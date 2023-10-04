@@ -16,15 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Get packages
+        shell: bash
         run: |
           dnf -y update
           dnf -y install SDL2-devel
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source "$HOME/.cargo/env"
       - name: Update rust
+        shell: bash
         run: |
           rustup default nightly
       - name: Build
+        shell: bash
         run: |
           . ./build_release.sh
 
