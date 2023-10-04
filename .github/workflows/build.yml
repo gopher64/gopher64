@@ -20,6 +20,7 @@ jobs:
           dnf -y update
           dnf -y install SDL2-devel
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source "$HOME/.cargo/env"
           rustup default nightly
       - name: Build
         run: ./build_release.sh
@@ -35,6 +36,6 @@ jobs:
           pacboy: >-
             SDL2:p
       - name: Setup
-        run: msys2 -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; rustup default nightly'
+        run: msys2 -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source "$HOME/.cargo/env"; rustup default nightly'
       - name: Build
         run: msys2 -c './build_release.sh'
