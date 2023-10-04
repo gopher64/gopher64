@@ -1,5 +1,4 @@
 fn main() {
-    let sdl = pkg_config::Config::new().probe("sdl2").unwrap();
     let mut build = cc::Build::new();
     build
         .cpp(true)
@@ -48,7 +47,7 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/vulkan")
         .include("parallel-rdp/parallel-rdp-standalone/vulkan-headers/include")
         .include("parallel-rdp/parallel-rdp-standalone/util")
-        .includes(sdl.include_paths);
+        .includes(std::env::var("DEP_SDL2_INCLUDE"));
 
     #[cfg(target_os = "windows")]
     {
