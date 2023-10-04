@@ -23,6 +23,11 @@ jobs:
       - name: Build
         run: |
           ./build_release.sh
+      - name: Upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: gopher64-linux
+          path: target/release/gopher64
 
   build-windows:
     runs-on: windows-latest
@@ -39,3 +44,8 @@ jobs:
         shell: bash
         run: |
           ./build_release.sh
+      - name: Upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: gopher64-windows
+          path: target/release/gopher64.exe
