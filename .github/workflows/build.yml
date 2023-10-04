@@ -16,19 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Get packages
-        shell: bash
         run: |
           dnf -y update
           dnf -y install SDL2-devel
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Update rust
-        shell: bash
         run: |
           rustup default nightly
       - name: Build
-        shell: bash
         run: |
-          . ./build_release.sh
+          ./build_release.sh
 
   build-windows:
     runs-on: windows-latest
@@ -41,7 +39,7 @@ jobs:
           pacboy: >-
             SDL2:p
       - name: Get packages
-        run: msys2 -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
+        run: msys2 -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; echo "$HOME/.cargo/bin" >> $GITHUB_PATH'
       - name: Update rust
         run: msys2 -c 'rustup default nightly'
       - name: Build
