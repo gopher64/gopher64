@@ -44,9 +44,11 @@ jobs:
         shell: msys2 {0}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          export PATH=$PATH:~/.cargo/bin
           rustup default nightly
           rustup update
       - name: Build
         shell: msys2 {0}
         run: |
+          export PATH=$PATH:~/.cargo/bin
           ./build_release.sh
