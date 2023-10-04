@@ -38,10 +38,12 @@ jobs:
         with:
           update: true
           msystem: UCRT64
+          pacboy: >-
             SDL2:p
       - name: Update rust
         shell: msys2 {0}
         run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           rustup default nightly
           rustup update
       - name: Build
