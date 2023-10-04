@@ -12,16 +12,25 @@ env:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-
+    container: registry.fedoraproject.org/fedora:latest
     steps:
       - uses: actions/checkout@v3
+      - name: Setup
+        run: |
+          dnf -y update
+          dnf -y install SDL2-devel
       - name: Build
         run: ./build_release.sh
 
   build-windows:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v3
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: UCRT64
+          pacboy: >-
+            SDL2:p
       - name: Build
-        run: ./build_release.sh
+        run: msys2 -c './build_release.sh'
