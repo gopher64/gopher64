@@ -1,0 +1,51 @@
+name: Rust
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Update rust
+        run: |
+          rustup default nightly
+          rustup update
+      - name: Build
+        run: |
+          ./build_release.sh
+      - name: Upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: gopher64-linux
+          path: target/release/gopher64
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Update rust
+        shell: bash
+        run: |
+          rustup default nightly
+          rustup update
+      - name: Build
+        shell: bash
+        run: |
+          ./build_release.sh
+      - name: Upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: gopher64-windows
+          path: target/release/gopher64.exe

@@ -1,10 +1,7 @@
 fn main() {
-    let sdl = pkg_config::Config::new().probe("sdl2").unwrap();
     let mut build = cc::Build::new();
     build
         .cpp(true)
-        .flag("-Wno-missing-field-initializers")
-        .flag("-Wno-unused-parameter")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/command_ring.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_device.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_dump_write.cpp")
@@ -48,11 +45,17 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/vulkan")
         .include("parallel-rdp/parallel-rdp-standalone/vulkan-headers/include")
         .include("parallel-rdp/parallel-rdp-standalone/util")
-        .includes(sdl.include_paths);
+        .includes(std::env::var("DEP_SDL2_INCLUDE"));
 
     #[cfg(target_os = "windows")]
     {
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
+    }
+    #[cfg(target_os = "linux")]
+    {
+        build
+            .flag("-Wno-missing-field-initializers")
+            .flag("-Wno-unused-parameter");
     }
     build.compile("parallel-rdp");
 }
