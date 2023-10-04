@@ -2,8 +2,6 @@ fn main() {
     let mut build = cc::Build::new();
     build
         .cpp(true)
-        .flag("-Wno-missing-field-initializers")
-        .flag("-Wno-unused-parameter")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/command_ring.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_device.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_dump_write.cpp")
@@ -52,6 +50,12 @@ fn main() {
     #[cfg(target_os = "windows")]
     {
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
+    }
+    #[cfg(target_os = "linux")]
+    {
+        build
+            .flag("-Wno-missing-field-initializers")
+            .flag("-Wno-unused-parameter");
     }
     build.compile("parallel-rdp");
 }
