@@ -12,18 +12,12 @@ env:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:latest
     steps:
       - uses: actions/checkout@v3
-      - name: Get packages
-        run: |
-          dnf -y update
-          dnf -y install SDL2-devel
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Update rust
         run: |
           rustup default nightly
+          rustup update
       - name: Build
         run: |
           ./build_release.sh
@@ -39,7 +33,7 @@ jobs:
           pacboy: >-
             SDL2:p
       - name: Get packages
-        run: msys2 -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; echo "$HOME/.cargo/bin" >> $GITHUB_PATH'
+        run: msys2 -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; echo "%USERPROFILE%\.cargo\bin" >> $GITHUB_PATH'
       - name: Update rust
         run: msys2 -c 'rustup default nightly'
       - name: Build
