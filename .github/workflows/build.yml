@@ -26,15 +26,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          msystem: UCRT64
-          pacboy: >-
-            SDL2:p
-      - name: Get packages
-        run: msys2 -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; echo "%USERPROFILE%\.cargo\bin" >> $GITHUB_PATH'
       - name: Update rust
-        run: msys2 -c 'rustup default nightly'
+        run: |
+          rustup default nightly
+          rustup update
       - name: Build
-        run: msys2 -c './build_release.sh'
+        run: |
+          ./build_release.sh
