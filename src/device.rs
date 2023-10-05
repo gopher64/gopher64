@@ -180,6 +180,9 @@ impl Device {
             rdram: rdram::Rdram { mem: vec![] },
             rsp: rsp_interface::Rsp {
                 cpu: rsp_cpu::Cpu {
+                    last_instruction_type: rsp_cpu::InstructionType::Su,
+                    instruction_type: rsp_cpu::InstructionType::Su,
+                    pipeline_full: false,
                     branch_state: rsp_cpu::BranchState {
                         state: cpu::State::Step,
                         pc: 0,
