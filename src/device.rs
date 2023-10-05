@@ -197,6 +197,7 @@ impl Device {
                     divdp: false,
                     divin: 0,
                     divout: 0,
+                    shuffle: unsafe { [std::arch::x86_64::_mm_setzero_si128(); 16] },
                     vcol: unsafe { std::arch::x86_64::_mm_setzero_si128() },
                     vcoh: unsafe { std::arch::x86_64::_mm_setzero_si128() },
                     vccl: unsafe { std::arch::x86_64::_mm_setzero_si128() },
