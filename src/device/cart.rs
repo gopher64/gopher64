@@ -24,9 +24,16 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 .contains(&ui::storage::SaveTypes::Eeprom16k)
             {
                 eeprom_type = JDT_EEPROM_16K;
-            } else {
+            } else if device
+                .ui
+                .save_type
+                .contains(&ui::storage::SaveTypes::Eeprom4k)
+            {
                 eeprom_type = JDT_EEPROM_4K;
+            } else {
+                return;
             }
+
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = eeprom_type as u8;
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 1] =
                 (eeprom_type >> 8) as u8;

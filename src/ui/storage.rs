@@ -71,6 +71,8 @@ pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
         =>{
             return vec![SaveTypes::Flash]
         }
+        "NPQ" // Powerpuff Girls: Chemical X Traction
+        => {return vec![];}
         _ => {
             return vec![SaveTypes::Eeprom4k, SaveTypes::Sram]
         }
