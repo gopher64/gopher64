@@ -66,7 +66,7 @@ pub fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usiz
             .ui
             .saves
             .eeprom
-            .resize(address + EEPROM_BLOCK_SIZE, 0)
+            .resize(address + EEPROM_BLOCK_SIZE, 0xFF)
     }
 
     device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]
@@ -81,7 +81,7 @@ pub fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usi
             .ui
             .saves
             .eeprom
-            .resize(address + EEPROM_BLOCK_SIZE, 0)
+            .resize(address + EEPROM_BLOCK_SIZE, 0xFF)
     }
 
     device.ui.saves.eeprom[address..address + EEPROM_BLOCK_SIZE]

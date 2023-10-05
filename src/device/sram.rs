@@ -15,7 +15,7 @@ pub fn read_mem(
         let masked_address = address as usize & SRAM_MASK;
 
         if masked_address + 4 > device.ui.saves.sram.len() {
-            device.ui.saves.sram.resize(masked_address + 4, 0)
+            device.ui.saves.sram.resize(masked_address + 4, 0xFF)
         }
 
         return u32::from_be_bytes(
@@ -33,7 +33,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         let masked_address = address as usize & SRAM_MASK;
 
         if masked_address + 4 > device.ui.saves.sram.len() {
-            device.ui.saves.sram.resize(masked_address + 4, 0)
+            device.ui.saves.sram.resize(masked_address + 4, 0xFF)
         }
 
         let mut data = u32::from_be_bytes(
@@ -72,7 +72,7 @@ pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, len
                 .ui
                 .saves
                 .sram
-                .resize((cart_addr + length) as usize, 0)
+                .resize((cart_addr + length) as usize, 0xFF)
         }
 
         while j < cart_addr + length {
@@ -99,7 +99,7 @@ pub fn dma_write(device: &mut device::Device, cart_addr: u32, dram_addr: u32, le
                 .ui
                 .saves
                 .sram
-                .resize((cart_addr + length) as usize, 0)
+                .resize((cart_addr + length) as usize, 0xFF)
         }
 
         while i < dram_addr + length {
