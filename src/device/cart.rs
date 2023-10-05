@@ -9,7 +9,7 @@ pub const JCMD_RESET: u8 = 0xff;
 pub const JDT_EEPROM_4K: u16 = 0x8000; /* 4k EEPROM */
 //pub const JDT_EEPROM_16K: u16 = 0xc000; /* 16k EEPROM */
 pub const EEPROM_TYPE: u16 = JDT_EEPROM_4K; // todo, support 16k eeprom
-                                            //pub const EEPROM_BLOCK_SIZE: usize = 8;
+pub const EEPROM_BLOCK_SIZE: usize = 8;
 
 pub fn process(device: &mut device::Device, channel: usize) {
     let cmd = device.pif.ram[device.pif.channels[channel].tx_buf.unwrap()];
@@ -41,15 +41,32 @@ pub fn process(device: &mut device::Device, channel: usize) {
     }
 }
 
-pub fn eeprom_read_block(_device: &mut device::Device, _block: usize, _data: usize) {
-    panic!("eeprom read")
+pub fn eeprom_read_block(device: &mut device::Device, block: usize, data: usize) {
+    //let address = device.pif.ram[block as usize] as usize * EEPROM_BLOCK_SIZE;
+    /*
+    if (address < eeprom->istorage->size(eeprom->storage))
+    {
+        memcpy(data, eeprom->istorage->data(eeprom->storage) + address, EEPROM_BLOCK_SIZE);
+    }
+    else
+    {
+        panic!("Invalid access to eeprom read");
+    }
+    */
 }
 
-pub fn eeprom_write_block(
-    _device: &mut device::Device,
-    _block: usize,
-    _data: usize,
-    _status: usize,
-) {
-    panic!("eeprom write")
+pub fn eeprom_write_block(device: &mut device::Device, block: usize, data: usize, status: usize) {
+    // let address = device.pif.ram[block as usize] as usize * EEPROM_BLOCK_SIZE;
+    /*
+    if (address < eeprom->istorage->size(eeprom->storage))
+    {
+        memcpy(eeprom->istorage->data(eeprom->storage) + address, data, EEPROM_BLOCK_SIZE);
+        eeprom->istorage->save(eeprom->storage, address, EEPROM_BLOCK_SIZE);
+        device.pif.ram[status as usize] = 0x00;
+    }
+    else
+    {
+        panic!("Invalid access to eeprom write");
+    }
+    */
 }
