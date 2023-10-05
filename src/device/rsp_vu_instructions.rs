@@ -1245,6 +1245,7 @@ pub fn vrsqh(device: &mut device::Device, opcode: u32) {
 pub fn vnop(_device: &mut device::Device, _opcode: u32) {}
 
 pub fn execute_vec(device: &mut device::Device, opcode: u32) {
+    device.rsp.cpu.instruction_type = device::rsp_cpu::InstructionType::Vu;
     device.rsp.cpu.vec_instrs[(opcode & 0x3F) as usize](device, opcode)
 }
 
