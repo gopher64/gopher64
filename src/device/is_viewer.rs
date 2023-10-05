@@ -1,5 +1,4 @@
 use crate::device;
-use std::str;
 
 pub const IS_VIEWER_MASK: usize = 0xFFFF;
 
@@ -20,9 +19,10 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     let masked_address = address as usize & IS_VIEWER_MASK;
     if masked_address == 0x14 {
         let length = (value & mask) as u64;
-        let data =
-            str::from_utf8(&device.cart.is_viewer_buffer[0x20 as usize..(0x20 + length) as usize])
-                .unwrap();
+        let data = std::str::from_utf8(
+            &device.cart.is_viewer_buffer[0x20 as usize..(0x20 + length) as usize],
+        )
+        .unwrap();
         print!("{}", data);
     } else {
         let mut data = u32::from_be_bytes(

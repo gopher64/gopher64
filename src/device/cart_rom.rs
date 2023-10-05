@@ -1,6 +1,5 @@
 use crate::device;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use sha2::{Digest, Sha256};
 
 pub enum CicType {
     CicNus6101,
@@ -95,7 +94,12 @@ pub fn dma_write(device: &mut device::Device, cart_addr: u32, dram_addr: u32, le
 pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     device.cart.rom = rom_file;
     set_system_region(device, device.cart.rom[0x3E]);
-    set_cic(device)
+    set_cic(device);
+
+    let data =
+        std::str::from_utf8(&device.cart.rom[0x20 as usize..(0x20 + 0x14) as usize]).unwrap();
+    let hash = calculate_hash(&device.cart.rom);
+    device.game = format!("{}-{}", data.trim(), hash);
 }
 
 pub fn set_system_region(device: &mut device::Device, country: u8) {
@@ -109,28 +113,28 @@ pub fn set_system_region(device: &mut device::Device, country: u8) {
 
 pub fn set_cic(device: &mut device::Device) {
     let hash = calculate_hash(&device.cart.rom[0x40..0x1000]);
-    match hash {
-        0x83a9a60ad75b3ed9 => {
+    match hash.as_str() {
+        "B99F06C4802C2377E31E388435955EF3E99C618A6D55D24699D828EB1075F1EB" => {
             device.cart.cic_type = CicType::CicNus6101;
             device.cart.cic_seed = 0x3F;
             device.cart.rdram_size_offset = 0x318;
         }
-        0x3c1e2f5171ec2b8 => {
+        "61E88238552C356C23D19409FE5570EE6910419586BC6FC740F638F761ADC46E" => {
             device.cart.cic_type = CicType::CicNus6102;
             device.cart.cic_seed = 0x3F;
             device.cart.rdram_size_offset = 0x318;
         }
-        0xdbdb0cb696006257 => {
+        "BF3620D30817007091EBE9BDDD1B88C23B8A0052170B3309CDE5B6B4238E45E7" => {
             device.cart.cic_type = CicType::CicNus6103;
             device.cart.cic_seed = 0x78;
             device.cart.rdram_size_offset = 0x318;
         }
-        0x3d51ac3a48960357 => {
+        "04B7BC6717A9F0EB724CF927E74AD3876C381CBB280D841736FC5E55580B756B" => {
             device.cart.cic_type = CicType::CicNus6105;
             device.cart.cic_seed = 0x91;
             device.cart.rdram_size_offset = 0x3F0;
         }
-        0x90135a02ea97ba9f => {
+        "36ADC40148AF56F0D78CD505EB6A90117D1FD6F11C6309E52ED36BC4C6BA340E" => {
             device.cart.cic_type = CicType::CicNus6106;
             device.cart.cic_seed = 0x85;
             device.cart.rdram_size_offset = 0x318;
@@ -139,13 +143,13 @@ pub fn set_cic(device: &mut device::Device) {
             device.cart.cic_type = CicType::CicNus6102;
             device.cart.cic_seed = 0x3F;
             device.cart.rdram_size_offset = 0x318;
-            println!("unknown IPL3 {:#01x}", hash)
+            println!("unknown IPL3 {}", hash)
         }
     }
 }
 
-fn calculate_hash<T: Hash>(t: &[T]) -> u64 {
-    let mut s = DefaultHasher::new();
-    t.hash(&mut s);
-    s.finish()
+fn calculate_hash(data: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    format!("{:X}", hasher.finalize())
 }

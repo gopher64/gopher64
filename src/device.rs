@@ -47,6 +47,7 @@ pub struct Device {
     ai: ai::Ai,
     si: si::Si,
     ri: ri::Ri,
+    game: String,
 }
 
 impl Device {
@@ -59,6 +60,7 @@ impl Device {
             byte_swap = 3;
         }
         Device {
+            game: String::new(),
             ui: ui::Ui::new(),
             byte_swap: byte_swap,
             cpu: cpu::Cpu {
