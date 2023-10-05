@@ -4,6 +4,7 @@ pub mod storage;
 pub mod video;
 
 pub struct Ui {
+    pub paths: storage::Paths,
     pub saves: storage::Saves,
     pub sdl_context: Option<sdl2::Sdl>,
     pub video_subsystem: Option<sdl2::VideoSubsystem>,
@@ -24,6 +25,9 @@ impl Ui {
             .build()
             .unwrap();
         Ui {
+            paths: storage::Paths {
+                eep_file_path: std::path::PathBuf::new(),
+            },
             saves: storage::Saves { eeprom: Vec::new() },
             sdl_context: Some(sdl_context),
             video_subsystem: Some(video_subsystem),

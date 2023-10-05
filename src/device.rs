@@ -47,7 +47,7 @@ pub struct Device {
     ai: ai::Ai,
     si: si::Si,
     ri: ri::Ri,
-    game: String,
+    pub game: String,
 }
 
 impl Device {
