@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+dirs = "5.0"
 sha2 = "0.10"
 sdl2-sys = { git = "https://github.com/Rust-SDL2/rust-sdl2.git" }
 

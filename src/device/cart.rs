@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 
 pub const JCMD_STATUS: u8 = 0x00;
 pub const JCMD_EEPROM_READ: u8 = 0x04;
@@ -9,7 +10,7 @@ pub const JCMD_RESET: u8 = 0xff;
 pub const JDT_EEPROM_4K: u16 = 0x8000; /* 4k EEPROM */
 //pub const JDT_EEPROM_16K: u16 = 0xc000; /* 16k EEPROM */
 pub const EEPROM_TYPE: u16 = JDT_EEPROM_4K; // todo, support 16k eeprom
-                                            //pub const EEPROM_BLOCK_SIZE: usize = 8;
+pub const EEPROM_BLOCK_SIZE: usize = 8;
 
 pub fn process(device: &mut device::Device, channel: usize) {
     let cmd = device.pif.ram[device.pif.channels[channel].tx_buf.unwrap()];
@@ -41,15 +42,34 @@ pub fn process(device: &mut device::Device, channel: usize) {
     }
 }
 
-pub fn eeprom_read_block(_device: &mut device::Device, _block: usize, _data: usize) {
-    panic!("eeprom read")
+pub fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usize) {
+    let address = device.pif.ram[block as usize] as usize * EEPROM_BLOCK_SIZE;
+
+    if address < device.ui.saves.eeprom.len() {
+        device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]
+            .copy_from_slice(&device.ui.saves.eeprom[address..address + EEPROM_BLOCK_SIZE]);
+    } else {
+        for i in 0..EEPROM_BLOCK_SIZE {
+            device.pif.ram[offset + i] = 0;
+        }
+    }
 }
 
-pub fn eeprom_write_block(
-    _device: &mut device::Device,
-    _block: usize,
-    _data: usize,
-    _status: usize,
-) {
-    panic!("eeprom write")
+pub fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
+    let address = device.pif.ram[block as usize] as usize * EEPROM_BLOCK_SIZE;
+
+    if address + EEPROM_BLOCK_SIZE > device.ui.saves.eeprom.len() {
+        device
+            .ui
+            .saves
+            .eeprom
+            .resize(address + EEPROM_BLOCK_SIZE, 0)
+    }
+
+    device.ui.saves.eeprom[address..address + EEPROM_BLOCK_SIZE]
+        .copy_from_slice(&device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]);
+
+    device.pif.ram[status as usize] = 0x00;
+
+    ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Eeprom);
 }
