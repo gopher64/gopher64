@@ -27,7 +27,7 @@ fn main() {
     device::vi::init(&mut device);
     device::cpu::init(&mut device);
 
-    ui::storage::init(&mut device.ui, device.game.as_str());
+    ui::storage::init(&mut device.ui);
     ui::storage::load_saves(&mut device.ui);
 
     device::cpu::run(&mut device);

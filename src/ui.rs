@@ -4,6 +4,9 @@ pub mod storage;
 pub mod video;
 
 pub struct Ui {
+    pub save_type: Vec<storage::SaveTypes>,
+    pub game_name: String,
+    pub game_id: String,
     pub paths: storage::Paths,
     pub saves: storage::Saves,
     pub sdl_context: Option<sdl2::Sdl>,
@@ -25,10 +28,20 @@ impl Ui {
             .build()
             .unwrap();
         Ui {
+            save_type: vec![],
+            game_name: String::new(),
+            game_id: String::new(),
             paths: storage::Paths {
                 eep_file_path: std::path::PathBuf::new(),
+                fla_file_path: std::path::PathBuf::new(),
+                sra_file_path: std::path::PathBuf::new(),
+                pak_file_path: std::path::PathBuf::new(),
             },
-            saves: storage::Saves { eeprom: Vec::new() },
+            saves: storage::Saves {
+                eeprom: Vec::new(),
+                sram: Vec::new(),
+                flash: Vec::new(),
+            },
             sdl_context: Some(sdl_context),
             video_subsystem: Some(video_subsystem),
             audio_subsystem: Some(audio_subsystem),
