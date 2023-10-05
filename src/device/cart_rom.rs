@@ -99,7 +99,8 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     let data =
         std::str::from_utf8(&device.cart.rom[0x20 as usize..(0x20 + 0x14) as usize]).unwrap();
     let hash = calculate_hash(&device.cart.rom);
-    device.game = format!("{}-{}", data.trim(), hash);
+    device.ui.game_name = format!("{}-{}", data.trim(), hash);
+    device.ui.game_id = String::from_utf8(device.cart.rom[0x3B..0x3E].to_vec()).unwrap();
 }
 
 pub fn set_system_region(device: &mut device::Device, country: u8) {

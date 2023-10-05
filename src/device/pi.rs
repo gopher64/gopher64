@@ -94,8 +94,8 @@ pub fn get_handler(address: u32) -> PiHandler {
             handler.write = device::cart_rom::dma_write;
         }
     } else if address >= device::memory::MM_DOM2_ADDR2 as u32 {
-        panic!("sram handler")
-    //RW(cart, cart_dom2);
+        handler.read = device::sram::dma_read;
+        handler.write = device::sram::dma_write;
     } else {
         panic!("unknown pi handler")
     }
