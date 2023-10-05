@@ -62,7 +62,7 @@ pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, len
                 .resize((cart_addr + length) as usize, 0)
         }
 
-        while i < dram_addr + length {
+        while j < cart_addr + length {
             device.ui.saves.sram[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
             i += 1;
             j += 1;
