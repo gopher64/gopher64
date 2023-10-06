@@ -43,6 +43,7 @@ pub const COP0_STATUS_CU1: u64 = 1 << 29;
 pub const COP0_STATUS_CU2: u64 = 1 << 30;
 
 //pub const COP0_CAUSE_EXCCODE_INTR: u64 = 0 << 2;
+pub const COP0_CAUSE_EXCCODE_MOD: u64 = 1 << 2;
 pub const COP0_CAUSE_EXCCODE_TLBL: u64 = 2 << 2;
 pub const COP0_CAUSE_EXCCODE_TLBS: u64 = 3 << 2;
 //pub const COP0_CAUSE_EXCCODE_ADEL: u64 = 4 << 2;

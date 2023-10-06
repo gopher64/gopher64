@@ -105,9 +105,19 @@ pub fn tlb_miss_exception(
     for i in device.cpu.cop0.tlb_entries {
         if address >= i.start_even && address <= i.end_even {
             valid = i.v_even != 0;
+            if valid && access_type == device::memory::AccessType::Write && i.d_even == 0 {
+                device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
+                    device::cop0::COP0_CAUSE_EXCCODE_MOD;
+                valid = false;
+            }
         }
         if address >= i.start_odd && address <= i.start_odd {
             valid = i.v_odd != 0;
+            if valid && access_type == device::memory::AccessType::Write && i.d_odd == 0 {
+                device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
+                    device::cop0::COP0_CAUSE_EXCCODE_MOD;
+                valid = false;
+            }
         }
     }
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_EXL
