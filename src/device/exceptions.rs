@@ -95,6 +95,11 @@ pub fn tlb_miss_exception(
         address >> 31,
         device::cop0::COP0_XCONTEXT_REGION_MASK,
     );
+    device::memory::masked_write_64(
+        &mut device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize],
+        address,
+        0xFFFFE000,
+    );
 
     let mut vector_offset = 0x180;
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_EXL
