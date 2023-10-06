@@ -73,17 +73,22 @@ pub fn dma_read(device: &mut device::Device, _cart_addr: u32, _dram_addr: u32, l
 }
 
 // cart is big endian, rdram is native endian
-pub fn dma_write(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) -> u64 {
-    let mut i = dram_addr & device::rdram::RDRAM_MASK as u32;
-    let mut j = cart_addr & CART_MASK as u32;
-    while i < (dram_addr & device::rdram::RDRAM_MASK as u32) + length
-        && j < device.cart.rom.len() as u32
-    {
+pub fn dma_write(
+    device: &mut device::Device,
+    mut cart_addr: u32,
+    mut dram_addr: u32,
+    length: u32,
+) -> u64 {
+    dram_addr &= device::rdram::RDRAM_MASK as u32;
+    cart_addr &= CART_MASK as u32;
+    let mut i = dram_addr;
+    let mut j = cart_addr;
+    while i < dram_addr + length && j < device.cart.rom.len() as u32 {
         device.rdram.mem[i as usize ^ device.byte_swap] = device.cart.rom[j as usize];
         i += 1;
         j += 1;
     }
-    while i < (dram_addr & device::rdram::RDRAM_MASK as u32) + length {
+    while i < dram_addr + length {
         // DMAs that extend past the end of the ROM return 0's for the portion that extends past the ROM length
         device.rdram.mem[i as usize ^ device.byte_swap] = 0;
         i += 1;

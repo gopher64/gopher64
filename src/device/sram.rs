@@ -62,10 +62,17 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
 }
 
 // cart is big endian, rdram is native endian
-pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) -> u64 {
+pub fn dma_read(
+    device: &mut device::Device,
+    mut cart_addr: u32,
+    mut dram_addr: u32,
+    length: u32,
+) -> u64 {
     if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
-        let mut i = dram_addr & device::rdram::RDRAM_MASK as u32;
-        let mut j = cart_addr & SRAM_MASK as u32;
+        dram_addr &= device::rdram::RDRAM_MASK as u32;
+        cart_addr &= SRAM_MASK as u32;
+        let mut i = dram_addr;
+        let mut j = cart_addr;
 
         if (cart_addr + length) as usize > device.ui.saves.sram.len() {
             device
@@ -89,10 +96,17 @@ pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, len
 }
 
 // cart is big endian, rdram is native endian
-pub fn dma_write(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) -> u64 {
+pub fn dma_write(
+    device: &mut device::Device,
+    mut cart_addr: u32,
+    mut dram_addr: u32,
+    length: u32,
+) -> u64 {
     if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
-        let mut i = dram_addr & device::rdram::RDRAM_MASK as u32;
-        let mut j = cart_addr & SRAM_MASK as u32;
+        dram_addr &= device::rdram::RDRAM_MASK as u32;
+        cart_addr &= SRAM_MASK as u32;
+        let mut i = dram_addr;
+        let mut j = cart_addr;
 
         if (cart_addr + length) as usize > device.ui.saves.sram.len() {
             device
