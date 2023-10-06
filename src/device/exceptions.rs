@@ -103,23 +103,26 @@ pub fn tlb_miss_exception(
     let mut vector_offset = 0x180;
     let mut valid = true;
     for i in device.cpu.cop0.tlb_entries {
-        if address >= i.start_even && address <= i.end_even {
+        if address & !3 >= i.start_even && address & !3 <= i.end_even {
             valid = i.v_even != 0;
             if valid && access_type == device::memory::AccessType::Write && i.d_even == 0 {
                 device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
                     device::cop0::COP0_CAUSE_EXCCODE_MOD;
                 valid = false;
             }
+            break;
         }
-        if address >= i.start_odd && address <= i.start_odd {
+        if address & !3 >= i.start_odd && address & !3 <= i.start_odd {
             valid = i.v_odd != 0;
             if valid && access_type == device::memory::AccessType::Write && i.d_odd == 0 {
                 device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
                     device::cop0::COP0_CAUSE_EXCCODE_MOD;
                 valid = false;
             }
+            break;
         }
     }
+
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_EXL
         == 0
         && valid

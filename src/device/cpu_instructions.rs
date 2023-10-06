@@ -246,11 +246,12 @@ pub fn ldl(device: &mut device::Device, opcode: u32) {
     let shift = 8 * n;
     let mask = bits_below_mask(8 * n);
 
-    let (phys_address, cached, err) =
-        device::memory::translate_address(device, addr & !7, device::memory::AccessType::Read);
+    let (mut phys_address, cached, err) =
+        device::memory::translate_address(device, addr, device::memory::AccessType::Read);
     if err {
         return;
     }
+    phys_address &= !7;
 
     let mut w = [0; 2];
     w[0] = device::memory::data_read(
@@ -280,11 +281,12 @@ pub fn ldr(device: &mut device::Device, opcode: u32) {
         mask = bits_above_mask(8 * (n + 1))
     }
 
-    let (phys_address, cached, err) =
-        device::memory::translate_address(device, addr & !7, device::memory::AccessType::Read);
+    let (mut phys_address, cached, err) =
+        device::memory::translate_address(device, addr, device::memory::AccessType::Read);
     if err {
         return;
     }
+    phys_address &= !7;
 
     let mut w = [0; 2];
     w[0] = device::memory::data_read(
@@ -349,11 +351,12 @@ pub fn lwl(device: &mut device::Device, opcode: u32) {
     let shift = 8 * n;
     let mask = bits_below_mask(8 * n) as u32;
 
-    let (phys_address, cached, err) =
-        device::memory::translate_address(device, addr & !3, device::memory::AccessType::Read);
+    let (mut phys_address, cached, err) =
+        device::memory::translate_address(device, addr, device::memory::AccessType::Read);
     if err {
         return;
     }
+    phys_address &= !3;
 
     device.cpu.gpr[rt(opcode) as usize] = se32(
         ((device.cpu.gpr[rt(opcode) as usize] as u32) & mask
@@ -433,11 +436,12 @@ pub fn lwr(device: &mut device::Device, opcode: u32) {
         mask = bits_above_mask(8 * (n + 1))
     }
 
-    let (phys_address, cached, err) =
-        device::memory::translate_address(device, addr & !3, device::memory::AccessType::Read);
+    let (mut phys_address, cached, err) =
+        device::memory::translate_address(device, addr, device::memory::AccessType::Read);
     if err {
         return;
     }
+    phys_address &= !3;
 
     device.cpu.gpr[rt(opcode) as usize] = se32(
         ((device.cpu.gpr[rt(opcode) as usize] as u32) & (mask as u32)
@@ -522,11 +526,13 @@ pub fn swl(device: &mut device::Device, opcode: u32) {
         mask = bits_below_mask(8 * (4 - n)) as u32
     }
 
-    let (phys_address, cached, err) =
-        device::memory::translate_address(device, addr & !3, device::memory::AccessType::Write);
+    let (mut phys_address, cached, err) =
+        device::memory::translate_address(device, addr, device::memory::AccessType::Write);
     if err {
         return;
     }
+    phys_address &= !3;
+
     device::memory::data_write(
         device,
         phys_address,
@@ -567,11 +573,12 @@ pub fn sdl(device: &mut device::Device, opcode: u32) {
         mask = bits_below_mask(8 * (8 - n))
     }
 
-    let (phys_address, cached, err) =
-        device::memory::translate_address(device, addr & !7, device::memory::AccessType::Write);
+    let (mut phys_address, cached, err) =
+        device::memory::translate_address(device, addr, device::memory::AccessType::Write);
     if err {
         return;
     }
+    phys_address &= !7;
 
     let value = device.cpu.gpr[rt(opcode) as usize] >> shift;
     device::memory::data_write(
@@ -591,11 +598,12 @@ pub fn sdr(device: &mut device::Device, opcode: u32) {
 
     let mask = bits_above_mask(8 * (7 - n));
 
-    let (phys_address, cached, err) =
-        device::memory::translate_address(device, addr & !7, device::memory::AccessType::Write);
+    let (mut phys_address, cached, err) =
+        device::memory::translate_address(device, addr, device::memory::AccessType::Write);
     if err {
         return;
     }
+    phys_address &= !7;
 
     let value = device.cpu.gpr[rt(opcode) as usize] << shift;
     device::memory::data_write(
@@ -615,11 +623,13 @@ pub fn swr(device: &mut device::Device, opcode: u32) {
 
     let mask = bits_above_mask(8 * (3 - n)) as u32;
 
-    let (phys_address, cached, err) =
-        device::memory::translate_address(device, addr & !3, device::memory::AccessType::Write);
+    let (mut phys_address, cached, err) =
+        device::memory::translate_address(device, addr, device::memory::AccessType::Write);
     if err {
         return;
     }
+    phys_address &= !3;
+
     device::memory::data_write(
         device,
         phys_address,
