@@ -117,7 +117,13 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, _mask: u
             .unwrap(),
     );
     device::memory::masked_write_32(&mut data, value, 0xFFFFFFFF);
-    device.rsp.mem[masked_address..masked_address + 4].copy_from_slice(&data.to_be_bytes())
+    device.rsp.mem[masked_address..masked_address + 4].copy_from_slice(&data.to_be_bytes());
+
+    if masked_address & 0x1000 != 0 {
+        // imem being updated
+        device.rsp.cpu.instructions[((masked_address & 0xFFF) / 4) as usize] =
+            device::rsp_cpu::decode_opcode(device, data);
+    }
 
     // SH/SB are broken: They overwrite the whole 32 bit, filling everything that isn't written with zeroes
 }
@@ -138,11 +144,17 @@ pub fn do_dma(device: &mut device::Device, dma: RspDma) {
         while j < count {
             let mut i = 0;
             while i < length {
-                device.rdram.mem[dram_addr as usize ^ device.byte_swap] =
-                    device.rsp.mem[(offset + (mem_addr & 0xFFF)) as usize];
-                mem_addr += 1;
-                dram_addr += 1;
-                i += 1;
+                let data = u32::from_be_bytes(
+                    device.rsp.mem[(offset + (mem_addr & 0xFFF)) as usize
+                        ..(offset + (mem_addr & 0xFFF)) as usize + 4]
+                        .try_into()
+                        .unwrap(),
+                );
+                device.rdram.mem[dram_addr as usize..dram_addr as usize + 4]
+                    .copy_from_slice(&data.to_ne_bytes());
+                mem_addr += 4;
+                dram_addr += 4;
+                i += 4;
             }
             dram_addr += skip;
             j += 1;
@@ -152,11 +164,22 @@ pub fn do_dma(device: &mut device::Device, dma: RspDma) {
         while j < count {
             let mut i = 0;
             while i < length {
-                device.rsp.mem[(offset + (mem_addr & 0xFFF)) as usize] =
-                    device.rdram.mem[dram_addr as usize ^ device.byte_swap];
-                mem_addr += 1;
-                dram_addr += 1;
-                i += 1;
+                let data = u32::from_ne_bytes(
+                    device.rdram.mem[dram_addr as usize..dram_addr as usize + 4]
+                        .try_into()
+                        .unwrap(),
+                );
+                if offset != 0 {
+                    // imem being updated
+                    device.rsp.cpu.instructions[((mem_addr & 0xFFF) / 4) as usize] =
+                        device::rsp_cpu::decode_opcode(device, data);
+                }
+                device.rsp.mem[(offset + (mem_addr & 0xFFF)) as usize
+                    ..(offset + (mem_addr & 0xFFF)) as usize + 4]
+                    .copy_from_slice(&data.to_be_bytes());
+                mem_addr += 4;
+                dram_addr += 4;
+                i += 4;
             }
             dram_addr += skip;
             j += 1;
