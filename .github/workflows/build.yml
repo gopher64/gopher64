@@ -19,10 +19,9 @@ jobs:
       - name: Update rust
         run: |
           rustup update
-          rustup install nightly
       - name: Build
         run: |
-          ./build_release.sh
+          cargo build --release -v
       - name: Upload file
         uses: actions/upload-artifact@v3
         with:
@@ -36,16 +35,31 @@ jobs:
         with:
           submodules: recursive
       - name: Update rust
-        shell: bash
         run: |
           rustup update
-          rustup install nightly
       - name: Build
-        shell: bash
         run: |
-          ./build_release.sh
+          cargo build --release -v
       - name: Upload file
         uses: actions/upload-artifact@v3
         with:
           name: gopher64-windows
           path: target/release/gopher64.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Update rust
+        run: |
+          rustup update
+      - name: Build
+        run: |
+          cargo build --release -v
+      - name: Upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: gopher64-mac
+          path: target/release/gopher64

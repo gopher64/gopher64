@@ -2,6 +2,7 @@ fn main() {
     let mut build = cc::Build::new();
     build
         .cpp(true)
+        .std("c++17")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/command_ring.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_device.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_dump_write.cpp")
@@ -51,7 +52,7 @@ fn main() {
     {
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
     }
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
         build
             .flag("-Wno-missing-field-initializers")
