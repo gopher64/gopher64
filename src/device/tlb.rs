@@ -250,7 +250,6 @@ pub fn get_physical_address(
     address: u64,
     access_type: device::memory::AccessType,
 ) -> (u64, bool, bool) {
-    let valid;
     if access_type == device::memory::AccessType::Write {
         if device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].address != 0 {
             return (
@@ -259,8 +258,6 @@ pub fn get_physical_address(
                 device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].cached,
                 false,
             );
-        } else {
-            valid = device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].valid;
         }
     } else {
         if device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].address != 0 {
@@ -270,13 +267,11 @@ pub fn get_physical_address(
                 device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].cached,
                 false,
             );
-        } else {
-            valid = device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].valid;
         }
     }
 
     if access_type != device::memory::AccessType::Lookup {
-        device::exceptions::tlb_miss_exception(device, address, access_type, valid)
+        device::exceptions::tlb_miss_exception(device, address, access_type)
     }
 
     return (0, false, true);

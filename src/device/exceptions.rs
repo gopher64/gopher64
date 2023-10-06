@@ -69,7 +69,6 @@ pub fn tlb_miss_exception(
     device: &mut device::Device,
     address: u64,
     access_type: device::memory::AccessType,
-    valid: bool,
 ) {
     if access_type == device::memory::AccessType::Read {
         device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
@@ -102,6 +101,15 @@ pub fn tlb_miss_exception(
     );
 
     let mut vector_offset = 0x180;
+    let mut valid = true;
+    for i in device.cpu.cop0.tlb_entries {
+        if address >= i.start_even && address <= i.end_even {
+            valid = i.v_even != 0;
+        }
+        if address >= i.start_odd && address <= i.start_odd {
+            valid = i.v_odd != 0;
+        }
+    }
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_EXL
         == 0
         && valid
