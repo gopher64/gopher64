@@ -20,55 +20,56 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
         return;
     }
 
-    exception_general(device);
+    exception_general(device, 0x180);
 }
 
 pub fn floating_point_exception(device: &mut device::Device) {
     device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
         device::cop0::COP0_CAUSE_EXCCODE_FPE;
 
-    exception_general(device)
+    exception_general(device, 0x180)
 }
 
 pub fn trap_exception(device: &mut device::Device) {
     device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
         device::cop0::COP0_CAUSE_EXCCODE_TR;
 
-    exception_general(device)
+    exception_general(device, 0x180)
 }
 
 pub fn syscall_exception(device: &mut device::Device) {
     device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
         device::cop0::COP0_CAUSE_EXCCODE_SYS;
 
-    exception_general(device)
+    exception_general(device, 0x180)
 }
 
 pub fn break_exception(device: &mut device::Device) {
     device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
         device::cop0::COP0_CAUSE_EXCCODE_BP;
 
-    exception_general(device)
+    exception_general(device, 0x180)
 }
 
 pub fn reserved_exception(device: &mut device::Device, cop: u64) {
     device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
         device::cop0::COP0_CAUSE_EXCCODE_RI | cop;
 
-    exception_general(device)
+    exception_general(device, 0x180)
 }
 
 pub fn cop_unusable_exception(device: &mut device::Device, cop: u64) {
     device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
         device::cop0::COP0_CAUSE_EXCCODE_CPU | cop;
 
-    exception_general(device)
+    exception_general(device, 0x180)
 }
 
 pub fn tlb_miss_exception(
     device: &mut device::Device,
     address: u64,
     access_type: device::memory::AccessType,
+    valid: bool,
 ) {
     if access_type == device::memory::AccessType::Read {
         device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
@@ -95,16 +96,18 @@ pub fn tlb_miss_exception(
         device::cop0::COP0_XCONTEXT_REGION_MASK,
     );
 
+    let mut vector_offset = 0x180;
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_EXL
         == 0
+        && valid
     {
-        device.cpu.pc -= 0x180
+        vector_offset = 0;
     }
 
-    exception_general(device)
+    exception_general(device, vector_offset)
 }
 
-pub fn exception_general(device: &mut device::Device) {
+pub fn exception_general(device: &mut device::Device, vector_offset: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_EXL
         == 0
     {
@@ -121,7 +124,6 @@ pub fn exception_general(device: &mut device::Device) {
 
     device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] |= device::cop0::COP0_STATUS_EXL;
 
-    let vector_offset: u32 = 0x180;
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_BEV
         == 0
     {
