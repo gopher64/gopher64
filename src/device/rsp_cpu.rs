@@ -13,6 +13,7 @@ pub enum InstructionType {
 }
 
 pub struct Cpu {
+    pub instructions: [fn(&mut device::Device, u32); 0x1000 / 4],
     pub last_instruction_type: InstructionType,
     pub instruction_type: InstructionType,
     pub pipeline_full: bool,
@@ -36,12 +37,12 @@ pub struct Cpu {
     pub divdp: bool,
     pub divin: i16,
     pub divout: i16,
-    pub special_instrs: [fn(&mut device::Device, u32); 48],
-    pub regimm_instrs: [fn(&mut device::Device, u32); 18],
-    pub cop0_instrs: [fn(&mut device::Device, u32); 5],
+    pub special_instrs: [fn(&mut device::Device, u32); 64],
+    pub regimm_instrs: [fn(&mut device::Device, u32); 32],
+    pub cop0_instrs: [fn(&mut device::Device, u32); 32],
     pub cop2_instrs: [fn(&mut device::Device, u32); 32],
-    pub lwc2_instrs: [fn(&mut device::Device, u32); 12],
-    pub swc2_instrs: [fn(&mut device::Device, u32); 12],
+    pub lwc2_instrs: [fn(&mut device::Device, u32); 32],
+    pub swc2_instrs: [fn(&mut device::Device, u32); 32],
     pub instrs: [fn(&mut device::Device, u32); 64],
     pub vec_instrs: [fn(&mut device::Device, u32); 64],
 }
@@ -63,7 +64,12 @@ pub fn run(device: &mut device::Device) -> u64 {
         device.rsp.cpu.gpr[0] = 0; // gpr 0 is read only
         let offset = 0x1000 + device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] as usize;
         let opcode = u32::from_be_bytes(device.rsp.mem[offset..offset + 4].try_into().unwrap());
-        execute_opcode(device, opcode)(device, opcode);
+
+        device.rsp.cpu.instructions
+            [(device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] / 4) as usize](
+            device, opcode,
+        );
+
         match device.rsp.cpu.branch_state.state {
             device::cpu::State::Step => {
                 device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 4;
@@ -114,7 +120,7 @@ pub fn run(device: &mut device::Device) -> u64 {
     return (cycle_counter as f64 * 1.5) as u64; // converting RCP clock to CPU clock
 }
 
-pub fn execute_opcode(device: &mut device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
+pub fn decode_opcode(device: &mut device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
     match opcode >> 26 {
         0 => {
             // SPECIAL
@@ -316,6 +322,22 @@ pub fn init(device: &mut device::Device) {
         device::rsp_su_instructions::reserved, // 45
         device::rsp_su_instructions::reserved, // 46
         device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
+        device::rsp_su_instructions::reserved, // 47
     ];
 
     device.rsp.cpu.regimm_instrs = [
@@ -337,6 +359,20 @@ pub fn init(device: &mut device::Device) {
         device::rsp_su_instructions::reserved, // 15
         device::rsp_su_instructions::bltzal,   // 16
         device::rsp_su_instructions::bgezal,   // 17
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
     ];
 
     device.rsp.cpu.cop0_instrs = [
@@ -345,6 +381,33 @@ pub fn init(device: &mut device::Device) {
         device::rsp_su_instructions::reserved, // 2
         device::rsp_su_instructions::reserved, // 3
         device::rsp_su_instructions::mtc0,     // 4
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
     ];
 
     device.rsp.cpu.cop2_instrs = [
@@ -383,33 +446,73 @@ pub fn init(device: &mut device::Device) {
     ];
 
     device.rsp.cpu.lwc2_instrs = [
-        device::rsp_su_instructions::lbv, // 0
-        device::rsp_su_instructions::lsv, // 1
-        device::rsp_su_instructions::llv, // 2
-        device::rsp_su_instructions::ldv, // 3
-        device::rsp_su_instructions::lqv, // 4
-        device::rsp_su_instructions::lrv, // 5
-        device::rsp_su_instructions::lpv, // 6
-        device::rsp_su_instructions::luv, // 7
-        device::rsp_su_instructions::lhv, // 8
-        device::rsp_su_instructions::lfv, // 9
-        device::rsp_su_instructions::lwv, // 10
-        device::rsp_su_instructions::ltv, // 11
+        device::rsp_su_instructions::lbv,      // 0
+        device::rsp_su_instructions::lsv,      // 1
+        device::rsp_su_instructions::llv,      // 2
+        device::rsp_su_instructions::ldv,      // 3
+        device::rsp_su_instructions::lqv,      // 4
+        device::rsp_su_instructions::lrv,      // 5
+        device::rsp_su_instructions::lpv,      // 6
+        device::rsp_su_instructions::luv,      // 7
+        device::rsp_su_instructions::lhv,      // 8
+        device::rsp_su_instructions::lfv,      // 9
+        device::rsp_su_instructions::lwv,      // 10
+        device::rsp_su_instructions::ltv,      // 11
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
     ];
 
     device.rsp.cpu.swc2_instrs = [
-        device::rsp_su_instructions::sbv, // 0
-        device::rsp_su_instructions::ssv, // 1
-        device::rsp_su_instructions::slv, // 2
-        device::rsp_su_instructions::sdv, // 3
-        device::rsp_su_instructions::sqv, // 4
-        device::rsp_su_instructions::srv, // 5
-        device::rsp_su_instructions::spv, // 6
-        device::rsp_su_instructions::suv, // 7
-        device::rsp_su_instructions::shv, // 8
-        device::rsp_su_instructions::sfv, // 9
-        device::rsp_su_instructions::swv, // 10
-        device::rsp_su_instructions::stv, // 11
+        device::rsp_su_instructions::sbv,      // 0
+        device::rsp_su_instructions::ssv,      // 1
+        device::rsp_su_instructions::slv,      // 2
+        device::rsp_su_instructions::sdv,      // 3
+        device::rsp_su_instructions::sqv,      // 4
+        device::rsp_su_instructions::srv,      // 5
+        device::rsp_su_instructions::spv,      // 6
+        device::rsp_su_instructions::suv,      // 7
+        device::rsp_su_instructions::shv,      // 8
+        device::rsp_su_instructions::sfv,      // 9
+        device::rsp_su_instructions::swv,      // 10
+        device::rsp_su_instructions::stv,      // 11
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
+        device::rsp_su_instructions::reserved, // 15
     ];
 
     device.rsp.cpu.vec_instrs = [
