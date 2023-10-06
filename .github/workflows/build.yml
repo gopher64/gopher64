@@ -18,8 +18,8 @@ jobs:
           submodules: recursive
       - name: Update rust
         run: |
-          rustup default nightly
           rustup update
+          rustup install nightly
       - name: Build
         run: |
           ./build_release.sh
@@ -38,8 +38,8 @@ jobs:
       - name: Update rust
         shell: bash
         run: |
-          rustup default nightly
           rustup update
+          rustup install nightly
       - name: Build
         shell: bash
         run: |
