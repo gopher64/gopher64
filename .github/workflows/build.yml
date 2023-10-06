@@ -35,11 +35,9 @@ jobs:
         with:
           submodules: recursive
       - name: Update rust
-        shell: bash
         run: |
           rustup update
       - name: Build
-        shell: bash
         run: |
           cargo build --release
       - name: Upload file
@@ -47,3 +45,21 @@ jobs:
         with:
           name: gopher64-windows
           path: target/release/gopher64.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Update rust
+        run: |
+          rustup update
+      - name: Build
+        run: |
+          cargo build --release
+      - name: Upload file
+        uses: actions/upload-artifact@v3
+        with:
+          name: gopher64-mac
+          path: target/release/gopher64
