@@ -9,12 +9,13 @@ pub enum EventType {
     DP,
     SP,
     SPDma,
-    COMPARE,
+    Compare,
+    EventTypeCount,
 }
 
 #[derive(PartialEq, Copy, Clone)]
 pub struct Event {
-    pub name: EventType,
+    pub enabled: bool,
     pub count: u64,
     pub handler: fn(&mut device::Device),
 }
@@ -25,57 +26,40 @@ pub fn create_event(
     when: u64,
     handler: fn(&mut device::Device),
 ) {
-    let event = Event {
-        name: name,
+    device.cpu.events[name as usize] = Event {
+        enabled: true,
         count: when,
         handler: handler,
     };
-    if get_event(device, name) != None {
-        panic! {"duplicate event {}", name as usize}
-    }
-    device.cpu.events.push(event);
     set_next_event(device);
 }
 
 pub fn get_event(device: &mut device::Device, name: EventType) -> Option<&mut Event> {
-    for i in device.cpu.events.iter_mut() {
-        if i.name == name {
-            return Some(i);
-        }
+    if device.cpu.events[name as usize].enabled {
+        return Some(&mut device.cpu.events[name as usize]);
     }
     return None;
 }
 
 pub fn remove_event(device: &mut device::Device, name: EventType) {
-    let mut remove_index: usize = 0;
-    let mut found = false;
-    for (pos, i) in device.cpu.events.iter_mut().enumerate() {
-        if i.name == name {
-            found = true;
-            remove_index = pos;
-            break;
-        }
-    }
-    if found {
-        device.cpu.events.remove(remove_index);
-    }
+    device.cpu.events[name as usize].enabled = false;
 }
 
 pub fn trigger_event(device: &mut device::Device) {
-    let next_event_name = device.cpu.next_event.unwrap().name;
-    remove_event(device, next_event_name);
+    let next_event_name = device.cpu.next_event;
+    device.cpu.events[next_event_name].enabled = false;
 
-    let handler = device.cpu.next_event.unwrap().handler;
+    let handler = device.cpu.events[next_event_name].handler;
     handler(device);
     set_next_event(device);
 }
 
 pub fn set_next_event(device: &mut device::Device) {
     device.cpu.next_event_count = u64::MAX;
-    for i in device.cpu.events.iter() {
-        if i.count < device.cpu.next_event_count {
+    for (pos, i) in device.cpu.events.iter().enumerate() {
+        if i.enabled && i.count < device.cpu.next_event_count {
             device.cpu.next_event_count = i.count;
-            device.cpu.next_event = Some(*i);
+            device.cpu.next_event = pos;
         }
     }
 }
@@ -85,4 +69,8 @@ pub fn translate_events(device: &mut device::Device, old_count: u64, new_count: 
         i.count = i.count - old_count + new_count
     }
     set_next_event(device);
+}
+
+pub fn dummy_event(_device: &mut device::Device) {
+    panic!("dummy event")
 }
