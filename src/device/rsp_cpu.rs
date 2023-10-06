@@ -88,11 +88,17 @@ pub fn run(device: &mut device::Device) -> u64 {
             device::cpu::State::DelaySlotTaken => {
                 device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] =
                     device.rsp.cpu.branch_state.pc;
-                device.rsp.cpu.branch_state.state = device::cpu::State::Step
+                device.rsp.cpu.branch_state.state = device::cpu::State::Step;
+                if device.rsp.cpu.broken {
+                    break;
+                }
             }
             device::cpu::State::DelaySlotNotTaken => {
                 device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 4;
-                device.rsp.cpu.branch_state.state = device::cpu::State::Step
+                device.rsp.cpu.branch_state.state = device::cpu::State::Step;
+                if device.rsp.cpu.broken {
+                    break;
+                }
             }
             device::cpu::State::Discard => {
                 device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 8;
