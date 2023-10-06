@@ -12,7 +12,7 @@
 2. `rustup install nightly`
 3. `git clone --recursive https://github.com/gopher64/gopher64.git`
 4. `cd gopher64`
-5. `./build_release.sh`
+5. `cargo build --release`
 6. `./target/release/gopher64 /path/to/rom.z64`
 
 ## controls

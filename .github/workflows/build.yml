@@ -19,10 +19,9 @@ jobs:
       - name: Update rust
         run: |
           rustup update
-          rustup install nightly
       - name: Build
         run: |
-          ./build_release.sh
+          cargo build --release
       - name: Upload file
         uses: actions/upload-artifact@v3
         with:
@@ -39,11 +38,10 @@ jobs:
         shell: bash
         run: |
           rustup update
-          rustup install nightly
       - name: Build
         shell: bash
         run: |
-          ./build_release.sh
+          cargo build --release
       - name: Upload file
         uses: actions/upload-artifact@v3
         with:
