@@ -36,6 +36,12 @@ pub struct Cop1 {
 }
 
 pub fn lwc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     let (phys_address, cached, err) = device::memory::translate_address(
         device,
         device.cpu.gpr[device::cpu_instructions::rs(opcode) as usize].wrapping_add(
@@ -62,6 +68,12 @@ pub fn lwc1(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn ldc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     let (phys_address, cached, err) = device::memory::translate_address(
         device,
         device.cpu.gpr[device::cpu_instructions::rs(opcode) as usize].wrapping_add(
@@ -95,6 +107,12 @@ pub fn ldc1(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn swc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     let (phys_address, cached, err) = device::memory::translate_address(
         device,
         device.cpu.gpr[device::cpu_instructions::rs(opcode) as usize].wrapping_add(
@@ -116,6 +134,12 @@ pub fn swc1(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn sdc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     let (phys_address, cached, err) = device::memory::translate_address(
         device,
         device.cpu.gpr[device::cpu_instructions::rs(opcode) as usize].wrapping_add(
@@ -146,30 +170,60 @@ pub fn sdc1(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn mfc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     let value = get_fpr_single(device, device::fpu_instructions::fs(opcode) as usize);
     device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] =
         device::cpu_instructions::se32(u32::from_ne_bytes(value.to_ne_bytes()) as i32);
 }
 
 pub fn dmfc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     let value = get_fpr_double(device, device::fpu_instructions::fs(opcode) as usize);
     device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] =
         u64::from_ne_bytes(value.to_ne_bytes());
 }
 
 pub fn cfc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] = device::cpu_instructions::se32(
         get_control_registers_fpu(device, device::fpu_instructions::fs(opcode)) as i32,
     )
 }
 
-pub fn dcfc1(device: &mut device::Device, _opcode: u32) {
+pub fn dcfc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     device.cpu.cop1.fcr31 &= !FCR31_CAUSE_MASK;
     device.cpu.cop1.fcr31 |= FCR31_CAUSE_UNIMP_BIT;
     device::exceptions::floating_point_exception(device)
 }
 
 pub fn mtc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     let value = f32::from_ne_bytes(
         (device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] as u32).to_ne_bytes(),
     );
@@ -182,6 +236,12 @@ pub fn mtc1(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn dmtc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     let value = f64::from_ne_bytes(
         device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize].to_ne_bytes(),
     );
@@ -189,6 +249,12 @@ pub fn dmtc1(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn ctc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     set_control_registers_fpu(
         device,
         device::fpu_instructions::fs(opcode),
@@ -196,29 +262,65 @@ pub fn ctc1(device: &mut device::Device, opcode: u32) {
     )
 }
 
-pub fn dctc1(device: &mut device::Device, _opcode: u32) {
+pub fn dctc1(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     device.cpu.cop1.fcr31 &= !FCR31_CAUSE_MASK;
     device.cpu.cop1.fcr31 |= FCR31_CAUSE_UNIMP_BIT;
     device::exceptions::floating_point_exception(device)
 }
 
 pub fn execute_cop1_b(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     device.cpu.cop1.b_instrs[((opcode >> 16) & 0x3) as usize](device, opcode)
 }
 
 pub fn execute_cop1_s(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     device.cpu.cop1.s_instrs[(opcode & 0x3F) as usize](device, opcode)
 }
 
 pub fn execute_cop1_d(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     device.cpu.cop1.d_instrs[(opcode & 0x3F) as usize](device, opcode)
 }
 
 pub fn execute_cop1_l(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     device.cpu.cop1.l_instrs[(opcode & 0x3F) as usize](device, opcode)
 }
 
 pub fn execute_cop1_w(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
     device.cpu.cop1.w_instrs[(opcode & 0x3F) as usize](device, opcode)
 }
 
@@ -226,8 +328,14 @@ pub fn unusable(device: &mut device::Device, _opcode: u32) {
     device::exceptions::cop_unusable_exception(device, device::cop0::COP0_CAUSE_CE1)
 }
 
-pub fn reserved(_device: &mut device::Device, _opcode: u32) {
-    panic!("cop1 reserved");
+pub fn reserved(device: &mut device::Device, opcode: u32) {
+    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
+        == 0
+    {
+        return unusable(device, opcode);
+    }
+
+    device::exceptions::reserved_exception(device, device::cop0::COP0_CAUSE_CE1);
 }
 
 pub fn get_control_registers_fpu(device: &mut device::Device, index: u32) -> u32 {
@@ -317,7 +425,6 @@ pub fn get_fpr_double(device: &mut device::Device, index: usize) -> f64 {
 
 pub fn init(device: &mut device::Device) {
     set_fgr_registers(device, 0);
-    set_usable(device, false);
     device.cpu.cop1.fcr0 = 0b101000000000;
 
     device.cpu.cop1.b_instrs = [
@@ -594,6 +701,41 @@ pub fn init(device: &mut device::Device) {
         device::cop1::reserved,            // 62
         device::cop1::reserved,            // 63
     ];
+
+    device.cpu.cop1.instrs = [
+        device::cop1::mfc1,           // 0
+        device::cop1::dmfc1,          // 1
+        device::cop1::cfc1,           // 2
+        device::cop1::dcfc1,          // 3
+        device::cop1::mtc1,           // 4
+        device::cop1::dmtc1,          // 5
+        device::cop1::ctc1,           // 6
+        device::cop1::dctc1,          // 7
+        device::cop1::execute_cop1_b, // 8
+        device::cop1::reserved,       // 9
+        device::cop1::reserved,       // 10
+        device::cop1::reserved,       // 11
+        device::cop1::reserved,       // 12
+        device::cop1::reserved,       // 13
+        device::cop1::reserved,       // 14
+        device::cop1::reserved,       // 15
+        device::cop1::execute_cop1_s, // 16
+        device::cop1::execute_cop1_d, // 17
+        device::cop1::reserved,       // 18
+        device::cop1::reserved,       // 19
+        device::cop1::execute_cop1_w, // 20
+        device::cop1::execute_cop1_l, // 21
+        device::cop1::reserved,       // 22
+        device::cop1::reserved,       // 23
+        device::cop1::reserved,       // 24
+        device::cop1::reserved,       // 25
+        device::cop1::reserved,       // 26
+        device::cop1::reserved,       // 27
+        device::cop1::reserved,       // 28
+        device::cop1::reserved,       // 29
+        device::cop1::reserved,       // 30
+        device::cop1::reserved,       // 31
+    ]
 }
 
 pub fn set_fgr_registers(device: &mut device::Device, status_reg: u64) {
@@ -614,106 +756,5 @@ pub fn set_fgr_registers(device: &mut device::Device, status_reg: u64) {
             device.cpu.cop1.fgr64[i] = [bytes_lo, bytes_hi].concat().try_into().unwrap();
             i += 2;
         }
-    }
-}
-
-pub fn set_usable(device: &mut device::Device, usable: bool) {
-    if !usable {
-        device.cpu.instrs[49] = device::cop1::unusable; // lwc1
-        device.cpu.instrs[53] = device::cop1::unusable; // ldc1
-        device.cpu.instrs[57] = device::cop1::unusable; // swc1
-        device.cpu.instrs[61] = device::cop1::unusable; // sdc1
-        device.cpu.cop1.instrs = [
-            device::cop1::unusable, // 0
-            device::cop1::unusable, // 1
-            device::cop1::unusable, // 2
-            device::cop1::unusable, // 3
-            device::cop1::unusable, // 4
-            device::cop1::unusable, // 5
-            device::cop1::unusable, // 6
-            device::cop1::unusable, // 7
-            device::cop1::unusable, // 8
-            device::cop1::unusable, // 9
-            device::cop1::unusable, // 10
-            device::cop1::unusable, // 11
-            device::cop1::unusable, // 12
-            device::cop1::unusable, // 13
-            device::cop1::unusable, // 14
-            device::cop1::unusable, // 15
-            device::cop1::unusable, // 16
-            device::cop1::unusable, // 17
-            device::cop1::unusable, // 18
-            device::cop1::unusable, // 19
-            device::cop1::unusable, // 20
-            device::cop1::unusable, // 21
-            device::cop1::unusable, // 22
-            device::cop1::unusable, // 23
-            device::cop1::unusable, // 24
-            device::cop1::unusable, // 25
-            device::cop1::unusable, // 26
-            device::cop1::unusable, // 27
-            device::cop1::unusable, // 28
-            device::cop1::unusable, // 29
-            device::cop1::unusable, // 30
-            device::cop1::unusable, // 31
-        ]
-    } else {
-        device.cpu.instrs[49] = device::cop1::lwc1;
-        device.cpu.instrs[53] = device::cop1::ldc1;
-        device.cpu.instrs[57] = device::cop1::swc1;
-        device.cpu.instrs[61] = device::cop1::sdc1;
-        device.cpu.cop1.instrs = [
-            device::cop1::mfc1,           // 0
-            device::cop1::dmfc1,          // 1
-            device::cop1::cfc1,           // 2
-            device::cop1::dcfc1,          // 3
-            device::cop1::mtc1,           // 4
-            device::cop1::dmtc1,          // 5
-            device::cop1::ctc1,           // 6
-            device::cop1::dctc1,          // 7
-            device::cop1::execute_cop1_b, // 8
-            device::cop1::reserved,       // 9
-            device::cop1::reserved,       // 10
-            device::cop1::reserved,       // 11
-            device::cop1::reserved,       // 12
-            device::cop1::reserved,       // 13
-            device::cop1::reserved,       // 14
-            device::cop1::reserved,       // 15
-            device::cop1::execute_cop1_s, // 16
-            device::cop1::execute_cop1_d, // 17
-            device::cop1::reserved,       // 18
-            device::cop1::reserved,       // 19
-            device::cop1::execute_cop1_w, // 20
-            device::cop1::execute_cop1_l, // 21
-            device::cop1::reserved,       // 22
-            device::cop1::reserved,       // 23
-            device::cop1::reserved,       // 24
-            device::cop1::reserved,       // 25
-            device::cop1::reserved,       // 26
-            device::cop1::reserved,       // 27
-            device::cop1::reserved,       // 28
-            device::cop1::reserved,       // 29
-            device::cop1::reserved,       // 30
-            device::cop1::reserved,       // 31
-        ]
-    }
-    // we have to recalculate the instruction pointers in the icache
-    for i in 0..512 {
-        device.memory.icache[i].instruction[0] =
-            device::cpu::decode_opcode(device, device.memory.icache[i].words[0]);
-        device.memory.icache[i].instruction[1] =
-            device::cpu::decode_opcode(device, device.memory.icache[i].words[1]);
-        device.memory.icache[i].instruction[2] =
-            device::cpu::decode_opcode(device, device.memory.icache[i].words[2]);
-        device.memory.icache[i].instruction[3] =
-            device::cpu::decode_opcode(device, device.memory.icache[i].words[3]);
-        device.memory.icache[i].instruction[4] =
-            device::cpu::decode_opcode(device, device.memory.icache[i].words[4]);
-        device.memory.icache[i].instruction[5] =
-            device::cpu::decode_opcode(device, device.memory.icache[i].words[5]);
-        device.memory.icache[i].instruction[6] =
-            device::cpu::decode_opcode(device, device.memory.icache[i].words[6]);
-        device.memory.icache[i].instruction[7] =
-            device::cpu::decode_opcode(device, device.memory.icache[i].words[7])
     }
 }

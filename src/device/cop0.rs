@@ -211,12 +211,6 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
             if data & COP0_STATUS_FR != device.cpu.cop0.regs[index as usize] & COP0_STATUS_FR {
                 device::cop1::set_fgr_registers(device, data)
             }
-            if data & COP0_STATUS_CU1 != device.cpu.cop0.regs[index as usize] & COP0_STATUS_CU1 {
-                device::cop1::set_usable(device, data & COP0_STATUS_CU1 != 0)
-            }
-            if data & COP0_STATUS_CU2 != device.cpu.cop0.regs[index as usize] & COP0_STATUS_CU2 {
-                device::cop2::set_usable(device, data & COP0_STATUS_CU2 != 0)
-            }
         }
         _ => {}
     }
