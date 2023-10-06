@@ -134,9 +134,13 @@ impl Device {
                 instrs: [cop0::reserved; 64],
                 special_instrs: [cop0::reserved; 64],
                 regimm_instrs: [cop0::reserved; 32],
-                events: vec![],
+                events: [events::Event {
+                    enabled: false,
+                    count: u64::MAX,
+                    handler: events::dummy_event,
+                }; events::EventType::EventTypeCount as usize],
                 next_event_count: u64::MAX,
-                next_event: None,
+                next_event: 0,
             },
             pif: pif::Pif {
                 rom: [0; 1984],

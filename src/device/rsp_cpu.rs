@@ -58,7 +58,7 @@ pub fn in_delay_slot_taken(device: &mut device::Device) -> bool {
 pub fn run(device: &mut device::Device) -> u64 {
     device.rsp.cpu.broken = false;
     let mut cycle_counter = 0;
-    while !device.rsp.cpu.halted && !device.rsp.cpu.sync_point {
+    while !device.rsp.cpu.sync_point {
         device.rsp.cpu.instruction_type = InstructionType::Su;
         device.rsp.cpu.gpr[0] = 0; // gpr 0 is read only
         let offset = 0x1000 + device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] as usize;
@@ -66,7 +66,10 @@ pub fn run(device: &mut device::Device) -> u64 {
         execute_opcode(device, opcode)(device, opcode);
         match device.rsp.cpu.branch_state.state {
             device::cpu::State::Step => {
-                device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 4
+                device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 4;
+                if device.rsp.cpu.broken {
+                    break;
+                }
             }
             device::cpu::State::Take => {
                 device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 4;
@@ -106,10 +109,6 @@ pub fn run(device: &mut device::Device) -> u64 {
             } else {
                 device.rsp.cpu.pipeline_full = true;
             }
-        }
-
-        if device.rsp.cpu.broken && device.rsp.cpu.branch_state.state == device::cpu::State::Step {
-            break;
         }
     }
     return (cycle_counter as f64 * 1.5) as u64; // converting RCP clock to CPU clock

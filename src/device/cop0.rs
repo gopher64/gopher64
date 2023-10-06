@@ -202,7 +202,7 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
                 event_time += !0 as u32 as u64
             }
             let compare_event: &mut device::events::Event =
-                device::events::get_event(device, device::events::EventType::COMPARE).unwrap();
+                device::events::get_event(device, device::events::EventType::Compare).unwrap();
             compare_event.count = event_time; // reschedule the next compare interrupt event
             device::events::set_next_event(device);
             device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_IP7;
@@ -228,7 +228,7 @@ pub fn compare_event(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::COMPARE,
+        device::events::EventType::Compare,
         device.cpu.next_event_count + (!0 as u32 as u64),
         compare_event,
     );
@@ -364,7 +364,7 @@ pub fn init(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::COMPARE,
+        device::events::EventType::Compare,
         !0 as u32 as u64,
         compare_event,
     )
