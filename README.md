@@ -9,11 +9,10 @@
 ## building and usage
 
 1. Install rust: https://www.rust-lang.org/tools/install
-2. `rustup install nightly`
-3. `git clone --recursive https://github.com/gopher64/gopher64.git`
-4. `cd gopher64`
-5. `cargo build --release`
-6. `./target/release/gopher64 /path/to/rom.z64`
+2. `git clone --recursive https://github.com/gopher64/gopher64.git`
+3. `cd gopher64`
+4. `cargo build --release`
+5. `./target/release/gopher64 /path/to/rom.z64`
 
 ## controls
 
