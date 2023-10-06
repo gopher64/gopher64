@@ -2,6 +2,7 @@ fn main() {
     let mut build = cc::Build::new();
     build
         .cpp(true)
+        .std("c++17")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/command_ring.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_device.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_dump_write.cpp")
