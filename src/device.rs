@@ -72,7 +72,6 @@ impl Device {
                         tlb::TlbLut {
                             address: 0,
                             cached: false,
-                            valid: false,
                         };
                         0x100000
                     ],
@@ -80,7 +79,6 @@ impl Device {
                         tlb::TlbLut {
                             address: 0,
                             cached: false,
-                            valid: false,
                         };
                         0x100000
                     ],
