@@ -51,7 +51,7 @@ fn main() {
     {
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
     }
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
         build
             .flag("-Wno-missing-field-initializers")
