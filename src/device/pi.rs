@@ -39,17 +39,32 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    return device.pi.regs[((address & 0xFFFF) >> 2) as usize];
+    let reg = (address & 0xFFFF) >> 2;
+    match reg as u32 {
+        PI_WR_LEN_REG | PI_RD_LEN_REG => {
+            return 0x7F;
+        }
+        PI_CART_ADDR_REG => return device.pi.regs[reg as usize] & 0xFFFFFFFE,
+        PI_DRAM_ADDR_REG => return device.pi.regs[reg as usize] & 0xFFFFFE,
+        _ => {
+            return device.pi.regs[reg as usize];
+        }
+    }
 }
 
 pub fn dma_read(device: &mut device::Device) {
     let handler = get_handler(device.pi.regs[PI_CART_ADDR_REG as usize]);
-    let cycles = (handler.read)(
-        device,
-        device.pi.regs[PI_CART_ADDR_REG as usize],
-        device.pi.regs[PI_DRAM_ADDR_REG as usize],
-        device.pi.regs[PI_RD_LEN_REG as usize] + 1,
-    );
+
+    let cart_addr = device.pi.regs[PI_CART_ADDR_REG as usize] & !1;
+    let dram_addr = device.pi.regs[PI_DRAM_ADDR_REG as usize] & 0xFFFFFE;
+    let mut length = (device.pi.regs[PI_RD_LEN_REG as usize] & 0xFFFFFF) + 1;
+
+    /* PI seems to treat the first 128 bytes differently, see https://n64brew.dev/wiki/Peripheral_Interface#Unaligned_DMA_transfer */
+    if length >= 0x7f && (length & 1) != 0 {
+        length += 1;
+    }
+
+    let cycles = (handler.read)(device, cart_addr, dram_addr, length);
 
     device::events::create_event(
         device,
@@ -57,18 +72,32 @@ pub fn dma_read(device: &mut device::Device) {
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
         dma_event,
     );
+
+    /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */
+    device.pi.regs[PI_DRAM_ADDR_REG as usize] =
+        (device.pi.regs[PI_DRAM_ADDR_REG as usize] + length + 7) & !7;
+    device.pi.regs[PI_CART_ADDR_REG as usize] =
+        (device.pi.regs[PI_CART_ADDR_REG as usize] + length + 1) & !1;
 
     device.pi.regs[PI_STATUS_REG as usize] |= PI_STATUS_DMA_BUSY
 }
 
 pub fn dma_write(device: &mut device::Device) {
     let handler = get_handler(device.pi.regs[PI_CART_ADDR_REG as usize]);
-    let cycles = (handler.write)(
-        device,
-        device.pi.regs[PI_CART_ADDR_REG as usize],
-        device.pi.regs[PI_DRAM_ADDR_REG as usize],
-        device.pi.regs[PI_WR_LEN_REG as usize] + 1,
-    );
+
+    let cart_addr = device.pi.regs[PI_CART_ADDR_REG as usize] & !1;
+    let dram_addr = device.pi.regs[PI_DRAM_ADDR_REG as usize] & 0xFFFFFE;
+    let mut length = (device.pi.regs[PI_WR_LEN_REG as usize] & 0xFFFFFF) + 1;
+
+    /* PI seems to treat the first 128 bytes differently, see https://n64brew.dev/wiki/Peripheral_Interface#Unaligned_DMA_transfer */
+    if length >= 0x7f && (length & 1) != 0 {
+        length += 1;
+    }
+    if length <= 0x80 {
+        length -= dram_addr & 0x7;
+    }
+
+    let cycles = (handler.write)(device, cart_addr, dram_addr, length);
 
     device::events::create_event(
         device,
@@ -76,6 +105,12 @@ pub fn dma_write(device: &mut device::Device) {
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
         dma_event,
     );
+
+    /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */
+    device.pi.regs[PI_DRAM_ADDR_REG as usize] =
+        (device.pi.regs[PI_DRAM_ADDR_REG as usize] + length + 7) & !7;
+    device.pi.regs[PI_CART_ADDR_REG as usize] =
+        (device.pi.regs[PI_CART_ADDR_REG as usize] + length + 1) & !1;
 
     device.pi.regs[PI_STATUS_REG as usize] |= PI_STATUS_DMA_BUSY
 }
