@@ -117,15 +117,17 @@ pub fn read_regs(
     match reg as u32 {
         AI_LEN_REG => {
             let value = get_remaining_dma_length(device);
-            let diff = device.ai.fifo[0].length - device.ai.last_read;
+            if value < device.ai.last_read {
+                let diff = device.ai.fifo[0].length - device.ai.last_read;
 
-            ui::audio::play_audio(
-                device,
-                (device.ai.fifo[0].address + diff) as usize,
-                device.ai.last_read - value,
-            );
+                ui::audio::play_audio(
+                    device,
+                    (device.ai.fifo[0].address + diff) as usize,
+                    device.ai.last_read - value,
+                );
 
-            device.ai.last_read = value;
+                device.ai.last_read = value;
+            }
             return value as u32;
         }
         _ => return device.ai.regs[reg as usize],
