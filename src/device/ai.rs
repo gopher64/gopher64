@@ -70,7 +70,9 @@ pub fn do_dma(device: &mut device::Device) {
         device::events::EventType::AI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + device.ai.fifo[0].duration,
         dma_event,
-    )
+    );
+
+    device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_AI);
 }
 
 pub fn fifo_push(device: &mut device::Device) {
@@ -89,7 +91,6 @@ pub fn fifo_push(device: &mut device::Device) {
         device.ai.fifo[0].duration = duration;
         device.ai.regs[AI_STATUS_REG as usize] |= AI_STATUS_BUSY;
 
-        device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_AI);
         do_dma(device);
     }
 }
@@ -167,5 +168,4 @@ pub fn dma_event(device: &mut device::Device) {
     }
 
     fifo_pop(device);
-    device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_AI);
 }
