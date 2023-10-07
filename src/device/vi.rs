@@ -92,20 +92,26 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     match reg as u32 {
         VI_CURRENT_REG => device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_VI),
         VI_V_INTR_REG => {
-            device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-            set_vertical_interrupt(device);
-            ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+            if device.vi.regs[reg as usize] != value & mask {
+                device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
+                set_vertical_interrupt(device);
+                ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+            }
         }
         VI_V_SYNC_REG => {
-            device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-            set_vertical_interrupt(device);
-            set_expected_refresh_rate(device);
-            ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+            if device.vi.regs[reg as usize] != value & mask {
+                device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
+                set_vertical_interrupt(device);
+                set_expected_refresh_rate(device);
+                ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+            }
         }
         VI_H_SYNC_REG => {
-            device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-            set_expected_refresh_rate(device);
-            ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+            if device.vi.regs[reg as usize] != value & mask {
+                device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
+                set_expected_refresh_rate(device);
+                ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+            }
         }
         _ => {
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
