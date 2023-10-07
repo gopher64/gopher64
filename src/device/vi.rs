@@ -129,25 +129,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         }
     */
 
-    let elapsed = device.vi.last_vi_time.elapsed();
-    if elapsed <= device.vi.vi_period {
-        let sleep_time = device.vi.vi_period - elapsed;
-        let remaining_holdover_space = device.vi.vi_period - device.vi.holdover; // holdover can't exceed the vi period
-        if sleep_time <= remaining_holdover_space {
-            device.vi.holdover += sleep_time; // donate all time to the holdover
-        } else {
-            device.vi.holdover += remaining_holdover_space; // max out holdover
-            std::thread::sleep(sleep_time - remaining_holdover_space); // sleep the rest of the time
-        }
-    } else {
-        let over_time = elapsed - device.vi.vi_period; // this is how much we overshot the vi period
-        if over_time <= device.vi.holdover {
-            device.vi.holdover -= over_time; // consume some holdover
-        } else {
-            device.vi.holdover -= device.vi.holdover; // consume all holdover
-        }
-    }
-    device.vi.last_vi_time = std::time::Instant::now();
+    speed_limiter(device);
 
     /* toggle vi field if in interlaced mode */
     device.vi.field ^= (device.vi.regs[VI_STATUS_REG as usize] >> 6) & 0x1;
@@ -180,4 +162,26 @@ pub fn init(device: &mut device::Device) {
         }
     });
     */
+}
+
+pub fn speed_limiter(device: &mut device::Device) {
+    let elapsed = device.vi.last_vi_time.elapsed();
+    if elapsed <= device.vi.vi_period {
+        let sleep_time = device.vi.vi_period - elapsed;
+        let remaining_holdover_space = device.vi.vi_period - device.vi.holdover; // holdover can't exceed the vi period
+        if sleep_time <= remaining_holdover_space {
+            device.vi.holdover += sleep_time; // donate all time to the holdover
+        } else {
+            device.vi.holdover += remaining_holdover_space; // max out holdover
+            std::thread::sleep(sleep_time - remaining_holdover_space); // sleep the rest of the time
+        }
+    } else {
+        let over_time = elapsed - device.vi.vi_period; // this is how much we overshot the vi period
+        if over_time <= device.vi.holdover {
+            device.vi.holdover -= over_time; // consume some holdover
+        } else {
+            device.vi.holdover -= device.vi.holdover; // consume all holdover
+        }
+    }
+    device.vi.last_vi_time = std::time::Instant::now();
 }
