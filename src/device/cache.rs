@@ -159,9 +159,10 @@ pub fn icache_fetch(device: &mut device::Device, phys_address: u64) {
     if !icache_hit(device, line_index, phys_address) {
         icache_fill(device, line_index, phys_address)
     }
-    device.memory.icache[line_index].instruction[((phys_address >> 2) & 7) as usize](
+    let item = ((phys_address >> 2) & 7) as usize;
+    device.memory.icache[line_index].instruction[item](
         device,
-        device.memory.icache[line_index].words[((phys_address >> 2) & 7) as usize],
+        device.memory.icache[line_index].words[item],
     );
 }
 
