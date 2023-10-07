@@ -184,7 +184,10 @@ impl Device {
             rdram: rdram::Rdram { mem: vec![] },
             rsp: rsp_interface::Rsp {
                 cpu: rsp_cpu::Cpu {
-                    instructions: [rsp_su_instructions::reserved; 0x1000 / 4],
+                    instructions: [rsp_cpu::Instructions {
+                        func: rsp_su_instructions::reserved,
+                        opcode: 0,
+                    }; 0x1000 / 4],
                     last_instruction_type: rsp_cpu::InstructionType::Su,
                     instruction_type: rsp_cpu::InstructionType::Su,
                     pipeline_full: false,

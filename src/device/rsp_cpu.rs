@@ -6,6 +6,12 @@ pub struct BranchState {
     pub pc: u32,
 }
 
+#[derive(Copy, Clone)]
+pub struct Instructions {
+    pub func: fn(&mut device::Device, u32),
+    pub opcode: u32,
+}
+
 #[derive(PartialEq, Copy, Clone)]
 pub enum InstructionType {
     Su,
@@ -13,7 +19,7 @@ pub enum InstructionType {
 }
 
 pub struct Cpu {
-    pub instructions: [fn(&mut device::Device, u32); 0x1000 / 4],
+    pub instructions: [Instructions; 0x1000 / 4],
     pub last_instruction_type: InstructionType,
     pub instruction_type: InstructionType,
     pub pipeline_full: bool,
@@ -62,13 +68,10 @@ pub fn run(device: &mut device::Device) -> u64 {
     while !device.rsp.cpu.sync_point {
         device.rsp.cpu.instruction_type = InstructionType::Su;
         device.rsp.cpu.gpr[0] = 0; // gpr 0 is read only
-        let offset = 0x1000 + device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] as usize;
-        let opcode = u32::from_be_bytes(device.rsp.mem[offset..offset + 4].try_into().unwrap());
 
-        device.rsp.cpu.instructions
-            [(device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] / 4) as usize](
-            device, opcode,
-        );
+        let instruction = device.rsp.cpu.instructions
+            [(device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] / 4) as usize];
+        (instruction.func)(device, instruction.opcode);
 
         match device.rsp.cpu.branch_state.state {
             device::cpu::State::Step => {
