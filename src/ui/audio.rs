@@ -32,5 +32,16 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
         i += 2;
     }
 
-    let _ = audio_device.queue_audio(&primary_buffer);
+    let audio_queued = audio_device.size() as f64;
+    let acceptable_latency = (audio_device.spec().freq as f64 * 0.2) * 4.0;
+    let min_latency = (audio_device.spec().freq as f64 * 0.02) * 4.0;
+
+    if audio_device.status() != sdl2::audio::AudioStatus::Paused && audio_queued < min_latency {
+        let silence_buffer: Vec<i16> = vec![0; ((min_latency - audio_queued) * 2.0) as usize & !1];
+        let _ = audio_device.queue_audio(&silence_buffer);
+    }
+
+    if audio_queued < acceptable_latency {
+        let _ = audio_device.queue_audio(&primary_buffer);
+    }
 }
