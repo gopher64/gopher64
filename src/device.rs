@@ -127,6 +127,7 @@ impl Device {
                 gpr: [0; 32],
                 clock_rate: 0,
                 pc: 0xBFC00000,
+                pc_phys: 0,
                 llbit: false,
                 lo: 0,
                 hi: 0,

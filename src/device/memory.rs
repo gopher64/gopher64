@@ -24,7 +24,6 @@ pub const MM_IS_VIEWER: usize = 0x13ff0000;
 pub enum AccessType {
     Write,
     Read,
-    Lookup,
 }
 
 #[derive(Copy, Clone)]

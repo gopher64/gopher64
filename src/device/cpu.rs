@@ -22,6 +22,7 @@ pub struct Cpu {
     pub branch_state: BranchState,
     pub gpr: [u64; 32],
     pub pc: u64,
+    pub pc_phys: u64,
     pub lo: u64,
     pub hi: u64,
     pub running: u8,
@@ -241,6 +242,7 @@ pub fn run(device: &mut device::Device) {
         if err {
             continue; // TLB exception
         }
+        device.cpu.pc_phys = phys_address;
         if cached {
             device::cache::icache_fetch(device, phys_address)
         } else {

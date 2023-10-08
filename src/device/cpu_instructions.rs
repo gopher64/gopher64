@@ -49,18 +49,10 @@ pub fn bits_above_mask<T: Into<u64>>(x: T) -> u64 {
 }
 
 pub fn check_relative_idle_loop(device: &mut device::Device, opcode: u32) {
-    let (phys_address, _, err) = device::memory::translate_address(
-        device,
-        device.cpu.pc,
-        device::memory::AccessType::Lookup,
-    );
-    if err {
-        return;
-    }
     if imm(opcode) as i16 == -1
-        && device.memory.fast_read[(phys_address >> 16) as usize](
+        && device.memory.fast_read[(device.cpu.pc_phys >> 16) as usize](
             device,
-            phys_address + 4,
+            device.cpu.pc_phys + 4,
             device::memory::AccessSize::Word,
         ) == 0
     {
@@ -69,18 +61,10 @@ pub fn check_relative_idle_loop(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn check_absolute_idle_loop(device: &mut device::Device, opcode: u32) {
-    let (phys_address, _, err) = device::memory::translate_address(
-        device,
-        device.cpu.pc,
-        device::memory::AccessType::Lookup,
-    );
-    if err {
-        return;
-    }
-    if (opcode & 0x3FFFFFF) as u64 == (phys_address & 0x0FFFFFFF) >> 2
-        && device.memory.fast_read[(phys_address >> 16) as usize](
+    if (opcode & 0x3FFFFFF) as u64 == (device.cpu.pc_phys & 0x0FFFFFFF) >> 2
+        && device.memory.fast_read[(device.cpu.pc_phys >> 16) as usize](
             device,
-            phys_address + 4,
+            device.cpu.pc_phys + 4,
             device::memory::AccessSize::Word,
         ) == 0
     {

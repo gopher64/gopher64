@@ -261,9 +261,7 @@ pub fn get_physical_address(
         }
     }
 
-    if access_type != device::memory::AccessType::Lookup {
-        device::exceptions::tlb_miss_exception(device, address, access_type)
-    }
+    device::exceptions::tlb_miss_exception(device, address, access_type);
 
     return (0, false, true);
 }
