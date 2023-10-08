@@ -1037,8 +1037,8 @@ pub fn mult(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn multu(device: &mut device::Device, opcode: u32) {
-    let result =
-        device.cpu.gpr[rs(opcode) as usize].wrapping_mul(device.cpu.gpr[rt(opcode) as usize]);
+    let result = (device.cpu.gpr[rs(opcode) as usize] as u32 as u64)
+        .wrapping_mul(device.cpu.gpr[rt(opcode) as usize] as u32 as u64);
 
     device.cpu.lo = se32((result) as u32 as i32);
     device.cpu.hi = se32((result >> 32) as u32 as i32);
