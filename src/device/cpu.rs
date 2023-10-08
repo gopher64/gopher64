@@ -234,7 +234,8 @@ pub fn run(device: &mut device::Device) {
     device.cpu.running = 1;
     while device.cpu.running == 1 {
         device.cpu.gpr[0] = 0; // gpr 0 is read only
-        let (phys_address, cached, err) = device::memory::translate_address(
+        let (cached, err);
+        (device.cpu.pc_phys, cached, err) = device::memory::translate_address(
             device,
             device.cpu.pc,
             device::memory::AccessType::Read,
@@ -242,17 +243,18 @@ pub fn run(device: &mut device::Device) {
         if err {
             continue; // TLB exception
         }
-        device.cpu.pc_phys = phys_address;
+
         if cached {
-            device::cache::icache_fetch(device, phys_address)
+            device::cache::icache_fetch(device, device.cpu.pc_phys)
         } else {
-            let opcode = device.memory.memory_map_read[(phys_address >> 16) as usize](
+            let opcode = device.memory.memory_map_read[(device.cpu.pc_phys >> 16) as usize](
                 device,
-                phys_address,
+                device.cpu.pc_phys,
                 device::memory::AccessSize::Word,
             );
             device::cpu::decode_opcode(device, opcode)(device, opcode);
         }
+
         match device.cpu.branch_state.state {
             State::Step => device.cpu.pc += 4,
             State::Take => {
