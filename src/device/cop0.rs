@@ -362,6 +362,8 @@ pub fn init(device: &mut device::Device) {
     device.cpu.cop0.regs[COP0_PREVID_REG as usize] = 0b00000000000000000000101100100010;
     device.cpu.cop0.regs[COP0_EPC_REG as usize] = 0b11111111111111111111111111111111;
     device.cpu.cop0.regs[COP0_ERROREPC_REG as usize] = 0b11111111111111111111111111111111;
+    device.cpu.cop0.regs[COP0_BADVADDR_REG as usize] = 0xFFFFFFFF;
+    device.cpu.cop0.regs[COP0_CONTEXT_REG as usize] = 0x7FFFF0;
 
     device::events::create_event(
         device,
