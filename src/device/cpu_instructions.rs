@@ -975,20 +975,21 @@ pub fn jr(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn jalr(device: &mut device::Device, opcode: u32) {
+    let target = device.cpu.gpr[rs(opcode) as usize];
     let in_delay_slot_taken = device::cpu::in_delay_slot_taken(device);
-
-    if !in_delay_slot_taken {
-        check_relative_idle_loop(device, opcode);
-        device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.gpr[rs(opcode) as usize];
-    } else if !device::cpu::in_delay_slot(device) {
-        device.cpu.branch_state.state = device::cpu::State::NotTaken;
-    }
 
     if in_delay_slot_taken {
         device.cpu.gpr[rd(opcode) as usize] = device.cpu.branch_state.pc + 4
     } else {
         device.cpu.gpr[rd(opcode) as usize] = device.cpu.pc + 8
+    }
+
+    if !in_delay_slot_taken {
+        check_relative_idle_loop(device, opcode);
+        device.cpu.branch_state.state = device::cpu::State::Take;
+        device.cpu.branch_state.pc = target;
+    } else if !device::cpu::in_delay_slot(device) {
+        device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
 }
 
