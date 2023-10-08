@@ -40,6 +40,9 @@ pub fn set_expected_refresh_rate(device: &mut device::Device) {
         device.vi.delay / (device.vi.regs[VI_V_SYNC_REG as usize] + 1) as u64;
 
     device.vi.vi_period = std::time::Duration::from_secs_f64(1.0 / expected_refresh_rate);
+    if device.vi.holdover > device.vi.vi_period {
+        device.vi.holdover = device.vi.vi_period;
+    }
 }
 
 pub fn set_vertical_interrupt(device: &mut device::Device) {
