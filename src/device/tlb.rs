@@ -244,7 +244,7 @@ pub fn get_physical_address(
     if access_type == device::memory::AccessType::Write {
         if device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].address != 0 {
             return (
-                (device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].address & 0xFFFFF000)
+                (device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].address & 0x1FFFF000)
                     | (address & 0xFFF),
                 device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].cached,
                 false,
@@ -253,7 +253,7 @@ pub fn get_physical_address(
     } else {
         if device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].address != 0 {
             return (
-                (device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].address & 0xFFFFF000)
+                (device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].address & 0x1FFFF000)
                     | (address & 0xFFF),
                 device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].cached,
                 false,
