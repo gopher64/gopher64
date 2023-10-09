@@ -112,7 +112,7 @@ pub fn tlb_miss_exception(
             }
             break;
         }
-        if address & !3 >= i.start_odd && address & !3 <= i.start_odd {
+        if address & !3 >= i.start_odd && address & !3 <= i.end_odd {
             valid = i.v_odd != 0;
             if valid && access_type == device::memory::AccessType::Write && i.d_odd == 0 {
                 device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] =
