@@ -124,7 +124,8 @@ pub fn update_dpc_status(device: &mut device::Device, w: u32) {
         device.rdp.regs_dpc[DPC_STATUS_REG as usize] &= !DPC_STATUS_FREEZE
     }
     if w & DPC_SET_FREEZE != 0 {
-        device.rdp.regs_dpc[DPC_STATUS_REG as usize] |= DPC_STATUS_FREEZE
+        device.rdp.regs_dpc[DPC_STATUS_REG as usize] |= DPC_STATUS_FREEZE;
+        panic!("DP freeze")
     }
 
     /* clear / set flush */
