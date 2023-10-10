@@ -184,6 +184,7 @@ pub fn get_control_registers(device: &mut device::Device, index: u32) -> u64 {
 }
 
 pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64) {
+    data &= device.cpu.cop0.reg_write_masks[index as usize];
     device.cpu.cop0.reg_latch = data;
     match index {
         COP0_COUNT_REG => {
