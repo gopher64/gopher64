@@ -184,8 +184,8 @@ pub fn get_control_registers(device: &mut device::Device, index: u32) -> u64 {
 }
 
 pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64) {
-    data &= device.cpu.cop0.reg_write_masks[index as usize];
     device.cpu.cop0.reg_latch = data;
+    data &= device.cpu.cop0.reg_write_masks[index as usize];
     match index {
         COP0_COUNT_REG => {
             data <<= 1;
@@ -216,11 +216,7 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
         }
         _ => {}
     }
-    device::memory::masked_write_64(
-        &mut device.cpu.cop0.regs[index as usize],
-        data,
-        device.cpu.cop0.reg_write_masks[index as usize],
-    );
+    device::memory::masked_write_64(&mut device.cpu.cop0.regs[index as usize], data, !0 as u64);
     device::exceptions::check_pending_interrupts(device);
 }
 
