@@ -208,8 +208,8 @@ pub fn process_ram(device: &mut device::Device) {
     device.pif.ram[0x3F] &= !clrmask
 }
 
-pub fn init(device: &mut device::Device, pal: bool) {
-    if pal {
+pub fn init(device: &mut device::Device) {
+    if device.cart.pal {
         device.pif.rom = rom::PAL_PIF_ROM;
     } else {
         device.pif.rom = rom::NTSC_PIF_ROM;

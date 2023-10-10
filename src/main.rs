@@ -20,7 +20,7 @@ fn main() {
     ui::video::init(&mut device.ui, rdram_ptr, rdram_size);
 
     device::mi::init(&mut device);
-    device::pif::init(&mut device, false);
+    device::pif::init(&mut device);
     device::memory::init(&mut device);
     device::rsp_interface::init(&mut device);
     device::rdp::init(&mut device);
