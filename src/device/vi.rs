@@ -1,5 +1,6 @@
 use crate::device;
 use crate::ui;
+use governor::clock::Clock;
 
 pub const VI_STATUS_REG: u32 = 0;
 //pub const VI_ORIGIN_REG: u32 = 1;
@@ -22,10 +23,8 @@ pub struct Vi {
     pub clock: u64,
     pub delay: u64,
     pub field: u32,
-    pub holdover: std::time::Duration,
+    pub limiter: Option<governor::DefaultDirectRateLimiter>,
     pub count_per_scanline: u64,
-    pub last_vi_time: std::time::Instant,
-    pub vi_period: std::time::Duration,
 }
 
 //static mut FRAME_COUNTER: u64 = 0;
@@ -39,10 +38,11 @@ pub fn set_expected_refresh_rate(device: &mut device::Device) {
     device.vi.count_per_scanline =
         device.vi.delay / (device.vi.regs[VI_V_SYNC_REG as usize] + 1) as u64;
 
-    device.vi.vi_period = std::time::Duration::from_secs_f64(1.0 / expected_refresh_rate);
-    if device.vi.holdover > device.vi.vi_period {
-        device.vi.holdover = device.vi.vi_period;
-    }
+    let quota = governor::Quota::with_period(std::time::Duration::from_secs_f64(
+        1.0 / expected_refresh_rate,
+    ))
+    .unwrap();
+    device.vi.limiter = Some(governor::RateLimiter::direct(quota))
 }
 
 pub fn set_vertical_interrupt(device: &mut device::Device) {
@@ -168,23 +168,12 @@ pub fn init(device: &mut device::Device) {
 }
 
 pub fn speed_limiter(device: &mut device::Device) {
-    let elapsed = device.vi.last_vi_time.elapsed();
-    if elapsed <= device.vi.vi_period {
-        let sleep_time = device.vi.vi_period - elapsed;
-        let remaining_holdover_space = device.vi.vi_period - device.vi.holdover; // holdover can't exceed the vi period
-        if sleep_time <= remaining_holdover_space {
-            device.vi.holdover += sleep_time; // donate all time to the holdover
-        } else {
-            device.vi.holdover += remaining_holdover_space; // max out holdover
-            std::thread::sleep(sleep_time - remaining_holdover_space); // sleep the rest of the time
-        }
-    } else {
-        let over_time = elapsed - device.vi.vi_period; // this is how much we overshot the vi period
-        if over_time <= device.vi.holdover {
-            device.vi.holdover -= over_time; // consume some holdover
-        } else {
-            device.vi.holdover -= device.vi.holdover; // consume all holdover
-        }
+    let result = device.vi.limiter.as_ref().unwrap().check();
+    if result.is_err() {
+        let outcome = result.unwrap_err();
+        let dur = outcome.wait_time_from(governor::clock::DefaultClock::default().now());
+        std::thread::sleep(dur);
+
+        let _ = device.vi.limiter.as_ref().unwrap().check();
     }
-    device.vi.last_vi_time = std::time::Instant::now();
 }

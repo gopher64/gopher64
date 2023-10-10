@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 dirs = "5.0"
+governor = "0.6.0"
 sha2 = "0.10"
 sdl2-sys = { git = "https://github.com/Rust-SDL2/rust-sdl2.git" }
 

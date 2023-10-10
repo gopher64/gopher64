@@ -266,10 +266,8 @@ impl Device {
                 clock: 0,
                 field: 0,
                 delay: 0,
-                holdover: std::time::Duration::from_secs(0),
                 count_per_scanline: 0,
-                last_vi_time: std::time::Instant::now(),
-                vi_period: std::time::Duration::from_secs_f64(0.0),
+                limiter: None,
             },
         }
     }
