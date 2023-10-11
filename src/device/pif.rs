@@ -20,6 +20,7 @@ pub const PIF_RAM_SIZE: usize = 64;
 const PIF_CHANNELS_COUNT: usize = 5;
 const PIF_RAM_OFFSET: usize = 0x7C0;
 const PIF_MASK: usize = 0xFFFF;
+const CHL_LEN: usize = 0x20;
 
 pub fn read_mem(
     device: &mut device::Device,
@@ -188,7 +189,14 @@ pub fn process_ram(device: &mut device::Device) {
     }
     if command & 0x02 != 0 {
         // Challenge / response for protection
-        panic!("pif command 0x02");
+        /* disable channel processing when doing CIC challenge */
+        for k in 0..PIF_CHANNELS_COUNT {
+            disable_pif_channel(&mut device.pif.channels[k]);
+        }
+
+        /* CIC Challenge */
+        process_cic_challenge(device);
+        clrmask |= 0x02;
     }
     if command & 0x08 != 0 {
         // Terminate boot process
@@ -218,4 +226,66 @@ pub fn init(device: &mut device::Device) {
 
     device.pif.channels[0].process = Some(device::controller::process);
     device.pif.channels[4].process = Some(device::cart::process)
+}
+
+pub fn process_cic_challenge(device: &mut device::Device) {
+    let mut challenge: [u8; 30] = [0; 30];
+    let mut response: [u8; 30] = [0; 30];
+
+    /* format the 'challenge' message into 30 nibbles for X-Scale's CIC code */
+    for i in 0..15 {
+        challenge[i * 2] = (device.pif.ram[0x30 + i] >> 4) & 0x0f;
+        challenge[i * 2 + 1] = device.pif.ram[0x30 + i] & 0x0f;
+    }
+
+    /* calculate the proper response for the given challenge (X-Scale's algorithm) */
+    n64_cic_nus_6105(challenge, &mut response, CHL_LEN - 2);
+    device.pif.ram[0x2e] = 0;
+    device.pif.ram[0x2f] = 0;
+
+    /* re-format the 'response' into a byte stream */
+    for i in 0..15 {
+        device.pif.ram[0x30 + i] = (response[i * 2] << 4) + response[i * 2 + 1];
+    }
+}
+
+pub fn n64_cic_nus_6105(chl: [u8; 30], rsp: &mut [u8; 30], len: usize) {
+    let lut0: [u8; 0x10] = [
+        0x4, 0x7, 0xA, 0x7, 0xE, 0x5, 0xE, 0x1, 0xC, 0xF, 0x8, 0xF, 0x6, 0x3, 0x6, 0x9,
+    ];
+    let lut1: [u8; 0x10] = [
+        0x4, 0x1, 0xA, 0x7, 0xE, 0x5, 0xE, 0x1, 0xC, 0x9, 0x8, 0x5, 0x6, 0x3, 0xC, 0x9,
+    ];
+
+    let mut key = 0xB;
+    let mut lut = lut0.as_ref();
+    for i in 0..len {
+        rsp[i] = (key + 5 * chl[i]) & 0xF;
+        key = lut[rsp[i] as usize];
+        let sgn = (rsp[i] >> 3) & 0x1;
+        let mut mag;
+        if sgn == 1 {
+            mag = !rsp[i]
+        } else {
+            mag = rsp[i]
+        }
+        mag &= 0x7;
+        let mut modd;
+        if mag % 3 == 1 {
+            modd = sgn
+        } else {
+            modd = 1 - sgn;
+        }
+        if lut == lut1 && (rsp[i] == 0x1 || rsp[i] == 0x9) {
+            modd = 1;
+        }
+        if lut == lut1 && (rsp[i] == 0xB || rsp[i] == 0xE) {
+            modd = 0;
+        }
+        if modd == 1 {
+            lut = &lut1;
+        } else {
+            lut = &lut0;
+        }
+    }
 }
