@@ -201,7 +201,7 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
         COP0_COMPARE_REG => {
             data &= 0xFFFFFFFF;
             let current_count = (device.cpu.cop0.regs[COP0_COUNT_REG as usize] >> 1) & 0xFFFFFFFF;
-            let mut compare_event_diff = data as u32 - current_count as u32;
+            let mut compare_event_diff = (data as u32).wrapping_sub(current_count as u32);
 
             if compare_event_diff == 0 {
                 compare_event_diff += !0 as u32;
