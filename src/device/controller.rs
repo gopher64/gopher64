@@ -49,7 +49,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.channels[channel].tx_buf.unwrap() + 3,
             device.pif.channels[channel].rx_buf.unwrap(),
         ),
-        _ => panic!("unknown controller command"),
+        _ => println!("unknown controller command {}", cmd),
     }
 }
 

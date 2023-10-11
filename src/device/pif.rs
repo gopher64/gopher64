@@ -150,9 +150,8 @@ pub fn setup_channels_format(device: &mut device::Device) {
 
             0xfd => {
                 /* channel reset - send reset command and discard the results */
-                {
-                    panic!("channel reset")
-                }
+                k += 1;
+                i += 1;
             }
 
             _ => {
