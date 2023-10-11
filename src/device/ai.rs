@@ -71,8 +71,7 @@ pub fn do_dma(device: &mut device::Device) {
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + device.ai.fifo[0].duration,
         dma_event,
     );
-
-    device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_AI);
+    device::mi::schedule_rcp_interrupt(device, device::mi::MI_INTR_AI);
 }
 
 pub fn fifo_push(device: &mut device::Device) {
