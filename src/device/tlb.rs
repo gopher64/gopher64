@@ -238,9 +238,11 @@ pub fn tlb_map(device: &mut device::Device, index: u64) {
 
 pub fn get_physical_address(
     device: &mut device::Device,
-    address: u64,
+    mut address: u64,
     access_type: device::memory::AccessType,
 ) -> (u64, bool, bool) {
+    address &= 0xffffffff;
+
     if access_type == device::memory::AccessType::Write {
         if device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].address != 0 {
             return (

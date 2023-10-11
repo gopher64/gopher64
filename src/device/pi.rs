@@ -122,8 +122,9 @@ pub fn get_handler(address: u32) -> PiHandler {
     };
     if address >= device::memory::MM_CART_ROM as u32 {
         if address >= device::memory::MM_DOM1_ADDR3 as u32 {
-            panic!("unimplemented handler")
-        //RW(cart, cart_dom3);
+            // this should result in all 0's being read/written
+            handler.read = device::cart_rom::dma_read;
+            handler.write = device::cart_rom::dma_write;
         } else {
             handler.read = device::cart_rom::dma_read;
             handler.write = device::cart_rom::dma_write;
