@@ -47,6 +47,7 @@ pub struct Device {
     ai: ai::Ai,
     si: si::Si,
     ri: ri::Ri,
+    flashram: sram::Flashram,
 }
 
 impl Device {
@@ -269,6 +270,13 @@ impl Device {
                 delay: 0,
                 count_per_scanline: 0,
                 limiter: None,
+            },
+            flashram: sram::Flashram {
+                status: 0,
+                erase_page: 0,
+                page_buf: [0xff; 128],
+                silicon_id: [sram::FLASHRAM_TYPE_ID, sram::MX29L1100_ID],
+                mode: sram::FlashramMode::ReadArray,
             },
         }
     }
