@@ -52,8 +52,6 @@ pub fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
 }
 
 pub fn read_mem_flash(device: &mut device::Device, address: u64) -> u32 {
-    format_flash(device);
-
     if (address & 0x1ffff) == 0x00000 && device.flashram.mode == FlashramMode::Status {
         /* read Status register */
         return device.flashram.status;
