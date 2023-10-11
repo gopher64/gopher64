@@ -2,6 +2,8 @@ use crate::device;
 use crate::ui;
 
 pub const SRAM_MASK: usize = 0xFFFF;
+pub const SRAM_SIZE: usize = 0x8000;
+//pub const FLASHRAM_SIZE: usize = 0x20000;
 
 pub fn read_mem(
     device: &mut device::Device,
@@ -14,8 +16,8 @@ pub fn read_mem(
     if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
         let masked_address = address as usize & SRAM_MASK;
 
-        if masked_address + 4 > device.ui.saves.sram.len() {
-            device.ui.saves.sram.resize(masked_address + 4, 0xFF)
+        if device.ui.saves.sram.len() < SRAM_SIZE {
+            device.ui.saves.sram.resize(SRAM_SIZE, 0xFF)
         }
 
         return u32::from_be_bytes(
@@ -32,8 +34,8 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
         let masked_address = address as usize & SRAM_MASK;
 
-        if masked_address + 4 > device.ui.saves.sram.len() {
-            device.ui.saves.sram.resize(masked_address + 4, 0xFF)
+        if device.ui.saves.sram.len() < SRAM_SIZE {
+            device.ui.saves.sram.resize(SRAM_SIZE, 0xFF)
         }
 
         let mut data = u32::from_be_bytes(
@@ -74,12 +76,8 @@ pub fn dma_read(
         let mut i = dram_addr;
         let mut j = cart_addr;
 
-        if (cart_addr + length) as usize > device.ui.saves.sram.len() {
-            device
-                .ui
-                .saves
-                .sram
-                .resize((cart_addr + length) as usize, 0xFF)
+        if device.ui.saves.sram.len() < SRAM_SIZE {
+            device.ui.saves.sram.resize(SRAM_SIZE, 0xFF)
         }
 
         while i < dram_addr + length {
@@ -108,12 +106,8 @@ pub fn dma_write(
         let mut i = dram_addr;
         let mut j = cart_addr;
 
-        if (cart_addr + length) as usize > device.ui.saves.sram.len() {
-            device
-                .ui
-                .saves
-                .sram
-                .resize((cart_addr + length) as usize, 0xFF)
+        if device.ui.saves.sram.len() < SRAM_SIZE {
+            device.ui.saves.sram.resize(SRAM_SIZE, 0xFF)
         }
 
         while i < dram_addr + length {
