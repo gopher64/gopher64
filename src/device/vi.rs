@@ -135,7 +135,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         device::events::EventType::VI,
         device.cpu.next_event_count + device.vi.delay,
         vertical_interrupt_event,
-    );
+    )
 }
 
 pub fn init(device: &mut device::Device) {
