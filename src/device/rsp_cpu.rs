@@ -27,6 +27,7 @@ pub struct Cpu {
     pub broken: bool,
     pub halted: bool,
     pub sync_point: bool,
+    pub cycle_counter: u64,
     pub shuffle: [__m128i; 16],
     pub gpr: [u32; 32],
     pub vpr: [u128; 32],
@@ -64,7 +65,7 @@ pub fn in_delay_slot_taken(device: &mut device::Device) -> bool {
 
 pub fn run(device: &mut device::Device) -> u64 {
     device.rsp.cpu.broken = false;
-    let mut cycle_counter = 0;
+    device.rsp.cpu.cycle_counter = 0;
     while !device.rsp.cpu.sync_point {
         device.rsp.cpu.instruction_type = InstructionType::Su;
         device.rsp.cpu.gpr[0] = 0; // gpr 0 is read only
@@ -114,19 +115,19 @@ pub fn run(device: &mut device::Device) -> u64 {
         device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] &= 0xFFC;
 
         if device.rsp.cpu.instruction_type == device.rsp.cpu.last_instruction_type {
-            cycle_counter += 1;
+            device.rsp.cpu.cycle_counter += 1;
             device.rsp.cpu.pipeline_full = false;
         } else {
             device.rsp.cpu.last_instruction_type = device.rsp.cpu.instruction_type;
             if device.rsp.cpu.pipeline_full {
-                cycle_counter += 1;
+                device.rsp.cpu.cycle_counter += 1;
                 device.rsp.cpu.pipeline_full = false;
             } else {
                 device.rsp.cpu.pipeline_full = true;
             }
         }
     }
-    return (cycle_counter as f64 * 1.5) as u64; // converting RCP clock to CPU clock
+    return (device.rsp.cpu.cycle_counter as f64 * 1.5) as u64; // converting RCP clock to CPU clock
 }
 
 pub fn decode_opcode(device: &mut device::Device, opcode: u32) -> fn(&mut device::Device, u32) {

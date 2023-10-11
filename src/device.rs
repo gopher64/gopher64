@@ -201,6 +201,7 @@ impl Device {
                     broken: false,
                     halted: false,
                     sync_point: false,
+                    cycle_counter: 0,
                     gpr: [0; 32],
                     vpr: [0; 32],
                     reciprocals: [0; 512],

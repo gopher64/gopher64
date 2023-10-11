@@ -440,6 +440,7 @@ pub fn mfc0(device: &mut device::Device, opcode: u32) {
             device::memory::AccessSize::Word,
         )
     }
+    device.rsp.cpu.cycle_counter += 4; // needed for DK64
     device.rsp.cpu.sync_point = true;
 }
 
