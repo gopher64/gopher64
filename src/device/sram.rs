@@ -233,7 +233,7 @@ pub fn dma_write_flash(
         /* do actual DMA */
         for i in 0..length {
             device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap] =
-                device.ui.saves.flash[(cart_addr + i) as usize ^ device.byte_swap];
+                device.ui.saves.flash[(cart_addr + i) as usize];
         }
     } else {
         /* other accesses are not implemented */
@@ -297,8 +297,7 @@ pub fn flashram_command(device: &mut device::Device, command: u32) {
             /* program selected page */
             let offset = (command as u16) * 128;
             for i in 0..128 {
-                device.ui.saves.flash[(offset + i) as usize ^ device.byte_swap] =
-                    device.flashram.page_buf[i as usize];
+                device.ui.saves.flash[(offset + i) as usize] = device.flashram.page_buf[i as usize];
             }
             ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Flash);
 
