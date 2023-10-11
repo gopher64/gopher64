@@ -201,15 +201,18 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
         COP0_COMPARE_REG => {
             data &= 0xFFFFFFFF;
             let current_count = (device.cpu.cop0.regs[COP0_COUNT_REG as usize] >> 1) & 0xFFFFFFFF;
-            let mut compare_event_time =
-                (device.cpu.cop0.regs[COP0_COUNT_REG as usize] & 0xFFFFFFFF00000000) + (data << 1);
-            if current_count >= data {
-                compare_event_time += !0 as u32 as u64
+            let mut compare_event_diff = data as u32 - current_count as u32;
+
+            if compare_event_diff == 0 {
+                compare_event_diff += !0 as u32;
             }
-            let compare_event: &mut device::events::Event =
-                device::events::get_event(device, device::events::EventType::Compare).unwrap();
-            compare_event.count = compare_event_time; // reschedule the next compare interrupt event
-            device::events::set_next_event(device);
+
+            device::events::create_event(
+                device,
+                device::events::EventType::Compare,
+                device.cpu.cop0.regs[COP0_COUNT_REG as usize] + ((compare_event_diff as u64) << 1),
+                compare_event,
+            );
             device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_IP7;
         }
         COP0_STATUS_REG => {
