@@ -185,9 +185,9 @@ pub fn get_control_registers(device: &mut device::Device, index: u32) -> u64 {
 
 pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64) {
     device.cpu.cop0.reg_latch = data;
-    data &= device.cpu.cop0.reg_write_masks[index as usize];
     match index {
         COP0_COUNT_REG => {
+            data &= 0xFFFFFFFF;
             data <<= 1;
             device::events::translate_events(
                 device,
@@ -197,6 +197,7 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
         }
         COP0_WIRED_REG => device.cpu.cop0.regs[COP0_RANDOM_REG as usize] = 31,
         COP0_COMPARE_REG => {
+            data &= 0xFFFFFFFF;
             let current_count = (device.cpu.cop0.regs[COP0_COUNT_REG as usize] >> 1) & 0xFFFFFFFF;
             let mut compare_event_time =
                 (device.cpu.cop0.regs[COP0_COUNT_REG as usize] & 0xFFFFFFFF00000000) + (data << 1);
@@ -216,7 +217,11 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
         }
         _ => {}
     }
-    device::memory::masked_write_64(&mut device.cpu.cop0.regs[index as usize], data, !0 as u64);
+    device::memory::masked_write_64(
+        &mut device.cpu.cop0.regs[index as usize],
+        data,
+        device.cpu.cop0.reg_write_masks[index as usize],
+    );
     device::exceptions::check_pending_interrupts(device);
 }
 
