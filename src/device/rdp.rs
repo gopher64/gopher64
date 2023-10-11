@@ -44,6 +44,7 @@ pub const DPC_CLR_CLOCK_CTR: u32 = 1 << 9;
 pub struct Rdp {
     pub regs_dpc: [u32; DPC_REGS_COUNT as usize],
     pub regs_dps: [u32; DPS_REGS_COUNT as usize],
+    pub wait_frozen: bool,
 }
 
 pub fn read_regs_dpc(
@@ -80,17 +81,25 @@ pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mas
                     device.rdp.regs_dpc[DPC_START_REG as usize];
                 device.rdp.regs_dpc[DPC_STATUS_REG as usize] &= !DPC_STATUS_START_VALID
             }
-            let timer = ui::video::process_rdp_list(&mut device.rdp.regs_dpc, &mut device.rsp.mem);
-            if timer != 0 {
-                device::events::create_event(
-                    device,
-                    device::events::EventType::DP,
-                    device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
-                    rdp_interrupt_event,
-                )
+            if device.rdp.regs_dpc[DPC_STATUS_REG as usize] & DPC_STATUS_FREEZE == 0 {
+                run_rdp(device)
+            } else {
+                device.rdp.wait_frozen = true;
             }
         }
         _ => device::memory::masked_write_32(&mut device.rdp.regs_dpc[reg as usize], value, mask),
+    }
+}
+
+pub fn run_rdp(device: &mut device::Device) {
+    let timer = ui::video::process_rdp_list(&mut device.rdp.regs_dpc, &mut device.rsp.mem);
+    if timer != 0 {
+        device::events::create_event(
+            device,
+            device::events::EventType::DP,
+            device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
+            rdp_interrupt_event,
+        )
     }
 }
 
@@ -121,11 +130,14 @@ pub fn update_dpc_status(device: &mut device::Device, w: u32) {
 
     /* clear / set freeze */
     if w & DPC_CLR_FREEZE != 0 {
-        device.rdp.regs_dpc[DPC_STATUS_REG as usize] &= !DPC_STATUS_FREEZE
+        device.rdp.regs_dpc[DPC_STATUS_REG as usize] &= !DPC_STATUS_FREEZE;
+        if device.rdp.wait_frozen {
+            run_rdp(device);
+            device.rdp.wait_frozen = false;
+        }
     }
     if w & DPC_SET_FREEZE != 0 {
         device.rdp.regs_dpc[DPC_STATUS_REG as usize] |= DPC_STATUS_FREEZE;
-        panic!("DP freeze")
     }
 
     /* clear / set flush */
