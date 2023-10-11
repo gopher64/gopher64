@@ -5,6 +5,24 @@ pub const SRAM_MASK: usize = 0xFFFF;
 pub const SRAM_SIZE: usize = 0x8000;
 //pub const FLASHRAM_SIZE: usize = 0x20000;
 
+pub fn format_sram(device: &mut device::Device) {
+    if device.ui.saves.sram.len() < SRAM_SIZE {
+        device.ui.saves.sram.resize(SRAM_SIZE, 0xFF)
+    }
+}
+
+pub fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
+    let masked_address = address as usize & SRAM_MASK;
+
+    format_sram(device);
+
+    return u32::from_be_bytes(
+        device.ui.saves.sram[masked_address..masked_address + 4]
+            .try_into()
+            .unwrap(),
+    );
+}
+
 pub fn read_mem(
     device: &mut device::Device,
     address: u64,
@@ -14,40 +32,31 @@ pub fn read_mem(
     device::cop0::add_cycles(device, cycles);
 
     if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
-        let masked_address = address as usize & SRAM_MASK;
-
-        if device.ui.saves.sram.len() < SRAM_SIZE {
-            device.ui.saves.sram.resize(SRAM_SIZE, 0xFF)
-        }
-
-        return u32::from_be_bytes(
-            device.ui.saves.sram[masked_address..masked_address + 4]
-                .try_into()
-                .unwrap(),
-        );
+        return read_mem_sram(device, address);
     } else {
         panic!("flash read")
     }
 }
 
+pub fn write_mem_sram(device: &mut device::Device, address: u64, value: u32, mask: u32) {
+    let masked_address = address as usize & SRAM_MASK;
+
+    format_sram(device);
+
+    let mut data = u32::from_be_bytes(
+        device.ui.saves.sram[masked_address..masked_address + 4]
+            .try_into()
+            .unwrap(),
+    );
+    device::memory::masked_write_32(&mut data, value, mask);
+    device.ui.saves.sram[masked_address..masked_address + 4].copy_from_slice(&data.to_be_bytes());
+
+    ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Sram);
+}
+
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
-        let masked_address = address as usize & SRAM_MASK;
-
-        if device.ui.saves.sram.len() < SRAM_SIZE {
-            device.ui.saves.sram.resize(SRAM_SIZE, 0xFF)
-        }
-
-        let mut data = u32::from_be_bytes(
-            device.ui.saves.sram[masked_address..masked_address + 4]
-                .try_into()
-                .unwrap(),
-        );
-        device::memory::masked_write_32(&mut data, value, mask);
-        device.ui.saves.sram[masked_address..masked_address + 4]
-            .copy_from_slice(&data.to_be_bytes());
-
-        ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Sram);
+        write_mem_sram(device, address, value, mask)
     } else {
         panic!("flash write")
     }
@@ -63,60 +72,64 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     );
 }
 
-// cart is big endian, rdram is native endian
-pub fn dma_read(
+pub fn dma_read_sram(
     device: &mut device::Device,
     mut cart_addr: u32,
     mut dram_addr: u32,
     length: u32,
-) -> u64 {
+) {
+    dram_addr &= device::rdram::RDRAM_MASK as u32;
+    cart_addr &= SRAM_MASK as u32;
+    let mut i = dram_addr;
+    let mut j = cart_addr;
+
+    format_sram(device);
+
+    while i < dram_addr + length {
+        device.ui.saves.sram[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
+        i += 1;
+        j += 1;
+    }
+
+    ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Sram);
+}
+
+// cart is big endian, rdram is native endian
+pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) -> u64 {
     if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
-        dram_addr &= device::rdram::RDRAM_MASK as u32;
-        cart_addr &= SRAM_MASK as u32;
-        let mut i = dram_addr;
-        let mut j = cart_addr;
-
-        if device.ui.saves.sram.len() < SRAM_SIZE {
-            device.ui.saves.sram.resize(SRAM_SIZE, 0xFF)
-        }
-
-        while i < dram_addr + length {
-            device.ui.saves.sram[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
-            i += 1;
-            j += 1;
-        }
-
-        ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Sram);
-        return device::pi::calculate_cycles(device, 2, length);
+        dma_read_sram(device, cart_addr, dram_addr, length)
     } else {
         panic!("flash dma read")
+    }
+    return device::pi::calculate_cycles(device, 2, length);
+}
+
+pub fn dma_write_sram(
+    device: &mut device::Device,
+    mut cart_addr: u32,
+    mut dram_addr: u32,
+    length: u32,
+) {
+    dram_addr &= device::rdram::RDRAM_MASK as u32;
+    cart_addr &= SRAM_MASK as u32;
+    let mut i = dram_addr;
+    let mut j = cart_addr;
+
+    format_sram(device);
+
+    while i < dram_addr + length {
+        device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.saves.sram[j as usize];
+        i += 1;
+        j += 1;
     }
 }
 
 // cart is big endian, rdram is native endian
-pub fn dma_write(
-    device: &mut device::Device,
-    mut cart_addr: u32,
-    mut dram_addr: u32,
-    length: u32,
-) -> u64 {
+pub fn dma_write(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) -> u64 {
     if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
-        dram_addr &= device::rdram::RDRAM_MASK as u32;
-        cart_addr &= SRAM_MASK as u32;
-        let mut i = dram_addr;
-        let mut j = cart_addr;
-
-        if device.ui.saves.sram.len() < SRAM_SIZE {
-            device.ui.saves.sram.resize(SRAM_SIZE, 0xFF)
-        }
-
-        while i < dram_addr + length {
-            device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.saves.sram[j as usize];
-            i += 1;
-            j += 1;
-        }
-        return device::pi::calculate_cycles(device, 2, length);
+        dma_write_sram(device, cart_addr, dram_addr, length)
     } else {
         panic!("flash dma write")
     }
+    return device::pi::calculate_cycles(device, 2, length);
 }
