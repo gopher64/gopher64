@@ -185,6 +185,7 @@ pub fn get_control_registers(device: &mut device::Device, index: u32) -> u64 {
 
 pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64) {
     device.cpu.cop0.reg_latch = data;
+    data &= device.cpu.cop0.reg_write_masks[index as usize];
     match index {
         COP0_COUNT_REG => {
             data <<= 1;
@@ -197,14 +198,14 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
         COP0_WIRED_REG => device.cpu.cop0.regs[COP0_RANDOM_REG as usize] = 31,
         COP0_COMPARE_REG => {
             let current_count = (device.cpu.cop0.regs[COP0_COUNT_REG as usize] >> 1) & 0xFFFFFFFF;
-            let mut event_time =
-                (device.cpu.cop0.regs[COP0_COUNT_REG as usize] & 0xFFFFFFFF00000000) | (data << 1);
+            let mut compare_event_time =
+                (device.cpu.cop0.regs[COP0_COUNT_REG as usize] & 0xFFFFFFFF00000000) + (data << 1);
             if current_count >= data {
-                event_time += !0 as u32 as u64
+                compare_event_time += !0 as u32 as u64
             }
             let compare_event: &mut device::events::Event =
                 device::events::get_event(device, device::events::EventType::Compare).unwrap();
-            compare_event.count = event_time; // reschedule the next compare interrupt event
+            compare_event.count = compare_event_time; // reschedule the next compare interrupt event
             device::events::set_next_event(device);
             device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_IP7;
         }
@@ -215,11 +216,7 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
         }
         _ => {}
     }
-    device::memory::masked_write_64(
-        &mut device.cpu.cop0.regs[index as usize],
-        data,
-        device.cpu.cop0.reg_write_masks[index as usize],
-    );
+    device::memory::masked_write_64(&mut device.cpu.cop0.regs[index as usize], data, !0 as u64);
     device::exceptions::check_pending_interrupts(device);
 }
 

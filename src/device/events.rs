@@ -66,7 +66,9 @@ pub fn set_next_event(device: &mut device::Device) {
 
 pub fn translate_events(device: &mut device::Device, old_count: u64, new_count: u64) {
     for i in device.cpu.events.iter_mut() {
-        i.count = i.count - old_count + new_count
+        if i.enabled {
+            i.count = i.count - old_count + new_count;
+        }
     }
     set_next_event(device);
 }

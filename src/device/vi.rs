@@ -5,7 +5,7 @@ use governor::clock::Clock;
 pub const VI_STATUS_REG: u32 = 0;
 //pub const VI_ORIGIN_REG: u32 = 1;
 //pub const VI_WIDTH_REG: u32 = 2;
-pub const VI_V_INTR_REG: u32 = 3;
+//pub const VI_V_INTR_REG: u32 = 3;
 pub const VI_CURRENT_REG: u32 = 4;
 //pub const VI_BURST_REG: u32 = 5;
 pub const VI_V_SYNC_REG: u32 = 6;
@@ -46,9 +46,7 @@ pub fn set_expected_refresh_rate(device: &mut device::Device) {
 }
 
 pub fn set_vertical_interrupt(device: &mut device::Device) {
-    if device::events::get_event(device, device::events::EventType::VI) == None
-        && device.vi.regs[VI_V_INTR_REG as usize] < device.vi.regs[VI_V_SYNC_REG as usize]
-    {
+    if device::events::get_event(device, device::events::EventType::VI) == None {
         device::events::create_event(
             device,
             device::events::EventType::VI,
@@ -94,13 +92,6 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
         VI_CURRENT_REG => device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_VI),
-        VI_V_INTR_REG => {
-            if device.vi.regs[reg as usize] != value & mask {
-                device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-                set_vertical_interrupt(device);
-                ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
-            }
-        }
         VI_V_SYNC_REG => {
             if device.vi.regs[reg as usize] != value & mask {
                 device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
