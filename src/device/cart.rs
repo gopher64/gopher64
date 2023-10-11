@@ -31,6 +31,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
             {
                 eeprom_type = JDT_EEPROM_4K;
             } else {
+                device.pif.ram[device.pif.channels[channel].rx.unwrap()] |= 0x80;
                 return;
             }
 
