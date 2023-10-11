@@ -193,7 +193,9 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
                 device,
                 device.cpu.cop0.regs[COP0_COUNT_REG as usize],
                 data,
-            )
+            );
+            device.cpu.cop0.regs[COP0_COUNT_REG as usize] = data;
+            return;
         }
         COP0_WIRED_REG => device.cpu.cop0.regs[COP0_RANDOM_REG as usize] = 31,
         COP0_COMPARE_REG => {
