@@ -18,7 +18,8 @@ pub const JDT_JOY_ABS_COUNTERS: u16 = 0x0001; /* joystick with absolute coordina
 pub const JDT_JOY_PORT: u16 = 0x0004; /* has port for external paks */
 //pub const JDT_VRU: u16 = 0x0100; /* VRU */
 pub const PAK_CHUNK_SIZE: usize = 0x20;
-pub const CONT_STATUS: u8 = 0;
+pub const CONT_STATUS_PAK_NOT_PRESENT: u8 = 0;
+pub const CONT_STATUS_PAK_PRESENT: u8 = 1;
 pub const CONT_FLAVOR: u16 = JDT_JOY_ABS_COUNTERS | JDT_JOY_PORT;
 
 #[derive(Copy, Clone)]
@@ -36,7 +37,13 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = CONT_FLAVOR as u8;
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 1] =
                 (CONT_FLAVOR >> 8) as u8;
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 2] = CONT_STATUS;
+            if device.pif.channels[channel].pak_handler.is_none() {
+                device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 2] =
+                    CONT_STATUS_PAK_NOT_PRESENT;
+            } else {
+                device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 2] =
+                    CONT_STATUS_PAK_PRESENT;
+            }
         }
         JCMD_CONTROLLER_READ => {
             let offset = device.pif.channels[channel].rx_buf.unwrap();

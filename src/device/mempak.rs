@@ -6,6 +6,8 @@ pub const MPK_PAGE_SIZE: usize = 256;
 
 pub fn format_mempak(device: &mut device::Device) {
     if device.ui.saves.mempak.len() < MEMPAK_SIZE * 4 {
+        device.ui.saves.mempak.resize(MEMPAK_SIZE * 4, 0);
+
         let page_0: [u8; MPK_PAGE_SIZE] = [
             /* Label area */
             0x81, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
