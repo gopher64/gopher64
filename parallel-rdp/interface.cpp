@@ -411,7 +411,15 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 			}
 
 			uint32_t width = viCalculateHorizonalWidth(vi_registers[VI_H_START_REG], vi_registers[VI_X_SCALE_REG], vi_registers[VI_WIDTH_REG]);
+			if (width == 0)
+			{
+				width = 320;
+			}
 			uint32_t height = viCalculateVerticalHeight(vi_registers[VI_V_START_REG], vi_registers[VI_Y_SCALE_REG]);
+			if (height == 0)
+			{
+				height = 240;
+			}
 			interrupt_timer = width * height * 4;
 
 			dpc_regs[DPC_STATUS_REG] &= ~(DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK);
