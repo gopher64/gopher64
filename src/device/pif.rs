@@ -152,6 +152,7 @@ pub fn setup_channels_format(device: &mut device::Device) {
 
             0xfd => {
                 /* channel reset - send reset command and discard the results */
+                disable_pif_channel(&mut device.pif.channels[k]); // not sure about this
                 k += 1;
                 i += 1;
             }
