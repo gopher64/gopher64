@@ -52,6 +52,30 @@ fn main() {
                 break;
             }
         }
+    } else if file_path.extension().unwrap().to_ascii_lowercase() == "7z" {
+        let mut archive =
+            sevenz_rust::SevenZReader::open(file_path, sevenz_rust::Password::empty()).unwrap();
+
+        let mut found = false;
+        archive
+            .for_each_entries(
+                &mut |entry: &sevenz_rust::SevenZArchiveEntry, reader: &mut dyn std::io::Read| {
+                    let name = entry.name().to_ascii_lowercase();
+                    if !found
+                        && (name.ends_with("z64") || name.ends_with("n64") || name.ends_with("v64"))
+                    {
+                        reader
+                            .read_to_end(&mut contents)
+                            .expect("could not read zip file");
+                        found = true;
+                    } else {
+                        //skip other files
+                        std::io::copy(reader, &mut std::io::sink())?;
+                    }
+                    Ok(true)
+                },
+            )
+            .expect("ok");
     } else {
         contents = fs::read(file_path).expect("Should have been able to read the file");
     }
