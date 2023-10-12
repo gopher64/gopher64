@@ -14,6 +14,7 @@ pub struct PifChannel {
     pub rx: Option<usize>,
     pub rx_buf: Option<usize>,
     pub process: Option<fn(&mut device::Device, usize)>,
+    pub pak_handler: Option<device::controller::PakHandler>,
 }
 
 pub const PIF_RAM_SIZE: usize = 64;
@@ -224,6 +225,12 @@ pub fn init(device: &mut device::Device) {
     device.pif.ram[0x26] = device.cart.cic_seed;
     device.pif.ram[0x27] = device.cart.cic_seed;
 
+    let mempak_handler = device::controller::PakHandler {
+        read: device::mempak::read,
+        write: device::mempak::write,
+    };
+
+    device.pif.channels[0].pak_handler = Some(mempak_handler);
     device.pif.channels[0].process = Some(device::controller::process);
     device.pif.channels[4].process = Some(device::cart::process)
 }

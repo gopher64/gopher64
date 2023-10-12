@@ -15,6 +15,7 @@ pub mod exceptions;
 pub mod fpu_instructions;
 pub mod is_viewer;
 pub mod memory;
+pub mod mempak;
 pub mod mi;
 pub mod pi;
 pub mod pif;
@@ -154,6 +155,7 @@ impl Device {
                     rx: None,
                     rx_buf: None,
                     process: None,
+                    pak_handler: None,
                 }; 5],
             },
             cart: cart_rom::Cart {
