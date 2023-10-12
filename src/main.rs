@@ -1,6 +1,7 @@
 #![feature(round_ties_even)]
 use std::env;
 use std::fs;
+use std::io::Read;
 mod device;
 mod ui;
 
@@ -32,8 +33,27 @@ fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let file_path = &args[1];
-    let mut contents = fs::read(file_path).expect("Should have been able to read the file");
+    let file_path = std::path::Path::new(&args[1]);
+    let mut contents = vec![];
+    if file_path.extension().unwrap().to_ascii_lowercase() == "zip" {
+        let zip_file = fs::File::open(file_path).unwrap();
+        let mut archive = zip::ZipArchive::new(zip_file).unwrap();
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i).unwrap();
+            let extension = file
+                .enclosed_name()
+                .unwrap()
+                .extension()
+                .unwrap()
+                .to_ascii_lowercase();
+            if extension == "z64" || extension == "n64" || extension == "v64" {
+                file.read_to_end(&mut contents)
+                    .expect("could not read zip file");
+            }
+        }
+    } else {
+        contents = fs::read(file_path).expect("Should have been able to read the file");
+    }
 
     contents = swap_rom(contents);
 
