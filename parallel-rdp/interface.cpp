@@ -201,6 +201,38 @@ void set_sdl_window(void *_window)
 	SDL_SetEventFilter(sdl_event_filter, nullptr);
 }
 
+static void calculate_viewport(float *x, float *y, float *width, float *height)
+{
+	bool window_widescreen = false;
+	int32_t display_width = (window_widescreen ? 854 : 640);
+	int32_t display_height = 480;
+
+	int w, h;
+	SDL_GetWindowSize(window, &w, &h);
+
+	*width = w;
+	*height = h;
+	*x = 0;
+	*y = 0;
+	int32_t hw = display_height * *width;
+	int32_t wh = display_width * *height;
+
+	// add letterboxes or pillarboxes if the window has a different aspect ratio
+	// than the current display mode
+	if (hw > wh)
+	{
+		int32_t w_max = wh / display_height;
+		*x += (*width - w_max) / 2;
+		*width = w_max;
+	}
+	else if (hw < wh)
+	{
+		int32_t h_max = hw / display_width;
+		*y += (*height - h_max) / 2;
+		*height = h_max;
+	}
+}
+
 static void render_frame(Vulkan::Device &device)
 {
 	RDP::ScanoutOptions options = {};
@@ -225,7 +257,7 @@ static void render_frame(Vulkan::Device &device)
 		cmd->begin_render_pass(rp);
 
 		VkViewport vp = cmd->get_viewport();
-		// Adjust the viewport here for aspect ratio correction.
+		calculate_viewport(&vp.x, &vp.y, &vp.width, &vp.height);
 
 		cmd->set_program(program);
 

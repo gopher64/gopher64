@@ -25,6 +25,7 @@ impl Ui {
             .window("gopher64", 640, 480)
             .position_centered()
             .vulkan()
+            .resizable()
             .build()
             .unwrap();
         Ui {
