@@ -49,6 +49,7 @@ fn main() {
             if extension == "z64" || extension == "n64" || extension == "v64" {
                 file.read_to_end(&mut contents)
                     .expect("could not read zip file");
+                break;
             }
         }
     } else {
