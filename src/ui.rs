@@ -41,6 +41,7 @@ impl Ui {
                 eeprom: Vec::new(),
                 sram: Vec::new(),
                 flash: Vec::new(),
+                mempak: Vec::new(),
             },
             sdl_context: Some(sdl_context),
             video_subsystem: Some(video_subsystem),

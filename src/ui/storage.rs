@@ -6,6 +6,7 @@ pub enum SaveTypes {
     Eeprom16k,
     Sram,
     Flash,
+    Mempak,
 }
 
 pub struct Paths {
@@ -19,6 +20,7 @@ pub struct Saves {
     pub eeprom: Vec<u8>,
     pub sram: Vec<u8>,
     pub flash: Vec<u8>,
+    pub mempak: Vec<u8>,
 }
 
 pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
@@ -106,6 +108,11 @@ pub fn init(ui: &mut ui::Ui) {
     ui.paths
         .fla_file_path
         .push(ui.game_name.to_owned() + ".fla");
+
+    ui.paths.pak_file_path = base_path.clone();
+    ui.paths
+        .pak_file_path
+        .push(ui.game_name.to_owned() + ".mpk");
 }
 
 pub fn load_saves(ui: &mut ui::Ui) {
@@ -120,6 +127,10 @@ pub fn load_saves(ui: &mut ui::Ui) {
     let fla = std::fs::read(&mut ui.paths.fla_file_path);
     if fla.is_ok() {
         ui.saves.flash = fla.unwrap();
+    }
+    let mempak = std::fs::read(&mut ui.paths.pak_file_path);
+    if mempak.is_ok() {
+        ui.saves.mempak = mempak.unwrap();
     }
 }
 
@@ -138,6 +149,10 @@ pub fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
         SaveTypes::Flash => {
             path = ui.paths.fla_file_path.as_ref();
             data = ui.saves.flash.as_ref();
+        }
+        SaveTypes::Mempak => {
+            path = ui.paths.pak_file_path.as_ref();
+            data = ui.saves.mempak.as_ref();
         }
     }
     let result = std::fs::write(path, data);
