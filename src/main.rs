@@ -40,9 +40,7 @@ fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
     }
 }
 
-fn main() {
-    let args = Args::parse();
-    let file_path = std::path::Path::new(args.game.as_ref().unwrap());
+fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
     let mut contents = vec![];
     if file_path.extension().unwrap().to_ascii_lowercase() == "zip" {
         let zip_file = fs::File::open(file_path).unwrap();
@@ -89,11 +87,18 @@ fn main() {
         contents = fs::read(file_path).expect("Should have been able to read the file");
     }
 
-    contents = swap_rom(contents);
+    return swap_rom(contents);
+}
+
+fn main() {
+    let args = Args::parse();
+    let file_path = std::path::Path::new(args.game.as_ref().unwrap());
+
+    let rom_contents = get_rom_contents(file_path);
 
     let mut device = device::Device::new();
 
-    device::cart_rom::init(&mut device, contents); // cart needs to come before rdram
+    device::cart_rom::init(&mut device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
     let (rdram_ptr, rdram_size) = device::rdram::init(&mut device);
