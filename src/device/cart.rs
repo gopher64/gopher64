@@ -16,8 +16,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
     let cmd = device.pif.ram[device.pif.channels[channel].tx_buf.unwrap()];
 
     match cmd {
-        JCMD_RESET => { /* reset  */ }
-        JCMD_STATUS => {
+        JCMD_RESET | JCMD_STATUS => {
             let eeprom_type;
             if device
                 .ui

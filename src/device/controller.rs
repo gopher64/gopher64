@@ -32,8 +32,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
     let cmd = device.pif.ram[device.pif.channels[channel].tx_buf.unwrap()];
 
     match cmd {
-        JCMD_RESET => { /* reset  */ }
-        JCMD_STATUS => {
+        JCMD_RESET | JCMD_STATUS => {
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = CONT_FLAVOR as u8;
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 1] =
                 (CONT_FLAVOR >> 8) as u8;
