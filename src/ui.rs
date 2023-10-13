@@ -21,13 +21,6 @@ impl Ui {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
         let audio_subsystem = sdl_context.audio().unwrap();
-        let window = video_subsystem
-            .window("gopher64", 640, 480)
-            .position_centered()
-            .vulkan()
-            .resizable()
-            .build()
-            .unwrap();
         Ui {
             save_type: vec![],
             game_name: String::new(),
@@ -47,7 +40,7 @@ impl Ui {
             sdl_context: Some(sdl_context),
             video_subsystem: Some(video_subsystem),
             audio_subsystem: Some(audio_subsystem),
-            window: Some(window),
+            window: None,
             audio_device: None,
         }
     }

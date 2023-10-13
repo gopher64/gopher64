@@ -12,6 +12,7 @@ governor = "0.6"
 sevenz-rust = "0.5"
 sha2 = "0.10"
 sdl2-sys = { git = "https://github.com/Rust-SDL2/rust-sdl2.git" }
+clap = { version = "4.4", features = ["derive"] }
 
 [dependencies.sdl2]
 git = "https://github.com/Rust-SDL2/rust-sdl2.git"

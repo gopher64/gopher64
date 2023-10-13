@@ -1,9 +1,18 @@
 #![feature(round_ties_even)]
-use std::env;
 use std::fs;
 use std::io::Read;
 mod device;
 mod ui;
+use clap::Parser;
+
+/// N64 emulator
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    game: Option<String>,
+    #[arg(short, long)]
+    fullscreen: bool,
+}
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
     let test = u32::from_be_bytes(contents[0..4].try_into().unwrap());
@@ -32,8 +41,8 @@ fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let file_path = std::path::Path::new(&args[1]);
+    let args = Args::parse();
+    let file_path = std::path::Path::new(args.game.as_ref().unwrap());
     let mut contents = vec![];
     if file_path.extension().unwrap().to_ascii_lowercase() == "zip" {
         let zip_file = fs::File::open(file_path).unwrap();
@@ -90,7 +99,7 @@ fn main() {
     let (rdram_ptr, rdram_size) = device::rdram::init(&mut device);
 
     ui::audio::init(&mut device.ui, 33600);
-    ui::video::init(&mut device.ui, rdram_ptr, rdram_size);
+    ui::video::init(&mut device.ui, rdram_ptr, rdram_size, args.fullscreen);
 
     device::mi::init(&mut device);
     device::pif::init(&mut device);

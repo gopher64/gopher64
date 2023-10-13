@@ -9,7 +9,19 @@ extern "C" {
     pub fn full_sync();
 }
 
-pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize) {
+pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize, fullscreen: bool) {
+    let mut builder = ui
+        .video_subsystem
+        .as_ref()
+        .unwrap()
+        .window("gopher64", 640, 480);
+    builder.position_centered().vulkan();
+    if fullscreen {
+        builder.fullscreen();
+    } else {
+        builder.resizable();
+    }
+    ui.window = Some(builder.build().unwrap());
     unsafe {
         set_sdl_window(ui.window.as_mut().unwrap().raw() as usize);
         vk_init(rdram_ptr as usize, rdram_size as u32)
