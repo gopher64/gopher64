@@ -5,7 +5,7 @@ extern "C"
 {
 #endif
 
-    void vk_init(void *mem_base, uint32_t rdram_size);
+    void vk_init(void *mem_base, uint32_t rdram_size, uint8_t fullscreen);
     void vk_close();
     void set_sdl_window(void *_window);
     void rdp_set_vi_register(uint32_t reg, uint32_t value);

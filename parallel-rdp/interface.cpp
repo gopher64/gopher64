@@ -50,6 +50,7 @@ enum vi_registers
 	VI_REGS_COUNT
 };
 
+static bool fullscreen;
 static void *rdram;
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
@@ -136,8 +137,9 @@ enum
 	MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024
 };
 
-void vk_init(void *mem_base, uint32_t rdram_size)
+void vk_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
 {
+	fullscreen = _fullscreen != 0;
 	rdram = mem_base;
 	bool window_vsync = 0;
 	wsi = new WSI;
@@ -185,6 +187,17 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 		switch (event->window.event)
 		{
 		case SDL_WINDOWEVENT_CLOSE:
+			emu_running = 0;
+			break;
+		default:
+			break;
+		}
+	}
+	else if (fullscreen && event->type == SDL_KEYDOWN)
+	{
+		switch (event->key.keysym.scancode)
+		{
+		case SDL_SCANCODE_ESCAPE:
 			emu_running = 0;
 			break;
 		default:
