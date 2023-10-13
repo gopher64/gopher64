@@ -270,7 +270,7 @@ pub fn flashram_command(device: &mut device::Device, command: u32) {
 
             /* do chip/sector erase */
             if device.flashram.mode == FlashramMode::SectorErase {
-                let offset = (device.flashram.erase_page & 0xff80) * 128;
+                let offset: usize = (device.flashram.erase_page & 0xff80) as usize * 128;
                 for i in 0..128 * 128 {
                     device.ui.saves.flash[offset as usize + i] = 0xFF;
                 }
@@ -295,7 +295,7 @@ pub fn flashram_command(device: &mut device::Device, command: u32) {
             device.flashram.status |= 0x01;
 
             /* program selected page */
-            let offset = (command as u16) * 128;
+            let offset: usize = (command & 0xffff) as usize * 128;
             for i in 0..128 {
                 device.ui.saves.flash[(offset + i) as usize] = device.flashram.page_buf[i as usize];
             }
