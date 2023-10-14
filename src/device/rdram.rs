@@ -1,5 +1,5 @@
 use crate::device;
-use std::alloc::{alloc, Layout};
+use std::alloc::{alloc_zeroed, Layout};
 
 pub const RDRAM_MASK: usize = 0xFFFFFF;
 
@@ -71,7 +71,7 @@ pub fn write_regs(_device: &mut device::Device, _address: u64, _value: u32, _mas
 pub fn init(device: &mut device::Device) -> (*mut u8, usize) {
     let alignment = 64 * 1024;
     let layout = Layout::from_size_align(RDRAM_SIZE, alignment).expect("Invalid layout");
-    let ptr = unsafe { alloc(layout) };
+    let ptr = unsafe { alloc_zeroed(layout) };
     device.rdram.mem = unsafe { Vec::from_raw_parts(ptr, RDRAM_SIZE, RDRAM_SIZE) };
 
     // hack, skip RDRAM initialization
