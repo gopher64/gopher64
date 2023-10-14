@@ -17,7 +17,7 @@ pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize, fullscreen: 
         .window("gopher64", 640, 480);
     builder.position_centered().vulkan();
     if fullscreen {
-        builder.fullscreen();
+        builder.fullscreen_desktop();
     } else {
         builder.resizable();
     }
