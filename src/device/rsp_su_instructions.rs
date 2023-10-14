@@ -21,6 +21,10 @@ pub fn imm(opcode: u32) -> u16 {
     return opcode as u16;
 }
 
+pub fn se16(value: i16) -> u32 {
+    return value as i32 as u32;
+}
+
 pub fn voffset(opcode: u32) -> u8 {
     return (opcode & 0x7F) as u8;
 }
@@ -89,9 +93,10 @@ pub fn jal(device: &mut device::Device, opcode: u32) {
 pub fn beq(device: &mut device::Device, opcode: u32) {
     if device.rsp.cpu.gpr[rs(opcode) as usize] == device.rsp.cpu.gpr[rt(opcode) as usize] {
         device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize]
-            .wrapping_add(imm(opcode << 2) as i16 as i32 as u32)
-            + 4
+        device.rsp.cpu.branch_state.pc = device.rsp.regs2
+            [device::rsp_interface::SP_PC_REG as usize]
+            .wrapping_add(se16(imm(opcode) as i16) << 2)
+            + 4;
     } else {
         device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -100,9 +105,10 @@ pub fn beq(device: &mut device::Device, opcode: u32) {
 pub fn bne(device: &mut device::Device, opcode: u32) {
     if device.rsp.cpu.gpr[rs(opcode) as usize] != device.rsp.cpu.gpr[rt(opcode) as usize] {
         device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize]
-            .wrapping_add(imm(opcode << 2) as i16 as i32 as u32)
-            + 4
+        device.rsp.cpu.branch_state.pc = device.rsp.regs2
+            [device::rsp_interface::SP_PC_REG as usize]
+            .wrapping_add(se16(imm(opcode) as i16) << 2)
+            + 4;
     } else {
         device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -111,9 +117,10 @@ pub fn bne(device: &mut device::Device, opcode: u32) {
 pub fn blez(device: &mut device::Device, opcode: u32) {
     if device.rsp.cpu.gpr[rs(opcode) as usize] as i32 <= 0 {
         device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize]
-            .wrapping_add(imm(opcode << 2) as i16 as i32 as u32)
-            + 4
+        device.rsp.cpu.branch_state.pc = device.rsp.regs2
+            [device::rsp_interface::SP_PC_REG as usize]
+            .wrapping_add(se16(imm(opcode) as i16) << 2)
+            + 4;
     } else {
         device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -122,9 +129,10 @@ pub fn blez(device: &mut device::Device, opcode: u32) {
 pub fn bgtz(device: &mut device::Device, opcode: u32) {
     if device.rsp.cpu.gpr[rs(opcode) as usize] as i32 > 0 {
         device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize]
-            .wrapping_add(imm(opcode << 2) as i16 as i32 as u32)
-            + 4
+        device.rsp.cpu.branch_state.pc = device.rsp.regs2
+            [device::rsp_interface::SP_PC_REG as usize]
+            .wrapping_add(se16(imm(opcode) as i16) << 2)
+            + 4;
     } else {
         device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -381,9 +389,10 @@ pub fn sltu(device: &mut device::Device, opcode: u32) {
 pub fn bltz(device: &mut device::Device, opcode: u32) {
     if (device.rsp.cpu.gpr[rs(opcode) as usize] as i32) < 0 {
         device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize]
-            .wrapping_add(imm(opcode << 2) as i16 as i32 as u32)
-            + 4
+        device.rsp.cpu.branch_state.pc = device.rsp.regs2
+            [device::rsp_interface::SP_PC_REG as usize]
+            .wrapping_add(se16(imm(opcode) as i16) << 2)
+            + 4;
     } else {
         device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -392,9 +401,10 @@ pub fn bltz(device: &mut device::Device, opcode: u32) {
 pub fn bgez(device: &mut device::Device, opcode: u32) {
     if device.rsp.cpu.gpr[rs(opcode) as usize] as i32 >= 0 {
         device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize]
-            .wrapping_add(imm(opcode << 2) as i16 as i32 as u32)
-            + 4
+        device.rsp.cpu.branch_state.pc = device.rsp.regs2
+            [device::rsp_interface::SP_PC_REG as usize]
+            .wrapping_add(se16(imm(opcode) as i16) << 2)
+            + 4;
     } else {
         device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -403,9 +413,10 @@ pub fn bgez(device: &mut device::Device, opcode: u32) {
 pub fn bltzal(device: &mut device::Device, opcode: u32) {
     if (device.rsp.cpu.gpr[rs(opcode) as usize] as i32) < 0 {
         device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize]
-            .wrapping_add(imm(opcode << 2) as i16 as i32 as u32)
-            + 4
+        device.rsp.cpu.branch_state.pc = device.rsp.regs2
+            [device::rsp_interface::SP_PC_REG as usize]
+            .wrapping_add(se16(imm(opcode) as i16) << 2)
+            + 4;
     } else {
         device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -416,9 +427,10 @@ pub fn bltzal(device: &mut device::Device, opcode: u32) {
 pub fn bgezal(device: &mut device::Device, opcode: u32) {
     if (device.rsp.cpu.gpr[rs(opcode) as usize] as i32) >= 0 {
         device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize]
-            .wrapping_add(imm(opcode << 2) as i16 as i32 as u32)
-            + 4
+        device.rsp.cpu.branch_state.pc = device.rsp.regs2
+            [device::rsp_interface::SP_PC_REG as usize]
+            .wrapping_add(se16(imm(opcode) as i16) << 2)
+            + 4;
     } else {
         device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
