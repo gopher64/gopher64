@@ -166,6 +166,7 @@ impl Device {
                 cic_seed: 0,
                 cic_type: cart_rom::CicType::CicNus6102,
                 rdram_size_offset: 0,
+                rtc: cart::AfRtc { control: 0x0200 },
             },
             memory: memory::Memory {
                 fast_read: [unmapped::read_mem; 0x2000],
