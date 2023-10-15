@@ -18,6 +18,7 @@ pub struct Cart {
     pub cic_type: CicType,
     pub cic_seed: u8,
     pub rdram_size_offset: usize,
+    pub rtc: device::cart::AfRtc,
 }
 
 pub fn read_mem_fast(

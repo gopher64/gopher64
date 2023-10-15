@@ -10,6 +10,7 @@ dirs = "5.0"
 zip = "0.6"
 governor = "0.6"
 sevenz-rust = "0.5"
+chrono = "0.4"
 sha2 = "0.10"
 sdl2-sys = { git = "https://github.com/Rust-SDL2/rust-sdl2.git" }
 clap = { version = "4.4", features = ["derive"] }
