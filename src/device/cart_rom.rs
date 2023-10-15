@@ -7,6 +7,7 @@ pub enum CicType {
     CicNus6103,
     CicNus6105,
     CicNus6106,
+    CicNus5167,
 }
 
 pub const CART_MASK: usize = 0xFFFFFFF;
@@ -69,8 +70,14 @@ pub fn write_mem(device: &mut device::Device, _address: u64, value: u32, mask: u
     );
 }
 
-pub fn dma_read(device: &mut device::Device, _cart_addr: u32, _dram_addr: u32, length: u32) -> u64 {
-    return device::pi::calculate_cycles(device, 1, length);
+pub fn dma_read(
+    _device: &mut device::Device,
+    _cart_addr: u32,
+    _dram_addr: u32,
+    _length: u32,
+) -> u64 {
+    panic!("cart rom write");
+    //    return device::pi::calculate_cycles(device, 1, length);
 }
 
 // cart is big endian, rdram is native endian
@@ -102,10 +109,28 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     set_system_region(device, device.cart.rom[0x3E]);
     set_cic(device);
 
-    let data =
-        std::str::from_utf8(&device.cart.rom[0x20 as usize..(0x20 + 0x14) as usize]).unwrap();
+    let decoded_game_name;
+    let jis_string;
+    let utf8_result = std::str::from_utf8(&device.cart.rom[0x20 as usize..(0x20 + 0x14) as usize]);
+    if utf8_result.is_ok() {
+        decoded_game_name = utf8_result.unwrap()
+    } else {
+        let (jis_result, _enc, jis_errors) =
+            encoding_rs::SHIFT_JIS.decode(&device.cart.rom[0x20 as usize..(0x20 + 0x14) as usize]);
+        if jis_errors {
+            decoded_game_name = "Unknown"
+        } else {
+            jis_string = jis_result.to_string();
+            decoded_game_name = jis_string.as_str();
+        }
+    }
     let hash = calculate_hash(&device.cart.rom);
-    device.ui.game_name = format!("{}-{}", data.trim().trim_matches(char::from(0)), hash);
+    device.ui.game_name = format!(
+        "{}-{}",
+        decoded_game_name.trim().trim_matches(char::from(0)),
+        hash
+    );
+
     device.ui.game_id = String::from_utf8(device.cart.rom[0x3B..0x3E].to_vec()).unwrap();
 }
 
@@ -144,6 +169,11 @@ pub fn set_cic(device: &mut device::Device) {
         "36ADC40148AF56F0D78CD505EB6A90117D1FD6F11C6309E52ED36BC4C6BA340E" => {
             device.cart.cic_type = CicType::CicNus6106;
             device.cart.cic_seed = 0x85;
+            device.cart.rdram_size_offset = 0x318;
+        }
+        "53C0088FB777870D0AF32F0251E964030E2E8B72E830C26042FD191169508C05" => {
+            device.cart.cic_type = CicType::CicNus5167;
+            device.cart.cic_seed = 0xdd;
             device.cart.rdram_size_offset = 0x318;
         }
         _ => {
