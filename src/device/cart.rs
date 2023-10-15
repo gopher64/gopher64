@@ -145,7 +145,7 @@ pub fn time2data(device: &mut device::Device, offset: usize) {
 }
 
 pub fn af_rtc_read_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
-    match block {
+    match device.pif.ram[block as usize] {
         0 => {
             device.pif.ram[offset] = device.cart.rtc.control as u8;
             device.pif.ram[offset + 1] = (device.cart.rtc.control >> 8) as u8;
@@ -159,12 +159,12 @@ pub fn af_rtc_read_block(device: &mut device::Device, block: usize, offset: usiz
             device.pif.ram[status as usize] = 0x00;
         }
         _ => {
-            panic!("AF-RTC read invalid block {}", block);
+            panic!("AF-RTC read invalid block");
         }
     }
 }
 pub fn af_rtc_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
-    match block {
+    match device.pif.ram[block as usize] {
         0 => {
             device.cart.rtc.control =
                 (device.pif.ram[offset + 1] as u16) << 8 | device.pif.ram[offset] as u16;
