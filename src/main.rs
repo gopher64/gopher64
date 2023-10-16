@@ -1,4 +1,5 @@
 #![feature(round_ties_even)]
+#![feature(string_remove_matches)]
 use std::fs;
 use std::io::Read;
 mod device;

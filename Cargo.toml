@@ -12,7 +12,7 @@ governor = "0.6"
 encoding_rs = "0.8"
 sevenz-rust = "0.5"
 chrono = "0.4"
-bsdiff = "0.1"
+qbsdiff = "1.4"
 sha2 = "0.10"
 sdl2-sys = { git = "https://github.com/Rust-SDL2/rust-sdl2.git" }
 clap = { version = "4.4", features = ["derive"] }

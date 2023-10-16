@@ -86,10 +86,9 @@ pub fn dma_read(
             device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap]
     }
 
-    let mut cursor = std::io::Cursor::new(Vec::new());
-    bsdiff::diff::diff(&device.cart.rom_orig, &device.cart.rom, &mut cursor).unwrap();
-
-    device.ui.saves.romsave = cursor.into_inner();
+    qbsdiff::Bsdiff::new(&device.cart.rom_orig, &device.cart.rom)
+        .compare(std::io::Cursor::new(&mut device.ui.saves.romsave))
+        .unwrap();
 
     ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Romsave);
 
@@ -141,12 +140,10 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
             decoded_game_name = jis_string.as_str();
         }
     }
+    let mut formatted_name = decoded_game_name.trim().to_owned();
+    formatted_name.remove_matches(char::from(0));
     let hash = calculate_hash(&device.cart.rom);
-    device.ui.game_name = format!(
-        "{}-{}",
-        decoded_game_name.trim().trim_matches(char::from(0)),
-        hash
-    );
+    device.ui.game_name = format!("{}-{}", formatted_name, hash);
 
     device.ui.game_id = String::from_utf8(device.cart.rom[0x3B..0x3E].to_vec()).unwrap();
 }
@@ -155,9 +152,13 @@ pub fn load_rom_save(device: &mut device::Device) {
     if device.ui.saves.romsave.is_empty() {
         return;
     }
-    let mut cursor: std::io::Cursor<&Vec<u8>> =
-        std::io::Cursor::new(device.ui.saves.romsave.as_ref());
-    bsdiff::patch::patch(&device.cart.rom_orig, &mut cursor, &mut device.cart.rom).unwrap();
+    let patcher = qbsdiff::Bspatch::new(&device.ui.saves.romsave).unwrap();
+    patcher
+        .apply(
+            &device.cart.rom_orig,
+            std::io::Cursor::new(&mut device.cart.rom),
+        )
+        .unwrap();
 }
 
 pub fn set_system_region(device: &mut device::Device, country: u8) {
