@@ -1,3 +1,4 @@
+use crate::device;
 use crate::ui;
 
 #[derive(PartialEq)]
@@ -123,27 +124,29 @@ pub fn init(ui: &mut ui::Ui) {
         .push(ui.game_name.to_owned() + ".romsave");
 }
 
-pub fn load_saves(ui: &mut ui::Ui) {
-    let eep = std::fs::read(&mut ui.paths.eep_file_path);
+pub fn load_saves(device: &mut device::Device) {
+    let eep = std::fs::read(&mut device.ui.paths.eep_file_path);
     if eep.is_ok() {
-        ui.saves.eeprom = eep.unwrap();
+        device.ui.saves.eeprom = eep.unwrap();
     }
-    let sra = std::fs::read(&mut ui.paths.sra_file_path);
+    let sra = std::fs::read(&mut device.ui.paths.sra_file_path);
     if sra.is_ok() {
-        ui.saves.sram = sra.unwrap();
+        device.ui.saves.sram = sra.unwrap();
     }
-    let fla = std::fs::read(&mut ui.paths.fla_file_path);
+    let fla = std::fs::read(&mut device.ui.paths.fla_file_path);
     if fla.is_ok() {
-        ui.saves.flash = fla.unwrap();
+        device.ui.saves.flash = fla.unwrap();
     }
-    let mempak = std::fs::read(&mut ui.paths.pak_file_path);
+    let mempak = std::fs::read(&mut device.ui.paths.pak_file_path);
     if mempak.is_ok() {
-        ui.saves.mempak = mempak.unwrap();
+        device.ui.saves.mempak = mempak.unwrap();
     }
-    let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
+    let romsave = std::fs::read(&mut device.ui.paths.romsave_file_path);
     if romsave.is_ok() {
-        ui.saves.romsave = romsave.unwrap();
+        device.ui.saves.romsave = romsave.unwrap();
     }
+
+    device::cart_rom::load_rom_save(device)
 }
 
 pub fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {

@@ -98,7 +98,6 @@ fn main() {
 
     let mut device = device::Device::new();
 
-    ui::storage::load_saves(&mut device.ui);
     device::cart_rom::init(&mut device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
@@ -116,6 +115,7 @@ fn main() {
     device::cpu::init(&mut device);
 
     ui::storage::init(&mut device.ui);
+    ui::storage::load_saves(&mut device);
 
     device::cpu::run(&mut device);
 }
