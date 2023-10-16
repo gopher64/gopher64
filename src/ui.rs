@@ -5,8 +5,8 @@ pub mod video;
 
 pub struct Ui {
     pub save_type: Vec<storage::SaveTypes>,
-    pub game_name: String,
     pub game_id: String,
+    pub game_hash: String,
     pub paths: storage::Paths,
     pub saves: storage::Saves,
     pub sdl_context: Option<sdl2::Sdl>,
@@ -23,8 +23,8 @@ impl Ui {
         let audio_subsystem = sdl_context.audio().unwrap();
         Ui {
             save_type: vec![],
-            game_name: String::new(),
             game_id: String::new(),
+            game_hash: String::new(),
             paths: storage::Paths {
                 eep_file_path: std::path::PathBuf::new(),
                 fla_file_path: std::path::PathBuf::new(),

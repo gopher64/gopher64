@@ -125,25 +125,7 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     set_system_region(device, device.cart.rom[0x3E]);
     set_cic(device);
 
-    let decoded_game_name;
-    let jis_string;
-    let utf8_result = std::str::from_utf8(&device.cart.rom[0x20 as usize..(0x20 + 0x14) as usize]);
-    if utf8_result.is_ok() {
-        decoded_game_name = utf8_result.unwrap()
-    } else {
-        let (jis_result, _enc, jis_errors) =
-            encoding_rs::SHIFT_JIS.decode(&device.cart.rom[0x20 as usize..(0x20 + 0x14) as usize]);
-        if jis_errors {
-            decoded_game_name = "Unknown"
-        } else {
-            jis_string = jis_result.to_string();
-            decoded_game_name = jis_string.as_str();
-        }
-    }
-    let mut formatted_name = decoded_game_name.trim().to_owned();
-    formatted_name.remove_matches(char::from(0));
-    let hash = calculate_hash(&device.cart.rom);
-    device.ui.game_name = format!("{}-{}", formatted_name, hash);
+    device.ui.game_hash = calculate_hash(&device.cart.rom);
 
     device.ui.game_id = String::from_utf8(device.cart.rom[0x3B..0x3E].to_vec()).unwrap();
 }

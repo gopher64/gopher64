@@ -100,27 +100,27 @@ pub fn init(ui: &mut ui::Ui) {
     ui.paths.eep_file_path = base_path.clone();
     ui.paths
         .eep_file_path
-        .push(ui.game_name.to_owned() + ".eep");
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".eep");
 
     ui.paths.sra_file_path = base_path.clone();
     ui.paths
         .sra_file_path
-        .push(ui.game_name.to_owned() + ".sra");
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".sra");
 
     ui.paths.fla_file_path = base_path.clone();
     ui.paths
         .fla_file_path
-        .push(ui.game_name.to_owned() + ".fla");
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".fla");
 
     ui.paths.pak_file_path = base_path.clone();
     ui.paths
         .pak_file_path
-        .push(ui.game_name.to_owned() + ".mpk");
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".mpk");
 
     ui.paths.romsave_file_path = base_path.clone();
     ui.paths
         .romsave_file_path
-        .push(ui.game_name.to_owned() + ".romsave");
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".romsave");
 }
 
 pub fn load_saves(ui: &mut ui::Ui) {
