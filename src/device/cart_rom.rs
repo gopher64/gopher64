@@ -14,7 +14,6 @@ pub enum CicType {
 pub const CART_MASK: usize = 0xFFFFFFF;
 pub struct Cart {
     pub rom: Vec<u8>,
-    pub rom_orig: Vec<u8>,
     pub is_viewer_buffer: [u8; 0xFFFF],
     pub pal: bool,
     pub latch: u32,
@@ -123,7 +122,6 @@ pub fn dma_write(
 
 pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     device.cart.rom = rom_file.clone();
-    device.cart.rom_orig = rom_file.clone();
     set_system_region(device, device.cart.rom[0x3E]);
     set_cic(device);
 
