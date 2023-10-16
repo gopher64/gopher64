@@ -115,7 +115,8 @@ fn main() {
     device::cpu::init(&mut device);
 
     ui::storage::init(&mut device.ui);
-    ui::storage::load_saves(&mut device);
+    ui::storage::load_saves(&mut device.ui);
+    device::cart_rom::load_rom_save(&mut device);
 
     device::cpu::run(&mut device);
 }
