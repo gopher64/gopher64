@@ -1,4 +1,5 @@
 #![feature(round_ties_even)]
+#![feature(string_remove_matches)]
 use std::fs;
 use std::io::Read;
 mod device;
@@ -116,6 +117,7 @@ fn main() {
 
     ui::storage::init(&mut device.ui);
     ui::storage::load_saves(&mut device.ui);
+    device::cart_rom::load_rom_save(&mut device);
 
     device::cpu::run(&mut device);
 }

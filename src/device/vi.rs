@@ -165,6 +165,6 @@ pub fn speed_limiter(device: &mut device::Device) {
         let dur = outcome.wait_time_from(governor::clock::DefaultClock::default().now());
         std::thread::sleep(dur);
 
-        let _ = device.vi.limiter.as_ref().unwrap().check();
+        device.vi.limiter.as_ref().unwrap().check().unwrap();
     }
 }

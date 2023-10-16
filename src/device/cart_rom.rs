@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 use sha2::{Digest, Sha256};
 
 pub enum CicType {
@@ -71,13 +72,28 @@ pub fn write_mem(device: &mut device::Device, _address: u64, value: u32, mask: u
 }
 
 pub fn dma_read(
-    _device: &mut device::Device,
-    _cart_addr: u32,
-    _dram_addr: u32,
-    _length: u32,
+    device: &mut device::Device,
+    mut cart_addr: u32,
+    mut dram_addr: u32,
+    length: u32,
 ) -> u64 {
-    panic!("cart rom write");
-    //    return device::pi::calculate_cycles(device, 1, length);
+    dram_addr &= device::rdram::RDRAM_MASK as u32;
+    cart_addr &= CART_MASK as u32;
+
+    for i in 0..length {
+        device.cart.rom[(cart_addr + i) as usize] =
+            device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
+
+        device.ui.saves.romsave.insert(
+            (cart_addr + i).to_string(),
+            serde_json::to_value(device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap])
+                .unwrap(),
+        );
+    }
+
+    ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Romsave);
+
+    return device::pi::calculate_cycles(device, 1, length);
 }
 
 // cart is big endian, rdram is native endian
@@ -109,29 +125,19 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     set_system_region(device, device.cart.rom[0x3E]);
     set_cic(device);
 
-    let decoded_game_name;
-    let jis_string;
-    let utf8_result = std::str::from_utf8(&device.cart.rom[0x20 as usize..(0x20 + 0x14) as usize]);
-    if utf8_result.is_ok() {
-        decoded_game_name = utf8_result.unwrap()
-    } else {
-        let (jis_result, _enc, jis_errors) =
-            encoding_rs::SHIFT_JIS.decode(&device.cart.rom[0x20 as usize..(0x20 + 0x14) as usize]);
-        if jis_errors {
-            decoded_game_name = "Unknown"
-        } else {
-            jis_string = jis_result.to_string();
-            decoded_game_name = jis_string.as_str();
-        }
-    }
-    let hash = calculate_hash(&device.cart.rom);
-    device.ui.game_name = format!(
-        "{}-{}",
-        decoded_game_name.trim().trim_matches(char::from(0)),
-        hash
-    );
+    device.ui.game_hash = calculate_hash(&device.cart.rom);
 
     device.ui.game_id = String::from_utf8(device.cart.rom[0x3B..0x3E].to_vec()).unwrap();
+}
+
+pub fn load_rom_save(device: &mut device::Device) {
+    if device.ui.saves.romsave.is_empty() {
+        return;
+    }
+    for (key, value) in device.ui.saves.romsave.iter() {
+        device.cart.rom[key.parse::<usize>().unwrap()] =
+            serde_json::from_value(value.clone()).unwrap()
+    }
 }
 
 pub fn set_system_region(device: &mut device::Device, country: u8) {

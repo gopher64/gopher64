@@ -7,6 +7,7 @@ pub enum SaveTypes {
     Sram,
     Flash,
     Mempak,
+    Romsave,
 }
 
 pub struct Paths {
@@ -14,6 +15,7 @@ pub struct Paths {
     pub sra_file_path: std::path::PathBuf,
     pub fla_file_path: std::path::PathBuf,
     pub pak_file_path: std::path::PathBuf,
+    pub romsave_file_path: std::path::PathBuf,
 }
 
 pub struct Saves {
@@ -21,6 +23,7 @@ pub struct Saves {
     pub sram: Vec<u8>,
     pub flash: Vec<u8>,
     pub mempak: Vec<u8>,
+    pub romsave: serde_json::Map<String, serde_json::Value>,
 }
 
 pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
@@ -97,22 +100,27 @@ pub fn init(ui: &mut ui::Ui) {
     ui.paths.eep_file_path = base_path.clone();
     ui.paths
         .eep_file_path
-        .push(ui.game_name.to_owned() + ".eep");
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".eep");
 
     ui.paths.sra_file_path = base_path.clone();
     ui.paths
         .sra_file_path
-        .push(ui.game_name.to_owned() + ".sra");
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".sra");
 
     ui.paths.fla_file_path = base_path.clone();
     ui.paths
         .fla_file_path
-        .push(ui.game_name.to_owned() + ".fla");
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".fla");
 
     ui.paths.pak_file_path = base_path.clone();
     ui.paths
         .pak_file_path
-        .push(ui.game_name.to_owned() + ".mpk");
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".mpk");
+
+    ui.paths.romsave_file_path = base_path.clone();
+    ui.paths
+        .romsave_file_path
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".romsave");
 }
 
 pub fn load_saves(ui: &mut ui::Ui) {
@@ -132,6 +140,15 @@ pub fn load_saves(ui: &mut ui::Ui) {
     if mempak.is_ok() {
         ui.saves.mempak = mempak.unwrap();
     }
+    let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
+    if romsave.is_ok() {
+        ui.saves.romsave = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
+    }
+}
+
+pub fn write_rom_save(ui: &mut ui::Ui) {
+    let f = std::fs::File::create(ui.paths.romsave_file_path.clone()).unwrap();
+    serde_json::to_writer(f, &ui.saves.romsave).unwrap();
 }
 
 pub fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
@@ -153,6 +170,10 @@ pub fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
         SaveTypes::Mempak => {
             path = ui.paths.pak_file_path.as_ref();
             data = ui.saves.mempak.as_ref();
+        }
+        SaveTypes::Romsave => {
+            write_rom_save(ui);
+            return;
         }
     }
     let result = std::fs::write(path, data);
