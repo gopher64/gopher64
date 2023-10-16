@@ -123,6 +123,7 @@ pub fn dma_write(
 pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     device.cart.rom = rom_file.clone();
     device.cart.rom_orig = rom_file.clone();
+    load_rom_save(device);
     set_system_region(device, device.cart.rom[0x3E]);
     set_cic(device);
 
@@ -149,6 +150,15 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     );
 
     device.ui.game_id = String::from_utf8(device.cart.rom[0x3B..0x3E].to_vec()).unwrap();
+}
+
+pub fn load_rom_save(device: &mut device::Device) {
+    if device.ui.saves.romsave.is_empty() {
+        return;
+    }
+    let mut cursor: std::io::Cursor<&Vec<u8>> =
+        std::io::Cursor::new(device.ui.saves.romsave.as_ref());
+    bsdiff::patch::patch(&device.cart.rom_orig, &mut cursor, &mut device.cart.rom).unwrap();
 }
 
 pub fn set_system_region(device: &mut device::Device, country: u8) {
