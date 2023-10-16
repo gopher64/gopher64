@@ -121,7 +121,7 @@ pub fn dma_write(
 }
 
 pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
-    device.cart.rom = rom_file.clone();
+    device.cart.rom = rom_file;
     set_system_region(device, device.cart.rom[0x3E]);
     set_cic(device);
 
