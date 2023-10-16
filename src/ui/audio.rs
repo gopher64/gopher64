@@ -38,10 +38,10 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
 
     if audio_queued < min_latency {
         let silence_buffer: Vec<i16> = vec![0; ((min_latency - audio_queued) * 2.0) as usize & !1];
-        let _ = audio_device.queue_audio(&silence_buffer);
+        audio_device.queue_audio(&silence_buffer).unwrap();
     }
 
     if audio_queued < acceptable_latency {
-        let _ = audio_device.queue_audio(&primary_buffer);
+        audio_device.queue_audio(&primary_buffer).unwrap();
     }
 }

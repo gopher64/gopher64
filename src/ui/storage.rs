@@ -7,6 +7,7 @@ pub enum SaveTypes {
     Sram,
     Flash,
     Mempak,
+    Romsave,
 }
 
 pub struct Paths {
@@ -14,6 +15,7 @@ pub struct Paths {
     pub sra_file_path: std::path::PathBuf,
     pub fla_file_path: std::path::PathBuf,
     pub pak_file_path: std::path::PathBuf,
+    pub romsave_file_path: std::path::PathBuf,
 }
 
 pub struct Saves {
@@ -21,6 +23,7 @@ pub struct Saves {
     pub sram: Vec<u8>,
     pub flash: Vec<u8>,
     pub mempak: Vec<u8>,
+    pub romsave: Vec<u8>,
 }
 
 pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
@@ -113,6 +116,11 @@ pub fn init(ui: &mut ui::Ui) {
     ui.paths
         .pak_file_path
         .push(ui.game_name.to_owned() + ".mpk");
+
+    ui.paths.romsave_file_path = base_path.clone();
+    ui.paths
+        .romsave_file_path
+        .push(ui.game_name.to_owned() + ".romsave");
 }
 
 pub fn load_saves(ui: &mut ui::Ui) {
@@ -131,6 +139,10 @@ pub fn load_saves(ui: &mut ui::Ui) {
     let mempak = std::fs::read(&mut ui.paths.pak_file_path);
     if mempak.is_ok() {
         ui.saves.mempak = mempak.unwrap();
+    }
+    let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
+    if romsave.is_ok() {
+        ui.saves.romsave = romsave.unwrap();
     }
 }
 
@@ -153,6 +165,10 @@ pub fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
         SaveTypes::Mempak => {
             path = ui.paths.pak_file_path.as_ref();
             data = ui.saves.mempak.as_ref();
+        }
+        SaveTypes::Romsave => {
+            path = ui.paths.romsave_file_path.as_ref();
+            data = ui.saves.romsave.as_ref();
         }
     }
     let result = std::fs::write(path, data);

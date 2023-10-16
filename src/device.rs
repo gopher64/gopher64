@@ -160,6 +160,7 @@ impl Device {
             },
             cart: cart_rom::Cart {
                 rom: Vec::new(),
+                rom_orig: Vec::new(),
                 is_viewer_buffer: [0; 0xFFFF],
                 pal: false,
                 latch: 0,

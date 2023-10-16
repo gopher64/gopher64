@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 use sha2::{Digest, Sha256};
 
 pub enum CicType {
@@ -13,6 +14,7 @@ pub enum CicType {
 pub const CART_MASK: usize = 0xFFFFFFF;
 pub struct Cart {
     pub rom: Vec<u8>,
+    pub rom_orig: Vec<u8>,
     pub is_viewer_buffer: [u8; 0xFFFF],
     pub pal: bool,
     pub latch: u32,
@@ -71,13 +73,27 @@ pub fn write_mem(device: &mut device::Device, _address: u64, value: u32, mask: u
 }
 
 pub fn dma_read(
-    _device: &mut device::Device,
-    _cart_addr: u32,
-    _dram_addr: u32,
-    _length: u32,
+    device: &mut device::Device,
+    mut cart_addr: u32,
+    mut dram_addr: u32,
+    length: u32,
 ) -> u64 {
-    panic!("cart rom write");
-    //    return device::pi::calculate_cycles(device, 1, length);
+    dram_addr &= device::rdram::RDRAM_MASK as u32;
+    cart_addr &= CART_MASK as u32;
+
+    for i in 0..length {
+        device.cart.rom[(cart_addr + i) as usize] =
+            device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap]
+    }
+
+    let mut cursor = std::io::Cursor::new(Vec::new());
+    bsdiff::diff::diff(&device.cart.rom_orig, &device.cart.rom, &mut cursor).unwrap();
+
+    device.ui.saves.romsave = cursor.into_inner();
+
+    ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Romsave);
+
+    return device::pi::calculate_cycles(device, 1, length);
 }
 
 // cart is big endian, rdram is native endian
@@ -105,7 +121,8 @@ pub fn dma_write(
 }
 
 pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
-    device.cart.rom = rom_file;
+    device.cart.rom = rom_file.clone();
+    device.cart.rom_orig = rom_file.clone();
     set_system_region(device, device.cart.rom[0x3E]);
     set_cic(device);
 
