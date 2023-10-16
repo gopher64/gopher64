@@ -83,12 +83,14 @@ pub fn dma_read(
 
     for i in 0..length {
         device.cart.rom[(cart_addr + i) as usize] =
-            device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap]
-    }
+            device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
 
-    qbsdiff::Bsdiff::new(&device.cart.rom_orig, &device.cart.rom)
-        .compare(std::io::Cursor::new(&mut device.ui.saves.romsave))
-        .unwrap();
+        device.ui.saves.romsave.insert(
+            (cart_addr + i).to_string(),
+            serde_json::to_value(device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap])
+                .unwrap(),
+        );
+    }
 
     ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Romsave);
 
@@ -152,13 +154,10 @@ pub fn load_rom_save(device: &mut device::Device) {
     if device.ui.saves.romsave.is_empty() {
         return;
     }
-    let patcher = qbsdiff::Bspatch::new(&device.ui.saves.romsave).unwrap();
-    patcher
-        .apply(
-            &device.cart.rom_orig,
-            std::io::Cursor::new(&mut device.cart.rom),
-        )
-        .unwrap();
+    for (key, value) in device.ui.saves.romsave.iter() {
+        device.cart.rom[key.parse::<usize>().unwrap()] =
+            serde_json::from_value(value.clone()).unwrap()
+    }
 }
 
 pub fn set_system_region(device: &mut device::Device, country: u8) {

@@ -23,7 +23,7 @@ pub struct Saves {
     pub sram: Vec<u8>,
     pub flash: Vec<u8>,
     pub mempak: Vec<u8>,
-    pub romsave: Vec<u8>,
+    pub romsave: serde_json::Map<String, serde_json::Value>,
 }
 
 pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
@@ -142,8 +142,13 @@ pub fn load_saves(ui: &mut ui::Ui) {
     }
     let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
     if romsave.is_ok() {
-        ui.saves.romsave = romsave.unwrap();
+        ui.saves.romsave = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
     }
+}
+
+pub fn write_rom_save(ui: &mut ui::Ui) {
+    let f = std::fs::File::create(ui.paths.romsave_file_path.clone()).unwrap();
+    serde_json::to_writer(f, &ui.saves.romsave).unwrap();
 }
 
 pub fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
@@ -167,8 +172,8 @@ pub fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
             data = ui.saves.mempak.as_ref();
         }
         SaveTypes::Romsave => {
-            path = ui.paths.romsave_file_path.as_ref();
-            data = ui.saves.romsave.as_ref();
+            write_rom_save(ui);
+            return;
         }
     }
     let result = std::fs::write(path, data);

@@ -37,7 +37,7 @@ impl Ui {
                 sram: Vec::new(),
                 flash: Vec::new(),
                 mempak: Vec::new(),
-                romsave: Vec::new(),
+                romsave: serde_json::Map::new(),
             },
             sdl_context: Some(sdl_context),
             video_subsystem: Some(video_subsystem),
