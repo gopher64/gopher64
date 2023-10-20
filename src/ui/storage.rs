@@ -18,6 +18,8 @@ pub struct Paths {
     pub romsave_file_path: std::path::PathBuf,
 }
 
+// the bool indicates whether the save has been written to
+// if that is the case, it will be flushed to the disk when the program closes
 pub struct Saves {
     pub eeprom: (Vec<u8>, bool),
     pub sram: (Vec<u8>, bool),
