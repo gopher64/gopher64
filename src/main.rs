@@ -17,24 +17,24 @@ struct Args {
         short,
         long,
         value_name = "PROFILE_NAME",
-        help = "Create a new controller profile (keyboard/gamepad mappings)."
+        help = "Create a new input profile (keyboard/gamepad mappings)."
     )]
-    configure_controller_profile: Option<String>,
+    configure_input_profile: Option<String>,
     #[arg(
         short,
         long,
         value_name = "PROFILE_NAME",
-        help = "Must also specify --port. Used to assign a previosuly created profile to a port"
+        help = "Must also specify --port. Used to bind a previously created profile to a port"
     )]
-    assign_controller_profile: Option<String>,
+    bind_input_profile: Option<String>,
     #[arg(
         short,
         long,
-        help = "Lists connected controllers, which can be used in --assign-controller"
+        help = "Lists connected controllers which can be used in --assign-controller"
     )]
     list_controllers: bool,
     #[arg(
-        short = 'b',
+        short,
         long,
         value_name = "CONTROLLER_NUMBER",
         help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
@@ -44,7 +44,7 @@ struct Args {
         short,
         long,
         value_name = "PORT",
-        help = "Valid values: 1-4. To be used alongside --assign-controller-profile and --assign-controller"
+        help = "Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller"
     )]
     port: Option<usize>,
 }
