@@ -4,6 +4,7 @@ pub mod storage;
 pub mod video;
 
 pub struct Ui {
+    pub config_file: std::path::PathBuf,
     pub save_type: Vec<storage::SaveTypes>,
     pub game_id: String,
     pub game_hash: String,
@@ -24,6 +25,7 @@ impl Ui {
         let audio_subsystem = sdl_context.audio().unwrap();
         let joystick_subsystem = sdl_context.joystick().unwrap();
         Ui {
+            config_file: dirs::config_dir().unwrap().join("config.toml"),
             save_type: vec![],
             game_id: String::new(),
             game_hash: String::new(),

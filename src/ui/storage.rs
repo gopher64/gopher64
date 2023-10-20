@@ -88,9 +88,7 @@ pub fn init(ui: &mut ui::Ui) {
     let id = ui.game_id.as_str();
     ui.save_type = get_save_type(id);
 
-    let mut base_path = dirs::data_dir().unwrap();
-    base_path.push("gopher64");
-    base_path.push("saves");
+    let base_path = dirs::data_dir().unwrap().join("gopher64").join("saves");
 
     let result = std::fs::create_dir_all(base_path.clone());
     if result.is_err() {
