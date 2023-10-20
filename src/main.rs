@@ -162,6 +162,18 @@ fn main() {
         );
         return;
     }
+    if args.bind_input_profile.is_some() {
+        if args.port.is_none() {
+            println!("Must specify port number");
+            return;
+        }
+        ui::input::bind_input_profile(
+            &mut device.ui,
+            args.bind_input_profile.unwrap(),
+            args.port.unwrap(),
+        );
+        return;
+    }
     let file_path = std::path::Path::new(args.game.as_ref().unwrap());
 
     let rom_contents = get_rom_contents(file_path);

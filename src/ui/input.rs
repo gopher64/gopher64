@@ -68,7 +68,21 @@ pub fn list_controllers(ui: &mut ui::Ui) {
 }
 
 pub fn assign_controller(ui: &mut ui::Ui, controller: usize, port: usize) {
-    ui.config.input.controller_assignment[port - 1] = Some(controller);
+    let joystick = ui.joystick_subsystem.as_ref().unwrap();
+    let num_joysticks = joystick.num_joysticks().unwrap();
+    if controller < num_joysticks as usize {
+        ui.config.input.controller_assignment[port - 1] = Some(controller);
+    } else {
+        println!("Invalid controller number")
+    }
+}
+
+pub fn bind_input_profile(ui: &mut ui::Ui, profile: String, port: usize) {
+    if ui.config.input.input_profiles.contains_key(&profile) {
+        ui.config.input.input_profile_binding[port - 1] = Some(profile);
+    } else {
+        println!("Invalid profile name")
+    }
 }
 
 pub fn clear_bindings(ui: &mut ui::Ui) {
