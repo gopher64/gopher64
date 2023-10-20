@@ -38,7 +38,10 @@ impl Ui {
         let audio_subsystem = sdl_context.audio().unwrap();
         let joystick_subsystem = sdl_context.joystick().unwrap();
 
-        let config_file_path = dirs::config_dir().unwrap().join("config.json");
+        let config_file_path = dirs::config_dir()
+            .unwrap()
+            .join("gopher64")
+            .join("config.json");
         let config_file = std::fs::read(config_file_path.clone());
         let mut config_map = serde_json::Map::new();
         if config_file.is_ok() {
