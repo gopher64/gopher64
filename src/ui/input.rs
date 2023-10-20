@@ -91,3 +91,5 @@ pub fn clear_bindings(ui: &mut ui::Ui) {
         ui.config.input.input_profile_binding[i] = None;
     }
 }
+
+pub fn configure_input_profile(_ui: &mut ui::Ui, _profile: String) {}

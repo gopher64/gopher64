@@ -174,6 +174,10 @@ fn main() {
         );
         return;
     }
+    if args.configure_input_profile.is_some() {
+        ui::input::configure_input_profile(&mut device.ui, args.configure_input_profile.unwrap());
+        return;
+    }
     let file_path = std::path::Path::new(args.game.as_ref().unwrap());
 
     let rom_contents = get_rom_contents(file_path);
