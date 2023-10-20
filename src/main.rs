@@ -47,6 +47,12 @@ struct Args {
         help = "Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller"
     )]
     port: Option<usize>,
+    #[arg(
+        short = 'z',
+        long,
+        help = "Clear all input profile bindings and controller assignments"
+    )]
+    clear_input_bindings: bool,
 }
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
@@ -129,6 +135,10 @@ fn main() {
     let args = Args::parse();
     let mut device = device::Device::new();
 
+    if args.clear_input_bindings {
+        ui::input::clear_bindings(&mut device.ui);
+        return;
+    }
     if args.port.is_some() {
         let port = args.port.unwrap();
         if port < 1 || port > 4 {
@@ -149,7 +159,8 @@ fn main() {
             &mut device.ui,
             args.assign_controller.unwrap(),
             args.port.unwrap(),
-        )
+        );
+        return;
     }
     let file_path = std::path::Path::new(args.game.as_ref().unwrap());
 
