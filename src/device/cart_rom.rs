@@ -1,5 +1,4 @@
 use crate::device;
-use crate::ui;
 use sha2::{Digest, Sha256};
 
 pub enum CicType {
@@ -84,14 +83,14 @@ pub fn dma_read(
         device.cart.rom[(cart_addr + i) as usize] =
             device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
 
-        device.ui.saves.romsave.insert(
+        device.ui.saves.romsave.0.insert(
             (cart_addr + i).to_string(),
             serde_json::to_value(device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap])
                 .unwrap(),
         );
     }
 
-    ui::storage::write_save(&mut device.ui, ui::storage::SaveTypes::Romsave);
+    device.ui.saves.romsave.1 = true;
 
     return device::pi::calculate_cycles(device, 1, length);
 }
@@ -131,10 +130,10 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
 }
 
 pub fn load_rom_save(device: &mut device::Device) {
-    if device.ui.saves.romsave.is_empty() {
+    if device.ui.saves.romsave.0.is_empty() {
         return;
     }
-    for (key, value) in device.ui.saves.romsave.iter() {
+    for (key, value) in device.ui.saves.romsave.0.iter() {
         device.cart.rom[key.parse::<usize>().unwrap()] =
             serde_json::from_value(value.clone()).unwrap()
     }

@@ -4,7 +4,8 @@ pub mod storage;
 pub mod video;
 
 pub struct Ui {
-    pub config_file: std::path::PathBuf,
+    pub config_file_path: std::path::PathBuf,
+    pub config: serde_json::Map<String, serde_json::Value>,
     pub save_type: Vec<storage::SaveTypes>,
     pub game_id: String,
     pub game_hash: String,
@@ -18,14 +19,35 @@ pub struct Ui {
     pub audio_device: Option<sdl2::audio::AudioQueue<i16>>,
 }
 
+impl Drop for Ui {
+    fn drop(&mut self) {
+        storage::write_saves(self);
+        write_config(self);
+    }
+}
+
+fn write_config(ui: &mut Ui) {
+    let f = std::fs::File::create(ui.config_file_path.clone()).unwrap();
+    serde_json::to_writer(f, &ui.config).unwrap();
+}
+
 impl Ui {
     pub fn new() -> Ui {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
         let audio_subsystem = sdl_context.audio().unwrap();
         let joystick_subsystem = sdl_context.joystick().unwrap();
+
+        let config_file_path = dirs::config_dir().unwrap().join("config.json");
+        let config_file = std::fs::read(config_file_path.clone());
+        let mut config_map = serde_json::Map::new();
+        if config_file.is_ok() {
+            config_map = serde_json::from_slice(config_file.unwrap().as_ref()).unwrap();
+        }
+
         Ui {
-            config_file: dirs::config_dir().unwrap().join("config.toml"),
+            config_file_path: config_file_path,
+            config: config_map,
             save_type: vec![],
             game_id: String::new(),
             game_hash: String::new(),
@@ -37,11 +59,11 @@ impl Ui {
                 romsave_file_path: std::path::PathBuf::new(),
             },
             saves: storage::Saves {
-                eeprom: Vec::new(),
-                sram: Vec::new(),
-                flash: Vec::new(),
-                mempak: Vec::new(),
-                romsave: serde_json::Map::new(),
+                eeprom: (Vec::new(), false),
+                sram: (Vec::new(), false),
+                flash: (Vec::new(), false),
+                mempak: (Vec::new(), false),
+                romsave: (serde_json::Map::new(), false),
             },
             sdl_context: Some(sdl_context),
             video_subsystem: Some(video_subsystem),
