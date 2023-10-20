@@ -127,16 +127,15 @@ fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
 
 fn main() {
     let args = Args::parse();
+    let mut device = device::Device::new();
 
     if args.list_controllers {
-        ui::input::list_controllers();
+        ui::input::list_controllers(&mut device.ui);
         return;
     }
     let file_path = std::path::Path::new(args.game.as_ref().unwrap());
 
     let rom_contents = get_rom_contents(file_path);
-
-    let mut device = device::Device::new();
 
     device::cart_rom::init(&mut device, rom_contents); // cart needs to come before rdram
 

@@ -56,4 +56,13 @@ pub fn get(ui: &mut ui::Ui, _channel: usize) -> u32 {
     return keys;
 }
 
-pub fn list_controllers() {}
+pub fn list_controllers(ui: &mut ui::Ui) {
+    let joystick = ui.joystick_subsystem.as_ref().unwrap();
+    let num_joysticks = joystick.num_joysticks().unwrap();
+    if num_joysticks == 0 {
+        println!("No controllers connected")
+    }
+    for i in 0..num_joysticks {
+        println!("{}: {}", i, joystick.name_for_index(i).unwrap())
+    }
+}
