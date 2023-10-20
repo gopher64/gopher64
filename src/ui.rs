@@ -1,11 +1,12 @@
 pub mod audio;
+pub mod config;
 pub mod input;
 pub mod storage;
 pub mod video;
 
 pub struct Ui {
     pub config_file_path: std::path::PathBuf,
-    pub config: serde_json::Map<String, serde_json::Value>,
+    pub config: config::Config,
     pub save_type: Vec<storage::SaveTypes>,
     pub game_id: String,
     pub game_hash: String,
@@ -43,7 +44,7 @@ impl Ui {
             .join("gopher64")
             .join("config.json");
         let config_file = std::fs::read(config_file_path.clone());
-        let mut config_map = serde_json::Map::new();
+        let mut config_map = config::Config::new();
         if config_file.is_ok() {
             config_map = serde_json::from_slice(config_file.unwrap().as_ref()).unwrap();
         }
