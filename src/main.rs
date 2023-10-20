@@ -13,6 +13,40 @@ struct Args {
     game: Option<String>,
     #[arg(short, long)]
     fullscreen: bool,
+    #[arg(
+        short,
+        long,
+        value_name = "PROFILE_NAME",
+        help = "Create a new controller profile (keyboard/gamepad mappings)."
+    )]
+    configure_controller_profile: Option<String>,
+    #[arg(
+        short,
+        long,
+        value_name = "PROFILE_NAME",
+        help = "Must also specify --port. Used to assign a previosuly created profile to a port"
+    )]
+    assign_controller_profile: Option<String>,
+    #[arg(
+        short,
+        long,
+        help = "Lists connected controllers, which can be used in --assign-controller"
+    )]
+    list_controllers: bool,
+    #[arg(
+        short = 'b',
+        long,
+        value_name = "CONTROLLER_NUMBER",
+        help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
+    )]
+    assign_controller: Option<usize>,
+    #[arg(
+        short,
+        long,
+        value_name = "PORT",
+        help = "Valid values: 1-4. To be used alongside --assign-controller-profile and --assign-controller"
+    )]
+    port: Option<usize>,
 }
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
