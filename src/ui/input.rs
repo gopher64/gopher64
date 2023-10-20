@@ -68,12 +68,12 @@ pub fn list_controllers(ui: &mut ui::Ui) {
 }
 
 pub fn assign_controller(ui: &mut ui::Ui, controller: usize, port: usize) {
-    ui.config.controller_assignment[port - 1] = Some(controller);
+    ui.config.input.controller_assignment[port - 1] = Some(controller);
 }
 
 pub fn clear_bindings(ui: &mut ui::Ui) {
     for i in 0..4 {
-        ui.config.controller_assignment[i] = None;
-        ui.config.input_profile_binding[i] = None;
+        ui.config.input.controller_assignment[i] = None;
+        ui.config.input.input_profile_binding[i] = None;
     }
 }
