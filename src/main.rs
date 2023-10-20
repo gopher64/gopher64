@@ -127,6 +127,11 @@ fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
 
 fn main() {
     let args = Args::parse();
+
+    if args.list_controllers {
+        ui::input::list_controllers();
+        return;
+    }
     let file_path = std::path::Path::new(args.game.as_ref().unwrap());
 
     let rom_contents = get_rom_contents(file_path);

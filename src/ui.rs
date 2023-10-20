@@ -12,6 +12,7 @@ pub struct Ui {
     pub sdl_context: Option<sdl2::Sdl>,
     pub video_subsystem: Option<sdl2::VideoSubsystem>,
     pub audio_subsystem: Option<sdl2::AudioSubsystem>,
+    pub joystick_subsystem: Option<sdl2::JoystickSubsystem>,
     pub window: Option<sdl2::video::Window>,
     pub audio_device: Option<sdl2::audio::AudioQueue<i16>>,
 }
@@ -21,6 +22,7 @@ impl Ui {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
         let audio_subsystem = sdl_context.audio().unwrap();
+        let joystick_subsystem = sdl_context.joystick().unwrap();
         Ui {
             save_type: vec![],
             game_id: String::new(),
@@ -42,6 +44,7 @@ impl Ui {
             sdl_context: Some(sdl_context),
             video_subsystem: Some(video_subsystem),
             audio_subsystem: Some(audio_subsystem),
+            joystick_subsystem: Some(joystick_subsystem),
             window: None,
             audio_device: None,
         }

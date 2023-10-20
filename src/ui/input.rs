@@ -15,6 +15,7 @@ pub fn bound_axis(x: &mut f64, y: &mut f64) {
         *y *= scale_factor;
     }
 }
+
 pub fn get(ui: &mut ui::Ui, _channel: usize) -> u32 {
     let context = ui.sdl_context.as_mut().unwrap();
     let events = context.event_pump().unwrap();
@@ -54,3 +55,5 @@ pub fn get(ui: &mut ui::Ui, _channel: usize) -> u32 {
     keys |= (y.round() as i8 as u32) << 24;
     return keys;
 }
+
+pub fn list_controllers() {}
