@@ -151,7 +151,7 @@ pub fn write_rom_save(ui: &mut ui::Ui) {
 
 pub fn write_saves(ui: &mut ui::Ui) {
     if ui.saves.eeprom.1 {
-        write_save(ui, SaveTypes::Eeprom4k)
+        write_save(ui, SaveTypes::Eeprom16k)
     }
     if ui.saves.sram.1 {
         write_save(ui, SaveTypes::Sram)
