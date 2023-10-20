@@ -129,9 +129,27 @@ fn main() {
     let args = Args::parse();
     let mut device = device::Device::new();
 
+    if args.port.is_some() {
+        let port = args.port.unwrap();
+        if port < 1 || port > 4 {
+            println!("Port must be betwen 1 and 4");
+            return;
+        }
+    }
     if args.list_controllers {
         ui::input::list_controllers(&mut device.ui);
         return;
+    }
+    if args.assign_controller.is_some() {
+        if args.port.is_none() {
+            println!("Must specify port number");
+            return;
+        }
+        ui::input::assign_controller(
+            &mut device.ui,
+            args.assign_controller.unwrap(),
+            args.port.unwrap(),
+        )
     }
     let file_path = std::path::Path::new(args.game.as_ref().unwrap());
 

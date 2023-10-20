@@ -66,3 +66,7 @@ pub fn list_controllers(ui: &mut ui::Ui) {
         println!("{}: {}", i, joystick.name_for_index(i).unwrap())
     }
 }
+
+pub fn assign_controller(ui: &mut ui::Ui, controller: usize, port: usize) {
+    ui.config.controller_assignment[port - 1] = Some(controller);
+}
