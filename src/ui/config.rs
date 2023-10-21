@@ -2,7 +2,7 @@ use crate::ui;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct InputProfile {
-    pub keys: [(bool, i32); 14],
+    pub keys: [(bool, i32); 18],
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

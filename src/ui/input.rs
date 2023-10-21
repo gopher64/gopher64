@@ -17,6 +17,11 @@ pub const L_TRIG: usize = 13;
 pub const X_AXIS: usize = 16;
 pub const Y_AXIS: usize = 24;
 
+pub const AXIS_LEFT: usize = 14;
+pub const AXIS_RIGHT: usize = 15;
+pub const AXIS_UP: usize = 16;
+pub const AXIS_DOWN: usize = 17;
+
 pub const MAX_AXIS_VALUE: f64 = 85.0;
 
 pub fn bound_axis(x: &mut f64, y: &mut f64) {
@@ -54,15 +59,27 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
 
     let mut x: f64 = 0.0;
     let mut y: f64 = 0.0;
-    if keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::Left) {
-        x = -MAX_AXIS_VALUE
-    } else if keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::Right) {
-        x = MAX_AXIS_VALUE
-    }
-    if keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::Down) {
-        y = -MAX_AXIS_VALUE
-    } else if keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::Up) {
-        y = MAX_AXIS_VALUE
+    unsafe {
+        if profile.keys[AXIS_LEFT].0 {
+            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_LEFT].1)) {
+                x = -MAX_AXIS_VALUE
+            }
+        }
+        if profile.keys[AXIS_RIGHT].0 {
+            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_RIGHT].1)) {
+                x = MAX_AXIS_VALUE
+            }
+        }
+        if profile.keys[AXIS_DOWN].0 {
+            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_DOWN].1)) {
+                y = -MAX_AXIS_VALUE
+            }
+        }
+        if profile.keys[AXIS_UP].0 {
+            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_UP].1)) {
+                y = MAX_AXIS_VALUE
+            }
+        }
     }
     bound_axis(&mut x, &mut y);
 
@@ -129,7 +146,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         ("Z", Z_TRIG),
     ];
 
-    let new_keys = [(false, 0); 14];
+    let new_keys = [(false, 0); 18];
 
     for (key, _value) in key_labels.iter() {
         println!("{}", key);
@@ -141,7 +158,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
 }
 
 pub fn get_default_profile() -> ui::config::InputProfile {
-    let mut default_keys = [(false, 0); 14];
+    let mut default_keys = [(false, 0); 18];
     default_keys[R_DPAD] = (true, sdl2::keyboard::Scancode::D as i32);
     default_keys[L_DPAD] = (true, sdl2::keyboard::Scancode::A as i32);
     default_keys[D_DPAD] = (true, sdl2::keyboard::Scancode::S as i32);
@@ -156,6 +173,10 @@ pub fn get_default_profile() -> ui::config::InputProfile {
     default_keys[U_CBUTTON] = (true, sdl2::keyboard::Scancode::I as i32);
     default_keys[R_TRIG] = (true, sdl2::keyboard::Scancode::C as i32);
     default_keys[L_TRIG] = (true, sdl2::keyboard::Scancode::X as i32);
+    default_keys[AXIS_LEFT] = (true, sdl2::keyboard::Scancode::Left as i32);
+    default_keys[AXIS_RIGHT] = (true, sdl2::keyboard::Scancode::Right as i32);
+    default_keys[AXIS_UP] = (true, sdl2::keyboard::Scancode::Up as i32);
+    default_keys[AXIS_DOWN] = (true, sdl2::keyboard::Scancode::Down as i32);
 
     ui::config::InputProfile { keys: default_keys }
 }
