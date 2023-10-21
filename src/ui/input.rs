@@ -2,6 +2,7 @@ use crate::ui;
 
 #[derive(serde::Serialize, serde::Deserialize, Copy, Clone)]
 pub enum InputType {
+    None,
     Keyboard,
     JoystickHat,
     JoystickButton,
@@ -137,11 +138,12 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         ("R", R_TRIG),
         ("Z", Z_TRIG),
     ];
-    let mut new_keys = [(InputType::Keyboard, 0); 14];
+
+    let mut new_keys = [(InputType::None, 0); 14];
 
     for (key, value) in key_labels.iter() {
         println!("{}", key);
-        new_keys[value.to_owned() as usize] = (InputType::Keyboard, 0);
+        new_keys[value.to_owned() as usize] = (InputType::None, 0);
     }
 
     let new_profile = ui::config::InputProfile { keys: new_keys };
