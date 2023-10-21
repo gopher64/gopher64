@@ -1,5 +1,22 @@
 use crate::ui;
 
+pub const R_DPAD: u32 = 0;
+pub const L_DPAD: u32 = 1;
+pub const D_DPAD: u32 = 2;
+pub const U_DPAD: u32 = 3;
+pub const START_BUTTON: u32 = 4;
+pub const Z_TRIG: u32 = 5;
+pub const B_BUTTON: u32 = 6;
+pub const A_BUTTON: u32 = 7;
+pub const R_CBUTTON: u32 = 8;
+pub const L_CBUTTON: u32 = 9;
+pub const D_CBUTTON: u32 = 10;
+pub const U_CBUTTON: u32 = 11;
+pub const R_TRIG: u32 = 12;
+pub const L_TRIG: u32 = 13;
+pub const X_AXIS: u32 = 16;
+pub const Y_AXIS: u32 = 24;
+
 pub const MAX_AXIS_VALUE: f64 = 85.0;
 
 pub fn bound_axis(x: &mut f64, y: &mut f64) {
@@ -22,20 +39,23 @@ pub fn get(ui: &mut ui::Ui, _channel: usize) -> u32 {
     let keyboard_state = events.keyboard_state();
 
     let mut keys = 0;
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::D) as u32) << 0; // R_DPAD
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::A) as u32) << 1; // L_DPAD
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::S) as u32) << 2; // D_DPAD
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::W) as u32) << 3; // U_DPAD
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::Return) as u32) << 4; // START_BUTTON
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::Z) as u32) << 5; // Z_TRIG
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::LCtrl) as u32) << 6; // B_BUTTON
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::LShift) as u32) << 7; // A_BUTTON
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::L) as u32) << 8; // R_CBUTTON
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::J) as u32) << 9; // L_CBUTTON
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::K) as u32) << 10; // D_CBUTTON
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::I) as u32) << 11; // U_CBUTTON
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::C) as u32) << 12; // R_TRIG
-    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::X) as u32) << 13; // L_TRIG
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::D) as u32) << R_DPAD;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::A) as u32) << L_DPAD;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::S) as u32) << D_DPAD;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::W) as u32) << U_DPAD;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::Return) as u32)
+        << START_BUTTON;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::Z) as u32) << Z_TRIG;
+    keys |=
+        (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::LCtrl) as u32) << B_BUTTON;
+    keys |=
+        (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::LShift) as u32) << A_BUTTON;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::L) as u32) << R_CBUTTON;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::J) as u32) << L_CBUTTON;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::K) as u32) << D_CBUTTON;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::I) as u32) << U_CBUTTON;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::C) as u32) << R_TRIG;
+    keys |= (keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::X) as u32) << L_TRIG;
 
     let mut x: f64 = 0.0;
     let mut y: f64 = 0.0;
@@ -51,8 +71,8 @@ pub fn get(ui: &mut ui::Ui, _channel: usize) -> u32 {
     }
     bound_axis(&mut x, &mut y);
 
-    keys |= (x.round() as i8 as u32) << 16; // X_AXIS
-    keys |= (y.round() as i8 as u32) << 24; // Y_AXIS
+    keys |= (x.round() as i8 as u32) << X_AXIS;
+    keys |= (y.round() as i8 as u32) << Y_AXIS;
     return keys;
 }
 
