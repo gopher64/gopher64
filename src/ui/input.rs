@@ -7,6 +7,8 @@ pub enum InputType {
     JoystickHat,
     JoystickButton,
     JoystickAxis,
+    GameControllerButton,
+    GameControllerAxis,
 }
 
 pub const R_DPAD: u32 = 0;
