@@ -1,5 +1,13 @@
 use crate::ui;
 
+#[derive(serde::Serialize, serde::Deserialize, Copy, Clone)]
+pub enum InputType {
+    Keyboard,
+    JoystickHat,
+    JoystickButton,
+    JoystickAxis,
+}
+
 pub const R_DPAD: u32 = 0;
 pub const L_DPAD: u32 = 1;
 pub const D_DPAD: u32 = 2;
@@ -112,4 +120,30 @@ pub fn clear_bindings(ui: &mut ui::Ui) {
     }
 }
 
-pub fn configure_input_profile(_ui: &mut ui::Ui, _profile: String) {}
+pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
+    let key_labels = [
+        ("A", A_BUTTON),
+        ("B", B_BUTTON),
+        ("Start", START_BUTTON),
+        ("D Up", U_DPAD),
+        ("D Down", D_DPAD),
+        ("D Left", L_DPAD),
+        ("D Right", R_DPAD),
+        ("C Up", U_CBUTTON),
+        ("C Down", D_CBUTTON),
+        ("C Left", L_CBUTTON),
+        ("C Right", R_CBUTTON),
+        ("L", L_TRIG),
+        ("R", R_TRIG),
+        ("Z", Z_TRIG),
+    ];
+    let mut new_keys = [(InputType::Keyboard, 0); 14];
+
+    for (key, value) in key_labels.iter() {
+        println!("{}", key);
+        new_keys[value.to_owned() as usize] = (InputType::Keyboard, 0);
+    }
+
+    let new_profile = ui::config::InputProfile { keys: new_keys };
+    ui.config.input.input_profiles.insert(profile, new_profile);
+}

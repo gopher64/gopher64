@@ -1,5 +1,9 @@
+use crate::ui;
+
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct InputProfile {}
+pub struct InputProfile {
+    pub keys: [(ui::input::InputType, usize); 14],
+}
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Input {
