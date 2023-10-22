@@ -158,6 +158,39 @@ pub fn set_axis_from_keys(
     }
 }
 
+pub fn set_buttons_from_joystick(
+    profile: &ui::config::InputProfile,
+    i: usize,
+    joystick: &sdl2::joystick::Joystick,
+    keys: &mut u32,
+) {
+    let profile_joystick_button = profile.joystick_buttons[i];
+    if profile_joystick_button.0 {
+        unsafe {
+            *keys |= (joystick
+                .button(std::mem::transmute(profile_joystick_button.1))
+                .unwrap() as u32)
+                << i;
+        }
+    }
+
+    // TODO joystick hat
+
+    let profile_joystick_axis = profile.joystick_axis[i];
+    if profile_joystick_axis.0 {
+        let axis_position = unsafe {
+            joystick
+                .axis(std::mem::transmute(profile_joystick_axis.1))
+                .unwrap()
+        };
+        if axis_position as isize * profile_joystick_axis.2 as isize > 0 {
+            if axis_position.abs() > std::i16::MAX / 2 {
+                *keys |= 1 << i;
+            }
+        }
+    }
+}
+
 pub fn set_buttons_from_controller(
     profile: &ui::config::InputProfile,
     i: usize,
@@ -204,11 +237,11 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
             }
         }
 
-        if controller.is_some() {
+        if joystick.is_some() {
+            set_buttons_from_joystick(profile, i, joystick.as_ref().unwrap(), &mut keys);
+        } else if controller.is_some() {
             set_buttons_from_controller(profile, i, controller.as_ref().unwrap(), &mut keys);
         }
-
-        // TODO: joystick hat, button, axis
     }
 
     let mut x: f64;
@@ -289,6 +322,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let new_keys = [(false, 0); 18];
     let new_controller_buttons = [(false, 0); 18];
     let new_controller_axis = [(false, 0, 0); 18];
+    let new_joystick_buttons = [(false, 0); 18];
     let new_joystick_axis = [(false, 0, 0); 18];
 
     for (key, _value) in key_labels.iter() {
@@ -301,6 +335,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         keys: new_keys,
         controller_buttons: new_controller_buttons,
         controller_axis: new_controller_axis,
+        joystick_buttons: new_joystick_buttons,
         joystick_axis: new_joystick_axis,
     };
     ui.config.input.input_profiles.insert(profile, new_profile);
@@ -352,6 +387,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
         keys: default_keys,
         controller_buttons: default_controller_buttons,
         controller_axis: default_controller_axis,
+        joystick_buttons: Default::default(),
         joystick_axis: Default::default(),
     }
 }
