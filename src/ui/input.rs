@@ -45,6 +45,49 @@ pub fn bound_axis(x: &mut f64, y: &mut f64) {
     }
 }
 
+pub fn set_axis_from_joystick(
+    profile: &ui::config::InputProfile,
+    joystick: &sdl2::joystick::Joystick,
+) -> (f64, f64) {
+    unsafe {
+        let mut x = 0.0;
+        let mut y = 0.0;
+        if profile.joystick_axis[AXIS_LEFT].0 {
+            let axis_position = joystick
+                .axis(std::mem::transmute(profile.joystick_axis[AXIS_LEFT].1))
+                .unwrap();
+            if axis_position as isize * profile.joystick_axis[AXIS_LEFT].2 as isize > 0 {
+                x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+            }
+        }
+        if profile.joystick_axis[AXIS_RIGHT].0 {
+            let axis_position = joystick
+                .axis(std::mem::transmute(profile.joystick_axis[AXIS_RIGHT].1))
+                .unwrap();
+            if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].2 as isize > 0 {
+                x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+            }
+        }
+        if profile.joystick_axis[AXIS_DOWN].0 {
+            let axis_position = joystick
+                .axis(std::mem::transmute(profile.joystick_axis[AXIS_DOWN].1))
+                .unwrap();
+            if axis_position as isize * profile.joystick_axis[AXIS_DOWN].2 as isize > 0 {
+                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+            }
+        }
+        if profile.joystick_axis[AXIS_UP].0 {
+            let axis_position = joystick
+                .axis(std::mem::transmute(profile.joystick_axis[AXIS_UP].1))
+                .unwrap();
+            if axis_position as isize * profile.joystick_axis[AXIS_UP].2 as isize > 0 {
+                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+            }
+        }
+        return (x, y);
+    }
+}
+
 pub fn set_axis_from_keys(
     profile: &ui::config::InputProfile,
     keyboard_state: sdl2::keyboard::KeyboardState,
@@ -132,49 +175,11 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let mut y: f64;
 
     (x, y) = set_axis_from_keys(profile, keyboard_state);
-    unsafe {
-        if joystick.is_some() {
-            if profile.joystick_axis[AXIS_LEFT].0 {
-                let axis_position = joystick
-                    .as_ref()
-                    .unwrap()
-                    .axis(std::mem::transmute(profile.joystick_axis[AXIS_LEFT].1))
-                    .unwrap();
-                if axis_position as isize * profile.joystick_axis[AXIS_LEFT].2 as isize > 0 {
-                    x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
-                }
-            }
-            if profile.joystick_axis[AXIS_RIGHT].0 {
-                let axis_position = joystick
-                    .as_ref()
-                    .unwrap()
-                    .axis(std::mem::transmute(profile.joystick_axis[AXIS_RIGHT].1))
-                    .unwrap();
-                if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].2 as isize > 0 {
-                    x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
-                }
-            }
-            if profile.joystick_axis[AXIS_DOWN].0 {
-                let axis_position = joystick
-                    .as_ref()
-                    .unwrap()
-                    .axis(std::mem::transmute(profile.joystick_axis[AXIS_DOWN].1))
-                    .unwrap();
-                if axis_position as isize * profile.joystick_axis[AXIS_DOWN].2 as isize > 0 {
-                    y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
-                }
-            }
-            if profile.joystick_axis[AXIS_UP].0 {
-                let axis_position = joystick
-                    .as_ref()
-                    .unwrap()
-                    .axis(std::mem::transmute(profile.joystick_axis[AXIS_UP].1))
-                    .unwrap();
-                if axis_position as isize * profile.joystick_axis[AXIS_UP].2 as isize > 0 {
-                    y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
-                }
-            }
-        } else if controller.is_some() {
+
+    if joystick.is_some() {
+        (x, y) = set_axis_from_joystick(profile, joystick.as_ref().unwrap())
+    } else if controller.is_some() {
+        unsafe {
             if profile.controller_axis[AXIS_LEFT].0 {
                 let axis_position = controller
                     .as_ref()
