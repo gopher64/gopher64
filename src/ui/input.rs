@@ -174,7 +174,18 @@ pub fn set_buttons_from_joystick(
         }
     }
 
-    // TODO joystick hat
+    let profile_joystick_hat = profile.joystick_hat[i];
+    if profile_joystick_hat.0 {
+        unsafe {
+            if joystick
+                .hat(std::mem::transmute(profile_joystick_hat.1))
+                .unwrap()
+                == std::mem::transmute(profile_joystick_hat.2)
+            {
+                *keys |= 1 << i;
+            }
+        }
+    }
 
     let profile_joystick_axis = profile.joystick_axis[i];
     if profile_joystick_axis.0 {
@@ -320,9 +331,10 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     ];
 
     let new_keys = [(false, 0); 18];
-    let new_controller_buttons = [(false, 0); 18];
+    let new_controller_buttons = [(false, 0); 14];
     let new_controller_axis = [(false, 0, 0); 18];
-    let new_joystick_buttons = [(false, 0); 18];
+    let new_joystick_buttons = [(false, 0); 14];
+    let new_joystick_hat = [(false, 0, 0); 14];
     let new_joystick_axis = [(false, 0, 0); 18];
 
     for (key, _value) in key_labels.iter() {
@@ -336,13 +348,14 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         controller_buttons: new_controller_buttons,
         controller_axis: new_controller_axis,
         joystick_buttons: new_joystick_buttons,
+        joystick_hat: new_joystick_hat,
         joystick_axis: new_joystick_axis,
     };
     ui.config.input.input_profiles.insert(profile, new_profile);
 }
 
 pub fn get_default_profile() -> ui::config::InputProfile {
-    let mut default_controller_buttons = [(false, 0); 18];
+    let mut default_controller_buttons = [(false, 0); 14];
     let mut default_controller_axis = [(false, 0, 0); 18];
     let mut default_keys = [(false, 0); 18];
     default_keys[R_DPAD] = (true, sdl2::keyboard::Scancode::D as i32);
@@ -388,6 +401,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
         controller_buttons: default_controller_buttons,
         controller_axis: default_controller_axis,
         joystick_buttons: Default::default(),
+        joystick_hat: Default::default(),
         joystick_axis: Default::default(),
     }
 }

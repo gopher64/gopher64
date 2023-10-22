@@ -3,9 +3,10 @@ use crate::ui;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct InputProfile {
     pub keys: [(bool, i32); 18],
-    pub controller_buttons: [(bool, i32); 18],
+    pub controller_buttons: [(bool, i32); 14],
     pub controller_axis: [(bool, i32, i16); 18],
-    pub joystick_buttons: [(bool, i32); 18],
+    pub joystick_buttons: [(bool, i32); 14],
+    pub joystick_hat: [(bool, i32, i8); 14],
     pub joystick_axis: [(bool, i32, i16); 18],
 }
 
