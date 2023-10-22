@@ -88,6 +88,45 @@ pub fn set_axis_from_joystick(
     }
 }
 
+pub fn set_axis_from_controller(
+    profile: &ui::config::InputProfile,
+    controller: &sdl2::controller::GameController,
+) -> (f64, f64) {
+    unsafe {
+        let mut x = 0.0;
+        let mut y = 0.0;
+        if profile.controller_axis[AXIS_LEFT].0 {
+            let axis_position =
+                controller.axis(std::mem::transmute(profile.controller_axis[AXIS_LEFT].1));
+            if axis_position as isize * profile.controller_axis[AXIS_LEFT].2 as isize > 0 {
+                x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+            }
+        }
+        if profile.controller_axis[AXIS_RIGHT].0 {
+            let axis_position =
+                controller.axis(std::mem::transmute(profile.controller_axis[AXIS_RIGHT].1));
+            if axis_position as isize * profile.controller_axis[AXIS_RIGHT].2 as isize > 0 {
+                x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+            }
+        }
+        if profile.controller_axis[AXIS_DOWN].0 {
+            let axis_position =
+                controller.axis(std::mem::transmute(profile.controller_axis[AXIS_DOWN].1));
+            if axis_position as isize * profile.controller_axis[AXIS_DOWN].2 as isize > 0 {
+                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+            }
+        }
+        if profile.controller_axis[AXIS_UP].0 {
+            let axis_position =
+                controller.axis(std::mem::transmute(profile.controller_axis[AXIS_UP].1));
+            if axis_position as isize * profile.controller_axis[AXIS_UP].2 as isize > 0 {
+                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+            }
+        }
+        return (x, y);
+    }
+}
+
 pub fn set_axis_from_keys(
     profile: &ui::config::InputProfile,
     keyboard_state: sdl2::keyboard::KeyboardState,
@@ -179,44 +218,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     if joystick.is_some() {
         (x, y) = set_axis_from_joystick(profile, joystick.as_ref().unwrap())
     } else if controller.is_some() {
-        unsafe {
-            if profile.controller_axis[AXIS_LEFT].0 {
-                let axis_position = controller
-                    .as_ref()
-                    .unwrap()
-                    .axis(std::mem::transmute(profile.controller_axis[AXIS_LEFT].1));
-                if axis_position as isize * profile.controller_axis[AXIS_LEFT].2 as isize > 0 {
-                    x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
-                }
-            }
-            if profile.controller_axis[AXIS_RIGHT].0 {
-                let axis_position = controller
-                    .as_ref()
-                    .unwrap()
-                    .axis(std::mem::transmute(profile.controller_axis[AXIS_RIGHT].1));
-                if axis_position as isize * profile.controller_axis[AXIS_RIGHT].2 as isize > 0 {
-                    x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
-                }
-            }
-            if profile.controller_axis[AXIS_DOWN].0 {
-                let axis_position = controller
-                    .as_ref()
-                    .unwrap()
-                    .axis(std::mem::transmute(profile.controller_axis[AXIS_DOWN].1));
-                if axis_position as isize * profile.controller_axis[AXIS_DOWN].2 as isize > 0 {
-                    y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
-                }
-            }
-            if profile.controller_axis[AXIS_UP].0 {
-                let axis_position = controller
-                    .as_ref()
-                    .unwrap()
-                    .axis(std::mem::transmute(profile.controller_axis[AXIS_UP].1));
-                if axis_position as isize * profile.controller_axis[AXIS_UP].2 as isize > 0 {
-                    y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
-                }
-            }
-        }
+        (x, y) = set_axis_from_controller(profile, controller.as_ref().unwrap())
     }
     bound_axis(&mut x, &mut y);
 
