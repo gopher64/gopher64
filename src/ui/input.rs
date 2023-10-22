@@ -239,12 +239,14 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let controller = &ui.controllers[channel].game_controller;
     let joystick = &ui.controllers[channel].joystick;
     for i in 0..14 {
-        let profile_key = profile.keys[i];
-        if profile_key.0 {
-            unsafe {
-                keys |= (keyboard_state.is_scancode_pressed(std::mem::transmute(profile_key.1))
-                    as u32)
-                    << i;
+        if profile_name != "default" || (channel == 0 && profile_name == "default") {
+            let profile_key = profile.keys[i];
+            if profile_key.0 {
+                unsafe {
+                    keys |= (keyboard_state.is_scancode_pressed(std::mem::transmute(profile_key.1))
+                        as u32)
+                        << i;
+                }
             }
         }
 
@@ -255,10 +257,12 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
         }
     }
 
-    let mut x: f64;
-    let mut y: f64;
+    let mut x: f64 = 0.0;
+    let mut y: f64 = 0.0;
 
-    (x, y) = set_axis_from_keys(profile, keyboard_state);
+    if profile_name != "default" || (channel == 0 && profile_name == "default") {
+        (x, y) = set_axis_from_keys(profile, keyboard_state);
+    }
 
     if joystick.is_some() {
         (x, y) = set_axis_from_joystick(profile, joystick.as_ref().unwrap())
