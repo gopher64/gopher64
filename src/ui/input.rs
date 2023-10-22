@@ -45,6 +45,37 @@ pub fn bound_axis(x: &mut f64, y: &mut f64) {
     }
 }
 
+pub fn set_axis_from_keys(
+    profile: &ui::config::InputProfile,
+    keyboard_state: sdl2::keyboard::KeyboardState,
+) -> (f64, f64) {
+    unsafe {
+        let mut x = 0.0;
+        let mut y = 0.0;
+        if profile.keys[AXIS_LEFT].0 {
+            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_LEFT].1)) {
+                x = -MAX_AXIS_VALUE
+            }
+        }
+        if profile.keys[AXIS_RIGHT].0 {
+            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_RIGHT].1)) {
+                x = MAX_AXIS_VALUE
+            }
+        }
+        if profile.keys[AXIS_DOWN].0 {
+            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_DOWN].1)) {
+                y = -MAX_AXIS_VALUE
+            }
+        }
+        if profile.keys[AXIS_UP].0 {
+            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_UP].1)) {
+                y = MAX_AXIS_VALUE
+            }
+        }
+        return (x, y);
+    }
+}
+
 pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let context = ui.sdl_context.as_mut().unwrap();
     let events = context.event_pump().unwrap();
@@ -97,30 +128,11 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
         // TODO: joystick hat, button, axis
     }
 
-    let mut x: f64 = 0.0;
-    let mut y: f64 = 0.0;
-    unsafe {
-        if profile.keys[AXIS_LEFT].0 {
-            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_LEFT].1)) {
-                x = -MAX_AXIS_VALUE
-            }
-        }
-        if profile.keys[AXIS_RIGHT].0 {
-            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_RIGHT].1)) {
-                x = MAX_AXIS_VALUE
-            }
-        }
-        if profile.keys[AXIS_DOWN].0 {
-            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_DOWN].1)) {
-                y = -MAX_AXIS_VALUE
-            }
-        }
-        if profile.keys[AXIS_UP].0 {
-            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_UP].1)) {
-                y = MAX_AXIS_VALUE
-            }
-        }
+    let mut x: f64;
+    let mut y: f64;
 
+    (x, y) = set_axis_from_keys(profile, keyboard_state);
+    unsafe {
         if joystick.is_some() {
             if profile.joystick_axis[AXIS_LEFT].0 {
                 let axis_position = joystick
