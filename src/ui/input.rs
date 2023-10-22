@@ -85,7 +85,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
                         .unwrap()
                         .axis(std::mem::transmute(profile_controller_axis.1))
                 };
-                if axis_position * profile_controller_axis.2 > 0 {
+                if axis_position as isize * profile_controller_axis.2 as isize > 0 {
                     if axis_position.abs() > std::i16::MAX / 2 {
                         keys |= 1 << i;
                     }
@@ -126,8 +126,8 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
                     .as_ref()
                     .unwrap()
                     .axis(std::mem::transmute(profile.controller_axis[AXIS_LEFT].1));
-                if axis_position * profile.controller_axis[AXIS_LEFT].2 > 0 {
-                    x = ((axis_position * MAX_AXIS_VALUE as i16 / std::i16::MAX) as f64).neg();
+                if axis_position as isize * profile.controller_axis[AXIS_LEFT].2 as isize > 0 {
+                    x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
                 }
             }
             if profile.controller_axis[AXIS_RIGHT].0 {
@@ -135,8 +135,8 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
                     .as_ref()
                     .unwrap()
                     .axis(std::mem::transmute(profile.controller_axis[AXIS_RIGHT].1));
-                if axis_position * profile.controller_axis[AXIS_RIGHT].2 > 0 {
-                    x = (axis_position * MAX_AXIS_VALUE as i16 / std::i16::MAX) as f64;
+                if axis_position as isize * profile.controller_axis[AXIS_RIGHT].2 as isize > 0 {
+                    x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
                 }
             }
             if profile.controller_axis[AXIS_DOWN].0 {
@@ -144,8 +144,8 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
                     .as_ref()
                     .unwrap()
                     .axis(std::mem::transmute(profile.controller_axis[AXIS_DOWN].1));
-                if axis_position * profile.controller_axis[AXIS_DOWN].2 > 0 {
-                    y = ((axis_position * MAX_AXIS_VALUE as i16 / std::i16::MAX) as f64).neg();
+                if axis_position as isize * profile.controller_axis[AXIS_DOWN].2 as isize > 0 {
+                    y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
                 }
             }
             if profile.controller_axis[AXIS_UP].0 {
@@ -153,16 +153,16 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
                     .as_ref()
                     .unwrap()
                     .axis(std::mem::transmute(profile.controller_axis[AXIS_UP].1));
-                if axis_position * profile.controller_axis[AXIS_UP].2 > 0 {
-                    y = (axis_position * MAX_AXIS_VALUE as i16 / std::i16::MAX) as f64;
+                if axis_position as isize * profile.controller_axis[AXIS_UP].2 as isize > 0 {
+                    y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
                 }
             }
         }
     }
     bound_axis(&mut x, &mut y);
 
-    keys |= (x.round() as i8 as u32) << X_AXIS;
-    keys |= (y.round() as i8 as u32) << Y_AXIS;
+    keys |= (x.round() as i8 as u8 as u32) << X_AXIS;
+    keys |= (y.round() as i8 as u8 as u32) << Y_AXIS;
     return keys;
 }
 
