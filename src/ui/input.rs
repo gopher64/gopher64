@@ -340,7 +340,6 @@ pub fn init(ui: &mut ui::Ui) {
     for i in 0..4 {
         let controller_assignment = ui.config.input.controller_assignment[i];
         if controller_assignment.is_some() {
-            let mut controller_configured = false;
             if ui.config.input.input_profile_binding[i] == "default" {
                 let controller_result = ui
                     .sdl_context
@@ -351,10 +350,9 @@ pub fn init(ui: &mut ui::Ui) {
                     .open(controller_assignment.unwrap());
                 if controller_result.is_ok() {
                     ui.controllers[i].game_controller = Some(controller_result.unwrap());
-                    controller_configured = true
                 }
             }
-            if !controller_configured {
+            if ui.controllers[i].game_controller.is_none() {
                 let joystick_result = ui
                     .sdl_context
                     .as_ref()
