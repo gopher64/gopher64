@@ -1,3 +1,5 @@
+use std::ops::Neg;
+
 use crate::ui;
 
 pub const R_DPAD: usize = 0;
@@ -51,6 +53,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let profile_name = ui.config.input.input_profile_binding[channel].clone();
     let profile = ui.config.input.input_profiles.get(&profile_name).unwrap();
     let mut keys = 0;
+    let controller = &ui.controllers[channel].game_controller;
     for i in 0..14 {
         let profile_key = profile.keys[i];
         if profile_key.0 {
@@ -61,7 +64,6 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
             }
         }
 
-        let controller = &ui.controllers[channel].game_controller;
         if controller.is_some() {
             let profile_controller_button = profile.controller_buttons[i];
             if profile_controller_button.0 {
@@ -115,6 +117,45 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
         if profile.keys[AXIS_UP].0 {
             if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_UP].1)) {
                 y = MAX_AXIS_VALUE
+            }
+        }
+
+        if controller.is_some() {
+            if profile.controller_axis[AXIS_LEFT].0 {
+                let axis_position = controller
+                    .as_ref()
+                    .unwrap()
+                    .axis(std::mem::transmute(profile.controller_axis[AXIS_LEFT].1));
+                if axis_position * profile.controller_axis[AXIS_LEFT].2 > 0 {
+                    x = ((axis_position * MAX_AXIS_VALUE as i16 / std::i16::MAX) as f64).neg();
+                }
+            }
+            if profile.controller_axis[AXIS_RIGHT].0 {
+                let axis_position = controller
+                    .as_ref()
+                    .unwrap()
+                    .axis(std::mem::transmute(profile.controller_axis[AXIS_RIGHT].1));
+                if axis_position * profile.controller_axis[AXIS_RIGHT].2 > 0 {
+                    x = (axis_position * MAX_AXIS_VALUE as i16 / std::i16::MAX) as f64;
+                }
+            }
+            if profile.controller_axis[AXIS_DOWN].0 {
+                let axis_position = controller
+                    .as_ref()
+                    .unwrap()
+                    .axis(std::mem::transmute(profile.controller_axis[AXIS_DOWN].1));
+                if axis_position * profile.controller_axis[AXIS_DOWN].2 > 0 {
+                    y = ((axis_position * MAX_AXIS_VALUE as i16 / std::i16::MAX) as f64).neg();
+                }
+            }
+            if profile.controller_axis[AXIS_UP].0 {
+                let axis_position = controller
+                    .as_ref()
+                    .unwrap()
+                    .axis(std::mem::transmute(profile.controller_axis[AXIS_UP].1));
+                if axis_position * profile.controller_axis[AXIS_UP].2 > 0 {
+                    y = (axis_position * MAX_AXIS_VALUE as i16 / std::i16::MAX) as f64;
+                }
             }
         }
     }
