@@ -49,7 +49,10 @@ impl Ui {
         let config_file = std::fs::read(config_file_path.clone());
         let mut config_map = config::Config::new();
         if config_file.is_ok() {
-            config_map = serde_json::from_slice(config_file.unwrap().as_ref()).unwrap();
+            let result = serde_json::from_slice(config_file.unwrap().as_ref());
+            if result.is_ok() {
+                config_map = result.unwrap();
+            }
         }
 
         Ui {
