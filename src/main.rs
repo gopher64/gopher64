@@ -39,7 +39,7 @@ struct Args {
         value_name = "CONTROLLER_NUMBER",
         help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
     )]
-    assign_controller: Option<usize>,
+    assign_controller: Option<u32>,
     #[arg(
         short,
         long,
@@ -189,6 +189,7 @@ fn main() {
 
     ui::audio::init(&mut device.ui, 33600);
     ui::video::init(&mut device.ui, rdram_ptr, rdram_size, args.fullscreen);
+    ui::input::init(&mut device.ui);
 
     device::mi::init(&mut device);
     device::pif::init(&mut device);

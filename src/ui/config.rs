@@ -3,13 +3,15 @@ use crate::ui;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct InputProfile {
     pub keys: [(bool, i32); 18],
+    pub controller_button: [(bool, i32); 18],
+    pub controller_axis: [(bool, i32, i32); 18],
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Input {
     pub input_profiles: std::collections::HashMap<String, InputProfile>,
     pub input_profile_binding: [String; 4],
-    pub controller_assignment: [Option<usize>; 4],
+    pub controller_assignment: [Option<u32>; 4],
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {

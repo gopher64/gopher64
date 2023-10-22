@@ -24,6 +24,11 @@ pub const AXIS_DOWN: usize = 17;
 
 pub const MAX_AXIS_VALUE: f64 = 85.0;
 
+pub struct Controllers {
+    pub game_controller: Option<sdl2::controller::GameController>,
+    pub joystick: Option<sdl2::joystick::Joystick>,
+}
+
 pub fn bound_axis(x: &mut f64, y: &mut f64) {
     let radius = 95.0; // this is roughly the maxium diagonal distance of the controller
 
@@ -99,10 +104,10 @@ pub fn list_controllers(ui: &mut ui::Ui) {
     }
 }
 
-pub fn assign_controller(ui: &mut ui::Ui, controller: usize, port: usize) {
+pub fn assign_controller(ui: &mut ui::Ui, controller: u32, port: usize) {
     let joystick = ui.joystick_subsystem.as_ref().unwrap();
     let num_joysticks = joystick.num_joysticks().unwrap();
-    if controller < num_joysticks as usize {
+    if controller < num_joysticks {
         ui.config.input.controller_assignment[port - 1] = Some(controller);
     } else {
         println!("Invalid controller number")
@@ -147,17 +152,26 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     ];
 
     let new_keys = [(false, 0); 18];
+    let new_controller_buttons = [(false, 0); 18];
+    let new_controller_axis = [(false, 0, 0); 18];
 
     for (key, _value) in key_labels.iter() {
         println!("{}", key);
+        // TODO: configure input profile
         //new_keys[value.to_owned() as usize] = (InputType::None, 0);
     }
 
-    let new_profile = ui::config::InputProfile { keys: new_keys };
+    let new_profile = ui::config::InputProfile {
+        keys: new_keys,
+        controller_button: new_controller_buttons,
+        controller_axis: new_controller_axis,
+    };
     ui.config.input.input_profiles.insert(profile, new_profile);
 }
 
 pub fn get_default_profile() -> ui::config::InputProfile {
+    let mut default_controller_buttons = [(false, 0); 18];
+    let mut default_controller_axis = [(false, 0, 0); 18];
     let mut default_keys = [(false, 0); 18];
     default_keys[R_DPAD] = (true, sdl2::keyboard::Scancode::D as i32);
     default_keys[L_DPAD] = (true, sdl2::keyboard::Scancode::A as i32);
@@ -178,5 +192,59 @@ pub fn get_default_profile() -> ui::config::InputProfile {
     default_keys[AXIS_UP] = (true, sdl2::keyboard::Scancode::Up as i32);
     default_keys[AXIS_DOWN] = (true, sdl2::keyboard::Scancode::Down as i32);
 
-    ui::config::InputProfile { keys: default_keys }
+    default_controller_buttons[R_DPAD] = (true, sdl2::controller::Button::DPadRight as i32);
+    default_controller_buttons[L_DPAD] = (true, sdl2::controller::Button::DPadLeft as i32);
+    default_controller_buttons[D_DPAD] = (true, sdl2::controller::Button::DPadDown as i32);
+    default_controller_buttons[U_DPAD] = (true, sdl2::controller::Button::DPadUp as i32);
+    default_controller_buttons[START_BUTTON] = (true, sdl2::controller::Button::Start as i32);
+    default_controller_axis[Z_TRIG] = (true, sdl2::controller::Axis::TriggerLeft as i32, 1);
+    default_controller_buttons[B_BUTTON] = (true, sdl2::controller::Button::X as i32);
+    default_controller_buttons[A_BUTTON] = (true, sdl2::controller::Button::A as i32);
+    default_controller_axis[R_CBUTTON] = (true, sdl2::controller::Axis::RightX as i32, 1);
+    default_controller_axis[L_CBUTTON] = (true, sdl2::controller::Axis::RightX as i32, -1);
+    default_controller_axis[D_CBUTTON] = (true, sdl2::controller::Axis::RightY as i32, 1);
+    default_controller_axis[U_CBUTTON] = (true, sdl2::controller::Axis::RightY as i32, -1);
+    default_controller_buttons[R_TRIG] = (true, sdl2::controller::Button::RightShoulder as i32);
+    default_controller_buttons[L_TRIG] = (true, sdl2::controller::Button::LeftShoulder as i32);
+    default_controller_axis[AXIS_LEFT] = (true, sdl2::controller::Axis::LeftX as i32, -1);
+    default_controller_axis[AXIS_RIGHT] = (true, sdl2::controller::Axis::LeftX as i32, 1);
+    default_controller_axis[AXIS_UP] = (true, sdl2::controller::Axis::LeftY as i32, -1);
+    default_controller_axis[AXIS_DOWN] = (true, sdl2::controller::Axis::LeftY as i32, 1);
+
+    ui::config::InputProfile {
+        keys: default_keys,
+        controller_button: default_controller_buttons,
+        controller_axis: default_controller_axis,
+    }
+}
+
+pub fn init(ui: &mut ui::Ui) {
+    for i in 0..4 {
+        let controller_assignment = ui.config.input.controller_assignment[i];
+        if controller_assignment.is_some() {
+            let controller_result = ui
+                .sdl_context
+                .as_ref()
+                .unwrap()
+                .game_controller()
+                .unwrap()
+                .open(controller_assignment.unwrap());
+            if controller_result.is_err() {
+                let joystick_result = ui
+                    .sdl_context
+                    .as_ref()
+                    .unwrap()
+                    .joystick()
+                    .unwrap()
+                    .open(controller_assignment.unwrap());
+                if joystick_result.is_err() {
+                    println!("could not connect joystick")
+                } else {
+                    ui.controllers[i].joystick = Some(joystick_result.unwrap());
+                }
+            } else {
+                ui.controllers[i].game_controller = Some(controller_result.unwrap());
+            }
+        }
+    }
 }
