@@ -54,6 +54,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let profile = ui.config.input.input_profiles.get(&profile_name).unwrap();
     let mut keys = 0;
     let controller = &ui.controllers[channel].game_controller;
+    let joystick = &ui.controllers[channel].joystick;
     for i in 0..14 {
         let profile_key = profile.keys[i];
         if profile_key.0 {
@@ -120,7 +121,48 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
             }
         }
 
-        if controller.is_some() {
+        if joystick.is_some() {
+            if profile.joystick_axis[AXIS_LEFT].0 {
+                let axis_position = joystick
+                    .as_ref()
+                    .unwrap()
+                    .axis(std::mem::transmute(profile.joystick_axis[AXIS_LEFT].1))
+                    .unwrap();
+                if axis_position as isize * profile.joystick_axis[AXIS_LEFT].2 as isize > 0 {
+                    x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+                }
+            }
+            if profile.joystick_axis[AXIS_RIGHT].0 {
+                let axis_position = joystick
+                    .as_ref()
+                    .unwrap()
+                    .axis(std::mem::transmute(profile.joystick_axis[AXIS_RIGHT].1))
+                    .unwrap();
+                if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].2 as isize > 0 {
+                    x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+                }
+            }
+            if profile.joystick_axis[AXIS_DOWN].0 {
+                let axis_position = joystick
+                    .as_ref()
+                    .unwrap()
+                    .axis(std::mem::transmute(profile.joystick_axis[AXIS_DOWN].1))
+                    .unwrap();
+                if axis_position as isize * profile.joystick_axis[AXIS_DOWN].2 as isize > 0 {
+                    y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+                }
+            }
+            if profile.joystick_axis[AXIS_UP].0 {
+                let axis_position = joystick
+                    .as_ref()
+                    .unwrap()
+                    .axis(std::mem::transmute(profile.joystick_axis[AXIS_UP].1))
+                    .unwrap();
+                if axis_position as isize * profile.joystick_axis[AXIS_UP].2 as isize > 0 {
+                    y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+                }
+            }
+        } else if controller.is_some() {
             if profile.controller_axis[AXIS_LEFT].0 {
                 let axis_position = controller
                     .as_ref()
@@ -227,6 +269,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let new_keys = [(false, 0); 18];
     let new_controller_buttons = [(false, 0); 18];
     let new_controller_axis = [(false, 0, 0); 18];
+    let new_joystick_axis = [(false, 0, 0); 18];
 
     for (key, _value) in key_labels.iter() {
         println!("{}", key);
@@ -238,6 +281,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         keys: new_keys,
         controller_buttons: new_controller_buttons,
         controller_axis: new_controller_axis,
+        joystick_axis: new_joystick_axis,
     };
     ui.config.input.input_profiles.insert(profile, new_profile);
 }
@@ -288,6 +332,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
         keys: default_keys,
         controller_buttons: default_controller_buttons,
         controller_axis: default_controller_axis,
+        joystick_axis: Default::default(),
     }
 }
 
@@ -295,14 +340,21 @@ pub fn init(ui: &mut ui::Ui) {
     for i in 0..4 {
         let controller_assignment = ui.config.input.controller_assignment[i];
         if controller_assignment.is_some() {
-            let controller_result = ui
-                .sdl_context
-                .as_ref()
-                .unwrap()
-                .game_controller()
-                .unwrap()
-                .open(controller_assignment.unwrap());
-            if controller_result.is_err() {
+            let mut controller_configured = false;
+            if ui.config.input.input_profile_binding[i] == "default" {
+                let controller_result = ui
+                    .sdl_context
+                    .as_ref()
+                    .unwrap()
+                    .game_controller()
+                    .unwrap()
+                    .open(controller_assignment.unwrap());
+                if controller_result.is_ok() {
+                    ui.controllers[i].game_controller = Some(controller_result.unwrap());
+                    controller_configured = true
+                }
+            }
+            if !controller_configured {
                 let joystick_result = ui
                     .sdl_context
                     .as_ref()
@@ -315,8 +367,6 @@ pub fn init(ui: &mut ui::Ui) {
                 } else {
                     ui.controllers[i].joystick = Some(joystick_result.unwrap());
                 }
-            } else {
-                ui.controllers[i].game_controller = Some(controller_result.unwrap());
             }
         }
     }
