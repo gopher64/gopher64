@@ -158,6 +158,32 @@ pub fn set_axis_from_keys(
     }
 }
 
+pub fn set_buttons_from_controller(
+    profile: &ui::config::InputProfile,
+    i: usize,
+    controller: &sdl2::controller::GameController,
+    keys: &mut u32,
+) {
+    let profile_controller_button = profile.controller_buttons[i];
+    if profile_controller_button.0 {
+        unsafe {
+            *keys |=
+                (controller.button(std::mem::transmute(profile_controller_button.1)) as u32) << i;
+        }
+    }
+
+    let profile_controller_axis = profile.controller_axis[i];
+    if profile_controller_axis.0 {
+        let axis_position =
+            unsafe { controller.axis(std::mem::transmute(profile_controller_axis.1)) };
+        if axis_position as isize * profile_controller_axis.2 as isize > 0 {
+            if axis_position.abs() > std::i16::MAX / 2 {
+                *keys |= 1 << i;
+            }
+        }
+    }
+}
+
 pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let context = ui.sdl_context.as_mut().unwrap();
     let events = context.event_pump().unwrap();
@@ -179,32 +205,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
         }
 
         if controller.is_some() {
-            let profile_controller_button = profile.controller_buttons[i];
-            if profile_controller_button.0 {
-                unsafe {
-                    keys |= (controller
-                        .as_ref()
-                        .unwrap()
-                        .button(std::mem::transmute(profile_controller_button.1))
-                        as u32)
-                        << i;
-                }
-            }
-
-            let profile_controller_axis = profile.controller_axis[i];
-            if profile_controller_axis.0 {
-                let axis_position = unsafe {
-                    controller
-                        .as_ref()
-                        .unwrap()
-                        .axis(std::mem::transmute(profile_controller_axis.1))
-                };
-                if axis_position as isize * profile_controller_axis.2 as isize > 0 {
-                    if axis_position.abs() > std::i16::MAX / 2 {
-                        keys |= 1 << i;
-                    }
-                }
-            }
+            set_buttons_from_controller(profile, i, controller.as_ref().unwrap(), &mut keys);
         }
 
         // TODO: joystick hat, button, axis
