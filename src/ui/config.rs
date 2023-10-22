@@ -3,8 +3,8 @@ use crate::ui;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct InputProfile {
     pub keys: [(bool, i32); 18],
-    pub controller_button: [(bool, i32); 18],
-    pub controller_axis: [(bool, i32, i32); 18],
+    pub controller_buttons: [(bool, i32); 18],
+    pub controller_axis: [(bool, i32, i16); 18],
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

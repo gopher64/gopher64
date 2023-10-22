@@ -60,6 +60,38 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
                     << i;
             }
         }
+
+        let controller = &ui.controllers[channel].game_controller;
+        if controller.is_some() {
+            let profile_controller_button = profile.controller_buttons[i];
+            if profile_controller_button.0 {
+                unsafe {
+                    keys |= (controller
+                        .as_ref()
+                        .unwrap()
+                        .button(std::mem::transmute(profile_controller_button.1))
+                        as u32)
+                        << i;
+                }
+            }
+
+            let profile_controller_axis = profile.controller_axis[i];
+            if profile_controller_axis.0 {
+                let axis_position = unsafe {
+                    controller
+                        .as_ref()
+                        .unwrap()
+                        .axis(std::mem::transmute(profile_controller_axis.1))
+                };
+                if axis_position * profile_controller_axis.2 > 0 {
+                    if axis_position.abs() > std::i16::MAX / 2 {
+                        keys |= 1 << i;
+                    }
+                }
+            }
+        }
+
+        // TODO: joystick hat, button, axis
     }
 
     let mut x: f64 = 0.0;
@@ -163,7 +195,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
 
     let new_profile = ui::config::InputProfile {
         keys: new_keys,
-        controller_button: new_controller_buttons,
+        controller_buttons: new_controller_buttons,
         controller_axis: new_controller_axis,
     };
     ui.config.input.input_profiles.insert(profile, new_profile);
@@ -213,7 +245,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 
     ui::config::InputProfile {
         keys: default_keys,
-        controller_button: default_controller_buttons,
+        controller_buttons: default_controller_buttons,
         controller_axis: default_controller_axis,
     }
 }
