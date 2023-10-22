@@ -33,7 +33,7 @@ impl Config {
                     "default".to_string(),
                     "default".to_string(),
                 ],
-                controller_assignment: [None; 4],
+                controller_assignment: [Some(0), None, None, None],
                 input_profiles: input_profiles,
             },
         }
