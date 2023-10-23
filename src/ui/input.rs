@@ -329,7 +329,10 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
             .unwrap()
             .window("configure input profile", 640, 480);
     builder.position_centered().opengl();
-    let _window = builder.build().unwrap();
+    let window = builder.build().unwrap();
+    let mut canvas = window.into_canvas().build().unwrap();
+    let font =
+        rusttype::Font::try_from_bytes(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
 
     let key_labels = [
         ("A", A_BUTTON),
@@ -356,6 +359,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     for (_key, value) in key_labels.iter() {
         for _event in event_pump.poll_iter() {} // clear events
+
+        ui::video::draw_text("hello!", &mut canvas, &font);
 
         let mut key_set = false;
         while !key_set {
