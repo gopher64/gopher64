@@ -459,14 +459,19 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 
 pub fn init(ui: &mut ui::Ui) {
     let joystick_subsystem = ui.joystick_subsystem.as_ref().unwrap();
+    let mut taken = [false; 4];
     for i in 0..4 {
         let controller_assignment = &ui.config.input.controller_assignment[i];
         if controller_assignment.is_some() {
             let mut joystick_index = u32::MAX;
             let guid = controller_assignment.clone().unwrap();
             for i in 0..joystick_subsystem.num_joysticks().unwrap() {
-                if joystick_subsystem.device_guid(i).unwrap().to_string() == guid {
+                if joystick_subsystem.device_guid(i).unwrap().to_string() == guid
+                    && !taken[i as usize]
+                {
                     joystick_index = i;
+                    taken[i as usize] = true;
+                    break;
                 }
             }
             if joystick_index < u32::MAX {
