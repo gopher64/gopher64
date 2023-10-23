@@ -339,17 +339,32 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         ("Z", Z_TRIG),
     ];
 
-    let new_keys = [(false, 0); 18];
+    let mut new_keys = [(false, 0); 18];
     let new_controller_buttons = [(false, 0); 14];
     let new_controller_axis = [(false, 0, 0); 18];
     let new_joystick_buttons = [(false, 0); 14];
     let new_joystick_hat = [(false, 0, 0); 14];
     let new_joystick_axis = [(false, 0, 0); 18];
 
-    for (key, _value) in key_labels.iter() {
-        println!("{}", key);
-        // TODO: configure input profile
-        //new_keys[value.to_owned() as usize] = (InputType::None, 0);
+    let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
+    for (key, value) in key_labels.iter() {
+        for _event in event_pump.poll_iter() {} // clear events
+        println!("Enter binding for {}", key);
+        let mut key_set = false;
+        while !key_set {
+            for event in event_pump.poll_iter() {
+                match event {
+                    sdl2::event::Event::KeyDown {
+                        scancode: Some(scancode),
+                        ..
+                    } => {
+                        new_keys[*value] = (true, scancode as i32);
+                        key_set = true
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 
     let new_profile = ui::config::InputProfile {
