@@ -49,43 +49,33 @@ pub fn set_axis_from_joystick(
     profile: &ui::config::InputProfile,
     joystick: &sdl2::joystick::Joystick,
 ) -> (f64, f64) {
-    unsafe {
-        let mut x = 0.0;
-        let mut y = 0.0;
-        if profile.joystick_axis[AXIS_LEFT].0 {
-            let axis_position = joystick
-                .axis(std::mem::transmute(profile.joystick_axis[AXIS_LEFT].1))
-                .unwrap();
-            if axis_position as isize * profile.joystick_axis[AXIS_LEFT].2 as isize > 0 {
-                x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
-            }
+    let mut x = 0.0;
+    let mut y = 0.0;
+    if profile.joystick_axis[AXIS_LEFT].0 {
+        let axis_position = joystick.axis(profile.joystick_axis[AXIS_LEFT].1).unwrap();
+        if axis_position as isize * profile.joystick_axis[AXIS_LEFT].2 as isize > 0 {
+            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
         }
-        if profile.joystick_axis[AXIS_RIGHT].0 {
-            let axis_position = joystick
-                .axis(std::mem::transmute(profile.joystick_axis[AXIS_RIGHT].1))
-                .unwrap();
-            if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].2 as isize > 0 {
-                x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
-            }
-        }
-        if profile.joystick_axis[AXIS_DOWN].0 {
-            let axis_position = joystick
-                .axis(std::mem::transmute(profile.joystick_axis[AXIS_DOWN].1))
-                .unwrap();
-            if axis_position as isize * profile.joystick_axis[AXIS_DOWN].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
-            }
-        }
-        if profile.joystick_axis[AXIS_UP].0 {
-            let axis_position = joystick
-                .axis(std::mem::transmute(profile.joystick_axis[AXIS_UP].1))
-                .unwrap();
-            if axis_position as isize * profile.joystick_axis[AXIS_UP].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
-            }
-        }
-        return (x, y);
     }
+    if profile.joystick_axis[AXIS_RIGHT].0 {
+        let axis_position = joystick.axis(profile.joystick_axis[AXIS_RIGHT].1).unwrap();
+        if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].2 as isize > 0 {
+            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+        }
+    }
+    if profile.joystick_axis[AXIS_DOWN].0 {
+        let axis_position = joystick.axis(profile.joystick_axis[AXIS_DOWN].1).unwrap();
+        if axis_position as isize * profile.joystick_axis[AXIS_DOWN].2 as isize > 0 {
+            y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
+        }
+    }
+    if profile.joystick_axis[AXIS_UP].0 {
+        let axis_position = joystick.axis(profile.joystick_axis[AXIS_UP].1).unwrap();
+        if axis_position as isize * profile.joystick_axis[AXIS_UP].2 as isize > 0 {
+            y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
+        }
+    }
+    return (x, y);
 }
 
 pub fn set_axis_from_controller(
@@ -166,24 +156,15 @@ pub fn set_buttons_from_joystick(
 ) {
     let profile_joystick_button = profile.joystick_buttons[i];
     if profile_joystick_button.0 {
-        unsafe {
-            *keys |= (joystick
-                .button(std::mem::transmute(profile_joystick_button.1))
-                .unwrap() as u32)
-                << i;
-        }
+        *keys |= (joystick.button(profile_joystick_button.1).unwrap() as u32) << i;
     }
 
     let profile_joystick_hat = profile.joystick_hat[i];
     if profile_joystick_hat.0 {
-        unsafe {
-            if joystick
-                .hat(std::mem::transmute(profile_joystick_hat.1))
-                .unwrap()
-                == std::mem::transmute(profile_joystick_hat.2)
-            {
-                *keys |= 1 << i;
-            }
+        if joystick.hat(profile_joystick_hat.1).unwrap()
+            == unsafe { std::mem::transmute(profile_joystick_hat.2) }
+        {
+            *keys |= 1 << i;
         }
     }
 
@@ -357,9 +338,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     ];
 
     let mut new_keys = [(false, 0); 18];
-    let mut new_joystick_buttons = [(false, 0); 14];
-    let mut new_joystick_hat = [(false, 0, 0); 14];
-    let mut new_joystick_axis = [(false, 0, 0); 18];
+    let mut new_joystick_buttons = [(false, 0u32); 14];
+    let mut new_joystick_hat = [(false, 0u32, 0); 14];
+    let mut new_joystick_axis = [(false, 0u32, 0); 18];
 
     let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     for (key, value) in key_labels.iter() {
@@ -388,12 +369,12 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         key_set = true
                     }
                     sdl2::event::Event::JoyButtonDown { button_idx, .. } => {
-                        new_joystick_buttons[*value] = (true, button_idx as i32);
+                        new_joystick_buttons[*value] = (true, button_idx as u32);
                         key_set = true
                     }
                     sdl2::event::Event::JoyHatMotion { hat_idx, state, .. } => {
                         new_joystick_hat[*value] =
-                            unsafe { (true, hat_idx as i32, std::mem::transmute(state)) };
+                            unsafe { (true, hat_idx as u32, std::mem::transmute(state)) };
                         key_set = true
                     }
                     sdl2::event::Event::JoyAxisMotion {
@@ -403,7 +384,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                     } => {
                         if axis_value.abs() > i16::MAX / 2 {
                             new_joystick_axis[*value] =
-                                (true, axis_idx as i32, axis_value / axis_value.abs());
+                                (true, axis_idx as u32, axis_value / axis_value.abs());
                             key_set = true
                         }
                     }
