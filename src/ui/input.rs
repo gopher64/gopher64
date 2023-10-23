@@ -349,10 +349,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     ];
 
     let mut new_keys = [(false, 0); 18];
-    let new_controller_buttons = [(false, 0); 14];
-    let new_controller_axis = [(false, 0, 0); 18];
-    let new_joystick_buttons = [(false, 0); 14];
-    let new_joystick_hat = [(false, 0, 0); 14];
+    let mut new_joystick_buttons = [(false, 0); 14];
+    let mut new_joystick_hat = [(false, 0, 0); 14];
     let new_joystick_axis = [(false, 0, 0); 18];
 
     let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
@@ -375,6 +373,15 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         new_keys[*value] = (true, scancode as i32);
                         key_set = true
                     }
+                    sdl2::event::Event::JoyButtonDown { button_idx, .. } => {
+                        new_joystick_buttons[*value] = (true, button_idx as i32);
+                        key_set = true
+                    }
+                    sdl2::event::Event::JoyHatMotion { hat_idx, state, .. } => {
+                        new_joystick_hat[*value] =
+                            unsafe { (true, hat_idx as i32, std::mem::transmute(state)) };
+                        key_set = true
+                    }
                     _ => {}
                 }
             }
@@ -383,8 +390,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
 
     let new_profile = ui::config::InputProfile {
         keys: new_keys,
-        controller_buttons: new_controller_buttons,
-        controller_axis: new_controller_axis,
+        controller_buttons: Default::default(),
+        controller_axis: Default::default(),
         joystick_buttons: new_joystick_buttons,
         joystick_hat: new_joystick_hat,
         joystick_axis: new_joystick_axis,
