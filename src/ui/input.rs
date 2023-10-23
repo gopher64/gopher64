@@ -328,7 +328,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
             .as_ref()
             .unwrap()
             .window("configure input profile", 640, 480);
-    builder.position_centered().opengl();
+    builder.position_centered();
     let window = builder.build().unwrap();
     let mut canvas = window.into_canvas().build().unwrap();
     let font =
