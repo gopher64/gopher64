@@ -57,7 +57,7 @@ pub fn set_axis_from_joystick(
                 .axis(std::mem::transmute(profile.joystick_axis[AXIS_LEFT].1))
                 .unwrap();
             if axis_position as isize * profile.joystick_axis[AXIS_LEFT].2 as isize > 0 {
-                x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+                x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
             }
         }
         if profile.joystick_axis[AXIS_RIGHT].0 {
@@ -65,7 +65,7 @@ pub fn set_axis_from_joystick(
                 .axis(std::mem::transmute(profile.joystick_axis[AXIS_RIGHT].1))
                 .unwrap();
             if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].2 as isize > 0 {
-                x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+                x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
             }
         }
         if profile.joystick_axis[AXIS_DOWN].0 {
@@ -73,7 +73,7 @@ pub fn set_axis_from_joystick(
                 .axis(std::mem::transmute(profile.joystick_axis[AXIS_DOWN].1))
                 .unwrap();
             if axis_position as isize * profile.joystick_axis[AXIS_DOWN].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
             }
         }
         if profile.joystick_axis[AXIS_UP].0 {
@@ -81,7 +81,7 @@ pub fn set_axis_from_joystick(
                 .axis(std::mem::transmute(profile.joystick_axis[AXIS_UP].1))
                 .unwrap();
             if axis_position as isize * profile.joystick_axis[AXIS_UP].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
             }
         }
         return (x, y);
@@ -99,28 +99,28 @@ pub fn set_axis_from_controller(
             let axis_position =
                 controller.axis(std::mem::transmute(profile.controller_axis[AXIS_LEFT].1));
             if axis_position as isize * profile.controller_axis[AXIS_LEFT].2 as isize > 0 {
-                x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+                x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
             }
         }
         if profile.controller_axis[AXIS_RIGHT].0 {
             let axis_position =
                 controller.axis(std::mem::transmute(profile.controller_axis[AXIS_RIGHT].1));
             if axis_position as isize * profile.controller_axis[AXIS_RIGHT].2 as isize > 0 {
-                x = axis_position as f64 * MAX_AXIS_VALUE / std::i16::MAX as f64;
+                x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
             }
         }
         if profile.controller_axis[AXIS_DOWN].0 {
             let axis_position =
                 controller.axis(std::mem::transmute(profile.controller_axis[AXIS_DOWN].1));
             if axis_position as isize * profile.controller_axis[AXIS_DOWN].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
             }
         }
         if profile.controller_axis[AXIS_UP].0 {
             let axis_position =
                 controller.axis(std::mem::transmute(profile.controller_axis[AXIS_UP].1));
             if axis_position as isize * profile.controller_axis[AXIS_UP].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / std::i16::MAX as f64).neg();
+                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
             }
         }
         return (x, y);
@@ -195,7 +195,7 @@ pub fn set_buttons_from_joystick(
                 .unwrap()
         };
         if axis_position as isize * profile_joystick_axis.2 as isize > 0 {
-            if axis_position.abs() > std::i16::MAX / 2 {
+            if axis_position.abs() > i16::MAX / 2 {
                 *keys |= 1 << i;
             }
         }
@@ -221,7 +221,7 @@ pub fn set_buttons_from_controller(
         let axis_position =
             unsafe { controller.axis(std::mem::transmute(profile_controller_axis.1)) };
         if axis_position as isize * profile_controller_axis.2 as isize > 0 {
-            if axis_position.abs() > std::i16::MAX / 2 {
+            if axis_position.abs() > i16::MAX / 2 {
                 *keys |= 1 << i;
             }
         }
@@ -351,7 +351,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut new_keys = [(false, 0); 18];
     let mut new_joystick_buttons = [(false, 0); 14];
     let mut new_joystick_hat = [(false, 0, 0); 14];
-    let new_joystick_axis = [(false, 0, 0); 18];
+    let mut new_joystick_axis = [(false, 0, 0); 18];
 
     let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     for (_key, value) in key_labels.iter() {
@@ -381,6 +381,17 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         new_joystick_hat[*value] =
                             unsafe { (true, hat_idx as i32, std::mem::transmute(state)) };
                         key_set = true
+                    }
+                    sdl2::event::Event::JoyAxisMotion {
+                        axis_idx,
+                        value: axis_value,
+                        ..
+                    } => {
+                        if axis_value.abs() > i16::MAX / 2 {
+                            new_joystick_axis[*value] =
+                                (true, axis_idx as i32, axis_value / axis_value.abs());
+                            key_set = true
+                        }
                     }
                     _ => {}
                 }
@@ -456,14 +467,14 @@ pub fn init(ui: &mut ui::Ui) {
     for i in 0..4 {
         let controller_assignment = &ui.config.input.controller_assignment[i];
         if controller_assignment.is_some() {
-            let mut joystick_index = std::u32::MAX;
+            let mut joystick_index = u32::MAX;
             let guid = controller_assignment.clone().unwrap();
             for i in 0..joystick_subsystem.num_joysticks().unwrap() {
                 if joystick_subsystem.device_guid(i).unwrap().to_string() == guid {
                     joystick_index = i;
                 }
             }
-            if joystick_index < std::u32::MAX {
+            if joystick_index < u32::MAX {
                 if ui.config.input.input_profile_binding[i] == "default" {
                     let controller_result = ui
                         .sdl_context
