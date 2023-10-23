@@ -322,6 +322,15 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         println!("Profile name cannot be default");
         return;
     }
+
+    let mut builder =
+        ui.video_subsystem
+            .as_ref()
+            .unwrap()
+            .window("configure input profile", 640, 480);
+    builder.position_centered();
+    let _window = builder.build().unwrap();
+
     let key_labels = [
         ("A", A_BUTTON),
         ("B", B_BUTTON),
@@ -352,8 +361,13 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         println!("Enter binding for {}", key);
         let mut key_set = false;
         while !key_set {
+            std::thread::sleep(std::time::Duration::from_millis(100));
             for event in event_pump.poll_iter() {
                 match event {
+                    sdl2::event::Event::Window {
+                        win_event: sdl2::event::WindowEvent::Close,
+                        ..
+                    } => return,
                     sdl2::event::Event::KeyDown {
                         scancode: Some(scancode),
                         ..
