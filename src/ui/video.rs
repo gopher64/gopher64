@@ -56,7 +56,7 @@ pub fn draw_text(
     canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
     font: &rusttype::Font,
 ) {
-    let text_size = 48;
+    let text_size = 32;
     let scale = rusttype::Scale::uniform(text_size as f32);
     let v_metrics = font.v_metrics(scale);
     let offset = rusttype::point(10.0, 10.0 + v_metrics.ascent);

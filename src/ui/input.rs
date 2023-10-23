@@ -176,7 +176,7 @@ pub fn set_buttons_from_joystick(
                 .unwrap()
         };
         if axis_position as isize * profile_joystick_axis.2 as isize > 0 {
-            if axis_position.abs() > i16::MAX / 2 {
+            if axis_position.saturating_abs() > i16::MAX / 2 {
                 *keys |= 1 << i;
             }
         }
@@ -202,7 +202,7 @@ pub fn set_buttons_from_controller(
         let axis_position =
             unsafe { controller.axis(std::mem::transmute(profile_controller_axis.1)) };
         if axis_position as isize * profile_controller_axis.2 as isize > 0 {
-            if axis_position.abs() > i16::MAX / 2 {
+            if axis_position.saturating_abs() > i16::MAX / 2 {
                 *keys |= 1 << i;
             }
         }
@@ -335,6 +335,10 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         ("L", L_TRIG),
         ("R", R_TRIG),
         ("Z", Z_TRIG),
+        ("Control Stick Up", AXIS_UP),
+        ("Control Stick Down", AXIS_DOWN),
+        ("Control Stick Left", AXIS_LEFT),
+        ("Control Stick Right", AXIS_RIGHT),
     ];
 
     let mut new_keys = [(false, 0); 18];
@@ -342,6 +346,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut new_joystick_hat = [(false, 0u32, 0); 14];
     let mut new_joystick_axis = [(false, 0u32, 0); 18];
 
+    let mut last_axis_result = (false, 0, 0);
     let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     for (key, value) in key_labels.iter() {
         for _event in event_pump.poll_iter() {} // clear events
@@ -382,10 +387,17 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         value: axis_value,
                         ..
                     } => {
-                        if axis_value.abs() > i16::MAX / 2 {
-                            new_joystick_axis[*value] =
-                                (true, axis_idx as u32, axis_value / axis_value.abs());
-                            key_set = true
+                        if axis_value.saturating_abs() > 24576 {
+                            let result = (
+                                true,
+                                axis_idx as u32,
+                                axis_value / axis_value.saturating_abs(),
+                            );
+                            if result != last_axis_result {
+                                new_joystick_axis[*value] = result;
+                                last_axis_result = result;
+                                key_set = true
+                            }
                         }
                     }
                     _ => {}
