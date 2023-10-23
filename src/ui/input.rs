@@ -357,10 +357,14 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut new_joystick_axis = [(false, 0, 0); 18];
 
     let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
-    for (_key, value) in key_labels.iter() {
+    for (key, value) in key_labels.iter() {
         for _event in event_pump.poll_iter() {} // clear events
 
-        ui::video::draw_text("hello!", &mut canvas, &font);
+        ui::video::draw_text(
+            format!("Select binding for: {key}").as_str(),
+            &mut canvas,
+            &font,
+        );
 
         let mut key_set = false;
         while !key_set {
