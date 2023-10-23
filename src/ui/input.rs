@@ -329,7 +329,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
             .unwrap()
             .window("configure input profile", 640, 480);
     builder.position_centered().opengl();
-    let window = builder.build().unwrap();
+    let _window = builder.build().unwrap();
 
     let key_labels = [
         ("A", A_BUTTON),
@@ -356,7 +356,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let new_joystick_axis = [(false, 0, 0); 18];
 
     let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
-    for (key, value) in key_labels.iter() {
+    for (_key, value) in key_labels.iter() {
         for _event in event_pump.poll_iter() {} // clear events
 
         let mut key_set = false;
