@@ -18,12 +18,14 @@ pub struct Paths {
     pub romsave_file_path: std::path::PathBuf,
 }
 
+// the bool indicates whether the save has been written to
+// if that is the case, it will be flushed to the disk when the program closes
 pub struct Saves {
-    pub eeprom: Vec<u8>,
-    pub sram: Vec<u8>,
-    pub flash: Vec<u8>,
-    pub mempak: Vec<u8>,
-    pub romsave: serde_json::Map<String, serde_json::Value>,
+    pub eeprom: (Vec<u8>, bool),
+    pub sram: (Vec<u8>, bool),
+    pub flash: (Vec<u8>, bool),
+    pub mempak: (Vec<u8>, bool),
+    pub romsave: (serde_json::Map<String, serde_json::Value>, bool),
 }
 
 pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
@@ -88,9 +90,7 @@ pub fn init(ui: &mut ui::Ui) {
     let id = ui.game_id.as_str();
     ui.save_type = get_save_type(id);
 
-    let mut base_path = dirs::data_dir().unwrap();
-    base_path.push("gopher64");
-    base_path.push("saves");
+    let base_path = dirs::data_dir().unwrap().join("gopher64").join("saves");
 
     let result = std::fs::create_dir_all(base_path.clone());
     if result.is_err() {
@@ -126,23 +126,23 @@ pub fn init(ui: &mut ui::Ui) {
 pub fn load_saves(ui: &mut ui::Ui) {
     let eep = std::fs::read(&mut ui.paths.eep_file_path);
     if eep.is_ok() {
-        ui.saves.eeprom = eep.unwrap();
+        ui.saves.eeprom.0 = eep.unwrap();
     }
     let sra = std::fs::read(&mut ui.paths.sra_file_path);
     if sra.is_ok() {
-        ui.saves.sram = sra.unwrap();
+        ui.saves.sram.0 = sra.unwrap();
     }
     let fla = std::fs::read(&mut ui.paths.fla_file_path);
     if fla.is_ok() {
-        ui.saves.flash = fla.unwrap();
+        ui.saves.flash.0 = fla.unwrap();
     }
     let mempak = std::fs::read(&mut ui.paths.pak_file_path);
     if mempak.is_ok() {
-        ui.saves.mempak = mempak.unwrap();
+        ui.saves.mempak.0 = mempak.unwrap();
     }
     let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
     if romsave.is_ok() {
-        ui.saves.romsave = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
+        ui.saves.romsave.0 = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
     }
 }
 
@@ -151,25 +151,43 @@ pub fn write_rom_save(ui: &mut ui::Ui) {
     serde_json::to_writer(f, &ui.saves.romsave).unwrap();
 }
 
+pub fn write_saves(ui: &mut ui::Ui) {
+    if ui.saves.eeprom.1 {
+        write_save(ui, SaveTypes::Eeprom16k)
+    }
+    if ui.saves.sram.1 {
+        write_save(ui, SaveTypes::Sram)
+    }
+    if ui.saves.flash.1 {
+        write_save(ui, SaveTypes::Flash)
+    }
+    if ui.saves.mempak.1 {
+        write_save(ui, SaveTypes::Mempak)
+    }
+    if ui.saves.romsave.1 {
+        write_save(ui, SaveTypes::Romsave)
+    }
+}
+
 pub fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
     let path: &std::path::Path;
     let data: &Vec<u8>;
     match save_type {
         SaveTypes::Eeprom4k | SaveTypes::Eeprom16k => {
             path = ui.paths.eep_file_path.as_ref();
-            data = ui.saves.eeprom.as_ref();
+            data = ui.saves.eeprom.0.as_ref();
         }
         SaveTypes::Sram => {
             path = ui.paths.sra_file_path.as_ref();
-            data = ui.saves.sram.as_ref();
+            data = ui.saves.sram.0.as_ref();
         }
         SaveTypes::Flash => {
             path = ui.paths.fla_file_path.as_ref();
-            data = ui.saves.flash.as_ref();
+            data = ui.saves.flash.0.as_ref();
         }
         SaveTypes::Mempak => {
             path = ui.paths.pak_file_path.as_ref();
-            data = ui.saves.mempak.as_ref();
+            data = ui.saves.mempak.0.as_ref();
         }
         SaveTypes::Romsave => {
             write_rom_save(ui);

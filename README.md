@@ -1,5 +1,29 @@
 # gopher64
 
+```
+Usage: gopher64 [OPTIONS] [GAME]
+
+Arguments:
+  [GAME]  
+
+Options:
+  -f, --fullscreen
+          
+  -c, --configure-input-profile <PROFILE_NAME>
+          Create a new input profile (keyboard/gamepad mappings).
+  -b, --bind-input-profile <PROFILE_NAME>
+          Must also specify --port. Used to bind a previously created profile to a port
+  -l, --list-controllers
+          Lists connected controllers which can be used in --assign-controller
+  -a, --assign-controller <CONTROLLER_NUMBER>
+          Must also specify --port. Used to assign a controller listed in --list-controllers to a port
+  -p, --port <PORT>
+          Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller
+  -h, --help
+          Print help
+  -V, --version
+          Print version
+```
 ## goals
 
 1. Performance. I want to be able to use this emulator on my laptop.
@@ -16,7 +40,11 @@
 
 ## controls
 
-Right now, only keyboard is supported. Keys are mapped according to mupen64plus defaults: https://mupen64plus.org/wiki/index.php/KeyboardSetup#2._Default_Key_Mappings_for_SDL-Input_Plugin
+Keys are mapped according to mupen64plus defaults: https://mupen64plus.org/wiki/index.php/KeyboardSetup#2._Default_Key_Mappings_for_SDL-Input_Plugin. Xbox-style controllers also have a default mapping applied.
+
+You can create you own mappings by running `./gopher64 --configure-input-profile my_profile`. You then bind that profile to a port: `./gopher64 --bind-input-profile my_profile --port 1`
+
+In order to use a controller (for example, an Xbox controller), run `./gopher64 --list-controllers` to get a list of attached controllers, and then assign it by doing `./gopher64 --assign-controller <controller_number> --port 1`
 
 ## contributing
 

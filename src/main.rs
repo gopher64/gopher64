@@ -13,6 +13,46 @@ struct Args {
     game: Option<String>,
     #[arg(short, long)]
     fullscreen: bool,
+    #[arg(
+        short,
+        long,
+        value_name = "PROFILE_NAME",
+        help = "Create a new input profile (keyboard/gamepad mappings)."
+    )]
+    configure_input_profile: Option<String>,
+    #[arg(
+        short,
+        long,
+        value_name = "PROFILE_NAME",
+        help = "Must also specify --port. Used to bind a previously created profile to a port"
+    )]
+    bind_input_profile: Option<String>,
+    #[arg(
+        short,
+        long,
+        help = "Lists connected controllers which can be used in --assign-controller"
+    )]
+    list_controllers: bool,
+    #[arg(
+        short,
+        long,
+        value_name = "CONTROLLER_NUMBER",
+        help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
+    )]
+    assign_controller: Option<u32>,
+    #[arg(
+        short,
+        long,
+        value_name = "PORT",
+        help = "Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller"
+    )]
+    port: Option<usize>,
+    #[arg(
+        short = 'z',
+        long,
+        help = "Clear all input profile bindings and controller assignments"
+    )]
+    clear_input_bindings: bool,
 }
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
@@ -93,11 +133,54 @@ fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
 
 fn main() {
     let args = Args::parse();
+    let mut device = device::Device::new();
+
+    if args.clear_input_bindings {
+        ui::input::clear_bindings(&mut device.ui);
+        return;
+    }
+    if args.port.is_some() {
+        let port = args.port.unwrap();
+        if port < 1 || port > 4 {
+            println!("Port must be betwen 1 and 4");
+            return;
+        }
+    }
+    if args.list_controllers {
+        ui::input::list_controllers(&mut device.ui);
+        return;
+    }
+    if args.assign_controller.is_some() {
+        if args.port.is_none() {
+            println!("Must specify port number");
+            return;
+        }
+        ui::input::assign_controller(
+            &mut device.ui,
+            args.assign_controller.unwrap(),
+            args.port.unwrap(),
+        );
+        return;
+    }
+    if args.bind_input_profile.is_some() {
+        if args.port.is_none() {
+            println!("Must specify port number");
+            return;
+        }
+        ui::input::bind_input_profile(
+            &mut device.ui,
+            args.bind_input_profile.unwrap(),
+            args.port.unwrap(),
+        );
+        return;
+    }
+    if args.configure_input_profile.is_some() {
+        ui::input::configure_input_profile(&mut device.ui, args.configure_input_profile.unwrap());
+        return;
+    }
     let file_path = std::path::Path::new(args.game.as_ref().unwrap());
 
     let rom_contents = get_rom_contents(file_path);
-
-    let mut device = device::Device::new();
 
     device::cart_rom::init(&mut device, rom_contents); // cart needs to come before rdram
 
@@ -106,6 +189,7 @@ fn main() {
 
     ui::audio::init(&mut device.ui, 33600);
     ui::video::init(&mut device.ui, rdram_ptr, rdram_size, args.fullscreen);
+    ui::input::init(&mut device.ui);
 
     device::mi::init(&mut device);
     device::pif::init(&mut device);
