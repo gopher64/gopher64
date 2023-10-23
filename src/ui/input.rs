@@ -277,21 +277,26 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
 }
 
 pub fn list_controllers(ui: &mut ui::Ui) {
-    let joystick = ui.joystick_subsystem.as_ref().unwrap();
-    let num_joysticks = joystick.num_joysticks().unwrap();
+    let joystick_subsystem = ui.joystick_subsystem.as_ref().unwrap();
+    let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
     if num_joysticks == 0 {
         println!("No controllers connected")
     }
     for i in 0..num_joysticks {
-        println!("{}: {}", i, joystick.name_for_index(i).unwrap())
+        println!("{}: {}", i, joystick_subsystem.name_for_index(i).unwrap())
     }
 }
 
 pub fn assign_controller(ui: &mut ui::Ui, controller: u32, port: usize) {
-    let joystick = ui.joystick_subsystem.as_ref().unwrap();
-    let num_joysticks = joystick.num_joysticks().unwrap();
+    let joystick_subsystem = ui.joystick_subsystem.as_ref().unwrap();
+    let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
     if controller < num_joysticks {
-        ui.config.input.controller_assignment[port - 1] = Some(controller);
+        ui.config.input.controller_assignment[port - 1] = Some(
+            joystick_subsystem
+                .device_guid(controller)
+                .unwrap()
+                .to_string(),
+        );
     } else {
         println!("Invalid controller number")
     }
@@ -411,34 +416,46 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 }
 
 pub fn init(ui: &mut ui::Ui) {
+    let joystick_subsystem = ui.joystick_subsystem.as_ref().unwrap();
     for i in 0..4 {
-        let controller_assignment = ui.config.input.controller_assignment[i];
+        let controller_assignment = &ui.config.input.controller_assignment[i];
         if controller_assignment.is_some() {
-            if ui.config.input.input_profile_binding[i] == "default" {
-                let controller_result = ui
-                    .sdl_context
-                    .as_ref()
-                    .unwrap()
-                    .game_controller()
-                    .unwrap()
-                    .open(controller_assignment.unwrap());
-                if controller_result.is_ok() {
-                    ui.controllers[i].game_controller = Some(controller_result.unwrap());
+            let mut joystick_index = std::u32::MAX;
+            let guid = controller_assignment.clone().unwrap();
+            for i in 0..joystick_subsystem.num_joysticks().unwrap() {
+                if joystick_subsystem.device_guid(i).unwrap().to_string() == guid {
+                    joystick_index = i;
                 }
             }
-            if ui.controllers[i].game_controller.is_none() {
-                let joystick_result = ui
-                    .sdl_context
-                    .as_ref()
-                    .unwrap()
-                    .joystick()
-                    .unwrap()
-                    .open(controller_assignment.unwrap());
-                if joystick_result.is_err() {
-                    println!("could not connect joystick")
-                } else {
-                    ui.controllers[i].joystick = Some(joystick_result.unwrap());
+            if joystick_index < std::u32::MAX {
+                if ui.config.input.input_profile_binding[i] == "default" {
+                    let controller_result = ui
+                        .sdl_context
+                        .as_ref()
+                        .unwrap()
+                        .game_controller()
+                        .unwrap()
+                        .open(joystick_index);
+                    if controller_result.is_ok() {
+                        ui.controllers[i].game_controller = Some(controller_result.unwrap());
+                    }
                 }
+                if ui.controllers[i].game_controller.is_none() {
+                    let joystick_result = ui
+                        .sdl_context
+                        .as_ref()
+                        .unwrap()
+                        .joystick()
+                        .unwrap()
+                        .open(joystick_index);
+                    if joystick_result.is_err() {
+                        println!("could not connect joystick")
+                    } else {
+                        ui.controllers[i].joystick = Some(joystick_result.unwrap());
+                    }
+                }
+            } else {
+                println!("Could not bind assigned controller");
             }
         }
     }

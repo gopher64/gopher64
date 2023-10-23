@@ -14,7 +14,7 @@ pub struct InputProfile {
 pub struct Input {
     pub input_profiles: std::collections::HashMap<String, InputProfile>,
     pub input_profile_binding: [String; 4],
-    pub controller_assignment: [Option<u32>; 4],
+    pub controller_assignment: [Option<String>; 4],
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
@@ -33,7 +33,7 @@ impl Config {
                     "default".to_string(),
                     "default".to_string(),
                 ],
-                controller_assignment: [Some(0), None, None, None],
+                controller_assignment: [None, None, None, None],
                 input_profiles: input_profiles,
             },
         }
