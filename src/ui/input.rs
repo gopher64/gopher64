@@ -323,11 +323,6 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         return;
     }
 
-    let font_bytes =
-        sdl2::rwops::RWops::from_bytes(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
-
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
-
     let mut builder =
         ui.video_subsystem
             .as_ref()
@@ -335,10 +330,6 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
             .window("configure input profile", 640, 480);
     builder.position_centered().opengl();
     let window = builder.build().unwrap();
-
-    let mut canvas = window.into_canvas().build().unwrap();
-    let texture_creator = canvas.texture_creator();
-    let font = ttf_context.load_font_from_rwops(font_bytes, 24).unwrap();
 
     let key_labels = [
         ("A", A_BUTTON),
@@ -367,18 +358,6 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     for (key, value) in key_labels.iter() {
         for _event in event_pump.poll_iter() {} // clear events
-
-        let surface = font
-            .render(format!("Enter binding for {key}").as_str())
-            .blended(sdl2::pixels::Color::RGBA(255, 0, 0, 255))
-            .unwrap();
-        let texture = texture_creator
-            .create_texture_from_surface(&surface)
-            .unwrap();
-
-        canvas.clear();
-        canvas.copy(&texture, None, None).unwrap();
-        canvas.present();
 
         let mut key_set = false;
         while !key_set {
