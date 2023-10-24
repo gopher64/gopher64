@@ -169,11 +169,7 @@ pub fn set_buttons_from_joystick(
 
     let profile_joystick_axis = profile.joystick_axis[i];
     if profile_joystick_axis.0 {
-        let axis_position = unsafe {
-            joystick
-                .axis(std::mem::transmute(profile_joystick_axis.1))
-                .unwrap()
-        };
+        let axis_position = joystick.axis(profile_joystick_axis.1).unwrap();
         if axis_position as isize * profile_joystick_axis.2 as isize > 0
             && axis_position.saturating_abs() > i16::MAX / 2
         {
