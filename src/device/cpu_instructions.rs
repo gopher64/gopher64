@@ -505,7 +505,7 @@ pub fn swl(device: &mut device::Device, opcode: u32) {
 
     let mask;
     if n == 0 {
-        mask = !0 as u32
+        mask = u32::MAX
     } else {
         mask = bits_below_mask(8 * (4 - n)) as u32
     }
@@ -552,7 +552,7 @@ pub fn sdl(device: &mut device::Device, opcode: u32) {
 
     let mask;
     if n == 0 {
-        mask = !0 as u64
+        mask = u64::MAX
     } else {
         mask = bits_below_mask(8 * (8 - n))
     }
@@ -1060,7 +1060,7 @@ pub fn div(device: &mut device::Device, opcode: u32) {
         if (device.cpu.gpr[rs(opcode) as usize] as i32) < 0 {
             device.cpu.lo = 1
         } else {
-            device.cpu.lo = !0 as u64
+            device.cpu.lo = u64::MAX
         }
         device.cpu.hi = se32(device.cpu.gpr[rs(opcode) as usize] as i32)
     }
@@ -1079,7 +1079,7 @@ pub fn divu(device: &mut device::Device, opcode: u32) {
                 % (device.cpu.gpr[rt(opcode) as usize] as u32)) as i32,
         );
     } else {
-        device.cpu.lo = !0 as u64;
+        device.cpu.lo = u64::MAX;
         device.cpu.hi = se32(device.cpu.gpr[rs(opcode) as usize] as u32 as i32)
     }
 
@@ -1112,7 +1112,7 @@ pub fn ddiv(device: &mut device::Device, opcode: u32) {
         if ((device.cpu.gpr[rs(opcode) as usize]) as i64) < 0 {
             device.cpu.lo = 1
         } else {
-            device.cpu.lo = !0 as u64
+            device.cpu.lo = u64::MAX
         }
         device.cpu.hi = device.cpu.gpr[rs(opcode) as usize]
     }
@@ -1124,7 +1124,7 @@ pub fn ddivu(device: &mut device::Device, opcode: u32) {
         device.cpu.lo = device.cpu.gpr[rs(opcode) as usize] / device.cpu.gpr[rt(opcode) as usize];
         device.cpu.hi = device.cpu.gpr[rs(opcode) as usize] % device.cpu.gpr[rt(opcode) as usize]
     } else {
-        device.cpu.lo = !0 as u64;
+        device.cpu.lo = u64::MAX;
         device.cpu.hi = device.cpu.gpr[rs(opcode) as usize]
     }
     device::cop0::add_cycles(device, 68);

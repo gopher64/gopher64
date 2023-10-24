@@ -161,7 +161,7 @@ pub fn decode_opcode(device: &mut device::Device, opcode: u32) -> fn(&mut device
 }
 
 pub fn init(device: &mut device::Device) {
-    device.rsp.cpu.reciprocals[0] = !0 as u16;
+    device.rsp.cpu.reciprocals[0] = u16::MAX;
     let mut index = 1;
     while index < 512 {
         let a = (index + 512) as u64;
