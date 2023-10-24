@@ -17,7 +17,7 @@ pub const MM_SI_REGS: usize = 0x04800000;
 pub const MM_DOM2_ADDR2: usize = 0x08000000;
 pub const MM_CART_ROM: usize = 0x10000000;
 pub const MM_PIF_MEM: usize = 0x1fc00000;
-pub const MM_DOM1_ADDR3: usize = 0x1fd00000;
+//pub const MM_DOM1_ADDR3: usize = 0x1fd00000;
 pub const MM_IS_VIEWER: usize = 0x13ff0000;
 
 #[derive(PartialEq)]

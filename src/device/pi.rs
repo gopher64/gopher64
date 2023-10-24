@@ -41,14 +41,10 @@ pub fn read_regs(
 ) -> u32 {
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
-        PI_WR_LEN_REG | PI_RD_LEN_REG => {
-            0x7F
-        }
+        PI_WR_LEN_REG | PI_RD_LEN_REG => 0x7F,
         PI_CART_ADDR_REG => device.pi.regs[reg as usize] & 0xFFFFFFFE,
         PI_DRAM_ADDR_REG => device.pi.regs[reg as usize] & 0xFFFFFE,
-        _ => {
-            device.pi.regs[reg as usize]
-        }
+        _ => device.pi.regs[reg as usize],
     }
 }
 
@@ -121,14 +117,8 @@ pub fn get_handler(address: u32) -> PiHandler {
         write: device::cart_rom::dma_write,
     };
     if address >= device::memory::MM_CART_ROM as u32 {
-        if address >= device::memory::MM_DOM1_ADDR3 as u32 {
-            // this should result in all 0's being read/written
-            handler.read = device::cart_rom::dma_read;
-            handler.write = device::cart_rom::dma_write;
-        } else {
-            handler.read = device::cart_rom::dma_read;
-            handler.write = device::cart_rom::dma_write;
-        }
+        handler.read = device::cart_rom::dma_read;
+        handler.write = device::cart_rom::dma_write;
     } else if address >= device::memory::MM_DOM2_ADDR2 as u32 {
         handler.read = device::sram::dma_read;
         handler.write = device::sram::dma_write;
@@ -189,7 +179,7 @@ pub fn calculate_cycles(device: &mut device::Device, domain: i32, length: u32) -
     cycles += (14.0 + latency) * pages;
     cycles += (pulse_width + release) * (length as f64 / 2.0);
     cycles += 5.0 * pages;
-    (cycles * 1.5) as u64// Converting RCP clock speed to CPU clock speed
+    (cycles * 1.5) as u64 // Converting RCP clock speed to CPU clock speed
 }
 
 pub fn dma_event(device: &mut device::Device) {
