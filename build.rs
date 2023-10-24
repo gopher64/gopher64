@@ -59,4 +59,9 @@ fn main() {
             .flag("-Wno-unused-parameter");
     }
     build.compile("parallel-rdp");
+
+    winres::WindowsResource::new()
+        .set_icon("data/icon.ico")
+        .compile()
+        .unwrap();
 }
