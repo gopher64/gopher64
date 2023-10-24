@@ -273,7 +273,7 @@ pub fn init(device: &mut device::Device) {
         u32::MAX as u64, // compare
         COP0_STATUS_REG_MASK,
         COP0_CAUSE_REG_MASK,
-        u32::MAX, // EPC
+        u64::MAX, // EPC
         0,        // previd, read only
         COP0_CONFIG_REG_MASK,
         COP0_LLADDR_REG_MASK,
@@ -289,7 +289,7 @@ pub fn init(device: &mut device::Device) {
         0, // cache error
         COP0_TAGLO_REG_MASK,
         0,        // taghi
-        u32::MAX, // ErrorPC
+        u64::MAX, // ErrorPC
         0,        // 31
     ];
 
