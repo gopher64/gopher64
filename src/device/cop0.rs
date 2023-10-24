@@ -204,7 +204,7 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
             let mut compare_event_diff = (data as u32).wrapping_sub(current_count as u32);
 
             if compare_event_diff == 0 {
-                compare_event_diff += !0 as u32;
+                compare_event_diff += u32::MAX;
             }
 
             device::events::create_event(
@@ -237,7 +237,7 @@ pub fn compare_event(device: &mut device::Device) {
     device::events::create_event(
         device,
         device::events::EventType::Compare,
-        device.cpu.next_event_count + (!0 as u32 as u64),
+        device.cpu.next_event_count + (u32::MAX as u64),
         compare_event,
     );
     device::exceptions::check_pending_interrupts(device);
@@ -266,15 +266,15 @@ pub fn init(device: &mut device::Device) {
         COP0_CONTEXT_REG_MASK,
         COP0_PAGEMASK_REG_MASK,
         COP0_WIRED_REG_MASK,
-        0,                // 7
-        0,                // BadVAddr, read only
-        !0 as u32 as u64, // count
+        0,               // 7
+        0,               // BadVAddr, read only
+        u32::MAX as u64, // count
         COP0_ENTRYHI_REG_MASK,
-        !0 as u32 as u64, // compare
+        u32::MAX as u64, // compare
         COP0_STATUS_REG_MASK,
         COP0_CAUSE_REG_MASK,
-        !0, // EPC
-        0,  // previd, read only
+        u64::MAX, // EPC
+        0,        // previd, read only
         COP0_CONFIG_REG_MASK,
         COP0_LLADDR_REG_MASK,
         COP0_WATCHLO_REG_MASK,
@@ -288,9 +288,9 @@ pub fn init(device: &mut device::Device) {
         COP0_PARITYERR_REG_MASK,
         0, // cache error
         COP0_TAGLO_REG_MASK,
-        0,  // taghi
-        !0, // ErrorPC
-        0,  // 31
+        0,        // taghi
+        u64::MAX, // ErrorPC
+        0,        // 31
     ];
 
     device.cpu.cop0.instrs = [
@@ -375,7 +375,7 @@ pub fn init(device: &mut device::Device) {
     device::events::create_event(
         device,
         device::events::EventType::Compare,
-        !0 as u32 as u64,
+        u32::MAX as u64,
         compare_event,
     )
 }
