@@ -44,17 +44,17 @@ pub fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
 
     format_sram(device);
 
-    return u32::from_be_bytes(
+    u32::from_be_bytes(
         device.ui.saves.sram.0[masked_address..masked_address + 4]
             .try_into()
             .unwrap(),
-    );
+    )
 }
 
 pub fn read_mem_flash(device: &mut device::Device, address: u64) -> u32 {
     if (address & 0x1ffff) == 0x00000 && device.flashram.mode == FlashramMode::Status {
         /* read Status register */
-        return device.flashram.status;
+        device.flashram.status
     } else if (address & 0x1ffff) == 0x0000 && device.flashram.mode == FlashramMode::ReadArray {
         /* flashram MMIO read are not supported except for the "dummy" read @0x0000 done before DMA.
          * returns a "dummy" value. */
@@ -74,9 +74,9 @@ pub fn read_mem(
     device::cop0::add_cycles(device, cycles);
 
     if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
-        return read_mem_sram(device, address);
+        read_mem_sram(device, address)
     } else {
-        return read_mem_flash(device, address);
+        read_mem_flash(device, address)
     }
 }
 
@@ -175,7 +175,7 @@ pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, len
     } else {
         dma_read_flash(device, cart_addr, dram_addr, length)
     }
-    return device::pi::calculate_cycles(device, 2, length);
+    device::pi::calculate_cycles(device, 2, length)
 }
 
 pub fn dma_write_sram(
@@ -248,7 +248,7 @@ pub fn dma_write(device: &mut device::Device, cart_addr: u32, dram_addr: u32, le
     } else {
         dma_write_flash(device, cart_addr, dram_addr, length)
     }
-    return device::pi::calculate_cycles(device, 2, length);
+    device::pi::calculate_cycles(device, 2, length)
 }
 
 pub fn flashram_command(device: &mut device::Device, command: u32) {
@@ -272,7 +272,7 @@ pub fn flashram_command(device: &mut device::Device, command: u32) {
             if device.flashram.mode == FlashramMode::SectorErase {
                 let offset: usize = (device.flashram.erase_page & 0xff80) as usize * 128;
                 for i in 0..128 * 128 {
-                    device.ui.saves.flash.0[offset as usize + i] = 0xFF;
+                    device.ui.saves.flash.0[offset + i] = 0xFF;
                 }
                 device.ui.saves.flash.1 = true
             } else if device.flashram.mode == FlashramMode::ChipErase {
@@ -297,8 +297,8 @@ pub fn flashram_command(device: &mut device::Device, command: u32) {
             /* program selected page */
             let offset: usize = (command & 0xffff) as usize * 128;
             for i in 0..128 {
-                device.ui.saves.flash.0[(offset + i) as usize] =
-                    device.flashram.page_buf[i as usize];
+                device.ui.saves.flash.0[offset + i] =
+                    device.flashram.page_buf[i];
             }
             device.ui.saves.flash.1 = true;
 

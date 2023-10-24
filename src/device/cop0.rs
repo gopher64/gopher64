@@ -176,10 +176,10 @@ pub fn reserved(device: &mut device::Device, _opcode: u32) {
 
 pub fn get_control_registers(device: &mut device::Device, index: u32) -> u64 {
     match index {
-        COP0_COUNT_REG => return device.cpu.cop0.regs[index as usize] >> 1,
-        COP0_RANDOM_REG => return set_random_register(device),
-        7 | 21 | 22 | 23 | 24 | 25 | 31 => return device.cpu.cop0.reg_latch,
-        _ => return device.cpu.cop0.regs[index as usize],
+        COP0_COUNT_REG => device.cpu.cop0.regs[index as usize] >> 1,
+        COP0_RANDOM_REG => set_random_register(device),
+        7 | 21 | 22 | 23 | 24 | 25 | 31 => device.cpu.cop0.reg_latch,
+        _ => device.cpu.cop0.regs[index as usize],
     }
 }
 
@@ -204,7 +204,7 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
             let mut compare_event_diff = (data as u32).wrapping_sub(current_count as u32);
 
             if compare_event_diff == 0 {
-                compare_event_diff += !0 as u32;
+                compare_event_diff += !0;
             }
 
             device::events::create_event(
@@ -237,7 +237,7 @@ pub fn compare_event(device: &mut device::Device) {
     device::events::create_event(
         device,
         device::events::EventType::Compare,
-        device.cpu.next_event_count + (!0 as u32 as u64),
+        device.cpu.next_event_count + !0,
         compare_event,
     );
     device::exceptions::check_pending_interrupts(device);
@@ -245,11 +245,11 @@ pub fn compare_event(device: &mut device::Device) {
 
 pub fn set_random_register(device: &mut device::Device) -> u64 {
     if device.cpu.cop0.regs[COP0_WIRED_REG as usize] > 31 {
-        return (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize]) & 0x3F;
+        (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize]) & 0x3F
     } else {
-        return (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize])
+        (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize])
             % (32 - device.cpu.cop0.regs[COP0_WIRED_REG as usize])
-            + device.cpu.cop0.regs[COP0_WIRED_REG as usize];
+            + device.cpu.cop0.regs[COP0_WIRED_REG as usize]
     }
 }
 
@@ -268,9 +268,9 @@ pub fn init(device: &mut device::Device) {
         COP0_WIRED_REG_MASK,
         0,                // 7
         0,                // BadVAddr, read only
-        !0 as u32 as u64, // count
+        !0, // count
         COP0_ENTRYHI_REG_MASK,
-        !0 as u32 as u64, // compare
+        !0, // compare
         COP0_STATUS_REG_MASK,
         COP0_CAUSE_REG_MASK,
         !0, // EPC
@@ -375,7 +375,7 @@ pub fn init(device: &mut device::Device) {
     device::events::create_event(
         device,
         device::events::EventType::Compare,
-        !0 as u32 as u64,
+        !0,
         compare_event,
     )
 }

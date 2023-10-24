@@ -1,51 +1,51 @@
 use crate::device;
 
 pub fn rd(opcode: u32) -> u32 {
-    return (opcode >> 11) & 0x1F;
+    (opcode >> 11) & 0x1F
 }
 
 pub fn rs(opcode: u32) -> u32 {
-    return (opcode >> 21) & 0x1F;
+    (opcode >> 21) & 0x1F
 }
 
 pub fn rt(opcode: u32) -> u32 {
-    return (opcode >> 16) & 0x1F;
+    (opcode >> 16) & 0x1F
 }
 
 pub fn sa(opcode: u32) -> u32 {
-    return (opcode >> 6) & 0x1F;
+    (opcode >> 6) & 0x1F
 }
 
 pub fn imm(opcode: u32) -> u16 {
-    return opcode as u16;
+    opcode as u16
 }
 
 pub fn se32(value: i32) -> u64 {
-    return value as i64 as u64;
+    value as i64 as u64
 }
 
 pub fn se16(value: i16) -> u64 {
-    return value as i64 as u64;
+    value as i64 as u64
 }
 
 pub fn se8(value: i8) -> u64 {
-    return value as i64 as u64;
+    value as i64 as u64
 }
 
 pub fn bshift<T: Into<u64>>(address: T) -> u64 {
-    return ((address.into() & 3) ^ 3) << 3;
+    ((address.into() & 3) ^ 3) << 3
 }
 
 pub fn hshift<T: Into<u64>>(address: T) -> u64 {
-    return ((address.into() & 2) ^ 2) << 3;
+    ((address.into() & 2) ^ 2) << 3
 }
 
 pub fn bits_below_mask<T: Into<u64>>(x: T) -> u64 {
-    return (1 << x.into()) - 1;
+    (1 << x.into()) - 1
 }
 
 pub fn bits_above_mask<T: Into<u64>>(x: T) -> u64 {
-    return !bits_below_mask(x);
+    !bits_below_mask(x)
 }
 
 pub fn check_relative_idle_loop(device: &mut device::Device, opcode: u32) {
@@ -505,7 +505,7 @@ pub fn swl(device: &mut device::Device, opcode: u32) {
 
     let mask;
     if n == 0 {
-        mask = !0 as u32
+        mask = !0
     } else {
         mask = bits_below_mask(8 * (4 - n)) as u32
     }
@@ -552,7 +552,7 @@ pub fn sdl(device: &mut device::Device, opcode: u32) {
 
     let mask;
     if n == 0 {
-        mask = !0 as u64
+        mask = !0
     } else {
         mask = bits_below_mask(8 * (8 - n))
     }
@@ -758,10 +758,8 @@ pub fn cache(device: &mut device::Device, opcode: u32) {
         }
         0x19 => {
             //dcache hit write back
-            if device::cache::dcache_hit(device, dcache_line, phys_address) {
-                if device.memory.dcache[dcache_line].dirty {
-                    device::cache::dcache_writeback(device, dcache_line)
-                }
+            if device::cache::dcache_hit(device, dcache_line, phys_address) && device.memory.dcache[dcache_line].dirty {
+                device::cache::dcache_writeback(device, dcache_line)
             }
         }
         _ => {
@@ -1060,7 +1058,7 @@ pub fn div(device: &mut device::Device, opcode: u32) {
         if (device.cpu.gpr[rs(opcode) as usize] as i32) < 0 {
             device.cpu.lo = 1
         } else {
-            device.cpu.lo = !0 as u64
+            device.cpu.lo = !0
         }
         device.cpu.hi = se32(device.cpu.gpr[rs(opcode) as usize] as i32)
     }
@@ -1079,7 +1077,7 @@ pub fn divu(device: &mut device::Device, opcode: u32) {
                 % (device.cpu.gpr[rt(opcode) as usize] as u32)) as i32,
         );
     } else {
-        device.cpu.lo = !0 as u64;
+        device.cpu.lo = !0;
         device.cpu.hi = se32(device.cpu.gpr[rs(opcode) as usize] as u32 as i32)
     }
 
@@ -1112,7 +1110,7 @@ pub fn ddiv(device: &mut device::Device, opcode: u32) {
         if ((device.cpu.gpr[rs(opcode) as usize]) as i64) < 0 {
             device.cpu.lo = 1
         } else {
-            device.cpu.lo = !0 as u64
+            device.cpu.lo = !0
         }
         device.cpu.hi = device.cpu.gpr[rs(opcode) as usize]
     }
@@ -1124,7 +1122,7 @@ pub fn ddivu(device: &mut device::Device, opcode: u32) {
         device.cpu.lo = device.cpu.gpr[rs(opcode) as usize] / device.cpu.gpr[rt(opcode) as usize];
         device.cpu.hi = device.cpu.gpr[rs(opcode) as usize] % device.cpu.gpr[rt(opcode) as usize]
     } else {
-        device.cpu.lo = !0 as u64;
+        device.cpu.lo = !0;
         device.cpu.hi = device.cpu.gpr[rs(opcode) as usize]
     }
     device::cop0::add_cycles(device, 68);

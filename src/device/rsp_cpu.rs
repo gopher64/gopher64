@@ -55,12 +55,12 @@ pub struct Cpu {
 }
 
 pub fn in_delay_slot(device: &mut device::Device) -> bool {
-    return device.rsp.cpu.branch_state.state == device::cpu::State::DelaySlotTaken
-        || device.rsp.cpu.branch_state.state == device::cpu::State::DelaySlotNotTaken;
+    device.rsp.cpu.branch_state.state == device::cpu::State::DelaySlotTaken
+        || device.rsp.cpu.branch_state.state == device::cpu::State::DelaySlotNotTaken
 }
 
 pub fn in_delay_slot_taken(device: &mut device::Device) -> bool {
-    return device.rsp.cpu.branch_state.state == device::cpu::State::DelaySlotTaken;
+    device.rsp.cpu.branch_state.state == device::cpu::State::DelaySlotTaken
 }
 
 pub fn run(device: &mut device::Device) -> u64 {
@@ -127,45 +127,45 @@ pub fn run(device: &mut device::Device) -> u64 {
             }
         }
     }
-    return (device.rsp.cpu.cycle_counter as f64 * 1.5) as u64; // converting RCP clock to CPU clock
+    (device.rsp.cpu.cycle_counter as f64 * 1.5) as u64// converting RCP clock to CPU clock
 }
 
 pub fn decode_opcode(device: &mut device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
     match opcode >> 26 {
         0 => {
             // SPECIAL
-            return device.rsp.cpu.special_instrs[(opcode & 0x3F) as usize];
+            device.rsp.cpu.special_instrs[(opcode & 0x3F) as usize]
         }
         1 => {
             // REGIMM
-            return device.rsp.cpu.regimm_instrs[((opcode >> 16) & 0x1F) as usize];
+            device.rsp.cpu.regimm_instrs[((opcode >> 16) & 0x1F) as usize]
         }
         16 => {
             // COP0
-            return device.rsp.cpu.cop0_instrs[((opcode >> 21) & 0x1F) as usize];
+            device.rsp.cpu.cop0_instrs[((opcode >> 21) & 0x1F) as usize]
         }
         18 => {
             // COP2
-            return device.rsp.cpu.cop2_instrs[((opcode >> 21) & 0x1F) as usize];
+            device.rsp.cpu.cop2_instrs[((opcode >> 21) & 0x1F) as usize]
         }
         50 => {
             // LWC2
-            return device.rsp.cpu.lwc2_instrs[((opcode >> 11) & 0x1F) as usize];
+            device.rsp.cpu.lwc2_instrs[((opcode >> 11) & 0x1F) as usize]
         }
         58 => {
             // SWC2
-            return device.rsp.cpu.swc2_instrs[((opcode >> 11) & 0x1F) as usize];
+            device.rsp.cpu.swc2_instrs[((opcode >> 11) & 0x1F) as usize]
         }
-        _ => return device.rsp.cpu.instrs[(opcode >> 26) as usize],
+        _ => device.rsp.cpu.instrs[(opcode >> 26) as usize],
     }
 }
 
 pub fn init(device: &mut device::Device) {
-    device.rsp.cpu.reciprocals[0] = !0 as u16;
+    device.rsp.cpu.reciprocals[0] = !0;
     let mut index = 1;
     while index < 512 {
         let a = (index + 512) as u64;
-        let b = ((1 as u64) << 34) / a;
+        let b = (1_u64 << 34) / a;
         device.rsp.cpu.reciprocals[index] = ((b + 1) >> 8) as u16;
         index += 1;
     }
@@ -179,7 +179,7 @@ pub fn init(device: &mut device::Device) {
         let a = ((index + 512) >> shift) as u64;
         let mut b = (1 << 17) as u64;
         //find the largest b where b < 1.0 / sqrt(a)
-        while a * (b + 1) * (b + 1) < ((1 as u64) << 44) {
+        while a * (b + 1) * (b + 1) < (1_u64 << 44) {
             b += 1;
         }
         device.rsp.cpu.inverse_square_roots[index] = (b >> 1) as u16;

@@ -62,7 +62,7 @@ pub fn translate_address(
     } else if address & 0x20000000 == 0 {
         cached = true;
     }
-    return (address & 0x1FFFFFFF, cached, false);
+    (address & 0x1FFFFFFF, cached, false)
 }
 
 pub fn data_read(
@@ -74,11 +74,11 @@ pub fn data_read(
     if cached {
         device::cache::dcache_read(device, phys_address)
     } else {
-        return device.memory.memory_map_read[(phys_address >> 16) as usize](
+        device.memory.memory_map_read[(phys_address >> 16) as usize](
             device,
             phys_address,
             access_size,
-        );
+        )
     }
 }
 
@@ -103,14 +103,14 @@ pub fn data_write(
 
 pub fn init(device: &mut device::Device) {
     for i in 0..0x2000 {
-        if i >= MM_RDRAM_DRAM >> 16 && i <= (MM_RDRAM_DRAM + 0x03EFFFFF) >> 16 {
+        if (MM_RDRAM_DRAM >> 16..=(MM_RDRAM_DRAM + 0x03EFFFFF) >> 16).contains(&i) {
             device.memory.fast_read[i] = device::rdram::read_mem_fast;
             device.memory.memory_map_read[i] = device::rdram::read_mem;
             device.memory.memory_map_write[i] = device::rdram::write_mem;
-        } else if i >= MM_RDRAM_REGS >> 16 && i <= (MM_RDRAM_REGS + 0xFFFFF) >> 16 {
+        } else if (MM_RDRAM_REGS >> 16..=(MM_RDRAM_REGS + 0xFFFFF) >> 16).contains(&i) {
             device.memory.memory_map_read[i] = device::rdram::read_regs;
             device.memory.memory_map_write[i] = device::rdram::write_regs;
-        } else if i >= MM_RSP_MEM >> 16 && i <= (MM_RSP_MEM + 0x3FFFF) >> 16 {
+        } else if (MM_RSP_MEM >> 16..=(MM_RSP_MEM + 0x3FFFF) >> 16).contains(&i) {
             device.memory.fast_read[i] = device::rsp_interface::read_mem_fast;
             device.memory.memory_map_read[i] = device::rsp_interface::read_mem;
             device.memory.memory_map_write[i] = device::rsp_interface::write_mem;
@@ -144,7 +144,7 @@ pub fn init(device: &mut device::Device) {
         } else if i >= MM_SI_REGS >> 16 && i <= (MM_SI_REGS + 0xFFFF) >> 16 {
             device.memory.memory_map_read[i] = device::si::read_regs;
             device.memory.memory_map_write[i] = device::si::write_regs;
-        } else if i >= MM_DOM2_ADDR2 >> 16 && i <= (MM_DOM2_ADDR2 + 0x1FFFF) >> 16 {
+        } else if (MM_DOM2_ADDR2 >> 16..=(MM_DOM2_ADDR2 + 0x1FFFF) >> 16).contains(&i) {
             device.memory.memory_map_read[i] = device::sram::read_mem;
             device.memory.memory_map_write[i] = device::sram::write_mem;
         } else if i >= MM_CART_ROM >> 16 && i <= (MM_CART_ROM + device.cart.rom.len() - 1) >> 16 {

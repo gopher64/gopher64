@@ -42,12 +42,12 @@ pub fn read_regs(
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
         PI_WR_LEN_REG | PI_RD_LEN_REG => {
-            return 0x7F;
+            0x7F
         }
-        PI_CART_ADDR_REG => return device.pi.regs[reg as usize] & 0xFFFFFFFE,
-        PI_DRAM_ADDR_REG => return device.pi.regs[reg as usize] & 0xFFFFFE,
+        PI_CART_ADDR_REG => device.pi.regs[reg as usize] & 0xFFFFFFFE,
+        PI_DRAM_ADDR_REG => device.pi.regs[reg as usize] & 0xFFFFFE,
         _ => {
-            return device.pi.regs[reg as usize];
+            device.pi.regs[reg as usize]
         }
     }
 }
@@ -135,7 +135,7 @@ pub fn get_handler(address: u32) -> PiHandler {
     } else {
         panic!("unknown pi handler")
     }
-    return handler;
+    handler
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
@@ -189,7 +189,7 @@ pub fn calculate_cycles(device: &mut device::Device, domain: i32, length: u32) -
     cycles += (14.0 + latency) * pages;
     cycles += (pulse_width + release) * (length as f64 / 2.0);
     cycles += 5.0 * pages;
-    return (cycles * 1.5) as u64; // Converting RCP clock speed to CPU clock speed
+    (cycles * 1.5) as u64// Converting RCP clock speed to CPU clock speed
 }
 
 pub fn dma_event(device: &mut device::Device) {

@@ -2,23 +2,23 @@ use crate::device;
 use std::arch::x86_64::*;
 
 pub fn vt(opcode: u32) -> u32 {
-    return (opcode >> 16) & 0x1F;
+    (opcode >> 16) & 0x1F
 }
 
 pub fn ve(opcode: u32) -> u32 {
-    return (opcode >> 21) & 0xF;
+    (opcode >> 21) & 0xF
 }
 
 pub fn vs(opcode: u32) -> u32 {
-    return (opcode >> 11) & 0x1F;
+    (opcode >> 11) & 0x1F
 }
 
 pub fn vd(opcode: u32) -> u32 {
-    return (opcode >> 6) & 0x1F;
+    (opcode >> 6) & 0x1F
 }
 
 pub fn de(opcode: u32) -> u32 {
-    return (opcode >> 11) & 0x7;
+    (opcode >> 11) & 0x7
 }
 
 pub fn clamp_signed_32(value: i32) -> i16 {
@@ -28,7 +28,7 @@ pub fn clamp_signed_32(value: i32) -> i16 {
     if value > 32767 {
         return 32767;
     }
-    return value as i16;
+    value as i16
 }
 
 pub fn clamp_signed_64(value: i64) -> i16 {
@@ -38,7 +38,7 @@ pub fn clamp_signed_64(value: i64) -> i16 {
     if value > 32767 {
         return 32767;
     }
-    return value as i16;
+    value as i16
 }
 
 pub fn count_leading_zeros(value: u32) -> u32 {
@@ -49,13 +49,13 @@ pub fn count_leading_zeros(value: u32) -> u32 {
         }
         index -= 1;
     }
-    return (31 - index) as u32;
+    (31 - index) as u32
 }
 
 pub fn s_clip(x: i64, bits: u32) -> i64 {
-    let b = (1 as u64) << (bits - 1);
+    let b = 1_u64 << (bits - 1);
     let m = b * 2 - 1;
-    return ((((x as u64) & m) ^ b).wrapping_sub(b)) as i64;
+    ((((x as u64) & m) ^ b).wrapping_sub(b)) as i64
 }
 
 pub fn modify_vpr_element(vpr: &mut u128, value: u16, element: u8) {
@@ -67,15 +67,15 @@ pub fn modify_vpr_element(vpr: &mut u128, value: u16, element: u8) {
 
 pub fn get_vpr_element(vpr: u128, element: u8) -> u16 {
     let pos = 7 - (element & 7);
-    return (vpr >> (pos * 16)) as u16;
+    (vpr >> (pos * 16)) as u16
 }
 
 pub fn vte(device: &mut device::Device, vt: u32, index: usize) -> __m128i {
     unsafe {
-        return _mm_shuffle_epi8(
+        _mm_shuffle_epi8(
             std::mem::transmute(device.rsp.cpu.vpr[vt as usize]),
             device.rsp.cpu.shuffle[index],
-        );
+        )
     }
 }
 

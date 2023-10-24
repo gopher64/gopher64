@@ -46,7 +46,7 @@ pub fn set_expected_refresh_rate(device: &mut device::Device) {
 }
 
 pub fn set_vertical_interrupt(device: &mut device::Device) {
-    if device::events::get_event(device, device::events::EventType::VI) == None {
+    if device::events::get_event(device, device::events::EventType::VI).is_none() {
         device::events::create_event(
             device,
             device::events::EventType::VI,
@@ -59,7 +59,7 @@ pub fn set_vertical_interrupt(device: &mut device::Device) {
 pub fn set_current_line(device: &mut device::Device) {
     let delay = device.vi.delay;
     let next_vi = device::events::get_event(device, device::events::EventType::VI);
-    if next_vi != None {
+    if next_vi.is_some() {
         device.vi.regs[VI_CURRENT_REG as usize] = ((delay
             - (next_vi.unwrap().count
                 - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]))
@@ -85,7 +85,7 @@ pub fn read_regs(
     if reg as u32 == VI_CURRENT_REG {
         set_current_line(device)
     }
-    return device.vi.regs[reg as usize];
+    device.vi.regs[reg as usize]
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {

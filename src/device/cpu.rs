@@ -222,12 +222,12 @@ pub fn init(device: &mut device::Device) {
 }
 
 pub fn in_delay_slot(device: &mut device::Device) -> bool {
-    return device.cpu.branch_state.state == State::DelaySlotTaken
-        || device.cpu.branch_state.state == State::DelaySlotNotTaken;
+    device.cpu.branch_state.state == State::DelaySlotTaken
+        || device.cpu.branch_state.state == State::DelaySlotNotTaken
 }
 
 pub fn in_delay_slot_taken(device: &mut device::Device) -> bool {
-    return device.cpu.branch_state.state == State::DelaySlotTaken;
+    device.cpu.branch_state.state == State::DelaySlotTaken
 }
 
 pub fn run(device: &mut device::Device) {

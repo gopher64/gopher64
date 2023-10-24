@@ -78,7 +78,7 @@ pub fn pak_read_block(
         (device.pif.ram[addr_acrc] as u16) << 8 | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
     let handler = device.pif.channels[channel].pak_handler;
 
-    if !handler.is_none() {
+    if handler.is_some() {
         (handler.unwrap().read)(device, channel, address, data, PAK_CHUNK_SIZE);
         device.pif.ram[dcrc] = pak_data_crc(device, data, PAK_CHUNK_SIZE)
     } else {
@@ -97,7 +97,7 @@ pub fn pak_write_block(
         (device.pif.ram[addr_acrc] as u16) << 8 | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
     let handler = device.pif.channels[channel].pak_handler;
 
-    if !handler.is_none() {
+    if handler.is_some() {
         (handler.unwrap().write)(device, channel, address, data, PAK_CHUNK_SIZE);
         device.pif.ram[dcrc] = pak_data_crc(device, data, PAK_CHUNK_SIZE)
     } else {
@@ -127,5 +127,5 @@ pub fn pak_data_crc(device: &mut device::Device, data_offset: usize, size: usize
         }
         i += 1;
     }
-    return crc;
+    crc
 }

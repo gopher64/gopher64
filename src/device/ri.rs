@@ -22,7 +22,7 @@ pub fn read_regs(
     if ((address & 0xFFFF) >> 2) as u32 == RI_SELECT_REG {
         return 0x14; // hack, skip RDRAM initialization
     }
-    return device.ri.regs[((address & 0xFFFF) >> 2) as usize];
+    device.ri.regs[((address & 0xFFFF) >> 2) as usize]
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {

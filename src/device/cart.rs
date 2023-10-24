@@ -24,7 +24,7 @@ pub struct AfRtc {
 
 pub fn byte2bcd(mut n: u32) -> u8 {
     n %= 100;
-    return (((n / 10) << 4) | (n % 10)) as u8;
+    (((n / 10) << 4) | (n % 10)) as u8
 }
 
 pub fn process(device: &mut device::Device, channel: usize) {
@@ -102,7 +102,7 @@ pub fn format_eeprom(device: &mut device::Device) {
 }
 
 pub fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usize) {
-    let address = device.pif.ram[block as usize] as usize * EEPROM_BLOCK_SIZE;
+    let address = device.pif.ram[block] as usize * EEPROM_BLOCK_SIZE;
 
     format_eeprom(device);
 
@@ -111,14 +111,14 @@ pub fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usiz
 }
 
 pub fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
-    let address = device.pif.ram[block as usize] as usize * EEPROM_BLOCK_SIZE;
+    let address = device.pif.ram[block] as usize * EEPROM_BLOCK_SIZE;
 
     format_eeprom(device);
 
     device.ui.saves.eeprom.0[address..address + EEPROM_BLOCK_SIZE]
         .copy_from_slice(&device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]);
 
-    device.pif.ram[status as usize] = 0x00;
+    device.pif.ram[status] = 0x00;
 
     device.ui.saves.eeprom.1 = true
 }
@@ -137,18 +137,18 @@ pub fn time2data(device: &mut device::Device, offset: usize) {
 }
 
 pub fn af_rtc_read_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
-    match device.pif.ram[block as usize] {
+    match device.pif.ram[block] {
         0 => {
             device.pif.ram[offset] = device.cart.rtc.control as u8;
             device.pif.ram[offset + 1] = (device.cart.rtc.control >> 8) as u8;
-            device.pif.ram[status as usize] = 0x00;
+            device.pif.ram[status] = 0x00;
         }
         1 => {
             panic!("AF-RTC reading block 1 is not implemented !");
         }
         2 => {
             time2data(device, offset);
-            device.pif.ram[status as usize] = 0x00;
+            device.pif.ram[status] = 0x00;
         }
         _ => {
             panic!("AF-RTC read invalid block");
@@ -156,11 +156,11 @@ pub fn af_rtc_read_block(device: &mut device::Device, block: usize, offset: usiz
     }
 }
 pub fn af_rtc_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
-    match device.pif.ram[block as usize] {
+    match device.pif.ram[block] {
         0 => {
             device.cart.rtc.control =
                 (device.pif.ram[offset + 1] as u16) << 8 | device.pif.ram[offset] as u16;
-            device.pif.ram[status as usize] = 0x00;
+            device.pif.ram[status] = 0x00;
         }
         1 => {
             /* block 1 read-only when control[0] is set */

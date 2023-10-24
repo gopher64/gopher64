@@ -30,8 +30,8 @@ pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize, fullscreen: 
 
 pub fn update_screen() -> u8 {
     // when the window is closed, running is set to 0
-    let running = unsafe { rdp_update_screen() };
-    return running;
+    
+    unsafe { rdp_update_screen() }
 }
 
 pub fn set_register(reg: u32, value: u32) {
@@ -41,8 +41,8 @@ pub fn set_register(reg: u32, value: u32) {
 }
 
 pub fn process_rdp_list(dpc_regs: &mut [u32; 8], sp_dmem: &mut [u8; 8192]) -> u64 {
-    let timer = unsafe { rdp_process_commands(dpc_regs, sp_dmem) };
-    return timer;
+    
+    unsafe { rdp_process_commands(dpc_regs, sp_dmem) }
 }
 
 pub fn rdp_full_sync() {
