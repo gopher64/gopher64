@@ -191,7 +191,7 @@ pub fn lh(device: &mut device::Device, opcode: u32) {
 
     let mut w = [0; 2];
     w[0] = device.rsp.mem[address as usize & 0xFFF];
-    w[1] = device.rsp.mem[(address as usize + 1) & &0xFFF];
+    w[1] = device.rsp.mem[(address as usize + 1) & 0xFFF];
 
     device.rsp.cpu.gpr[rt(opcode) as usize] =
         (((w[0] as u16) << 8) | w[1] as u16) as i16 as i32 as u32
@@ -203,9 +203,9 @@ pub fn lw(device: &mut device::Device, opcode: u32) {
 
     let mut w = [0; 4];
     w[0] = device.rsp.mem[address as usize & 0xFFF];
-    w[1] = device.rsp.mem[(address as usize + 1) & &0xFFF];
-    w[2] = device.rsp.mem[(address as usize + 2) & &0xFFF];
-    w[3] = device.rsp.mem[(address as usize + 3) & &0xFFF];
+    w[1] = device.rsp.mem[(address as usize + 1) & 0xFFF];
+    w[2] = device.rsp.mem[(address as usize + 2) & 0xFFF];
+    w[3] = device.rsp.mem[(address as usize + 3) & 0xFFF];
 
     device.rsp.cpu.gpr[rt(opcode) as usize] =
         (w[0] as u32) << 24 | (w[1] as u32) << 16 | (w[2] as u32) << 8 | (w[3] as u32)
@@ -224,7 +224,7 @@ pub fn lhu(device: &mut device::Device, opcode: u32) {
 
     let mut w = [0; 2];
     w[0] = device.rsp.mem[address as usize & 0xFFF];
-    w[1] = device.rsp.mem[(address as usize + 1) & &0xFFF];
+    w[1] = device.rsp.mem[(address as usize + 1) & 0xFFF];
 
     device.rsp.cpu.gpr[rt(opcode) as usize] = (((w[0] as u16) << 8) | w[1] as u16) as u32
 }
@@ -235,9 +235,9 @@ pub fn lwu(device: &mut device::Device, opcode: u32) {
 
     let mut w = [0; 4];
     w[0] = device.rsp.mem[address as usize & 0xFFF];
-    w[1] = device.rsp.mem[(address as usize + 1) & &0xFFF];
-    w[2] = device.rsp.mem[(address as usize + 2) & &0xFFF];
-    w[3] = device.rsp.mem[(address as usize + 3) & &0xFFF];
+    w[1] = device.rsp.mem[(address as usize + 1) & 0xFFF];
+    w[2] = device.rsp.mem[(address as usize + 2) & 0xFFF];
+    w[3] = device.rsp.mem[(address as usize + 3) & 0xFFF];
 
     device.rsp.cpu.gpr[rt(opcode) as usize] =
         (w[0] as u32) << 24 | (w[1] as u32) << 16 | (w[2] as u32) << 8 | (w[3] as u32)
@@ -274,13 +274,11 @@ pub fn sw(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn sll(device: &mut device::Device, opcode: u32) {
-    device.rsp.cpu.gpr[rd(opcode) as usize] =
-        device.rsp.cpu.gpr[rt(opcode) as usize] << sa(opcode)
+    device.rsp.cpu.gpr[rd(opcode) as usize] = device.rsp.cpu.gpr[rt(opcode) as usize] << sa(opcode)
 }
 
 pub fn srl(device: &mut device::Device, opcode: u32) {
-    device.rsp.cpu.gpr[rd(opcode) as usize] =
-        device.rsp.cpu.gpr[rt(opcode) as usize] >> sa(opcode)
+    device.rsp.cpu.gpr[rd(opcode) as usize] = device.rsp.cpu.gpr[rt(opcode) as usize] >> sa(opcode)
 }
 
 pub fn sra(device: &mut device::Device, opcode: u32) {
