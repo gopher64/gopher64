@@ -219,7 +219,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let controller = &ui.controllers[channel].game_controller;
     let joystick = &ui.controllers[channel].joystick;
     for i in 0..14 {
-        if profile_name != "default" || (channel == 0 && profile_name == "default") {
+        if profile_name != "default" || channel == 0 {
             let profile_key = profile.keys[i];
             if profile_key.0 {
                 unsafe {
@@ -240,7 +240,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let mut x: f64 = 0.0;
     let mut y: f64 = 0.0;
 
-    if profile_name != "default" || (channel == 0 && profile_name == "default") {
+    if profile_name != "default" || channel == 0 {
         (x, y) = set_axis_from_keys(profile, keyboard_state);
     }
 
