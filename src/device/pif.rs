@@ -30,23 +30,21 @@ pub fn read_mem(
 ) -> u32 {
     device::cop0::add_cycles(device, 3000); //based on https://github.com/rasky/n64-systembench
 
-    let value;
     let mut masked_address = address as usize & PIF_MASK;
     if masked_address < PIF_RAM_OFFSET {
-        value = u32::from_be_bytes(
+        u32::from_be_bytes(
             device.pif.rom[masked_address..masked_address + 4]
                 .try_into()
                 .unwrap(),
-        );
+        )
     } else {
         masked_address -= PIF_RAM_OFFSET;
-        value = u32::from_be_bytes(
+        u32::from_be_bytes(
             device.pif.ram[masked_address..masked_address + 4]
                 .try_into()
                 .unwrap(),
-        );
+        )
     }
-    return value;
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
@@ -76,7 +74,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
 
 pub fn process_channel(device: &mut device::Device, channel: usize) -> usize {
     /* don't process channel if it has been disabled */
-    if device.pif.channels[channel].tx == None {
+    if device.pif.channels[channel].tx.is_none() {
         return 0;
     }
 
@@ -85,7 +83,7 @@ pub fn process_channel(device: &mut device::Device, channel: usize) -> usize {
     device.pif.ram[device.pif.channels[channel].rx.unwrap()] &= 0x3f;
 
     /* set NoResponse if no device is connected */
-    if device.pif.channels[channel].process == None {
+    if device.pif.channels[channel].process.is_none() {
         device.pif.ram[device.pif.channels[channel].rx.unwrap()] |= 0x80;
         return 0;
     }
@@ -93,7 +91,7 @@ pub fn process_channel(device: &mut device::Device, channel: usize) -> usize {
     /* do device processing */
     let process_handler = device.pif.channels[channel].process.unwrap();
     process_handler(device, channel);
-    return 1;
+    1
 }
 
 pub fn update_pif_ram(device: &mut device::Device) -> u64 {
@@ -101,7 +99,7 @@ pub fn update_pif_ram(device: &mut device::Device) -> u64 {
     for k in 0..PIF_CHANNELS_COUNT {
         active_channels += process_channel(device, k)
     }
-    return (24000 + (active_channels * 28000)) as u64;
+    (24000 + (active_channels * 28000)) as u64
 }
 
 pub fn disable_pif_channel(channel: &mut PifChannel) {
@@ -122,7 +120,7 @@ pub fn setup_pif_channel(device: &mut device::Device, channel: usize, buf: usize
     device.pif.channels[channel].tx_buf = Some(buf + 2);
     device.pif.channels[channel].rx_buf = Some(buf + 2 + tx as usize);
 
-    return (2 + tx + rx) as usize;
+    (2 + tx + rx) as usize
 }
 
 pub fn setup_channels_format(device: &mut device::Device) {

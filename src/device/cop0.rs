@@ -174,12 +174,12 @@ pub fn reserved(device: &mut device::Device, _opcode: u32) {
     device::exceptions::reserved_exception(device, 0);
 }
 
-pub fn get_control_registers(device: &mut device::Device, index: u32) -> u64 {
+pub fn get_control_registers(device: &device::Device, index: u32) -> u64 {
     match index {
-        COP0_COUNT_REG => return device.cpu.cop0.regs[index as usize] >> 1,
-        COP0_RANDOM_REG => return set_random_register(device),
-        7 | 21 | 22 | 23 | 24 | 25 | 31 => return device.cpu.cop0.reg_latch,
-        _ => return device.cpu.cop0.regs[index as usize],
+        COP0_COUNT_REG => device.cpu.cop0.regs[index as usize] >> 1,
+        COP0_RANDOM_REG => set_random_register(device),
+        7 | 21 | 22 | 23 | 24 | 25 | 31 => device.cpu.cop0.reg_latch,
+        _ => device.cpu.cop0.regs[index as usize],
     }
 }
 
@@ -243,13 +243,13 @@ pub fn compare_event(device: &mut device::Device) {
     device::exceptions::check_pending_interrupts(device);
 }
 
-pub fn set_random_register(device: &mut device::Device) -> u64 {
+pub fn set_random_register(device: &device::Device) -> u64 {
     if device.cpu.cop0.regs[COP0_WIRED_REG as usize] > 31 {
-        return (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize]) & 0x3F;
+        (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize]) & 0x3F
     } else {
-        return (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize])
+        (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize])
             % (32 - device.cpu.cop0.regs[COP0_WIRED_REG as usize])
-            + device.cpu.cop0.regs[COP0_WIRED_REG as usize];
+            + device.cpu.cop0.regs[COP0_WIRED_REG as usize]
     }
 }
 

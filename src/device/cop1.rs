@@ -340,10 +340,10 @@ pub fn reserved(device: &mut device::Device, opcode: u32) {
     device::exceptions::reserved_exception(device, device::cop0::COP0_CAUSE_CE1);
 }
 
-pub fn get_control_registers_fpu(device: &mut device::Device, index: u32) -> u32 {
+pub fn get_control_registers_fpu(device: &device::Device, index: u32) -> u32 {
     match index {
-        0 => return device.cpu.cop1.fcr0,
-        31 => return device.cpu.cop1.fcr31,
+        0 => device.cpu.cop1.fcr0,
+        31 => device.cpu.cop1.fcr31,
         _ => {
             panic!("unknown FCR register")
         }
@@ -356,7 +356,7 @@ pub fn set_control_registers_fpu(device: &mut device::Device, index: u32, data: 
         }
 
         31 => {
-            device.cpu.cop1.fcr31 = data & FCR31_WRITE_MASK as u32;
+            device.cpu.cop1.fcr31 = data & FCR31_WRITE_MASK;
             // the Cause bits are ANDed with the Enable bits to check for exceptions
             // "Unimplemented Operation" has no Enable bit and always causes an exception
             if (device.cpu.cop1.fcr31 & FCR31_CAUSE_MASK) >> 5
@@ -399,23 +399,22 @@ pub fn set_fpr_single(device: &mut device::Device, index: usize, value: f32, cle
         device.cpu.cop1.fgr32[index] = bytes;
     } else {
         let bytes_lo = bytes;
-        let bytes_hi: [u8; 4];
-        if clear_high {
-            bytes_hi = [0, 0, 0, 0];
+        let bytes_hi: [u8; 4] = if clear_high {
+            [0, 0, 0, 0]
         } else {
-            bytes_hi = device.cpu.cop1.fgr64[index][4..8].try_into().unwrap()
-        }
+            device.cpu.cop1.fgr64[index][4..8].try_into().unwrap()
+        };
         device.cpu.cop1.fgr64[index] = [bytes_lo, bytes_hi].concat().try_into().unwrap();
     }
 }
 
-pub fn get_fpr_single(device: &mut device::Device, index: usize) -> f32 {
+pub fn get_fpr_single(device: &device::Device, index: usize) -> f32 {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_FR
         == 0
     {
-        return f32::from_ne_bytes(device.cpu.cop1.fgr32[index]);
+        f32::from_ne_bytes(device.cpu.cop1.fgr32[index])
     } else {
-        return f32::from_ne_bytes(device.cpu.cop1.fgr64[index][0..4].try_into().unwrap());
+        f32::from_ne_bytes(device.cpu.cop1.fgr64[index][0..4].try_into().unwrap())
     }
 }
 
@@ -431,15 +430,15 @@ pub fn set_fpr_double(device: &mut device::Device, index: usize, value: f64) {
     }
 }
 
-pub fn get_fpr_double(device: &mut device::Device, index: usize) -> f64 {
+pub fn get_fpr_double(device: &device::Device, index: usize) -> f64 {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_FR
         == 0
     {
         let bytes_lo = device.cpu.cop1.fgr32[index & !1];
         let bytes_hi = device.cpu.cop1.fgr32[(index & !1) + 1];
-        return f64::from_ne_bytes([bytes_lo, bytes_hi].concat().try_into().unwrap());
+        f64::from_ne_bytes([bytes_lo, bytes_hi].concat().try_into().unwrap())
     } else {
-        return f64::from_ne_bytes(device.cpu.cop1.fgr64[index]);
+        f64::from_ne_bytes(device.cpu.cop1.fgr64[index])
     }
 }
 

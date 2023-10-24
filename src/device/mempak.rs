@@ -42,17 +42,17 @@ pub fn format_mempak(device: &mut device::Device) {
 
             /* Fill INODE page 1 and update it's checkum */
             let start_page = 5;
-            for i in 1 * MPK_PAGE_SIZE..2 * start_page {
+            for i in MPK_PAGE_SIZE..2 * start_page {
                 device.ui.saves.mempak.0[offset + i] = 0;
             }
-            for i in (1 * MPK_PAGE_SIZE + 2 * start_page..2 * MPK_PAGE_SIZE).step_by(2) {
-                device.ui.saves.mempak.0[offset + i + 0] = 0x00;
+            for i in (MPK_PAGE_SIZE + 2 * start_page..2 * MPK_PAGE_SIZE).step_by(2) {
+                device.ui.saves.mempak.0[offset + i] = 0x00;
                 device.ui.saves.mempak.0[offset + i + 1] = 0x03;
             }
-            device.ui.saves.mempak.0[offset + (1 * MPK_PAGE_SIZE + 1)] = 0x71;
+            device.ui.saves.mempak.0[offset + (MPK_PAGE_SIZE + 1)] = 0x71;
 
             /* Page 2 is identical to page 1 */
-            let page1 = offset + 1 * MPK_PAGE_SIZE;
+            let page1 = offset + MPK_PAGE_SIZE;
             let page2 = offset + 2 * MPK_PAGE_SIZE;
             let page1data = device.ui.saves.mempak.0[page1..page1 + MPK_PAGE_SIZE].to_vec();
             device.ui.saves.mempak.0[page2..page2 + MPK_PAGE_SIZE].copy_from_slice(&page1data);

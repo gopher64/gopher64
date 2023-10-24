@@ -78,7 +78,7 @@ pub fn pak_read_block(
         (device.pif.ram[addr_acrc] as u16) << 8 | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
     let handler = device.pif.channels[channel].pak_handler;
 
-    if !handler.is_none() {
+    if handler.is_some() {
         (handler.unwrap().read)(device, channel, address, data, PAK_CHUNK_SIZE);
         device.pif.ram[dcrc] = pak_data_crc(device, data, PAK_CHUNK_SIZE)
     } else {
@@ -97,7 +97,7 @@ pub fn pak_write_block(
         (device.pif.ram[addr_acrc] as u16) << 8 | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
     let handler = device.pif.channels[channel].pak_handler;
 
-    if !handler.is_none() {
+    if handler.is_some() {
         (handler.unwrap().write)(device, channel, address, data, PAK_CHUNK_SIZE);
         device.pif.ram[dcrc] = pak_data_crc(device, data, PAK_CHUNK_SIZE)
     } else {
@@ -105,19 +105,14 @@ pub fn pak_write_block(
     }
 }
 
-pub fn pak_data_crc(device: &mut device::Device, data_offset: usize, size: usize) -> u8 {
+pub fn pak_data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 {
     let mut i = 0;
     let mut crc = 0;
 
     while i <= size {
         let mut mask = 0x80;
         while mask >= 1 {
-            let xor_tap;
-            if crc & 0x80 != 0 {
-                xor_tap = 0x85
-            } else {
-                xor_tap = 0x00
-            }
+            let xor_tap = if crc & 0x80 != 0 { 0x85 } else { 0x00 };
             crc <<= 1;
             if i != size && (device.pif.ram[data_offset + i] & mask) != 0 {
                 crc |= 1;
@@ -127,5 +122,5 @@ pub fn pak_data_crc(device: &mut device::Device, data_offset: usize, size: usize
         }
         i += 1;
     }
-    return crc;
+    crc
 }

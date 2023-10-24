@@ -66,16 +66,16 @@ pub fn set_axis_from_joystick(
     if profile.joystick_axis[AXIS_DOWN].0 {
         let axis_position = joystick.axis(profile.joystick_axis[AXIS_DOWN].1).unwrap();
         if axis_position as isize * profile.joystick_axis[AXIS_DOWN].2 as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
+            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
         }
     }
     if profile.joystick_axis[AXIS_UP].0 {
         let axis_position = joystick.axis(profile.joystick_axis[AXIS_UP].1).unwrap();
         if axis_position as isize * profile.joystick_axis[AXIS_UP].2 as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
+            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
         }
     }
-    return (x, y);
+    (x, y)
 }
 
 pub fn set_axis_from_controller(
@@ -103,17 +103,17 @@ pub fn set_axis_from_controller(
             let axis_position =
                 controller.axis(std::mem::transmute(profile.controller_axis[AXIS_DOWN].1));
             if axis_position as isize * profile.controller_axis[AXIS_DOWN].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
+                y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
             }
         }
         if profile.controller_axis[AXIS_UP].0 {
             let axis_position =
                 controller.axis(std::mem::transmute(profile.controller_axis[AXIS_UP].1));
             if axis_position as isize * profile.controller_axis[AXIS_UP].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE as f64 / i16::MAX as f64).neg();
+                y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
             }
         }
-        return (x, y);
+        (x, y)
     }
 }
 
@@ -124,27 +124,27 @@ pub fn set_axis_from_keys(
     unsafe {
         let mut x = 0.0;
         let mut y = 0.0;
-        if profile.keys[AXIS_LEFT].0 {
-            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_LEFT].1)) {
-                x = -MAX_AXIS_VALUE
-            }
+        if profile.keys[AXIS_LEFT].0
+            && keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_LEFT].1))
+        {
+            x = -MAX_AXIS_VALUE
         }
-        if profile.keys[AXIS_RIGHT].0 {
-            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_RIGHT].1)) {
-                x = MAX_AXIS_VALUE
-            }
+        if profile.keys[AXIS_RIGHT].0
+            && keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_RIGHT].1))
+        {
+            x = MAX_AXIS_VALUE
         }
-        if profile.keys[AXIS_DOWN].0 {
-            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_DOWN].1)) {
-                y = -MAX_AXIS_VALUE
-            }
+        if profile.keys[AXIS_DOWN].0
+            && keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_DOWN].1))
+        {
+            y = -MAX_AXIS_VALUE
         }
-        if profile.keys[AXIS_UP].0 {
-            if keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_UP].1)) {
-                y = MAX_AXIS_VALUE
-            }
+        if profile.keys[AXIS_UP].0
+            && keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_UP].1))
+        {
+            y = MAX_AXIS_VALUE
         }
-        return (x, y);
+        (x, y)
     }
 }
 
@@ -160,25 +160,20 @@ pub fn set_buttons_from_joystick(
     }
 
     let profile_joystick_hat = profile.joystick_hat[i];
-    if profile_joystick_hat.0 {
-        if joystick.hat(profile_joystick_hat.1).unwrap()
+    if profile_joystick_hat.0
+        && joystick.hat(profile_joystick_hat.1).unwrap()
             == unsafe { std::mem::transmute(profile_joystick_hat.2) }
-        {
-            *keys |= 1 << i;
-        }
+    {
+        *keys |= 1 << i;
     }
 
     let profile_joystick_axis = profile.joystick_axis[i];
     if profile_joystick_axis.0 {
-        let axis_position = unsafe {
-            joystick
-                .axis(std::mem::transmute(profile_joystick_axis.1))
-                .unwrap()
-        };
-        if axis_position as isize * profile_joystick_axis.2 as isize > 0 {
-            if axis_position.saturating_abs() > i16::MAX / 2 {
-                *keys |= 1 << i;
-            }
+        let axis_position = joystick.axis(profile_joystick_axis.1).unwrap();
+        if axis_position as isize * profile_joystick_axis.2 as isize > 0
+            && axis_position.saturating_abs() > i16::MAX / 2
+        {
+            *keys |= 1 << i;
         }
     }
 }
@@ -201,10 +196,10 @@ pub fn set_buttons_from_controller(
     if profile_controller_axis.0 {
         let axis_position =
             unsafe { controller.axis(std::mem::transmute(profile_controller_axis.1)) };
-        if axis_position as isize * profile_controller_axis.2 as isize > 0 {
-            if axis_position.saturating_abs() > i16::MAX / 2 {
-                *keys |= 1 << i;
-            }
+        if axis_position as isize * profile_controller_axis.2 as isize > 0
+            && axis_position.saturating_abs() > i16::MAX / 2
+        {
+            *keys |= 1 << i;
         }
     }
 }
@@ -220,7 +215,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let controller = &ui.controllers[channel].game_controller;
     let joystick = &ui.controllers[channel].joystick;
     for i in 0..14 {
-        if profile_name != "default" || (channel == 0 && profile_name == "default") {
+        if profile_name != "default" || channel == 0 {
             let profile_key = profile.keys[i];
             if profile_key.0 {
                 unsafe {
@@ -241,7 +236,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let mut x: f64 = 0.0;
     let mut y: f64 = 0.0;
 
-    if profile_name != "default" || (channel == 0 && profile_name == "default") {
+    if profile_name != "default" || channel == 0 {
         (x, y) = set_axis_from_keys(profile, keyboard_state);
     }
 
@@ -254,10 +249,10 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
 
     keys |= (x.round() as i8 as u8 as u32) << X_AXIS;
     keys |= (y.round() as i8 as u8 as u32) << Y_AXIS;
-    return keys;
+    keys
 }
 
-pub fn list_controllers(ui: &mut ui::Ui) {
+pub fn list_controllers(ui: &ui::Ui) {
     let joystick_subsystem = ui.joystick_subsystem.as_ref().unwrap();
     let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
     if num_joysticks == 0 {

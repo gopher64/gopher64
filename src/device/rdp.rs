@@ -52,7 +52,7 @@ pub fn read_regs_dpc(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    return device.rdp.regs_dpc[((address & 0xFFFF) >> 2) as usize];
+    device.rdp.regs_dpc[((address & 0xFFFF) >> 2) as usize]
 }
 
 pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mask: u32) {
@@ -108,7 +108,7 @@ pub fn read_regs_dps(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    return device.rdp.regs_dps[((address & 0xFFFF) >> 2) as usize];
+    device.rdp.regs_dps[((address & 0xFFFF) >> 2) as usize]
 }
 
 pub fn write_regs_dps(device: &mut device::Device, address: u64, value: u32, mask: u32) {

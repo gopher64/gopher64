@@ -28,11 +28,11 @@ pub fn read_mem_fast(
     _access_size: device::memory::AccessSize,
 ) -> u32 {
     let masked_address = address as usize & CART_MASK;
-    return u32::from_be_bytes(
+    u32::from_be_bytes(
         device.cart.rom[masked_address..masked_address + 4]
             .try_into()
             .unwrap(),
-    );
+    )
 }
 
 pub fn read_mem(
@@ -45,14 +45,14 @@ pub fn read_mem(
 
     // well known cart ROM oddity, if a read is perfomed while PI_STATUS_IO_BUSY is set, the latched value is returned rather than the data at the specified address
     if device.pi.regs[device::pi::PI_STATUS_REG as usize] & device::pi::PI_STATUS_IO_BUSY != 0 {
-        return device.cart.latch;
+        device.cart.latch
     } else {
         let masked_address = address as usize & CART_MASK;
-        return u32::from_be_bytes(
+        u32::from_be_bytes(
             device.cart.rom[masked_address..masked_address + 4]
                 .try_into()
                 .unwrap(),
-        );
+        )
     }
 }
 
@@ -92,7 +92,7 @@ pub fn dma_read(
 
     device.ui.saves.romsave.1 = true;
 
-    return device::pi::calculate_cycles(device, 1, length);
+    device::pi::calculate_cycles(device, 1, length)
 }
 
 // cart is big endian, rdram is native endian
@@ -116,7 +116,7 @@ pub fn dma_write(
         device.rdram.mem[i as usize ^ device.byte_swap] = 0;
         i += 1;
     }
-    return device::pi::calculate_cycles(device, 1, length);
+    device::pi::calculate_cycles(device, 1, length)
 }
 
 pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {

@@ -31,7 +31,7 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    return device.si.regs[((address & 0xFFFF) >> 2) as usize];
+    device.si.regs[((address & 0xFFFF) >> 2) as usize]
 }
 
 pub fn dma_read(device: &mut device::Device) {

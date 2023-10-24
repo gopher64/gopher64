@@ -18,9 +18,9 @@ pub struct DCache {
     pub words: [u32; 4],
 }
 
-pub fn icache_hit(device: &mut device::Device, line_index: usize, phys_address: u64) -> bool {
-    return device.memory.icache[line_index].valid
-        && (device.memory.icache[line_index].tag & 0x1ffffffc) == (phys_address & !0xFFF) as u32;
+pub fn icache_hit(device: &device::Device, line_index: usize, phys_address: u64) -> bool {
+    device.memory.icache[line_index].valid
+        && (device.memory.icache[line_index].tag & 0x1ffffffc) == (phys_address & !0xFFF) as u32
 }
 
 pub fn icache_writeback(device: &mut device::Device, line_index: usize) {
@@ -31,7 +31,7 @@ pub fn icache_writeback(device: &mut device::Device, line_index: usize) {
         & 0x1ffffffc) as u64;
     device.memory.memory_map_write[(cache_address >> 16) as usize](
         device,
-        cache_address | 0x0,
+        cache_address,
         device.memory.icache[line_index].words[0],
         0xFFFFFFFF,
     );
@@ -90,7 +90,7 @@ pub fn icache_fill(device: &mut device::Device, line_index: usize, phys_address:
     device.memory.icache[line_index].words[0] = device.memory.memory_map_read
         [(cache_address >> 16) as usize](
         device,
-        cache_address | 0x0,
+        cache_address,
         device::memory::AccessSize::Icache,
     );
     device.memory.icache[line_index].words[1] = device.memory.memory_map_read
@@ -166,9 +166,9 @@ pub fn icache_fetch(device: &mut device::Device, phys_address: u64) {
     );
 }
 
-pub fn dcache_hit(device: &mut device::Device, line_index: usize, phys_address: u64) -> bool {
-    return device.memory.dcache[line_index].valid
-        && (device.memory.dcache[line_index].tag & 0x1ffffffc) == (phys_address & !0xFFF) as u32;
+pub fn dcache_hit(device: &device::Device, line_index: usize, phys_address: u64) -> bool {
+    device.memory.dcache[line_index].valid
+        && (device.memory.dcache[line_index].tag & 0x1ffffffc) == (phys_address & !0xFFF) as u32
 }
 
 pub fn dcache_writeback(device: &mut device::Device, line_index: usize) {
@@ -181,7 +181,7 @@ pub fn dcache_writeback(device: &mut device::Device, line_index: usize) {
         & 0x1ffffffc) as u64;
     device.memory.memory_map_write[(cache_address >> 16) as usize](
         device,
-        cache_address | 0x0,
+        cache_address,
         device.memory.dcache[line_index].words[0],
         0xFFFFFFFF,
     );
@@ -218,7 +218,7 @@ pub fn dcache_fill(device: &mut device::Device, line_index: usize, phys_address:
     device.memory.dcache[line_index].words[0] = device.memory.memory_map_read
         [(cache_address >> 16) as usize](
         device,
-        cache_address | 0x0,
+        cache_address,
         device::memory::AccessSize::Dcache,
     );
     device.memory.dcache[line_index].words[1] = device.memory.memory_map_read
@@ -251,7 +251,7 @@ pub fn dcache_read(device: &mut device::Device, phys_address: u64) -> u32 {
     } else {
         device::cop0::add_cycles(device, 1)
     }
-    return device.memory.dcache[line_index].words[((phys_address >> 2) & 3) as usize];
+    device.memory.dcache[line_index].words[((phys_address >> 2) & 3) as usize]
 }
 
 pub fn dcache_write(device: &mut device::Device, phys_address: u64, value: u32, mask: u32) {
