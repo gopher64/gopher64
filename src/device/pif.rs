@@ -30,23 +30,21 @@ pub fn read_mem(
 ) -> u32 {
     device::cop0::add_cycles(device, 3000); //based on https://github.com/rasky/n64-systembench
 
-    let value;
     let mut masked_address = address as usize & PIF_MASK;
     if masked_address < PIF_RAM_OFFSET {
-        value = u32::from_be_bytes(
+        u32::from_be_bytes(
             device.pif.rom[masked_address..masked_address + 4]
                 .try_into()
                 .unwrap(),
-        );
+        )
     } else {
         masked_address -= PIF_RAM_OFFSET;
-        value = u32::from_be_bytes(
+        u32::from_be_bytes(
             device.pif.ram[masked_address..masked_address + 4]
                 .try_into()
                 .unwrap(),
-        );
+        )
     }
-    value
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {

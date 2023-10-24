@@ -112,12 +112,7 @@ pub fn pak_data_crc(device: &device::Device, data_offset: usize, size: usize) ->
     while i <= size {
         let mut mask = 0x80;
         while mask >= 1 {
-            let xor_tap;
-            if crc & 0x80 != 0 {
-                xor_tap = 0x85
-            } else {
-                xor_tap = 0x00
-            }
+            let xor_tap = if crc & 0x80 != 0 { 0x85 } else { 0x00 };
             crc <<= 1;
             if i != size && (device.pif.ram[data_offset + i] & mask) != 0 {
                 crc |= 1;

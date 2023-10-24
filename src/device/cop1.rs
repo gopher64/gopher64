@@ -399,12 +399,11 @@ pub fn set_fpr_single(device: &mut device::Device, index: usize, value: f32, cle
         device.cpu.cop1.fgr32[index] = bytes;
     } else {
         let bytes_lo = bytes;
-        let bytes_hi: [u8; 4];
-        if clear_high {
-            bytes_hi = [0, 0, 0, 0];
+        let bytes_hi: [u8; 4] = if clear_high {
+            [0, 0, 0, 0]
         } else {
-            bytes_hi = device.cpu.cop1.fgr64[index][4..8].try_into().unwrap()
-        }
+            device.cpu.cop1.fgr64[index][4..8].try_into().unwrap()
+        };
         device.cpu.cop1.fgr64[index] = [bytes_lo, bytes_hi].concat().try_into().unwrap();
     }
 }

@@ -228,6 +228,7 @@ pub fn ldl(device: &mut device::Device, opcode: u32) {
     let addr = device.cpu.gpr[rs(opcode) as usize].wrapping_add(se16(imm(opcode) as i16));
     let n = addr & 7;
     let shift = 8 * n;
+
     let mask = bits_below_mask(8 * n);
 
     let (mut phys_address, cached, err) =
@@ -258,12 +259,12 @@ pub fn ldr(device: &mut device::Device, opcode: u32) {
     let addr = device.cpu.gpr[rs(opcode) as usize].wrapping_add(se16(imm(opcode) as i16));
     let n = addr & 7;
     let shift = 8 * (7 - n);
-    let mask;
-    if n == 7 {
-        mask = 0
+
+    let mask = if n == 7 {
+        0
     } else {
-        mask = bits_above_mask(8 * (n + 1))
-    }
+        bits_above_mask(8 * (n + 1))
+    };
 
     let (mut phys_address, cached, err) =
         device::memory::translate_address(device, addr, device::memory::AccessType::Read);
@@ -333,6 +334,7 @@ pub fn lwl(device: &mut device::Device, opcode: u32) {
     let addr = device.cpu.gpr[rs(opcode) as usize].wrapping_add(se16(imm(opcode) as i16));
     let n = addr & 3;
     let shift = 8 * n;
+
     let mask = bits_below_mask(8 * n) as u32;
 
     let (mut phys_address, cached, err) =
@@ -413,12 +415,12 @@ pub fn lwr(device: &mut device::Device, opcode: u32) {
     let addr = device.cpu.gpr[rs(opcode) as usize].wrapping_add(se16(imm(opcode) as i16));
     let n = addr & 3;
     let shift = 8 * (3 - n);
-    let mask;
-    if n == 3 {
-        mask = 0
+
+    let mask = if n == 3 {
+        0
     } else {
-        mask = bits_above_mask(8 * (n + 1))
-    }
+        bits_above_mask(8 * (n + 1))
+    };
 
     let (mut phys_address, cached, err) =
         device::memory::translate_address(device, addr, device::memory::AccessType::Read);
@@ -503,12 +505,11 @@ pub fn swl(device: &mut device::Device, opcode: u32) {
     let n = addr & 3;
     let shift = 8 * n;
 
-    let mask;
-    if n == 0 {
-        mask = u32::MAX
+    let mask = if n == 0 {
+        u32::MAX
     } else {
-        mask = bits_below_mask(8 * (4 - n)) as u32
-    }
+        bits_below_mask(8 * (4 - n)) as u32
+    };
 
     let (mut phys_address, cached, err) =
         device::memory::translate_address(device, addr, device::memory::AccessType::Write);
@@ -550,12 +551,11 @@ pub fn sdl(device: &mut device::Device, opcode: u32) {
     let n = addr & 7;
     let shift = 8 * n;
 
-    let mask;
-    if n == 0 {
-        mask = u64::MAX
+    let mask = if n == 0 {
+        u64::MAX
     } else {
-        mask = bits_below_mask(8 * (8 - n))
-    }
+        bits_below_mask(8 * (8 - n))
+    };
 
     let (mut phys_address, cached, err) =
         device::memory::translate_address(device, addr, device::memory::AccessType::Write);
@@ -758,7 +758,9 @@ pub fn cache(device: &mut device::Device, opcode: u32) {
         }
         0x19 => {
             //dcache hit write back
-            if device::cache::dcache_hit(device, dcache_line, phys_address) && device.memory.dcache[dcache_line].dirty {
+            if device::cache::dcache_hit(device, dcache_line, phys_address)
+                && device.memory.dcache[dcache_line].dirty
+            {
                 device::cache::dcache_writeback(device, dcache_line)
             }
         }

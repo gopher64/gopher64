@@ -949,29 +949,14 @@ pub fn sfv(device: &mut device::Device, opcode: u32) {
     let base = address & 7;
     address &= !7;
     let element = velement(opcode);
-    let elements;
-    match element {
-        0 | 15 => {
-            elements = [0, 1, 2, 3];
-        }
-        1 => {
-            elements = [6, 7, 4, 5];
-        }
-        4 => {
-            elements = [1, 2, 3, 0];
-        }
-        5 => {
-            elements = [7, 4, 5, 6];
-        }
-        8 => {
-            elements = [4, 5, 6, 7];
-        }
-        11 => {
-            elements = [3, 0, 1, 2];
-        }
-        12 => {
-            elements = [5, 6, 7, 4];
-        }
+    let elements = match element {
+        0 | 15 => [0, 1, 2, 3],
+        1 => [6, 7, 4, 5],
+        4 => [1, 2, 3, 0],
+        5 => [7, 4, 5, 6],
+        8 => [4, 5, 6, 7],
+        11 => [3, 0, 1, 2],
+        12 => [5, 6, 7, 4],
         _ => {
             device.rsp.mem[((address + (base & 15)) & 0xFFF) as usize] = 0;
             device.rsp.mem[((address + ((base + 4) & 15)) & 0xFFF) as usize] = 0;
@@ -979,7 +964,7 @@ pub fn sfv(device: &mut device::Device, opcode: u32) {
             device.rsp.mem[((address + ((base + 12) & 15)) & 0xFFF) as usize] = 0;
             return;
         }
-    }
+    };
     let mut offset = 0;
     let mut i = 0;
     while i < 4 {
