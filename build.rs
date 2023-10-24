@@ -51,6 +51,11 @@ fn main() {
     #[cfg(target_os = "windows")]
     {
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
+
+        winres::WindowsResource::new()
+            .set_icon("data/icon.ico")
+            .compile()
+            .unwrap();
     }
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
