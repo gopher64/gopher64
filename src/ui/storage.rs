@@ -146,12 +146,12 @@ pub fn load_saves(ui: &mut ui::Ui) {
     }
 }
 
-pub fn write_rom_save(ui: &mut ui::Ui) {
+pub fn write_rom_save(ui: &ui::Ui) {
     let f = std::fs::File::create(ui.paths.romsave_file_path.clone()).unwrap();
     serde_json::to_writer(f, &ui.saves.romsave).unwrap();
 }
 
-pub fn write_saves(ui: &mut ui::Ui) {
+pub fn write_saves(ui: &ui::Ui) {
     if ui.saves.eeprom.1 {
         write_save(ui, SaveTypes::Eeprom16k)
     }
@@ -169,7 +169,7 @@ pub fn write_saves(ui: &mut ui::Ui) {
     }
 }
 
-pub fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
+pub fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
     let path: &std::path::Path;
     let data: &Vec<u8>;
     match save_type {

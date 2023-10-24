@@ -54,12 +54,12 @@ pub struct Cpu {
     pub vec_instrs: [fn(&mut device::Device, u32); 64],
 }
 
-pub fn in_delay_slot(device: &mut device::Device) -> bool {
+pub fn in_delay_slot(device: &device::Device) -> bool {
     device.rsp.cpu.branch_state.state == device::cpu::State::DelaySlotTaken
         || device.rsp.cpu.branch_state.state == device::cpu::State::DelaySlotNotTaken
 }
 
-pub fn in_delay_slot_taken(device: &mut device::Device) -> bool {
+pub fn in_delay_slot_taken(device: &device::Device) -> bool {
     device.rsp.cpu.branch_state.state == device::cpu::State::DelaySlotTaken
 }
 
@@ -127,10 +127,10 @@ pub fn run(device: &mut device::Device) -> u64 {
             }
         }
     }
-    (device.rsp.cpu.cycle_counter as f64 * 1.5) as u64// converting RCP clock to CPU clock
+    (device.rsp.cpu.cycle_counter as f64 * 1.5) as u64 // converting RCP clock to CPU clock
 }
 
-pub fn decode_opcode(device: &mut device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
+pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
     match opcode >> 26 {
         0 => {
             // SPECIAL

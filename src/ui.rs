@@ -29,7 +29,7 @@ impl Drop for Ui {
     }
 }
 
-fn write_config(ui: &mut Ui) {
+fn write_config(ui: &Ui) {
     let f = std::fs::File::create(ui.config_file_path.clone()).unwrap();
     serde_json::to_writer_pretty(f, &ui.config).unwrap();
 }

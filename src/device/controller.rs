@@ -105,7 +105,7 @@ pub fn pak_write_block(
     }
 }
 
-pub fn pak_data_crc(device: &mut device::Device, data_offset: usize, size: usize) -> u8 {
+pub fn pak_data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 {
     let mut i = 0;
     let mut crc = 0;
 

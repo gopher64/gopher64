@@ -158,7 +158,7 @@ pub fn init(device: &mut device::Device) {
     */
 }
 
-pub fn speed_limiter(device: &mut device::Device) {
+pub fn speed_limiter(device: &device::Device) {
     let result = device.vi.limiter.as_ref().unwrap().check();
     if result.is_err() {
         let outcome = result.unwrap_err();

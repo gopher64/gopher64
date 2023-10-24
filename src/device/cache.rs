@@ -18,7 +18,7 @@ pub struct DCache {
     pub words: [u32; 4],
 }
 
-pub fn icache_hit(device: &mut device::Device, line_index: usize, phys_address: u64) -> bool {
+pub fn icache_hit(device: &device::Device, line_index: usize, phys_address: u64) -> bool {
     device.memory.icache[line_index].valid
         && (device.memory.icache[line_index].tag & 0x1ffffffc) == (phys_address & !0xFFF) as u32
 }
@@ -166,7 +166,7 @@ pub fn icache_fetch(device: &mut device::Device, phys_address: u64) {
     );
 }
 
-pub fn dcache_hit(device: &mut device::Device, line_index: usize, phys_address: u64) -> bool {
+pub fn dcache_hit(device: &device::Device, line_index: usize, phys_address: u64) -> bool {
     device.memory.dcache[line_index].valid
         && (device.memory.dcache[line_index].tag & 0x1ffffffc) == (phys_address & !0xFFF) as u32
 }

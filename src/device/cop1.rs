@@ -340,7 +340,7 @@ pub fn reserved(device: &mut device::Device, opcode: u32) {
     device::exceptions::reserved_exception(device, device::cop0::COP0_CAUSE_CE1);
 }
 
-pub fn get_control_registers_fpu(device: &mut device::Device, index: u32) -> u32 {
+pub fn get_control_registers_fpu(device: &device::Device, index: u32) -> u32 {
     match index {
         0 => device.cpu.cop1.fcr0,
         31 => device.cpu.cop1.fcr31,
@@ -409,7 +409,7 @@ pub fn set_fpr_single(device: &mut device::Device, index: usize, value: f32, cle
     }
 }
 
-pub fn get_fpr_single(device: &mut device::Device, index: usize) -> f32 {
+pub fn get_fpr_single(device: &device::Device, index: usize) -> f32 {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_FR
         == 0
     {
@@ -431,7 +431,7 @@ pub fn set_fpr_double(device: &mut device::Device, index: usize, value: f64) {
     }
 }
 
-pub fn get_fpr_double(device: &mut device::Device, index: usize) -> f64 {
+pub fn get_fpr_double(device: &device::Device, index: usize) -> f64 {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_FR
         == 0
     {

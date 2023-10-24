@@ -36,7 +36,7 @@ pub struct Cpu {
     pub next_event: usize,
 }
 
-pub fn decode_opcode(device: &mut device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
+pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
     match opcode >> 26 {
         0 => device.cpu.special_instrs[(opcode & 0x3F) as usize], // SPECIAL
         1 => device.cpu.regimm_instrs[((opcode >> 16) & 0x1F) as usize], // REGIMM
@@ -221,12 +221,12 @@ pub fn init(device: &mut device::Device) {
     device::cop2::init(device);
 }
 
-pub fn in_delay_slot(device: &mut device::Device) -> bool {
+pub fn in_delay_slot(device: &device::Device) -> bool {
     device.cpu.branch_state.state == State::DelaySlotTaken
         || device.cpu.branch_state.state == State::DelaySlotNotTaken
 }
 
-pub fn in_delay_slot_taken(device: &mut device::Device) -> bool {
+pub fn in_delay_slot_taken(device: &device::Device) -> bool {
     device.cpu.branch_state.state == State::DelaySlotTaken
 }
 

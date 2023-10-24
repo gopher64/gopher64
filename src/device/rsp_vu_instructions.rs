@@ -70,7 +70,7 @@ pub fn get_vpr_element(vpr: u128, element: u8) -> u16 {
     (vpr >> (pos * 16)) as u16
 }
 
-pub fn vte(device: &mut device::Device, vt: u32, index: usize) -> __m128i {
+pub fn vte(device: &device::Device, vt: u32, index: usize) -> __m128i {
     unsafe {
         _mm_shuffle_epi8(
             std::mem::transmute(device.rsp.cpu.vpr[vt as usize]),

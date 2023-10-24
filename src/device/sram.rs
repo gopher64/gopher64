@@ -51,7 +51,7 @@ pub fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
     )
 }
 
-pub fn read_mem_flash(device: &mut device::Device, address: u64) -> u32 {
+pub fn read_mem_flash(device: &device::Device, address: u64) -> u32 {
     if (address & 0x1ffff) == 0x00000 && device.flashram.mode == FlashramMode::Status {
         /* read Status register */
         device.flashram.status
@@ -297,8 +297,7 @@ pub fn flashram_command(device: &mut device::Device, command: u32) {
             /* program selected page */
             let offset: usize = (command & 0xffff) as usize * 128;
             for i in 0..128 {
-                device.ui.saves.flash.0[offset + i] =
-                    device.flashram.page_buf[i];
+                device.ui.saves.flash.0[offset + i] = device.flashram.page_buf[i];
             }
             device.ui.saves.flash.1 = true;
 

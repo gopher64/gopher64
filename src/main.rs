@@ -147,7 +147,7 @@ fn main() {
         }
     }
     if args.list_controllers {
-        ui::input::list_controllers(&mut device.ui);
+        ui::input::list_controllers(&device.ui);
         return;
     }
     if args.assign_controller.is_some() {

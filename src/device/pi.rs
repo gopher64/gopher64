@@ -156,7 +156,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     }
 }
 
-pub fn calculate_cycles(device: &mut device::Device, domain: i32, length: u32) -> u64 {
+pub fn calculate_cycles(device: &device::Device, domain: i32, length: u32) -> u64 {
     let mut cycles: f64 = 0.0;
     let (page_size, latency, pulse_width, release, pages);
     let page_size_base: f64 = 2.0;

@@ -43,7 +43,7 @@ pub fn get_remaining_dma_length(device: &mut device::Device) -> u64 {
     dma_length & !7
 }
 
-pub fn get_dma_duration(device: &mut device::Device) -> u64 {
+pub fn get_dma_duration(device: &device::Device) -> u64 {
     let samples_per_sec = device.vi.clock / (1 + device.ai.regs[AI_DACRATE_REG as usize]) as u64;
     let bytes_per_sample = 4; /* XXX: assume 16bit stereo - should depends on bitrate instead */
     let length = (device.ai.regs[AI_LEN_REG as usize] & !7) as u64;
@@ -58,7 +58,8 @@ pub fn do_dma(device: &mut device::Device) {
         device.ai.fifo[0].address += 0x2000;
     }
 
-    device.ai.delayed_carry = ((device.ai.fifo[0].address + device.ai.fifo[0].length) & 0x1FFF) == 0;
+    device.ai.delayed_carry =
+        ((device.ai.fifo[0].address + device.ai.fifo[0].length) & 0x1FFF) == 0;
 
     /* schedule end of dma event */
     device::events::create_event(
