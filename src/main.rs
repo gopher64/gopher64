@@ -59,7 +59,7 @@ fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
     let test = u32::from_be_bytes(contents[0..4].try_into().unwrap());
     if test == 0x80371240 {
         // z64
-        return contents;
+        contents
     } else if test == 0x37804012 {
         // v64
         let mut data: Vec<u8> = vec![0; contents.len()];
@@ -128,7 +128,7 @@ fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
         contents = fs::read(file_path).expect("Should have been able to read the file");
     }
 
-    return swap_rom(contents);
+    swap_rom(contents)
 }
 
 fn main() {
@@ -141,7 +141,7 @@ fn main() {
     }
     if args.port.is_some() {
         let port = args.port.unwrap();
-        if port < 1 || port > 4 {
+        if !(1..=4).contains(&port) {
             println!("Port must be betwen 1 and 4");
             return;
         }

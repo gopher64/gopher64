@@ -30,7 +30,7 @@ pub fn create_event(
     device.cpu.events[name as usize] = Event {
         enabled: true,
         count: when,
-        handler: handler,
+        handler,
     };
     set_next_event(device);
 }
@@ -39,7 +39,7 @@ pub fn get_event(device: &mut device::Device, name: EventType) -> Option<&mut Ev
     if device.cpu.events[name as usize].enabled {
         return Some(&mut device.cpu.events[name as usize]);
     }
-    return None;
+    None
 }
 
 pub fn remove_event(device: &mut device::Device, name: EventType) {

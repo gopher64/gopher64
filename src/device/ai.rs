@@ -32,7 +32,7 @@ pub fn get_remaining_dma_length(device: &mut device::Device) -> u64 {
     }
 
     let next_ai_event = device::events::get_event(device, device::events::EventType::AI);
-    if next_ai_event == None {
+    if next_ai_event.is_none() {
         return 0;
     }
 
@@ -40,7 +40,7 @@ pub fn get_remaining_dma_length(device: &mut device::Device) -> u64 {
         next_ai_event.unwrap().count - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize];
 
     let dma_length = remaining_dma_duration * device.ai.fifo[0].length / device.ai.fifo[0].duration;
-    return dma_length & !7;
+    dma_length & !7
 }
 
 pub fn get_dma_duration(device: &mut device::Device) -> u64 {
@@ -48,7 +48,7 @@ pub fn get_dma_duration(device: &mut device::Device) -> u64 {
     let bytes_per_sample = 4; /* XXX: assume 16bit stereo - should depends on bitrate instead */
     let length = (device.ai.regs[AI_LEN_REG as usize] & !7) as u64;
 
-    return length * (device.cpu.clock_rate / (bytes_per_sample * samples_per_sec));
+    length * (device.cpu.clock_rate / (bytes_per_sample * samples_per_sec))
 }
 
 pub fn do_dma(device: &mut device::Device) {
@@ -58,11 +58,7 @@ pub fn do_dma(device: &mut device::Device) {
         device.ai.fifo[0].address += 0x2000;
     }
 
-    if ((device.ai.fifo[0].address + device.ai.fifo[0].length) & 0x1FFF) == 0 {
-        device.ai.delayed_carry = true;
-    } else {
-        device.ai.delayed_carry = false;
-    }
+    device.ai.delayed_carry = ((device.ai.fifo[0].address + device.ai.fifo[0].length) & 0x1FFF) == 0;
 
     /* schedule end of dma event */
     device::events::create_event(
@@ -128,9 +124,9 @@ pub fn read_regs(
 
                 device.ai.last_read = value;
             }
-            return value as u32;
+            value as u32
         }
-        _ => return device.ai.regs[reg as usize],
+        _ => device.ai.regs[reg as usize],
     }
 }
 

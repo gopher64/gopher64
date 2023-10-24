@@ -54,7 +54,7 @@ pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
         "NEP" | // Star Wars Episode I: Racer
         "NYS"   // Yoshi's Story
         => {
-            return vec![SaveTypes::Eeprom16k]
+            vec![SaveTypes::Eeprom16k]
         }
         "NCC" | // Command & Conquer
         "NDA" | // Derby Stallion 64
@@ -76,12 +76,12 @@ pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
         "NW4" | // WWF No Mercy
         "NDP"   // Dinosaur Planet (Unlicensed)
         =>{
-            return vec![SaveTypes::Flash]
+            vec![SaveTypes::Flash]
         }
         "NPQ" // Powerpuff Girls: Chemical X Traction
-        => {return vec![];}
+        => {vec![]}
         _ => {
-            return vec![SaveTypes::Eeprom4k, SaveTypes::Sram]
+            vec![SaveTypes::Eeprom4k, SaveTypes::Sram]
         }
     }
 }

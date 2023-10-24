@@ -15,11 +15,11 @@ pub fn read_mem_fast(
     _access_size: device::memory::AccessSize,
 ) -> u32 {
     let masked_address = address as usize & RDRAM_MASK;
-    return u32::from_ne_bytes(
+    u32::from_ne_bytes(
         device.rdram.mem[masked_address..masked_address + 4]
             .try_into()
             .unwrap(),
-    );
+    )
 }
 
 pub fn read_mem(
@@ -33,13 +33,13 @@ pub fn read_mem(
     );
     let masked_address = address as usize & RDRAM_MASK;
     if address < RDRAM_SIZE as u64 {
-        return u32::from_ne_bytes(
+        u32::from_ne_bytes(
             device.rdram.mem[masked_address..masked_address + 4]
                 .try_into()
                 .unwrap(),
-        );
+        )
     } else {
-        return 0;
+        0
     }
 }
 
@@ -78,9 +78,9 @@ pub fn init(device: &mut device::Device) -> (*mut u8, usize) {
     let data: u32 = RDRAM_SIZE as u32;
     device.rdram.mem[device.cart.rdram_size_offset..device.cart.rdram_size_offset + 4]
         .copy_from_slice(&data.to_ne_bytes());
-    return (ptr, RDRAM_SIZE);
+    (ptr, RDRAM_SIZE)
 }
 
 pub fn rdram_calculate_cycles(length: u64) -> u64 {
-    return 31 + (length / 3); // https://hcs64.com/dma.html, https://github.com/rasky/n64-systembench
+    31 + (length / 3)// https://hcs64.com/dma.html, https://github.com/rasky/n64-systembench
 }

@@ -1,15 +1,15 @@
 use crate::device;
 
 pub fn fs(opcode: u32) -> u32 {
-    return (opcode >> 11) & 0x1F;
+    (opcode >> 11) & 0x1F
 }
 
 pub fn ft(opcode: u32) -> u32 {
-    return (opcode >> 16) & 0x1F;
+    (opcode >> 16) & 0x1F
 }
 
 pub fn fd(opcode: u32) -> u32 {
-    return (opcode >> 6) & 0x1F;
+    (opcode >> 6) & 0x1F
 }
 
 pub fn bc1f(device: &mut device::Device, opcode: u32) {

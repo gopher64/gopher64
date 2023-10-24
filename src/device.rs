@@ -62,7 +62,7 @@ impl Device {
         }
         Device {
             ui: ui::Ui::new(),
-            byte_swap: byte_swap,
+            byte_swap,
             cpu: cpu::Cpu {
                 cop0: cop0::Cop0 {
                     regs: [0; cop0::COP0_REGS_COUNT as usize],

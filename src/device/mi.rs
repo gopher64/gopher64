@@ -53,7 +53,7 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    return device.mi.regs[((address & 0xFFFF) >> 2) as usize];
+    device.mi.regs[((address & 0xFFFF) >> 2) as usize]
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {

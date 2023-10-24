@@ -8,11 +8,11 @@ pub fn read_mem(
     _access_size: device::memory::AccessSize,
 ) -> u32 {
     let masked_address = address as usize & IS_VIEWER_MASK;
-    return u32::from_be_bytes(
+    u32::from_be_bytes(
         device.cart.is_viewer_buffer[masked_address..masked_address + 4]
             .try_into()
             .unwrap(),
-    );
+    )
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
@@ -20,7 +20,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     if masked_address == 0x14 {
         let length = (value & mask) as u64;
         let data = std::str::from_utf8(
-            &device.cart.is_viewer_buffer[0x20 as usize..(0x20 + length) as usize],
+            &device.cart.is_viewer_buffer[0x20_usize..(0x20 + length) as usize],
         )
         .unwrap();
         print!("{}", data);

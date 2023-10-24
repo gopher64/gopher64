@@ -34,7 +34,7 @@ impl Config {
                     "default".to_string(),
                 ],
                 controller_assignment: [None, None, None, None],
-                input_profiles: input_profiles,
+                input_profiles,
             },
         }
     }

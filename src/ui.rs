@@ -74,7 +74,7 @@ impl Ui {
                     joystick: None,
                 },
             ],
-            config_file_path: config_file_path,
+            config_file_path,
             config: config_map,
             save_type: vec![],
             game_id: String::new(),
