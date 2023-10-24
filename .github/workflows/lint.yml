@@ -1,0 +1,28 @@
+name: Rust-lint
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install sdl2 headers
+        run: |
+          sudo apt -y install libsdl2-dev
+      - name: Update rust
+        run: |
+          rustup update
+          rustup component add clippy
+      - name: Lint
+        run: |
+          cargo clippy -- -Dwarnings
