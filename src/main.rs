@@ -131,6 +131,33 @@ fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
     swap_rom(contents)
 }
 
+fn run_game(file_path: &std::path::Path, device: &mut device::Device, fullscreen: bool) {
+    let rom_contents = get_rom_contents(file_path);
+
+    device::cart_rom::init(device, rom_contents); // cart needs to come before rdram
+
+    // rdram pointer is shared with parallel-rdp
+    let (rdram_ptr, rdram_size) = device::rdram::init(device);
+
+    ui::audio::init(&mut device.ui, 33600);
+    ui::video::init(&mut device.ui, rdram_ptr, rdram_size, fullscreen);
+    ui::input::init(&mut device.ui);
+
+    device::mi::init(device);
+    device::pif::init(device);
+    device::memory::init(device);
+    device::rsp_interface::init(device);
+    device::rdp::init(device);
+    device::vi::init(device);
+    device::cpu::init(device);
+
+    ui::storage::init(&mut device.ui);
+    ui::storage::load_saves(&mut device.ui);
+    device::cart_rom::load_rom_save(device);
+
+    device::cpu::run(device);
+}
+
 fn main() {
     let args = Args::parse();
     let mut device = device::Device::new();
@@ -178,30 +205,8 @@ fn main() {
         ui::input::configure_input_profile(&mut device.ui, args.configure_input_profile.unwrap());
         return;
     }
-    let file_path = std::path::Path::new(args.game.as_ref().unwrap());
-
-    let rom_contents = get_rom_contents(file_path);
-
-    device::cart_rom::init(&mut device, rom_contents); // cart needs to come before rdram
-
-    // rdram pointer is shared with parallel-rdp
-    let (rdram_ptr, rdram_size) = device::rdram::init(&mut device);
-
-    ui::audio::init(&mut device.ui, 33600);
-    ui::video::init(&mut device.ui, rdram_ptr, rdram_size, args.fullscreen);
-    ui::input::init(&mut device.ui);
-
-    device::mi::init(&mut device);
-    device::pif::init(&mut device);
-    device::memory::init(&mut device);
-    device::rsp_interface::init(&mut device);
-    device::rdp::init(&mut device);
-    device::vi::init(&mut device);
-    device::cpu::init(&mut device);
-
-    ui::storage::init(&mut device.ui);
-    ui::storage::load_saves(&mut device.ui);
-    device::cart_rom::load_rom_save(&mut device);
-
-    device::cpu::run(&mut device);
+    if args.game.is_some() {
+        let file_path = std::path::Path::new(args.game.as_ref().unwrap());
+        run_game(file_path, &mut device, args.fullscreen);
+    }
 }
