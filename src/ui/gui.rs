@@ -16,7 +16,7 @@ impl eframe::App for GopherEguiApp {
                 }
             }
 
-            if ui.button("Configure Input Profile").clicked() {}
+            ui.button("Configure Input Profile").clicked();
 
             if let Some(picked_path) = &self.picked_path {
                 ui.horizontal(|ui| {
