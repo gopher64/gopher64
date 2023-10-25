@@ -10,13 +10,13 @@ pub struct GopherEguiApp {
 impl eframe::App for GopherEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("gopher64!");
-
-            if ui.button("Open ROM…").clicked() {
+            if ui.button("Open ROM").clicked() {
                 if let Some(path) = rfd::FileDialog::new().pick_file() {
                     self.picked_path = Some(path.display().to_string());
                 }
             }
+
+            if ui.button("Configure Input Profile").clicked() {}
 
             if let Some(picked_path) = &self.picked_path {
                 ui.horizontal(|ui| {
