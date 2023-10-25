@@ -210,11 +210,15 @@ fn main() {
         let file_path = std::path::Path::new(args.game.as_ref().unwrap());
         run_game(file_path, &mut device, args.fullscreen);
     } else {
-        let native_options = eframe::NativeOptions::default();
+        let options = eframe::NativeOptions {
+            drag_and_drop_support: true,
+            initial_window_size: Some(eframe::egui::vec2(320.0, 240.0)),
+            ..Default::default()
+        };
         eframe::run_native(
             "gopher64",
-            native_options,
-            Box::new(|cc| Box::new(ui::gui::GopherEguiApp::new(cc))),
+            options,
+            Box::new(|_cc| Box::<ui::gui::GopherEguiApp>::default()),
         )
         .unwrap();
     }
