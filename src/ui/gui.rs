@@ -1,3 +1,4 @@
+use crate::device;
 use eframe::egui;
 
 #[derive(Default)]
@@ -17,10 +18,13 @@ impl eframe::App for GopherEguiApp {
             ui.button("Configure Input Profile").clicked();
 
             if let Some(picked_path) = &self.picked_path {
-                ui.horizontal(|ui| {
-                    ui.label("Picked file:");
-                    ui.monospace(picked_path);
+                std::thread::scope(|s| {
+                    s.spawn(|| {
+                        let mut device = device::Device::new();
+                        device::run_game(std::path::Path::new(picked_path), &mut device, false);
+                    });
                 });
+                self.picked_path = None;
             }
         });
     }
