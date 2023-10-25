@@ -212,7 +212,7 @@ fn main() {
     } else {
         let native_options = eframe::NativeOptions::default();
         eframe::run_native(
-            "MyApp",
+            "gopher64",
             native_options,
             Box::new(|cc| Box::new(ui::gui::GopherEguiApp::new(cc))),
         )
