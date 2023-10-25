@@ -205,8 +205,17 @@ fn main() {
         ui::input::configure_input_profile(&mut device.ui, args.configure_input_profile.unwrap());
         return;
     }
+
     if args.game.is_some() {
         let file_path = std::path::Path::new(args.game.as_ref().unwrap());
         run_game(file_path, &mut device, args.fullscreen);
+    } else {
+        let native_options = eframe::NativeOptions::default();
+        eframe::run_native(
+            "MyApp",
+            native_options,
+            Box::new(|cc| Box::new(ui::gui::GopherEguiApp::new(cc))),
+        )
+        .unwrap();
     }
 }
