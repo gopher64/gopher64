@@ -1,12 +1,37 @@
 use crate::device;
+use crate::ui;
 use eframe::egui;
 
 #[derive(Default)]
-pub struct GopherEguiApp {}
+pub struct GopherEguiApp {
+    configure_profile: bool,
+    profile_name: String,
+}
 
 impl eframe::App for GopherEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if self.configure_profile {
+            egui::Window::new("Configure Input Profile")
+                .open(&mut self.configure_profile)
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        let name_label = ui.label("Profile Name: ");
+                        ui.text_edit_singleline(&mut self.profile_name)
+                            .labelled_by(name_label.id);
+                    });
+                    if ui.button("Configure Profile").clicked() {
+                        let profile_name = self.profile_name.clone();
+                        execute(async {
+                            let mut device = device::Device::new();
+                            ui::input::configure_input_profile(&mut device.ui, profile_name);
+                        });
+                    };
+                });
+        }
+
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.set_enabled(!self.configure_profile);
+
             if ui.button("Open ROM").clicked() {
                 // Spawn dialog on main thread
                 let task = rfd::AsyncFileDialog::new().pick_file();
@@ -30,7 +55,16 @@ impl eframe::App for GopherEguiApp {
                 });
             }
 
-            ui.button("Configure Input Profile").clicked();
+            if ui.button("Configure Input Profile").clicked() {
+                let running_file = dirs::cache_dir()
+                    .unwrap()
+                    .join("gopher64")
+                    .join("game_running");
+                if running_file.exists() {
+                    return;
+                }
+                self.configure_profile = true;
+            }
         });
     }
 }
