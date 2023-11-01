@@ -17,6 +17,7 @@ eframe = "0.23"
 rfd = {version = "0.12",  default-features = false, features = ["xdg-portal"] }
 sha2 = "0.10"
 rusttype = "0.9"
+futures = "0.3"
 sdl2-sys = { git = "https://github.com/Rust-SDL2/rust-sdl2.git" }
 clap = { version = "4.4", features = ["derive"] }
 
