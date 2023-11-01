@@ -12,20 +12,26 @@ impl eframe::App for GopherEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.configure_profile {
             egui::Window::new("Configure Input Profile")
-                .open(&mut self.configure_profile)
+                // .open(&mut self.configure_profile)
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         let name_label = ui.label("Profile Name: ");
                         ui.text_edit_singleline(&mut self.profile_name)
                             .labelled_by(name_label.id);
                     });
-                    if ui.button("Configure Profile").clicked() {
-                        let profile_name = self.profile_name.clone();
-                        execute(async {
-                            let mut device = device::Device::new();
-                            ui::input::configure_input_profile(&mut device.ui, profile_name);
-                        });
-                    };
+                    ui.horizontal(|ui| {
+                        if ui.button("Configure Profile").clicked() {
+                            let profile_name = self.profile_name.clone();
+                            execute(async {
+                                let mut device = device::Device::new();
+                                ui::input::configure_input_profile(&mut device.ui, profile_name);
+                            });
+                            self.configure_profile = false
+                        };
+                        if ui.button("Close").clicked() {
+                            self.configure_profile = false
+                        };
+                    });
                 });
         }
 
