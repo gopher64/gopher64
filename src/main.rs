@@ -115,7 +115,6 @@ fn main() {
         }
     } else {
         let options = eframe::NativeOptions {
-            drag_and_drop_support: true,
             initial_window_size: Some(eframe::egui::vec2(320.0, 240.0)),
             ..Default::default()
         };
