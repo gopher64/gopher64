@@ -298,7 +298,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         println!("Profile name cannot be default");
         return;
     }
-    if profile == "" {
+    if profile.is_empty() {
         println!("Profile name cannot be empty");
         return;
     }

@@ -71,6 +71,19 @@ impl eframe::App for GopherEguiApp {
                 }
                 self.configure_profile = true;
             }
+
+            ui.label("Controller Config:");
+            egui::Grid::new("some_unique_id").show(ui, |ui| {
+                ui.label("Port");
+                ui.label("Profile");
+                ui.label("Controller");
+                ui.end_row();
+                for i in 0..4 {
+                    ui.label(format!("{}", i + 1));
+                    ui.label("First row, second column");
+                    ui.end_row();
+                }
+            });
         });
     }
 }
