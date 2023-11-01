@@ -56,6 +56,11 @@ struct Args {
 }
 
 fn main() {
+    let cache_dir = dirs::cache_dir().unwrap().join("gopher64");
+
+    let _ = std::fs::create_dir_all(cache_dir.clone());
+    let _ = std::fs::remove_file(cache_dir.clone().join("game_running"));
+
     let args = Args::parse();
     let args_as_strings: Vec<String> = std::env::args().collect();
     let args_count = args_as_strings.len();
