@@ -56,8 +56,10 @@ struct Args {
 }
 
 fn main() {
+    let config_dir = dirs::config_dir().unwrap().join("gopher64");
     let cache_dir = dirs::cache_dir().unwrap().join("gopher64");
 
+    let _ = std::fs::create_dir_all(config_dir.clone());
     let _ = std::fs::create_dir_all(cache_dir.clone());
     let _ = std::fs::remove_file(cache_dir.clone().join("game_running"));
 
