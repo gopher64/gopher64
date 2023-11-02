@@ -13,7 +13,7 @@ pub struct GopherEguiApp {
 
 fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
     let mut profiles = vec![];
-    for (key, _value) in &game_ui.config.input.input_profiles {
+    for key in game_ui.config.input.input_profiles.keys() {
         profiles.push((*key).clone())
     }
     profiles
