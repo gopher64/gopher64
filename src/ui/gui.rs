@@ -107,12 +107,11 @@ impl eframe::App for GopherEguiApp {
 
                     ui.label("filler");
 
-                    let text;
-                    if self.selected_controller[i] == -1 {
-                        text = "None".to_string()
+                    let text = if self.selected_controller[i] == -1 {
+                        "None".to_string()
                     } else {
-                        text = self.controllers[self.selected_controller[i] as usize].clone()
-                    }
+                        self.controllers[self.selected_controller[i] as usize].clone()
+                    };
                     egui::ComboBox::from_id_source(format!("combo-{}", i))
                         .selected_text(text)
                         .show_ui(ui, |ui| {
