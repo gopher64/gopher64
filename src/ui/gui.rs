@@ -6,6 +6,30 @@ use eframe::egui;
 pub struct GopherEguiApp {
     configure_profile: bool,
     profile_name: String,
+    controllers: Vec<String>,
+    selected_controller: [i32; 4],
+}
+
+fn get_controllers() -> Vec<String> {
+    let mut controllers: Vec<String> = vec![];
+    let game_ui = ui::Ui::new();
+    let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
+    let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
+    for i in 0..num_joysticks {
+        controllers.push(joystick_subsystem.name_for_index(i).unwrap());
+    }
+    controllers
+}
+
+impl GopherEguiApp {
+    pub fn new() -> GopherEguiApp {
+        GopherEguiApp {
+            configure_profile: false,
+            profile_name: "".to_string(),
+            selected_controller: [-1, -1, -1, -1],
+            controllers: get_controllers(),
+        }
+    }
 }
 
 impl eframe::App for GopherEguiApp {
@@ -23,8 +47,8 @@ impl eframe::App for GopherEguiApp {
                         if ui.button("Configure Profile").clicked() {
                             let profile_name = self.profile_name.clone();
                             execute(async {
-                                let mut device = device::Device::new();
-                                ui::input::configure_input_profile(&mut device.ui, profile_name);
+                                let mut game_ui = ui::Ui::new();
+                                ui::input::configure_input_profile(&mut game_ui, profile_name);
                             });
                             self.configure_profile = false
                         };
@@ -80,7 +104,31 @@ impl eframe::App for GopherEguiApp {
                 ui.end_row();
                 for i in 0..4 {
                     ui.label(format!("{}", i + 1));
-                    ui.label("First row, second column");
+
+                    ui.label("filler");
+
+                    let text;
+                    if self.selected_controller[i] == -1 {
+                        text = "None".to_string()
+                    } else {
+                        text = self.controllers[self.selected_controller[i] as usize].clone()
+                    }
+                    egui::ComboBox::from_id_source(format!("combo-{}", i))
+                        .selected_text(text)
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.selected_controller[i],
+                                -1,
+                                "None".to_string(),
+                            );
+                            for j in 0..self.controllers.len() {
+                                ui.selectable_value(
+                                    &mut self.selected_controller[i],
+                                    j as i32,
+                                    self.controllers[j].clone(),
+                                );
+                            }
+                        });
                     ui.end_row();
                 }
             });
