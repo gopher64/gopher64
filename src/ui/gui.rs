@@ -33,11 +33,34 @@ fn get_controllers(game_ui: &ui::Ui) -> Vec<String> {
 impl GopherEguiApp {
     pub fn new() -> GopherEguiApp {
         let game_ui = ui::Ui::new();
+        let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
+        let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
+        let mut guids: Vec<String> = vec![];
+        for i in 0..num_joysticks {
+            guids.push(joystick_subsystem.device_guid(i).unwrap().to_string());
+        }
+        let mut selected_controller = [-1, -1, -1, -1];
+        for (pos, item) in game_ui
+            .config
+            .input
+            .controller_assignment
+            .iter()
+            .enumerate()
+        {
+            if item.is_some() {
+                for (guid_pos, guid) in guids.iter().enumerate() {
+                    if item.as_deref().unwrap() == *guid {
+                        selected_controller[pos] = guid_pos as i32;
+                        break;
+                    }
+                }
+            }
+        }
         GopherEguiApp {
             configure_profile: false,
             profile_name: "".to_string(),
             selected_profile: game_ui.config.input.input_profile_binding.clone(),
-            selected_controller: [-1, -1, -1, -1],
+            selected_controller: selected_controller,
             controllers: get_controllers(&game_ui),
             input_profiles: get_input_profiles(&game_ui),
         }
@@ -54,6 +77,8 @@ fn save_config(game_ui: &mut ui::Ui, selected_controller: [i32; 4], selected_pro
                     .unwrap()
                     .to_string(),
             );
+        } else {
+            game_ui.config.input.controller_assignment[pos] = None
         }
     }
 
