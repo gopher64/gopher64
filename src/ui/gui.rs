@@ -42,11 +42,8 @@ impl GopherEguiApp {
             input_profiles: get_input_profiles(&game_ui),
         }
     }
-}
 
-impl Drop for GopherEguiApp {
-    fn drop(&mut self) {
-        let mut game_ui = ui::Ui::new();
+    fn save_config(&mut self, game_ui: &mut ui::Ui) {
         let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
         for i in 0..4 {
             if self.selected_controller[i] != -1 {
@@ -60,6 +57,13 @@ impl Drop for GopherEguiApp {
         }
 
         game_ui.config.input.input_profile_binding = self.selected_profile.clone();
+    }
+}
+
+impl Drop for GopherEguiApp {
+    fn drop(&mut self) {
+        let mut game_ui = ui::Ui::new();
+        self.save_config(&mut game_ui);
     }
 }
 
