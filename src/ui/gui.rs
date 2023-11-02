@@ -42,28 +42,32 @@ impl GopherEguiApp {
             input_profiles: get_input_profiles(&game_ui),
         }
     }
+}
 
-    fn save_config(&mut self, game_ui: &mut ui::Ui) {
-        let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
-        for i in 0..4 {
-            if self.selected_controller[i] != -1 {
-                game_ui.config.input.controller_assignment[i] = Some(
-                    joystick_subsystem
-                        .device_guid(self.selected_controller[i] as u32)
-                        .unwrap()
-                        .to_string(),
-                );
-            }
+fn save_config(game_ui: &mut ui::Ui, selected_controller: [i32; 4], selected_profile: [String; 4]) {
+    let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
+    for i in 0..4 {
+        if selected_controller[i] != -1 {
+            game_ui.config.input.controller_assignment[i] = Some(
+                joystick_subsystem
+                    .device_guid(selected_controller[i] as u32)
+                    .unwrap()
+                    .to_string(),
+            );
         }
-
-        game_ui.config.input.input_profile_binding = self.selected_profile.clone();
     }
+
+    game_ui.config.input.input_profile_binding = selected_profile;
 }
 
 impl Drop for GopherEguiApp {
     fn drop(&mut self) {
         let mut game_ui = ui::Ui::new();
-        self.save_config(&mut game_ui);
+        save_config(
+            &mut game_ui,
+            self.selected_controller,
+            self.selected_profile.clone(),
+        );
     }
 }
 
@@ -100,8 +104,9 @@ impl eframe::App for GopherEguiApp {
             if ui.button("Open ROM").clicked() {
                 // Spawn dialog on main thread
                 let task = rfd::AsyncFileDialog::new().pick_file();
-
-                execute(async {
+                let selected_controller = self.selected_controller;
+                let selected_profile = self.selected_profile.clone();
+                execute(async move {
                     let file = task.await;
 
                     if let Some(file) = file {
@@ -114,6 +119,7 @@ impl eframe::App for GopherEguiApp {
                         }
                         let _ = std::fs::File::create(running_file.clone());
                         let mut device = device::Device::new();
+                        save_config(&mut device.ui, selected_controller, selected_profile);
                         device::run_game(std::path::Path::new(file.path()), &mut device, false);
                         let _ = std::fs::remove_file(running_file.clone());
                     }
