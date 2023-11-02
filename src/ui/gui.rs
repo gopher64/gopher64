@@ -46,11 +46,11 @@ impl GopherEguiApp {
 
 fn save_config(game_ui: &mut ui::Ui, selected_controller: [i32; 4], selected_profile: [String; 4]) {
     let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
-    for i in 0..4 {
-        if selected_controller[i] != -1 {
-            game_ui.config.input.controller_assignment[i] = Some(
+    for (pos, item) in selected_controller.iter().enumerate() {
+        if *item != -1 {
+            game_ui.config.input.controller_assignment[pos] = Some(
                 joystick_subsystem
-                    .device_guid(selected_controller[i] as u32)
+                    .device_guid(*item as u32)
                     .unwrap()
                     .to_string(),
             );
