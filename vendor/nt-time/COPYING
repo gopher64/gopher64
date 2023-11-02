@@ -1,0 +1,6 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://github.com/sorairolake/nt-time
+
+Files: *
+Copyright: 2023 Shun Sakai
+License: Apache-2.0 or MIT

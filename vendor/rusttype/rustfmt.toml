@@ -1,0 +1,5 @@
+# rustfmt 0.3.x-nightly
+wrap_comments = true
+error_on_line_overflow = false
+use_field_init_shorthand = true
+condense_wildcard_suffixes = true

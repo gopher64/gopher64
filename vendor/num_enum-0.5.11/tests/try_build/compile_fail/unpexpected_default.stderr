@@ -1,0 +1,5 @@
+error: #[derive(UnsafeFromPrimitive)] does not support `#[num_enum(default)]`
+ --> $DIR/unpexpected_default.rs:5:16
+  |
+5 |     #[num_enum(default)]
+  |                ^^^^^^^

@@ -1,0 +1,14 @@
+# Rustfmt documentation:
+# https://rust-lang.github.io/rustfmt/?version=v1.5.1&search=
+
+# This crate is 'unix' only.
+newline_style = "Unix"
+reorder_imports = true
+
+# chain_width; a percentage of maximum width
+# precedes what is implied by `use_small_heuristics"
+chain_width = 70
+use_small_heuristics = "Max"
+
+# force the use of tabs, not spaces
+hard_tabs = true

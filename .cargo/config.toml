@@ -6,3 +6,13 @@ rustflags = ["-C", "target-cpu=x86-64-v3"]
 
 [target.x86_64-apple-darwin]
 rustflags = ["-C", "target-cpu=x86-64-v2"]
+
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/Rust-SDL2/rust-sdl2.git"]
+git = "https://github.com/Rust-SDL2/rust-sdl2.git"
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"

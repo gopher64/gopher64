@@ -1,0 +1,5 @@
+error: #[derive(UnsafeFromPrimitive)] does not support `#[num_enum(alternatives = [..])]`
+ --> $DIR/unpexpected_alternatives.rs:5:16
+  |
+5 |     #[num_enum(alternatives = [2])]
+  |                ^^^^^^^^^^^^

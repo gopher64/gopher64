@@ -25,4 +25,4 @@ jobs:
           rustup component add clippy
       - name: Lint
         run: |
-          cargo clippy -- -Dwarnings
+          cargo --offline clippy -- -Dwarnings

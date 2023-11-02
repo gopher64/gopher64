@@ -24,7 +24,7 @@ jobs:
           rustup update
       - name: Build
         run: |
-          cargo build --release -v
+          cargo --offline build --release -v
       - name: Upload file
         uses: actions/upload-artifact@v3
         with:
@@ -42,7 +42,7 @@ jobs:
           rustup update
       - name: Build
         run: |
-          cargo build --release -v
+          cargo --offline build --release -v
       - name: Upload file
         uses: actions/upload-artifact@v3
         with:
@@ -63,7 +63,7 @@ jobs:
           rustup update
       - name: Build
         run: |
-          cargo build --release -v
+          cargo --offline build --release -v
       - name: Upload file
         uses: actions/upload-artifact@v3
         with:

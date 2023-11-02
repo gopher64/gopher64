@@ -1,0 +1,42 @@
+// SPDX-FileCopyrightText: 2023 Shun Sakai
+//
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
+= Contribution Guide
+:git-flow-url: https://nvie.com/posts/a-successful-git-branching-model/
+:commit-messages-guide-url: https://github.com/RomuloOliveira/commit-messages-guide
+
+== Branching model
+
+The branching model of this project is based on the {git-flow-url}[git-flow].
+
+== Style guides
+
+=== Commit message
+
+Please see the {commit-messages-guide-url}[Commit messages guide].
+
+== Development
+
+=== Useful development tools
+
+The https://github.com/casey/just[just] command runner can be used.
+Run `just --list` for more details.
+
+.Run tests
+[source, shell]
+----
+just test
+----
+
+.Run the formatter
+[source, shell]
+----
+just fmt
+----
+
+.Run the linter
+[source, shell]
+----
+just lint
+----

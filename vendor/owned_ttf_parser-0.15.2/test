@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# run CI-like set of tests
+set -eu
+
+dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$dir"
+
+echo "==> test"
+cargo test
+
+echo "==> no_std"
+cargo build --target thumbv6m-none-eabi --no-default-features --features "variable-fonts opentype-layout glyph-names"
+
+echo "==> rustfmt"
+cargo fmt -- --check

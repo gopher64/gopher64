@@ -1,0 +1,122 @@
+// SPDX-FileCopyrightText: 2023 Shun Sakai
+//
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
+= Changelog
+:toc: macro
+:project-url: https://github.com/sorairolake/nt-time
+:compare-url: {project-url}/compare
+:issue-url: {project-url}/issues
+:pull-request-url: {project-url}/pull
+
+All notable changes to this project will be documented in this file.
+
+The format is based on https://keepachangelog.com/[Keep a Changelog], and this
+project adheres to https://semver.org/[Semantic Versioning].
+
+toc::[]
+
+== {compare-url}/v0.5.2\...v0.5.3[0.5.3] - 2023-08-09
+
+=== Added
+
+* Add unit tests when `FileTime` is `i64::MAX` ({pull-request-url}/30[#30])
+
+== {compare-url}/v0.5.1\...v0.5.2[0.5.2] - 2023-08-06
+
+=== Changed
+
+* Rename parameters of methods ({pull-request-url}/25[#25])
+
+== {compare-url}/v0.5.0\...v0.5.1[0.5.1] - 2023-08-01
+
+=== Changed
+
+* Change the comment header to the format recommended by the REUSE
+  Specification ({pull-request-url}/22[#22])
+* Make this project REUSE compliant ({pull-request-url}/23[#23])
+* Pin the version of `time` crate to 0.3.23 ({pull-request-url}/24[#24])
+
+== {compare-url}/v0.4.1\...v0.5.0[0.5.0] - 2023-05-15
+
+=== Added
+
+* Add `FileTime::to_raw` as an alternative to `FileTime::as_u64`
+
+=== Changed
+
+* Change to use `datetime` macro in doctests
+* Bump MSRV to 1.65.0
+
+=== Deprecated
+
+* Change `FileTime::as_u64` to deprecated
+
+== {compare-url}/v0.4.0\...v0.4.1[0.4.1] - 2023-04-25
+
+=== Removed
+
+* Remove `once_cell` from dependencies
+
+== {compare-url}/v0.3.0\...v0.4.0[0.4.0] - 2023-04-21
+
+=== Added
+
+* Add doctests for `Serialize` and `Deserialize`
+* Add conversion methods from/to Unix time
+* Add Serde support for Unix time
+* Re-export `serde` crate
+
+=== Changed
+
+* Rename `FileTime::NT_EPOCH` to `FileTime::NT_TIME_EPOCH`
+* Rename `serde` to `serde_with`
+
+== {compare-url}/v0.2.0\...v0.3.0[0.3.0] - 2023-04-17
+
+=== Added
+
+* Add Serde support
+
+=== Changed
+
+* Change `FileTimeRangeErrorKind` to public
+
+== {compare-url}/v0.1.0\...v0.2.0[0.2.0] - 2023-04-14
+
+=== Added
+
+* Add `impl From<FileTime> for SystemTime`
+* Add `FileTime::UNIX_EPOCH` constant
+* Add `FileTime::now` method
+* Add conversion methods from/to `chrono::DateTime`
+* Add methods for operation with `time::Duration`
+* Add conversion methods from/to byte arrays
+* Add methods to subtract from/to `SystemTime`
+* Add methods to subtract from/to `time::OffsetDateTime`
+* Add methods to subtract from/to `chrono::DateTime<chrono::Utc>`
+* Add methods for equality comparisons from/to `SystemTime`,
+  `time::OffsetDateTime` and `chrono::DateTime<chrono::Utc>`
+* Add methods for order comparisons from/to `SystemTime`,
+  `time::OffsetDateTime` and `chrono::DateTime<chrono::Utc>`
+
+=== Changed
+
+* `impl TryFrom<SystemTime> for FileTime` always supports after
+  `9999-12-31 23:59:59.999999900 UTC`
+
+=== Removed
+
+* Remove `impl TryFrom<FileTime> for SystemTime`
+
+=== Fixed
+
+* Fix `OffsetDateTimeRangeError` description
+* Fix `FileTimeRangeError` description
+* Fix operation of `impl Sub for FileTime` if the difference is large
+
+== {project-url}/releases/tag/v0.1.0[0.1.0] - 2023-03-27
+
+=== Added
+
+* Initial release

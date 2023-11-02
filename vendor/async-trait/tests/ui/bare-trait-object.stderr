@@ -1,0 +1,14 @@
+error[E0782]: trait objects must include the `dyn` keyword
+  --> tests/ui/bare-trait-object.rs:11:16
+   |
+11 | impl Trait for Send + Sync {
+   |                ^^^^^^^^^^^
+   |
+help: add `dyn` keyword before this trait
+   |
+11 | impl Trait for dyn Send + Sync {
+   |                +++
+help: alternatively use a blanket implementation to implement `Trait` for all types that also implement `Send + Sync`
+   |
+11 | impl<T: Send + Sync> Trait for T {
+   |     ++++++++++++++++           ~
