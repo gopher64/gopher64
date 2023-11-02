@@ -114,7 +114,8 @@ impl eframe::App for GopherEguiApp {
                                 let mut game_ui = ui::Ui::new();
                                 ui::input::configure_input_profile(&mut game_ui, profile_name);
                             });
-                            self.configure_profile = false
+                            self.configure_profile = false;
+                            self.input_profiles.push(self.profile_name.clone())
                         };
                         if ui.button("Close").clicked() {
                             self.configure_profile = false
