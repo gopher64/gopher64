@@ -47,6 +47,18 @@ impl GopherEguiApp {
 impl Drop for GopherEguiApp {
     fn drop(&mut self) {
         let mut game_ui = ui::Ui::new();
+        let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
+        for i in 0..4 {
+            if self.selected_controller[i] != -1 {
+                game_ui.config.input.controller_assignment[i] = Some(
+                    joystick_subsystem
+                        .device_guid(self.selected_controller[i] as u32)
+                        .unwrap()
+                        .to_string(),
+                );
+            }
+        }
+
         game_ui.config.input.input_profile_binding = self.selected_profile.clone();
     }
 }
