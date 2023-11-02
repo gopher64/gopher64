@@ -120,7 +120,7 @@ fn main() {
         }
     } else {
         let options = eframe::NativeOptions {
-            initial_window_size: Some(eframe::egui::vec2(320.0, 240.0)),
+            initial_window_size: Some(eframe::egui::vec2(640.0, 480.0)),
             ..Default::default()
         };
         eframe::run_native(

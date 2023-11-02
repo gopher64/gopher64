@@ -115,7 +115,9 @@ impl eframe::App for GopherEguiApp {
                                 ui::input::configure_input_profile(&mut game_ui, profile_name);
                             });
                             self.configure_profile = false;
-                            self.input_profiles.push(self.profile_name.clone())
+                            if !self.profile_name.is_empty() && self.profile_name != "default" {
+                                self.input_profiles.push(self.profile_name.clone())
+                            }
                         };
                         if ui.button("Close").clicked() {
                             self.configure_profile = false
@@ -163,6 +165,7 @@ impl eframe::App for GopherEguiApp {
                 self.configure_profile = true;
             }
 
+            ui.add_space(32.0);
             ui.label("Controller Config:");
             egui::Grid::new("some_unique_id").show(ui, |ui| {
                 ui.label("Port");
