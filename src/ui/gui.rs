@@ -7,6 +7,16 @@ pub struct GopherEguiApp {
     profile_name: String,
     controllers: Vec<String>,
     selected_controller: [i32; 4],
+    selected_profile: [String; 4],
+    input_profiles: Vec<String>,
+}
+
+fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
+    let mut profiles = vec![];
+    for (key, _value) in &game_ui.config.input.input_profiles {
+        profiles.push((*key).clone())
+    }
+    profiles
 }
 
 fn get_controllers(game_ui: &ui::Ui) -> Vec<String> {
@@ -26,8 +36,15 @@ impl GopherEguiApp {
         GopherEguiApp {
             configure_profile: false,
             profile_name: "".to_string(),
+            selected_profile: [
+                "default".to_string(),
+                "default".to_string(),
+                "default".to_string(),
+                "default".to_string(),
+            ],
             selected_controller: [-1, -1, -1, -1],
             controllers: get_controllers(&game_ui),
+            input_profiles: get_input_profiles(&game_ui),
         }
     }
 }
@@ -105,15 +122,25 @@ impl eframe::App for GopherEguiApp {
                 for i in 0..4 {
                     ui.label(format!("{}", i + 1));
 
-                    ui.label("filler");
+                    egui::ComboBox::from_id_source(format!("profile-combo-{}", i))
+                        .selected_text(self.selected_profile[i].clone())
+                        .show_ui(ui, |ui| {
+                            for j in 0..self.input_profiles.len() {
+                                ui.selectable_value(
+                                    &mut self.selected_profile[i],
+                                    self.input_profiles[j].clone(),
+                                    self.input_profiles[j].clone(),
+                                );
+                            }
+                        });
 
-                    let text = if self.selected_controller[i] == -1 {
+                    let controller_text = if self.selected_controller[i] == -1 {
                         "None".to_string()
                     } else {
                         self.controllers[self.selected_controller[i] as usize].clone()
                     };
-                    egui::ComboBox::from_id_source(format!("combo-{}", i))
-                        .selected_text(text)
+                    egui::ComboBox::from_id_source(format!("controller-combo-{}", i))
+                        .selected_text(controller_text)
                         .show_ui(ui, |ui| {
                             ui.selectable_value(
                                 &mut self.selected_controller[i],
