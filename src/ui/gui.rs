@@ -60,7 +60,7 @@ impl GopherEguiApp {
             configure_profile: false,
             profile_name: "".to_string(),
             selected_profile: game_ui.config.input.input_profile_binding.clone(),
-            selected_controller: selected_controller,
+            selected_controller,
             controllers: get_controllers(&game_ui),
             input_profiles: get_input_profiles(&game_ui),
         }
