@@ -1,4 +1,6 @@
 use crate::ui;
+use std::fs;
+use std::io::Read;
 
 pub mod ai;
 pub mod cache;
@@ -31,6 +33,109 @@ pub mod sram;
 pub mod tlb;
 pub mod unmapped;
 pub mod vi;
+
+pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bool) {
+    let rom_contents = get_rom_contents(file_path);
+
+    cart_rom::init(device, rom_contents); // cart needs to come before rdram
+
+    // rdram pointer is shared with parallel-rdp
+    let (rdram_ptr, rdram_size) = rdram::init(device);
+
+    ui::audio::init(&mut device.ui, 33600);
+    ui::video::init(&mut device.ui, rdram_ptr, rdram_size, fullscreen);
+    ui::input::init(&mut device.ui);
+
+    mi::init(device);
+    pif::init(device);
+    memory::init(device);
+    rsp_interface::init(device);
+    rdp::init(device);
+    vi::init(device);
+    cpu::init(device);
+
+    ui::storage::init(&mut device.ui);
+    ui::storage::load_saves(&mut device.ui);
+    cart_rom::load_rom_save(device);
+
+    cpu::run(device);
+}
+
+fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
+    let test = u32::from_be_bytes(contents[0..4].try_into().unwrap());
+    if test == 0x80371240 {
+        // z64
+        contents
+    } else if test == 0x37804012 {
+        // v64
+        let mut data: Vec<u8> = vec![0; contents.len()];
+        for i in (0..contents.len()).step_by(2) {
+            let temp = u16::from_ne_bytes(contents[i..i + 2].try_into().unwrap());
+            data[i..i + 2].copy_from_slice(&temp.to_be_bytes());
+        }
+        return data;
+    } else if test == 0x40123780 {
+        // n64
+        let mut data: Vec<u8> = vec![0; contents.len()];
+        for i in (0..contents.len()).step_by(4) {
+            let temp = u32::from_ne_bytes(contents[i..i + 4].try_into().unwrap());
+            data[i..i + 4].copy_from_slice(&temp.to_be_bytes());
+        }
+        return data;
+    } else {
+        panic!("unknown rom format")
+    }
+}
+
+fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
+    let mut contents = vec![];
+    if file_path.extension().unwrap().to_ascii_lowercase() == "zip" {
+        let zip_file = fs::File::open(file_path).unwrap();
+        let mut archive = zip::ZipArchive::new(zip_file).unwrap();
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i).unwrap();
+            let extension = file
+                .enclosed_name()
+                .unwrap()
+                .extension()
+                .unwrap()
+                .to_ascii_lowercase();
+            if extension == "z64" || extension == "n64" || extension == "v64" {
+                file.read_to_end(&mut contents)
+                    .expect("could not read zip file");
+                break;
+            }
+        }
+    } else if file_path.extension().unwrap().to_ascii_lowercase() == "7z" {
+        let mut archive =
+            sevenz_rust::SevenZReader::open(file_path, sevenz_rust::Password::empty()).unwrap();
+
+        let mut found = false;
+        archive
+            .for_each_entries(
+                &mut |entry: &sevenz_rust::SevenZArchiveEntry, reader: &mut dyn std::io::Read| {
+                    let name = entry.name().to_ascii_lowercase();
+                    if !found
+                        && (name.ends_with("z64") || name.ends_with("n64") || name.ends_with("v64"))
+                    {
+                        reader
+                            .read_to_end(&mut contents)
+                            .expect("could not read zip file");
+                        found = true;
+                    } else {
+                        //skip other files
+                        std::io::copy(reader, &mut std::io::sink())?;
+                    }
+                    Ok(true)
+                },
+            )
+            .expect("ok");
+    } else {
+        contents = fs::read(file_path).expect("Should have been able to read the file");
+    }
+
+    swap_rom(contents)
+}
 
 pub struct Device {
     pub ui: ui::Ui,

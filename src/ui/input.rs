@@ -298,6 +298,10 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         println!("Profile name cannot be default");
         return;
     }
+    if profile.is_empty() {
+        println!("Profile name cannot be empty");
+        return;
+    }
     let joystick_subsystem = ui.sdl_context.as_ref().unwrap().joystick().unwrap();
     let mut joysticks = vec![];
     for i in 0..joystick_subsystem.num_joysticks().unwrap() {

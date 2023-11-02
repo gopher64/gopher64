@@ -1,5 +1,6 @@
 pub mod audio;
 pub mod config;
+pub mod gui;
 pub mod input;
 pub mod storage;
 pub mod video;
