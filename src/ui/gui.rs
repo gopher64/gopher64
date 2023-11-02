@@ -2,7 +2,6 @@ use crate::device;
 use crate::ui;
 use eframe::egui;
 
-#[derive(Default)]
 pub struct GopherEguiApp {
     configure_profile: bool,
     profile_name: String,
@@ -10,9 +9,9 @@ pub struct GopherEguiApp {
     selected_controller: [i32; 4],
 }
 
-fn get_controllers() -> Vec<String> {
+fn get_controllers(game_ui: &ui::Ui) -> Vec<String> {
     let mut controllers: Vec<String> = vec![];
-    let game_ui = ui::Ui::new();
+
     let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
     let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
     for i in 0..num_joysticks {
@@ -23,11 +22,12 @@ fn get_controllers() -> Vec<String> {
 
 impl GopherEguiApp {
     pub fn new() -> GopherEguiApp {
+        let game_ui = ui::Ui::new();
         GopherEguiApp {
             configure_profile: false,
             profile_name: "".to_string(),
             selected_controller: [-1, -1, -1, -1],
-            controllers: get_controllers(),
+            controllers: get_controllers(&game_ui),
         }
     }
 }
