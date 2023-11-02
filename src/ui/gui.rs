@@ -36,16 +36,18 @@ impl GopherEguiApp {
         GopherEguiApp {
             configure_profile: false,
             profile_name: "".to_string(),
-            selected_profile: [
-                "default".to_string(),
-                "default".to_string(),
-                "default".to_string(),
-                "default".to_string(),
-            ],
+            selected_profile: game_ui.config.input.input_profile_binding.clone(),
             selected_controller: [-1, -1, -1, -1],
             controllers: get_controllers(&game_ui),
             input_profiles: get_input_profiles(&game_ui),
         }
+    }
+}
+
+impl Drop for GopherEguiApp {
+    fn drop(&mut self) {
+        let mut game_ui = ui::Ui::new();
+        game_ui.config.input.input_profile_binding = self.selected_profile.clone();
     }
 }
 
