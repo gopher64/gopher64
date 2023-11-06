@@ -11,7 +11,7 @@ pub enum EventType {
     InterruptCheck,
     SPDma,
     Compare,
-    EventTypeCount,
+    Count,
 }
 
 #[derive(PartialEq, Copy, Clone)]
