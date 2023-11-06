@@ -184,10 +184,14 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 {
 	if (event->type == SDL_WINDOWEVENT)
 	{
+		SDL_WSIPlatform *platform = (SDL_WSIPlatform *)&wsi->get_platform();
 		switch (event->window.event)
 		{
 		case SDL_WINDOWEVENT_CLOSE:
 			emu_running = 0;
+			break;
+		case SDL_WINDOWEVENT_RESIZED:
+			platform->do_resize();
 			break;
 		default:
 			break;

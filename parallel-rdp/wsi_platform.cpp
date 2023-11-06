@@ -58,3 +58,8 @@ void SDL_WSIPlatform::set_window(SDL_Window *_window)
 {
 	window = _window;
 }
+
+void SDL_WSIPlatform::do_resize()
+{
+	resize = true;
+}

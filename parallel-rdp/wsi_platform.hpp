@@ -14,6 +14,7 @@ public:
 	bool alive(Vulkan::WSI &wsi) override;
 	void poll_input() override;
 	void set_window(SDL_Window *_window);
+	void do_resize();
 
 private:
 	VkSurfaceKHR surface;
