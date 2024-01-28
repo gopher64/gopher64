@@ -56,4 +56,4 @@ Gopher64 is licensed under the GPLv3 license. Many portions of gopher64 have bee
 
 ## where to download
 
-Builds can be found as artifacts on [GitHub Actions](https://github.com/gopher64/gopher64/actions?query=branch%3Amain)
+https://github.com/gopher64/gopher64/releases
