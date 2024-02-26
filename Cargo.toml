@@ -14,7 +14,7 @@ chrono = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 eframe = "0.26"
-rfd = {version = "0.13",  default-features = false, features = ["xdg-portal", "async-std"] }
+rfd = {version = "0.14",  default-features = false, features = ["xdg-portal", "async-std"] }
 sha2 = "0.10"
 rusttype = "0.9"
 futures = "0.3"
