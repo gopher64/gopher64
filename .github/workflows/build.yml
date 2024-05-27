@@ -48,24 +48,23 @@ jobs:
         with:
           name: gopher64-windows
           path: target/release/gopher64.exe
-
-  build-macos:
-    runs-on: macos-13
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Install sdl2 headers
-        run: |
-          brew install sdl2
-      - name: Update rust
-        run: |
-          rustup update
-      - name: Build
-        run: |
-          cargo build --release -v
-      - name: Upload file
-        uses: actions/upload-artifact@v4
-        with:
-          name: gopher64-mac
-          path: target/release/gopher64
+#  build-macos:
+#    runs-on: macos-13
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#      - name: Install sdl2 headers
+#        run: |
+#          brew install sdl2
+#      - name: Update rust
+#        run: |
+#         rustup update
+#      - name: Build
+#        run: |
+#          cargo build --release -v
+#      - name: Upload file
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: gopher64-mac
+#          path: target/release/gopher64
