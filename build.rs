@@ -37,6 +37,7 @@ fn main() {
         .file("parallel-rdp/parallel-rdp-standalone/util/aligned_alloc.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/util/timer.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/util/timeline_trace_file.cpp")
+        .file("parallel-rdp/parallel-rdp-standalone/util/environment.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/util/thread_name.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/volk/volk.c")
         .file("parallel-rdp/interface.cpp")
