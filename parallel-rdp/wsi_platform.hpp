@@ -18,6 +18,5 @@ public:
 	void do_resize();
 
 private:
-	VkSurfaceKHR surface;
 	SDL_Window *window;
 };
