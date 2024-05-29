@@ -5,4 +5,4 @@ rustflags = ["-C", "target-cpu=x86-64-v3"]
 rustflags = ["-C", "target-cpu=x86-64-v3"]
 
 [target.x86_64-apple-darwin]
-rustflags = ["-C", "target-cpu=x86-64-v2"]
+rustflags = ["-C", "target-cpu=x86-64-v3"]
