@@ -129,7 +129,7 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     device.ui.game_hash = calculate_hash(&device.cart.rom);
 
     device.ui.game_id = String::from_utf8(device.cart.rom[0x3B..0x3E].to_vec()).unwrap();
-    if device.ui.game_id.contains("\0") {
+    if device.ui.game_id.contains('\0') {
         device.ui.game_id = String::from("UNK");
     }
 }
