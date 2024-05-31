@@ -80,14 +80,16 @@ pub fn dma_read(
     cart_addr &= CART_MASK as u32;
 
     for i in 0..length {
-        device.cart.rom[(cart_addr + i) as usize] =
-            device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
+        if cart_addr + i < device.cart.rom.len() as u32 {
+            device.cart.rom[(cart_addr + i) as usize] =
+                device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
 
-        device.ui.saves.romsave.0.insert(
-            (cart_addr + i).to_string(),
-            serde_json::to_value(device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap])
-                .unwrap(),
-        );
+            device.ui.saves.romsave.0.insert(
+                (cart_addr + i).to_string(),
+                serde_json::to_value(device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap])
+                    .unwrap(),
+            );
+        }
     }
 
     device.ui.saves.romsave.1 = true;
@@ -127,6 +129,9 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     device.ui.game_hash = calculate_hash(&device.cart.rom);
 
     device.ui.game_id = String::from_utf8(device.cart.rom[0x3B..0x3E].to_vec()).unwrap();
+    if device.ui.game_id.contains("\0") {
+        device.ui.game_id = String::from("UNK");
+    }
 }
 
 pub fn load_rom_save(device: &mut device::Device) {
