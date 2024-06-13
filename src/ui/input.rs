@@ -87,28 +87,36 @@ pub fn set_axis_from_controller(
         let mut y = 0.0;
         if profile.controller_axis[AXIS_LEFT].0 {
             let axis_position =
-                controller.axis(std::mem::transmute(profile.controller_axis[AXIS_LEFT].1));
+                controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
+                    profile.controller_axis[AXIS_LEFT].1,
+                ));
             if axis_position as isize * profile.controller_axis[AXIS_LEFT].2 as isize > 0 {
                 x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
             }
         }
         if profile.controller_axis[AXIS_RIGHT].0 {
             let axis_position =
-                controller.axis(std::mem::transmute(profile.controller_axis[AXIS_RIGHT].1));
+                controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
+                    profile.controller_axis[AXIS_RIGHT].1,
+                ));
             if axis_position as isize * profile.controller_axis[AXIS_RIGHT].2 as isize > 0 {
                 x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
             }
         }
         if profile.controller_axis[AXIS_DOWN].0 {
             let axis_position =
-                controller.axis(std::mem::transmute(profile.controller_axis[AXIS_DOWN].1));
+                controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
+                    profile.controller_axis[AXIS_DOWN].1,
+                ));
             if axis_position as isize * profile.controller_axis[AXIS_DOWN].2 as isize > 0 {
                 y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
             }
         }
         if profile.controller_axis[AXIS_UP].0 {
             let axis_position =
-                controller.axis(std::mem::transmute(profile.controller_axis[AXIS_UP].1));
+                controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
+                    profile.controller_axis[AXIS_UP].1,
+                ));
             if axis_position as isize * profile.controller_axis[AXIS_UP].2 as isize > 0 {
                 y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
             }
@@ -125,22 +133,34 @@ pub fn set_axis_from_keys(
         let mut x = 0.0;
         let mut y = 0.0;
         if profile.keys[AXIS_LEFT].0
-            && keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_LEFT].1))
+            && keyboard_state
+                .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
+                    profile.keys[AXIS_LEFT].1,
+                ))
         {
             x = -MAX_AXIS_VALUE
         }
         if profile.keys[AXIS_RIGHT].0
-            && keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_RIGHT].1))
+            && keyboard_state
+                .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
+                    profile.keys[AXIS_RIGHT].1,
+                ))
         {
             x = MAX_AXIS_VALUE
         }
         if profile.keys[AXIS_DOWN].0
-            && keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_DOWN].1))
+            && keyboard_state
+                .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
+                    profile.keys[AXIS_DOWN].1,
+                ))
         {
             y = -MAX_AXIS_VALUE
         }
         if profile.keys[AXIS_UP].0
-            && keyboard_state.is_scancode_pressed(std::mem::transmute(profile.keys[AXIS_UP].1))
+            && keyboard_state
+                .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
+                    profile.keys[AXIS_UP].1,
+                ))
         {
             y = MAX_AXIS_VALUE
         }
@@ -162,7 +182,9 @@ pub fn set_buttons_from_joystick(
     let profile_joystick_hat = profile.joystick_hat[i];
     if profile_joystick_hat.0
         && joystick.hat(profile_joystick_hat.1).unwrap()
-            == unsafe { std::mem::transmute(profile_joystick_hat.2) }
+            == unsafe {
+                std::mem::transmute::<i8, sdl2::joystick::HatState>(profile_joystick_hat.2)
+            }
     {
         *keys |= 1 << i;
     }
@@ -187,15 +209,20 @@ pub fn set_buttons_from_controller(
     let profile_controller_button = profile.controller_buttons[i];
     if profile_controller_button.0 {
         unsafe {
-            *keys |=
-                (controller.button(std::mem::transmute(profile_controller_button.1)) as u32) << i;
+            *keys |= (controller.button(std::mem::transmute::<i32, sdl2::controller::Button>(
+                profile_controller_button.1,
+            )) as u32)
+                << i;
         }
     }
 
     let profile_controller_axis = profile.controller_axis[i];
     if profile_controller_axis.0 {
-        let axis_position =
-            unsafe { controller.axis(std::mem::transmute(profile_controller_axis.1)) };
+        let axis_position = unsafe {
+            controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
+                profile_controller_axis.1,
+            ))
+        };
         if axis_position as isize * profile_controller_axis.2 as isize > 0
             && axis_position.saturating_abs() > i16::MAX / 2
         {
@@ -219,8 +246,10 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
             let profile_key = profile.keys[i];
             if profile_key.0 {
                 unsafe {
-                    keys |= (keyboard_state.is_scancode_pressed(std::mem::transmute(profile_key.1))
-                        as u32)
+                    keys |= (keyboard_state
+                        .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
+                            profile_key.1,
+                        )) as u32)
                         << i;
                 }
             }
@@ -377,8 +406,13 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         key_set = true
                     }
                     sdl2::event::Event::JoyHatMotion { hat_idx, state, .. } => {
-                        new_joystick_hat[*value] =
-                            unsafe { (true, hat_idx as u32, std::mem::transmute(state)) };
+                        new_joystick_hat[*value] = unsafe {
+                            (
+                                true,
+                                hat_idx as u32,
+                                std::mem::transmute::<sdl2::joystick::HatState, i8>(state),
+                            )
+                        };
                         key_set = true
                     }
                     sdl2::event::Event::JoyAxisMotion {
