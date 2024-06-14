@@ -18,11 +18,11 @@ rfd = "0.14"
 sha2 = "0.10"
 rusttype = "0.9"
 futures = "0.3"
-sdl2-sys = "0.36"
+sdl2-sys = "0.37"
 clap = { version = "4.4", features = ["derive"] }
 
 [dependencies.sdl2]
-version = "0.36"
+version = "0.37"
 default-features = false
 features = ["static-link","bundled"]
 
