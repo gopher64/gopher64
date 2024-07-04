@@ -129,7 +129,9 @@ impl eframe::App for GopherEguiApp {
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.set_enabled(!self.configure_profile);
+            if self.configure_profile {
+                ui.disable()
+            }
 
             if ui.button("Open ROM").clicked() {
                 // Spawn dialog on main thread
