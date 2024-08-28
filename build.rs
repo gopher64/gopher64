@@ -51,6 +51,10 @@ fn main() {
 
     #[cfg(target_os = "windows")]
     {
+        #[cfg(target_arch = "x86_64")]
+        {
+            build.flag("/arch:AVX2");
+        }
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
 
         winres::WindowsResource::new()
@@ -60,6 +64,10 @@ fn main() {
     }
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
+        #[cfg(target_arch = "x86_64")]
+        {
+            build.flag("-march=x86-64-v3");
+        }
         build
             .flag("-Wno-missing-field-initializers")
             .flag("-Wno-unused-parameter");
