@@ -49,6 +49,10 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/util")
         .includes(std::env::var("DEP_SDL2_INCLUDE"));
 
+    #[cfg(target_arch = "x86_64")]
+    {
+        build.flag("-march=x86-64-v5");
+    }
     #[cfg(target_os = "windows")]
     {
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
