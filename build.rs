@@ -51,7 +51,7 @@ fn main() {
 
     #[cfg(target_arch = "x86_64")]
     {
-        build.flag("-march=x86-64-v5");
+        build.flag("-march=x86-64-v3");
     }
     #[cfg(target_os = "windows")]
     {
