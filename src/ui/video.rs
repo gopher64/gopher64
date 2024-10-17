@@ -1,6 +1,6 @@
 use crate::ui;
 
-extern "C" {
+unsafe extern "C" {
     pub fn vk_init(rdram_ptr: usize, rdram_size: u32, fullscreen: u8);
     pub fn set_sdl_window(window: usize);
     pub fn rdp_update_screen() -> u8;
