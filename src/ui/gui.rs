@@ -179,7 +179,7 @@ impl eframe::App for GopherEguiApp {
                 for i in 0..4 {
                     ui.label(format!("{}", i + 1));
 
-                    egui::ComboBox::from_id_source(format!("profile-combo-{}", i))
+                    egui::ComboBox::from_id_salt(format!("profile-combo-{}", i))
                         .selected_text(self.selected_profile[i].clone())
                         .show_ui(ui, |ui| {
                             for j in 0..self.input_profiles.len() {
@@ -196,7 +196,7 @@ impl eframe::App for GopherEguiApp {
                     } else {
                         self.controllers[self.selected_controller[i] as usize].clone()
                     };
-                    egui::ComboBox::from_id_source(format!("controller-combo-{}", i))
+                    egui::ComboBox::from_id_salt(format!("controller-combo-{}", i))
                         .selected_text(controller_text)
                         .show_ui(ui, |ui| {
                             ui.selectable_value(
