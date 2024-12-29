@@ -163,7 +163,7 @@ pub fn speed_limiter(device: &device::Device) {
     if result.is_err() {
         let outcome = result.unwrap_err();
         let dur = outcome.wait_time_from(governor::clock::DefaultClock::default().now());
-        std::thread::sleep(dur);
+        spin_sleep::sleep(dur);
 
         device.vi.limiter.as_ref().unwrap().check().unwrap();
     }
