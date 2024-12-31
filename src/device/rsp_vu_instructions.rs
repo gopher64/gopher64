@@ -1275,7 +1275,8 @@ pub fn vrcpl(device: &mut device::Device, opcode: u32) {
     let mut result;
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let input = if device.rsp.cpu.divdp {
-        ((device.rsp.cpu.divin as i32) << 16) | get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as u16
+        ((device.rsp.cpu.divin as i32) << 16)
+            | get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as u16
                 as i32
     } else {
         get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32
@@ -1370,7 +1371,8 @@ pub fn vrsql(device: &mut device::Device, opcode: u32) {
     let mut result;
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let input = if device.rsp.cpu.divdp {
-        ((device.rsp.cpu.divin as i32) << 16) | get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as u16
+        ((device.rsp.cpu.divin as i32) << 16)
+            | get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as u16
                 as i32
     } else {
         get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32

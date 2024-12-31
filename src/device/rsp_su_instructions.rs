@@ -486,7 +486,8 @@ pub fn mfc2(device: &mut device::Device, opcode: u32) {
         device.rsp.cpu.vpr[rd(opcode) as usize],
         velement(opcode) + 1,
     );
-    device.rsp.cpu.gpr[rt(opcode) as usize] = (((hi as u16) << 8) | (lo as u16)) as i16 as i32 as u32
+    device.rsp.cpu.gpr[rt(opcode) as usize] =
+        (((hi as u16) << 8) | (lo as u16)) as i16 as i32 as u32
 }
 
 pub fn cfc2(device: &mut device::Device, opcode: u32) {
@@ -936,7 +937,8 @@ pub fn shv(device: &mut device::Device, opcode: u32) {
     let mut offset = 0;
     while offset < 8 {
         let byte_val = element + offset * 2;
-        let value = (get_vpr_byte(device.rsp.cpu.vpr[rt(opcode) as usize], byte_val) << 1) | (get_vpr_byte(device.rsp.cpu.vpr[rt(opcode) as usize], byte_val + 1) >> 7);
+        let value = (get_vpr_byte(device.rsp.cpu.vpr[rt(opcode) as usize], byte_val) << 1)
+            | (get_vpr_byte(device.rsp.cpu.vpr[rt(opcode) as usize], byte_val + 1) >> 7);
         device.rsp.mem[((address + ((index + offset * 2) & 15) as u32) & 0xFFF) as usize] = value;
         offset += 1;
     }

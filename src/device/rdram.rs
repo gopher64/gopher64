@@ -82,5 +82,5 @@ pub fn init(device: &mut device::Device) -> (*mut u8, usize) {
 }
 
 pub fn rdram_calculate_cycles(length: u64) -> u64 {
-    31 + (length / 3)// https://hcs64.com/dma.html, https://github.com/rasky/n64-systembench
+    31 + (length / 3) // https://hcs64.com/dma.html, https://github.com/rasky/n64-systembench
 }
