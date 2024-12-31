@@ -38,7 +38,8 @@ pub fn read(device: &mut device::Device, index: u64) {
         device.cpu.cop0.tlb_entries[index as usize].mask << 13;
 
     device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] =
-        ((device.cpu.cop0.tlb_entries[index as usize].region as u64) << 62) | (device.cpu.cop0.tlb_entries[index as usize].vpn2 << 13)
+        ((device.cpu.cop0.tlb_entries[index as usize].region as u64) << 62)
+            | (device.cpu.cop0.tlb_entries[index as usize].vpn2 << 13)
             | (device.cpu.cop0.tlb_entries[index as usize].asid) as u64;
 
     device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG as usize] =
@@ -135,7 +136,8 @@ pub fn probe(device: &mut device::Device) {
         if e.region != (device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] >> 62) as u8 {
             continue;
         }
-        if e.g == 0 && e.asid != device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] as u8 {
+        if e.g == 0 && e.asid != device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] as u8
+        {
             continue;
         }
         device.cpu.cop0.regs[device::cop0::COP0_INDEX_REG as usize] = pos as u64;
@@ -184,8 +186,11 @@ pub fn tlb_unmap(device: &mut device::Device, index: u64) {
 pub fn tlb_map(device: &mut device::Device, index: u64) {
     let e = &mut device.cpu.cop0.tlb_entries[index as usize];
 
-    if e.v_even != 0 && e.start_even < e.end_even
-            && !(e.start_even >= 0x80000000 && e.end_even < 0xC0000000) && e.phys_even < 0x20000000 {
+    if e.v_even != 0
+        && e.start_even < e.end_even
+        && !(e.start_even >= 0x80000000 && e.end_even < 0xC0000000)
+        && e.phys_even < 0x20000000
+    {
         let mut i = e.start_even;
         while i < e.end_even {
             device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].address =
@@ -204,8 +209,11 @@ pub fn tlb_map(device: &mut device::Device, index: u64) {
         }
     }
 
-    if e.v_odd != 0 && e.start_odd < e.end_odd
-            && !(e.start_odd >= 0x80000000 && e.end_odd < 0xC0000000) && e.phys_odd < 0x20000000 {
+    if e.v_odd != 0
+        && e.start_odd < e.end_odd
+        && !(e.start_odd >= 0x80000000 && e.end_odd < 0xC0000000)
+        && e.phys_odd < 0x20000000
+    {
         let mut i = e.start_odd;
         while i < e.end_odd {
             device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].address =

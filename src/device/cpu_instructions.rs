@@ -345,7 +345,8 @@ pub fn lwl(device: &mut device::Device, opcode: u32) {
     phys_address &= !3;
 
     device.cpu.gpr[rt(opcode) as usize] = se32(
-        ((device.cpu.gpr[rt(opcode) as usize] as u32) & mask | (device::memory::data_read(
+        ((device.cpu.gpr[rt(opcode) as usize] as u32) & mask
+            | (device::memory::data_read(
                 device,
                 phys_address,
                 device::memory::AccessSize::Word,
@@ -429,7 +430,8 @@ pub fn lwr(device: &mut device::Device, opcode: u32) {
     phys_address &= !3;
 
     device.cpu.gpr[rt(opcode) as usize] = se32(
-        ((device.cpu.gpr[rt(opcode) as usize] as u32) & (mask as u32) | (device::memory::data_read(
+        ((device.cpu.gpr[rt(opcode) as usize] as u32) & (mask as u32)
+            | (device::memory::data_read(
                 device,
                 phys_address,
                 device::memory::AccessSize::Word,
