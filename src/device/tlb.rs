@@ -38,8 +38,7 @@ pub fn read(device: &mut device::Device, index: u64) {
         device.cpu.cop0.tlb_entries[index as usize].mask << 13;
 
     device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] =
-        (device.cpu.cop0.tlb_entries[index as usize].region as u64) << 62
-            | device.cpu.cop0.tlb_entries[index as usize].vpn2 << 13
+        ((device.cpu.cop0.tlb_entries[index as usize].region as u64) << 62) | (device.cpu.cop0.tlb_entries[index as usize].vpn2 << 13)
             | (device.cpu.cop0.tlb_entries[index as usize].asid) as u64;
 
     device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG as usize] =
