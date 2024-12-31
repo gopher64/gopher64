@@ -159,7 +159,7 @@ pub fn af_rtc_write_block(device: &mut device::Device, block: usize, offset: usi
     match device.pif.ram[block] {
         0 => {
             device.cart.rtc.control =
-                (device.pif.ram[offset + 1] as u16) << 8 | device.pif.ram[offset] as u16;
+                ((device.pif.ram[offset + 1] as u16) << 8) | device.pif.ram[offset] as u16;
             device.pif.ram[status] = 0x00;
         }
         1 => {

@@ -359,8 +359,7 @@ pub fn set_control_registers_fpu(device: &mut device::Device, index: u32, data: 
             device.cpu.cop1.fcr31 = data & FCR31_WRITE_MASK;
             // the Cause bits are ANDed with the Enable bits to check for exceptions
             // "Unimplemented Operation" has no Enable bit and always causes an exception
-            if (device.cpu.cop1.fcr31 & FCR31_CAUSE_MASK) >> 5
-                & (device.cpu.cop1.fcr31 & FCR31_ENABLE_MASK)
+            if ((device.cpu.cop1.fcr31 & FCR31_CAUSE_MASK) >> 5) & (device.cpu.cop1.fcr31 & FCR31_ENABLE_MASK)
                 != 0
                 || device.cpu.cop1.fcr31 & FCR31_CAUSE_UNIMP_BIT != 0
             {

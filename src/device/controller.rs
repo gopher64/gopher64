@@ -75,7 +75,7 @@ pub fn pak_read_block(
     channel: usize,
 ) {
     let address =
-        (device.pif.ram[addr_acrc] as u16) << 8 | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
+        ((device.pif.ram[addr_acrc] as u16) << 8) | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
     let handler = device.pif.channels[channel].pak_handler;
 
     if handler.is_some() {
@@ -94,7 +94,7 @@ pub fn pak_write_block(
     channel: usize,
 ) {
     let address =
-        (device.pif.ram[addr_acrc] as u16) << 8 | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
+        ((device.pif.ram[addr_acrc] as u16) << 8) | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
     let handler = device.pif.channels[channel].pak_handler;
 
     if handler.is_some() {

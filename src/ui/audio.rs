@@ -23,12 +23,10 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
     let mut i = 0;
     while i < length as usize / 2 {
         // Left channel
-        primary_buffer[i] = device.rdram.mem[dram_addr + (i * 2) + 2] as i16
-            | (device.rdram.mem[dram_addr + (i * 2) + 3] as i16) << 8;
+        primary_buffer[i] = device.rdram.mem[dram_addr + (i * 2) + 2] as i16 | ((device.rdram.mem[dram_addr + (i * 2) + 3] as i16) << 8);
 
         // Right channel
-        primary_buffer[i + 1] = device.rdram.mem[dram_addr + (i * 2)] as i16
-            | (device.rdram.mem[dram_addr + (i * 2) + 1] as i16) << 8;
+        primary_buffer[i + 1] = device.rdram.mem[dram_addr + (i * 2)] as i16 | ((device.rdram.mem[dram_addr + (i * 2) + 1] as i16) << 8);
         i += 2;
     }
 

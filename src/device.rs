@@ -89,7 +89,7 @@ fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
 
 fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
     let mut contents = vec![];
-    if file_path.extension().unwrap().to_ascii_lowercase() == "zip" {
+    if file_path.extension().unwrap().eq_ignore_ascii_case("zip") {
         let zip_file = fs::File::open(file_path).unwrap();
         let mut archive = zip::ZipArchive::new(zip_file).unwrap();
         for i in 0..archive.len() {
@@ -106,7 +106,7 @@ fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
                 break;
             }
         }
-    } else if file_path.extension().unwrap().to_ascii_lowercase() == "7z" {
+    } else if file_path.extension().unwrap().eq_ignore_ascii_case("7z") {
         let mut archive =
             sevenz_rust::SevenZReader::open(file_path, sevenz_rust::Password::empty()).unwrap();
 
