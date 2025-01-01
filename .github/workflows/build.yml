@@ -50,7 +50,7 @@ jobs:
           path: target/release/gopher64.exe
 
   build-macos:
-    runs-on: macos-13
+    runs-on: macos-latest-large
     steps:
       - uses: actions/checkout@v4
         with:
