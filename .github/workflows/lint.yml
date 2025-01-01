@@ -19,10 +19,11 @@ jobs:
       - name: Install sdl2 headers
         run: |
           sudo apt -y install libsdl2-dev
-      - name: Update rust
-        run: |
-          rustup update
-          rustup component add clippy
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy
+      - name: Rustfmt Check
+        uses: actions-rust-lang/rustfmt@v1
       - name: Lint
         run: |
           cargo clippy -- -Dwarnings
