@@ -26,7 +26,6 @@ pub struct Ui {
 
 impl Drop for Ui {
     fn drop(&mut self) {
-        storage::write_saves(self);
         write_config(self);
     }
 }

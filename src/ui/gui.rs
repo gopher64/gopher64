@@ -67,7 +67,11 @@ impl GopherEguiApp {
     }
 }
 
-fn save_config(game_ui: &mut ui::Ui, selected_controller: [i32; 4], selected_profile: [String; 4]) {
+fn save_input_config(
+    game_ui: &mut ui::Ui,
+    selected_controller: [i32; 4],
+    selected_profile: [String; 4],
+) {
     let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
     for (pos, item) in selected_controller.iter().enumerate() {
         if *item != -1 {
@@ -88,7 +92,7 @@ fn save_config(game_ui: &mut ui::Ui, selected_controller: [i32; 4], selected_pro
 impl Drop for GopherEguiApp {
     fn drop(&mut self) {
         let mut game_ui = ui::Ui::new();
-        save_config(
+        save_input_config(
             &mut game_ui,
             self.selected_controller,
             self.selected_profile.clone(),
@@ -151,7 +155,7 @@ impl eframe::App for GopherEguiApp {
                         }
                         let _ = std::fs::File::create(running_file.clone());
                         let mut device = device::Device::new();
-                        save_config(&mut device.ui, selected_controller, selected_profile);
+                        save_input_config(&mut device.ui, selected_controller, selected_profile);
                         device::run_game(std::path::Path::new(file.path()), &mut device, false);
                         let _ = std::fs::remove_file(running_file.clone());
                     }
