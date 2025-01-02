@@ -54,6 +54,7 @@ static bool fullscreen;
 static void *rdram;
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
+static SDL_WSIPlatform *wsi_platform;
 static WSI *wsi;
 static uint32_t cmd_data[0x00040000 >> 2];
 static int cmd_cur;
@@ -143,7 +144,7 @@ void vk_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
 	rdram = mem_base;
 	bool window_vsync = 0;
 	wsi = new WSI;
-	SDL_WSIPlatform *wsi_platform = new SDL_WSIPlatform;
+	wsi_platform = new SDL_WSIPlatform;
 	wsi_platform->set_window(window);
 	wsi->set_platform(wsi_platform);
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
@@ -176,22 +177,36 @@ void vk_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
 
 void vk_close()
 {
-	delete processor;
-	delete wsi;
+	wsi->end_frame();
+
+	if (processor)
+	{
+		delete processor;
+		processor = nullptr;
+	}
+	if (wsi)
+	{
+		delete wsi;
+		wsi = nullptr;
+	}
+	if (wsi_platform)
+	{
+		delete wsi_platform;
+		wsi_platform = nullptr;
+	}
 }
 
 int sdl_event_filter(void *userdata, SDL_Event *event)
 {
 	if (event->type == SDL_WINDOWEVENT)
 	{
-		SDL_WSIPlatform *platform = (SDL_WSIPlatform *)&wsi->get_platform();
 		switch (event->window.event)
 		{
 		case SDL_WINDOWEVENT_CLOSE:
 			emu_running = 0;
 			break;
 		case SDL_WINDOWEVENT_RESIZED:
-			platform->do_resize();
+			wsi_platform->do_resize();
 			break;
 		default:
 			break;
@@ -212,7 +227,7 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 	return 0;
 }
 
-void set_sdl_window(void *_window)
+void vk_set_sdl_window(void *_window)
 {
 	window = (SDL_Window *)_window;
 	SDL_SetEventFilter(sdl_event_filter, nullptr);

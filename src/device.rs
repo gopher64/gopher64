@@ -59,6 +59,8 @@ pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bo
     cart_rom::load_rom_save(device);
 
     cpu::run(device);
+
+    ui::video::close(&mut device.ui);
 }
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {

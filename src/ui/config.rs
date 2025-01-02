@@ -17,8 +17,13 @@ pub struct Input {
     pub controller_assignment: [Option<String>; 4],
 }
 #[derive(serde::Serialize, serde::Deserialize)]
+pub struct Video {
+    pub lle: bool,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub input: Input,
+    pub video: Video,
 }
 
 impl Config {
@@ -36,6 +41,7 @@ impl Config {
                 controller_assignment: [None, None, None, None],
                 input_profiles,
             },
+            video: Video { lle: false },
         }
     }
 }

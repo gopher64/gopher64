@@ -1,4 +1,7 @@
 fn main() {
+    println!("cargo:rerun-if-changed=parallel-rdp");
+    println!("cargo:rerun-if-changed=gliden64");
+
     let mut build_parallel = cc::Build::new();
     build_parallel
         .cpp(true)

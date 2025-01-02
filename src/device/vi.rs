@@ -97,25 +97,37 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                 device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
                 set_vertical_interrupt(device);
                 set_expected_refresh_rate(device);
-                ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+                ui::video::set_register(
+                    reg as u32,
+                    device.vi.regs[reg as usize],
+                    device.ui.config.video.lle,
+                )
             }
         }
         VI_H_SYNC_REG => {
             if device.vi.regs[reg as usize] != value & mask {
                 device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
                 set_expected_refresh_rate(device);
-                ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+                ui::video::set_register(
+                    reg as u32,
+                    device.vi.regs[reg as usize],
+                    device.ui.config.video.lle,
+                )
             }
         }
         _ => {
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-            ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+            ui::video::set_register(
+                reg as u32,
+                device.vi.regs[reg as usize],
+                device.ui.config.video.lle,
+            )
         }
     }
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
-    device.cpu.running = ui::video::update_screen();
+    device.cpu.running = ui::video::update_screen(device.ui.config.video.lle);
 
     /*
         unsafe {
