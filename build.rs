@@ -161,7 +161,6 @@ fn main() {
         .file("gliden64/GLideN64/src/uCodes/ZSort.cpp")
         .file("gliden64/GLideN64/src/uCodes/ZSortBOSS.cpp")
         .file("gliden64/GLideN64/src/TxFilterStub.cpp")
-        .include("gliden64/overrides")
         .include("gliden64/GLideN64/src")
         .include("gliden64/GLideN64/src/inc")
         .include("gliden64/GLideN64/src/osal")
