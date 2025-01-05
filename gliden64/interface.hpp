@@ -7,6 +7,8 @@ extern "C"
 {
 #endif
 
+    void hle_init();
+    void hle_close();
     uint64_t hle_process_dlist();
     bool hle_update_screen();
 

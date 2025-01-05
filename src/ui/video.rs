@@ -8,6 +8,8 @@ unsafe extern "C" {
     pub fn lle_set_vi_register(reg: u32, value: u32);
     pub fn rdp_process_commands(dpc_regs: &mut [u32; 8], SP_DMEM: &mut [u8; 8192]) -> u64;
     pub fn lle_full_sync();
+    pub fn hle_init();
+    pub fn hle_close();
     pub fn hle_process_dlist() -> u64;
     pub fn hle_update_screen() -> bool;
 }
@@ -36,6 +38,9 @@ pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize, fullscreen: 
         }
     } else {
         ui.gl_context = Some(ui.window.as_ref().unwrap().gl_create_context().unwrap());
+        unsafe {
+            hle_init();
+        }
     }
 }
 
@@ -43,6 +48,10 @@ pub fn close(ui: &mut ui::Ui) {
     if ui.config.video.lle {
         unsafe {
             lle_close();
+        }
+    } else {
+        unsafe {
+            hle_close();
         }
     }
 }
@@ -56,11 +65,9 @@ pub fn update_screen(lle: bool) -> bool {
     }
 }
 
-pub fn set_register(reg: u32, value: u32, lle: bool) {
-    if lle {
-        unsafe {
-            lle_set_vi_register(reg, value);
-        }
+pub fn set_register(reg: u32, value: u32) {
+    unsafe {
+        lle_set_vi_register(reg, value);
     }
 }
 
@@ -80,11 +87,9 @@ pub fn process_rdp_list(dpc_regs: &mut [u32; 8], sp_dmem: &mut [u8; 8192], lle: 
     }
 }
 
-pub fn rdp_full_sync(lle: bool) {
-    if lle {
-        unsafe {
-            lle_full_sync();
-        }
+pub fn rdp_full_sync() {
+    unsafe {
+        lle_full_sync();
     }
 }
 

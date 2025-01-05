@@ -1,8 +1,6 @@
 #include "interface.hpp"
 #include "m64p_frontend.h"
 #include "Config.h"
-#include <RSP.h>
-#include <VI.h>
 #include <DisplayWindow.h>
 #include <PluginAPI.h>
 
@@ -10,15 +8,26 @@ Config config;
 ptr_DebugCallback CoreDebugCallback = nullptr;
 void *CoreDebugCallbackContext = nullptr;
 
+void hle_init()
+{
+    api().RomOpen();
+    // api().InitiateGFX();
+}
+
+void hle_close()
+{
+    api().RomClosed();
+}
+
 uint64_t hle_process_dlist()
 {
-    RSP_ProcessDList();
+    api().ProcessDList();
     return 4000;
 }
 
 bool hle_update_screen()
 {
-    VI_UpdateScreen();
+    api().UpdateScreen();
     return true;
 }
 
@@ -106,5 +115,13 @@ void PluginAPI::GetUserDataPath(wchar_t *_strPath)
 }
 
 void PluginAPI::GetUserCachePath(wchar_t *_strPath)
+{
+}
+
+void PluginAPI::FindPluginPath(wchar_t *_strPath)
+{
+}
+
+void Config_LoadConfig()
 {
 }
