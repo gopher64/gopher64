@@ -37,12 +37,12 @@ pub struct GfxInfo {
 }
 
 unsafe extern "C" {
-    pub fn lle_init(gfx_info: GfxInfo, fullscreen: u8);
+    pub fn lle_init(gfx_info: GfxInfo, fullscreen: bool);
     pub fn lle_close();
     pub fn lle_set_sdl_window(window: usize);
     pub fn lle_update_screen() -> bool;
     pub fn lle_set_vi_register(reg: u32, value: u32);
-    pub fn rdp_process_commands(dpc_regs: &mut [u32; 8], SP_DMEM: &mut [u8; 8192]) -> u64;
+    pub fn rdp_process_commands() -> u64;
     pub fn lle_full_sync();
     pub fn hle_init(gfx_info: GfxInfo);
     pub fn hle_close();
@@ -105,7 +105,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
     if device.ui.config.video.lle {
         unsafe {
             lle_set_sdl_window(device.ui.window.as_mut().unwrap().raw() as usize);
-            lle_init(gfx_info, fullscreen as u8)
+            lle_init(gfx_info, fullscreen)
         }
     } else {
         device.ui.gl_context = Some(
@@ -154,9 +154,9 @@ pub fn process_dlist() -> u64 {
     unsafe { hle_process_dlist() }
 }
 
-pub fn process_rdp_list(dpc_regs: &mut [u32; 8], sp_dmem: &mut [u8; 8192], lle: bool) -> u64 {
+pub fn process_rdp_list(lle: bool) -> u64 {
     if lle {
-        unsafe { rdp_process_commands(dpc_regs, sp_dmem) }
+        unsafe { rdp_process_commands() }
     } else {
         panic!("process_rdp_list in HLE mode")
     }

@@ -138,10 +138,10 @@ enum
 	MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024
 };
 
-void lle_init(GFX_INFO _gfx_info, uint8_t _fullscreen)
+void lle_init(GFX_INFO _gfx_info, bool _fullscreen)
 {
 	gfx_info = _gfx_info;
-	fullscreen = _fullscreen != 0;
+	fullscreen = _fullscreen;
 	rdram = gfx_info.RDRAM;
 	bool window_vsync = 0;
 	wsi = new WSI;
@@ -368,11 +368,11 @@ static uint32_t viCalculateVerticalHeight(uint32_t vstart, uint32_t yscale)
 	return (delta * scale) / 0x800;
 }
 
-uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
+uint64_t rdp_process_commands()
 {
 	uint64_t interrupt_timer = 0;
-	const uint32_t DP_CURRENT = dpc_regs[DPC_CURRENT_REG] & 0x00FFFFF8;
-	const uint32_t DP_END = dpc_regs[DPC_END_REG] & 0x00FFFFF8;
+	const uint32_t DP_CURRENT = *gfx_info.DPC_CURRENT_REG & 0x00FFFFF8;
+	const uint32_t DP_END = *gfx_info.DPC_END_REG & 0x00FFFFF8;
 
 	int length = DP_END - DP_CURRENT;
 	if (length <= 0)
@@ -382,16 +382,16 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 	if ((cmd_ptr + length) & ~(0x0003FFFF >> 3))
 		return interrupt_timer;
 
-	dpc_regs[DPC_STATUS_REG] |= DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK;
+	*gfx_info.DPC_STATUS_REG |= DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK;
 
 	uint32_t offset = DP_CURRENT;
-	if (dpc_regs[DPC_STATUS_REG] & DP_STATUS_XBUS_DMA)
+	if (*gfx_info.DPC_STATUS_REG & DP_STATUS_XBUS_DMA)
 	{
 		do
 		{
 			offset &= 0xFF8;
-			cmd_data[2 * cmd_ptr + 0] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(SP_DMEM + offset));
-			cmd_data[2 * cmd_ptr + 1] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(SP_DMEM + offset + 4));
+			cmd_data[2 * cmd_ptr + 0] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset));
+			cmd_data[2 * cmd_ptr + 1] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset + 4));
 			offset += sizeof(uint64_t);
 			cmd_ptr++;
 		} while (--length > 0);
@@ -423,7 +423,7 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 
 		if (cmd_ptr - cmd_cur - cmd_length < 0)
 		{
-			dpc_regs[DPC_START_REG] = dpc_regs[DPC_CURRENT_REG] = dpc_regs[DPC_END_REG];
+			*gfx_info.DPC_START_REG = *gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
 			return interrupt_timer;
 		}
 
@@ -454,7 +454,7 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 			}
 			interrupt_timer = width * height * 4;
 
-			dpc_regs[DPC_STATUS_REG] &= ~(DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK);
+			*gfx_info.DPC_STATUS_REG &= ~(DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK);
 		}
 
 		cmd_cur += cmd_length;
@@ -462,8 +462,8 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 
 	cmd_ptr = 0;
 	cmd_cur = 0;
-	dpc_regs[DPC_CURRENT_REG] = dpc_regs[DPC_END_REG];
-	dpc_regs[DPC_STATUS_REG] |= DP_STATUS_CBUF_READY;
+	*gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
+	*gfx_info.DPC_STATUS_REG |= DP_STATUS_CBUF_READY;
 
 	return interrupt_timer;
 }

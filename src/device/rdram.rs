@@ -76,9 +76,8 @@ pub fn init(device: &mut device::Device) {
         unsafe { Vec::from_raw_parts(ptr, device.rdram.size as usize, device.rdram.size as usize) };
 
     // hack, skip RDRAM initialization
-    let data: u32 = device.rdram.size as u32;
     device.rdram.mem[device.cart.rdram_size_offset..device.cart.rdram_size_offset + 4]
-        .copy_from_slice(&data.to_ne_bytes());
+        .copy_from_slice(&device.rdram.size.to_ne_bytes());
 }
 
 pub fn rdram_calculate_cycles(length: u64) -> u64 {
