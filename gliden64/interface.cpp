@@ -11,53 +11,53 @@ void *CoreDebugCallbackContext = nullptr;
 
 void hle_init(GFX_INFO _gfx_info)
 {
-    api().InitiateGFX(_gfx_info);
-    api().RomOpen();
+	api().InitiateGFX(_gfx_info);
+	api().RomOpen();
 }
 
 void hle_close()
 {
-    api().RomClosed();
+	api().RomClosed();
 }
 
 uint64_t hle_process_dlist()
 {
-    api().ProcessDList();
-    return 4000;
+	api().ProcessDList();
+	return 4000;
 }
 
 bool hle_update_screen()
 {
-    api().UpdateScreen();
-    return true;
+	api().UpdateScreen();
+	return true;
 }
 
 class DisplayWindowMupen64plus : public DisplayWindow
 {
 public:
-    DisplayWindowMupen64plus() {}
+	DisplayWindowMupen64plus() {}
 
 private:
-    void _setAttributes();
-    void _getDisplaySize();
+	void _setAttributes();
+	void _getDisplaySize();
 
-    bool _start() override;
-    void _stop() override;
-    void _restart() override;
-    void _swapBuffers() override;
-    void _saveScreenshot() override;
-    void _saveBufferContent(graphics::ObjectHandle _fbo, CachedTexture *_pTexture) override;
-    bool _resizeWindow() override;
-    void _changeWindow() override;
-    void _readScreen(void **_pDest, long *_pWidth, long *_pHeight) override {}
-    void _readScreen2(void *_dest, int *_width, int *_height, int _front) override;
-    graphics::ObjectHandle _getDefaultFramebuffer() override;
+	bool _start() override;
+	void _stop() override;
+	void _restart() override;
+	void _swapBuffers() override;
+	void _saveScreenshot() override;
+	void _saveBufferContent(graphics::ObjectHandle _fbo, CachedTexture *_pTexture) override;
+	bool _resizeWindow() override;
+	void _changeWindow() override;
+	void _readScreen(void **_pDest, long *_pWidth, long *_pHeight) override {}
+	void _readScreen2(void *_dest, int *_width, int *_height, int _front) override;
+	graphics::ObjectHandle _getDefaultFramebuffer() override;
 };
 
 DisplayWindow &DisplayWindow::get()
 {
-    static DisplayWindowMupen64plus video;
-    return video;
+	static DisplayWindowMupen64plus video;
+	return video;
 }
 
 void DisplayWindowMupen64plus::_setAttributes()
@@ -66,7 +66,7 @@ void DisplayWindowMupen64plus::_setAttributes()
 
 bool DisplayWindowMupen64plus::_start()
 {
-    return true;
+	return true;
 }
 
 void DisplayWindowMupen64plus::_stop()
@@ -91,7 +91,7 @@ void DisplayWindowMupen64plus::_saveBufferContent(graphics::ObjectHandle /*_fbo*
 
 bool DisplayWindowMupen64plus::_resizeWindow()
 {
-    return true;
+	return true;
 }
 
 void DisplayWindowMupen64plus::_changeWindow()
@@ -108,17 +108,17 @@ void DisplayWindowMupen64plus::_readScreen2(void *_dest, int *_width, int *_heig
 
 graphics::ObjectHandle DisplayWindowMupen64plus::_getDefaultFramebuffer()
 {
-    return graphics::ObjectHandle::null;
+	return graphics::ObjectHandle::null;
 }
 
 int PluginAPI::InitiateGFX(const GFX_INFO &_gfx_info)
 {
-    _initiateGFX(_gfx_info);
+	_initiateGFX(_gfx_info);
 
-    REG.SP_STATUS = _gfx_info.SP_STATUS_REG;
-    RDRAMSize = *_gfx_info.RDRAM_SIZE - 1;
+	REG.SP_STATUS = _gfx_info.SP_STATUS_REG;
+	RDRAMSize = *_gfx_info.RDRAM_SIZE - 1;
 
-    return TRUE;
+	return TRUE;
 }
 
 void PluginAPI::GetUserDataPath(wchar_t *_strPath)
