@@ -2,6 +2,7 @@
 #include "m64p_frontend.h"
 #include "Config.h"
 #include <RSP.h>
+#include <VI.h>
 #include <DisplayWindow.h>
 
 Config config;
@@ -12,6 +13,12 @@ uint64_t hle_process_dlist()
 {
     RSP_ProcessDList();
     return 4000;
+}
+
+bool hle_update_screen()
+{
+    VI_UpdateScreen();
+    return true;
 }
 
 class DisplayWindowMupen64plus : public DisplayWindow

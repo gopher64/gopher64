@@ -181,7 +181,10 @@ fn main() {
             build_gliden64.flag("/arch:AVX2");
         }
         build_parallel.flag("-DVK_USE_PLATFORM_WIN32_KHR");
-        build_gliden64.flag("-DOS_WINDOWS");
+        build_gliden64
+            .file("gliden64/GLideN64/src/osal/osal_files_win32.c")
+            .file("gliden64/GLideN64/src/osal/osal_keys_win.c")
+            .flag("-DOS_WINDOWS");
 
         winres::WindowsResource::new()
             .set_icon("data/icon.ico")
@@ -190,11 +193,15 @@ fn main() {
     }
     #[cfg(target_os = "linux")]
     {
-        build_gliden64.flag("-DOS_LINUX");
+        build_gliden64
+            .file("gliden64/GLideN64/src/osal/osal_keys_linux.c")
+            .flag("-DOS_LINUX");
     }
     #[cfg(target_os = "macos")]
     {
-        build_gliden64.flag("-DOS_MAC_OS_X");
+        build_gliden64
+            .file("gliden64/GLideN64/src/osal/osal_keys_unix.c")
+            .flag("-DOS_MAC_OS_X");
     }
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
@@ -203,6 +210,7 @@ fn main() {
             build_parallel.flag("-march=x86-64-v3");
             build_gliden64.flag("-march=x86-64-v3");
         }
+        build_gliden64.file("gliden64/GLideN64/src/osal/osal_files_unix.c");
     }
 
     build_parallel.compile("parallel-rdp");

@@ -59,7 +59,7 @@ static WSI *wsi;
 static uint32_t cmd_data[0x00040000 >> 2];
 static int cmd_cur;
 static int cmd_ptr;
-static uint8_t emu_running;
+static bool emu_running;
 static uint64_t rdp_sync_signal;
 static uint32_t vi_registers[14];
 
@@ -138,7 +138,7 @@ enum
 	MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024
 };
 
-void vk_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
+void lle_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
 {
 	fullscreen = _fullscreen != 0;
 	rdram = mem_base;
@@ -152,11 +152,11 @@ void vk_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
 	Context::SystemHandles handles = {};
 	if (!::Vulkan::Context::init_loader(nullptr))
 	{
-		vk_close();
+		lle_close();
 	}
 	if (!wsi->init_simple(1, handles))
 	{
-		vk_close();
+		lle_close();
 	}
 	RDP::CommandProcessorFlags flags = 0;
 	processor = new RDP::CommandProcessor(wsi->get_device(), rdram, 0, rdram_size, rdram_size / 2, flags);
@@ -166,16 +166,16 @@ void vk_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
 		delete processor;
 		delete wsi;
 		processor = nullptr;
-		vk_close();
+		lle_close();
 	}
 	wsi->begin_frame();
 
-	emu_running = 1;
+	emu_running = true;
 	last_frame_counter = 0;
 	frame_counter = 0;
 }
 
-void vk_close()
+void lle_close()
 {
 	wsi->end_frame();
 
@@ -203,7 +203,7 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 		switch (event->window.event)
 		{
 		case SDL_WINDOWEVENT_CLOSE:
-			emu_running = 0;
+			emu_running = false;
 			break;
 		case SDL_WINDOWEVENT_RESIZED:
 			wsi_platform->do_resize();
@@ -217,7 +217,7 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 		switch (event->key.keysym.scancode)
 		{
 		case SDL_SCANCODE_ESCAPE:
-			emu_running = 0;
+			emu_running = false;
 			break;
 		default:
 			break;
@@ -227,7 +227,7 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 	return 0;
 }
 
-void vk_set_sdl_window(void *_window)
+void lle_set_sdl_window(void *_window)
 {
 	window = (SDL_Window *)_window;
 	SDL_SetEventFilter(sdl_event_filter, nullptr);
@@ -313,13 +313,13 @@ static void render_frame(Vulkan::Device &device)
 	device.submit(cmd);
 }
 
-void rdp_set_vi_register(uint32_t reg, uint32_t value)
+void lle_set_vi_register(uint32_t reg, uint32_t value)
 {
 	processor->set_vi_register(RDP::VIRegister(reg), value);
 	vi_registers[reg] = value;
 }
 
-uint8_t rdp_update_screen()
+bool lle_update_screen()
 {
 	auto &device = wsi->get_device();
 	render_frame(device);
@@ -468,7 +468,7 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 	return interrupt_timer;
 }
 
-void full_sync()
+void lle_full_sync()
 {
 	if (rdp_sync_signal)
 	{

@@ -242,7 +242,7 @@ impl Device {
                 llbit: false,
                 lo: 0,
                 hi: 0,
-                running: 0,
+                running: false,
                 instrs: [cop0::reserved; 64],
                 special_instrs: [cop0::reserved; 64],
                 regimm_instrs: [cop0::reserved; 32],

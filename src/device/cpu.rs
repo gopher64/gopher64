@@ -25,7 +25,7 @@ pub struct Cpu {
     pub pc_phys: u64,
     pub lo: u64,
     pub hi: u64,
-    pub running: u8,
+    pub running: bool,
     pub llbit: bool,
     pub clock_rate: u64,
     pub instrs: [fn(&mut device::Device, u32); 64],
@@ -231,8 +231,8 @@ pub fn in_delay_slot_taken(device: &device::Device) -> bool {
 }
 
 pub fn run(device: &mut device::Device) {
-    device.cpu.running = 1;
-    while device.cpu.running == 1 {
+    device.cpu.running = true;
+    while device.cpu.running == true {
         device.cpu.gpr[0] = 0; // gpr 0 is read only
         let (cached, err);
         (device.cpu.pc_phys, cached, err) = device::memory::translate_address(
