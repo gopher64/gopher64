@@ -341,6 +341,7 @@ impl Device {
                 regs: [0; rsp_interface::SP_REGS_COUNT as usize],
                 regs2: [0; rsp_interface::SP_REGS2_COUNT as usize],
                 mem: [0; 0x2000],
+                hle_task: false,
                 fifo: [rsp_interface::RspDma {
                     dir: rsp_interface::DmaDir::None,
                     length: 0,

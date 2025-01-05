@@ -71,12 +71,8 @@ pub fn set_register(reg: u32, value: u32) {
     }
 }
 
-pub fn process_dlist(lle: bool) -> u64 {
-    if !lle {
-        unsafe { hle_process_dlist() }
-    } else {
-        panic!("process_dlist in LLE mode")
-    }
+pub fn process_dlist() -> u64 {
+    unsafe { hle_process_dlist() }
 }
 
 pub fn process_rdp_list(dpc_regs: &mut [u32; 8], sp_dmem: &mut [u8; 8192], lle: bool) -> u64 {
