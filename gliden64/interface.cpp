@@ -105,6 +105,7 @@ DisplayWindow &DisplayWindow::get()
 
 void DisplayWindowMupen64plus::_setAttributes()
 {
+	SDL_GL_SetSwapInterval(0);
 }
 
 bool DisplayWindowMupen64plus::_start()
@@ -113,10 +114,11 @@ bool DisplayWindowMupen64plus::_start()
 
 	_setAttributes();
 
-	m_bFullscreen = config.video.fullscreen > 0;
-	m_screenWidth = config.video.windowedWidth;
-	m_screenHeight = config.video.windowedHeight;
-	m_screenRefresh = config.video.fullscreenRefresh;
+	m_bFullscreen = fullscreen;
+	int w, h;
+	SDL_GL_GetDrawableSize(window, &w, &h);
+	m_screenWidth = w;
+	m_screenHeight = h;
 
 	_getDisplaySize();
 	_setBufferSize();

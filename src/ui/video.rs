@@ -60,6 +60,11 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
         builder.position_centered().vulkan();
     } else {
         builder.position_centered().opengl();
+        let video_subsytem = device.ui.video_subsystem.as_ref().unwrap();
+        video_subsytem
+            .gl_attr()
+            .set_context_profile(sdl2::video::GLProfile::Core);
+        video_subsytem.gl_attr().set_context_version(3, 3);
     }
     if fullscreen {
         builder.fullscreen_desktop();
