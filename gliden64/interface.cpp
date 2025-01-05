@@ -3,15 +3,16 @@
 #include "Config.h"
 #include <DisplayWindow.h>
 #include <PluginAPI.h>
+#include <N64.h>
 
 Config config;
 ptr_DebugCallback CoreDebugCallback = nullptr;
 void *CoreDebugCallbackContext = nullptr;
 
-void hle_init()
+void hle_init(GFX_INFO _gfx_info)
 {
+    api().InitiateGFX(_gfx_info);
     api().RomOpen();
-    // api().InitiateGFX();
 }
 
 void hle_close()
@@ -108,6 +109,16 @@ void DisplayWindowMupen64plus::_readScreen2(void *_dest, int *_width, int *_heig
 graphics::ObjectHandle DisplayWindowMupen64plus::_getDefaultFramebuffer()
 {
     return graphics::ObjectHandle::null;
+}
+
+int PluginAPI::InitiateGFX(const GFX_INFO &_gfx_info)
+{
+    _initiateGFX(_gfx_info);
+
+    REG.SP_STATUS = _gfx_info.SP_STATUS_REG;
+    RDRAMSize = *_gfx_info.RDRAM_SIZE - 1;
+
+    return TRUE;
 }
 
 void PluginAPI::GetUserDataPath(wchar_t *_strPath)

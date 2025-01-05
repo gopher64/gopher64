@@ -61,7 +61,7 @@ static int cmd_cur;
 static int cmd_ptr;
 static bool emu_running;
 static uint64_t rdp_sync_signal;
-static uint32_t vi_registers[14];
+static GFX_INFO gfx_info;
 
 static uint64_t last_frame_counter;
 static uint64_t frame_counter;
@@ -138,10 +138,11 @@ enum
 	MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024
 };
 
-void lle_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
+void lle_init(GFX_INFO _gfx_info, uint8_t _fullscreen)
 {
+	gfx_info = _gfx_info;
 	fullscreen = _fullscreen != 0;
-	rdram = mem_base;
+	rdram = gfx_info.RDRAM;
 	bool window_vsync = 0;
 	wsi = new WSI;
 	wsi_platform = new SDL_WSIPlatform;
@@ -159,7 +160,7 @@ void lle_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
 		lle_close();
 	}
 	RDP::CommandProcessorFlags flags = 0;
-	processor = new RDP::CommandProcessor(wsi->get_device(), rdram, 0, rdram_size, rdram_size / 2, flags);
+	processor = new RDP::CommandProcessor(wsi->get_device(), rdram, 0, *gfx_info.RDRAM_SIZE, *gfx_info.RDRAM_SIZE / 2, flags);
 
 	if (!processor->device_is_supported())
 	{
@@ -316,7 +317,6 @@ static void render_frame(Vulkan::Device &device)
 void lle_set_vi_register(uint32_t reg, uint32_t value)
 {
 	processor->set_vi_register(RDP::VIRegister(reg), value);
-	vi_registers[reg] = value;
 }
 
 bool lle_update_screen()
@@ -442,12 +442,12 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 				rdp_sync_signal = 0;
 			}
 
-			uint32_t width = viCalculateHorizonalWidth(vi_registers[VI_H_START_REG], vi_registers[VI_X_SCALE_REG], vi_registers[VI_WIDTH_REG]);
+			uint32_t width = viCalculateHorizonalWidth(*gfx_info.VI_H_START_REG, *gfx_info.VI_X_SCALE_REG, *gfx_info.VI_WIDTH_REG);
 			if (width == 0)
 			{
 				width = 320;
 			}
-			uint32_t height = viCalculateVerticalHeight(vi_registers[VI_V_START_REG], vi_registers[VI_Y_SCALE_REG]);
+			uint32_t height = viCalculateVerticalHeight(*gfx_info.VI_V_START_REG, *gfx_info.VI_Y_SCALE_REG);
 			if (height == 0)
 			{
 				height = 240;

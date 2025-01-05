@@ -1,26 +1,63 @@
+use crate::device;
 use crate::ui;
 
+#[repr(C)]
+pub struct GfxInfo {
+    pub header: *mut u8,
+    pub rdram: *mut u8,
+    pub dmem: *mut u8,
+    pub imem: *mut u8,
+    pub mi_intr_reg: *mut u32,
+    pub dpc_start_reg: *mut u32,
+    pub dpc_end_reg: *mut u32,
+    pub dpc_current_reg: *mut u32,
+    pub dpc_status_reg: *mut u32,
+    pub dpc_clock_reg: *mut u32,
+    pub dpc_bufbusy_reg: *mut u32,
+    pub dpc_pipebusy_reg: *mut u32,
+    pub dpc_tmem_reg: *mut u32,
+    pub vi_status_reg: *mut u32,
+    pub vi_origin_reg: *mut u32,
+    pub vi_width_reg: *mut u32,
+    pub vi_intr_reg: *mut u32,
+    pub vi_v_current_line_reg: *mut u32,
+    pub vi_timing_reg: *mut u32,
+    pub vi_v_sync_reg: *mut u32,
+    pub vi_h_sync_reg: *mut u32,
+    pub vi_leap_reg: *mut u32,
+    pub vi_h_start_reg: *mut u32,
+    pub vi_v_start_reg: *mut u32,
+    pub vi_v_burst_reg: *mut u32,
+    pub vi_x_scale_reg: *mut u32,
+    pub vi_y_scale_reg: *mut u32,
+    pub check_interrupts: *mut usize,
+    pub version: u32,
+    pub sp_status_reg: *mut u32,
+    pub rdram_size: *mut u32,
+}
+
 unsafe extern "C" {
-    pub fn lle_init(rdram_ptr: usize, rdram_size: u32, fullscreen: u8);
+    pub fn lle_init(gfx_info: GfxInfo, fullscreen: u8);
     pub fn lle_close();
     pub fn lle_set_sdl_window(window: usize);
     pub fn lle_update_screen() -> bool;
     pub fn lle_set_vi_register(reg: u32, value: u32);
     pub fn rdp_process_commands(dpc_regs: &mut [u32; 8], SP_DMEM: &mut [u8; 8192]) -> u64;
     pub fn lle_full_sync();
-    pub fn hle_init();
+    pub fn hle_init(gfx_info: GfxInfo);
     pub fn hle_close();
     pub fn hle_process_dlist() -> u64;
     pub fn hle_update_screen() -> bool;
 }
 
-pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize, fullscreen: bool) {
-    let mut builder = ui
+pub fn init(device: &mut device::Device, fullscreen: bool) {
+    let mut builder = device
+        .ui
         .video_subsystem
         .as_ref()
         .unwrap()
         .window("gopher64", 640, 480);
-    if ui.config.video.lle {
+    if device.ui.config.video.lle {
         builder.position_centered().vulkan();
     } else {
         builder.position_centered().opengl();
@@ -30,16 +67,58 @@ pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize, fullscreen: 
     } else {
         builder.resizable();
     }
-    ui.window = Some(builder.build().unwrap());
-    if ui.config.video.lle {
+    device.ui.window = Some(builder.build().unwrap());
+
+    let gfx_info = GfxInfo {
+        header: device.cart.rom.as_mut_ptr(),
+        rdram: device.rdram.mem.as_mut_ptr(),
+        dmem: device.rsp.mem.as_mut_ptr(),
+        imem: std::ptr::null_mut(),
+        mi_intr_reg: &mut device.mi.regs[device::mi::MI_INTR_REG as usize],
+        dpc_start_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
+        dpc_end_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
+        dpc_current_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
+        dpc_status_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
+        dpc_clock_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_CLOCK_REG as usize],
+        dpc_bufbusy_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_BUFBUSY_REG as usize],
+        dpc_pipebusy_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_PIPEBUSY_REG as usize],
+        dpc_tmem_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_TMEM_REG as usize],
+        vi_status_reg: &mut device.vi.regs[device::vi::VI_STATUS_REG as usize],
+        vi_origin_reg: &mut device.vi.regs[device::vi::VI_ORIGIN_REG as usize],
+        vi_width_reg: &mut device.vi.regs[device::vi::VI_WIDTH_REG as usize],
+        vi_intr_reg: &mut device.vi.regs[device::vi::VI_V_INTR_REG as usize],
+        vi_v_current_line_reg: &mut device.vi.regs[device::vi::VI_CURRENT_REG as usize],
+        vi_timing_reg: &mut device.vi.regs[device::vi::VI_BURST_REG as usize],
+        vi_v_sync_reg: &mut device.vi.regs[device::vi::VI_V_SYNC_REG as usize],
+        vi_h_sync_reg: &mut device.vi.regs[device::vi::VI_H_SYNC_REG as usize],
+        vi_leap_reg: &mut device.vi.regs[device::vi::VI_LEAP_REG as usize],
+        vi_h_start_reg: &mut device.vi.regs[device::vi::VI_H_START_REG as usize],
+        vi_v_start_reg: &mut device.vi.regs[device::vi::VI_V_START_REG as usize],
+        vi_v_burst_reg: &mut device.vi.regs[device::vi::VI_V_BURST_REG as usize],
+        vi_x_scale_reg: &mut device.vi.regs[device::vi::VI_X_SCALE_REG as usize],
+        vi_y_scale_reg: &mut device.vi.regs[device::vi::VI_Y_SCALE_REG as usize],
+        check_interrupts: std::ptr::null_mut(),
+        version: 2,
+        sp_status_reg: &mut device.rsp.regs[device::rsp_interface::SP_STATUS_REG as usize],
+        rdram_size: &mut device.rdram.size,
+    };
+    if device.ui.config.video.lle {
         unsafe {
-            lle_set_sdl_window(ui.window.as_mut().unwrap().raw() as usize);
-            lle_init(rdram_ptr as usize, rdram_size as u32, fullscreen as u8)
+            lle_set_sdl_window(device.ui.window.as_mut().unwrap().raw() as usize);
+            lle_init(gfx_info, fullscreen as u8)
         }
     } else {
-        ui.gl_context = Some(ui.window.as_ref().unwrap().gl_create_context().unwrap());
+        device.ui.gl_context = Some(
+            device
+                .ui
+                .window
+                .as_ref()
+                .unwrap()
+                .gl_create_context()
+                .unwrap(),
+        );
         unsafe {
-            hle_init();
+            hle_init(gfx_info);
         }
     }
 }
