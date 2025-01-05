@@ -51,6 +51,7 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/vulkan")
         .include("parallel-rdp/parallel-rdp-standalone/vulkan-headers/include")
         .include("parallel-rdp/parallel-rdp-standalone/util")
+        .include("gliden64/GLideN64/src/inc")
         .includes(std::env::var("DEP_SDL2_INCLUDE"));
 
     let mut build_gliden64 = cc::Build::new();
