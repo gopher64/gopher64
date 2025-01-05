@@ -34,6 +34,8 @@ pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize, fullscreen: 
             lle_set_sdl_window(ui.window.as_mut().unwrap().raw() as usize);
             lle_init(rdram_ptr as usize, rdram_size as u32, fullscreen as u8)
         }
+    } else {
+        ui.gl_context = Some(ui.window.as_ref().unwrap().gl_create_context().unwrap());
     }
 }
 
