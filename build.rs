@@ -169,6 +169,7 @@ fn main() {
         .file("gliden64/interface.cpp")
         .include("gliden64/custom")
         .include("gliden64/GLideN64/src")
+        .include("gliden64/GLideN64/src/Graphics/OpenGLContext")
         .include("gliden64/GLideN64/src/inc")
         .include("gliden64/GLideN64/src/osal")
         .flag("-DMUPENPLUSAPI")
@@ -216,4 +217,5 @@ fn main() {
 
     build_parallel.compile("parallel-rdp");
     build_gliden64.compile("gliden64");
+    println!("cargo:rustc-link-lib=GL");
 }

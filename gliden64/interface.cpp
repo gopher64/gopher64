@@ -1,6 +1,7 @@
 #include "interface.hpp"
 #include "m64p_frontend.h"
 #include "Config.h"
+#include "GLFunctions.h"
 #include <DisplayWindow.h>
 #include <PluginAPI.h>
 #include <N64.h>
@@ -66,6 +67,7 @@ void DisplayWindowMupen64plus::_setAttributes()
 
 bool DisplayWindowMupen64plus::_start()
 {
+	initGLFunctions();
 	return true;
 }
 

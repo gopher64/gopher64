@@ -92,7 +92,12 @@ pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mas
 }
 
 pub fn run_rdp(device: &mut device::Device) {
-    let timer = ui::video::process_rdp_list(device.ui.config.video.lle);
+    let timer;
+    if device.ui.config.video.lle {
+        timer = ui::video::process_rdp_list();
+    } else {
+        timer = 1000;
+    }
     if timer != 0 {
         device::events::create_event(
             device,

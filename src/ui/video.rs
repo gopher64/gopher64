@@ -154,12 +154,8 @@ pub fn process_dlist() -> u64 {
     unsafe { hle_process_dlist() }
 }
 
-pub fn process_rdp_list(lle: bool) -> u64 {
-    if lle {
-        unsafe { rdp_process_commands() }
-    } else {
-        panic!("process_rdp_list in HLE mode")
-    }
+pub fn process_rdp_list() -> u64 {
+    unsafe { rdp_process_commands() }
 }
 
 pub fn rdp_full_sync() {
