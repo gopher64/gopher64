@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 
 pub const SP_MEM_ADDR_REG: u32 = 0;
 pub const SP_DRAM_ADDR_REG: u32 = 1;
@@ -427,7 +428,12 @@ pub fn update_sp_status(device: &mut device::Device, w: u32) {
 }
 
 pub fn do_task(device: &mut device::Device) {
-    let timer = device::rsp_cpu::run(device);
+    let timer;
+    if device.ui.config.video.lle {
+        timer = device::rsp_cpu::run(device);
+    } else {
+        timer = ui::video::process_dlist(device.ui.config.video.lle);
+    }
 
     device::events::create_event(
         device,

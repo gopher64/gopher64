@@ -8,6 +8,7 @@ unsafe extern "C" {
     pub fn rdp_set_vi_register(reg: u32, value: u32);
     pub fn rdp_process_commands(dpc_regs: &mut [u32; 8], SP_DMEM: &mut [u8; 8192]) -> u64;
     pub fn full_sync();
+    pub fn hle_process_dlist() -> u64;
 }
 
 pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize, fullscreen: bool) {
@@ -60,11 +61,19 @@ pub fn set_register(reg: u32, value: u32, lle: bool) {
     }
 }
 
+pub fn process_dlist(lle: bool) -> u64 {
+    if !lle {
+        unsafe { hle_process_dlist() }
+    } else {
+        panic!("process_dlist in LLE mode")
+    }
+}
+
 pub fn process_rdp_list(dpc_regs: &mut [u32; 8], sp_dmem: &mut [u8; 8192], lle: bool) -> u64 {
     if lle {
         unsafe { rdp_process_commands(dpc_regs, sp_dmem) }
     } else {
-        0
+        panic!("process_rdp_list in HLE mode")
     }
 }
 

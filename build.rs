@@ -164,6 +164,8 @@ fn main() {
         .file("gliden64/GLideN64/src/uCodes/ZSort.cpp")
         .file("gliden64/GLideN64/src/uCodes/ZSortBOSS.cpp")
         .file("gliden64/GLideN64/src/TxFilterStub.cpp")
+        .file("gliden64/GLideN64/src/mupenplus/MemoryStatus_mupenplus.cpp")
+        .file("gliden64/interface.cpp")
         .include("gliden64/custom")
         .include("gliden64/GLideN64/src")
         .include("gliden64/GLideN64/src/inc")
