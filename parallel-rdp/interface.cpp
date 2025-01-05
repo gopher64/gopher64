@@ -138,8 +138,42 @@ enum
 	MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024
 };
 
-void lle_init(GFX_INFO _gfx_info, bool _fullscreen)
+int lle_sdl_event_filter(void *userdata, SDL_Event *event)
 {
+	if (event->type == SDL_WINDOWEVENT)
+	{
+		switch (event->window.event)
+		{
+		case SDL_WINDOWEVENT_CLOSE:
+			emu_running = false;
+			break;
+		case SDL_WINDOWEVENT_RESIZED:
+			wsi_platform->do_resize();
+			break;
+		default:
+			break;
+		}
+	}
+	else if (fullscreen && event->type == SDL_KEYDOWN)
+	{
+		switch (event->key.keysym.scancode)
+		{
+		case SDL_SCANCODE_ESCAPE:
+			emu_running = false;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return 0;
+}
+
+void lle_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
+{
+	window = (SDL_Window *)_window;
+	SDL_SetEventFilter(lle_sdl_event_filter, nullptr);
+
 	gfx_info = _gfx_info;
 	fullscreen = _fullscreen;
 	rdram = gfx_info.RDRAM;
@@ -195,43 +229,6 @@ void lle_close()
 		delete wsi_platform;
 		wsi_platform = nullptr;
 	}
-}
-
-int sdl_event_filter(void *userdata, SDL_Event *event)
-{
-	if (event->type == SDL_WINDOWEVENT)
-	{
-		switch (event->window.event)
-		{
-		case SDL_WINDOWEVENT_CLOSE:
-			emu_running = false;
-			break;
-		case SDL_WINDOWEVENT_RESIZED:
-			wsi_platform->do_resize();
-			break;
-		default:
-			break;
-		}
-	}
-	else if (fullscreen && event->type == SDL_KEYDOWN)
-	{
-		switch (event->key.keysym.scancode)
-		{
-		case SDL_SCANCODE_ESCAPE:
-			emu_running = false;
-			break;
-		default:
-			break;
-		}
-	}
-
-	return 0;
-}
-
-void lle_set_sdl_window(void *_window)
-{
-	window = (SDL_Window *)_window;
-	SDL_SetEventFilter(sdl_event_filter, nullptr);
 }
 
 static void calculate_viewport(float *x, float *y, float *width, float *height)

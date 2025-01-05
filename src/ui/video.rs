@@ -37,14 +37,13 @@ pub struct GfxInfo {
 }
 
 unsafe extern "C" {
-    pub fn lle_init(gfx_info: GfxInfo, fullscreen: bool);
+    pub fn lle_init(window: usize, gfx_info: GfxInfo, fullscreen: bool);
     pub fn lle_close();
-    pub fn lle_set_sdl_window(window: usize);
     pub fn lle_update_screen() -> bool;
     pub fn lle_set_vi_register(reg: u32, value: u32);
     pub fn rdp_process_commands() -> u64;
     pub fn lle_full_sync();
-    pub fn hle_init(gfx_info: GfxInfo);
+    pub fn hle_init(window: usize, gfx_info: GfxInfo, fullscreen: bool);
     pub fn hle_close();
     pub fn hle_process_dlist() -> u64;
     pub fn hle_update_screen() -> bool;
@@ -104,8 +103,11 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
     };
     if device.ui.config.video.lle {
         unsafe {
-            lle_set_sdl_window(device.ui.window.as_mut().unwrap().raw() as usize);
-            lle_init(gfx_info, fullscreen)
+            lle_init(
+                device.ui.window.as_mut().unwrap().raw() as usize,
+                gfx_info,
+                fullscreen,
+            )
         }
     } else {
         device.ui.gl_context = Some(
@@ -118,7 +120,11 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
                 .unwrap(),
         );
         unsafe {
-            hle_init(gfx_info);
+            hle_init(
+                device.ui.window.as_mut().unwrap().raw() as usize,
+                gfx_info,
+                fullscreen,
+            );
         }
     }
 }

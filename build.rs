@@ -172,6 +172,7 @@ fn main() {
         .include("gliden64/GLideN64/src/Graphics/OpenGLContext")
         .include("gliden64/GLideN64/src/inc")
         .include("gliden64/GLideN64/src/osal")
+        .includes(std::env::var("DEP_SDL2_INCLUDE"))
         .flag("-DMUPENPLUSAPI")
         .flag("-D__VEC4_OPT");
 

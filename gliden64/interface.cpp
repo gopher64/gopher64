@@ -2,18 +2,60 @@
 #include "m64p_frontend.h"
 #include "Config.h"
 #include "GLFunctions.h"
+#include <Graphics/OpenGLContext/ThreadedOpenGl/opengl_Wrapper.h>
 #include <DisplayWindow.h>
 #include <PluginAPI.h>
 #include <N64.h>
+#include <SDL.h>
+
+using namespace opengl;
 
 Config config;
 ptr_DebugCallback CoreDebugCallback = nullptr;
 void *CoreDebugCallbackContext = nullptr;
+static SDL_Window *window;
+static bool emu_running = false;
+static bool fullscreen = false;
 
-void hle_init(GFX_INFO _gfx_info)
+int hle_sdl_event_filter(void *userdata, SDL_Event *event)
 {
+	if (event->type == SDL_WINDOWEVENT)
+	{
+		switch (event->window.event)
+		{
+		case SDL_WINDOWEVENT_CLOSE:
+			emu_running = false;
+			break;
+		case SDL_WINDOWEVENT_RESIZED:
+			// wsi_platform->do_resize();
+			break;
+		default:
+			break;
+		}
+	}
+	else if (fullscreen && event->type == SDL_KEYDOWN)
+	{
+		switch (event->key.keysym.scancode)
+		{
+		case SDL_SCANCODE_ESCAPE:
+			emu_running = false;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return 0;
+}
+
+void hle_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
+{
+	window = (SDL_Window *)_window;
+	SDL_SetEventFilter(hle_sdl_event_filter, nullptr);
 	api().InitiateGFX(_gfx_info);
 	api().RomOpen();
+	fullscreen = _fullscreen;
+	emu_running = true;
 }
 
 void hle_close()
@@ -30,7 +72,7 @@ uint64_t hle_process_dlist()
 bool hle_update_screen()
 {
 	api().UpdateScreen();
-	return true;
+	return emu_running;
 }
 
 class DisplayWindowMupen64plus : public DisplayWindow
@@ -67,6 +109,18 @@ void DisplayWindowMupen64plus::_setAttributes()
 
 bool DisplayWindowMupen64plus::_start()
 {
+	FunctionWrapper::setThreadedMode(0);
+
+	_setAttributes();
+
+	m_bFullscreen = config.video.fullscreen > 0;
+	m_screenWidth = config.video.windowedWidth;
+	m_screenHeight = config.video.windowedHeight;
+	m_screenRefresh = config.video.fullscreenRefresh;
+
+	_getDisplaySize();
+	_setBufferSize();
+
 	initGLFunctions();
 	return true;
 }
@@ -81,6 +135,7 @@ void DisplayWindowMupen64plus::_restart()
 
 void DisplayWindowMupen64plus::_swapBuffers()
 {
+	SDL_GL_SwapWindow(window);
 }
 
 void DisplayWindowMupen64plus::_saveScreenshot()
@@ -137,4 +192,5 @@ void PluginAPI::FindPluginPath(wchar_t *_strPath)
 
 void Config_LoadConfig()
 {
+	config.resetToDefaults();
 }
