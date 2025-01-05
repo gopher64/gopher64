@@ -430,7 +430,11 @@ pub fn update_sp_status(device: &mut device::Device, w: u32) {
 
 pub fn do_task(device: &mut device::Device) {
     let timer;
-    if !device.ui.config.video.lle && device.rsp.mem[0xfc0] == 1 {
+    let mut task = 0;
+    if !device.ui.config.video.lle {
+        task = u32::from_be_bytes(device.rsp.mem[0xfc0..0xfc0 + 4].try_into().unwrap());
+    }
+    if task == 1 {
         device.rsp.regs[SP_STATUS_REG as usize] |=
             SP_STATUS_SIG2 | SP_STATUS_BROKE | SP_STATUS_HALT;
         timer = ui::video::process_dlist();
