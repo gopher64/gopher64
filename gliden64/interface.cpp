@@ -10,8 +10,13 @@
 
 using namespace opengl;
 
+void DebugCallback(void *Context, int level, const char *message)
+{
+	printf("message %s\n", message);
+}
+
 Config config;
-ptr_DebugCallback CoreDebugCallback = nullptr;
+ptr_DebugCallback CoreDebugCallback = &DebugCallback;
 void *CoreDebugCallbackContext = nullptr;
 static SDL_Window *window;
 static bool emu_running = false;
