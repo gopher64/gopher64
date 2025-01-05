@@ -4,6 +4,7 @@
 #include <RSP.h>
 #include <VI.h>
 #include <DisplayWindow.h>
+#include <PluginAPI.h>
 
 Config config;
 ptr_DebugCallback CoreDebugCallback = nullptr;
@@ -98,4 +99,12 @@ void DisplayWindowMupen64plus::_readScreen2(void *_dest, int *_width, int *_heig
 graphics::ObjectHandle DisplayWindowMupen64plus::_getDefaultFramebuffer()
 {
     return graphics::ObjectHandle::null;
+}
+
+void PluginAPI::GetUserDataPath(wchar_t *_strPath)
+{
+}
+
+void PluginAPI::GetUserCachePath(wchar_t *_strPath)
+{
 }
