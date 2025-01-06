@@ -49,6 +49,8 @@ jobs:
         with:
           submodules: recursive
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: x86_64-apple-darwin
       - name: Build
         run: |
           cargo build --release -v --target=x86_64-apple-darwin
