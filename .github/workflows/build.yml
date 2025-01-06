@@ -12,6 +12,8 @@ env:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    env:
+      TARGET: x86_64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,33 +22,41 @@ jobs:
         run: |
           sudo apt -y install libsdl2-dev
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ""
       - name: Build
         run: |
-          cargo build --release -v
+          cargo build --release -v --target=${{ env.TARGET }}
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
           name: gopher64-linux
-          path: target/release/gopher64
+          path: target/${{ env.TARGET }}/release/gopher64
 
   build-windows:
     runs-on: windows-latest
+    env:
+      TARGET: x86_64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ""
       - name: Build
         run: |
-          cargo build --release -v
+          cargo build --release -v --target=${{ env.TARGET }}
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
           name: gopher64-windows
-          path: target/release/gopher64.exe
+          path: target/${{ env.TARGET }}/release/gopher64.exe
 
   build-macos:
-    runs-on: macos-13
+    runs-on: macos-latest
+    env:
+      TARGET: x86_64-apple-darwin
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,11 +65,14 @@ jobs:
         run: |
           brew install sdl2
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ env.TARGET }}
+          rustflags: ""
       - name: Build
         run: |
-          cargo build --release -v
+          cargo build --release -v --target=${{ env.TARGET }}
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
           name: gopher64-mac
-          path: target/release/gopher64
+          path: target/${{ env.TARGET }}/release/gopher64
