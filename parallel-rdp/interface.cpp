@@ -51,7 +51,6 @@ enum vi_registers
 };
 
 static bool fullscreen;
-static void *rdram;
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
 static SDL_WSIPlatform *wsi_platform;
@@ -145,7 +144,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
 
 	gfx_info = _gfx_info;
 	fullscreen = _fullscreen;
-	rdram = gfx_info.RDRAM;
 	bool window_vsync = 0;
 	wsi = new WSI;
 	wsi_platform = new SDL_WSIPlatform;
@@ -163,7 +161,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
 		rdp_close();
 	}
 	RDP::CommandProcessorFlags flags = 0;
-	processor = new RDP::CommandProcessor(wsi->get_device(), rdram, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
+	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 
 	if (!processor->device_is_supported())
 	{
@@ -404,8 +402,8 @@ uint64_t rdp_process_commands()
 			do
 			{
 				offset &= 0xFFFFF8;
-				cmd_data[2 * cmd_ptr + 0] = *reinterpret_cast<const uint32_t *>((uint8_t *)rdram + offset);
-				cmd_data[2 * cmd_ptr + 1] = *reinterpret_cast<const uint32_t *>((uint8_t *)rdram + offset + 4);
+				cmd_data[2 * cmd_ptr + 0] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset);
+				cmd_data[2 * cmd_ptr + 1] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset + 4);
 				offset += sizeof(uint64_t);
 				cmd_ptr++;
 			} while (--length > 0);
