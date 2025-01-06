@@ -16,9 +16,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install sdl2 headers
-        run: |
-          sudo apt -y install libsdl2-dev
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy
