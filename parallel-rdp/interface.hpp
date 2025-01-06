@@ -9,18 +9,18 @@ extern "C"
 
 	typedef struct
 	{
-		unsigned char *RDRAM;
-		unsigned char *DMEM;
-		const unsigned int *RDRAM_SIZE;
-		unsigned int *DPC_CURRENT_REG;
-		unsigned int *DPC_START_REG;
-		unsigned int *DPC_END_REG;
-		unsigned int *DPC_STATUS_REG;
-		unsigned int *VI_H_START_REG;
-		unsigned int *VI_V_START_REG;
-		unsigned int *VI_X_SCALE_REG;
-		unsigned int *VI_Y_SCALE_REG;
-		unsigned int *VI_WIDTH_REG;
+		uint8_t *RDRAM;
+		uint8_t *DMEM;
+		uint32_t RDRAM_SIZE;
+		uint32_t *DPC_CURRENT_REG;
+		uint32_t *DPC_START_REG;
+		uint32_t *DPC_END_REG;
+		uint32_t *DPC_STATUS_REG;
+		uint32_t *VI_H_START_REG;
+		uint32_t *VI_V_START_REG;
+		uint32_t *VI_X_SCALE_REG;
+		uint32_t *VI_Y_SCALE_REG;
+		uint32_t *VI_WIDTH_REG;
 	} GFX_INFO;
 
 	void rdp_init(void *_window, GFX_INFO _gfx_info, bool fullscreen);

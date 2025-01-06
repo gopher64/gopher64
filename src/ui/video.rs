@@ -4,7 +4,7 @@ use crate::device;
 pub struct GfxInfo {
     pub rdram: *mut u8,
     pub dmem: *mut u8,
-    pub rdram_size: *mut u32,
+    pub rdram_size: u32,
     pub dpc_current_reg: *mut u32,
     pub dpc_start_reg: *mut u32,
     pub dpc_end_reg: *mut u32,
@@ -45,7 +45,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
     let gfx_info = GfxInfo {
         rdram: device.rdram.mem.as_mut_ptr(),
         dmem: device.rsp.mem.as_mut_ptr(),
-        rdram_size: &mut device.rdram.size,
+        rdram_size: device.rdram.size,
         dpc_current_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
         dpc_start_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
         dpc_end_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],

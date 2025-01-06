@@ -163,7 +163,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
 		rdp_close();
 	}
 	RDP::CommandProcessorFlags flags = 0;
-	processor = new RDP::CommandProcessor(wsi->get_device(), rdram, 0, *gfx_info.RDRAM_SIZE, *gfx_info.RDRAM_SIZE / 2, flags);
+	processor = new RDP::CommandProcessor(wsi->get_device(), rdram, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 
 	if (!processor->device_is_supported())
 	{
