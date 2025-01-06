@@ -25,9 +25,12 @@ pub struct Vi {
     pub field: u32,
     pub limiter: Option<governor::DefaultDirectRateLimiter>,
     pub count_per_scanline: u64,
+    pub vi_counter: u64,
 }
 
 //static mut FRAME_COUNTER: u64 = 0;
+
+const LIMIT_BUFFER: u64 = 3;
 
 pub fn set_expected_refresh_rate(device: &mut device::Device) {
     let expected_refresh_rate = device.vi.clock as f64
@@ -39,7 +42,7 @@ pub fn set_expected_refresh_rate(device: &mut device::Device) {
         device.vi.delay / (device.vi.regs[VI_V_SYNC_REG as usize] + 1) as u64;
 
     let quota = governor::Quota::with_period(std::time::Duration::from_secs_f64(
-        1.0 / expected_refresh_rate,
+        (1.0 / expected_refresh_rate) * LIMIT_BUFFER as f64,
     ))
     .unwrap();
     device.vi.limiter = Some(governor::RateLimiter::direct(quota))
@@ -121,7 +124,10 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         }
     */
 
-    speed_limiter(device);
+    device.vi.vi_counter += 1;
+    if device.vi.vi_counter % LIMIT_BUFFER == 0 {
+        speed_limiter(device);
+    }
 
     /* toggle vi field if in interlaced mode */
     device.vi.field ^= (device.vi.regs[VI_STATUS_REG as usize] >> 6) & 0x1;

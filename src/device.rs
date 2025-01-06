@@ -386,6 +386,7 @@ impl Device {
                 delay: 0,
                 count_per_scanline: 0,
                 limiter: None,
+                vi_counter: 0,
             },
             flashram: sram::Flashram {
                 status: 0,
