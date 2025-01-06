@@ -19,6 +19,8 @@ jobs:
         with:
           submodules: recursive
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ""
       - name: Build
         run: |
           cargo build --release -v --target=${{ env.TARGET }}
@@ -37,6 +39,8 @@ jobs:
         with:
           submodules: recursive
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ""
       - name: Build
         run: |
           cargo build --release -v --target=${{ env.TARGET }}
@@ -57,6 +61,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ env.TARGET }}
+          rustflags: ""
       - name: Build
         run: |
           cargo build --release -v --target=${{ env.TARGET }}
