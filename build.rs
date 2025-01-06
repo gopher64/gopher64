@@ -1,5 +1,5 @@
 fn main() {
-    println!("cargo:rerun-if-changed=parallel-rdp");
+    println!("cargo::rerun-if-changed=parallel-rdp");
 
     let mut build = cc::Build::new();
     build
