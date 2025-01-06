@@ -1,5 +1,4 @@
 use crate::device;
-use crate::ui;
 
 pub const SP_MEM_ADDR_REG: u32 = 0;
 pub const SP_DRAM_ADDR_REG: u32 = 1;

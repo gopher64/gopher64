@@ -19,7 +19,6 @@ pub struct Input {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub input: Input,
-    pub video: Video,
 }
 
 impl Config {
@@ -37,7 +36,6 @@ impl Config {
                 controller_assignment: [None, None, None, None],
                 input_profiles,
             },
-            video: Video { lle: false },
         }
     }
 }

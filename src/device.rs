@@ -60,7 +60,7 @@ pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bo
 
     cpu::run(device);
 
-    ui::video::close(&mut device.ui);
+    ui::video::close();
     ui::storage::write_saves(&mut device.ui);
 }
 
