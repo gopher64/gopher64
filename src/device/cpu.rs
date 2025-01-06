@@ -232,7 +232,7 @@ pub fn in_delay_slot_taken(device: &device::Device) -> bool {
 
 pub fn run(device: &mut device::Device) {
     device.cpu.running = true;
-    while device.cpu.running == true {
+    while device.cpu.running {
         device.cpu.gpr[0] = 0; // gpr 0 is read only
         let (cached, err);
         (device.cpu.pc_phys, cached, err) = device::memory::translate_address(
