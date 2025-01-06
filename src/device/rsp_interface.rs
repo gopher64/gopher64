@@ -82,7 +82,6 @@ pub struct Rsp {
     pub regs2: [u32; SP_REGS2_COUNT as usize],
     pub mem: [u8; 0x2000],
     pub fifo: [RspDma; 2],
-    pub hle_task: bool,
 }
 
 pub fn read_mem_fast(
@@ -429,29 +428,7 @@ pub fn update_sp_status(device: &mut device::Device, w: u32) {
 }
 
 pub fn do_task(device: &mut device::Device) {
-    let timer;
-    let mut task = 0;
-    if !device.ui.config.video.lle {
-        task = u32::from_be_bytes(device.rsp.mem[0xfc0..0xfc0 + 4].try_into().unwrap());
-    }
-    if task == 1 {
-        device.rsp.regs[SP_STATUS_REG as usize] |=
-            SP_STATUS_SIG2 | SP_STATUS_BROKE | SP_STATUS_HALT;
-        timer = ui::video::process_dlist();
-        if device.rsp.regs[SP_STATUS_REG as usize] & SP_STATUS_BROKE != 0 {
-            device.rsp.cpu.broken = true;
-            device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_BROKE
-        }
-        if device.rsp.regs[SP_STATUS_REG as usize] & SP_STATUS_HALT != 0 {
-            device.rsp.cpu.halted = true;
-            device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_HALT
-        }
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SIG2;
-        device.rsp.hle_task = true
-    } else {
-        timer = device::rsp_cpu::run(device);
-        device.rsp.hle_task = false
-    }
+    let timer = device::rsp_cpu::run(device);
 
     device::events::create_event(
         device,
@@ -463,9 +440,6 @@ pub fn do_task(device: &mut device::Device) {
 
 pub fn rsp_event(device: &mut device::Device) {
     if device.rsp.cpu.broken {
-        if device.rsp.hle_task {
-            device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SIG2
-        }
         device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT | SP_STATUS_BROKE;
 
         if device.rsp.regs[SP_STATUS_REG as usize] & SP_STATUS_INTR_BREAK != 0 {

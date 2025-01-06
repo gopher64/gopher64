@@ -2,7 +2,6 @@
 
 #ifdef __cplusplus
 #include <cstdint>
-#include "m64p_plugin.h"
 
 extern "C"
 {

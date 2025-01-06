@@ -1,6 +1,3 @@
 [submodule "parallel-rdp/parallel-rdp-standalone"]
 	path = parallel-rdp/parallel-rdp-standalone
 	url = https://github.com/Themaister/parallel-rdp-standalone.git
-[submodule "gliden64/GLideN64"]
-	path = gliden64/GLideN64
-	url = https://github.com/gonetz/GLideN64.git

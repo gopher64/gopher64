@@ -109,13 +109,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
         }
     }
-    if device.ui.config.video.lle {
-        ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
-    }
+    ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
-    device.cpu.running = ui::video::update_screen(device.ui.config.video.lle);
+    device.cpu.running = ui::video::update_screen();
 
     /*
         unsafe {

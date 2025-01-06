@@ -43,10 +43,6 @@ unsafe extern "C" {
     pub fn lle_set_vi_register(reg: u32, value: u32);
     pub fn rdp_process_commands() -> u64;
     pub fn lle_full_sync();
-    pub fn hle_init(window: usize, gfx_info: GfxInfo, fullscreen: bool);
-    pub fn hle_close();
-    pub fn hle_process_dlist() -> u64;
-    pub fn hle_update_screen() -> bool;
 }
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
@@ -56,16 +52,9 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
         .as_ref()
         .unwrap()
         .window("gopher64", 640, 480);
-    if device.ui.config.video.lle {
-        builder.position_centered().vulkan();
-    } else {
-        builder.position_centered().opengl();
-        let video_subsytem = device.ui.video_subsystem.as_ref().unwrap();
-        video_subsytem
-            .gl_attr()
-            .set_context_profile(sdl2::video::GLProfile::Core);
-        video_subsytem.gl_attr().set_context_version(3, 3);
-    }
+
+    builder.position_centered().vulkan();
+
     if fullscreen {
         builder.fullscreen_desktop();
     } else {
@@ -106,63 +95,31 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
         sp_status_reg: &mut device.rsp.regs[device::rsp_interface::SP_STATUS_REG as usize],
         rdram_size: &mut device.rdram.size,
     };
-    if device.ui.config.video.lle {
-        unsafe {
-            lle_init(
-                device.ui.window.as_mut().unwrap().raw() as usize,
-                gfx_info,
-                fullscreen,
-            )
-        }
-    } else {
-        device.ui.gl_context = Some(
-            device
-                .ui
-                .window
-                .as_ref()
-                .unwrap()
-                .gl_create_context()
-                .unwrap(),
-        );
-        unsafe {
-            hle_init(
-                device.ui.window.as_mut().unwrap().raw() as usize,
-                gfx_info,
-                fullscreen,
-            );
-        }
+
+    unsafe {
+        lle_init(
+            device.ui.window.as_mut().unwrap().raw() as usize,
+            gfx_info,
+            fullscreen,
+        )
     }
 }
 
 pub fn close(ui: &mut ui::Ui) {
-    if ui.config.video.lle {
-        unsafe {
-            lle_close();
-        }
-    } else {
-        unsafe {
-            hle_close();
-        }
+    unsafe {
+        lle_close();
     }
 }
 
-pub fn update_screen(lle: bool) -> bool {
+pub fn update_screen() -> bool {
     // when the window is closed, running is set to false
-    if lle {
-        unsafe { lle_update_screen() }
-    } else {
-        unsafe { hle_update_screen() }
-    }
+    unsafe { lle_update_screen() }
 }
 
 pub fn set_register(reg: u32, value: u32) {
     unsafe {
         lle_set_vi_register(reg, value);
     }
-}
-
-pub fn process_dlist() -> u64 {
-    unsafe { hle_process_dlist() }
 }
 
 pub fn process_rdp_list() -> u64 {

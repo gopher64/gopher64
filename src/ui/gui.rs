@@ -9,7 +9,6 @@ pub struct GopherEguiApp {
     selected_controller: [i32; 4],
     selected_profile: [String; 4],
     input_profiles: Vec<String>,
-    lle_graphics: bool,
 }
 
 fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
@@ -64,17 +63,11 @@ impl GopherEguiApp {
             selected_controller,
             controllers: get_controllers(&game_ui),
             input_profiles: get_input_profiles(&game_ui),
-            lle_graphics: game_ui.config.video.lle,
         }
     }
 }
 
-fn save_config(
-    game_ui: &mut ui::Ui,
-    selected_controller: [i32; 4],
-    selected_profile: [String; 4],
-    lle_graphics: bool,
-) {
+fn save_config(game_ui: &mut ui::Ui, selected_controller: [i32; 4], selected_profile: [String; 4]) {
     let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
     for (pos, item) in selected_controller.iter().enumerate() {
         if *item != -1 {
@@ -90,8 +83,6 @@ fn save_config(
     }
 
     game_ui.config.input.input_profile_binding = selected_profile;
-
-    game_ui.config.video.lle = lle_graphics;
 }
 
 impl Drop for GopherEguiApp {
@@ -101,7 +92,6 @@ impl Drop for GopherEguiApp {
             &mut game_ui,
             self.selected_controller,
             self.selected_profile.clone(),
-            self.lle_graphics,
         );
     }
 }
@@ -148,7 +138,6 @@ impl eframe::App for GopherEguiApp {
                 let task = rfd::AsyncFileDialog::new().pick_file();
                 let selected_controller = self.selected_controller;
                 let selected_profile = self.selected_profile.clone();
-                let lle_graphics = self.lle_graphics;
                 execute(async move {
                     let file = task.await;
 
@@ -162,12 +151,7 @@ impl eframe::App for GopherEguiApp {
                         }
                         let _ = std::fs::File::create(running_file.clone());
                         let mut device = device::Device::new();
-                        save_config(
-                            &mut device.ui,
-                            selected_controller,
-                            selected_profile,
-                            lle_graphics,
-                        );
+                        save_config(&mut device.ui, selected_controller, selected_profile);
                         device::run_game(std::path::Path::new(file.path()), &mut device, false);
                         let _ = std::fs::remove_file(running_file.clone());
                     }
@@ -231,8 +215,6 @@ impl eframe::App for GopherEguiApp {
                     ui.end_row();
                 }
             });
-            ui.add_space(32.0);
-            ui.checkbox(&mut self.lle_graphics, "LLE Graphics");
         });
     }
 }
