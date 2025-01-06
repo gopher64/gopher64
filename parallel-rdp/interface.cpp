@@ -132,11 +132,6 @@ static const unsigned cmd_len_lut[64] = {
 	1,
 };
 
-enum
-{
-	MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024
-};
-
 void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
 {
 	window = (SDL_Window *)_window;
