@@ -37,12 +37,12 @@ pub struct GfxInfo {
 }
 
 unsafe extern "C" {
-    pub fn lle_init(window: usize, gfx_info: GfxInfo, fullscreen: bool);
-    pub fn lle_close();
-    pub fn lle_update_screen() -> bool;
-    pub fn lle_set_vi_register(reg: u32, value: u32);
+    pub fn rdp_init(window: usize, gfx_info: GfxInfo, fullscreen: bool);
+    pub fn rdp_close();
+    pub fn rdp_update_screen() -> bool;
+    pub fn rdp_set_vi_register(reg: u32, value: u32);
     pub fn rdp_process_commands() -> u64;
-    pub fn lle_full_sync();
+    pub fn rdp_full_sync();
 }
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
@@ -97,7 +97,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
     };
 
     unsafe {
-        lle_init(
+        rdp_init(
             device.ui.window.as_mut().unwrap().raw() as usize,
             gfx_info,
             fullscreen,
@@ -107,18 +107,18 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
 
 pub fn close(ui: &mut ui::Ui) {
     unsafe {
-        lle_close();
+        rdp_close();
     }
 }
 
 pub fn update_screen() -> bool {
     // when the window is closed, running is set to false
-    unsafe { lle_update_screen() }
+    unsafe { rdp_update_screen() }
 }
 
 pub fn set_register(reg: u32, value: u32) {
     unsafe {
-        lle_set_vi_register(reg, value);
+        rdp_set_vi_register(reg, value);
     }
 }
 
@@ -128,7 +128,7 @@ pub fn process_rdp_list() -> u64 {
 
 pub fn rdp_full_sync() {
     unsafe {
-        lle_full_sync();
+        rdp_full_sync();
     }
 }
 

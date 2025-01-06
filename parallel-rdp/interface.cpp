@@ -138,7 +138,69 @@ enum
 	MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024
 };
 
-int lle_sdl_event_filter(void *userdata, SDL_Event *event)
+void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
+{
+	window = (SDL_Window *)_window;
+	SDL_SetEventFilter(sdl_event_filter, nullptr);
+
+	gfx_info = _gfx_info;
+	fullscreen = _fullscreen;
+	rdram = gfx_info.RDRAM;
+	bool window_vsync = 0;
+	wsi = new WSI;
+	wsi_platform = new SDL_WSIPlatform;
+	wsi_platform->set_window(window);
+	wsi->set_platform(wsi_platform);
+	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
+	wsi->set_backbuffer_srgb(false);
+	Context::SystemHandles handles = {};
+	if (!::Vulkan::Context::init_loader(nullptr))
+	{
+		rdp_close();
+	}
+	if (!wsi->init_simple(1, handles))
+	{
+		rdp_close();
+	}
+	RDP::CommandProcessorFlags flags = 0;
+	processor = new RDP::CommandProcessor(wsi->get_device(), rdram, 0, *gfx_info.RDRAM_SIZE, *gfx_info.RDRAM_SIZE / 2, flags);
+
+	if (!processor->device_is_supported())
+	{
+		delete processor;
+		delete wsi;
+		processor = nullptr;
+		rdp_close();
+	}
+	wsi->begin_frame();
+
+	emu_running = true;
+	last_frame_counter = 0;
+	frame_counter = 0;
+}
+
+void rdp_close()
+{
+	wsi->end_frame();
+
+	if (processor)
+	{
+		delete processor;
+		processor = nullptr;
+	}
+	if (wsi)
+	{
+		delete wsi;
+		wsi = nullptr;
+	}
+	if (wsi_platform)
+	{
+		delete wsi_platform;
+		wsi_platform = nullptr;
+	}
+}
+
+int sdl_event_filter(void *userdata, SDL_Event *event)
 {
 	if (event->type == SDL_WINDOWEVENT)
 	{
@@ -167,68 +229,6 @@ int lle_sdl_event_filter(void *userdata, SDL_Event *event)
 	}
 
 	return 0;
-}
-
-void lle_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
-{
-	window = (SDL_Window *)_window;
-	SDL_SetEventFilter(lle_sdl_event_filter, nullptr);
-
-	gfx_info = _gfx_info;
-	fullscreen = _fullscreen;
-	rdram = gfx_info.RDRAM;
-	bool window_vsync = 0;
-	wsi = new WSI;
-	wsi_platform = new SDL_WSIPlatform;
-	wsi_platform->set_window(window);
-	wsi->set_platform(wsi_platform);
-	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
-	wsi->set_backbuffer_srgb(false);
-	Context::SystemHandles handles = {};
-	if (!::Vulkan::Context::init_loader(nullptr))
-	{
-		lle_close();
-	}
-	if (!wsi->init_simple(1, handles))
-	{
-		lle_close();
-	}
-	RDP::CommandProcessorFlags flags = 0;
-	processor = new RDP::CommandProcessor(wsi->get_device(), rdram, 0, *gfx_info.RDRAM_SIZE, *gfx_info.RDRAM_SIZE / 2, flags);
-
-	if (!processor->device_is_supported())
-	{
-		delete processor;
-		delete wsi;
-		processor = nullptr;
-		lle_close();
-	}
-	wsi->begin_frame();
-
-	emu_running = true;
-	last_frame_counter = 0;
-	frame_counter = 0;
-}
-
-void lle_close()
-{
-	wsi->end_frame();
-
-	if (processor)
-	{
-		delete processor;
-		processor = nullptr;
-	}
-	if (wsi)
-	{
-		delete wsi;
-		wsi = nullptr;
-	}
-	if (wsi_platform)
-	{
-		delete wsi_platform;
-		wsi_platform = nullptr;
-	}
 }
 
 static void calculate_viewport(float *x, float *y, float *width, float *height)
@@ -311,12 +311,12 @@ static void render_frame(Vulkan::Device &device)
 	device.submit(cmd);
 }
 
-void lle_set_vi_register(uint32_t reg, uint32_t value)
+void rdp_set_vi_register(uint32_t reg, uint32_t value)
 {
 	processor->set_vi_register(RDP::VIRegister(reg), value);
 }
 
-bool lle_update_screen()
+bool rdp_update_screen()
 {
 	auto &device = wsi->get_device();
 	render_frame(device);
@@ -465,7 +465,7 @@ uint64_t rdp_process_commands()
 	return interrupt_timer;
 }
 
-void lle_full_sync()
+void rdp_full_sync()
 {
 	if (rdp_sync_signal)
 	{
