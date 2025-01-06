@@ -1,36 +1,79 @@
-use crate::ui;
+use crate::device;
 
-unsafe extern "C" {
-    pub fn vk_init(rdram_ptr: usize, rdram_size: u32, fullscreen: u8);
-    pub fn set_sdl_window(window: usize);
-    pub fn rdp_update_screen() -> u8;
-    pub fn rdp_set_vi_register(reg: u32, value: u32);
-    pub fn rdp_process_commands(dpc_regs: &mut [u32; 8], SP_DMEM: &mut [u8; 8192]) -> u64;
-    pub fn full_sync();
+#[repr(C)]
+pub struct GfxInfo {
+    pub rdram: *mut u8,
+    pub dmem: *mut u8,
+    pub rdram_size: u32,
+    pub dpc_current_reg: *mut u32,
+    pub dpc_start_reg: *mut u32,
+    pub dpc_end_reg: *mut u32,
+    pub dpc_status_reg: *mut u32,
+    pub vi_h_start_reg: *mut u32,
+    pub vi_v_start_reg: *mut u32,
+    pub vi_x_scale_reg: *mut u32,
+    pub vi_y_scale_reg: *mut u32,
+    pub vi_width_reg: *mut u32,
 }
 
-pub fn init(ui: &mut ui::Ui, rdram_ptr: *mut u8, rdram_size: usize, fullscreen: bool) {
-    let mut builder = ui
+unsafe extern "C" {
+    pub fn rdp_init(window: usize, gfx_info: GfxInfo, fullscreen: bool);
+    pub fn rdp_close();
+    pub fn rdp_update_screen() -> bool;
+    pub fn rdp_set_vi_register(reg: u32, value: u32);
+    pub fn rdp_process_commands() -> u64;
+    pub fn rdp_full_sync();
+}
+
+pub fn init(device: &mut device::Device, fullscreen: bool) {
+    let mut builder = device
+        .ui
         .video_subsystem
         .as_ref()
         .unwrap()
         .window("gopher64", 640, 480);
+
     builder.position_centered().vulkan();
+
     if fullscreen {
         builder.fullscreen_desktop();
     } else {
         builder.resizable();
     }
-    ui.window = Some(builder.build().unwrap());
+    device.ui.window = Some(builder.build().unwrap());
+
+    let gfx_info = GfxInfo {
+        rdram: device.rdram.mem.as_mut_ptr(),
+        dmem: device.rsp.mem.as_mut_ptr(),
+        rdram_size: device.rdram.size,
+        dpc_current_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
+        dpc_start_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
+        dpc_end_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
+        dpc_status_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
+        vi_h_start_reg: &mut device.vi.regs[device::vi::VI_H_START_REG as usize],
+        vi_v_start_reg: &mut device.vi.regs[device::vi::VI_V_START_REG as usize],
+        vi_x_scale_reg: &mut device.vi.regs[device::vi::VI_X_SCALE_REG as usize],
+        vi_y_scale_reg: &mut device.vi.regs[device::vi::VI_Y_SCALE_REG as usize],
+        vi_width_reg: &mut device.vi.regs[device::vi::VI_WIDTH_REG as usize],
+    };
+
     unsafe {
-        set_sdl_window(ui.window.as_mut().unwrap().raw() as usize);
-        vk_init(rdram_ptr as usize, rdram_size as u32, fullscreen as u8)
+        rdp_init(
+            device.ui.window.as_mut().unwrap().raw() as usize,
+            gfx_info,
+            fullscreen,
+        )
     }
 }
 
-pub fn update_screen() -> u8 {
-    // when the window is closed, running is set to 0
+pub fn close() {
+    unsafe {
+        rdp_close();
+    }
+}
 
+pub fn update_screen() -> bool {
+    // when the window is closed, running is set to false
     unsafe { rdp_update_screen() }
 }
 
@@ -40,13 +83,13 @@ pub fn set_register(reg: u32, value: u32) {
     }
 }
 
-pub fn process_rdp_list(dpc_regs: &mut [u32; 8], sp_dmem: &mut [u8; 8192]) -> u64 {
-    unsafe { rdp_process_commands(dpc_regs, sp_dmem) }
+pub fn process_rdp_list() -> u64 {
+    unsafe { rdp_process_commands() }
 }
 
-pub fn rdp_full_sync() {
+pub fn full_sync() {
     unsafe {
-        full_sync();
+        rdp_full_sync();
     }
 }
 

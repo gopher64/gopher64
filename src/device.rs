@@ -40,10 +40,10 @@ pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bo
     cart_rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
-    let (rdram_ptr, rdram_size) = rdram::init(device);
+    rdram::init(device);
 
     ui::audio::init(&mut device.ui, 33600);
-    ui::video::init(&mut device.ui, rdram_ptr, rdram_size, fullscreen);
+    ui::video::init(device, fullscreen);
     ui::input::init(&mut device.ui);
 
     mi::init(device);
@@ -59,6 +59,9 @@ pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bo
     cart_rom::load_rom_save(device);
 
     cpu::run(device);
+
+    ui::video::close();
+    ui::storage::write_saves(&device.ui);
 }
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
@@ -144,12 +147,12 @@ pub struct Device {
     pif: pif::Pif,
     cart: cart_rom::Cart,
     memory: memory::Memory,
-    rsp: rsp_interface::Rsp,
-    rdp: rdp::Rdp,
+    pub rsp: rsp_interface::Rsp,
+    pub rdp: rdp::Rdp,
     pub rdram: rdram::Rdram,
     mi: mi::Mi,
     pi: pi::Pi,
-    vi: vi::Vi,
+    pub vi: vi::Vi,
     ai: ai::Ai,
     si: si::Si,
     ri: ri::Ri,
@@ -239,7 +242,7 @@ impl Device {
                 llbit: false,
                 lo: 0,
                 hi: 0,
-                running: 0,
+                running: false,
                 instrs: [cop0::reserved; 64],
                 special_instrs: [cop0::reserved; 64],
                 regimm_instrs: [cop0::reserved; 32],
@@ -292,7 +295,10 @@ impl Device {
                     words: [0; 4],
                 }; 512],
             },
-            rdram: rdram::Rdram { mem: vec![] },
+            rdram: rdram::Rdram {
+                mem: vec![],
+                size: 0x800000,
+            },
             rsp: rsp_interface::Rsp {
                 cpu: rsp_cpu::Cpu {
                     instructions: [rsp_cpu::Instructions {

@@ -1,7 +1,10 @@
 fn main() {
+    println!("cargo:rerun-if-changed=parallel-rdp");
+
     let mut build = cc::Build::new();
     build
         .cpp(true)
+        .warnings(false)
         .std("c++17")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/command_ring.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_device.cpp")
@@ -68,9 +71,7 @@ fn main() {
         {
             build.flag("-march=x86-64-v3");
         }
-        build
-            .flag("-Wno-missing-field-initializers")
-            .flag("-Wno-unused-parameter");
     }
+
     build.compile("parallel-rdp");
 }

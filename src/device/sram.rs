@@ -141,7 +141,7 @@ pub fn dma_read_sram(
 
     format_sram(device);
 
-    while i < dram_addr + length && i < device::rdram::RDRAM_SIZE as u32 {
+    while i < dram_addr + length && i < device.rdram.size {
         device.ui.saves.sram.0[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
         i += 1;
         j += 1;
@@ -191,7 +191,7 @@ pub fn dma_write_sram(
 
     format_sram(device);
 
-    while i < dram_addr + length && i < device::rdram::RDRAM_SIZE as u32 {
+    while i < dram_addr + length && i < device.rdram.size {
         device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.saves.sram.0[j as usize];
         i += 1;
         j += 1;

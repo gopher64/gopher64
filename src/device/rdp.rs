@@ -92,7 +92,8 @@ pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mas
 }
 
 pub fn run_rdp(device: &mut device::Device) {
-    let timer = ui::video::process_rdp_list(&mut device.rdp.regs_dpc, &mut device.rsp.mem);
+    let timer = ui::video::process_rdp_list();
+
     if timer != 0 {
         device::events::create_event(
             device,
@@ -173,6 +174,7 @@ pub fn init(device: &mut device::Device) {
 }
 
 pub fn rdp_interrupt_event(device: &mut device::Device) {
-    ui::video::rdp_full_sync();
+    ui::video::full_sync();
+
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_DP)
 }

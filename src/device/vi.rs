@@ -4,18 +4,18 @@ use governor::clock::Clock;
 
 pub const VI_STATUS_REG: u32 = 0;
 //pub const VI_ORIGIN_REG: u32 = 1;
-//pub const VI_WIDTH_REG: u32 = 2;
+pub const VI_WIDTH_REG: u32 = 2;
 //pub const VI_V_INTR_REG: u32 = 3;
 pub const VI_CURRENT_REG: u32 = 4;
 //pub const VI_BURST_REG: u32 = 5;
 pub const VI_V_SYNC_REG: u32 = 6;
 pub const VI_H_SYNC_REG: u32 = 7;
 //pub const VI_LEAP_REG: u32 = 8;
-//pub const VI_H_START_REG: u32 = 9;
-//pub const VI_V_START_REG: u32 = 10;
+pub const VI_H_START_REG: u32 = 9;
+pub const VI_V_START_REG: u32 = 10;
 //pub const VI_V_BURST_REG: u32 = 11;
-//pub const VI_X_SCALE_REG: u32 = 12;
-//pub const VI_Y_SCALE_REG: u32 = 13;
+pub const VI_X_SCALE_REG: u32 = 12;
+pub const VI_Y_SCALE_REG: u32 = 13;
 pub const VI_REGS_COUNT: u32 = 14;
 
 pub struct Vi {
@@ -97,21 +97,19 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                 device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
                 set_vertical_interrupt(device);
                 set_expected_refresh_rate(device);
-                ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
             }
         }
         VI_H_SYNC_REG => {
             if device.vi.regs[reg as usize] != value & mask {
                 device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
                 set_expected_refresh_rate(device);
-                ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
             }
         }
         _ => {
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-            ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
         }
     }
+    ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {

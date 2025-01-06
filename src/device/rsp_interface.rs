@@ -166,7 +166,7 @@ pub fn do_dma(device: &mut device::Device, dma: RspDma) {
             let mut i = 0;
             while i < length {
                 let mut data = 0;
-                if dram_addr < device::rdram::RDRAM_SIZE as u32 {
+                if dram_addr < device.rdram.size {
                     data = u32::from_ne_bytes(
                         device.rdram.mem[dram_addr as usize..dram_addr as usize + 4]
                             .try_into()

@@ -51,16 +51,16 @@ enum vi_registers
 };
 
 static bool fullscreen;
-static void *rdram;
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
+static SDL_WSIPlatform *wsi_platform;
 static WSI *wsi;
 static uint32_t cmd_data[0x00040000 >> 2];
 static int cmd_cur;
 static int cmd_ptr;
-static uint8_t emu_running;
+static bool emu_running;
 static uint64_t rdp_sync_signal;
-static uint32_t vi_registers[14];
+static GFX_INFO gfx_info;
 
 static uint64_t last_frame_counter;
 static uint64_t frame_counter;
@@ -132,18 +132,16 @@ static const unsigned cmd_len_lut[64] = {
 	1,
 };
 
-enum
+void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
 {
-	MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024
-};
+	window = (SDL_Window *)_window;
+	SDL_SetEventFilter(sdl_event_filter, nullptr);
 
-void vk_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
-{
-	fullscreen = _fullscreen != 0;
-	rdram = mem_base;
+	gfx_info = _gfx_info;
+	fullscreen = _fullscreen;
 	bool window_vsync = 0;
 	wsi = new WSI;
-	SDL_WSIPlatform *wsi_platform = new SDL_WSIPlatform;
+	wsi_platform = new SDL_WSIPlatform;
 	wsi_platform->set_window(window);
 	wsi->set_platform(wsi_platform);
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
@@ -151,47 +149,61 @@ void vk_init(void *mem_base, uint32_t rdram_size, uint8_t _fullscreen)
 	Context::SystemHandles handles = {};
 	if (!::Vulkan::Context::init_loader(nullptr))
 	{
-		vk_close();
+		rdp_close();
 	}
 	if (!wsi->init_simple(1, handles))
 	{
-		vk_close();
+		rdp_close();
 	}
 	RDP::CommandProcessorFlags flags = 0;
-	processor = new RDP::CommandProcessor(wsi->get_device(), rdram, 0, rdram_size, rdram_size / 2, flags);
+	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 
 	if (!processor->device_is_supported())
 	{
 		delete processor;
 		delete wsi;
 		processor = nullptr;
-		vk_close();
+		rdp_close();
 	}
 	wsi->begin_frame();
 
-	emu_running = 1;
+	emu_running = true;
 	last_frame_counter = 0;
 	frame_counter = 0;
 }
 
-void vk_close()
+void rdp_close()
 {
-	delete processor;
-	delete wsi;
+	wsi->end_frame();
+
+	if (processor)
+	{
+		delete processor;
+		processor = nullptr;
+	}
+	if (wsi)
+	{
+		delete wsi;
+		wsi = nullptr;
+	}
+	if (wsi_platform)
+	{
+		delete wsi_platform;
+		wsi_platform = nullptr;
+	}
 }
 
 int sdl_event_filter(void *userdata, SDL_Event *event)
 {
 	if (event->type == SDL_WINDOWEVENT)
 	{
-		SDL_WSIPlatform *platform = (SDL_WSIPlatform *)&wsi->get_platform();
 		switch (event->window.event)
 		{
 		case SDL_WINDOWEVENT_CLOSE:
-			emu_running = 0;
+			emu_running = false;
 			break;
 		case SDL_WINDOWEVENT_RESIZED:
-			platform->do_resize();
+			wsi_platform->do_resize();
 			break;
 		default:
 			break;
@@ -202,7 +214,7 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 		switch (event->key.keysym.scancode)
 		{
 		case SDL_SCANCODE_ESCAPE:
-			emu_running = 0;
+			emu_running = false;
 			break;
 		default:
 			break;
@@ -210,12 +222,6 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 	}
 
 	return 0;
-}
-
-void set_sdl_window(void *_window)
-{
-	window = (SDL_Window *)_window;
-	SDL_SetEventFilter(sdl_event_filter, nullptr);
 }
 
 static void calculate_viewport(float *x, float *y, float *width, float *height)
@@ -301,10 +307,9 @@ static void render_frame(Vulkan::Device &device)
 void rdp_set_vi_register(uint32_t reg, uint32_t value)
 {
 	processor->set_vi_register(RDP::VIRegister(reg), value);
-	vi_registers[reg] = value;
 }
 
-uint8_t rdp_update_screen()
+bool rdp_update_screen()
 {
 	auto &device = wsi->get_device();
 	render_frame(device);
@@ -353,11 +358,11 @@ static uint32_t viCalculateVerticalHeight(uint32_t vstart, uint32_t yscale)
 	return (delta * scale) / 0x800;
 }
 
-uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
+uint64_t rdp_process_commands()
 {
 	uint64_t interrupt_timer = 0;
-	const uint32_t DP_CURRENT = dpc_regs[DPC_CURRENT_REG] & 0x00FFFFF8;
-	const uint32_t DP_END = dpc_regs[DPC_END_REG] & 0x00FFFFF8;
+	const uint32_t DP_CURRENT = *gfx_info.DPC_CURRENT_REG & 0x00FFFFF8;
+	const uint32_t DP_END = *gfx_info.DPC_END_REG & 0x00FFFFF8;
 
 	int length = DP_END - DP_CURRENT;
 	if (length <= 0)
@@ -367,16 +372,16 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 	if ((cmd_ptr + length) & ~(0x0003FFFF >> 3))
 		return interrupt_timer;
 
-	dpc_regs[DPC_STATUS_REG] |= DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK;
+	*gfx_info.DPC_STATUS_REG |= DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK;
 
 	uint32_t offset = DP_CURRENT;
-	if (dpc_regs[DPC_STATUS_REG] & DP_STATUS_XBUS_DMA)
+	if (*gfx_info.DPC_STATUS_REG & DP_STATUS_XBUS_DMA)
 	{
 		do
 		{
 			offset &= 0xFF8;
-			cmd_data[2 * cmd_ptr + 0] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(SP_DMEM + offset));
-			cmd_data[2 * cmd_ptr + 1] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(SP_DMEM + offset + 4));
+			cmd_data[2 * cmd_ptr + 0] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset));
+			cmd_data[2 * cmd_ptr + 1] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset + 4));
 			offset += sizeof(uint64_t);
 			cmd_ptr++;
 		} while (--length > 0);
@@ -392,8 +397,8 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 			do
 			{
 				offset &= 0xFFFFF8;
-				cmd_data[2 * cmd_ptr + 0] = *reinterpret_cast<const uint32_t *>((uint8_t *)rdram + offset);
-				cmd_data[2 * cmd_ptr + 1] = *reinterpret_cast<const uint32_t *>((uint8_t *)rdram + offset + 4);
+				cmd_data[2 * cmd_ptr + 0] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset);
+				cmd_data[2 * cmd_ptr + 1] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset + 4);
 				offset += sizeof(uint64_t);
 				cmd_ptr++;
 			} while (--length > 0);
@@ -408,7 +413,7 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 
 		if (cmd_ptr - cmd_cur - cmd_length < 0)
 		{
-			dpc_regs[DPC_START_REG] = dpc_regs[DPC_CURRENT_REG] = dpc_regs[DPC_END_REG];
+			*gfx_info.DPC_START_REG = *gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
 			return interrupt_timer;
 		}
 
@@ -427,19 +432,19 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 				rdp_sync_signal = 0;
 			}
 
-			uint32_t width = viCalculateHorizonalWidth(vi_registers[VI_H_START_REG], vi_registers[VI_X_SCALE_REG], vi_registers[VI_WIDTH_REG]);
+			uint32_t width = viCalculateHorizonalWidth(*gfx_info.VI_H_START_REG, *gfx_info.VI_X_SCALE_REG, *gfx_info.VI_WIDTH_REG);
 			if (width == 0)
 			{
 				width = 320;
 			}
-			uint32_t height = viCalculateVerticalHeight(vi_registers[VI_V_START_REG], vi_registers[VI_Y_SCALE_REG]);
+			uint32_t height = viCalculateVerticalHeight(*gfx_info.VI_V_START_REG, *gfx_info.VI_Y_SCALE_REG);
 			if (height == 0)
 			{
 				height = 240;
 			}
 			interrupt_timer = width * height * 4;
 
-			dpc_regs[DPC_STATUS_REG] &= ~(DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK);
+			*gfx_info.DPC_STATUS_REG &= ~(DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK);
 		}
 
 		cmd_cur += cmd_length;
@@ -447,13 +452,13 @@ uint64_t rdp_process_commands(uint32_t *dpc_regs, uint8_t *SP_DMEM)
 
 	cmd_ptr = 0;
 	cmd_cur = 0;
-	dpc_regs[DPC_CURRENT_REG] = dpc_regs[DPC_END_REG];
-	dpc_regs[DPC_STATUS_REG] |= DP_STATUS_CBUF_READY;
+	*gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
+	*gfx_info.DPC_STATUS_REG |= DP_STATUS_CBUF_READY;
 
 	return interrupt_timer;
 }
 
-void full_sync()
+void rdp_full_sync()
 {
 	if (rdp_sync_signal)
 	{
