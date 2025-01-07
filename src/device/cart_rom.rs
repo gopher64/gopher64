@@ -10,7 +10,7 @@ pub enum CicType {
     CicNus5167,
 }
 
-pub const CART_MASK: usize = 0xFFFFFFF;
+const CART_MASK: usize = 0xFFFFFFF;
 pub struct Cart {
     pub rom: Vec<u8>,
     pub is_viewer_buffer: [u8; 0xFFFF],

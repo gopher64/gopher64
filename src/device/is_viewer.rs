@@ -1,6 +1,6 @@
 use crate::device;
 
-pub const IS_VIEWER_MASK: usize = 0xFFFF;
+const IS_VIEWER_MASK: usize = 0xFFFF;
 
 pub fn read_mem(
     device: &mut device::Device,

@@ -5,41 +5,41 @@ pub const DPC_START_REG: u32 = 0;
 pub const DPC_END_REG: u32 = 1;
 pub const DPC_CURRENT_REG: u32 = 2;
 pub const DPC_STATUS_REG: u32 = 3;
-pub const DPC_CLOCK_REG: u32 = 4;
-pub const DPC_BUFBUSY_REG: u32 = 5;
-pub const DPC_PIPEBUSY_REG: u32 = 6;
-pub const DPC_TMEM_REG: u32 = 7;
+const DPC_CLOCK_REG: u32 = 4;
+const DPC_BUFBUSY_REG: u32 = 5;
+const DPC_PIPEBUSY_REG: u32 = 6;
+const DPC_TMEM_REG: u32 = 7;
 pub const DPC_REGS_COUNT: u32 = 8;
 
-//pub const DPS_TBIST_REG: u32 = 0;
-//pub const DPS_TEST_MODE_REG: u32 = 1;
-//pub const DPS_BUFTEST_ADDR_REG: u32 = 2;
-//pub const DPS_BUFTEST_DATA_REG: u32 = 3;
+//const DPS_TBIST_REG: u32 = 0;
+//const DPS_TEST_MODE_REG: u32 = 1;
+//const DPS_BUFTEST_ADDR_REG: u32 = 2;
+//const DPS_BUFTEST_DATA_REG: u32 = 3;
 pub const DPS_REGS_COUNT: u32 = 4;
 
 /* DPC status - read */
-pub const DPC_STATUS_XBUS_DMEM_DMA: u32 = 1 << 0;
-pub const DPC_STATUS_FREEZE: u32 = 1 << 1;
-pub const DPC_STATUS_FLUSH: u32 = 1 << 2;
-pub const DPC_STATUS_START_GCLK: u32 = 1 << 3;
-pub const DPC_STATUS_TMEM_BUSY: u32 = 1 << 4;
-pub const DPC_STATUS_PIPE_BUSY: u32 = 1 << 5;
-pub const DPC_STATUS_CMD_BUSY: u32 = 1 << 6;
-pub const DPC_STATUS_CBUF_READY: u32 = 1 << 7;
-//pub const DPC_STATUS_DMA_BUSY: u32 = 1 << 8;
-//pub const DPC_STATUS_END_VALID: u32 = 1 << 9;
-pub const DPC_STATUS_START_VALID: u32 = 1 << 10;
+const DPC_STATUS_XBUS_DMEM_DMA: u32 = 1 << 0;
+const DPC_STATUS_FREEZE: u32 = 1 << 1;
+const DPC_STATUS_FLUSH: u32 = 1 << 2;
+const DPC_STATUS_START_GCLK: u32 = 1 << 3;
+const DPC_STATUS_TMEM_BUSY: u32 = 1 << 4;
+const DPC_STATUS_PIPE_BUSY: u32 = 1 << 5;
+const DPC_STATUS_CMD_BUSY: u32 = 1 << 6;
+const DPC_STATUS_CBUF_READY: u32 = 1 << 7;
+//const DPC_STATUS_DMA_BUSY: u32 = 1 << 8;
+//const DPC_STATUS_END_VALID: u32 = 1 << 9;
+const DPC_STATUS_START_VALID: u32 = 1 << 10;
 /* DPC status - write */
-pub const DPC_CLR_XBUS_DMEM_DMA: u32 = 1 << 0;
-pub const DPC_SET_XBUS_DMEM_DMA: u32 = 1 << 1;
-pub const DPC_CLR_FREEZE: u32 = 1 << 2;
-pub const DPC_SET_FREEZE: u32 = 1 << 3;
-pub const DPC_CLR_FLUSH: u32 = 1 << 4;
-pub const DPC_SET_FLUSH: u32 = 1 << 5;
-pub const DPC_CLR_TMEM_CTR: u32 = 1 << 6;
-pub const DPC_CLR_PIPE_CTR: u32 = 1 << 7;
-pub const DPC_CLR_CMD_CTR: u32 = 1 << 8;
-pub const DPC_CLR_CLOCK_CTR: u32 = 1 << 9;
+const DPC_CLR_XBUS_DMEM_DMA: u32 = 1 << 0;
+const DPC_SET_XBUS_DMEM_DMA: u32 = 1 << 1;
+const DPC_CLR_FREEZE: u32 = 1 << 2;
+const DPC_SET_FREEZE: u32 = 1 << 3;
+const DPC_CLR_FLUSH: u32 = 1 << 4;
+const DPC_SET_FLUSH: u32 = 1 << 5;
+const DPC_CLR_TMEM_CTR: u32 = 1 << 6;
+const DPC_CLR_PIPE_CTR: u32 = 1 << 7;
+const DPC_CLR_CMD_CTR: u32 = 1 << 8;
+const DPC_CLR_CLOCK_CTR: u32 = 1 << 9;
 
 pub struct Rdp {
     pub regs_dpc: [u32; DPC_REGS_COUNT as usize],

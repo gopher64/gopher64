@@ -1,24 +1,24 @@
 use crate::device;
 
-pub const MM_RDRAM_DRAM: usize = 0x00000000;
-pub const MM_RDRAM_REGS: usize = 0x03f00000;
-pub const MM_RSP_MEM: usize = 0x04000000;
-pub const MM_RSP_REGS: usize = 0x04040000;
-pub const MM_RSP_REGS_PC: usize = 0x04080000;
-pub const MM_DPC_REGS: usize = 0x04100000;
-pub const MM_DPS_REGS: usize = 0x04200000;
-pub const MM_MI_REGS: usize = 0x04300000;
-pub const MM_VI_REGS: usize = 0x04400000;
-pub const MM_AI_REGS: usize = 0x04500000;
-pub const MM_PI_REGS: usize = 0x04600000;
-pub const MM_RI_REGS: usize = 0x04700000;
-pub const MM_SI_REGS: usize = 0x04800000;
+const MM_RDRAM_DRAM: usize = 0x00000000;
+const MM_RDRAM_REGS: usize = 0x03f00000;
+const MM_RSP_MEM: usize = 0x04000000;
+const MM_RSP_REGS: usize = 0x04040000;
+const MM_RSP_REGS_PC: usize = 0x04080000;
+const MM_DPC_REGS: usize = 0x04100000;
+const MM_DPS_REGS: usize = 0x04200000;
+const MM_MI_REGS: usize = 0x04300000;
+const MM_VI_REGS: usize = 0x04400000;
+const MM_AI_REGS: usize = 0x04500000;
+const MM_PI_REGS: usize = 0x04600000;
+const MM_RI_REGS: usize = 0x04700000;
+const MM_SI_REGS: usize = 0x04800000;
 //const MM_DOM2_ADDR1: usize = 0x05000000;
 pub const MM_DOM2_ADDR2: usize = 0x08000000;
 pub const MM_CART_ROM: usize = 0x10000000;
-pub const MM_PIF_MEM: usize = 0x1fc00000;
-//pub const MM_DOM1_ADDR3: usize = 0x1fd00000;
-pub const MM_IS_VIEWER: usize = 0x13ff0000;
+const MM_PIF_MEM: usize = 0x1fc00000;
+//const MM_DOM1_ADDR3: usize = 0x1fd00000;
+const MM_IS_VIEWER: usize = 0x13ff0000;
 
 #[derive(PartialEq)]
 pub enum AccessType {

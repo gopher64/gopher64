@@ -1,9 +1,9 @@
 use crate::device;
 
-pub const MI_INIT_MODE_REG: u32 = 0;
-pub const MI_VERSION_REG: u32 = 1;
-pub const MI_INTR_REG: u32 = 2;
-pub const MI_INTR_MASK_REG: u32 = 3;
+const MI_INIT_MODE_REG: u32 = 0;
+const MI_VERSION_REG: u32 = 1;
+const MI_INTR_REG: u32 = 2;
+const MI_INTR_MASK_REG: u32 = 3;
 pub const MI_REGS_COUNT: u32 = 4;
 
 /* read */
@@ -15,34 +15,34 @@ pub const MI_INTR_PI: u32 = 1 << 4;
 pub const MI_INTR_DP: u32 = 1 << 5;
 
 /* write */
-pub const MI_CLR_SP: u32 = 1 << 0;
-pub const MI_SET_SP: u32 = 1 << 1;
-pub const MI_CLR_SI: u32 = 1 << 2;
-pub const MI_SET_SI: u32 = 1 << 3;
-pub const MI_CLR_AI: u32 = 1 << 4;
-pub const MI_SET_AI: u32 = 1 << 5;
-pub const MI_CLR_VI: u32 = 1 << 6;
-pub const MI_SET_VI: u32 = 1 << 7;
-pub const MI_CLR_PI: u32 = 1 << 8;
-pub const MI_SET_PI: u32 = 1 << 9;
-pub const MI_CLR_DP: u32 = 1 << 10;
-pub const MI_SET_DP: u32 = 1 << 11;
+const MI_CLR_SP: u32 = 1 << 0;
+const MI_SET_SP: u32 = 1 << 1;
+const MI_CLR_SI: u32 = 1 << 2;
+const MI_SET_SI: u32 = 1 << 3;
+const MI_CLR_AI: u32 = 1 << 4;
+const MI_SET_AI: u32 = 1 << 5;
+const MI_CLR_VI: u32 = 1 << 6;
+const MI_SET_VI: u32 = 1 << 7;
+const MI_CLR_PI: u32 = 1 << 8;
+const MI_SET_PI: u32 = 1 << 9;
+const MI_CLR_DP: u32 = 1 << 10;
+const MI_SET_DP: u32 = 1 << 11;
 
 /* mode read */
-pub const MI_INIT_MODE: u32 = 1 << 7;
-pub const MI_EBUS_MODE: u32 = 1 << 8;
-pub const MI_RDRAM_MODE: u32 = 1 << 9;
+const MI_INIT_MODE: u32 = 1 << 7;
+const MI_EBUS_MODE: u32 = 1 << 8;
+const MI_RDRAM_MODE: u32 = 1 << 9;
 
 /* mode write */
-pub const MI_CLR_INIT: u32 = 1 << 7;
-pub const MI_SET_INIT: u32 = 1 << 8;
-pub const MI_CLR_EBUS: u32 = 1 << 9;
-pub const MI_SET_EBUS: u32 = 1 << 10;
-pub const MI_CLR_DP_INTR: u32 = 1 << 11;
-pub const MI_CLR_RDRAM: u32 = 1 << 12;
-pub const MI_SET_RDRAM: u32 = 1 << 13;
+const MI_CLR_INIT: u32 = 1 << 7;
+const MI_SET_INIT: u32 = 1 << 8;
+const MI_CLR_EBUS: u32 = 1 << 9;
+const MI_SET_EBUS: u32 = 1 << 10;
+const MI_CLR_DP_INTR: u32 = 1 << 11;
+const MI_CLR_RDRAM: u32 = 1 << 12;
+const MI_SET_RDRAM: u32 = 1 << 13;
 
-pub const MI_INIT_LENGTH_MASK: u32 = 0b1111111;
+const MI_INIT_LENGTH_MASK: u32 = 0b1111111;
 
 pub struct Mi {
     pub regs: [u32; MI_REGS_COUNT as usize],

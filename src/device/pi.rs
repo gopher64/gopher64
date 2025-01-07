@@ -1,29 +1,29 @@
 use crate::device;
 
-pub const PI_DRAM_ADDR_REG: u32 = 0;
-pub const PI_CART_ADDR_REG: u32 = 1;
-pub const PI_RD_LEN_REG: u32 = 2;
-pub const PI_WR_LEN_REG: u32 = 3;
+const PI_DRAM_ADDR_REG: u32 = 0;
+const PI_CART_ADDR_REG: u32 = 1;
+const PI_RD_LEN_REG: u32 = 2;
+const PI_WR_LEN_REG: u32 = 3;
 pub const PI_STATUS_REG: u32 = 4;
-pub const PI_BSD_DOM1_LAT_REG: u32 = 5;
-pub const PI_BSD_DOM1_PWD_REG: u32 = 6;
-pub const PI_BSD_DOM1_PGS_REG: u32 = 7;
-pub const PI_BSD_DOM1_RLS_REG: u32 = 8;
-pub const PI_BSD_DOM2_LAT_REG: u32 = 9;
-pub const PI_BSD_DOM2_PWD_REG: u32 = 10;
-pub const PI_BSD_DOM2_PGS_REG: u32 = 11;
-pub const PI_BSD_DOM2_RLS_REG: u32 = 12;
+const PI_BSD_DOM1_LAT_REG: u32 = 5;
+const PI_BSD_DOM1_PWD_REG: u32 = 6;
+const PI_BSD_DOM1_PGS_REG: u32 = 7;
+const PI_BSD_DOM1_RLS_REG: u32 = 8;
+const PI_BSD_DOM2_LAT_REG: u32 = 9;
+const PI_BSD_DOM2_PWD_REG: u32 = 10;
+const PI_BSD_DOM2_PGS_REG: u32 = 11;
+const PI_BSD_DOM2_RLS_REG: u32 = 12;
 pub const PI_REGS_COUNT: u32 = 13;
 
 /* PI_STATUS - read */
-pub const PI_STATUS_DMA_BUSY: u32 = 1 << 0;
+const PI_STATUS_DMA_BUSY: u32 = 1 << 0;
 pub const PI_STATUS_IO_BUSY: u32 = 1 << 1;
-//pub const PI_STATUS_ERROR: u32 = 1 << 2;
-pub const PI_STATUS_INTERRUPT: u32 = 1 << 3;
+//const PI_STATUS_ERROR: u32 = 1 << 2;
+const PI_STATUS_INTERRUPT: u32 = 1 << 3;
 
 /* PI_STATUS - write */
-pub const PI_STATUS_RESET: u32 = 1 << 0;
-pub const PI_STATUS_CLR_INTR: u32 = 1 << 1;
+const PI_STATUS_RESET: u32 = 1 << 0;
+const PI_STATUS_CLR_INTR: u32 = 1 << 1;
 
 pub struct Pi {
     pub regs: [u32; PI_REGS_COUNT as usize],

@@ -1,18 +1,18 @@
 use crate::device;
 
-pub const SI_DRAM_ADDR_REG: u32 = 0;
-pub const SI_PIF_ADDR_RD64B_REG: u32 = 1;
-//pub const SI_R2_REG: u32 = 2;
-//pub const SI_R3_REG: u32 = 3;
-pub const SI_PIF_ADDR_WR64B_REG: u32 = 4;
-//pub const SI_R5_REG: u32 = 5;
+const SI_DRAM_ADDR_REG: u32 = 0;
+const SI_PIF_ADDR_RD64B_REG: u32 = 1;
+//const SI_R2_REG: u32 = 2;
+//const SI_R3_REG: u32 = 3;
+const SI_PIF_ADDR_WR64B_REG: u32 = 4;
+//const SI_R5_REG: u32 = 5;
 pub const SI_STATUS_REG: u32 = 6;
 pub const SI_REGS_COUNT: u32 = 7;
 
 pub const SI_STATUS_DMA_BUSY: u32 = 1 << 0;
 pub const SI_STATUS_IO_BUSY: u32 = 1 << 1;
-//pub const SI_STATUS_DMA_ERROR: u32 = 1 << 3;
-pub const SI_STATUS_INTERRUPT: u32 = 1 << 12;
+//const SI_STATUS_DMA_ERROR: u32 = 1 << 3;
+const SI_STATUS_INTERRUPT: u32 = 1 << 12;
 
 #[derive(PartialEq)]
 pub enum DmaDir {

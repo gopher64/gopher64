@@ -1,16 +1,16 @@
 use crate::device;
 use crate::ui;
 
-pub const AI_DRAM_ADDR_REG: u32 = 0;
-pub const AI_LEN_REG: u32 = 1;
-//pub const AI_CONTROL_REG: u32 = 2;
-pub const AI_STATUS_REG: u32 = 3;
-pub const AI_DACRATE_REG: u32 = 4;
-//pub const AI_BITRATE_REG: u32 = 5;
+const AI_DRAM_ADDR_REG: u32 = 0;
+const AI_LEN_REG: u32 = 1;
+// const AI_CONTROL_REG: u32 = 2;
+const AI_STATUS_REG: u32 = 3;
+const AI_DACRATE_REG: u32 = 4;
+// const AI_BITRATE_REG: u32 = 5;
 pub const AI_REGS_COUNT: u32 = 6;
 
-pub const AI_STATUS_BUSY: u32 = 0x40000000;
-pub const AI_STATUS_FULL: u32 = 0x80000000;
+const AI_STATUS_BUSY: u32 = 0x40000000;
+const AI_STATUS_FULL: u32 = 0x80000000;
 
 pub struct Ai {
     pub regs: [u32; AI_REGS_COUNT as usize],

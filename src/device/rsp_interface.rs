@@ -1,64 +1,64 @@
 use crate::device;
 
-pub const SP_MEM_ADDR_REG: u32 = 0;
-pub const SP_DRAM_ADDR_REG: u32 = 1;
-pub const SP_RD_LEN_REG: u32 = 2;
-pub const SP_WR_LEN_REG: u32 = 3;
+const SP_MEM_ADDR_REG: u32 = 0;
+const SP_DRAM_ADDR_REG: u32 = 1;
+const SP_RD_LEN_REG: u32 = 2;
+const SP_WR_LEN_REG: u32 = 3;
 pub const SP_STATUS_REG: u32 = 4;
-pub const SP_DMA_FULL_REG: u32 = 5;
-pub const SP_DMA_BUSY_REG: u32 = 6;
-pub const SP_SEMAPHORE_REG: u32 = 7;
+const SP_DMA_FULL_REG: u32 = 5;
+const SP_DMA_BUSY_REG: u32 = 6;
+const SP_SEMAPHORE_REG: u32 = 7;
 pub const SP_REGS_COUNT: u32 = 8;
 
 pub const SP_PC_REG: u32 = 0;
-//pub const SP_IBIST_REG: u32 = 1;
+//const SP_IBIST_REG: u32 = 1;
 pub const SP_REGS2_COUNT: u32 = 2;
 
 /* SP_STATUS - read */
 pub const SP_STATUS_HALT: u32 = 1 << 0;
-pub const SP_STATUS_BROKE: u32 = 1 << 1;
-pub const SP_STATUS_DMA_BUSY: u32 = 1 << 2;
-pub const SP_STATUS_DMA_FULL: u32 = 1 << 3;
-//pub const SP_STATUS_IO_FULL: u32 = 1 << 4;
-pub const SP_STATUS_SSTEP: u32 = 1 << 5;
-pub const SP_STATUS_INTR_BREAK: u32 = 1 << 6;
-pub const SP_STATUS_SIG0: u32 = 1 << 7;
-pub const SP_STATUS_SIG1: u32 = 1 << 8;
-pub const SP_STATUS_SIG2: u32 = 1 << 9;
-pub const SP_STATUS_SIG3: u32 = 1 << 10;
-pub const SP_STATUS_SIG4: u32 = 1 << 11;
-pub const SP_STATUS_SIG5: u32 = 1 << 12;
-pub const SP_STATUS_SIG6: u32 = 1 << 13;
-pub const SP_STATUS_SIG7: u32 = 1 << 14;
+const SP_STATUS_BROKE: u32 = 1 << 1;
+const SP_STATUS_DMA_BUSY: u32 = 1 << 2;
+const SP_STATUS_DMA_FULL: u32 = 1 << 3;
+//const SP_STATUS_IO_FULL: u32 = 1 << 4;
+const SP_STATUS_SSTEP: u32 = 1 << 5;
+const SP_STATUS_INTR_BREAK: u32 = 1 << 6;
+const SP_STATUS_SIG0: u32 = 1 << 7;
+const SP_STATUS_SIG1: u32 = 1 << 8;
+const SP_STATUS_SIG2: u32 = 1 << 9;
+const SP_STATUS_SIG3: u32 = 1 << 10;
+const SP_STATUS_SIG4: u32 = 1 << 11;
+const SP_STATUS_SIG5: u32 = 1 << 12;
+const SP_STATUS_SIG6: u32 = 1 << 13;
+const SP_STATUS_SIG7: u32 = 1 << 14;
 
 /* SP_STATUS - write */
-pub const SP_CLR_HALT: u32 = 1 << 0;
+const SP_CLR_HALT: u32 = 1 << 0;
 pub const SP_SET_HALT: u32 = 1 << 1;
-pub const SP_CLR_BROKE: u32 = 1 << 2;
-pub const SP_CLR_INTR: u32 = 1 << 3;
-pub const SP_SET_INTR: u32 = 1 << 4;
-pub const SP_CLR_SSTEP: u32 = 1 << 5;
-pub const SP_SET_SSTEP: u32 = 1 << 6;
-pub const SP_CLR_INTR_BREAK: u32 = 1 << 7;
-pub const SP_SET_INTR_BREAK: u32 = 1 << 8;
-pub const SP_CLR_SIG0: u32 = 1 << 9;
-pub const SP_SET_SIG0: u32 = 1 << 10;
-pub const SP_CLR_SIG1: u32 = 1 << 11;
-pub const SP_SET_SIG1: u32 = 1 << 12;
-pub const SP_CLR_SIG2: u32 = 1 << 13;
-pub const SP_SET_SIG2: u32 = 1 << 14;
-pub const SP_CLR_SIG3: u32 = 1 << 15;
-pub const SP_SET_SIG3: u32 = 1 << 16;
-pub const SP_CLR_SIG4: u32 = 1 << 17;
-pub const SP_SET_SIG4: u32 = 1 << 18;
-pub const SP_CLR_SIG5: u32 = 1 << 19;
-pub const SP_SET_SIG5: u32 = 1 << 20;
-pub const SP_CLR_SIG6: u32 = 1 << 21;
-pub const SP_SET_SIG6: u32 = 1 << 22;
-pub const SP_CLR_SIG7: u32 = 1 << 23;
-pub const SP_SET_SIG7: u32 = 1 << 24;
+const SP_CLR_BROKE: u32 = 1 << 2;
+const SP_CLR_INTR: u32 = 1 << 3;
+const SP_SET_INTR: u32 = 1 << 4;
+const SP_CLR_SSTEP: u32 = 1 << 5;
+const SP_SET_SSTEP: u32 = 1 << 6;
+const SP_CLR_INTR_BREAK: u32 = 1 << 7;
+const SP_SET_INTR_BREAK: u32 = 1 << 8;
+const SP_CLR_SIG0: u32 = 1 << 9;
+const SP_SET_SIG0: u32 = 1 << 10;
+const SP_CLR_SIG1: u32 = 1 << 11;
+const SP_SET_SIG1: u32 = 1 << 12;
+const SP_CLR_SIG2: u32 = 1 << 13;
+const SP_SET_SIG2: u32 = 1 << 14;
+const SP_CLR_SIG3: u32 = 1 << 15;
+const SP_SET_SIG3: u32 = 1 << 16;
+const SP_CLR_SIG4: u32 = 1 << 17;
+const SP_SET_SIG4: u32 = 1 << 18;
+const SP_CLR_SIG5: u32 = 1 << 19;
+const SP_SET_SIG5: u32 = 1 << 20;
+const SP_CLR_SIG6: u32 = 1 << 21;
+const SP_SET_SIG6: u32 = 1 << 22;
+const SP_CLR_SIG7: u32 = 1 << 23;
+const SP_SET_SIG7: u32 = 1 << 24;
 
-pub const RSP_MEM_MASK: usize = 0x1FFF;
+const RSP_MEM_MASK: usize = 0x1FFF;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum DmaDir {
