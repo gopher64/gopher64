@@ -229,8 +229,12 @@ pub fn init(device: &mut device::Device) {
         write: device::mempak::write,
     };
 
-    device.pif.channels[0].pak_handler = Some(mempak_handler);
-    device.pif.channels[0].process = Some(device::controller::process);
+    for i in 0..4 {
+        if device.ui.config.input.controller_enabled[i] {
+            device.pif.channels[i].pak_handler = Some(mempak_handler);
+            device.pif.channels[i].process = Some(device::controller::process);
+        }
+    }
     device.pif.channels[4].process = Some(device::cart::process)
 }
 
