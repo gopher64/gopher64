@@ -132,7 +132,7 @@ static const unsigned cmd_len_lut[64] = {
 	1,
 };
 
-void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
+void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen, bool _upscale)
 {
 	window = (SDL_Window *)_window;
 	SDL_SetEventFilter(sdl_event_filter, nullptr);
@@ -156,6 +156,11 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen)
 		rdp_close();
 	}
 	RDP::CommandProcessorFlags flags = 0;
+	if (_upscale)
+	{
+		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_2X_BIT;
+		flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
+	}
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 
 	if (!processor->device_is_supported())
