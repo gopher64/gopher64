@@ -239,6 +239,7 @@ pub fn init(device: &mut device::Device) {
         device.pif.channels[3].pak_handler = None;
         device.pif.channels[3].process = Some(device::vru::process);
         device::vru::reset_vru(device);
+        device::vru::create_word_mappings(device);
     }
     device.pif.channels[4].process = Some(device::cart::process)
 }

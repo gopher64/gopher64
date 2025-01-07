@@ -1,4 +1,6 @@
 use crate::device;
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 const JCMD_VRU_READ: u8 = 0x09;
 const JCMD_VRU_WRITE: u8 = 0x0A;
@@ -21,8 +23,9 @@ pub struct Vru {
     pub load_offset: u8,
     pub voice_init: u8,
     pub word_buffer: [u16; 40],
-    pub words: Vec<String>,
+    pub words: HashSet<String>,
     pub talking: bool,
+    pub word_mappings: HashMap<String, String>,
 }
 
 pub fn reset_vru(device: &mut device::Device) {
@@ -36,6 +39,7 @@ pub fn reset_vru(device: &mut device::Device) {
     device.vru.voice_init = 1;
     device.vru.word_buffer = [0; 40];
 }
+
 fn set_status(device: &mut device::Device, channel: usize) {
     if device.vru.voice_init == 2 {
         /* words have been loaded, we can change the state from READY to START */
@@ -111,7 +115,10 @@ pub fn process(device: &mut device::Device, channel: usize) {
                             device.vru.word_buffer[offset + i as usize]
                         ))
                     }
-                    device.vru.words.push(data);
+                    device
+                        .vru
+                        .words
+                        .insert(device.vru.word_mappings.get(&data).unwrap().clone());
                 } else {
                     panic!("Unknown command in JCMD_VRU_READ_STATUS.");
                 }
@@ -164,4 +171,15 @@ pub fn process(device: &mut device::Device, channel: usize) {
         }
         _ => panic!("unknown VRU command {}", cmd),
     }
+}
+
+pub fn create_word_mappings(device: &mut device::Device) {
+    device.vru.word_mappings.insert(
+        String::from("03A50024000303CF00A80003036000EA"),
+        String::from("pikachu"),
+    );
+    device.vru.word_mappings.insert(
+        String::from("03A50045000303CF00A80003036000EA"),
+        String::from("pikachu"),
+    );
 }
