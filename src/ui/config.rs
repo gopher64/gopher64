@@ -18,8 +18,13 @@ pub struct Input {
     pub controller_enabled: [bool; 4],
 }
 #[derive(serde::Serialize, serde::Deserialize)]
+pub struct Video {
+    pub upscale: bool,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub input: Input,
+    pub video: Video,
 }
 
 impl Config {
@@ -38,6 +43,7 @@ impl Config {
                 input_profiles,
                 controller_enabled: [true, false, false, false],
             },
+            video: Video { upscale: false },
         }
     }
 }

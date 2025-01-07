@@ -17,7 +17,7 @@ pub struct GfxInfo {
 }
 
 unsafe extern "C" {
-    pub fn rdp_init(window: usize, gfx_info: GfxInfo, fullscreen: bool);
+    pub fn rdp_init(window: usize, gfx_info: GfxInfo, fullscreen: bool, upscale: bool);
     pub fn rdp_close();
     pub fn rdp_update_screen() -> bool;
     pub fn rdp_set_vi_register(reg: u32, value: u32);
@@ -62,6 +62,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
             device.ui.window.as_mut().unwrap().raw() as usize,
             gfx_info,
             fullscreen,
+            device.ui.config.video.upscale,
         )
     }
 }
