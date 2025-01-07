@@ -148,7 +148,7 @@ pub fn load_saves(ui: &mut ui::Ui) {
 
 pub fn write_rom_save(ui: &ui::Ui) {
     let f = std::fs::File::create(ui.paths.romsave_file_path.clone()).unwrap();
-    serde_json::to_writer(f, &ui.saves.romsave).unwrap();
+    serde_json::to_writer(f, &ui.saves.romsave.0).unwrap();
 }
 
 pub fn write_saves(ui: &ui::Ui) {

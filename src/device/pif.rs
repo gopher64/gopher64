@@ -99,7 +99,7 @@ pub fn update_pif_ram(device: &mut device::Device) -> u64 {
     for k in 0..PIF_CHANNELS_COUNT {
         active_channels += process_channel(device, k)
     }
-    (24000 + (active_channels * 28000)) as u64
+    (24000 + (active_channels * 30000)) as u64
 }
 
 pub fn disable_pif_channel(channel: &mut PifChannel) {
