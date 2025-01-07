@@ -215,6 +215,8 @@ impl eframe::App for GopherEguiApp {
                     ui.end_row();
                 }
             });
+            ui.add_space(32.0);
+            ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
         });
     }
 }
