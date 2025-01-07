@@ -1,6 +1,8 @@
 mod rom;
 use crate::device;
 
+use super::vru::reset_vru;
+
 pub struct Pif {
     pub rom: [u8; 1984],
     pub ram: [u8; 64],
@@ -234,6 +236,11 @@ pub fn init(device: &mut device::Device) {
             device.pif.channels[i].pak_handler = Some(mempak_handler);
             device.pif.channels[i].process = Some(device::controller::process);
         }
+    }
+    if device.ui.config.input.emulate_vru {
+        device.pif.channels[3].pak_handler = None;
+        device.pif.channels[3].process = Some(device::vru::process);
+        reset_vru(device);
     }
     device.pif.channels[4].process = Some(device::cart::process)
 }

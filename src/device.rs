@@ -33,6 +33,7 @@ pub mod sram;
 pub mod tlb;
 pub mod unmapped;
 pub mod vi;
+pub mod vru;
 
 pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bool) {
     let rom_contents = get_rom_contents(file_path);
@@ -157,6 +158,7 @@ pub struct Device {
     si: si::Si,
     ri: ri::Ri,
     flashram: sram::Flashram,
+    vru: vru::Vru,
 }
 
 impl Device {
@@ -394,6 +396,15 @@ impl Device {
                 page_buf: [0xff; 128],
                 silicon_id: [sram::FLASHRAM_TYPE_ID, sram::MX29L1100_ID],
                 mode: sram::FlashramMode::ReadArray,
+            },
+            vru: vru::Vru {
+                status: 0,
+                voice_state: 0,
+                load_offset: 0,
+                voice_init: 0,
+                word_buffer: [0; 40],
+                words: Vec::new(),
+                talking: false,
             },
         }
     }

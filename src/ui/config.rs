@@ -16,6 +16,7 @@ pub struct Input {
     pub input_profile_binding: [String; 4],
     pub controller_assignment: [Option<String>; 4],
     pub controller_enabled: [bool; 4],
+    pub emulate_vru: bool,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Video {
@@ -42,6 +43,7 @@ impl Config {
                 controller_assignment: [None, None, None, None],
                 input_profiles,
                 controller_enabled: [true, false, false, false],
+                emulate_vru: false,
             },
             video: Video { upscale: false },
         }

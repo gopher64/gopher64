@@ -11,6 +11,7 @@ pub struct GopherEguiApp {
     input_profiles: Vec<String>,
     controller_enabled: [bool; 4],
     upscale: bool,
+    emulate_vru: bool,
 }
 
 fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
@@ -67,6 +68,7 @@ impl GopherEguiApp {
             input_profiles: get_input_profiles(&game_ui),
             controller_enabled: game_ui.config.input.controller_enabled,
             upscale: game_ui.config.video.upscale,
+            emulate_vru: game_ui.config.input.emulate_vru,
         }
     }
 }
@@ -77,6 +79,7 @@ fn save_config(
     selected_profile: [String; 4],
     controller_enabled: [bool; 4],
     upscale: bool,
+    emulate_vru: bool,
 ) {
     let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
     for (pos, item) in selected_controller.iter().enumerate() {
@@ -96,6 +99,7 @@ fn save_config(
     game_ui.config.input.controller_enabled = controller_enabled;
 
     game_ui.config.video.upscale = upscale;
+    game_ui.config.input.emulate_vru = emulate_vru;
 }
 
 impl Drop for GopherEguiApp {
@@ -107,6 +111,7 @@ impl Drop for GopherEguiApp {
             self.selected_profile.clone(),
             self.controller_enabled,
             self.upscale,
+            self.emulate_vru,
         );
     }
 }
@@ -155,6 +160,7 @@ impl eframe::App for GopherEguiApp {
                 let selected_profile = self.selected_profile.clone();
                 let controller_enabled = self.controller_enabled;
                 let upscale = self.upscale;
+                let emulate_vru = self.emulate_vru;
                 execute(async move {
                     let file = task.await;
 
@@ -174,6 +180,7 @@ impl eframe::App for GopherEguiApp {
                             selected_profile,
                             controller_enabled,
                             upscale,
+                            emulate_vru,
                         );
                         device::run_game(std::path::Path::new(file.path()), &mut device, false);
                         let _ = std::fs::remove_file(running_file.clone());
@@ -242,6 +249,7 @@ impl eframe::App for GopherEguiApp {
             });
             ui.add_space(32.0);
             ui.checkbox(&mut self.upscale, "High-Res Graphics");
+            ui.checkbox(&mut self.emulate_vru, "Emulate VRU");
             ui.add_space(32.0);
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
         });
