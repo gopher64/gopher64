@@ -4,19 +4,19 @@ use chrono::Timelike;
 use crate::device;
 use crate::ui;
 
-pub const JCMD_STATUS: u8 = 0x00;
-pub const JCMD_EEPROM_READ: u8 = 0x04;
-pub const JCMD_EEPROM_WRITE: u8 = 0x05;
-pub const JCMD_AF_RTC_STATUS: u8 = 0x06;
-pub const JCMD_AF_RTC_READ: u8 = 0x07;
-pub const JCMD_AF_RTC_WRITE: u8 = 0x08;
-pub const JCMD_RESET: u8 = 0xff;
+const JCMD_STATUS: u8 = 0x00;
+const JCMD_EEPROM_READ: u8 = 0x04;
+const JCMD_EEPROM_WRITE: u8 = 0x05;
+const JCMD_AF_RTC_STATUS: u8 = 0x06;
+const JCMD_AF_RTC_READ: u8 = 0x07;
+const JCMD_AF_RTC_WRITE: u8 = 0x08;
+const JCMD_RESET: u8 = 0xff;
 
-pub const JDT_AF_RTC: u16 = 0x1000; /* RTC */
-pub const JDT_EEPROM_4K: u16 = 0x8000; /* 4k EEPROM */
-pub const JDT_EEPROM_16K: u16 = 0xc000; /* 16k EEPROM */
-pub const EEPROM_BLOCK_SIZE: usize = 8;
-pub const EEPROM_MAX_SIZE: usize = 0x800;
+const JDT_AF_RTC: u16 = 0x1000; /* RTC */
+const JDT_EEPROM_4K: u16 = 0x8000; /* 4k EEPROM */
+const JDT_EEPROM_16K: u16 = 0xc000; /* 16k EEPROM */
+const EEPROM_BLOCK_SIZE: usize = 8;
+const EEPROM_MAX_SIZE: usize = 0x800;
 
 pub struct AfRtc {
     pub control: u16,

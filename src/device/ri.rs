@@ -1,13 +1,13 @@
 use crate::device;
 
-//pub const RI_MODE_REG: u32 = 0;
-//pub const RI_CONFIG_REG: u32 = 1;
-//pub const RI_CURRENT_LOAD_REG: u32 = 2;
-pub const RI_SELECT_REG: u32 = 3;
-//pub const RI_REFRESH_REG: u32 = 4;
-//pub const RI_LATENCY_REG: u32 = 5;
-//pub const RI_ERROR_REG: u32 = 6;
-//pub const RI_WERROR_REG: u32 = 7;
+//const RI_MODE_REG: u32 = 0;
+//const RI_CONFIG_REG: u32 = 1;
+//const RI_CURRENT_LOAD_REG: u32 = 2;
+const RI_SELECT_REG: u32 = 3;
+//const RI_REFRESH_REG: u32 = 4;
+//const RI_LATENCY_REG: u32 = 5;
+//const RI_ERROR_REG: u32 = 6;
+//const RI_WERROR_REG: u32 = 7;
 pub const RI_REGS_COUNT: u32 = 8;
 
 pub struct Ri {

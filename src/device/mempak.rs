@@ -1,7 +1,7 @@
 use crate::device;
 
-pub const MEMPAK_SIZE: usize = 0x8000;
-pub const MPK_PAGE_SIZE: usize = 256;
+const MEMPAK_SIZE: usize = 0x8000;
+const MPK_PAGE_SIZE: usize = 256;
 
 pub fn format_mempak(device: &mut device::Device) {
     if device.ui.saves.mempak.0.len() < MEMPAK_SIZE * 4 {
