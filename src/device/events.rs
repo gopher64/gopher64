@@ -11,6 +11,7 @@ pub enum EventType {
     InterruptCheck,
     SPDma,
     Compare,
+    Vru,
     Count,
 }
 

@@ -154,6 +154,13 @@ pub fn process(device: &mut device::Device, channel: usize) {
             if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0x4E {
                 device.vru.talking = true;
                 device.vru.voice_init = 2;
+                device::events::create_event(
+                    device,
+                    device::events::EventType::Vru,
+                    device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
+                        + (device.cpu.clock_rate * 2), // 2 seconds
+                    vru_talking_event,
+                )
             } else if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0xEF {
                 device.vru.talking = false;
             } else if device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 3] == 0x2 {
@@ -210,4 +217,8 @@ pub fn create_word_mappings(device: &mut device::Device) {
             String::from("pikachu"),
         ),
     ]);
+}
+
+pub fn vru_talking_event(device: &mut device::Device) {
+    device.vru.talking = false
 }
