@@ -1,4 +1,4 @@
-use crate::device;
+use crate::{device, ui};
 use std::collections::HashMap;
 
 const JCMD_VRU_READ: u8 = 0x09;
@@ -179,24 +179,31 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
+            let index = ui::vru::prompt_for_match(device.vru.words.clone());
+            let num_results;
+            if index == 0x7FFF {
+                num_results = 0;
+            } else {
+                num_results = 1;
+            }
             let data: HashMap<usize, u16> = HashMap::from([
                 (0, 0x8000),
                 (2, 0x0F00),
-                (4, 0),       // error flags
-                (6, 1),       // number of results
-                (8, 0xBB8),   // mic level
-                (10, 0xBB8),  // voice level
-                (12, 0x8004), // voice length
-                (14, 0),      // match 1
-                (16, 0),      // match 1 errors
-                (18, 0x7FFF), // match 2
-                (20, 0),      // match 2 errors
-                (22, 0x7FFF), // match 3
-                (24, 0),      // match 3 errors
-                (26, 0x7FFF), // match 4
-                (28, 0),      // match 4 errors
-                (30, 0x7FFF), // match 5
-                (32, 0),      // match 5 errors
+                (4, 0),           // error flags
+                (6, num_results), // number of results
+                (8, 0xBB8),       // mic level
+                (10, 0xBB8),      // voice level
+                (12, 0x8004),     // voice length
+                (14, index),      // match 1
+                (16, 0),          // match 1 errors
+                (18, 0x7FFF),     // match 2
+                (20, 0),          // match 2 errors
+                (22, 0x7FFF),     // match 3
+                (24, 0),          // match 3 errors
+                (26, 0x7FFF),     // match 4
+                (28, 0),          // match 4 errors
+                (30, 0x7FFF),     // match 5
+                (32, 0),          // match 5 errors
                 (34, 0x0040),
             ]);
             for (key, value) in data {

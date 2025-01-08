@@ -249,7 +249,10 @@ impl eframe::App for GopherEguiApp {
             });
             ui.add_space(32.0);
             ui.checkbox(&mut self.upscale, "High-Res Graphics");
-            ui.checkbox(&mut self.emulate_vru, "Emulate VRU");
+            ui.checkbox(
+                &mut self.emulate_vru,
+                "Emulate VRU (connects VRU to controller port 4)",
+            );
             ui.add_space(32.0);
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
         });

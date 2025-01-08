@@ -4,6 +4,7 @@ pub mod gui;
 pub mod input;
 pub mod storage;
 pub mod video;
+pub mod vru;
 
 pub struct Ui {
     pub controllers: [input::Controllers; 4],
