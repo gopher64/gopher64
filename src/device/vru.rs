@@ -172,14 +172,46 @@ pub fn process(device: &mut device::Device, channel: usize) {
         }
         JCMD_VRU_WRITE_INIT => {
             let offset = device.pif.channels[channel].tx_buf.unwrap() + 1;
-            if u16::from_be_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap()) == 0 {
+            if u16::from_ne_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap()) == 0 {
                 device.vru.talking = false;
                 device::events::remove_event(device, device::events::EventType::Vru);
             }
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
-            panic! {"JCMD_VRU_READ"}
+            let data: HashMap<usize, u16> = HashMap::from([
+                (0, 0x8000),
+                (2, 0x0F00),
+                (4, 0),       // error flags
+                (6, 1),       // number of results
+                (8, 0xBB8),   // mic level
+                (10, 0xBB8),  // voice level
+                (12, 0x8004), // voice length
+                (14, 0),      // match 1
+                (16, 0),      // match 1 errors
+                (18, 0x7FFF), // match 2
+                (20, 0),      // match 2 errors
+                (22, 0x7FFF), // match 3
+                (24, 0),      // match 3 errors
+                (26, 0x7FFF), // match 4
+                (28, 0),      // match 4 errors
+                (30, 0x7FFF), // match 5
+                (32, 0),      // match 5 errors
+                (34, 0x0040),
+            ]);
+            for (key, value) in data {
+                let offset = device.pif.channels[channel].rx_buf.unwrap() + key;
+                device.pif.ram[offset..offset + 2].copy_from_slice(&value.to_ne_bytes());
+            }
+
+            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 36] =
+                device::controller::data_crc(
+                    device,
+                    device.pif.channels[channel].rx_buf.unwrap(),
+                    36,
+                );
+
+            device.vru.voice_state = VOICE_STATUS_START;
         }
         JCMD_VRU_WRITE => {
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] =
