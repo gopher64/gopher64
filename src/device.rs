@@ -1,6 +1,5 @@
 use crate::ui;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::fs;
 use std::io::Read;
 
@@ -405,7 +404,7 @@ impl Device {
                 load_offset: 0,
                 voice_init: 0,
                 word_buffer: [0; 40],
-                words: HashSet::new(),
+                words: Vec::new(),
                 talking: false,
                 word_mappings: HashMap::new(),
             },

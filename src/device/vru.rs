@@ -1,6 +1,5 @@
 use crate::device;
 use std::collections::HashMap;
-use std::collections::HashSet;
 
 const JCMD_VRU_READ: u8 = 0x09;
 const JCMD_VRU_WRITE: u8 = 0x0A;
@@ -23,7 +22,7 @@ pub struct Vru {
     pub load_offset: u8,
     pub voice_init: u8,
     pub word_buffer: [u16; 40],
-    pub words: HashSet<String>,
+    pub words: Vec<String>,
     pub talking: bool,
     pub word_mappings: HashMap<String, String>,
 }
@@ -107,18 +106,21 @@ pub fn process(device: &mut device::Device, channel: usize) {
                         }
                     } else {
                         offset += 1;
+
+                        let mut data = String::new();
+                        for i in 0..length {
+                            data.push_str(&format!(
+                                "{:04X}",
+                                device.vru.word_buffer[offset + i as usize]
+                            ))
+                        }
+                        let word = device.vru.word_mappings.get(&data);
+                        if word.is_some() {
+                            device.vru.words.push(word.unwrap().clone());
+                        } else {
+                            panic!("Unknown VRU word {}", data);
+                        }
                     }
-                    let mut data = String::new();
-                    for i in 0..length {
-                        data.push_str(&format!(
-                            "{:04X}",
-                            device.vru.word_buffer[offset + i as usize]
-                        ))
-                    }
-                    device
-                        .vru
-                        .words
-                        .insert(device.vru.word_mappings.get(&data).unwrap().clone());
                 } else {
                     panic!("Unknown command in JCMD_VRU_READ_STATUS.");
                 }
@@ -134,7 +136,10 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     4,
                 );
             if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0x4E {
+                device.vru.talking = true;
                 device.vru.voice_init = 2;
+            } else if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0xEF {
+                device.vru.talking = false;
             } else if device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 3] == 0x2 {
                 device.vru.voice_init = 0;
                 device.vru.words.clear();
@@ -142,6 +147,11 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.vru.status = 0; /* status is always set to 0 after a write */
         }
         JCMD_VRU_WRITE_INIT => {
+            if device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 1] == 0
+                && device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 2] == 0
+            {
+                device.vru.talking = false;
+            }
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
@@ -174,12 +184,14 @@ pub fn process(device: &mut device::Device, channel: usize) {
 }
 
 pub fn create_word_mappings(device: &mut device::Device) {
-    device.vru.word_mappings.insert(
-        String::from("03A50024000303CF00A80003036000EA"),
-        String::from("pikachu"),
-    );
-    device.vru.word_mappings.insert(
-        String::from("03A50045000303CF00A80003036000EA"),
-        String::from("pikachu"),
-    );
+    device.vru.word_mappings = HashMap::from([
+        (
+            String::from("03A50024000303CF00A80003036000EA"),
+            String::from("pikachu"),
+        ),
+        (
+            String::from("03A50045000303CF00A80003036000EA"),
+            String::from("pikachu"),
+        ),
+    ]);
 }
