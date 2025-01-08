@@ -104,6 +104,22 @@ pub fn process(device: &mut device::Device, channel: usize) {
                         while device.vru.word_buffer[offset + length as usize] != 0 {
                             length += 1;
                         }
+                        if device.cart.rom[0x3E] == /* Japan */ 0x4A {
+                            let mut data = Vec::new();
+                            for i in 0..length {
+                                data.extend(
+                                    device.vru.word_buffer[offset + i as usize].to_be_bytes(),
+                                );
+                            }
+                            let (res, _enc, errors) = encoding_rs::SHIFT_JIS.decode(&data);
+                            if errors {
+                                panic!("Failed to decode Japanese word {:X?}", data);
+                            } else {
+                                device.vru.words.push(res.to_string());
+                            }
+                        } else {
+                            panic!("Unknown VRU region")
+                        }
                     } else {
                         offset += 1;
 
