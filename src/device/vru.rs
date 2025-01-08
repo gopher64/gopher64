@@ -172,7 +172,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
         }
         JCMD_VRU_WRITE_INIT => {
             let offset = device.pif.channels[channel].tx_buf.unwrap() + 1;
-            if u16::from_ne_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap()) == 0 {
+            if u16::from_be_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap()) == 0 {
                 device.vru.talking = false;
                 device::events::remove_event(device, device::events::EventType::Vru);
             }
