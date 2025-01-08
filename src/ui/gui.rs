@@ -14,7 +14,7 @@ pub struct GopherEguiApp {
     emulate_vru: bool,
     show_vru_dialog: bool,
     vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
-    vru_word_index_notifier: Option<std::sync::mpsc::Sender<u16>>,
+    vru_word_notifier: Option<std::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
 }
 
@@ -75,7 +75,7 @@ impl GopherEguiApp {
             emulate_vru: game_ui.config.input.emulate_vru,
             show_vru_dialog: false,
             vru_window_receiver: None,
-            vru_word_index_notifier: None,
+            vru_word_notifier: None,
             vru_word_list: Vec::new(),
         }
     }
@@ -176,11 +176,11 @@ impl eframe::App for GopherEguiApp {
                 ) = std::sync::mpsc::channel();
                 self.vru_window_receiver = Some(vru_window_receiver);
 
-                let (vru_word_index_notifier, vru_word_index_receiver): (
-                    std::sync::mpsc::Sender<u16>,
-                    std::sync::mpsc::Receiver<u16>,
+                let (vru_word_notifier, vru_word_receiver): (
+                    std::sync::mpsc::Sender<String>,
+                    std::sync::mpsc::Receiver<String>,
                 ) = std::sync::mpsc::channel();
-                self.vru_word_index_notifier = Some(vru_word_index_notifier);
+                self.vru_word_notifier = Some(vru_word_notifier);
 
                 let gui_ctx = ctx.clone();
                 execute(async move {
@@ -205,7 +205,7 @@ impl eframe::App for GopherEguiApp {
                             emulate_vru,
                         );
                         device.vru.window_notifier = Some(vru_window_notifier);
-                        device.vru.word_index_receiver = Some(vru_word_index_receiver);
+                        device.vru.word_receiver = Some(vru_word_receiver);
                         device.vru.gui_ctx = Some(gui_ctx);
                         device::run_game(std::path::Path::new(file.path()), &mut device, false);
                         let _ = std::fs::remove_file(running_file.clone());
@@ -301,7 +301,6 @@ impl eframe::App for GopherEguiApp {
                         class == egui::ViewportClass::Immediate,
                         "This egui backend doesn't support multiple viewports"
                     );
-
                     egui::CentralPanel::default().show(ctx, |ui| {
                         for i in self.vru_word_list.clone() {
                             ui.label(format!("{}", i));
@@ -309,10 +308,10 @@ impl eframe::App for GopherEguiApp {
                     });
 
                     if ctx.input(|i| i.viewport().close_requested()) {
-                        self.vru_word_index_notifier
+                        self.vru_word_notifier
                             .as_ref()
                             .unwrap()
-                            .send(1)
+                            .send(String::from("pikachu"))
                             .unwrap();
                         self.show_vru_dialog = false;
                     }

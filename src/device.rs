@@ -409,7 +409,7 @@ impl Device {
                 talking: false,
                 word_mappings: HashMap::new(),
                 window_notifier: None,
-                word_index_receiver: None,
+                word_receiver: None,
                 gui_ctx: None,
             },
         }

@@ -27,7 +27,7 @@ pub struct Vru {
     pub talking: bool,
     pub word_mappings: HashMap<String, String>,
     pub window_notifier: Option<std::sync::mpsc::Sender<Vec<String>>>,
-    pub word_index_receiver: Option<std::sync::mpsc::Receiver<u16>>,
+    pub word_receiver: Option<std::sync::mpsc::Receiver<String>>,
     pub gui_ctx: Option<egui::Context>,
 }
 
@@ -193,7 +193,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 index = ui::vru::prompt_for_match(
                     device.vru.words.clone(),
                     device.vru.window_notifier.as_ref().unwrap(),
-                    device.vru.word_index_receiver.as_ref().unwrap(),
+                    device.vru.word_receiver.as_ref().unwrap(),
                     device.vru.gui_ctx.as_ref().unwrap(),
                 );
             } else {
