@@ -163,6 +163,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 )
             } else if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0xEF {
                 device.vru.talking = false;
+                device::events::remove_event(device, device::events::EventType::Vru);
             } else if device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 3] == 0x2 {
                 device.vru.voice_init = 0;
                 device.vru.words.clear();
@@ -174,6 +175,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 && device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 2] == 0
             {
                 device.vru.talking = false;
+                device::events::remove_event(device, device::events::EventType::Vru);
             }
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
