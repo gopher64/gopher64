@@ -191,7 +191,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
             let index;
             if device.vru.window_notifier.is_some() {
                 index = ui::vru::prompt_for_match(
-                    device.vru.words.clone(),
+                    &device.vru.words,
                     device.vru.window_notifier.as_ref().unwrap(),
                     device.vru.word_receiver.as_ref().unwrap(),
                     device.vru.gui_ctx.as_ref().unwrap(),

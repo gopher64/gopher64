@@ -302,8 +302,8 @@ impl eframe::App for GopherEguiApp {
                         "This egui backend doesn't support multiple viewports"
                     );
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        for i in self.vru_word_list.clone() {
-                            ui.label(format!("{}", i));
+                        for i in &self.vru_word_list {
+                            ui.label(format!("{}", *i));
                         }
                     });
 
@@ -311,7 +311,7 @@ impl eframe::App for GopherEguiApp {
                         self.vru_word_notifier
                             .as_ref()
                             .unwrap()
-                            .send(String::from("pikachu"))
+                            .send(self.vru_word_list[0].clone())
                             .unwrap();
                         self.show_vru_dialog = false;
                     }

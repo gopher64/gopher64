@@ -3,7 +3,7 @@ use eframe::egui;
 use crate::ui;
 
 pub fn prompt_for_match(
-    words: Vec<String>,
+    words: &Vec<String>,
     window_notifier: &std::sync::mpsc::Sender<Vec<String>>,
     word_index_notifier: &std::sync::mpsc::Receiver<String>,
     gui_ctx: &egui::Context,
