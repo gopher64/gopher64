@@ -171,9 +171,8 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.vru.status = 0; /* status is always set to 0 after a write */
         }
         JCMD_VRU_WRITE_INIT => {
-            if device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 1] == 0
-                && device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 2] == 0
-            {
+            let offset = device.pif.channels[channel].tx_buf.unwrap() + 1;
+            if u16::from_ne_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap()) == 0 {
                 device.vru.talking = false;
                 device::events::remove_event(device, device::events::EventType::Vru);
             }
@@ -193,13 +192,9 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 device.vru.word_buffer = [0; 40];
             }
             for i in 0..10 {
-                device.vru.word_buffer[device.vru.load_offset as usize] = ((device.pif.ram
-                    [device.pif.channels[channel].tx_buf.unwrap() + 3 + 1 + (i * 2) as usize]
-                    as u16)
-                    << 8)
-                    | (device.pif.ram
-                        [device.pif.channels[channel].tx_buf.unwrap() + 3 + (i * 2) as usize])
-                        as u16;
+                let offset = device.pif.channels[channel].tx_buf.unwrap() + 3 + (i * 2);
+                device.vru.word_buffer[device.vru.load_offset as usize] =
+                    u16::from_ne_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap());
                 device.vru.load_offset += 1;
             }
             device.vru.status = 0; /* status is always set to 0 after a write */
