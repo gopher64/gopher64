@@ -38,7 +38,9 @@ fn get_controllers(game_ui: &ui::Ui) -> Vec<String> {
 }
 
 impl GopherEguiApp {
-    pub fn new() -> GopherEguiApp {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> GopherEguiApp {
+        add_japanese_font(&cc.egui_ctx);
+
         let game_ui = ui::Ui::new();
         let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
         let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
@@ -330,4 +332,23 @@ impl eframe::App for GopherEguiApp {
 
 fn execute<F: std::future::Future<Output = ()> + Send + 'static>(f: F) {
     std::thread::spawn(move || futures::executor::block_on(f));
+}
+
+fn add_japanese_font(ctx: &egui::Context) {
+    ctx.add_font(epaint::text::FontInsert::new(
+        "japanese_font",
+        egui::FontData::from_static(include_bytes!(
+            "../../data/NotoSerifJP-VariableFont_wght.ttf"
+        )),
+        vec![
+            epaint::text::InsertFontFamily {
+                family: egui::FontFamily::Proportional,
+                priority: egui::epaint::text::FontPriority::Lowest,
+            },
+            epaint::text::InsertFontFamily {
+                family: egui::FontFamily::Monospace,
+                priority: egui::epaint::text::FontPriority::Lowest,
+            },
+        ],
+    ));
 }

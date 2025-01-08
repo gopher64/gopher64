@@ -126,7 +126,7 @@ fn main() {
         eframe::run_native(
             "gopher64",
             options,
-            Box::new(|_cc| Ok(Box::new(ui::gui::GopherEguiApp::new()))),
+            Box::new(|cc| Ok(Box::new(ui::gui::GopherEguiApp::new(cc)))),
         )
         .unwrap();
     }
