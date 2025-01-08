@@ -14,7 +14,7 @@ pub fn prompt_for_match(
     window_notifier.send(dedup_words).unwrap();
     gui_ctx.request_repaint(); // this is so the window pops up right away
     let mut result = word_index_notifier.try_recv();
-    while !result.is_ok() {
+    while result.is_err() {
         result = word_index_notifier.try_recv();
         std::thread::sleep(std::time::Duration::from_secs_f64(1.0 / 60.0));
         ui::video::update_screen(); // so the OS doesn't complain about the game window being frozen

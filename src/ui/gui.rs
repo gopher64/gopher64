@@ -309,7 +309,7 @@ impl eframe::App for GopherEguiApp {
                                 if i % 5 == 0 {
                                     ui.end_row();
                                 }
-                                if ui.button(format!("{}", *v)).clicked() {
+                                if ui.button((*v).to_string()).clicked() {
                                     self.vru_word_notifier
                                         .as_ref()
                                         .unwrap()
