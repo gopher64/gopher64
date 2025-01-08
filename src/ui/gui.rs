@@ -303,7 +303,14 @@ impl eframe::App for GopherEguiApp {
                     );
                     egui::CentralPanel::default().show(ctx, |ui| {
                         for i in &self.vru_word_list {
-                            ui.label(format!("{}", *i));
+                            if ui.button(format!("{}", *i)).clicked() {
+                                self.vru_word_notifier
+                                    .as_ref()
+                                    .unwrap()
+                                    .send(i.clone())
+                                    .unwrap();
+                                self.show_vru_dialog = false;
+                            }
                         }
                     });
 
@@ -311,7 +318,7 @@ impl eframe::App for GopherEguiApp {
                         self.vru_word_notifier
                             .as_ref()
                             .unwrap()
-                            .send(self.vru_word_list[0].clone())
+                            .send(String::from(""))
                             .unwrap();
                         self.show_vru_dialog = false;
                     }
