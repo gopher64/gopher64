@@ -228,7 +228,7 @@ impl eframe::App for GopherEguiApp {
 
             ui.add_space(32.0);
             ui.label("Controller Config:");
-            egui::Grid::new("some_unique_id").show(ui, |ui| {
+            egui::Grid::new("controller_config").show(ui, |ui| {
                 ui.label("Port");
                 ui.label("Enabled");
                 ui.label("Profile");
@@ -304,16 +304,21 @@ impl eframe::App for GopherEguiApp {
                         "This egui backend doesn't support multiple viewports"
                     );
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        for i in &self.vru_word_list {
-                            if ui.button(format!("{}", *i)).clicked() {
-                                self.vru_word_notifier
-                                    .as_ref()
-                                    .unwrap()
-                                    .send(i.clone())
-                                    .unwrap();
-                                self.show_vru_dialog = false;
+                        egui::Grid::new("vru_words").show(ui, |ui| {
+                            for (i, v) in self.vru_word_list.iter().enumerate() {
+                                if i % 5 == 0 {
+                                    ui.end_row();
+                                }
+                                if ui.button(format!("{}", *v)).clicked() {
+                                    self.vru_word_notifier
+                                        .as_ref()
+                                        .unwrap()
+                                        .send(v.clone())
+                                        .unwrap();
+                                    self.show_vru_dialog = false;
+                                }
                             }
-                        }
+                        });
                     });
 
                     if ctx.input(|i| i.viewport().close_requested()) {
