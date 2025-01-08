@@ -203,6 +203,10 @@ pub fn process(device: &mut device::Device, channel: usize) {
     }
 }
 
+pub fn vru_talking_event(device: &mut device::Device) {
+    device.vru.talking = false
+}
+
 pub fn create_word_mappings(device: &mut device::Device) {
     device.vru.word_mappings = HashMap::from([
         (
@@ -214,8 +218,4 @@ pub fn create_word_mappings(device: &mut device::Device) {
             String::from("pikachu"),
         ),
     ]);
-}
-
-pub fn vru_talking_event(device: &mut device::Device) {
-    device.vru.talking = false
 }
