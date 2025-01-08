@@ -292,10 +292,10 @@ impl eframe::App for GopherEguiApp {
 
         if self.show_vru_dialog {
             ctx.show_viewport_immediate(
-                egui::ViewportId::from_hash_of("immediate_viewport"),
+                egui::ViewportId::from_hash_of("vru_dialog"),
                 egui::ViewportBuilder::default()
-                    .with_title("Immediate Viewport")
-                    .with_inner_size([200.0, 100.0]),
+                    .with_title("What would you like to say?")
+                    .with_always_on_top(),
                 |ctx, class| {
                     assert!(
                         class == egui::ViewportClass::Immediate,
@@ -303,11 +303,12 @@ impl eframe::App for GopherEguiApp {
                     );
 
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        ui.label("Hello from immediate viewport");
+                        for i in self.vru_word_list.clone() {
+                            ui.label(format!("{}", i));
+                        }
                     });
 
                     if ctx.input(|i| i.viewport().close_requested()) {
-                        // Tell parent viewport that we should not show next frame:
                         self.vru_word_index_notifier
                             .as_ref()
                             .unwrap()
