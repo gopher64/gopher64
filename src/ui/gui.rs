@@ -206,9 +206,11 @@ impl eframe::App for GopherEguiApp {
                             upscale,
                             emulate_vru,
                         );
-                        device.vru.window_notifier = Some(vru_window_notifier);
-                        device.vru.word_receiver = Some(vru_word_receiver);
-                        device.vru.gui_ctx = Some(gui_ctx);
+                        if emulate_vru {
+                            device.vru.window_notifier = Some(vru_window_notifier);
+                            device.vru.word_receiver = Some(vru_word_receiver);
+                            device.vru.gui_ctx = Some(gui_ctx);
+                        }
                         device::run_game(std::path::Path::new(file.path()), &mut device, false);
                         let _ = std::fs::remove_file(running_file.clone());
                     }
@@ -284,7 +286,7 @@ impl eframe::App for GopherEguiApp {
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
         });
 
-        if self.vru_window_receiver.is_some() {
+        if self.emulate_vru && self.vru_window_receiver.is_some() {
             let result = self.vru_window_receiver.as_ref().unwrap().try_recv();
             if result.is_ok() {
                 self.show_vru_dialog = true;
