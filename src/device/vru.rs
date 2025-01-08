@@ -113,13 +113,11 @@ pub fn process(device: &mut device::Device, channel: usize) {
                         while device.vru.word_buffer[offset + length as usize] != 0 {
                             length += 1;
                         }
+                        let mut data = Vec::new();
+                        for i in 0..length {
+                            data.extend(device.vru.word_buffer[offset + i as usize].to_be_bytes());
+                        }
                         if device.cart.rom[0x3E] == /* Japan */ 0x4A {
-                            let mut data = Vec::new();
-                            for i in 0..length {
-                                data.extend(
-                                    device.vru.word_buffer[offset + i as usize].to_be_bytes(),
-                                );
-                            }
                             let (res, _enc, errors) = encoding_rs::SHIFT_JIS.decode(&data);
                             if errors {
                                 panic!("Failed to decode Japanese word {:X?}", data);
@@ -127,7 +125,13 @@ pub fn process(device: &mut device::Device, channel: usize) {
                                 device.vru.words.push(res.to_string());
                             }
                         } else {
-                            panic!("Unknown VRU region")
+                            let result: Result<String, std::string::FromUtf8Error> =
+                                String::from_utf8(data);
+                            if result.is_ok() {
+                                device.vru.words.push(result.unwrap())
+                            } else {
+                                panic!("Could not decode VRU word")
+                            }
                         }
                     } else {
                         offset += 1;
