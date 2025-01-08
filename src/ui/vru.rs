@@ -3,12 +3,12 @@ use eframe::egui;
 use crate::ui;
 
 pub fn prompt_for_match(
-    words: &Vec<String>,
+    words: &[String],
     window_notifier: &std::sync::mpsc::Sender<Vec<String>>,
     word_index_notifier: &std::sync::mpsc::Receiver<String>,
     gui_ctx: &egui::Context,
 ) -> u16 {
-    let mut dedup_words = words.clone();
+    let mut dedup_words = words.to_owned();
     dedup_words.sort();
     dedup_words.dedup();
     window_notifier.send(dedup_words).unwrap();
