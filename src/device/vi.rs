@@ -169,6 +169,6 @@ pub fn speed_limiter(device: &device::Device) {
         let dur = outcome.wait_time_from(governor::clock::DefaultClock::default().now());
         spin_sleep::sleep(dur);
 
-        device.vi.limiter.as_ref().unwrap().check().unwrap();
+        let _ = device.vi.limiter.as_ref().unwrap().check();
     }
 }
