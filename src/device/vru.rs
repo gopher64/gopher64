@@ -125,10 +125,10 @@ pub fn process(device: &mut device::Device, channel: usize) {
                                 device.vru.words.push(res.to_string());
                             }
                         } else {
-                            let result: Result<String, std::string::FromUtf8Error> =
+                            let decoded: Result<String, std::string::FromUtf8Error> =
                                 String::from_utf8(data);
-                            if result.is_ok() {
-                                device.vru.words.push(result.unwrap())
+                            if let Ok(result) = decoded {
+                                device.vru.words.push(result)
                             } else {
                                 panic!("Could not decode VRU word")
                             }
