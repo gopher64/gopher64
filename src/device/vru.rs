@@ -1,4 +1,5 @@
 use crate::{device, ui};
+use eframe::egui;
 use std::collections::HashMap;
 
 const JCMD_VRU_READ: u8 = 0x09;
@@ -25,6 +26,14 @@ pub struct Vru {
     pub words: Vec<String>,
     pub talking: bool,
     pub word_mappings: HashMap<String, String>,
+    pub window_notifier: Option<std::sync::mpsc::Sender<Vec<String>>>,
+    pub word_index_receiver: Option<std::sync::mpsc::Receiver<u16>>,
+    pub gui_ctx: Option<egui::Context>,
+}
+
+pub fn init(device: &mut device::Device) {
+    reset_vru(device);
+    create_word_mappings(device);
 }
 
 pub fn reset_vru(device: &mut device::Device) {
@@ -179,7 +188,17 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
-            let index = ui::vru::prompt_for_match(device.vru.words.clone());
+            let index;
+            if device.vru.window_notifier.is_some() {
+                index = ui::vru::prompt_for_match(
+                    device.vru.words.clone(),
+                    device.vru.window_notifier.as_ref().unwrap(),
+                    device.vru.word_index_receiver.as_ref().unwrap(),
+                    device.vru.gui_ctx.as_ref().unwrap(),
+                );
+            } else {
+                index = 0x7FFF;
+            }
             let num_results;
             if index == 0x7FFF {
                 num_results = 0;

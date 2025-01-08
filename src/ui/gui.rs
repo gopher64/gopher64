@@ -12,6 +12,10 @@ pub struct GopherEguiApp {
     controller_enabled: [bool; 4],
     upscale: bool,
     emulate_vru: bool,
+    show_vru_dialog: bool,
+    vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
+    vru_word_index_notifier: Option<std::sync::mpsc::Sender<u16>>,
+    vru_word_list: Vec<String>,
 }
 
 fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
@@ -69,6 +73,10 @@ impl GopherEguiApp {
             controller_enabled: game_ui.config.input.controller_enabled,
             upscale: game_ui.config.video.upscale,
             emulate_vru: game_ui.config.input.emulate_vru,
+            show_vru_dialog: false,
+            vru_window_receiver: None,
+            vru_word_index_notifier: None,
+            vru_word_list: Vec::new(),
         }
     }
 }
@@ -161,6 +169,20 @@ impl eframe::App for GopherEguiApp {
                 let controller_enabled = self.controller_enabled;
                 let upscale = self.upscale;
                 let emulate_vru = self.emulate_vru;
+
+                let (vru_window_notifier, vru_window_receiver): (
+                    std::sync::mpsc::Sender<Vec<String>>,
+                    std::sync::mpsc::Receiver<Vec<String>>,
+                ) = std::sync::mpsc::channel();
+                self.vru_window_receiver = Some(vru_window_receiver);
+
+                let (vru_word_index_notifier, vru_word_index_receiver): (
+                    std::sync::mpsc::Sender<u16>,
+                    std::sync::mpsc::Receiver<u16>,
+                ) = std::sync::mpsc::channel();
+                self.vru_word_index_notifier = Some(vru_word_index_notifier);
+
+                let gui_ctx = ctx.clone();
                 execute(async move {
                     let file = task.await;
 
@@ -182,6 +204,9 @@ impl eframe::App for GopherEguiApp {
                             upscale,
                             emulate_vru,
                         );
+                        device.vru.window_notifier = Some(vru_window_notifier);
+                        device.vru.word_index_receiver = Some(vru_word_index_receiver);
+                        device.vru.gui_ctx = Some(gui_ctx);
                         device::run_game(std::path::Path::new(file.path()), &mut device, false);
                         let _ = std::fs::remove_file(running_file.clone());
                     }
@@ -256,6 +281,43 @@ impl eframe::App for GopherEguiApp {
             ui.add_space(32.0);
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
         });
+
+        if self.vru_window_receiver.is_some() {
+            let result = self.vru_window_receiver.as_ref().unwrap().try_recv();
+            if result.is_ok() {
+                self.show_vru_dialog = true;
+                self.vru_word_list = result.unwrap();
+            }
+        }
+
+        if self.show_vru_dialog {
+            ctx.show_viewport_immediate(
+                egui::ViewportId::from_hash_of("immediate_viewport"),
+                egui::ViewportBuilder::default()
+                    .with_title("Immediate Viewport")
+                    .with_inner_size([200.0, 100.0]),
+                |ctx, class| {
+                    assert!(
+                        class == egui::ViewportClass::Immediate,
+                        "This egui backend doesn't support multiple viewports"
+                    );
+
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("Hello from immediate viewport");
+                    });
+
+                    if ctx.input(|i| i.viewport().close_requested()) {
+                        // Tell parent viewport that we should not show next frame:
+                        self.vru_word_index_notifier
+                            .as_ref()
+                            .unwrap()
+                            .send(1)
+                            .unwrap();
+                        self.show_vru_dialog = false;
+                    }
+                },
+            );
+        }
     }
 }
 

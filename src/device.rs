@@ -50,6 +50,7 @@ pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bo
 
     mi::init(device);
     pif::init(device);
+    vru::init(device);
     memory::init(device);
     rsp_interface::init(device);
     rdp::init(device);
@@ -159,7 +160,7 @@ pub struct Device {
     si: si::Si,
     ri: ri::Ri,
     flashram: sram::Flashram,
-    vru: vru::Vru,
+    pub vru: vru::Vru,
 }
 
 impl Device {
@@ -407,6 +408,9 @@ impl Device {
                 words: Vec::new(),
                 talking: false,
                 word_mappings: HashMap::new(),
+                window_notifier: None,
+                word_index_receiver: None,
+                gui_ctx: None,
             },
         }
     }
