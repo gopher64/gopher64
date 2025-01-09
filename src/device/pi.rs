@@ -13,7 +13,8 @@ const PI_BSD_DOM2_LAT_REG: u32 = 9;
 const PI_BSD_DOM2_PWD_REG: u32 = 10;
 const PI_BSD_DOM2_PGS_REG: u32 = 11;
 const PI_BSD_DOM2_RLS_REG: u32 = 12;
-pub const PI_REGS_COUNT: u32 = 13;
+//const UNKNOWN_REG: u32 = 13; //LibDragon
+pub const PI_REGS_COUNT: u32 = 14;
 
 /* PI_STATUS - read */
 const PI_STATUS_DMA_BUSY: u32 = 1 << 0;
