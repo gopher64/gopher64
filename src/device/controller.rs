@@ -1,22 +1,16 @@
 use crate::device;
 use crate::ui;
 
-const JCMD_STATUS: u8 = 0x00;
-const JCMD_CONTROLLER_READ: u8 = 0x01;
+pub const JCMD_STATUS: u8 = 0x00;
+pub const JCMD_CONTROLLER_READ: u8 = 0x01;
 const JCMD_PAK_READ: u8 = 0x02;
 const JCMD_PAK_WRITE: u8 = 0x03;
-//const JCMD_VRU_READ: u8 = 0x09;
-//const JCMD_VRU_WRITE: u8 = 0x0A;
-//const JCMD_VRU_READ_STATUS: u8 = 0x0B;
-//const JCMD_VRU_WRITE_CONFIG: u8 = 0x0C;
-//const JCMD_VRU_WRITE_INIT: u8 = 0x0D;
-const JCMD_RESET: u8 = 0xff;
+pub const JCMD_RESET: u8 = 0xff;
 
 //const JDT_NONE: u16 = 0x0000;
 const JDT_JOY_ABS_COUNTERS: u16 = 0x0001; /* joystick with absolute coordinates */
 //const JDT_JOY_REL_COUNTERS: u16 = 0x0002; /* joystick with relative coordinates (= mouse) */
 const JDT_JOY_PORT: u16 = 0x0004; /* has port for external paks */
-//const JDT_VRU: u16 = 0x0100; /* VRU */
 const PAK_CHUNK_SIZE: usize = 0x20;
 const CONT_STATUS_PAK_NOT_PRESENT: u8 = 0;
 const CONT_STATUS_PAK_PRESENT: u8 = 1;
@@ -80,9 +74,9 @@ pub fn pak_read_block(
 
     if handler.is_some() {
         (handler.unwrap().read)(device, channel, address, data, PAK_CHUNK_SIZE);
-        device.pif.ram[dcrc] = pak_data_crc(device, data, PAK_CHUNK_SIZE)
+        device.pif.ram[dcrc] = data_crc(device, data, PAK_CHUNK_SIZE)
     } else {
-        device.pif.ram[dcrc] = !pak_data_crc(device, data, PAK_CHUNK_SIZE)
+        device.pif.ram[dcrc] = !data_crc(device, data, PAK_CHUNK_SIZE)
     }
 }
 
@@ -99,13 +93,13 @@ pub fn pak_write_block(
 
     if handler.is_some() {
         (handler.unwrap().write)(device, channel, address, data, PAK_CHUNK_SIZE);
-        device.pif.ram[dcrc] = pak_data_crc(device, data, PAK_CHUNK_SIZE)
+        device.pif.ram[dcrc] = data_crc(device, data, PAK_CHUNK_SIZE)
     } else {
-        device.pif.ram[dcrc] = !pak_data_crc(device, data, PAK_CHUNK_SIZE)
+        device.pif.ram[dcrc] = !data_crc(device, data, PAK_CHUNK_SIZE)
     }
 }
 
-pub fn pak_data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 {
+pub fn data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 {
     let mut i = 0;
     let mut crc = 0;
 

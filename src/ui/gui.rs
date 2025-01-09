@@ -11,6 +11,11 @@ pub struct GopherEguiApp {
     input_profiles: Vec<String>,
     controller_enabled: [bool; 4],
     upscale: bool,
+    emulate_vru: bool,
+    show_vru_dialog: bool,
+    vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
+    vru_word_notifier: Option<std::sync::mpsc::Sender<String>>,
+    vru_word_list: Vec<String>,
 }
 
 fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
@@ -33,7 +38,9 @@ fn get_controllers(game_ui: &ui::Ui) -> Vec<String> {
 }
 
 impl GopherEguiApp {
-    pub fn new() -> GopherEguiApp {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> GopherEguiApp {
+        add_japanese_font(&cc.egui_ctx);
+
         let game_ui = ui::Ui::new();
         let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
         let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
@@ -67,6 +74,11 @@ impl GopherEguiApp {
             input_profiles: get_input_profiles(&game_ui),
             controller_enabled: game_ui.config.input.controller_enabled,
             upscale: game_ui.config.video.upscale,
+            emulate_vru: game_ui.config.input.emulate_vru,
+            show_vru_dialog: false,
+            vru_window_receiver: None,
+            vru_word_notifier: None,
+            vru_word_list: Vec::new(),
         }
     }
 }
@@ -77,6 +89,7 @@ fn save_config(
     selected_profile: [String; 4],
     controller_enabled: [bool; 4],
     upscale: bool,
+    emulate_vru: bool,
 ) {
     let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
     for (pos, item) in selected_controller.iter().enumerate() {
@@ -96,6 +109,7 @@ fn save_config(
     game_ui.config.input.controller_enabled = controller_enabled;
 
     game_ui.config.video.upscale = upscale;
+    game_ui.config.input.emulate_vru = emulate_vru;
 }
 
 impl Drop for GopherEguiApp {
@@ -107,6 +121,7 @@ impl Drop for GopherEguiApp {
             self.selected_profile.clone(),
             self.controller_enabled,
             self.upscale,
+            self.emulate_vru,
         );
     }
 }
@@ -155,6 +170,24 @@ impl eframe::App for GopherEguiApp {
                 let selected_profile = self.selected_profile.clone();
                 let controller_enabled = self.controller_enabled;
                 let upscale = self.upscale;
+                let emulate_vru = self.emulate_vru;
+
+                let (vru_window_notifier, vru_window_receiver): (
+                    std::sync::mpsc::Sender<Vec<String>>,
+                    std::sync::mpsc::Receiver<Vec<String>>,
+                ) = std::sync::mpsc::channel();
+
+                let (vru_word_notifier, vru_word_receiver): (
+                    std::sync::mpsc::Sender<String>,
+                    std::sync::mpsc::Receiver<String>,
+                ) = std::sync::mpsc::channel();
+
+                if emulate_vru {
+                    self.vru_window_receiver = Some(vru_window_receiver);
+                    self.vru_word_notifier = Some(vru_word_notifier);
+                }
+
+                let gui_ctx = ctx.clone();
                 execute(async move {
                     let file = task.await;
 
@@ -174,7 +207,13 @@ impl eframe::App for GopherEguiApp {
                             selected_profile,
                             controller_enabled,
                             upscale,
+                            emulate_vru,
                         );
+                        if emulate_vru {
+                            device.vru.window_notifier = Some(vru_window_notifier);
+                            device.vru.word_receiver = Some(vru_word_receiver);
+                            device.vru.gui_ctx = Some(gui_ctx);
+                        }
                         device::run_game(std::path::Path::new(file.path()), &mut device, false);
                         let _ = std::fs::remove_file(running_file.clone());
                     }
@@ -194,7 +233,7 @@ impl eframe::App for GopherEguiApp {
 
             ui.add_space(32.0);
             ui.label("Controller Config:");
-            egui::Grid::new("some_unique_id").show(ui, |ui| {
+            egui::Grid::new("controller_config").show(ui, |ui| {
                 ui.label("Port");
                 ui.label("Enabled");
                 ui.label("Profile");
@@ -242,12 +281,82 @@ impl eframe::App for GopherEguiApp {
             });
             ui.add_space(32.0);
             ui.checkbox(&mut self.upscale, "High-Res Graphics");
+            ui.checkbox(
+                &mut self.emulate_vru,
+                "Emulate VRU (connects VRU to controller port 4)",
+            );
             ui.add_space(32.0);
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
         });
+
+        if self.emulate_vru && self.vru_window_receiver.is_some() {
+            let result = self.vru_window_receiver.as_ref().unwrap().try_recv();
+            if result.is_ok() {
+                self.show_vru_dialog = true;
+                self.vru_word_list = result.unwrap();
+            }
+        }
+
+        if self.show_vru_dialog {
+            ctx.show_viewport_immediate(
+                egui::ViewportId::from_hash_of("vru_dialog"),
+                egui::ViewportBuilder::default()
+                    .with_title("What would you like to say?")
+                    .with_always_on_top(),
+                |ctx, class| {
+                    assert!(
+                        class == egui::ViewportClass::Immediate,
+                        "This egui backend doesn't support multiple viewports"
+                    );
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        egui::Grid::new("vru_words").show(ui, |ui| {
+                            for (i, v) in self.vru_word_list.iter().enumerate() {
+                                if i % 5 == 0 {
+                                    ui.end_row();
+                                }
+                                if ui.button((*v).to_string()).clicked() {
+                                    self.vru_word_notifier
+                                        .as_ref()
+                                        .unwrap()
+                                        .send(v.clone())
+                                        .unwrap();
+                                    self.show_vru_dialog = false;
+                                }
+                            }
+                        });
+                    });
+
+                    if ctx.input(|i| i.viewport().close_requested()) {
+                        self.vru_word_notifier
+                            .as_ref()
+                            .unwrap()
+                            .send(String::from(""))
+                            .unwrap();
+                        self.show_vru_dialog = false;
+                    }
+                },
+            );
+        }
     }
 }
 
 fn execute<F: std::future::Future<Output = ()> + Send + 'static>(f: F) {
     std::thread::spawn(move || futures::executor::block_on(f));
+}
+
+fn add_japanese_font(ctx: &egui::Context) {
+    ctx.add_font(epaint::text::FontInsert::new(
+        "japanese_font",
+        egui::FontData::from_static(include_bytes!("../../data/NotoSansJP-Regular.ttf")),
+        vec![
+            epaint::text::InsertFontFamily {
+                family: egui::FontFamily::Proportional,
+                priority: egui::epaint::text::FontPriority::Lowest,
+            },
+            epaint::text::InsertFontFamily {
+                family: egui::FontFamily::Monospace,
+                priority: egui::epaint::text::FontPriority::Lowest,
+            },
+        ],
+    ));
 }

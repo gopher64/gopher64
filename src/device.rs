@@ -1,4 +1,5 @@
 use crate::ui;
+use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
 
@@ -33,6 +34,7 @@ pub mod sram;
 pub mod tlb;
 pub mod unmapped;
 pub mod vi;
+pub mod vru;
 
 pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bool) {
     let rom_contents = get_rom_contents(file_path);
@@ -48,6 +50,9 @@ pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bo
 
     mi::init(device);
     pif::init(device);
+    if device.ui.config.input.emulate_vru {
+        vru::init(device);
+    }
     memory::init(device);
     rsp_interface::init(device);
     rdp::init(device);
@@ -157,6 +162,7 @@ pub struct Device {
     si: si::Si,
     ri: ri::Ri,
     flashram: sram::Flashram,
+    pub vru: vru::Vru,
 }
 
 impl Device {
@@ -394,6 +400,19 @@ impl Device {
                 page_buf: [0xff; 128],
                 silicon_id: [sram::FLASHRAM_TYPE_ID, sram::MX29L1100_ID],
                 mode: sram::FlashramMode::ReadArray,
+            },
+            vru: vru::Vru {
+                status: 0,
+                voice_state: 0,
+                load_offset: 0,
+                voice_init: 0,
+                word_buffer: [0; 40],
+                words: Vec::new(),
+                talking: false,
+                word_mappings: HashMap::new(),
+                window_notifier: None,
+                word_receiver: None,
+                gui_ctx: None,
             },
         }
     }
