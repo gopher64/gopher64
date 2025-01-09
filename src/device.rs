@@ -50,7 +50,9 @@ pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bo
 
     mi::init(device);
     pif::init(device);
-    vru::init(device);
+    if device.ui.config.input.emulate_vru {
+        vru::init(device);
+    }
     memory::init(device);
     rsp_interface::init(device);
     rdp::init(device);
