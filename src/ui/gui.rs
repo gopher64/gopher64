@@ -345,15 +345,15 @@ fn execute<F: std::future::Future<Output = ()> + Send + 'static>(f: F) {
 }
 
 fn add_japanese_font(ctx: &egui::Context) {
-    ctx.add_font(epaint::text::FontInsert::new(
+    ctx.add_font(eframe::epaint::text::FontInsert::new(
         "japanese_font",
         egui::FontData::from_static(include_bytes!("../../data/NotoSansJP-Regular.ttf")),
         vec![
-            epaint::text::InsertFontFamily {
+            eframe::epaint::text::InsertFontFamily {
                 family: egui::FontFamily::Proportional,
                 priority: egui::epaint::text::FontPriority::Lowest,
             },
-            epaint::text::InsertFontFamily {
+            eframe::epaint::text::InsertFontFamily {
                 family: egui::FontFamily::Monospace,
                 priority: egui::epaint::text::FontPriority::Lowest,
             },
