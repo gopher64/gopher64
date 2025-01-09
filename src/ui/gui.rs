@@ -176,13 +176,16 @@ impl eframe::App for GopherEguiApp {
                     std::sync::mpsc::Sender<Vec<String>>,
                     std::sync::mpsc::Receiver<Vec<String>>,
                 ) = std::sync::mpsc::channel();
-                self.vru_window_receiver = Some(vru_window_receiver);
 
                 let (vru_word_notifier, vru_word_receiver): (
                     std::sync::mpsc::Sender<String>,
                     std::sync::mpsc::Receiver<String>,
                 ) = std::sync::mpsc::channel();
-                self.vru_word_notifier = Some(vru_word_notifier);
+
+                if emulate_vru {
+                    self.vru_window_receiver = Some(vru_window_receiver);
+                    self.vru_word_notifier = Some(vru_word_notifier);
+                }
 
                 let gui_ctx = ctx.clone();
                 execute(async move {
