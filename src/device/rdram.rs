@@ -57,10 +57,11 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
 
 pub fn read_regs(
     _device: &mut device::Device,
-    _address: u64,
+    address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    panic!("rdram read reg");
+    println!("Warning: read from RDRAM reg {:#x}", address);
+    0
 }
 
 pub fn write_regs(_device: &mut device::Device, _address: u64, _value: u32, _mask: u32) {
