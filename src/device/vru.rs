@@ -117,21 +117,12 @@ pub fn process(device: &mut device::Device, channel: usize) {
                         for i in 0..length {
                             data.extend(device.vru.word_buffer[offset + i as usize].to_be_bytes());
                         }
-                        if device.cart.rom[0x3E] == /* Japan */ 0x4A {
-                            let (res, _enc, errors) = encoding_rs::SHIFT_JIS.decode(&data);
-                            if errors {
-                                panic!("Failed to decode Japanese word {:X?}", data);
-                            } else {
-                                device.vru.words.push(res.to_string());
-                            }
+
+                        let (res, _enc, errors) = encoding_rs::SHIFT_JIS.decode(&data);
+                        if errors {
+                            panic!("Failed to decode Japanese word {:X?}", data);
                         } else {
-                            let decoded: Result<String, std::string::FromUtf8Error> =
-                                String::from_utf8(data);
-                            if let Ok(result) = decoded {
-                                device.vru.words.push(result)
-                            } else {
-                                panic!("Could not decode VRU word")
-                            }
+                            device.vru.words.push(res.to_string());
                         }
                     } else {
                         offset += 1;
