@@ -58,6 +58,10 @@ fn main() {
         {
             build.flag("/arch:AVX2");
         }
+        #[cfg(target_arch = "aarch64")]
+        {
+            build.flag("/arch:armv8.2");
+        }
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
 
         winres::WindowsResource::new()
@@ -70,6 +74,10 @@ fn main() {
         #[cfg(target_arch = "x86_64")]
         {
             build.flag("-march=x86-64-v3");
+        }
+        #[cfg(target_arch = "aarch64")]
+        {
+            build.flag("-march=armv8.2-a");
         }
     }
 
