@@ -86,16 +86,11 @@ pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
     }
 }
 
-pub fn init(ui: &mut ui::Ui) {
+pub fn init(ui: &mut ui::Ui, data_dir: std::path::PathBuf) {
     let id = ui.game_id.as_str();
     ui.save_type = get_save_type(id);
 
-    let base_path = dirs::data_dir().unwrap().join("gopher64").join("saves");
-
-    let result = std::fs::create_dir_all(base_path.clone());
-    if result.is_err() {
-        panic!("could not create save dir")
-    }
+    let base_path = data_dir.join("saves");
 
     ui.paths.eep_file_path.clone_from(&base_path);
     ui.paths

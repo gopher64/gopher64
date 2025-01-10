@@ -36,7 +36,12 @@ pub mod unmapped;
 pub mod vi;
 pub mod vru;
 
-pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bool) {
+pub fn run_game(
+    file_path: &std::path::Path,
+    data_dir: std::path::PathBuf,
+    device: &mut Device,
+    fullscreen: bool,
+) {
     let rom_contents = get_rom_contents(file_path);
 
     cart_rom::init(device, rom_contents); // cart needs to come before rdram
@@ -59,7 +64,7 @@ pub fn run_game(file_path: &std::path::Path, device: &mut Device, fullscreen: bo
     vi::init(device);
     cpu::init(device);
 
-    ui::storage::init(&mut device.ui);
+    ui::storage::init(&mut device.ui, data_dir);
     ui::storage::load_saves(&mut device.ui);
     cart_rom::load_rom_save(device);
 
@@ -166,7 +171,7 @@ pub struct Device {
 }
 
 impl Device {
-    pub fn new() -> Device {
+    pub fn new(config_dir: std::path::PathBuf) -> Device {
         let mut byte_swap: usize = 0;
         let test: [u8; 4] = [1, 2, 3, 4];
         // if the host computer is little endian, that means the RDRAM will be stored as little endian
@@ -175,7 +180,7 @@ impl Device {
             byte_swap = 3;
         }
         Device {
-            ui: ui::Ui::new(),
+            ui: ui::Ui::new(config_dir),
             byte_swap,
             cpu: cpu::Cpu {
                 cop0: cop0::Cop0 {
