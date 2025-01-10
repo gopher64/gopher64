@@ -212,7 +212,7 @@ impl eframe::App for GopherEguiApp {
                         }
                         let result = std::fs::File::create(running_file.clone());
                         if result.is_err() {
-                            panic!("could not create running file")
+                            panic!("could not create running file: {}", result.err().unwrap())
                         }
                         let mut device = device::Device::new(config_dir);
                         save_config(
@@ -236,7 +236,7 @@ impl eframe::App for GopherEguiApp {
                         );
                         let result = std::fs::remove_file(running_file.clone());
                         if result.is_err() {
-                            panic!("could not remove running file")
+                            panic!("could not remove running file: {}", result.err().unwrap())
                         }
                     }
                 });

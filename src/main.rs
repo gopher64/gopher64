@@ -82,19 +82,22 @@ fn main() {
 
     let mut result = std::fs::create_dir_all(config_dir.clone());
     if result.is_err() {
-        panic!("could not create config dir")
+        panic!("could not create config dir: {}", result.err().unwrap())
     }
     result = std::fs::create_dir_all(cache_dir.clone());
     if result.is_err() {
-        panic!("could not create cache dir")
+        panic!("could not create cache dir: {}", result.err().unwrap())
     }
     result = std::fs::create_dir_all(data_dir.clone());
     if result.is_err() {
-        panic!("could not create data dir")
+        panic!("could not create data dir: {}", result.err().unwrap())
     }
-    result = std::fs::remove_file(cache_dir.clone().join("game_running"));
-    if result.is_err() {
-        panic!("could not remove running file")
+    let running_file = cache_dir.join("game_running");
+    if running_file.exists() {
+        result = std::fs::remove_file(running_file);
+        if result.is_err() {
+            panic!("could not remove running file: {}", result.err().unwrap())
+        }
     }
 
     let args = Args::parse();
