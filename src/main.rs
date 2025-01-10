@@ -2,7 +2,6 @@
 
 mod device;
 mod ui;
-
 use clap::Parser;
 
 /// N64 emulator
