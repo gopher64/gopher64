@@ -52,11 +52,15 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/util")
         .includes(std::env::var("DEP_SDL2_INCLUDE"));
 
-    #[cfg(target_os = "windows")]
-    {
-        #[cfg(target_arch = "x86_64")]
-        {
+    let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
+    let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    if os == "windows" {
+        if arch == "x86_64" {
             build.flag("/arch:AVX2");
+        } else if arch == "aarch64" {
+            build.flag("/arch:armv8.2");
+        } else {
+            panic!("unknown arch")
         }
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
 
@@ -64,13 +68,16 @@ fn main() {
             .set_icon("data/icon.ico")
             .compile()
             .unwrap();
-    }
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    {
-        #[cfg(target_arch = "x86_64")]
-        {
+    } else if os == "linux" || os == "macos" {
+        if arch == "x86_64" {
             build.flag("-march=x86-64-v3");
+        } else if arch == "aarch64" {
+            build.flag("-march=armv8.2-a");
+        } else {
+            panic!("unknown arch")
         }
+    } else {
+        panic!("unknown OS")
     }
 
     build.compile("parallel-rdp");
