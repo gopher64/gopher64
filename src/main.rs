@@ -54,18 +54,47 @@ struct Args {
 }
 
 fn main() {
-    let config_dir = dirs::config_dir().unwrap().join("gopher64");
-    let cache_dir = dirs::cache_dir().unwrap().join("gopher64");
+    let exe_path = std::env::current_exe().unwrap();
+    let portable_dir = exe_path.parent();
+    let portable = portable_dir.unwrap().join("portable.txt").exists();
+    let config_dir;
+    let cache_dir;
+    let data_dir;
+    if portable {
+        config_dir = portable_dir.unwrap().join("portable_data").join("config");
+        cache_dir = portable_dir.unwrap().join("portable_data").join("cache");
+        data_dir = portable_dir.unwrap().join("portable_data").join("data");
+    } else {
+        config_dir = dirs::config_dir().unwrap().join("gopher64");
+        cache_dir = dirs::cache_dir().unwrap().join("gopher64");
+        data_dir = dirs::data_dir().unwrap().join("gopher64");
+    };
 
-    let _ = std::fs::create_dir_all(config_dir.clone());
-    let _ = std::fs::create_dir_all(cache_dir.clone());
-    let _ = std::fs::remove_file(cache_dir.clone().join("game_running"));
+    let mut result = std::fs::create_dir_all(config_dir.clone());
+    if result.is_err() {
+        panic!("could not create config dir: {}", result.err().unwrap())
+    }
+    result = std::fs::create_dir_all(cache_dir.clone());
+    if result.is_err() {
+        panic!("could not create cache dir: {}", result.err().unwrap())
+    }
+    result = std::fs::create_dir_all(data_dir.clone().join("saves"));
+    if result.is_err() {
+        panic!("could not create data dir: {}", result.err().unwrap())
+    }
+    let running_file = cache_dir.join("game_running");
+    if running_file.exists() {
+        result = std::fs::remove_file(running_file);
+        if result.is_err() {
+            panic!("could not remove running file: {}", result.err().unwrap())
+        }
+    }
 
     let args = Args::parse();
     let args_as_strings: Vec<String> = std::env::args().collect();
     let args_count = args_as_strings.len();
     if args_count > 1 {
-        let mut device = device::Device::new();
+        let mut device = device::Device::new(config_dir);
 
         if args.clear_input_bindings {
             ui::input::clear_bindings(&mut device.ui);
@@ -116,7 +145,7 @@ fn main() {
 
         if args.game.is_some() {
             let file_path = std::path::Path::new(args.game.as_ref().unwrap());
-            device::run_game(file_path, &mut device, args.fullscreen);
+            device::run_game(file_path, data_dir, &mut device, args.fullscreen);
         }
     } else {
         let options = eframe::NativeOptions {
@@ -126,7 +155,11 @@ fn main() {
         eframe::run_native(
             "gopher64",
             options,
-            Box::new(|cc| Ok(Box::new(ui::gui::GopherEguiApp::new(cc)))),
+            Box::new(|cc| {
+                Ok(Box::new(ui::gui::GopherEguiApp::new(
+                    cc, config_dir, cache_dir, data_dir,
+                )))
+            }),
         )
         .unwrap();
     }

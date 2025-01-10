@@ -3,6 +3,9 @@ use crate::ui;
 use eframe::egui;
 
 pub struct GopherEguiApp {
+    config_dir: std::path::PathBuf,
+    cache_dir: std::path::PathBuf,
+    data_dir: std::path::PathBuf,
     configure_profile: bool,
     profile_name: String,
     controllers: Vec<String>,
@@ -38,10 +41,14 @@ fn get_controllers(game_ui: &ui::Ui) -> Vec<String> {
 }
 
 impl GopherEguiApp {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> GopherEguiApp {
+    pub fn new(
+        cc: &eframe::CreationContext<'_>,
+        config_dir: std::path::PathBuf,
+        cache_dir: std::path::PathBuf,
+        data_dir: std::path::PathBuf,
+    ) -> GopherEguiApp {
         add_japanese_font(&cc.egui_ctx);
-
-        let game_ui = ui::Ui::new();
+        let game_ui = ui::Ui::new(config_dir.clone());
         let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
         let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
         let mut guids: Vec<String> = vec![];
@@ -66,6 +73,9 @@ impl GopherEguiApp {
             }
         }
         GopherEguiApp {
+            cache_dir: cache_dir.clone(),
+            config_dir: config_dir.clone(),
+            data_dir: data_dir.clone(),
             configure_profile: false,
             profile_name: "".to_string(),
             selected_profile: game_ui.config.input.input_profile_binding.clone(),
@@ -114,7 +124,7 @@ fn save_config(
 
 impl Drop for GopherEguiApp {
     fn drop(&mut self) {
-        let mut game_ui = ui::Ui::new();
+        let mut game_ui = ui::Ui::new(self.config_dir.clone());
         save_config(
             &mut game_ui,
             self.selected_controller,
@@ -140,8 +150,9 @@ impl eframe::App for GopherEguiApp {
                     ui.horizontal(|ui| {
                         if ui.button("Configure Profile").clicked() {
                             let profile_name = self.profile_name.clone();
+                            let config_dir = self.config_dir.clone();
                             execute(async {
-                                let mut game_ui = ui::Ui::new();
+                                let mut game_ui = ui::Ui::new(config_dir);
                                 ui::input::configure_input_profile(&mut game_ui, profile_name);
                             });
                             self.configure_profile = false;
@@ -171,6 +182,9 @@ impl eframe::App for GopherEguiApp {
                 let controller_enabled = self.controller_enabled;
                 let upscale = self.upscale;
                 let emulate_vru = self.emulate_vru;
+                let config_dir = self.config_dir.clone();
+                let cache_dir = self.cache_dir.clone();
+                let data_dir = self.data_dir.clone();
 
                 let (vru_window_notifier, vru_window_receiver): (
                     std::sync::mpsc::Sender<Vec<String>>,
@@ -192,15 +206,15 @@ impl eframe::App for GopherEguiApp {
                     let file = task.await;
 
                     if let Some(file) = file {
-                        let running_file = dirs::cache_dir()
-                            .unwrap()
-                            .join("gopher64")
-                            .join("game_running");
+                        let running_file = cache_dir.join("game_running");
                         if running_file.exists() {
                             return;
                         }
-                        let _ = std::fs::File::create(running_file.clone());
-                        let mut device = device::Device::new();
+                        let result = std::fs::File::create(running_file.clone());
+                        if result.is_err() {
+                            panic!("could not create running file: {}", result.err().unwrap())
+                        }
+                        let mut device = device::Device::new(config_dir);
                         save_config(
                             &mut device.ui,
                             selected_controller,
@@ -214,18 +228,22 @@ impl eframe::App for GopherEguiApp {
                             device.vru.word_receiver = Some(vru_word_receiver);
                             device.vru.gui_ctx = Some(gui_ctx);
                         }
-                        device::run_game(std::path::Path::new(file.path()), &mut device, false);
-                        let _ = std::fs::remove_file(running_file.clone());
+                        device::run_game(
+                            std::path::Path::new(file.path()),
+                            data_dir,
+                            &mut device,
+                            false,
+                        );
+                        let result = std::fs::remove_file(running_file.clone());
+                        if result.is_err() {
+                            panic!("could not remove running file: {}", result.err().unwrap())
+                        }
                     }
                 });
             }
 
             if ui.button("Configure Input Profile").clicked() {
-                let running_file = dirs::cache_dir()
-                    .unwrap()
-                    .join("gopher64")
-                    .join("game_running");
-                if running_file.exists() {
+                if self.cache_dir.join("game_running").exists() {
                     return;
                 }
                 self.configure_profile = true;

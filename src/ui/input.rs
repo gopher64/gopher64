@@ -541,7 +541,10 @@ pub fn init(ui: &mut ui::Ui) {
                         .unwrap()
                         .open(joystick_index);
                     if joystick_result.is_err() {
-                        println!("could not connect joystick")
+                        println!(
+                            "could not connect joystick: {}",
+                            joystick_result.err().unwrap()
+                        )
                     } else {
                         ui.controllers[i].joystick = Some(joystick_result.unwrap());
                     }

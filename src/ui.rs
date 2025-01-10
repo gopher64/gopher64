@@ -37,17 +37,14 @@ fn write_config(ui: &Ui) {
 }
 
 impl Ui {
-    pub fn new() -> Ui {
+    pub fn new(config_dir: std::path::PathBuf) -> Ui {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
         let audio_subsystem = sdl_context.audio().unwrap();
         let joystick_subsystem = sdl_context.joystick().unwrap();
         let controller_subsystem = sdl_context.game_controller().unwrap();
 
-        let config_file_path = dirs::config_dir()
-            .unwrap()
-            .join("gopher64")
-            .join("config.json");
+        let config_file_path = config_dir.join("config.json");
         let config_file = std::fs::read(config_file_path.clone());
         let mut config_map = config::Config::new();
         if config_file.is_ok() {
