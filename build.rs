@@ -52,11 +52,11 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/util")
         .includes(std::env::var("DEP_SDL2_INCLUDE"));
 
-    if cfg!(target_os = "windows") {
-        if cfg!(target_arch = "x86_64") {
+    if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
+        if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "x86_64" {
             build.flag("/arch:AVX2");
         }
-        if cfg!(target_arch = "aarch64") {
+        if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "aarch64" {
             build.flag("/arch:armv8.2");
         }
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
@@ -66,11 +66,13 @@ fn main() {
             .compile()
             .unwrap();
     }
-    if cfg!(any(target_os = "linux", target_os = "macos")) {
-        if cfg!(target_arch = "x86_64") {
+    if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "linux"
+        || std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "macos"
+    {
+        if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "x86_64" {
             build.flag("-march=x86-64-v3");
         }
-        if cfg!(target_arch = "aarch64") {
+        if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "aarch64" {
             build.flag("-march=armv8.2-a");
         }
     }
