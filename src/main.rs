@@ -2,6 +2,7 @@
 
 mod device;
 mod ui;
+
 use clap::Parser;
 
 /// N64 emulator
@@ -54,26 +55,16 @@ struct Args {
 }
 
 fn main() {
-    let portable = dirs::executable_dir()
-        .unwrap()
-        .join("portable.txt")
-        .exists();
+    let exe_path = std::env::current_exe().unwrap();
+    let portable_dir = exe_path.parent();
+    let portable = portable_dir.unwrap().join("portable.txt").exists();
     let config_dir;
     let cache_dir;
     let data_dir;
     if portable {
-        config_dir = dirs::executable_dir()
-            .unwrap()
-            .join("portable_data")
-            .join("config");
-        cache_dir = dirs::executable_dir()
-            .unwrap()
-            .join("portable_data")
-            .join("cache");
-        data_dir = dirs::executable_dir()
-            .unwrap()
-            .join("portable_data")
-            .join("data");
+        config_dir = portable_dir.unwrap().join("portable_data").join("config");
+        cache_dir = portable_dir.unwrap().join("portable_data").join("cache");
+        data_dir = portable_dir.unwrap().join("portable_data").join("data");
     } else {
         config_dir = dirs::config_dir().unwrap().join("gopher64");
         cache_dir = dirs::cache_dir().unwrap().join("gopher64");
@@ -88,7 +79,7 @@ fn main() {
     if result.is_err() {
         panic!("could not create cache dir: {}", result.err().unwrap())
     }
-    result = std::fs::create_dir_all(data_dir.clone());
+    result = std::fs::create_dir_all(data_dir.clone().join("saves"));
     if result.is_err() {
         panic!("could not create data dir: {}", result.err().unwrap())
     }
