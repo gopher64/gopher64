@@ -54,7 +54,6 @@ fn main() {
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    println!("Building parallel-RDP for {} {}", arch, os);
     if os == "windows" {
         if arch == "x86_64" {
             build.flag("/arch:AVX2");
