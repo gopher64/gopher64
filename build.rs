@@ -52,10 +52,13 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/util")
         .includes(std::env::var("DEP_SDL2_INCLUDE"));
 
-    if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
-        if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "x86_64" {
+    let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
+    let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    println!("Building parallel-RDP for {} {}", arch, os);
+    if os == "windows" {
+        if arch == "x86_64" {
             build.flag("/arch:AVX2");
-        } else if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "aarch64" {
+        } else if arch == "aarch64" {
             build.flag("/arch:armv8.2");
         } else {
             panic!("unknown arch")
@@ -66,12 +69,10 @@ fn main() {
             .set_icon("data/icon.ico")
             .compile()
             .unwrap();
-    } else if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "linux"
-        || std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "macos"
-    {
-        if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "x86_64" {
+    } else if os == "linux" || os == "macos" {
+        if arch == "x86_64" {
             build.flag("-march=x86-64-v3");
-        } else if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "aarch64" {
+        } else if arch == "aarch64" {
             build.flag("-march=armv8.2-a");
         } else {
             panic!("unknown arch")
