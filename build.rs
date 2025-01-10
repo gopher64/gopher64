@@ -55,9 +55,10 @@ fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
         if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "x86_64" {
             build.flag("/arch:AVX2");
-        }
-        if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "aarch64" {
+        } else if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "aarch64" {
             build.flag("/arch:armv8.2");
+        } else {
+            panic!("unknown arch")
         }
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
 
@@ -65,16 +66,18 @@ fn main() {
             .set_icon("data/icon.ico")
             .compile()
             .unwrap();
-    }
-    if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "linux"
+    } else if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "linux"
         || std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "macos"
     {
         if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "x86_64" {
             build.flag("-march=x86-64-v3");
-        }
-        if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "aarch64" {
+        } else if std::env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "aarch64" {
             build.flag("-march=armv8.2-a");
+        } else {
+            panic!("unknown arch")
         }
+    } else {
+        panic!("unknown OS")
     }
 
     build.compile("parallel-rdp");
