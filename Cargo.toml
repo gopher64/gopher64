@@ -30,6 +30,7 @@ features = ["static-link","bundled"]
 
 [build-dependencies]
 winres = "0.1"
+bindgen = "0.71"
 cc = { version = "1.2", features = ["parallel"] }
 
 [profile.release]

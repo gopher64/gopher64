@@ -1,29 +1,6 @@
+#![allow(non_snake_case)]
+include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::device;
-
-#[repr(C)]
-pub struct GfxInfo {
-    pub rdram: *mut u8,
-    pub dmem: *mut u8,
-    pub rdram_size: u32,
-    pub dpc_current_reg: *mut u32,
-    pub dpc_start_reg: *mut u32,
-    pub dpc_end_reg: *mut u32,
-    pub dpc_status_reg: *mut u32,
-    pub vi_h_start_reg: *mut u32,
-    pub vi_v_start_reg: *mut u32,
-    pub vi_x_scale_reg: *mut u32,
-    pub vi_y_scale_reg: *mut u32,
-    pub vi_width_reg: *mut u32,
-}
-
-unsafe extern "C" {
-    pub fn rdp_init(window: usize, gfx_info: GfxInfo, fullscreen: bool, upscale: bool);
-    pub fn rdp_close();
-    pub fn rdp_update_screen() -> bool;
-    pub fn rdp_set_vi_register(reg: u32, value: u32);
-    pub fn rdp_process_commands() -> u64;
-    pub fn rdp_full_sync();
-}
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
     let mut builder = device
@@ -42,24 +19,24 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
     }
     device.ui.window = Some(builder.build().unwrap());
 
-    let gfx_info = GfxInfo {
-        rdram: device.rdram.mem.as_mut_ptr(),
-        dmem: device.rsp.mem.as_mut_ptr(),
-        rdram_size: device.rdram.size,
-        dpc_current_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
-        dpc_start_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
-        dpc_end_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
-        dpc_status_reg: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
-        vi_h_start_reg: &mut device.vi.regs[device::vi::VI_H_START_REG as usize],
-        vi_v_start_reg: &mut device.vi.regs[device::vi::VI_V_START_REG as usize],
-        vi_x_scale_reg: &mut device.vi.regs[device::vi::VI_X_SCALE_REG as usize],
-        vi_y_scale_reg: &mut device.vi.regs[device::vi::VI_Y_SCALE_REG as usize],
-        vi_width_reg: &mut device.vi.regs[device::vi::VI_WIDTH_REG as usize],
+    let gfx_info = GFX_INFO {
+        RDRAM: device.rdram.mem.as_mut_ptr(),
+        DMEM: device.rsp.mem.as_mut_ptr(),
+        RDRAM_SIZE: device.rdram.size,
+        DPC_CURRENT_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
+        DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
+        DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
+        DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
+        VI_H_START_REG: &mut device.vi.regs[device::vi::VI_H_START_REG as usize],
+        VI_V_START_REG: &mut device.vi.regs[device::vi::VI_V_START_REG as usize],
+        VI_X_SCALE_REG: &mut device.vi.regs[device::vi::VI_X_SCALE_REG as usize],
+        VI_Y_SCALE_REG: &mut device.vi.regs[device::vi::VI_Y_SCALE_REG as usize],
+        VI_WIDTH_REG: &mut device.vi.regs[device::vi::VI_WIDTH_REG as usize],
     };
 
     unsafe {
         rdp_init(
-            device.ui.window.as_mut().unwrap().raw() as usize,
+            device.ui.window.as_mut().unwrap().raw() as *mut std::ffi::c_void,
             gfx_info,
             fullscreen,
             device.ui.config.video.upscale,

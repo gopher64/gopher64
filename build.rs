@@ -81,4 +81,28 @@ fn main() {
     }
 
     build.compile("parallel-rdp");
+
+    let parallel_bindings = bindgen::Builder::default()
+        // The input header we would like to generate
+        // bindings for.
+        .header("parallel-rdp/interface.hpp")
+        .allowlist_function("rdp_init")
+        .allowlist_function("rdp_close")
+        .allowlist_function("rdp_set_vi_register")
+        .allowlist_function("rdp_update_screen")
+        .allowlist_function("rdp_process_commands")
+        .allowlist_function("rdp_full_sync")
+        // Tell cargo to invalidate the built crate whenever any of the
+        // included header files changed.
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        // Finish the builder and generate the bindings.
+        .generate()
+        // Unwrap the Result and panic on failure.
+        .expect("Unable to generate bindings");
+
+    // Write the bindings to the $OUT_DIR/bindings.rs file.
+    let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    parallel_bindings
+        .write_to_file(out_path.join("parallel_bindings.rs"))
+        .expect("Couldn't write bindings!");
 }
