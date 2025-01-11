@@ -1,4 +1,5 @@
 use crate::device;
+use crate::device::rsp_su_instructions::{get_vpr_element, modify_vpr_element};
 use std::arch::x86_64::*;
 
 pub fn vt(opcode: u32) -> u32 {
@@ -56,18 +57,6 @@ pub fn s_clip(x: i64, bits: u32) -> i64 {
     let b = 1_u64 << (bits - 1);
     let m = b * 2 - 1;
     ((((x as u64) & m) ^ b).wrapping_sub(b)) as i64
-}
-
-pub fn modify_vpr_element(vpr: &mut u128, value: u16, element: u8) {
-    let pos = 7 - (element & 7);
-    let mask = 0xFFFF << (pos * 16);
-    *vpr &= !mask;
-    *vpr |= (value as u128) << (pos * 16);
-}
-
-pub fn get_vpr_element(vpr: u128, element: u8) -> u16 {
-    let pos = 7 - (element & 7);
-    (vpr >> (pos * 16)) as u16
 }
 
 pub fn vte(device: &device::Device, vt: u32, index: usize) -> __m128i {
@@ -195,13 +184,13 @@ pub fn vrndp(device: &mut device::Device, opcode: u32) {
         if acc >= 0 {
             acc = s_clip(acc + (product as i64), 48)
         }
-        modify_vpr_element(acch, (acc >> 32) as u16, n);
-        modify_vpr_element(accm, (acc >> 16) as u16, n);
-        modify_vpr_element(accl, acc as u16, n);
+        modify_vpr_element(acch, n, (acc >> 32) as u16);
+        modify_vpr_element(accm, n, (acc >> 16) as u16);
+        modify_vpr_element(accl, n, acc as u16);
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-            clamp_signed_64(acc >> 16) as u16,
             n,
+            clamp_signed_64(acc >> 16) as u16,
         );
 
         n += 1;
@@ -228,13 +217,13 @@ pub fn vmulq(device: &mut device::Device, opcode: u32) {
         if product < 0 {
             product += 31;
         }
-        modify_vpr_element(acch, (product >> 16) as u16, n);
-        modify_vpr_element(accm, (product) as u16, n);
-        modify_vpr_element(accl, 0, n);
+        modify_vpr_element(acch, n, (product >> 16) as u16);
+        modify_vpr_element(accm, n, (product) as u16);
+        modify_vpr_element(accl, n, 0);
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-            (clamp_signed_32(product >> 1) & !15) as u16,
             n,
+            (clamp_signed_32(product >> 1) & !15) as u16,
         );
         n += 1;
     }
@@ -458,13 +447,13 @@ pub fn vrndn(device: &mut device::Device, opcode: u32) {
         if acc < 0 {
             acc = s_clip(acc + (product as i64), 48)
         }
-        modify_vpr_element(acch, (acc >> 32) as u16, n);
-        modify_vpr_element(accm, (acc >> 16) as u16, n);
-        modify_vpr_element(accl, acc as u16, n);
+        modify_vpr_element(acch, n, (acc >> 32) as u16);
+        modify_vpr_element(accm, n, (acc >> 16) as u16);
+        modify_vpr_element(accl, n, acc as u16);
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-            clamp_signed_64(acc >> 16) as u16,
             n,
+            clamp_signed_64(acc >> 16) as u16,
         );
 
         n += 1;
@@ -484,12 +473,12 @@ pub fn vmacq(device: &mut device::Device, opcode: u32) {
         } else if product >= 32 && (product & (1 << 5)) == 0 {
             product -= 32
         }
-        modify_vpr_element(acch, (product >> 16) as u16, n);
-        modify_vpr_element(accm, (product) as u16, n);
+        modify_vpr_element(acch, n, (product >> 16) as u16);
+        modify_vpr_element(accm, n, (product) as u16);
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-            (clamp_signed_32(product >> 1) & !15) as u16,
             n,
+            (clamp_signed_32(product >> 1) & !15) as u16,
         );
         n += 1;
     }
@@ -1266,8 +1255,8 @@ pub fn vrcp(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.accl = vte;
     modify_vpr_element(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-        result as u16,
         de(opcode) as u8,
+        result as u16,
     );
 }
 
@@ -1302,8 +1291,8 @@ pub fn vrcpl(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.accl = vte;
     modify_vpr_element(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-        result as u16,
         de(opcode) as u8,
+        result as u16,
     );
 }
 
@@ -1316,8 +1305,8 @@ pub fn vrcph(device: &mut device::Device, opcode: u32) {
         get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16;
     modify_vpr_element(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-        device.rsp.cpu.divout as u16,
         de(opcode) as u8,
+        device.rsp.cpu.divout as u16,
     );
 }
 
@@ -1329,8 +1318,8 @@ pub fn vmov(device: &mut device::Device, opcode: u32) {
     );
     modify_vpr_element(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-        value,
         de(opcode) as u8,
+        value,
     );
     device.rsp.cpu.accl = vte;
 }
@@ -1362,8 +1351,8 @@ pub fn vrsq(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.accl = vte;
     modify_vpr_element(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-        result as u16,
         de(opcode) as u8,
+        result as u16,
     );
 }
 
@@ -1399,8 +1388,8 @@ pub fn vrsql(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.accl = vte;
     modify_vpr_element(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-        result as u16,
         de(opcode) as u8,
+        result as u16,
     );
 }
 
@@ -1413,8 +1402,8 @@ pub fn vrsqh(device: &mut device::Device, opcode: u32) {
         get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16;
     modify_vpr_element(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
-        device.rsp.cpu.divout as u16,
         de(opcode) as u8,
+        device.rsp.cpu.divout as u16,
     );
 }
 
