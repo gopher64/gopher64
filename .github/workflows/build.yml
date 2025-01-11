@@ -22,8 +22,12 @@ jobs:
       - name: Install aarch64 compiler
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
-          sudo apt -y install gcc-aarch64-linux-gnu
+          sudo dpkg --add-architecture arm64
+          sudo apt update
+          sudo apt -y install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt -y install libsdl2-dev:arm64
       - name: Install sdl2 headers
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
           sudo apt -y install libsdl2-dev
       - uses: actions-rust-lang/setup-rust-toolchain@v1
