@@ -39,7 +39,7 @@ pub fn sign_extend_7bit_offset(offset: u8, shift_amount: u32) -> u32 {
     (((soffset) as i32) as u32) << shift_amount
 }
 
-pub fn modify_vpr_byte(vpr: &mut u128, value: u8, element: u8) {
+pub fn modify_vpr_byte(vpr: &mut u128, element: u8, value: u8) {
     let pos = 15 - (element & 15);
     let mask = 0xFF << (pos * 8);
     *vpr &= !mask;
@@ -51,7 +51,7 @@ pub fn get_vpr_byte(vpr: u128, element: u8) -> u8 {
     (vpr >> (pos * 8)) as u8
 }
 
-pub fn modify_vpr_element(vpr: &mut u128, value: u16, element: u8) {
+pub fn modify_vpr_element(vpr: &mut u128, element: u8, value: u16) {
     let pos = 7 - (element & 7);
     let mask = 0xFFFF << (pos * 16);
     *vpr &= !mask;
@@ -522,14 +522,14 @@ pub fn cfc2(device: &mut device::Device, opcode: u32) {
 pub fn mtc2(device: &mut device::Device, opcode: u32) {
     modify_vpr_byte(
         &mut device.rsp.cpu.vpr[rd(opcode) as usize],
-        (device.rsp.cpu.gpr[rt(opcode) as usize] >> 8) as u8,
         velement(opcode),
+        (device.rsp.cpu.gpr[rt(opcode) as usize] >> 8) as u8,
     );
     if velement(opcode) != 15 {
         modify_vpr_byte(
             &mut device.rsp.cpu.vpr[rd(opcode) as usize],
-            device.rsp.cpu.gpr[rt(opcode) as usize] as u8,
             velement(opcode) + 1,
+            device.rsp.cpu.gpr[rt(opcode) as usize] as u8,
         );
     }
 }
@@ -591,8 +591,8 @@ pub fn lbv(device: &mut device::Device, opcode: u32) {
     let element = velement(opcode);
     modify_vpr_byte(
         &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-        device.rsp.mem[(address & 0xFFF) as usize],
         element,
+        device.rsp.mem[(address & 0xFFF) as usize],
     );
 }
 
@@ -605,8 +605,8 @@ pub fn lsv(device: &mut device::Device, opcode: u32) {
     while element < end {
         modify_vpr_byte(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            device.rsp.mem[(address & 0xFFF) as usize],
             element,
+            device.rsp.mem[(address & 0xFFF) as usize],
         );
         address += 1;
         element += 1;
@@ -622,8 +622,8 @@ pub fn llv(device: &mut device::Device, opcode: u32) {
     while element < end {
         modify_vpr_byte(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            device.rsp.mem[(address & 0xFFF) as usize],
             element,
+            device.rsp.mem[(address & 0xFFF) as usize],
         );
         address += 1;
         element += 1;
@@ -639,8 +639,8 @@ pub fn ldv(device: &mut device::Device, opcode: u32) {
     while element < end {
         modify_vpr_byte(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            device.rsp.mem[(address & 0xFFF) as usize],
             element,
+            device.rsp.mem[(address & 0xFFF) as usize],
         );
         address += 1;
         element += 1;
@@ -656,8 +656,8 @@ pub fn lqv(device: &mut device::Device, opcode: u32) {
     while element < end {
         modify_vpr_byte(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            device.rsp.mem[(address & 0xFFF) as usize],
             element,
+            device.rsp.mem[(address & 0xFFF) as usize],
         );
         address += 1;
         element += 1;
@@ -673,8 +673,8 @@ pub fn lrv(device: &mut device::Device, opcode: u32) {
     while element < 16 {
         modify_vpr_byte(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            device.rsp.mem[(address & 0xFFF) as usize],
             element,
+            device.rsp.mem[(address & 0xFFF) as usize],
         );
         address += 1;
         element += 1;
@@ -691,10 +691,10 @@ pub fn lpv(device: &mut device::Device, opcode: u32) {
     while offset < 8 {
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
+            offset,
             (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(offset)) & 15) as u32))
                 & 0xFFF) as usize] as u16)
                 << 8,
-            offset,
         );
         offset += 1;
     }
@@ -710,10 +710,10 @@ pub fn luv(device: &mut device::Device, opcode: u32) {
     while offset < 8 {
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
+            offset,
             (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(offset)) & 15) as u32))
                 & 0xFFF) as usize] as u16)
                 << 7,
-            offset,
         );
         offset += 1;
     }
@@ -729,10 +729,10 @@ pub fn lhv(device: &mut device::Device, opcode: u32) {
     while offset < 8 {
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
+            offset,
             (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(offset * 2)) & 15) as u32))
                 & 0xFFF) as usize] as u16)
                 << 7,
-            offset,
         );
         offset += 1;
     }
@@ -751,25 +751,25 @@ pub fn lfv(device: &mut device::Device, opcode: u32) {
     while offset < 4 {
         modify_vpr_element(
             &mut tmp,
+            offset,
             (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(offset * 4)) & 15) as u32))
                 & 0xFFF) as usize] as u16)
                 << 7,
-            offset,
         );
         modify_vpr_element(
             &mut tmp,
+            offset + 4,
             (device.rsp.mem[((address
                 .wrapping_add(((index.wrapping_add(offset * 4).wrapping_add(8)) & 15) as u32))
                 & 0xFFF) as usize] as u16)
                 << 7,
-            offset + 4,
         );
         offset += 1;
     }
     offset = start;
     while offset < end {
         let value = get_vpr_byte(tmp, offset);
-        modify_vpr_byte(&mut device.rsp.cpu.vpr[rt(opcode) as usize], value, offset);
+        modify_vpr_byte(&mut device.rsp.cpu.vpr[rt(opcode) as usize], offset, value);
         offset += 1;
     }
 }
@@ -788,8 +788,8 @@ pub fn ltv(device: &mut device::Device, opcode: u32) {
     while i < 8 {
         modify_vpr_byte(
             &mut device.rsp.cpu.vpr[(vtbase + vtoff) as usize],
-            device.rsp.mem[(address & 0xFFF) as usize],
             i * 2,
+            device.rsp.mem[(address & 0xFFF) as usize],
         );
         address += 1;
         if address == begin + 16 {
@@ -797,8 +797,8 @@ pub fn ltv(device: &mut device::Device, opcode: u32) {
         }
         modify_vpr_byte(
             &mut device.rsp.cpu.vpr[(vtbase + vtoff) as usize],
-            device.rsp.mem[(address & 0xFFF) as usize],
             i * 2 + 1,
+            device.rsp.mem[(address & 0xFFF) as usize],
         );
         address += 1;
         if address == begin + 16 {
