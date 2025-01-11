@@ -60,7 +60,7 @@ fn main() {
         if arch == "x86_64" {
             build.flag("/arch:AVX2");
             simd_build.flag("/arch:AVX2");
-            simd_header = "src/compat/simd_windows_x86_64.h";
+            simd_header = "src/compat/simd_x86_64.h";
         } else if arch == "aarch64" {
             build.flag("/arch:armv8.2");
             simd_build.flag("/arch:armv8.2");
@@ -78,7 +78,7 @@ fn main() {
         if arch == "x86_64" {
             build.flag("-march=x86-64-v3");
             simd_build.flag("-march=x86-64-v3");
-            simd_header = "src/compat/simd_unix_x86_64.h";
+            simd_header = "src/compat/simd_x86_64.h";
         } else if arch == "aarch64" {
             build.flag("-march=armv8.2-a");
             simd_build.flag("-march=armv8.2-a");
