@@ -1,5 +1,5 @@
+include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 use crate::device;
-use std::arch::x86_64::*;
 
 pub fn rd(opcode: u32) -> u32 {
     (opcode >> 11) & 0x1F
@@ -574,7 +574,7 @@ pub fn ctc2(device: &mut device::Device, opcode: u32) {
             ),
             _mm_setzero_si128(),
         );
-        *hi = std::arch::x86_64::_mm_cmpeq_epi8(
+        *hi = _mm_cmpeq_epi8(
             _mm_and_si128(
                 _mm_set1_epi8(!(device.rsp.cpu.gpr[rt(opcode) as usize] >> 8) as i8),
                 mask,

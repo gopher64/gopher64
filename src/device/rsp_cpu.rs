@@ -1,5 +1,5 @@
+include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 use crate::device;
-use std::arch::x86_64::*;
 
 pub struct BranchState {
     pub state: device::cpu::State,
@@ -33,14 +33,14 @@ pub struct Cpu {
     pub vpr: [u128; 32],
     pub reciprocals: [u16; 512],
     pub inverse_square_roots: [u16; 512],
-    pub vcol: std::arch::x86_64::__m128i,
-    pub vcoh: std::arch::x86_64::__m128i,
-    pub vccl: std::arch::x86_64::__m128i,
-    pub vcch: std::arch::x86_64::__m128i,
-    pub vce: std::arch::x86_64::__m128i,
-    pub accl: std::arch::x86_64::__m128i,
-    pub accm: std::arch::x86_64::__m128i,
-    pub acch: std::arch::x86_64::__m128i,
+    pub vcol: __m128i,
+    pub vcoh: __m128i,
+    pub vccl: __m128i,
+    pub vcch: __m128i,
+    pub vce: __m128i,
+    pub accl: __m128i,
+    pub accm: __m128i,
+    pub acch: __m128i,
     pub divdp: bool,
     pub divin: i16,
     pub divout: i16,

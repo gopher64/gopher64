@@ -1,3 +1,6 @@
+#![allow(non_camel_case_types)]
+#![allow(improper_ctypes)]
+include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 use crate::ui;
 use std::collections::HashMap;
 use std::fs;
@@ -334,15 +337,15 @@ impl Device {
                     divdp: false,
                     divin: 0,
                     divout: 0,
-                    shuffle: unsafe { [std::arch::x86_64::_mm_setzero_si128(); 16] },
-                    vcol: unsafe { std::arch::x86_64::_mm_setzero_si128() },
-                    vcoh: unsafe { std::arch::x86_64::_mm_setzero_si128() },
-                    vccl: unsafe { std::arch::x86_64::_mm_setzero_si128() },
-                    vcch: unsafe { std::arch::x86_64::_mm_setzero_si128() },
-                    vce: unsafe { std::arch::x86_64::_mm_setzero_si128() },
-                    accl: unsafe { std::arch::x86_64::_mm_setzero_si128() },
-                    accm: unsafe { std::arch::x86_64::_mm_setzero_si128() },
-                    acch: unsafe { std::arch::x86_64::_mm_setzero_si128() },
+                    shuffle: unsafe { [_mm_setzero_si128(); 16] },
+                    vcol: unsafe { _mm_setzero_si128() },
+                    vcoh: unsafe { _mm_setzero_si128() },
+                    vccl: unsafe { _mm_setzero_si128() },
+                    vcch: unsafe { _mm_setzero_si128() },
+                    vce: unsafe { _mm_setzero_si128() },
+                    accl: unsafe { _mm_setzero_si128() },
+                    accm: unsafe { _mm_setzero_si128() },
+                    acch: unsafe { _mm_setzero_si128() },
                     special_instrs: [rsp_su_instructions::reserved; 64],
                     regimm_instrs: [rsp_su_instructions::reserved; 32],
                     cop0_instrs: [rsp_su_instructions::reserved; 32],
