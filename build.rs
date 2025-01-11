@@ -55,13 +55,16 @@ fn main() {
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    let simd_header;
     if os == "windows" {
         if arch == "x86_64" {
             build.flag("/arch:AVX2");
             simd_build.flag("/arch:AVX2");
+            simd_header = "src/compat/simd_windows_x86_64.h";
         } else if arch == "aarch64" {
             build.flag("/arch:armv8.2");
             simd_build.flag("/arch:armv8.2");
+            simd_header = "src/compat/simd_aarch64.h";
         } else {
             panic!("unknown arch")
         }
@@ -75,9 +78,11 @@ fn main() {
         if arch == "x86_64" {
             build.flag("-march=x86-64-v3");
             simd_build.flag("-march=x86-64-v3");
+            simd_header = "src/compat/simd_unix_x86_64.h";
         } else if arch == "aarch64" {
             build.flag("-march=armv8.2-a");
             simd_build.flag("-march=armv8.2-a");
+            simd_header = "src/compat/simd_aarch64.h";
         } else {
             panic!("unknown arch")
         }
@@ -88,8 +93,6 @@ fn main() {
     build.compile("parallel-rdp");
 
     let parallel_bindings = bindgen::Builder::default()
-        // The input header we would like to generate
-        // bindings for.
         .header("parallel-rdp/interface.hpp")
         .allowlist_function("rdp_init")
         .allowlist_function("rdp_close")
@@ -97,18 +100,12 @@ fn main() {
         .allowlist_function("rdp_update_screen")
         .allowlist_function("rdp_process_commands")
         .allowlist_function("rdp_full_sync")
-        // Tell cargo to invalidate the built crate whenever any of the
-        // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-        // Finish the builder and generate the bindings.
         .generate()
-        // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
 
     let simd_bindings = bindgen::Builder::default()
-        // The input header we would like to generate
-        // bindings for.
-        .header("src/compat/simd.h")
+        .header(simd_header)
         .allowlist_function("_mm_setzero_si128")
         .allowlist_function("_mm_set_epi8")
         .allowlist_function("_mm_movemask_epi8")
@@ -144,15 +141,10 @@ fn main() {
         .allowlist_function("_mm_subs_epu16")
         .allowlist_function("_mm_set1_epi32")
         .wrap_static_fns(true)
-        // Tell cargo to invalidate the built crate whenever any of the
-        // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-        // Finish the builder and generate the bindings.
         .generate()
-        // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
 
-    // Write the bindings to the $OUT_DIR/bindings.rs file.
     let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
     parallel_bindings
         .write_to_file(out_path.join("parallel_bindings.rs"))
