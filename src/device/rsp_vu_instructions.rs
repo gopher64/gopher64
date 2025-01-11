@@ -23,11 +23,11 @@ pub fn de(opcode: u32) -> u32 {
 }
 
 pub fn clamp_signed_32(value: i32) -> i16 {
-    return value.clamp(-32768, 32767) as i16;
+    value.clamp(-32768, 32767) as i16
 }
 
 pub fn clamp_signed_64(value: i64) -> i16 {
-    return value.clamp(-32768, 32767) as i16;
+    value.clamp(-32768, 32767) as i16
 }
 
 pub fn s_clip(x: i64, bits: u32) -> i64 {
@@ -144,8 +144,7 @@ pub fn vrndp(device: &mut device::Device, opcode: u32) {
     let accm: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accm) };
     let accl: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accl) };
 
-    let mut n = 0;
-    while n < 8 {
+    for n in 0..8 {
         let mut product = get_vpr_element(vte, n) as i16 as i32;
         if vs(opcode) & 1 != 0 {
             product <<= 16
@@ -169,8 +168,6 @@ pub fn vrndp(device: &mut device::Device, opcode: u32) {
             n,
             clamp_signed_64(acc >> 16) as u16,
         );
-
-        n += 1;
     }
 }
 
@@ -186,8 +183,7 @@ pub fn vmulq(device: &mut device::Device, opcode: u32) {
     let accm: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accm) };
     let accl: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accl) };
 
-    let mut n = 0;
-    while n < 8 {
+    for n in 0..8 {
         let mut product = (get_vpr_element(device.rsp.cpu.vpr[vs(opcode) as usize], n) as i16
             as i32)
             .wrapping_mul(get_vpr_element(vte, n) as i16 as i32);
@@ -202,7 +198,6 @@ pub fn vmulq(device: &mut device::Device, opcode: u32) {
             n,
             (clamp_signed_32(product >> 1) & !15) as u16,
         );
-        n += 1;
     }
 }
 
@@ -407,8 +402,7 @@ pub fn vrndn(device: &mut device::Device, opcode: u32) {
     let accm: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accm) };
     let accl: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accl) };
 
-    let mut n = 0;
-    while n < 8 {
+    for n in 0..8 {
         let mut product = get_vpr_element(vte, n) as i16 as i32;
         if vs(opcode) & 1 != 0 {
             product <<= 16
@@ -432,8 +426,6 @@ pub fn vrndn(device: &mut device::Device, opcode: u32) {
             n,
             clamp_signed_64(acc >> 16) as u16,
         );
-
-        n += 1;
     }
 }
 
@@ -441,8 +433,7 @@ pub fn vmacq(device: &mut device::Device, opcode: u32) {
     let acch: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.acch) };
     let accm: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accm) };
 
-    let mut n = 0;
-    while n < 8 {
+    for n in 0..8 {
         let mut product =
             ((get_vpr_element(*acch, n) as i32) << 16) | (get_vpr_element(*accm, n) as i32);
         if product < 0 && (product & (1 << 5)) == 0 {
@@ -457,7 +448,6 @@ pub fn vmacq(device: &mut device::Device, opcode: u32) {
             n,
             (clamp_signed_32(product >> 1) & !15) as u16,
         );
-        n += 1;
     }
 }
 

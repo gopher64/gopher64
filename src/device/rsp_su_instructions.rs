@@ -508,7 +508,7 @@ pub fn cfc2(device: &mut device::Device, opcode: u32) {
             lo = &mut device.rsp.cpu.vce;
         }
         _ => {
-            panic!("unknown ctc2")
+            panic!("unknown cfc2")
         }
     }
 
@@ -687,8 +687,7 @@ pub fn lpv(device: &mut device::Device, opcode: u32) {
 
     let index = ((address & 7) as u8).wrapping_sub(velement(opcode));
     address &= !7;
-    let mut offset: u8 = 0;
-    while offset < 8 {
+    for offset in 0..8 {
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
             offset,
@@ -696,7 +695,6 @@ pub fn lpv(device: &mut device::Device, opcode: u32) {
                 & 0xFFF) as usize] as u16)
                 << 8,
         );
-        offset += 1;
     }
 }
 
@@ -706,8 +704,7 @@ pub fn luv(device: &mut device::Device, opcode: u32) {
 
     let index = ((address & 7) as u8).wrapping_sub(velement(opcode));
     address &= !7;
-    let mut offset: u8 = 0;
-    while offset < 8 {
+    for offset in 0..8 {
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
             offset,
@@ -715,7 +712,6 @@ pub fn luv(device: &mut device::Device, opcode: u32) {
                 & 0xFFF) as usize] as u16)
                 << 7,
         );
-        offset += 1;
     }
 }
 
@@ -725,8 +721,7 @@ pub fn lhv(device: &mut device::Device, opcode: u32) {
 
     let index = ((address & 7) as u8).wrapping_sub(velement(opcode));
     address &= !7;
-    let mut offset: u8 = 0;
-    while offset < 8 {
+    for offset in 0..8 {
         modify_vpr_element(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
             offset,
@@ -734,7 +729,6 @@ pub fn lhv(device: &mut device::Device, opcode: u32) {
                 & 0xFFF) as usize] as u16)
                 << 7,
         );
-        offset += 1;
     }
 }
 
@@ -784,8 +778,7 @@ pub fn ltv(device: &mut device::Device, opcode: u32) {
     address = begin + (((velement(opcode)) as u32 + (address & 8)) & 15);
     let vtbase = rt(opcode) & !7;
     let mut vtoff = (velement(opcode)) as u32 >> 1;
-    let mut i = 0;
-    while i < 8 {
+    for i in 0..8 {
         modify_vpr_byte(
             &mut device.rsp.cpu.vpr[(vtbase + vtoff) as usize],
             i * 2,
@@ -805,7 +798,6 @@ pub fn ltv(device: &mut device::Device, opcode: u32) {
             address = begin
         }
         vtoff = (vtoff + 1) & 7;
-        i += 1;
     }
 }
 
@@ -934,13 +926,11 @@ pub fn shv(device: &mut device::Device, opcode: u32) {
     let element = velement(opcode);
     let index = (address & 7) as u8;
     address &= !7;
-    let mut offset = 0;
-    while offset < 8 {
+    for offset in 0..8 {
         let byte_val = element + offset * 2;
         let value = (get_vpr_byte(device.rsp.cpu.vpr[rt(opcode) as usize], byte_val) << 1)
             | (get_vpr_byte(device.rsp.cpu.vpr[rt(opcode) as usize], byte_val + 1) >> 7);
         device.rsp.mem[((address + ((index + offset * 2) & 15) as u32) & 0xFFF) as usize] = value;
-        offset += 1;
     }
 }
 
@@ -949,8 +939,7 @@ pub fn sfv(device: &mut device::Device, opcode: u32) {
         .wrapping_add(sign_extend_7bit_offset(voffset(opcode), 4));
     let base = address & 7;
     address &= !7;
-    let element = velement(opcode);
-    let elements = match element {
+    let elements = match velement(opcode) {
         0 | 15 => [0, 1, 2, 3],
         1 => [6, 7, 4, 5],
         4 => [1, 2, 3, 0],
@@ -967,12 +956,10 @@ pub fn sfv(device: &mut device::Device, opcode: u32) {
         }
     };
     let mut offset = 0;
-    let mut i = 0;
-    while i < 4 {
+    for element in elements {
         device.rsp.mem[((address + ((base + offset) & 15)) & 0xFFF) as usize] =
-            (get_vpr_element(device.rsp.cpu.vpr[rt(opcode) as usize], elements[i]) >> 7) as u8;
+            (get_vpr_element(device.rsp.cpu.vpr[rt(opcode) as usize], element) >> 7) as u8;
         offset += 4;
-        i += 1;
     }
 }
 
