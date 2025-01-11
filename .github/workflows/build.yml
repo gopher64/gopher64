@@ -12,8 +12,9 @@ env:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    env:
-      TARGET: x86_64-unknown-linux-gnu
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,53 +24,57 @@ jobs:
           sudo apt -y install libsdl2-dev
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
+          target: ${{ matrix.target }}
           rustflags: ""
       - name: Build
         run: |
-          cargo build --release -v --target=${{ env.TARGET }}
+          cargo build --release -v --target=${{ matrix.target }}
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
-          name: gopher64-linux
-          path: target/${{ env.TARGET }}/release/gopher64
+          name: gopher64-linux-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/gopher64
 
   build-windows:
     runs-on: windows-latest
-    env:
-      TARGET: x86_64-pc-windows-msvc
+    strategy:
+      matrix:
+        target: [x86_64-pc-windows-msvc, aarch64-pc-windows-msvc]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
+          target: ${{ matrix.target }}
           rustflags: ""
       - name: Build
         run: |
-          cargo build --release -v --target=${{ env.TARGET }}
+          cargo build --release -v --target=${{ matrix.target }}
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
-          name: gopher64-windows
-          path: target/${{ env.TARGET }}/release/gopher64.exe
+          name: gopher64-windows-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/gopher64.exe
 
   build-macos:
     runs-on: macos-latest
-    env:
-      TARGET: x86_64-apple-darwin
+    strategy:
+      matrix:
+        target: [x86_64-apple-darwin, aarch64-apple-darwin]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          target: ${{ env.TARGET }}
+          target: ${{ matrix.target }}
           rustflags: ""
       - name: Build
         run: |
-          cargo build --release -v --target=${{ env.TARGET }}
+          cargo build --release -v --target=${{ matrix.target }}
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
-          name: gopher64-mac
-          path: target/${{ env.TARGET }}/release/gopher64
+          name: gopher64-mac-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/gopher64
