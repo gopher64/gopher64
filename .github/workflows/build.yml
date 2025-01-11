@@ -20,7 +20,7 @@ jobs:
         with:
           submodules: recursive
       - name: Install aarch64 compiler
-        if: matrix.target == "aarch64-unknown-linux-gnu"
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           sudo apt -y install gcc-aarch64-linux-gnu
       - name: Install sdl2 headers
