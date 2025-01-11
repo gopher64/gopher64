@@ -64,6 +64,7 @@ fn main() {
         } else if arch == "aarch64" {
             build.flag("/arch:armv8.2");
             simd_build.flag("/arch:armv8.2");
+            simd_build.file("src/compat/aarch64.c");
             simd_header = "src/compat/simd_aarch64.h";
         } else {
             panic!("unknown arch")
