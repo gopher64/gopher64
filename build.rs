@@ -58,12 +58,10 @@ fn main() {
     let simd_header;
     if os == "windows" {
         if arch == "x86_64" {
-            println!("cargo::rustc-link-arg=/arch:AVX2");
             build.flag("/arch:AVX2");
             simd_build.flag("/arch:AVX2");
             simd_header = "src/compat/simd_x86_64.h";
         } else if arch == "aarch64" {
-            println!("cargo::rustc-link-arg=/arch:armv8.2");
             build.flag("/arch:armv8.2");
             simd_build.flag("/arch:armv8.2");
             simd_header = "src/compat/simd_aarch64.h";
@@ -78,12 +76,10 @@ fn main() {
             .unwrap();
     } else if os == "linux" || os == "macos" {
         if arch == "x86_64" {
-            println!("cargo::rustc-link-arg=-march=x86-64-v3");
             build.flag("-march=x86-64-v3");
             simd_build.flag("-march=x86-64-v3");
             simd_header = "src/compat/simd_x86_64.h";
         } else if arch == "aarch64" {
-            println!("cargo::rustc-link-arg=-march=armv8.2-a");
             build.flag("-march=armv8.2-a");
             simd_build.flag("-march=armv8.2-a");
             simd_header = "src/compat/simd_aarch64.h";
