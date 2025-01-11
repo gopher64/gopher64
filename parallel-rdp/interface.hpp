@@ -29,7 +29,6 @@ extern "C"
 	bool rdp_update_screen();
 	uint64_t rdp_process_commands();
 	void rdp_full_sync();
-	int sdl_event_filter(void *userdata, SDL_Event *event);
 
 #ifdef __cplusplus
 }
