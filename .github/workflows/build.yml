@@ -11,7 +11,7 @@ env:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
