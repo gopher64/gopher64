@@ -86,6 +86,12 @@ fn main() {
         // The input header we would like to generate
         // bindings for.
         .header("parallel-rdp/interface.hpp")
+        .allowlist_function("rdp_init")
+        .allowlist_function("rdp_close")
+        .allowlist_function("rdp_set_vi_register")
+        .allowlist_function("rdp_update_screen")
+        .allowlist_function("rdp_process_commands")
+        .allowlist_function("rdp_full_sync")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
