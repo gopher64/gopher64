@@ -1,4 +1,6 @@
 include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
+#[cfg(target_arch = "aarch64")]
+include!("../compat/aarch64.rs");
 use crate::device;
 use crate::device::rsp_su_instructions::{get_vpr_element, modify_vpr_element};
 
