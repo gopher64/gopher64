@@ -231,6 +231,7 @@ impl Device {
                 cop1: cop1::Cop1 {
                     fcr0: 0,
                     fcr31: 0,
+                    #[cfg(target_arch = "x86_64")]
                     flush_mode: 0,
                     fgr32: [[0; 4]; 32],
                     fgr64: [[0; 8]; 32],
