@@ -156,5 +156,5 @@ fn main() {
 
     simd_build.file(std::env::temp_dir().join("bindgen").join("extern.c"));
     simd_build.include(".");
-    simd_build.compile("simd");
+    simd_build.cpp(true).compile("simd");
 }
