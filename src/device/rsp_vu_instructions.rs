@@ -23,34 +23,11 @@ pub fn de(opcode: u32) -> u32 {
 }
 
 pub fn clamp_signed_32(value: i32) -> i16 {
-    if value < -32768 {
-        return -32768;
-    }
-    if value > 32767 {
-        return 32767;
-    }
-    value as i16
+    return value.clamp(-32768, 32767) as i16;
 }
 
 pub fn clamp_signed_64(value: i64) -> i16 {
-    if value < -32768 {
-        return -32768;
-    }
-    if value > 32767 {
-        return 32767;
-    }
-    value as i16
-}
-
-pub fn count_leading_zeros(value: u32) -> u32 {
-    let mut index = 31;
-    while index >= 0 {
-        if (value >> index) & 1 != 0 {
-            break;
-        }
-        index -= 1;
-    }
-    (31 - index) as u32
+    return value.clamp(-32768, 32767) as i16;
 }
 
 pub fn s_clip(x: i64, bits: u32) -> i64 {
@@ -1244,7 +1221,7 @@ pub fn vrcp(device: &mut device::Device, opcode: u32) {
     } else if input == -32768 {
         result = 0xffff0000
     } else {
-        let shift = count_leading_zeros(data as u32);
+        let shift = (data as u32).leading_zeros();
         let index = (((data as u64) << shift) & 0x7fc00000) >> 22;
         result = device.rsp.cpu.reciprocals[index as usize] as u32;
         result = (0x10000 | result) << 14;
@@ -1280,7 +1257,7 @@ pub fn vrcpl(device: &mut device::Device, opcode: u32) {
     } else if input == -32768 {
         result = 0xffff0000
     } else {
-        let shift = count_leading_zeros(data as u32);
+        let shift = (data as u32).leading_zeros();
         let index = (((data as u64) << shift) & 0x7fc00000) >> 22;
         result = device.rsp.cpu.reciprocals[index as usize] as u32;
         result = (0x10000 | result) << 14;
@@ -1339,7 +1316,7 @@ pub fn vrsq(device: &mut device::Device, opcode: u32) {
     } else if input == -32768 {
         result = 0xffff0000
     } else {
-        let shift = count_leading_zeros(data as u32);
+        let shift = (data as u32).leading_zeros();
         let index = (((data as u64) << shift) & 0x7fc00000) as u32 >> 22;
         result =
             (device.rsp.cpu.inverse_square_roots[((index & 0x1fe) | (shift & 1)) as usize]) as u32;
@@ -1376,7 +1353,7 @@ pub fn vrsql(device: &mut device::Device, opcode: u32) {
     } else if input == -32768 {
         result = 0xffff0000
     } else {
-        let shift = count_leading_zeros(data as u32);
+        let shift = (data as u32).leading_zeros();
         let index = (((data as u64) << shift) & 0x7fc00000) as u32 >> 22;
         result =
             (device.rsp.cpu.inverse_square_roots[((index & 0x1fe) | (shift & 1)) as usize]) as u32;
