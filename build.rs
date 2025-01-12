@@ -55,7 +55,6 @@ fn main() {
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    let mut simd_header = "";
     if os == "windows" {
         if arch == "x86_64" {
             build.flag("/arch:AVX2");
@@ -77,7 +76,6 @@ fn main() {
             build.flag("-march=armv8.2-a");
             simd_build.flag("-march=armv8.2-a");
             simd_build.file("src/compat/aarch64.c");
-            simd_header = "src/compat/sse2neon.h";
         } else {
             panic!("unknown arch")
         }
@@ -107,7 +105,7 @@ fn main() {
 
     if arch == "aarch64" {
         let simd_bindings = bindgen::Builder::default()
-            .header(simd_header)
+            .header("src/compat/sse2neon.h")
             .allowlist_function("_mm_setzero_si128")
             .allowlist_function("_mm_set_epi8")
             .allowlist_function("_mm_movemask_epi8")
