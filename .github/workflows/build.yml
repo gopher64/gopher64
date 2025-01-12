@@ -60,8 +60,8 @@ jobs:
 
           sudo mv deb822sources /etc/apt/sources.list.d/ubuntu.sources
           sudo dpkg --add-architecture arm64
-          sudp apt update
-          sudo apt -y install libsdl2-dev:arm64
+          sudo apt update
+          sudo apt -y install libsdl2-dev:arm64 g++-aarch64-linux-gnu
       - name: Install SDL2
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
