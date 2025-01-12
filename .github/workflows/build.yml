@@ -32,7 +32,7 @@ jobs:
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
-          name: gopher64-linux-${{ matrix.target }}
+          name: gopher64-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/gopher64
 
   build-windows:
@@ -54,7 +54,7 @@ jobs:
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
-          name: gopher64-windows-${{ matrix.target }}
+          name: gopher64-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/gopher64.exe
 
   build-macos:
@@ -76,5 +76,5 @@ jobs:
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
-          name: gopher64-mac-${{ matrix.target }}
+          name: gopher64-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/gopher64
