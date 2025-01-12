@@ -28,7 +28,7 @@ jobs:
           githubToken: ${{ github.token }}
           install: |
             apt update
-            apt -y install libsdl2-dev
+            apt -y install libsdl2-dev curl
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
           run: |
             rustup update
