@@ -14,20 +14,31 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64-unknown-linux-gnu]
+        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install sdl2 headers
-        run: |
-          sudo apt -y install libsdl2-dev
+      - name: aarch64
+        uses: uraimo/run-on-arch-action@v2
+        if: matrix.target = 'aarch64-unknown-linux-gnu'
+        with:
+          arch: aarch64
+          distro: ubuntu_latest
+          githubToken: ${{ github.token }}
+          run: |
+            sudo apt -y install libsdl2-dev
+            rustup update
+            cargo build --release -v --target=${{ matrix.target }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
+        if: matrix.target = 'x86_64-unknown-linux-gnu'
         with:
           target: ${{ matrix.target }}
           rustflags: ""
       - name: Build
+        if: matrix.target = 'x86_64-unknown-linux-gnu'
         run: |
+          sudo apt -y install libsdl2-dev
           cargo build --release -v --target=${{ matrix.target }}
       - name: Upload file
         uses: actions/upload-artifact@v4
