@@ -32,7 +32,7 @@ jobs:
             --volume "${GITHUB_WORKSPACE}/target:/github/workspace/target"
           install: |
             apt update
-            apt -y install libsdl2-dev curl build-essential
+            apt -y install libsdl2-dev curl build-essential cmake
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           run: |
             . "$HOME/.cargo/env"
