@@ -27,8 +27,9 @@ jobs:
           distro: ubuntu_latest
           githubToken: ${{ github.token }}
           run: |
+            apt update
             apt -y install libsdl2-dev
-            rustup update
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
             cargo build --release -v --target=${{ matrix.target }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         if: matrix.target == 'x86_64-unknown-linux-gnu'
