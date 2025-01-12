@@ -143,6 +143,7 @@ fn main() {
             .allowlist_function("_mm_subs_epu16")
             .allowlist_function("_mm_set1_epi32")
             .blocklist_type("__m128i")
+            .blocklist_type("int64x2_t")
             .wrap_static_fns(true)
             .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
             .generate()

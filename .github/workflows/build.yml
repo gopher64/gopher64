@@ -19,34 +19,56 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: aarch64
-        uses: uraimo/run-on-arch-action@v2
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        with:
-          arch: aarch64
-          distro: ubuntu_latest
-          githubToken: ${{ github.token }}
-          setup: |
-            mkdir -p "${GITHUB_WORKSPACE}/target"
-          dockerRunArgs: |
-            --volume "${GITHUB_WORKSPACE}/target:/github/workspace/target"
-          install: |
-            apt update
-            apt -y install libsdl2-dev curl build-essential cmake
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          run: |
-            . "$HOME/.cargo/env"
-            rustup update
-            cargo build --release -v --target=${{ matrix.target }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
         with:
           target: ${{ matrix.target }}
           rustflags: ""
-      - name: Build
+      - name: Install SDL2
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          cat <<EOF > deb822sources
+          Types: deb
+          URIs: http://archive.ubuntu.com/ubuntu/
+          Suites: noble
+          Components: main restricted universe
+          Architectures: amd64
+
+          Types: deb
+          URIs: http://security.ubuntu.com/ubuntu/
+          Suites: noble-security
+          Components: main restricted universe
+          Architectures: amd64
+
+          Types: deb
+          URIs: http://archive.ubuntu.com/ubuntu/
+          Suites: noble-updates
+          Components: main restricted universe
+          Architectures: amd64
+
+          Types: deb
+          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          Suites: noble
+          Components: main restricted multiverse universe
+          Architectures: arm64
+
+          Types: deb
+          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          Suites: noble-updates
+          Components: main restricted multiverse universe
+          Architectures: arm64
+          EOF
+
+          sudo mv deb822sources /etc/apt/sources.list.d/ubuntu.sources
+          sudo dpkg --add-architecture arm64
+          sudp apt update
+          sudo apt -y install libsdl2-dev:arm64
+      - name: Install SDL2
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
+          sudo apt update
           sudo apt -y install libsdl2-dev
+      - name: Build
+        run: |
           cargo build --release -v --target=${{ matrix.target }}
       - name: Upload file
         uses: actions/upload-artifact@v4
