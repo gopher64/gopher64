@@ -14,18 +14,59 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64-unknown-linux-gnu]
+        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install sdl2 headers
-        run: |
-          sudo apt -y install libsdl2-dev
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+      - name: Install SDL2
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          cat <<EOF > deb822sources
+          Types: deb
+          URIs: http://archive.ubuntu.com/ubuntu/
+          Suites: noble
+          Components: main restricted universe
+          Architectures: amd64
+
+          Types: deb
+          URIs: http://security.ubuntu.com/ubuntu/
+          Suites: noble-security
+          Components: main restricted universe
+          Architectures: amd64
+
+          Types: deb
+          URIs: http://archive.ubuntu.com/ubuntu/
+          Suites: noble-updates
+          Components: main restricted universe
+          Architectures: amd64
+
+          Types: deb
+          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          Suites: noble
+          Components: main restricted multiverse universe
+          Architectures: arm64
+
+          Types: deb
+          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          Suites: noble-updates
+          Components: main restricted multiverse universe
+          Architectures: arm64
+          EOF
+
+          sudo mv deb822sources /etc/apt/sources.list.d/ubuntu.sources
+          sudo dpkg --add-architecture arm64
+          sudo apt update
+          sudo apt -y install libsdl2-dev:arm64 g++-aarch64-linux-gnu
+      - name: Install SDL2
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: |
+          sudo apt update
+          sudo apt -y install libsdl2-dev
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
