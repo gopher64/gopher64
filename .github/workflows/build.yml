@@ -26,10 +26,14 @@ jobs:
           arch: aarch64
           distro: ubuntu_latest
           githubToken: ${{ github.token }}
+          setup: |
+            mkdir -p "${GITHUB_WORKSPACE}/target"
+          dockerRunArgs: |
+            --volume "${GITHUB_WORKSPACE}/target:/github/workspace/target"
           install: |
             apt update
             apt -y install libsdl2-dev curl
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           run: |
             rustup update
             cargo build --release -v --target=${{ matrix.target }}
