@@ -35,6 +35,7 @@ jobs:
             apt -y install libsdl2-dev curl
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           run: |
+            . "$HOME/.cargo/env"
             rustup update
             cargo build --release -v --target=${{ matrix.target }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
