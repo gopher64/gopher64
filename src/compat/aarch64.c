@@ -1,4 +1,4 @@
-#include "src/compat/simd_aarch64.h"
+#include "src/compat/sse2neon.h"
 
 // Static wrappers
 
