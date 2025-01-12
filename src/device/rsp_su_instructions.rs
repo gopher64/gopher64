@@ -1,6 +1,10 @@
+#[cfg(target_arch = "aarch64")]
 use device::__m128i;
+#[cfg(target_arch = "aarch64")]
 include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 use crate::device;
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
 
 pub fn rd(opcode: u32) -> u32 {
     (opcode >> 11) & 0x1F
