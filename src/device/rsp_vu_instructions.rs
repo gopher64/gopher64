@@ -1,3 +1,4 @@
+use device::__m128i;
 include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 #[cfg(target_arch = "aarch64")]
 include!("../compat/aarch64.rs");
