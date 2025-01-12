@@ -67,6 +67,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt -y install libsdl2-dev
+      - name: Set aarch64 linker
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
