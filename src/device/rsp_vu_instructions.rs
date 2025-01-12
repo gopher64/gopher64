@@ -46,7 +46,7 @@ pub fn s_clip(x: i64, bits: u32) -> i64 {
 pub fn vte(device: &device::Device, vt: u32, index: usize) -> __m128i {
     unsafe {
         _mm_shuffle_epi8(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vt as usize]),
+            device.rsp.cpu.vpr[vt as usize],
             device.rsp.cpu.shuffle[index],
         )
     }
@@ -56,33 +56,23 @@ pub fn vmulf(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut lo, mut hi, mut round, mut sign1, sign2, neq, eq, neg);
     unsafe {
-        lo = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        lo = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         round = _mm_cmpeq_epi16(_mm_setzero_si128(), _mm_setzero_si128());
         sign1 = _mm_srli_epi16(lo, 15);
         lo = _mm_add_epi16(lo, lo);
         round = _mm_slli_epi16(round, 15);
-        hi = _mm_mulhi_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        hi = _mm_mulhi_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         sign2 = _mm_srli_epi16(lo, 15);
         device.rsp.cpu.accl = _mm_add_epi16(round, lo);
         sign1 = _mm_add_epi16(sign1, sign2);
         hi = _mm_slli_epi16(hi, 1);
-        neq = _mm_cmpeq_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        neq = _mm_cmpeq_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.accm = _mm_add_epi16(hi, sign1);
         neg = _mm_srai_epi16(device.rsp.cpu.accm, 15);
 
         eq = _mm_and_si128(neq, neg);
         device.rsp.cpu.acch = _mm_andnot_si128(neq, neg);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_add_epi16(device.rsp.cpu.accm, eq));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_add_epi16(device.rsp.cpu.accm, eq);
     }
 }
 
@@ -90,43 +80,31 @@ pub fn vmulu(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut lo, mut hi, mut round, mut sign1, sign2, neq, neg);
     unsafe {
-        lo = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        lo = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         round = _mm_cmpeq_epi16(_mm_setzero_si128(), _mm_setzero_si128());
         sign1 = _mm_srli_epi16(lo, 15);
         lo = _mm_add_epi16(lo, lo);
         round = _mm_slli_epi16(round, 15);
-        hi = _mm_mulhi_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        hi = _mm_mulhi_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         sign2 = _mm_srli_epi16(lo, 15);
         device.rsp.cpu.accl = _mm_add_epi16(round, lo);
         sign1 = _mm_add_epi16(sign1, sign2);
         hi = _mm_slli_epi16(hi, 1);
-        neq = _mm_cmpeq_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        neq = _mm_cmpeq_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.accm = _mm_add_epi16(hi, sign1);
         neg = _mm_srai_epi16(device.rsp.cpu.accm, 15);
 
         device.rsp.cpu.acch = _mm_andnot_si128(neq, neg);
         hi = _mm_or_si128(device.rsp.cpu.accm, neg);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_andnot_si128(device.rsp.cpu.acch, hi));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_andnot_si128(device.rsp.cpu.acch, hi);
     }
 }
 
 pub fn vrndp(device: &mut device::Device, opcode: u32) {
-    let vte = unsafe {
-        std::mem::transmute::<__m128i, u128>(vte(device, vt(opcode), ve(opcode) as usize))
-    };
-    let acch: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.acch) };
-    let accm: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accm) };
-    let accl: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accl) };
+    let vte = vte(device, vt(opcode), ve(opcode) as usize);
+    let acch: &mut __m128i = &mut device.rsp.cpu.acch;
+    let accm: &mut __m128i = &mut device.rsp.cpu.accm;
+    let accl: &mut __m128i = &mut device.rsp.cpu.accl;
 
     for n in 0..8 {
         let mut product = get_vpr_element(vte, n) as i16 as i32;
@@ -156,12 +134,10 @@ pub fn vrndp(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn vmulq(device: &mut device::Device, opcode: u32) {
-    let vte = unsafe {
-        std::mem::transmute::<__m128i, u128>(vte(device, vt(opcode), ve(opcode) as usize))
-    };
-    let acch: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.acch) };
-    let accm: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accm) };
-    let accl: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accl) };
+    let vte = vte(device, vt(opcode), ve(opcode) as usize);
+    let acch: &mut __m128i = &mut device.rsp.cpu.acch;
+    let accm: &mut __m128i = &mut device.rsp.cpu.accm;
+    let accl: &mut __m128i = &mut device.rsp.cpu.accl;
 
     for n in 0..8 {
         let mut product = (get_vpr_element(device.rsp.cpu.vpr[vs(opcode) as usize], n) as i16
@@ -184,14 +160,10 @@ pub fn vmulq(device: &mut device::Device, opcode: u32) {
 pub fn vmudl(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     unsafe {
-        device.rsp.cpu.accl = _mm_mulhi_epu16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        device.rsp.cpu.accl = _mm_mulhi_epu16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.accm = _mm_setzero_si128();
         device.rsp.cpu.acch = _mm_setzero_si128();
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -199,23 +171,13 @@ pub fn vmudm(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (sign, vta);
     unsafe {
-        device.rsp.cpu.accl = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        device.rsp.cpu.accm = _mm_mulhi_epu16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        sign = _mm_srai_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            15,
-        );
+        device.rsp.cpu.accl = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        device.rsp.cpu.accm = _mm_mulhi_epu16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        sign = _mm_srai_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], 15);
         vta = _mm_and_si128(vte, sign);
         device.rsp.cpu.accm = _mm_sub_epi16(device.rsp.cpu.accm, vta);
         device.rsp.cpu.acch = _mm_srai_epi16(device.rsp.cpu.accm, 15);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accm);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accm;
     }
 }
 
@@ -223,23 +185,13 @@ pub fn vmudn(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (sign, vsa);
     unsafe {
-        device.rsp.cpu.accl = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        device.rsp.cpu.accm = _mm_mulhi_epu16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        device.rsp.cpu.accl = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        device.rsp.cpu.accm = _mm_mulhi_epu16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         sign = _mm_srai_epi16(vte, 15);
-        vsa = _mm_and_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            sign,
-        );
+        vsa = _mm_and_si128(device.rsp.cpu.vpr[vs(opcode) as usize], sign);
         device.rsp.cpu.accm = _mm_sub_epi16(device.rsp.cpu.accm, vsa);
         device.rsp.cpu.acch = _mm_srai_epi16(device.rsp.cpu.accm, 15);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -248,18 +200,11 @@ pub fn vmudh(device: &mut device::Device, opcode: u32) {
     let (lo, hi);
     unsafe {
         device.rsp.cpu.accl = _mm_setzero_si128();
-        device.rsp.cpu.accm = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        device.rsp.cpu.acch = _mm_mulhi_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        device.rsp.cpu.accm = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        device.rsp.cpu.acch = _mm_mulhi_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         lo = _mm_unpacklo_epi16(device.rsp.cpu.accm, device.rsp.cpu.acch);
         hi = _mm_unpackhi_epi16(device.rsp.cpu.accm, device.rsp.cpu.acch);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_packs_epi32(lo, hi));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_packs_epi32(lo, hi);
     }
 }
 
@@ -267,14 +212,8 @@ pub fn vmacf(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut lo, mut md, mut hi, mut carry, mut omask);
     unsafe {
-        lo = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        hi = _mm_mulhi_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        lo = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        hi = _mm_mulhi_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         md = _mm_slli_epi16(hi, 1);
         carry = _mm_srli_epi16(lo, 15);
         hi = _mm_srai_epi16(hi, 15);
@@ -297,8 +236,7 @@ pub fn vmacf(device: &mut device::Device, opcode: u32) {
 
         lo = _mm_unpacklo_epi16(device.rsp.cpu.accm, device.rsp.cpu.acch);
         hi = _mm_unpackhi_epi16(device.rsp.cpu.accm, device.rsp.cpu.acch);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_packs_epi32(lo, hi));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_packs_epi32(lo, hi);
     }
 }
 
@@ -306,14 +244,8 @@ pub fn vmacu(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut lo, mut md, mut hi, mut carry, mut omask, mmask, hmask);
     unsafe {
-        lo = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        hi = _mm_mulhi_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        lo = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        hi = _mm_mulhi_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         md = _mm_slli_epi16(hi, 1);
         carry = _mm_srli_epi16(lo, 15);
         hi = _mm_srai_epi16(hi, 15);
@@ -339,18 +271,15 @@ pub fn vmacu(device: &mut device::Device, opcode: u32) {
         md = _mm_or_si128(mmask, device.rsp.cpu.accm);
         omask = _mm_cmpgt_epi16(device.rsp.cpu.acch, _mm_setzero_si128());
         md = _mm_andnot_si128(hmask, md);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_or_si128(omask, md));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_or_si128(omask, md);
     }
 }
 
 pub fn vrndn(device: &mut device::Device, opcode: u32) {
-    let vte = unsafe {
-        std::mem::transmute::<__m128i, u128>(vte(device, vt(opcode), ve(opcode) as usize))
-    };
-    let acch: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.acch) };
-    let accm: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accm) };
-    let accl: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accl) };
+    let vte = vte(device, vt(opcode), ve(opcode) as usize);
+    let acch: &mut __m128i = &mut device.rsp.cpu.acch;
+    let accm: &mut __m128i = &mut device.rsp.cpu.accm;
+    let accl: &mut __m128i = &mut device.rsp.cpu.accl;
 
     for n in 0..8 {
         let mut product = get_vpr_element(vte, n) as i16 as i32;
@@ -380,8 +309,8 @@ pub fn vrndn(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn vmacq(device: &mut device::Device, opcode: u32) {
-    let acch: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.acch) };
-    let accm: &mut u128 = unsafe { std::mem::transmute(&mut device.rsp.cpu.accm) };
+    let acch: &mut __m128i = &mut device.rsp.cpu.acch;
+    let accm: &mut __m128i = &mut device.rsp.cpu.accm;
 
     for n in 0..8 {
         let mut product =
@@ -405,10 +334,7 @@ pub fn vmadl(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut hi, mut omask, nhi, nmd, shi, smd, cmask, cval);
     unsafe {
-        hi = _mm_mulhi_epu16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        hi = _mm_mulhi_epu16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         omask = _mm_adds_epu16(device.rsp.cpu.accl, hi);
         device.rsp.cpu.accl = _mm_add_epi16(device.rsp.cpu.accl, hi);
         omask = _mm_cmpeq_epi16(device.rsp.cpu.accl, omask);
@@ -425,8 +351,7 @@ pub fn vmadl(device: &mut device::Device, opcode: u32) {
         smd = _mm_cmpeq_epi16(nhi, nmd);
         cmask = _mm_and_si128(smd, shi);
         cval = _mm_cmpeq_epi16(nhi, _mm_setzero_si128());
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_blendv_epi8(cval, device.rsp.cpu.accl, cmask));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_blendv_epi8(cval, device.rsp.cpu.accl, cmask);
     }
 }
 
@@ -434,18 +359,9 @@ pub fn vmadm(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut lo, mut hi, sign, vta, mut omask);
     unsafe {
-        lo = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        hi = _mm_mulhi_epu16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        sign = _mm_srai_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            15,
-        );
+        lo = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        hi = _mm_mulhi_epu16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        sign = _mm_srai_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], 15);
         vta = _mm_and_si128(vte, sign);
         hi = _mm_sub_epi16(hi, vta);
         omask = _mm_adds_epu16(device.rsp.cpu.accl, lo);
@@ -462,8 +378,7 @@ pub fn vmadm(device: &mut device::Device, opcode: u32) {
         device.rsp.cpu.acch = _mm_sub_epi16(device.rsp.cpu.acch, omask);
         lo = _mm_unpacklo_epi16(device.rsp.cpu.accm, device.rsp.cpu.acch);
         hi = _mm_unpackhi_epi16(device.rsp.cpu.accm, device.rsp.cpu.acch);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_packs_epi32(lo, hi));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_packs_epi32(lo, hi);
     }
 }
 
@@ -471,19 +386,10 @@ pub fn vmadn(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (lo, mut hi, sign, vsa, mut omask, nhi, nmd, shi, smd, cmask, cval);
     unsafe {
-        lo = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        hi = _mm_mulhi_epu16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        lo = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        hi = _mm_mulhi_epu16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         sign = _mm_srai_epi16(vte, 15);
-        vsa = _mm_and_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            sign,
-        );
+        vsa = _mm_and_si128(device.rsp.cpu.vpr[vs(opcode) as usize], sign);
         hi = _mm_sub_epi16(hi, vsa);
         omask = _mm_adds_epu16(device.rsp.cpu.accl, lo);
         device.rsp.cpu.accl = _mm_add_epi16(device.rsp.cpu.accl, lo);
@@ -503,8 +409,7 @@ pub fn vmadn(device: &mut device::Device, opcode: u32) {
         smd = _mm_cmpeq_epi16(nhi, nmd);
         cmask = _mm_and_si128(smd, shi);
         cval = _mm_cmpeq_epi16(nhi, _mm_setzero_si128());
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_blendv_epi8(cval, device.rsp.cpu.accl, cmask));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_blendv_epi8(cval, device.rsp.cpu.accl, cmask);
     }
 }
 
@@ -512,14 +417,8 @@ pub fn vmadh(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut lo, mut hi, mut omask);
     unsafe {
-        lo = _mm_mullo_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        hi = _mm_mulhi_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        lo = _mm_mullo_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        hi = _mm_mulhi_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         omask = _mm_adds_epu16(device.rsp.cpu.accm, lo);
         device.rsp.cpu.accm = _mm_add_epi16(device.rsp.cpu.accm, lo);
         omask = _mm_cmpeq_epi16(device.rsp.cpu.accm, omask);
@@ -528,8 +427,7 @@ pub fn vmadh(device: &mut device::Device, opcode: u32) {
         device.rsp.cpu.acch = _mm_add_epi16(device.rsp.cpu.acch, hi);
         lo = _mm_unpacklo_epi16(device.rsp.cpu.accm, device.rsp.cpu.acch);
         hi = _mm_unpackhi_epi16(device.rsp.cpu.accm, device.rsp.cpu.acch);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_packs_epi32(lo, hi));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_packs_epi32(lo, hi);
     }
 }
 
@@ -537,22 +435,12 @@ pub fn vadd(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (sum, mut min, max);
     unsafe {
-        sum = _mm_add_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        sum = _mm_add_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.accl = _mm_sub_epi16(sum, device.rsp.cpu.vcol);
-        min = _mm_min_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        max = _mm_max_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        min = _mm_min_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        max = _mm_max_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         min = _mm_subs_epi16(min, device.rsp.cpu.vcol);
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_adds_epi16(min, max));
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_adds_epi16(min, max);
         device.rsp.cpu.vcol = _mm_setzero_si128();
         device.rsp.cpu.vcoh = _mm_setzero_si128();
     }
@@ -564,21 +452,12 @@ pub fn vsub(device: &mut device::Device, opcode: u32) {
     unsafe {
         udiff = _mm_sub_epi16(vte, device.rsp.cpu.vcol);
         sdiff = _mm_subs_epi16(vte, device.rsp.cpu.vcol);
-        device.rsp.cpu.accl = _mm_sub_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            udiff,
-        );
+        device.rsp.cpu.accl = _mm_sub_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], udiff);
         ov = _mm_cmpgt_epi16(sdiff, udiff);
         device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_subs_epi16(
-                std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-                sdiff,
-            ));
+            _mm_subs_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], sdiff);
         device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_adds_epi16(
-                std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vd(opcode) as usize]),
-                ov,
-            ));
+            _mm_adds_epi16(device.rsp.cpu.vpr[vd(opcode) as usize], ov);
         device.rsp.cpu.vcol = _mm_setzero_si128();
         device.rsp.cpu.vcoh = _mm_setzero_si128();
     }
@@ -587,15 +466,11 @@ pub fn vsub(device: &mut device::Device, opcode: u32) {
 pub fn vzero(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     unsafe {
-        device.rsp.cpu.accl = _mm_add_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
+        device.rsp.cpu.accl = _mm_add_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_xor_si128(
+            device.rsp.cpu.vpr[vd(opcode) as usize],
+            device.rsp.cpu.vpr[vd(opcode) as usize],
         );
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_xor_si128(
-                std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vd(opcode) as usize]),
-                std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vd(opcode) as usize]),
-            ));
     }
 }
 
@@ -603,30 +478,14 @@ pub fn vabs(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (vs0, slt);
     unsafe {
-        vs0 = _mm_cmpeq_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            _mm_setzero_si128(),
-        );
-        slt = _mm_srai_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            15,
-        );
+        vs0 = _mm_cmpeq_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], _mm_setzero_si128());
+        slt = _mm_srai_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], 15);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = _mm_andnot_si128(vs0, vte);
         device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_andnot_si128(vs0, vte));
+            _mm_xor_si128(device.rsp.cpu.vpr[vd(opcode) as usize], slt);
+        device.rsp.cpu.accl = _mm_sub_epi16(device.rsp.cpu.vpr[vd(opcode) as usize], slt);
         device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_xor_si128(
-                std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vd(opcode) as usize]),
-                slt,
-            ));
-        device.rsp.cpu.accl = _mm_sub_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vd(opcode) as usize]),
-            slt,
-        );
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(_mm_subs_epi16(
-                std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vd(opcode) as usize]),
-                slt,
-            ));
+            _mm_subs_epi16(device.rsp.cpu.vpr[vd(opcode) as usize], slt);
     }
 }
 
@@ -634,19 +493,12 @@ pub fn vaddc(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let sum;
     unsafe {
-        sum = _mm_adds_epu16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        device.rsp.cpu.accl = _mm_add_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        sum = _mm_adds_epu16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        device.rsp.cpu.accl = _mm_add_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.vcol = _mm_cmpeq_epi16(sum, device.rsp.cpu.accl);
         device.rsp.cpu.vcol = _mm_cmpeq_epi16(device.rsp.cpu.vcol, _mm_setzero_si128());
         device.rsp.cpu.vcoh = _mm_setzero_si128();
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -654,42 +506,29 @@ pub fn vsubc(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (equal, udiff, diff0);
     unsafe {
-        udiff = _mm_subs_epu16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        equal = _mm_cmpeq_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        udiff = _mm_subs_epu16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        equal = _mm_cmpeq_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         diff0 = _mm_cmpeq_epi16(udiff, _mm_setzero_si128());
         device.rsp.cpu.vcoh = _mm_cmpeq_epi16(equal, _mm_setzero_si128());
         device.rsp.cpu.vcol = _mm_andnot_si128(equal, diff0);
-        device.rsp.cpu.accl = _mm_sub_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.accl = _mm_sub_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
 pub fn vsar(device: &mut device::Device, opcode: u32) {
     match ve(opcode) {
         0x8 => {
-            device.rsp.cpu.vpr[vd(opcode) as usize] =
-                unsafe { std::mem::transmute::<__m128i, u128>(device.rsp.cpu.acch) };
+            device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.acch;
         }
         0x9 => {
-            device.rsp.cpu.vpr[vd(opcode) as usize] =
-                unsafe { std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accm) };
+            device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accm;
         }
         0xa => {
-            device.rsp.cpu.vpr[vd(opcode) as usize] =
-                unsafe { std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl) };
+            device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
         }
         _ => {
-            device.rsp.cpu.vpr[vd(opcode) as usize] = 0;
+            device.rsp.cpu.vpr[vd(opcode) as usize] = unsafe { _mm_setzero_si128() };
         }
     }
 }
@@ -698,27 +537,20 @@ pub fn vlt(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut eq, lt);
     unsafe {
-        eq = _mm_cmpeq_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        lt = _mm_cmplt_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        eq = _mm_cmpeq_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        lt = _mm_cmplt_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         eq = _mm_and_si128(device.rsp.cpu.vcoh, eq);
         eq = _mm_and_si128(device.rsp.cpu.vcol, eq);
         device.rsp.cpu.vccl = _mm_or_si128(lt, eq);
         device.rsp.cpu.accl = _mm_blendv_epi8(
             vte,
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
+            device.rsp.cpu.vpr[vs(opcode) as usize],
             device.rsp.cpu.vccl,
         );
         device.rsp.cpu.vcch = _mm_setzero_si128();
         device.rsp.cpu.vcoh = _mm_setzero_si128();
         device.rsp.cpu.vcol = _mm_setzero_si128();
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -726,21 +558,17 @@ pub fn veq(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let eq;
     unsafe {
-        eq = _mm_cmpeq_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        eq = _mm_cmpeq_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.vccl = _mm_andnot_si128(device.rsp.cpu.vcoh, eq);
         device.rsp.cpu.accl = _mm_blendv_epi8(
             vte,
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
+            device.rsp.cpu.vpr[vs(opcode) as usize],
             device.rsp.cpu.vccl,
         );
         device.rsp.cpu.vcch = _mm_setzero_si128(); //unverified
         device.rsp.cpu.vcoh = _mm_setzero_si128();
         device.rsp.cpu.vcol = _mm_setzero_si128();
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -748,23 +576,19 @@ pub fn vne(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (eq, ne);
     unsafe {
-        eq = _mm_cmpeq_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        eq = _mm_cmpeq_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         ne = _mm_cmpeq_epi16(eq, _mm_setzero_si128());
         device.rsp.cpu.vccl = _mm_and_si128(device.rsp.cpu.vcoh, eq);
         device.rsp.cpu.vccl = _mm_or_si128(device.rsp.cpu.vccl, ne);
         device.rsp.cpu.accl = _mm_blendv_epi8(
             vte,
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
+            device.rsp.cpu.vpr[vs(opcode) as usize],
             device.rsp.cpu.vccl,
         );
         device.rsp.cpu.vcch = _mm_setzero_si128();
         device.rsp.cpu.vcoh = _mm_setzero_si128();
         device.rsp.cpu.vcol = _mm_setzero_si128();
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -772,27 +596,20 @@ pub fn vge(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut eq, gt, es);
     unsafe {
-        eq = _mm_cmpeq_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        gt = _mm_cmpgt_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        eq = _mm_cmpeq_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        gt = _mm_cmpgt_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         es = _mm_and_si128(device.rsp.cpu.vcoh, device.rsp.cpu.vcol);
         eq = _mm_andnot_si128(es, eq);
         device.rsp.cpu.vccl = _mm_or_si128(gt, eq);
         device.rsp.cpu.accl = _mm_blendv_epi8(
             vte,
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
+            device.rsp.cpu.vpr[vs(opcode) as usize],
             device.rsp.cpu.vccl,
         );
         device.rsp.cpu.vcch = _mm_setzero_si128();
         device.rsp.cpu.vcoh = _mm_setzero_si128();
         device.rsp.cpu.vcol = _mm_setzero_si128();
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -815,14 +632,8 @@ pub fn vcl(device: &mut device::Device, opcode: u32) {
     unsafe {
         nvt = _mm_xor_si128(vte, device.rsp.cpu.vcol);
         nvt = _mm_sub_epi16(nvt, device.rsp.cpu.vcol);
-        diff = _mm_sub_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            nvt,
-        );
-        ncarry = _mm_adds_epu16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        diff = _mm_sub_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], nvt);
+        ncarry = _mm_adds_epu16(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         ncarry = _mm_cmpeq_epi16(diff, ncarry);
         nvce = _mm_cmpeq_epi16(device.rsp.cpu.vce, _mm_setzero_si128());
         diff0 = _mm_cmpeq_epi16(diff, _mm_setzero_si128());
@@ -831,28 +642,20 @@ pub fn vcl(device: &mut device::Device, opcode: u32) {
         lec2 = _mm_or_si128(diff0, ncarry);
         lec2 = _mm_and_si128(device.rsp.cpu.vce, lec2);
         leeq = _mm_or_si128(lec1, lec2);
-        geeq = _mm_subs_epu16(
-            vte,
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-        );
+        geeq = _mm_subs_epu16(vte, device.rsp.cpu.vpr[vs(opcode) as usize]);
         geeq = _mm_cmpeq_epi16(geeq, _mm_setzero_si128());
         le = _mm_andnot_si128(device.rsp.cpu.vcoh, device.rsp.cpu.vcol);
         le = _mm_blendv_epi8(device.rsp.cpu.vccl, leeq, le);
         ge = _mm_or_si128(device.rsp.cpu.vcol, device.rsp.cpu.vcoh);
         ge = _mm_blendv_epi8(geeq, device.rsp.cpu.vcch, ge);
         mask = _mm_blendv_epi8(ge, le, device.rsp.cpu.vcol);
-        device.rsp.cpu.accl = _mm_blendv_epi8(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            nvt,
-            mask,
-        );
+        device.rsp.cpu.accl = _mm_blendv_epi8(device.rsp.cpu.vpr[vs(opcode) as usize], nvt, mask);
         device.rsp.cpu.vcch = ge;
         device.rsp.cpu.vccl = le;
         device.rsp.cpu.vcoh = _mm_setzero_si128();
         device.rsp.cpu.vcol = _mm_setzero_si128();
         device.rsp.cpu.vce = _mm_setzero_si128();
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -860,17 +663,11 @@ pub fn vch(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut nvt, diff, diff0, vtn, mut dlez, dgez, mask);
     unsafe {
-        device.rsp.cpu.vcol = _mm_xor_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        device.rsp.cpu.vcol = _mm_xor_si128(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.vcol = _mm_cmplt_epi16(device.rsp.cpu.vcol, _mm_setzero_si128());
         nvt = _mm_xor_si128(vte, device.rsp.cpu.vcol);
         nvt = _mm_sub_epi16(nvt, device.rsp.cpu.vcol);
-        diff = _mm_sub_epi16(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            nvt,
-        );
+        diff = _mm_sub_epi16(device.rsp.cpu.vpr[vs(opcode) as usize], nvt);
         diff0 = _mm_cmpeq_epi16(diff, _mm_setzero_si128());
         vtn = _mm_cmplt_epi16(vte, _mm_setzero_si128());
         dlez = _mm_cmpgt_epi16(diff, _mm_setzero_si128());
@@ -887,13 +684,8 @@ pub fn vch(device: &mut device::Device, opcode: u32) {
             device.rsp.cpu.vccl,
             device.rsp.cpu.vcol,
         );
-        device.rsp.cpu.accl = _mm_blendv_epi8(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            nvt,
-            mask,
-        );
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.accl = _mm_blendv_epi8(device.rsp.cpu.vpr[vs(opcode) as usize], nvt, mask);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -901,32 +693,18 @@ pub fn vcr(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let (mut sign, mut dlez, mut dgez, nvt, mask);
     unsafe {
-        sign = _mm_xor_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        sign = _mm_xor_si128(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         sign = _mm_srai_epi16(sign, 15);
-        dlez = _mm_and_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            sign,
-        );
+        dlez = _mm_and_si128(device.rsp.cpu.vpr[vs(opcode) as usize], sign);
         dlez = _mm_add_epi16(dlez, vte);
         device.rsp.cpu.vccl = _mm_srai_epi16(dlez, 15);
-        dgez = _mm_or_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            sign,
-        );
+        dgez = _mm_or_si128(device.rsp.cpu.vpr[vs(opcode) as usize], sign);
         dgez = _mm_min_epi16(dgez, vte);
         device.rsp.cpu.vcch = _mm_cmpeq_epi16(dgez, vte);
         nvt = _mm_xor_si128(vte, sign);
         mask = _mm_blendv_epi8(device.rsp.cpu.vcch, device.rsp.cpu.vccl, sign);
-        device.rsp.cpu.accl = _mm_blendv_epi8(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            nvt,
-            mask,
-        );
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.accl = _mm_blendv_epi8(device.rsp.cpu.vpr[vs(opcode) as usize], nvt, mask);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
         device.rsp.cpu.vcol = _mm_setzero_si128();
         device.rsp.cpu.vcoh = _mm_setzero_si128();
         device.rsp.cpu.vce = _mm_setzero_si128();
@@ -938,88 +716,63 @@ pub fn vmrg(device: &mut device::Device, opcode: u32) {
     unsafe {
         device.rsp.cpu.accl = _mm_blendv_epi8(
             vte,
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
+            device.rsp.cpu.vpr[vs(opcode) as usize],
             device.rsp.cpu.vccl,
         );
         device.rsp.cpu.vcoh = _mm_setzero_si128();
         device.rsp.cpu.vcol = _mm_setzero_si128();
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
 pub fn vand(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     unsafe {
-        device.rsp.cpu.accl = _mm_and_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.accl = _mm_and_si128(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
 pub fn vnand(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     unsafe {
-        device.rsp.cpu.accl = _mm_and_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        device.rsp.cpu.accl = _mm_and_si128(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.accl = _mm_xor_si128(device.rsp.cpu.accl, _mm_set1_epi32(-1));
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
 pub fn vor(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     unsafe {
-        device.rsp.cpu.accl = _mm_or_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.accl = _mm_or_si128(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
 pub fn vnor(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     unsafe {
-        device.rsp.cpu.accl = _mm_or_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        device.rsp.cpu.accl = _mm_or_si128(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.accl = _mm_xor_si128(device.rsp.cpu.accl, _mm_set1_epi32(-1));
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
 pub fn vxor(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     unsafe {
-        device.rsp.cpu.accl = _mm_xor_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.accl = _mm_xor_si128(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
 pub fn vnxor(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     unsafe {
-        device.rsp.cpu.accl = _mm_xor_si128(
-            std::mem::transmute::<u128, __m128i>(device.rsp.cpu.vpr[vs(opcode) as usize]),
-            vte,
-        );
+        device.rsp.cpu.accl = _mm_xor_si128(device.rsp.cpu.vpr[vs(opcode) as usize], vte);
         device.rsp.cpu.accl = _mm_xor_si128(device.rsp.cpu.accl, _mm_set1_epi32(-1));
-        device.rsp.cpu.vpr[vd(opcode) as usize] =
-            std::mem::transmute::<__m128i, u128>(device.rsp.cpu.accl);
+        device.rsp.cpu.vpr[vd(opcode) as usize] = device.rsp.cpu.accl;
     }
 }
 
@@ -1106,10 +859,7 @@ pub fn vrcph(device: &mut device::Device, opcode: u32) {
 
 pub fn vmov(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
-    let value = get_vpr_element(
-        unsafe { std::mem::transmute::<__m128i, u128>(vte) },
-        de(opcode) as u8,
-    );
+    let value = get_vpr_element(vte, de(opcode) as u8);
     modify_vpr_element(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
         de(opcode) as u8,

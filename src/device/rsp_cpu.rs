@@ -35,7 +35,7 @@ pub struct Cpu {
     pub cycle_counter: u64,
     pub shuffle: [__m128i; 16],
     pub gpr: [u32; 32],
-    pub vpr: [u128; 32],
+    pub vpr: [__m128i; 32],
     pub reciprocals: [u16; 512],
     pub inverse_square_roots: [u16; 512],
     pub vcol: __m128i,

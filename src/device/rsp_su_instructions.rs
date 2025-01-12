@@ -44,26 +44,26 @@ pub fn sign_extend_7bit_offset(offset: u8, shift_amount: u32) -> u32 {
     (((soffset) as i32) as u32) << shift_amount
 }
 
-pub fn modify_vpr_byte(vpr: &mut u128, element: u8, value: u8) {
+pub fn modify_vpr_byte(vpr: &mut __m128i, element: u8, value: u8) {
     let pos = 15 - (element & 15);
     let mask = 0xFF << (pos * 8);
     *vpr &= !mask;
     *vpr |= (value as u128) << (pos * 8);
 }
 
-pub fn get_vpr_byte(vpr: u128, element: u8) -> u8 {
+pub fn get_vpr_byte(vpr: __m128i, element: u8) -> u8 {
     let pos = 15 - (element & 15);
     (vpr >> (pos * 8)) as u8
 }
 
-pub fn modify_vpr_element(vpr: &mut u128, element: u8, value: u16) {
+pub fn modify_vpr_element(vpr: &mut __m128i, element: u8, value: u16) {
     let pos = 7 - (element & 7);
     let mask = 0xFFFF << (pos * 16);
     *vpr &= !mask;
     *vpr |= (value as u128) << (pos * 16);
 }
 
-pub fn get_vpr_element(vpr: u128, element: u8) -> u16 {
+pub fn get_vpr_element(vpr: __m128i, element: u8) -> u16 {
     let pos = 7 - (element & 7);
     (vpr >> (pos * 16)) as u16
 }
@@ -745,7 +745,7 @@ pub fn lfv(device: &mut device::Device, opcode: u32) {
     address &= !7;
     let start = velement(opcode);
     let end = std::cmp::min(start + 8, 16);
-    let mut tmp: u128 = 0;
+    let mut tmp: __m128i = unsafe { _mm_setzero_si128() };
     let mut offset: u8 = 0;
     while offset < 4 {
         modify_vpr_element(
