@@ -45,27 +45,83 @@ pub fn sign_extend_7bit_offset(offset: u8, shift_amount: u32) -> u32 {
 }
 
 pub fn modify_vpr_byte(vpr: &mut __m128i, element: u8, value: u8) {
-    let pos = 15 - (element & 15);
-    let mask = 0xFF << (pos * 8);
-    *vpr &= !mask;
-    *vpr |= (value as u128) << (pos * 8);
+    unsafe {
+        *vpr = match element & 15 {
+            0 => _mm_insert_epi8(*vpr, value as i32, 15),
+            1 => _mm_insert_epi8(*vpr, value as i32, 14),
+            2 => _mm_insert_epi8(*vpr, value as i32, 13),
+            3 => _mm_insert_epi8(*vpr, value as i32, 12),
+            4 => _mm_insert_epi8(*vpr, value as i32, 11),
+            5 => _mm_insert_epi8(*vpr, value as i32, 10),
+            6 => _mm_insert_epi8(*vpr, value as i32, 9),
+            7 => _mm_insert_epi8(*vpr, value as i32, 8),
+            8 => _mm_insert_epi8(*vpr, value as i32, 7),
+            9 => _mm_insert_epi8(*vpr, value as i32, 6),
+            10 => _mm_insert_epi8(*vpr, value as i32, 5),
+            11 => _mm_insert_epi8(*vpr, value as i32, 4),
+            12 => _mm_insert_epi8(*vpr, value as i32, 3),
+            13 => _mm_insert_epi8(*vpr, value as i32, 2),
+            14 => _mm_insert_epi8(*vpr, value as i32, 1),
+            15 => _mm_insert_epi8(*vpr, value as i32, 0),
+            _ => unreachable!(),
+        };
+    }
 }
 
 pub fn get_vpr_byte(vpr: __m128i, element: u8) -> u8 {
-    let pos = 15 - (element & 15);
-    (vpr >> (pos * 8)) as u8
+    unsafe {
+        match element & 15 {
+            0 => _mm_extract_epi8(vpr, 15) as u8,
+            1 => _mm_extract_epi8(vpr, 14) as u8,
+            2 => _mm_extract_epi8(vpr, 13) as u8,
+            3 => _mm_extract_epi8(vpr, 12) as u8,
+            4 => _mm_extract_epi8(vpr, 11) as u8,
+            5 => _mm_extract_epi8(vpr, 10) as u8,
+            6 => _mm_extract_epi8(vpr, 9) as u8,
+            7 => _mm_extract_epi8(vpr, 8) as u8,
+            8 => _mm_extract_epi8(vpr, 7) as u8,
+            9 => _mm_extract_epi8(vpr, 6) as u8,
+            10 => _mm_extract_epi8(vpr, 5) as u8,
+            11 => _mm_extract_epi8(vpr, 4) as u8,
+            12 => _mm_extract_epi8(vpr, 3) as u8,
+            13 => _mm_extract_epi8(vpr, 2) as u8,
+            14 => _mm_extract_epi8(vpr, 1) as u8,
+            15 => _mm_extract_epi8(vpr, 0) as u8,
+            _ => unreachable!(),
+        }
+    }
 }
 
 pub fn modify_vpr_element(vpr: &mut __m128i, element: u8, value: u16) {
-    let pos = 7 - (element & 7);
-    let mask = 0xFFFF << (pos * 16);
-    *vpr &= !mask;
-    *vpr |= (value as u128) << (pos * 16);
+    unsafe {
+        *vpr = match element & 7 {
+            0 => _mm_insert_epi16(*vpr, value as i32, 7),
+            1 => _mm_insert_epi16(*vpr, value as i32, 6),
+            2 => _mm_insert_epi16(*vpr, value as i32, 5),
+            3 => _mm_insert_epi16(*vpr, value as i32, 4),
+            4 => _mm_insert_epi16(*vpr, value as i32, 3),
+            5 => _mm_insert_epi16(*vpr, value as i32, 2),
+            6 => _mm_insert_epi16(*vpr, value as i32, 1),
+            7 => _mm_insert_epi16(*vpr, value as i32, 0),
+            _ => unreachable!(),
+        };
+    }
 }
 
 pub fn get_vpr_element(vpr: __m128i, element: u8) -> u16 {
-    let pos = 7 - (element & 7);
-    (vpr >> (pos * 16)) as u16
+    unsafe {
+        match element & 7 {
+            0 => _mm_extract_epi16(vpr, 7) as u16,
+            1 => _mm_extract_epi16(vpr, 6) as u16,
+            2 => _mm_extract_epi16(vpr, 5) as u16,
+            3 => _mm_extract_epi16(vpr, 4) as u16,
+            4 => _mm_extract_epi16(vpr, 3) as u16,
+            5 => _mm_extract_epi16(vpr, 2) as u16,
+            6 => _mm_extract_epi16(vpr, 1) as u16,
+            7 => _mm_extract_epi16(vpr, 0) as u16,
+            _ => unreachable!(),
+        }
+    }
 }
 
 pub fn j(device: &mut device::Device, opcode: u32) {
