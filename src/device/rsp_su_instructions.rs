@@ -825,32 +825,33 @@ pub fn lhv(device: &mut device::Device, opcode: u32) {
     let index = ((address & 7) as u8).wrapping_sub(velement(opcode));
     address &= !7;
     unsafe {
-        device.rsp.cpu.vpr[rt(opcode) as usize] = _mm_set_epi16(
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(0 * 2)) & 15) as u32))
-                & 0xFFF) as usize] as i16)
-                << 7,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(1 * 2)) & 15) as u32))
-                & 0xFFF) as usize] as i16)
-                << 7,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(2 * 2)) & 15) as u32))
-                & 0xFFF) as usize] as i16)
-                << 7,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(3 * 2)) & 15) as u32))
-                & 0xFFF) as usize] as i16)
-                << 7,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(4 * 2)) & 15) as u32))
-                & 0xFFF) as usize] as i16)
-                << 7,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(5 * 2)) & 15) as u32))
-                & 0xFFF) as usize] as i16)
-                << 7,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(6 * 2)) & 15) as u32))
-                & 0xFFF) as usize] as i16)
-                << 7,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(7 * 2)) & 15) as u32))
-                & 0xFFF) as usize] as i16)
-                << 7,
-        );
+        device.rsp.cpu.vpr[rt(opcode) as usize] =
+            _mm_set_epi16(
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(0)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(2)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(4)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(6)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(8)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(10)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(12)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(14)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+            );
     }
 }
 
