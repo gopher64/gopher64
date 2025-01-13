@@ -78,94 +78,110 @@ pub fn set_axis_from_joystick(
     (x, y)
 }
 
+fn get_axis_from_i32(axis: i32) -> sdl2::controller::Axis {
+    match axis {
+        0 => sdl2::controller::Axis::LeftX,
+        1 => sdl2::controller::Axis::LeftY,
+        2 => sdl2::controller::Axis::RightX,
+        3 => sdl2::controller::Axis::RightY,
+        4 => sdl2::controller::Axis::TriggerLeft,
+        5 => sdl2::controller::Axis::TriggerRight,
+        _ => panic!("Invalid axis"),
+    }
+}
+
+fn get_button_from_i32(button: i32) -> sdl2::controller::Button {
+    match button {
+        0 => sdl2::controller::Button::A,
+        1 => sdl2::controller::Button::B,
+        2 => sdl2::controller::Button::X,
+        3 => sdl2::controller::Button::Y,
+        4 => sdl2::controller::Button::Back,
+        5 => sdl2::controller::Button::Guide,
+        6 => sdl2::controller::Button::Start,
+        7 => sdl2::controller::Button::LeftStick,
+        8 => sdl2::controller::Button::RightStick,
+        9 => sdl2::controller::Button::LeftShoulder,
+        10 => sdl2::controller::Button::RightShoulder,
+        11 => sdl2::controller::Button::DPadUp,
+        12 => sdl2::controller::Button::DPadDown,
+        13 => sdl2::controller::Button::DPadLeft,
+        14 => sdl2::controller::Button::DPadRight,
+        _ => panic!("Invalid button"),
+    }
+}
+
 pub fn set_axis_from_controller(
     profile: &ui::config::InputProfile,
     controller: &sdl2::controller::GameController,
 ) -> (f64, f64) {
-    unsafe {
-        let mut x = 0.0;
-        let mut y = 0.0;
-        if profile.controller_axis[AXIS_LEFT].0 {
-            let axis_position =
-                controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
-                    profile.controller_axis[AXIS_LEFT].1,
-                ));
-            if axis_position as isize * profile.controller_axis[AXIS_LEFT].2 as isize > 0 {
-                x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
-            }
+    let mut x = 0.0;
+    let mut y = 0.0;
+    if profile.controller_axis[AXIS_LEFT].0 {
+        let axis_position =
+            controller.axis(get_axis_from_i32(profile.controller_axis[AXIS_LEFT].1));
+        if axis_position as isize * profile.controller_axis[AXIS_LEFT].2 as isize > 0 {
+            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
         }
-        if profile.controller_axis[AXIS_RIGHT].0 {
-            let axis_position =
-                controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
-                    profile.controller_axis[AXIS_RIGHT].1,
-                ));
-            if axis_position as isize * profile.controller_axis[AXIS_RIGHT].2 as isize > 0 {
-                x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
-            }
-        }
-        if profile.controller_axis[AXIS_DOWN].0 {
-            let axis_position =
-                controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
-                    profile.controller_axis[AXIS_DOWN].1,
-                ));
-            if axis_position as isize * profile.controller_axis[AXIS_DOWN].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
-            }
-        }
-        if profile.controller_axis[AXIS_UP].0 {
-            let axis_position =
-                controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
-                    profile.controller_axis[AXIS_UP].1,
-                ));
-            if axis_position as isize * profile.controller_axis[AXIS_UP].2 as isize > 0 {
-                y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
-            }
-        }
-        (x, y)
     }
+    if profile.controller_axis[AXIS_RIGHT].0 {
+        let axis_position =
+            controller.axis(get_axis_from_i32(profile.controller_axis[AXIS_RIGHT].1));
+        if axis_position as isize * profile.controller_axis[AXIS_RIGHT].2 as isize > 0 {
+            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+        }
+    }
+    if profile.controller_axis[AXIS_DOWN].0 {
+        let axis_position =
+            controller.axis(get_axis_from_i32(profile.controller_axis[AXIS_DOWN].1));
+        if axis_position as isize * profile.controller_axis[AXIS_DOWN].2 as isize > 0 {
+            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+        }
+    }
+    if profile.controller_axis[AXIS_UP].0 {
+        let axis_position = controller.axis(get_axis_from_i32(profile.controller_axis[AXIS_UP].1));
+        if axis_position as isize * profile.controller_axis[AXIS_UP].2 as isize > 0 {
+            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+        }
+    }
+    (x, y)
 }
 
 pub fn set_axis_from_keys(
     profile: &ui::config::InputProfile,
     keyboard_state: sdl2::keyboard::KeyboardState,
 ) -> (f64, f64) {
-    unsafe {
-        let mut x = 0.0;
-        let mut y = 0.0;
-        if profile.keys[AXIS_LEFT].0
-            && keyboard_state
-                .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
-                    profile.keys[AXIS_LEFT].1,
-                ))
-        {
-            x = -MAX_AXIS_VALUE
-        }
-        if profile.keys[AXIS_RIGHT].0
-            && keyboard_state
-                .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
-                    profile.keys[AXIS_RIGHT].1,
-                ))
-        {
-            x = MAX_AXIS_VALUE
-        }
-        if profile.keys[AXIS_DOWN].0
-            && keyboard_state
-                .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
-                    profile.keys[AXIS_DOWN].1,
-                ))
-        {
-            y = -MAX_AXIS_VALUE
-        }
-        if profile.keys[AXIS_UP].0
-            && keyboard_state
-                .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
-                    profile.keys[AXIS_UP].1,
-                ))
-        {
-            y = MAX_AXIS_VALUE
-        }
-        (x, y)
+    let mut x = 0.0;
+    let mut y = 0.0;
+    if profile.keys[AXIS_LEFT].0
+        && keyboard_state.is_scancode_pressed(
+            sdl2::keyboard::Scancode::from_i32(profile.keys[AXIS_LEFT].1).unwrap(),
+        )
+    {
+        x = -MAX_AXIS_VALUE
     }
+    if profile.keys[AXIS_RIGHT].0
+        && keyboard_state.is_scancode_pressed(
+            sdl2::keyboard::Scancode::from_i32(profile.keys[AXIS_RIGHT].1).unwrap(),
+        )
+    {
+        x = MAX_AXIS_VALUE
+    }
+    if profile.keys[AXIS_DOWN].0
+        && keyboard_state.is_scancode_pressed(
+            sdl2::keyboard::Scancode::from_i32(profile.keys[AXIS_DOWN].1).unwrap(),
+        )
+    {
+        y = -MAX_AXIS_VALUE
+    }
+    if profile.keys[AXIS_UP].0
+        && keyboard_state.is_scancode_pressed(
+            sdl2::keyboard::Scancode::from_i32(profile.keys[AXIS_UP].1).unwrap(),
+        )
+    {
+        y = MAX_AXIS_VALUE
+    }
+    (x, y)
 }
 
 pub fn set_buttons_from_joystick(
@@ -182,9 +198,7 @@ pub fn set_buttons_from_joystick(
     let profile_joystick_hat = profile.joystick_hat[i];
     if profile_joystick_hat.0
         && joystick.hat(profile_joystick_hat.1).unwrap()
-            == unsafe {
-                std::mem::transmute::<i8, sdl2::joystick::HatState>(profile_joystick_hat.2)
-            }
+            == sdl2::joystick::HatState::from_raw(profile_joystick_hat.2)
     {
         *keys |= 1 << i;
     }
@@ -208,21 +222,12 @@ pub fn set_buttons_from_controller(
 ) {
     let profile_controller_button = profile.controller_buttons[i];
     if profile_controller_button.0 {
-        unsafe {
-            *keys |= (controller.button(std::mem::transmute::<i32, sdl2::controller::Button>(
-                profile_controller_button.1,
-            )) as u32)
-                << i;
-        }
+        *keys |= (controller.button(get_button_from_i32(profile_controller_button.1)) as u32) << i;
     }
 
     let profile_controller_axis = profile.controller_axis[i];
     if profile_controller_axis.0 {
-        let axis_position = unsafe {
-            controller.axis(std::mem::transmute::<i32, sdl2::controller::Axis>(
-                profile_controller_axis.1,
-            ))
-        };
+        let axis_position = controller.axis(get_axis_from_i32(profile_controller_axis.1));
         if axis_position as isize * profile_controller_axis.2 as isize > 0
             && axis_position.saturating_abs() > i16::MAX / 2
         {
@@ -245,13 +250,10 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
         if profile_name != "default" || channel == 0 {
             let profile_key = profile.keys[i];
             if profile_key.0 {
-                unsafe {
-                    keys |= (keyboard_state
-                        .is_scancode_pressed(std::mem::transmute::<i32, sdl2::keyboard::Scancode>(
-                            profile_key.1,
-                        )) as u32)
-                        << i;
-                }
+                keys |= (keyboard_state
+                    .is_scancode_pressed(sdl2::keyboard::Scancode::from_i32(profile_key.1).unwrap())
+                    as u32)
+                    << i;
             }
         }
 
@@ -406,13 +408,11 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         key_set = true
                     }
                     sdl2::event::Event::JoyHatMotion { hat_idx, state, .. } => {
-                        new_joystick_hat[*value] = unsafe {
-                            (
-                                true,
-                                hat_idx as u32,
-                                std::mem::transmute::<sdl2::joystick::HatState, i8>(state),
-                            )
-                        };
+                        new_joystick_hat[*value] = (
+                            true,
+                            hat_idx as u32,
+                            sdl2::joystick::HatState::to_raw(state),
+                        );
                         key_set = true
                     }
                     sdl2::event::Event::JoyAxisMotion {
