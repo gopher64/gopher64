@@ -264,6 +264,9 @@ static void calculate_viewport(float *x, float *y, float *width, float *height)
 static void render_frame(Vulkan::Device &device)
 {
 	RDP::ScanoutOptions options = {};
+	options.persist_frame_on_invalid_input = true;
+	options.blend_previous_frame = true;
+	options.upscale_deinterlacing = false;
 	Vulkan::ImageHandle image = processor->scanout(options);
 
 	// Normally reflection is automated.
