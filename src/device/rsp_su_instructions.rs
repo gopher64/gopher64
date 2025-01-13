@@ -722,7 +722,7 @@ pub fn lsv(device: &mut device::Device, opcode: u32) {
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
             element / 2,
             (device.rsp.mem[(address & 0xFFF) as usize] as u16) << 8
-                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u16) << 0,
+                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u16),
         );
     } else {
         let end = std::cmp::min(element + 2, 16);
@@ -751,7 +751,7 @@ pub fn llv(device: &mut device::Device, opcode: u32) {
             (device.rsp.mem[(address & 0xFFF) as usize] as u32) << 24
                 | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u32) << 16
                 | (device.rsp.mem[((address + 2) & 0xFFF) as usize] as u32) << 8
-                | (device.rsp.mem[((address + 3) & 0xFFF) as usize] as u32) << 0,
+                | (device.rsp.mem[((address + 3) & 0xFFF) as usize] as u32),
         );
     } else {
         let end = std::cmp::min(element + 4, 16);
@@ -784,7 +784,7 @@ pub fn ldv(device: &mut device::Device, opcode: u32) {
                 | (device.rsp.mem[((address + 4) & 0xFFF) as usize] as u64) << 24
                 | (device.rsp.mem[((address + 5) & 0xFFF) as usize] as u64) << 16
                 | (device.rsp.mem[((address + 6) & 0xFFF) as usize] as u64) << 8
-                | (device.rsp.mem[((address + 7) & 0xFFF) as usize] as u64) << 0,
+                | (device.rsp.mem[((address + 7) & 0xFFF) as usize] as u64),
         );
     } else {
         let end = std::cmp::min(element + 8, 16);
@@ -825,7 +825,7 @@ pub fn lqv(device: &mut device::Device, opcode: u32) {
                 | (device.rsp.mem[((address + 12) & 0xFFF) as usize] as u128) << 24
                 | (device.rsp.mem[((address + 13) & 0xFFF) as usize] as u128) << 16
                 | (device.rsp.mem[((address + 14) & 0xFFF) as usize] as u128) << 8
-                | (device.rsp.mem[((address + 15) & 0xFFF) as usize] as u128) << 0,
+                | (device.rsp.mem[((address + 15) & 0xFFF) as usize] as u128),
         );
     } else {
         let end = std::cmp::min(16 + element - ((address & 15) as u8), 16);
@@ -866,7 +866,7 @@ pub fn lrv(device: &mut device::Device, opcode: u32) {
                 | (device.rsp.mem[((address + 12) & 0xFFF) as usize] as u128) << 24
                 | (device.rsp.mem[((address + 13) & 0xFFF) as usize] as u128) << 16
                 | (device.rsp.mem[((address + 14) & 0xFFF) as usize] as u128) << 8
-                | (device.rsp.mem[((address + 15) & 0xFFF) as usize] as u128) << 0,
+                | (device.rsp.mem[((address + 15) & 0xFFF) as usize] as u128),
         );
     } else {
         while element < 16 {

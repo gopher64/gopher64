@@ -85,6 +85,7 @@ int _mm_extract_epi8__extern(__m128i __a, const int __imm8)
         abort();
     }
 }
+
 __m128i _mm_insert_epi16__extern(__m128i __a, int __i, const int __imm8)
 {
     switch (__imm8)
@@ -130,6 +131,66 @@ int _mm_extract_epi16__extern(__m128i __a, const int __imm8)
         return _mm_extract_epi16(__a, 6);
     case 7:
         return _mm_extract_epi16(__a, 7);
+    default:
+        abort();
+    }
+}
+
+__m128i _mm_insert_epi32__extern(__m128i __a, int __i, const int __imm8)
+{
+    switch (__imm8)
+    {
+    case 0:
+        return _mm_insert_epi32(__a, __i, 0);
+    case 1:
+        return _mm_insert_epi32(__a, __i, 1);
+    case 2:
+        return _mm_insert_epi32(__a, __i, 2);
+    case 3:
+        return _mm_insert_epi32(__a, __i, 3);
+    default:
+        abort();
+    }
+}
+
+int _mm_extract_epi32__extern(__m128i __a, const int __imm8)
+{
+    switch (__imm8)
+    {
+    case 0:
+        return _mm_extract_epi32(__a, 0);
+    case 1:
+        return _mm_extract_epi32(__a, 1);
+    case 2:
+        return _mm_extract_epi32(__a, 2);
+    case 3:
+        return _mm_extract_epi32(__a, 3);
+    default:
+        abort();
+    }
+}
+
+__m128i _mm_insert_epi64__extern(__m128i __a, int64_t __i, const int __imm8)
+{
+    switch (__imm8)
+    {
+    case 0:
+        return _mm_insert_epi64(__a, __i, 0);
+    case 1:
+        return _mm_insert_epi64(__a, __i, 1);
+    default:
+        abort();
+    }
+}
+
+int64_t _mm_extract_epi64__extern(__m128i __a, const int __imm8)
+{
+    switch (__imm8)
+    {
+    case 0:
+        return _mm_extract_epi64(__a, 0);
+    case 1:
+        return _mm_extract_epi64(__a, 1);
     default:
         abort();
     }
