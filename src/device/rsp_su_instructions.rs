@@ -2,6 +2,8 @@
 use device::__m128i;
 #[cfg(target_arch = "aarch64")]
 include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
+#[cfg(target_arch = "aarch64")]
+include!("../compat/aarch64.rs");
 use crate::device;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;

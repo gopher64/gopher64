@@ -1,5 +1,6 @@
 fn main() {
     println!("cargo::rerun-if-changed=parallel-rdp");
+    println!("cargo::rerun-if-changed=src/compat");
 
     let mut simd_build = cc::Build::new();
     let mut build = cc::Build::new();

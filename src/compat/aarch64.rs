@@ -14,7 +14,7 @@ unsafe extern "C" {
 
 unsafe extern "C" {
     #[link_name = "_mm_extract_epi8__extern"]
-    pub fn _mm_extract_epi8(__a: __m128i, __imm8: ::std::os::raw::c_int) -> i32;
+    pub fn _mm_extract_epi8(__a: __m128i, __imm8: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
 }
 
 unsafe extern "C" {
@@ -28,5 +28,5 @@ unsafe extern "C" {
 
 unsafe extern "C" {
     #[link_name = "_mm_extract_epi16__extern"]
-    pub fn _mm_extract_epi16(__a: __m128i, __imm8: ::std::os::raw::c_int) -> i32;
+    pub fn _mm_extract_epi16(__a: __m128i, __imm8: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
 }
