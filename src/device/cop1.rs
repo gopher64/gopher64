@@ -371,22 +371,22 @@ pub fn set_control_registers_fpu(device: &mut device::Device, index: u32, data: 
 
             #[cfg(target_arch = "x86_64")]
             {
-                unsafe {
-                    let flush_mode;
-                    if (device.cpu.cop1.fcr31 & 2) != 0 {
-                        if (device.cpu.cop1.fcr31 & FCR31_FS_BIT) != 0 {
-                            flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_OFF
-                        } else {
-                            flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_ON;
-                        }
+                let flush_mode;
+                if (device.cpu.cop1.fcr31 & 2) != 0 {
+                    if (device.cpu.cop1.fcr31 & FCR31_FS_BIT) != 0 {
+                        flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_OFF
                     } else {
                         flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_ON;
                     }
-                    if flush_mode != device.cpu.cop1.flush_mode {
-                        #[allow(deprecated)]
-                        std::arch::x86_64::_MM_SET_FLUSH_ZERO_MODE(flush_mode);
-                        device.cpu.cop1.flush_mode = flush_mode;
-                    }
+                } else {
+                    flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_ON;
+                }
+                if flush_mode != device.cpu.cop1.flush_mode {
+                    #[allow(deprecated)]
+                    unsafe {
+                        std::arch::x86_64::_MM_SET_FLUSH_ZERO_MODE(flush_mode)
+                    };
+                    device.cpu.cop1.flush_mode = flush_mode;
                 }
             }
         }
