@@ -5,7 +5,7 @@ include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 #[cfg(target_arch = "aarch64")]
 include!("../compat/aarch64.rs");
 use crate::device;
-use crate::device::rsp_su_instructions::{get_vpr_element, modify_vpr_element};
+use crate::device::rsp_su_instructions::{get_vpr16, modify_vpr16};
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
@@ -107,25 +107,25 @@ pub fn vrndp(device: &mut device::Device, opcode: u32) {
     let accl: &mut __m128i = &mut device.rsp.cpu.accl;
 
     for n in 0..8 {
-        let mut product = get_vpr_element(vte, n) as i16 as i32;
+        let mut product = get_vpr16(vte, n) as i16 as i32;
         if vs(opcode) & 1 != 0 {
             product <<= 16
         }
         let mut acc = 0;
-        acc |= get_vpr_element(*acch, n) as i64;
+        acc |= get_vpr16(*acch, n) as i64;
         acc <<= 16;
-        acc |= get_vpr_element(*accm, n) as i64;
+        acc |= get_vpr16(*accm, n) as i64;
         acc <<= 16;
-        acc |= get_vpr_element(*accl, n) as i64;
+        acc |= get_vpr16(*accl, n) as i64;
         acc <<= 16;
         acc >>= 16;
         if acc >= 0 {
             acc = s_clip(acc + (product as i64), 48)
         }
-        modify_vpr_element(acch, n, (acc >> 32) as u16);
-        modify_vpr_element(accm, n, (acc >> 16) as u16);
-        modify_vpr_element(accl, n, acc as u16);
-        modify_vpr_element(
+        modify_vpr16(acch, n, (acc >> 32) as u16);
+        modify_vpr16(accm, n, (acc >> 16) as u16);
+        modify_vpr16(accl, n, acc as u16);
+        modify_vpr16(
             &mut device.rsp.cpu.vpr[vd(opcode) as usize],
             n,
             clamp_signed_64(acc >> 16) as u16,
@@ -140,16 +140,15 @@ pub fn vmulq(device: &mut device::Device, opcode: u32) {
     let accl: &mut __m128i = &mut device.rsp.cpu.accl;
 
     for n in 0..8 {
-        let mut product = (get_vpr_element(device.rsp.cpu.vpr[vs(opcode) as usize], n) as i16
-            as i32)
-            .wrapping_mul(get_vpr_element(vte, n) as i16 as i32);
+        let mut product = (get_vpr16(device.rsp.cpu.vpr[vs(opcode) as usize], n) as i16 as i32)
+            .wrapping_mul(get_vpr16(vte, n) as i16 as i32);
         if product < 0 {
             product += 31;
         }
-        modify_vpr_element(acch, n, (product >> 16) as u16);
-        modify_vpr_element(accm, n, (product) as u16);
-        modify_vpr_element(accl, n, 0);
-        modify_vpr_element(
+        modify_vpr16(acch, n, (product >> 16) as u16);
+        modify_vpr16(accm, n, (product) as u16);
+        modify_vpr16(accl, n, 0);
+        modify_vpr16(
             &mut device.rsp.cpu.vpr[vd(opcode) as usize],
             n,
             (clamp_signed_32(product >> 1) & !15) as u16,
@@ -282,25 +281,25 @@ pub fn vrndn(device: &mut device::Device, opcode: u32) {
     let accl: &mut __m128i = &mut device.rsp.cpu.accl;
 
     for n in 0..8 {
-        let mut product = get_vpr_element(vte, n) as i16 as i32;
+        let mut product = get_vpr16(vte, n) as i16 as i32;
         if vs(opcode) & 1 != 0 {
             product <<= 16
         }
         let mut acc = 0;
-        acc |= get_vpr_element(*acch, n) as i64;
+        acc |= get_vpr16(*acch, n) as i64;
         acc <<= 16;
-        acc |= get_vpr_element(*accm, n) as i64;
+        acc |= get_vpr16(*accm, n) as i64;
         acc <<= 16;
-        acc |= get_vpr_element(*accl, n) as i64;
+        acc |= get_vpr16(*accl, n) as i64;
         acc <<= 16;
         acc >>= 16;
         if acc < 0 {
             acc = s_clip(acc + (product as i64), 48)
         }
-        modify_vpr_element(acch, n, (acc >> 32) as u16);
-        modify_vpr_element(accm, n, (acc >> 16) as u16);
-        modify_vpr_element(accl, n, acc as u16);
-        modify_vpr_element(
+        modify_vpr16(acch, n, (acc >> 32) as u16);
+        modify_vpr16(accm, n, (acc >> 16) as u16);
+        modify_vpr16(accl, n, acc as u16);
+        modify_vpr16(
             &mut device.rsp.cpu.vpr[vd(opcode) as usize],
             n,
             clamp_signed_64(acc >> 16) as u16,
@@ -313,16 +312,15 @@ pub fn vmacq(device: &mut device::Device, opcode: u32) {
     let accm: &mut __m128i = &mut device.rsp.cpu.accm;
 
     for n in 0..8 {
-        let mut product =
-            ((get_vpr_element(*acch, n) as i32) << 16) | (get_vpr_element(*accm, n) as i32);
+        let mut product = ((get_vpr16(*acch, n) as i32) << 16) | (get_vpr16(*accm, n) as i32);
         if product < 0 && (product & (1 << 5)) == 0 {
             product += 32
         } else if product >= 32 && (product & (1 << 5)) == 0 {
             product -= 32
         }
-        modify_vpr_element(acch, n, (product >> 16) as u16);
-        modify_vpr_element(accm, n, (product) as u16);
-        modify_vpr_element(
+        modify_vpr16(acch, n, (product >> 16) as u16);
+        modify_vpr16(accm, n, (product) as u16);
+        modify_vpr16(
             &mut device.rsp.cpu.vpr[vd(opcode) as usize],
             n,
             (clamp_signed_32(product >> 1) & !15) as u16,
@@ -779,8 +777,7 @@ pub fn vnxor(device: &mut device::Device, opcode: u32) {
 pub fn vrcp(device: &mut device::Device, opcode: u32) {
     let mut result;
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
-    let input =
-        get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32;
+    let input = get_vpr16(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32;
     let mask = input >> 31;
     let mut data = input ^ mask;
     if input > -32768 {
@@ -800,7 +797,7 @@ pub fn vrcp(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.divdp = false;
     device.rsp.cpu.divout = (result >> 16) as i16;
     device.rsp.cpu.accl = vte;
-    modify_vpr_element(
+    modify_vpr16(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
         de(opcode) as u8,
         result as u16,
@@ -812,10 +809,9 @@ pub fn vrcpl(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let input = if device.rsp.cpu.divdp {
         ((device.rsp.cpu.divin as i32) << 16)
-            | get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as u16
-                as i32
+            | get_vpr16(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as u16 as i32
     } else {
-        get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32
+        get_vpr16(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32
     };
     let mask = input >> 31;
     let mut data = input ^ mask;
@@ -836,7 +832,7 @@ pub fn vrcpl(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.divdp = false;
     device.rsp.cpu.divout = (result >> 16) as i16;
     device.rsp.cpu.accl = vte;
-    modify_vpr_element(
+    modify_vpr16(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
         de(opcode) as u8,
         result as u16,
@@ -849,8 +845,8 @@ pub fn vrcph(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.divdp = true;
 
     device.rsp.cpu.divin =
-        get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16;
-    modify_vpr_element(
+        get_vpr16(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16;
+    modify_vpr16(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
         de(opcode) as u8,
         device.rsp.cpu.divout as u16,
@@ -859,8 +855,8 @@ pub fn vrcph(device: &mut device::Device, opcode: u32) {
 
 pub fn vmov(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
-    let value = get_vpr_element(vte, de(opcode) as u8);
-    modify_vpr_element(
+    let value = get_vpr16(vte, de(opcode) as u8);
+    modify_vpr16(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
         de(opcode) as u8,
         value,
@@ -871,8 +867,7 @@ pub fn vmov(device: &mut device::Device, opcode: u32) {
 pub fn vrsq(device: &mut device::Device, opcode: u32) {
     let mut result;
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
-    let input =
-        get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32;
+    let input = get_vpr16(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32;
     let mask = input >> 31;
     let mut data = input ^ mask;
     if input > -32768 {
@@ -893,7 +888,7 @@ pub fn vrsq(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.divdp = false;
     device.rsp.cpu.divout = (result >> 16) as i16;
     device.rsp.cpu.accl = vte;
-    modify_vpr_element(
+    modify_vpr16(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
         de(opcode) as u8,
         result as u16,
@@ -905,10 +900,9 @@ pub fn vrsql(device: &mut device::Device, opcode: u32) {
     let vte = vte(device, vt(opcode), ve(opcode) as usize);
     let input = if device.rsp.cpu.divdp {
         ((device.rsp.cpu.divin as i32) << 16)
-            | get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as u16
-                as i32
+            | get_vpr16(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as u16 as i32
     } else {
-        get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32
+        get_vpr16(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16 as i32
     };
     let mask = input >> 31;
     let mut data = input ^ mask;
@@ -930,7 +924,7 @@ pub fn vrsql(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.divdp = false;
     device.rsp.cpu.divout = (result >> 16) as i16;
     device.rsp.cpu.accl = vte;
-    modify_vpr_element(
+    modify_vpr16(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
         de(opcode) as u8,
         result as u16,
@@ -943,8 +937,8 @@ pub fn vrsqh(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.divdp = true;
 
     device.rsp.cpu.divin =
-        get_vpr_element(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16;
-    modify_vpr_element(
+        get_vpr16(device.rsp.cpu.vpr[vt(opcode) as usize], ve(opcode) as u8) as i16;
+    modify_vpr16(
         &mut device.rsp.cpu.vpr[vd(opcode) as usize],
         de(opcode) as u8,
         device.rsp.cpu.divout as u16,
