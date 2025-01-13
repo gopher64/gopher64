@@ -750,14 +750,34 @@ pub fn lpv(device: &mut device::Device, opcode: u32) {
 
     let index = ((address & 7) as u8).wrapping_sub(velement(opcode));
     address &= !7;
-    for offset in 0..8 {
-        modify_vpr_element(
-            &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            offset,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(offset)) & 15) as u32))
-                & 0xFFF) as usize] as u16)
-                << 8,
-        );
+    unsafe {
+        device.rsp.cpu.vpr[rt(opcode) as usize] =
+            _mm_set_epi16(
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(0)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 8,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(1)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 8,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(2)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 8,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(3)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 8,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(4)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 8,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(5)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 8,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(6)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 8,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(7)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 8,
+            );
     }
 }
 
@@ -767,14 +787,34 @@ pub fn luv(device: &mut device::Device, opcode: u32) {
 
     let index = ((address & 7) as u8).wrapping_sub(velement(opcode));
     address &= !7;
-    for offset in 0..8 {
-        modify_vpr_element(
-            &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            offset,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(offset)) & 15) as u32))
-                & 0xFFF) as usize] as u16)
-                << 7,
-        );
+    unsafe {
+        device.rsp.cpu.vpr[rt(opcode) as usize] =
+            _mm_set_epi16(
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(0)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(1)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(2)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(3)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(4)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(5)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(6)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+                (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(7)) & 15) as u32))
+                    & 0xFFF) as usize] as i16)
+                    << 7,
+            );
     }
 }
 
@@ -784,12 +824,31 @@ pub fn lhv(device: &mut device::Device, opcode: u32) {
 
     let index = ((address & 7) as u8).wrapping_sub(velement(opcode));
     address &= !7;
-    for offset in 0..8 {
-        modify_vpr_element(
-            &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            offset,
-            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(offset * 2)) & 15) as u32))
-                & 0xFFF) as usize] as u16)
+    unsafe {
+        device.rsp.cpu.vpr[rt(opcode) as usize] = _mm_set_epi16(
+            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(0 * 2)) & 15) as u32))
+                & 0xFFF) as usize] as i16)
+                << 7,
+            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(1 * 2)) & 15) as u32))
+                & 0xFFF) as usize] as i16)
+                << 7,
+            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(2 * 2)) & 15) as u32))
+                & 0xFFF) as usize] as i16)
+                << 7,
+            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(3 * 2)) & 15) as u32))
+                & 0xFFF) as usize] as i16)
+                << 7,
+            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(4 * 2)) & 15) as u32))
+                & 0xFFF) as usize] as i16)
+                << 7,
+            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(5 * 2)) & 15) as u32))
+                & 0xFFF) as usize] as i16)
+                << 7,
+            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(6 * 2)) & 15) as u32))
+                & 0xFFF) as usize] as i16)
+                << 7,
+            (device.rsp.mem[((address.wrapping_add(((index.wrapping_add(7 * 2)) & 15) as u32))
+                & 0xFFF) as usize] as i16)
                 << 7,
         );
     }
