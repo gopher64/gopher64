@@ -341,7 +341,7 @@ impl Device {
                     sync_point: false,
                     cycle_counter: 0,
                     gpr: [0; 32],
-                    vpr: [0; 32],
+                    vpr: unsafe { [_mm_setzero_si128(); 32] },
                     reciprocals: [0; 512],
                     inverse_square_roots: [0; 512],
                     divdp: false,

@@ -1,5 +1,6 @@
 fn main() {
     println!("cargo::rerun-if-changed=parallel-rdp");
+    println!("cargo::rerun-if-changed=src/compat");
 
     let mut simd_build = cc::Build::new();
     let mut build = cc::Build::new();
@@ -75,6 +76,7 @@ fn main() {
         } else if arch == "aarch64" {
             build.flag("-march=armv8.2-a");
             simd_build.flag("-march=armv8.2-a");
+            simd_build.flag("-DSSE2NEON_SUPPRESS_WARNINGS");
             simd_build.file("src/compat/aarch64.c");
         } else {
             panic!("unknown arch")
@@ -117,7 +119,6 @@ fn main() {
             .allowlist_function("_mm_set1_epi8")
             .allowlist_function("_mm_mullo_epi16")
             .allowlist_function("_mm_cmpeq_epi16")
-            .allowlist_function("_mm_srli_epi16")
             .allowlist_function("_mm_add_epi16")
             .allowlist_function("_mm_slli_epi16")
             .allowlist_function("_mm_mulhi_epi16")
