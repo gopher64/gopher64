@@ -75,6 +75,7 @@ fn main() {
         } else if arch == "aarch64" {
             build.flag("-march=armv8.2-a");
             simd_build.flag("-march=armv8.2-a");
+            simd_build.flag("-DSSE2NEON_SUPPRESS_WARNINGS");
             simd_build.file("src/compat/aarch64.c");
         } else {
             panic!("unknown arch")
@@ -140,6 +141,10 @@ fn main() {
             .allowlist_function("_mm_cmplt_epi16")
             .allowlist_function("_mm_subs_epu16")
             .allowlist_function("_mm_set1_epi32")
+            .allowlist_function("_mm_insert_epi8")
+            .allowlist_function("_mm_extract_epi8")
+            .allowlist_function("_mm_insert_epi16")
+            .allowlist_function("_mm_extract_epi16")
             .blocklist_type("__m128i")
             .blocklist_type("int64x2_t")
             .wrap_static_fns(true)
