@@ -170,11 +170,11 @@ pub fn get_vpr64(vpr: __m128i, element: u8) -> u64 {
     }
 }
 
-pub fn modify_vpr128(vpr: &mut __m128i, _element: u8, value: u128) {
+pub fn modify_vpr128(vpr: &mut __m128i, value: u128) {
     unsafe { *vpr = std::mem::transmute::<u128, __m128i>(value) }
 }
 
-pub fn get_vpr128(vpr: __m128i, _element: u8) -> u128 {
+pub fn get_vpr128(vpr: __m128i) -> u128 {
     unsafe { std::mem::transmute::<__m128i, u128>(vpr) }
 }
 
@@ -748,8 +748,8 @@ pub fn llv(device: &mut device::Device, opcode: u32) {
         modify_vpr32(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
             element / 4,
-            (device.rsp.mem[(address & 0xFFF) as usize] as u32) << 24
-                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u32) << 16
+            (device.rsp.mem[(address & 0xFFF) as usize] as u32) << (8 * 3)
+                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u32) << (8 * 2)
                 | (device.rsp.mem[((address + 2) & 0xFFF) as usize] as u32) << 8
                 | (device.rsp.mem[((address + 3) & 0xFFF) as usize] as u32),
         );
@@ -777,12 +777,12 @@ pub fn ldv(device: &mut device::Device, opcode: u32) {
         modify_vpr64(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
             element / 8,
-            (device.rsp.mem[(address & 0xFFF) as usize] as u64) << 56
-                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u64) << 48
-                | (device.rsp.mem[((address + 2) & 0xFFF) as usize] as u64) << 40
-                | (device.rsp.mem[((address + 3) & 0xFFF) as usize] as u64) << 32
-                | (device.rsp.mem[((address + 4) & 0xFFF) as usize] as u64) << 24
-                | (device.rsp.mem[((address + 5) & 0xFFF) as usize] as u64) << 16
+            (device.rsp.mem[(address & 0xFFF) as usize] as u64) << (8 * 7)
+                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u64) << (8 * 6)
+                | (device.rsp.mem[((address + 2) & 0xFFF) as usize] as u64) << (8 * 5)
+                | (device.rsp.mem[((address + 3) & 0xFFF) as usize] as u64) << (8 * 4)
+                | (device.rsp.mem[((address + 4) & 0xFFF) as usize] as u64) << (8 * 3)
+                | (device.rsp.mem[((address + 5) & 0xFFF) as usize] as u64) << (8 * 2)
                 | (device.rsp.mem[((address + 6) & 0xFFF) as usize] as u64) << 8
                 | (device.rsp.mem[((address + 7) & 0xFFF) as usize] as u64),
         );
@@ -806,24 +806,23 @@ pub fn lqv(device: &mut device::Device, opcode: u32) {
 
     let mut element = velement(opcode);
 
-    if element % 16 == 0 && address % 16 == 0 {
+    if element == 0 && address % 16 == 0 {
         modify_vpr128(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            element / 16,
-            (device.rsp.mem[(address & 0xFFF) as usize] as u128) << 120
-                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u128) << 112
-                | (device.rsp.mem[((address + 2) & 0xFFF) as usize] as u128) << 104
-                | (device.rsp.mem[((address + 3) & 0xFFF) as usize] as u128) << 96
-                | (device.rsp.mem[((address + 4) & 0xFFF) as usize] as u128) << 88
-                | (device.rsp.mem[((address + 5) & 0xFFF) as usize] as u128) << 80
-                | (device.rsp.mem[((address + 6) & 0xFFF) as usize] as u128) << 72
-                | (device.rsp.mem[((address + 7) & 0xFFF) as usize] as u128) << 64
-                | (device.rsp.mem[((address + 8) & 0xFFF) as usize] as u128) << 56
-                | (device.rsp.mem[((address + 9) & 0xFFF) as usize] as u128) << 48
-                | (device.rsp.mem[((address + 10) & 0xFFF) as usize] as u128) << 40
-                | (device.rsp.mem[((address + 11) & 0xFFF) as usize] as u128) << 32
-                | (device.rsp.mem[((address + 12) & 0xFFF) as usize] as u128) << 24
-                | (device.rsp.mem[((address + 13) & 0xFFF) as usize] as u128) << 16
+            (device.rsp.mem[(address & 0xFFF) as usize] as u128) << (8 * 15)
+                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u128) << (8 * 14)
+                | (device.rsp.mem[((address + 2) & 0xFFF) as usize] as u128) << (8 * 13)
+                | (device.rsp.mem[((address + 3) & 0xFFF) as usize] as u128) << (8 * 12)
+                | (device.rsp.mem[((address + 4) & 0xFFF) as usize] as u128) << (8 * 11)
+                | (device.rsp.mem[((address + 5) & 0xFFF) as usize] as u128) << (8 * 10)
+                | (device.rsp.mem[((address + 6) & 0xFFF) as usize] as u128) << (8 * 9)
+                | (device.rsp.mem[((address + 7) & 0xFFF) as usize] as u128) << (8 * 8)
+                | (device.rsp.mem[((address + 8) & 0xFFF) as usize] as u128) << (8 * 7)
+                | (device.rsp.mem[((address + 9) & 0xFFF) as usize] as u128) << (8 * 6)
+                | (device.rsp.mem[((address + 10) & 0xFFF) as usize] as u128) << (8 * 5)
+                | (device.rsp.mem[((address + 11) & 0xFFF) as usize] as u128) << (8 * 4)
+                | (device.rsp.mem[((address + 12) & 0xFFF) as usize] as u128) << (8 * 3)
+                | (device.rsp.mem[((address + 13) & 0xFFF) as usize] as u128) << (8 * 2)
                 | (device.rsp.mem[((address + 14) & 0xFFF) as usize] as u128) << 8
                 | (device.rsp.mem[((address + 15) & 0xFFF) as usize] as u128),
         );
@@ -847,24 +846,23 @@ pub fn lrv(device: &mut device::Device, opcode: u32) {
 
     let mut element = 16u8.wrapping_sub(((address & 15) as u8).wrapping_sub(velement(opcode)));
     address &= !15;
-    if element % 16 == 0 && element < 16 {
+    if element == 0 {
         modify_vpr128(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
-            element / 16,
-            (device.rsp.mem[(address & 0xFFF) as usize] as u128) << 120
-                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u128) << 112
-                | (device.rsp.mem[((address + 2) & 0xFFF) as usize] as u128) << 104
-                | (device.rsp.mem[((address + 3) & 0xFFF) as usize] as u128) << 96
-                | (device.rsp.mem[((address + 4) & 0xFFF) as usize] as u128) << 88
-                | (device.rsp.mem[((address + 5) & 0xFFF) as usize] as u128) << 80
-                | (device.rsp.mem[((address + 6) & 0xFFF) as usize] as u128) << 72
-                | (device.rsp.mem[((address + 7) & 0xFFF) as usize] as u128) << 64
-                | (device.rsp.mem[((address + 8) & 0xFFF) as usize] as u128) << 56
-                | (device.rsp.mem[((address + 9) & 0xFFF) as usize] as u128) << 48
-                | (device.rsp.mem[((address + 10) & 0xFFF) as usize] as u128) << 40
-                | (device.rsp.mem[((address + 11) & 0xFFF) as usize] as u128) << 32
-                | (device.rsp.mem[((address + 12) & 0xFFF) as usize] as u128) << 24
-                | (device.rsp.mem[((address + 13) & 0xFFF) as usize] as u128) << 16
+            (device.rsp.mem[(address & 0xFFF) as usize] as u128) << (8 * 15)
+                | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u128) << (8 * 14)
+                | (device.rsp.mem[((address + 2) & 0xFFF) as usize] as u128) << (8 * 13)
+                | (device.rsp.mem[((address + 3) & 0xFFF) as usize] as u128) << (8 * 12)
+                | (device.rsp.mem[((address + 4) & 0xFFF) as usize] as u128) << (8 * 11)
+                | (device.rsp.mem[((address + 5) & 0xFFF) as usize] as u128) << (8 * 10)
+                | (device.rsp.mem[((address + 6) & 0xFFF) as usize] as u128) << (8 * 9)
+                | (device.rsp.mem[((address + 7) & 0xFFF) as usize] as u128) << (8 * 8)
+                | (device.rsp.mem[((address + 8) & 0xFFF) as usize] as u128) << (8 * 7)
+                | (device.rsp.mem[((address + 9) & 0xFFF) as usize] as u128) << (8 * 6)
+                | (device.rsp.mem[((address + 10) & 0xFFF) as usize] as u128) << (8 * 5)
+                | (device.rsp.mem[((address + 11) & 0xFFF) as usize] as u128) << (8 * 4)
+                | (device.rsp.mem[((address + 12) & 0xFFF) as usize] as u128) << (8 * 3)
+                | (device.rsp.mem[((address + 13) & 0xFFF) as usize] as u128) << (8 * 2)
                 | (device.rsp.mem[((address + 14) & 0xFFF) as usize] as u128) << 8
                 | (device.rsp.mem[((address + 15) & 0xFFF) as usize] as u128),
         );
@@ -1141,11 +1139,9 @@ pub fn sqv(device: &mut device::Device, opcode: u32) {
 
     let mut element = velement(opcode);
 
-    if element % 16 == 0 && address % 16 == 0 {
+    if element == 0 && address % 16 == 0 {
         device.rsp.mem[(address & 0xFFF) as usize..((address + 16) & 0xFFF) as usize]
-            .copy_from_slice(
-                &get_vpr128(device.rsp.cpu.vpr[rt(opcode) as usize], element / 16).to_be_bytes(),
-            );
+            .copy_from_slice(&get_vpr128(device.rsp.cpu.vpr[rt(opcode) as usize]).to_be_bytes());
     } else {
         let end = element + (16 - (address & 15)) as u8;
         while element < end {
@@ -1168,9 +1164,7 @@ pub fn srv(device: &mut device::Device, opcode: u32) {
 
     if element == 0 && base == 0 {
         device.rsp.mem[(address & 0xFFF) as usize..((address + 16) & 0xFFF) as usize]
-            .copy_from_slice(
-                &get_vpr128(device.rsp.cpu.vpr[rt(opcode) as usize], element + base).to_be_bytes(),
-            );
+            .copy_from_slice(&get_vpr128(device.rsp.cpu.vpr[rt(opcode) as usize]).to_be_bytes());
     } else {
         while element < end {
             device.rsp.mem[(address & 0xFFF) as usize] =
