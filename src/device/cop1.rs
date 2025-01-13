@@ -17,8 +17,8 @@ use crate::device;
 //const FCR31_CAUSE_INVALID_BIT: u32 = 1 << 16;
 const FCR31_CAUSE_UNIMP_BIT: u32 = 1 << 17;
 pub const FCR31_CMP_BIT: u32 = 1 << 23;
-#[cfg(target_arch = "x86_64")]
-const FCR31_FS_BIT: u32 = 1 << 24;
+//#[cfg(target_arch = "x86_64")]
+//const FCR31_FS_BIT: u32 = 1 << 24;
 
 const FCR31_CAUSE_MASK: u32 = 0b00000000000000111111000000000000;
 const FCR31_ENABLE_MASK: u32 = 0b00000000000000000000111110000000;
@@ -27,8 +27,8 @@ const FCR31_WRITE_MASK: u32 = 0b00000001100000111111111111111111;
 pub struct Cop1 {
     pub fcr0: u32,
     pub fcr31: u32,
-    #[cfg(target_arch = "x86_64")]
-    pub flush_mode: u32,
+    //#[cfg(target_arch = "x86_64")]
+    //pub flush_mode: u32,
     pub fgr32: [[u8; 4]; 32],
     pub fgr64: [[u8; 8]; 32],
     pub instrs: [fn(&mut device::Device, u32); 32],
@@ -368,27 +368,28 @@ pub fn set_control_registers_fpu(device: &mut device::Device, index: u32, data: 
             {
                 device::exceptions::floating_point_exception(device)
             }
-
+            /*
             #[cfg(target_arch = "x86_64")]
             {
-                unsafe {
-                    let flush_mode;
-                    if (device.cpu.cop1.fcr31 & 2) != 0 {
-                        if (device.cpu.cop1.fcr31 & FCR31_FS_BIT) != 0 {
-                            flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_OFF
-                        } else {
-                            flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_ON;
-                        }
+                let flush_mode;
+                if (device.cpu.cop1.fcr31 & 2) != 0 {
+                    if (device.cpu.cop1.fcr31 & FCR31_FS_BIT) != 0 {
+                        flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_OFF
                     } else {
                         flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_ON;
                     }
-                    if flush_mode != device.cpu.cop1.flush_mode {
-                        #[allow(deprecated)]
-                        std::arch::x86_64::_MM_SET_FLUSH_ZERO_MODE(flush_mode);
-                        device.cpu.cop1.flush_mode = flush_mode;
-                    }
+                } else {
+                    flush_mode = std::arch::x86_64::_MM_FLUSH_ZERO_ON;
+                }
+                if flush_mode != device.cpu.cop1.flush_mode {
+                    #[allow(deprecated)]
+                    unsafe {
+                        std::arch::x86_64::_MM_SET_FLUSH_ZERO_MODE(flush_mode)
+                    };
+                    device.cpu.cop1.flush_mode = flush_mode;
                 }
             }
+            */
         }
         _ => {
             panic!("unknown FCR register")
