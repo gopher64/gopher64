@@ -171,15 +171,11 @@ pub fn get_vpr64(vpr: __m128i, element: u8) -> u64 {
 }
 
 pub fn modify_vpr128(vpr: &mut __m128i, _element: u8, value: u128) {
-    unsafe {
-        *vpr = _mm_set_epi64x((value >> 64) as i64, value as i64);
-    }
+    unsafe { *vpr = std::mem::transmute::<u128, __m128i>(value) }
 }
 
-pub fn get_vpr128(vpr: __m128i, element: u8) -> u128 {
-    unsafe {
-        unreachable!();
-    }
+pub fn get_vpr128(vpr: __m128i, _element: u8) -> u128 {
+    unsafe { std::mem::transmute::<__m128i, u128>(vpr) }
 }
 
 pub fn j(device: &mut device::Device, opcode: u32) {
@@ -1078,12 +1074,20 @@ pub fn ssv(device: &mut device::Device, opcode: u32) {
         .wrapping_add(sign_extend_7bit_offset(voffset(opcode), 1));
 
     let mut element = velement(opcode);
-    let end = element + 2;
-    while element < end {
-        device.rsp.mem[(address & 0xFFF) as usize] =
-            get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element);
-        address += 1;
-        element += 1;
+
+    if element % 2 == 0 {
+        device.rsp.mem[(address & 0xFFF) as usize..((address + 2) & 0xFFF) as usize]
+            .copy_from_slice(
+                &get_vpr16(device.rsp.cpu.vpr[rt(opcode) as usize], element / 2).to_be_bytes(),
+            );
+    } else {
+        let end = element + 2;
+        while element < end {
+            device.rsp.mem[(address & 0xFFF) as usize] =
+                get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element);
+            address += 1;
+            element += 1;
+        }
     }
 }
 
@@ -1092,12 +1096,20 @@ pub fn slv(device: &mut device::Device, opcode: u32) {
         .wrapping_add(sign_extend_7bit_offset(voffset(opcode), 2));
 
     let mut element = velement(opcode);
-    let end = element + 4;
-    while element < end {
-        device.rsp.mem[(address & 0xFFF) as usize] =
-            get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element);
-        address += 1;
-        element += 1;
+
+    if element % 4 == 0 {
+        device.rsp.mem[(address & 0xFFF) as usize..((address + 4) & 0xFFF) as usize]
+            .copy_from_slice(
+                &get_vpr32(device.rsp.cpu.vpr[rt(opcode) as usize], element / 4).to_be_bytes(),
+            );
+    } else {
+        let end = element + 4;
+        while element < end {
+            device.rsp.mem[(address & 0xFFF) as usize] =
+                get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element);
+            address += 1;
+            element += 1;
+        }
     }
 }
 
@@ -1106,12 +1118,20 @@ pub fn sdv(device: &mut device::Device, opcode: u32) {
         .wrapping_add(sign_extend_7bit_offset(voffset(opcode), 3));
 
     let mut element = velement(opcode);
-    let end = element + 8;
-    while element < end {
-        device.rsp.mem[(address & 0xFFF) as usize] =
-            get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element);
-        address += 1;
-        element += 1;
+
+    if element % 8 == 0 {
+        device.rsp.mem[(address & 0xFFF) as usize..((address + 8) & 0xFFF) as usize]
+            .copy_from_slice(
+                &get_vpr64(device.rsp.cpu.vpr[rt(opcode) as usize], element / 8).to_be_bytes(),
+            );
+    } else {
+        let end = element + 8;
+        while element < end {
+            device.rsp.mem[(address & 0xFFF) as usize] =
+                get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element);
+            address += 1;
+            element += 1;
+        }
     }
 }
 
@@ -1120,12 +1140,20 @@ pub fn sqv(device: &mut device::Device, opcode: u32) {
         .wrapping_add(sign_extend_7bit_offset(voffset(opcode), 4));
 
     let mut element = velement(opcode);
-    let end = element + (16 - (address & 15)) as u8;
-    while element < end {
-        device.rsp.mem[(address & 0xFFF) as usize] =
-            get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element);
-        address += 1;
-        element += 1;
+
+    if element % 16 == 0 && address % 16 == 0 {
+        device.rsp.mem[(address & 0xFFF) as usize..((address + 16) & 0xFFF) as usize]
+            .copy_from_slice(
+                &get_vpr128(device.rsp.cpu.vpr[rt(opcode) as usize], element / 16).to_be_bytes(),
+            );
+    } else {
+        let end = element + (16 - (address & 15)) as u8;
+        while element < end {
+            device.rsp.mem[(address & 0xFFF) as usize] =
+                get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element);
+            address += 1;
+            element += 1;
+        }
     }
 }
 
@@ -1137,11 +1165,19 @@ pub fn srv(device: &mut device::Device, opcode: u32) {
     let end = element + (address & 15) as u8;
     let base = (16 - (address & 15)) as u8;
     address &= !15;
-    while element < end {
-        device.rsp.mem[(address & 0xFFF) as usize] =
-            get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element + base);
-        address += 1;
-        element += 1;
+
+    if element == 0 && base == 0 {
+        device.rsp.mem[(address & 0xFFF) as usize..((address + 16) & 0xFFF) as usize]
+            .copy_from_slice(
+                &get_vpr128(device.rsp.cpu.vpr[rt(opcode) as usize], element + base).to_be_bytes(),
+            );
+    } else {
+        while element < end {
+            device.rsp.mem[(address & 0xFFF) as usize] =
+                get_vpr8(device.rsp.cpu.vpr[rt(opcode) as usize], element + base);
+            address += 1;
+            element += 1;
+        }
     }
 }
 
