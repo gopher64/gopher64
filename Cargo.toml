@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dirs = "5.0"
+dirs = "6.0"
 zip = "2.1"
 governor = "0.8"
 sevenz-rust = "0.6"
