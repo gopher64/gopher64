@@ -39,14 +39,12 @@ jobs:
           Suites: noble-security
           Components: main restricted multiverse universe
           Architectures: arm64
-          EOF
 
           Types: deb
           URIs: http://ports.ubuntu.com/
           Suites: noble-backports
           Components: main restricted multiverse universe
           Architectures: arm64
-          EOF
 
           Types: deb
           URIs: http://ports.ubuntu.com/
