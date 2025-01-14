@@ -36,12 +36,6 @@ jobs:
 
           Types: deb
           URIs: http://ports.ubuntu.com/
-          Suites: noble-backports
-          Components: main multiverse universe
-          Architectures: arm64
-
-          Types: deb
-          URIs: http://ports.ubuntu.com/
           Suites: noble-updates
           Components: main multiverse universe
           Architectures: arm64
