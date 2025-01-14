@@ -1,6 +1,6 @@
 [package]
 name = "gopher64"
-version = "0.1.18"
+version = "0.1.19"
 edition = "2021"
 rust-version = "1.82"
 
