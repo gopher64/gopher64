@@ -9,16 +9,16 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
     };
     ui.audio_device = Some(
         ui.audio_subsystem
-            .as_mut()
+            .as_ref()
             .unwrap()
             .open_queue::<i16, _>(None, &desired_spec)
             .unwrap(),
     );
-    ui.audio_device.as_mut().unwrap().resume();
+    ui.audio_device.as_ref().unwrap().resume();
 }
 
 pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
-    let audio_device = device.ui.audio_device.as_mut().unwrap();
+    let audio_device = device.ui.audio_device.as_ref().unwrap();
     let mut primary_buffer: Vec<i16> = vec![0; length as usize / 2];
     let mut i = 0;
     while i < length as usize / 2 {
