@@ -23,7 +23,7 @@ extern "C"
 		uint32_t *VI_WIDTH_REG;
 	} GFX_INFO;
 
-	void rdp_init(void *_window, GFX_INFO _gfx_info, bool fullscreen, bool _upscale);
+	void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen, bool _upscale);
 	void rdp_close();
 	void rdp_set_vi_register(uint32_t reg, uint32_t value);
 	bool rdp_update_screen();
