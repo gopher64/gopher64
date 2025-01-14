@@ -31,31 +31,49 @@ jobs:
           Types: deb
           URIs: http://archive.ubuntu.com/ubuntu/
           Suites: noble
-          Components: main restricted universe
+          Components: main multiverse universe
           Architectures: amd64
 
           Types: deb
           URIs: http://security.ubuntu.com/ubuntu/
           Suites: noble-security
-          Components: main restricted universe
+          Components: main multiverse universe
           Architectures: amd64
 
           Types: deb
           URIs: http://archive.ubuntu.com/ubuntu/
           Suites: noble-updates
-          Components: main restricted universe
+          Components: main multiverse universe
           Architectures: amd64
 
           Types: deb
-          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          URIs: http://archive.ubuntu.com/ubuntu/
+          Suites: noble-backports
+          Components: main multiverse universe
+          Architectures: amd64
+
+          Types: deb
+          URIs: http://ports.ubuntu.com/
           Suites: noble
-          Components: main restricted multiverse universe
+          Components: main multiverse universe
           Architectures: arm64
 
           Types: deb
-          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          URIs: http://ports.ubuntu.com/
+          Suites: noble-security
+          Components: main multiverse universe
+          Architectures: arm64
+
+          Types: deb
+          URIs: http://ports.ubuntu.com/
           Suites: noble-updates
-          Components: main restricted multiverse universe
+          Components: main multiverse universe
+          Architectures: arm64
+
+          Types: deb
+          URIs: http://ports.ubuntu.com/
+          Suites: noble-backports
+          Components: main multiverse universe
           Architectures: arm64
           EOF
 
