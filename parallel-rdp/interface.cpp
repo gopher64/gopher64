@@ -142,7 +142,10 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 			emu_running = false;
 			break;
 		case SDL_WINDOWEVENT_RESIZED:
-			wsi_platform->do_resize();
+			if (emu_running)
+			{
+				wsi_platform->do_resize();
+			}
 			break;
 		default:
 			break;

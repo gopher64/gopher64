@@ -14,6 +14,7 @@ pub struct GopherEguiApp {
     input_profiles: Vec<String>,
     controller_enabled: [bool; 4],
     upscale: bool,
+    fullscreen: bool,
     emulate_vru: bool,
     show_vru_dialog: bool,
     vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
@@ -84,6 +85,7 @@ impl GopherEguiApp {
             input_profiles: get_input_profiles(&game_ui),
             controller_enabled: game_ui.config.input.controller_enabled,
             upscale: game_ui.config.video.upscale,
+            fullscreen: game_ui.config.video.fullscreen,
             emulate_vru: game_ui.config.input.emulate_vru,
             show_vru_dialog: false,
             vru_window_receiver: None,
@@ -99,6 +101,7 @@ fn save_config(
     selected_profile: [String; 4],
     controller_enabled: [bool; 4],
     upscale: bool,
+    fullscreen: bool,
     emulate_vru: bool,
 ) {
     let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
@@ -118,6 +121,7 @@ fn save_config(
     game_ui.config.input.input_profile_binding = selected_profile;
     game_ui.config.input.controller_enabled = controller_enabled;
 
+    game_ui.config.video.fullscreen = fullscreen;
     game_ui.config.video.upscale = upscale;
     game_ui.config.input.emulate_vru = emulate_vru;
 }
@@ -131,6 +135,7 @@ impl Drop for GopherEguiApp {
             self.selected_profile.clone(),
             self.controller_enabled,
             self.upscale,
+            self.fullscreen,
             self.emulate_vru,
         );
     }
@@ -181,6 +186,7 @@ impl eframe::App for GopherEguiApp {
                 let selected_profile = self.selected_profile.clone();
                 let controller_enabled = self.controller_enabled;
                 let upscale = self.upscale;
+                let fullscreen = self.fullscreen;
                 let emulate_vru = self.emulate_vru;
                 let config_dir = self.config_dir.clone();
                 let cache_dir = self.cache_dir.clone();
@@ -221,6 +227,7 @@ impl eframe::App for GopherEguiApp {
                             selected_profile,
                             controller_enabled,
                             upscale,
+                            fullscreen,
                             emulate_vru,
                         );
                         if emulate_vru {
@@ -232,7 +239,7 @@ impl eframe::App for GopherEguiApp {
                             std::path::Path::new(file.path()),
                             data_dir,
                             &mut device,
-                            false,
+                            fullscreen,
                         );
                         let result = std::fs::remove_file(running_file.clone());
                         if result.is_err() {
@@ -299,6 +306,7 @@ impl eframe::App for GopherEguiApp {
             });
             ui.add_space(32.0);
             ui.checkbox(&mut self.upscale, "High-Res Graphics");
+            ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
             ui.checkbox(
                 &mut self.emulate_vru,
                 "Emulate VRU (connects VRU to controller port 4)",
