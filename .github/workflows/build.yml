@@ -29,25 +29,19 @@ jobs:
         run: |
           cat <<EOF > deb822sources
           Types: deb
-          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          URIs: http://ports.ubuntu.com/
           Suites: noble
           Components: main multiverse universe
           Architectures: arm64
 
           Types: deb
-          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
-          Suites: noble-security
-          Components: main multiverse universe
-          Architectures: arm64
-
-          Types: deb
-          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          URIs: http://ports.ubuntu.com/
           Suites: noble-backports
           Components: main multiverse universe
           Architectures: arm64
 
           Types: deb
-          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          URIs: http://ports.ubuntu.com/
           Suites: noble-updates
           Components: main multiverse universe
           Architectures: arm64
