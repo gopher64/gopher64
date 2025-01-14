@@ -230,13 +230,13 @@ impl eframe::App for GopherEguiApp {
                         let mut device = device::Device::new(config_dir);
 
                         let save_config_items = SaveConfig {
-                            selected_controller: selected_controller,
-                            selected_profile: selected_profile,
-                            controller_enabled: controller_enabled,
-                            upscale: upscale,
-                            integer_scaling: integer_scaling,
-                            fullscreen: fullscreen,
-                            emulate_vru: emulate_vru,
+                            selected_controller,
+                            selected_profile,
+                            controller_enabled,
+                            upscale,
+                            integer_scaling,
+                            fullscreen,
+                            emulate_vru,
                         };
                         save_config(&mut device.ui, save_config_items);
 
