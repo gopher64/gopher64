@@ -21,6 +21,7 @@ pub struct Input {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Video {
     pub upscale: bool,
+    pub fullscreen: bool,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
@@ -45,7 +46,10 @@ impl Config {
                 controller_enabled: [true, false, false, false],
                 emulate_vru: false,
             },
-            video: Video { upscale: false },
+            video: Video {
+                upscale: false,
+                fullscreen: false,
+            },
         }
     }
 }
