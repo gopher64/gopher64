@@ -13,6 +13,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
     steps:
@@ -84,6 +85,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
         target: [x86_64-pc-windows-msvc]
     steps:
@@ -106,6 +108,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         target: [x86_64-apple-darwin, aarch64-apple-darwin]
     steps:
