@@ -29,37 +29,33 @@ jobs:
         run: |
           cat <<EOF > deb822sources
           Types: deb
-          URIs: http://archive.ubuntu.com/ubuntu/
-          Suites: noble
-          Components: main restricted universe
-          Architectures: amd64
-
-          Types: deb
-          URIs: http://security.ubuntu.com/ubuntu/
-          Suites: noble-security
-          Components: main restricted universe
-          Architectures: amd64
-
-          Types: deb
-          URIs: http://archive.ubuntu.com/ubuntu/
-          Suites: noble-updates
-          Components: main restricted universe
-          Architectures: amd64
-
-          Types: deb
-          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          URIs: http://ports.ubuntu.com/
           Suites: noble
           Components: main restricted multiverse universe
           Architectures: arm64
 
           Types: deb
-          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          URIs: http://ports.ubuntu.com/
+          Suites: noble-security
+          Components: main restricted multiverse universe
+          Architectures: arm64
+          EOF
+
+          Types: deb
+          URIs: http://ports.ubuntu.com/
+          Suites: noble-backports
+          Components: main restricted multiverse universe
+          Architectures: arm64
+          EOF
+
+          Types: deb
+          URIs: http://ports.ubuntu.com/
           Suites: noble-updates
           Components: main restricted multiverse universe
           Architectures: arm64
           EOF
 
-          sudo mv deb822sources /etc/apt/sources.list.d/ubuntu.sources
+          sudo mv deb822sources /etc/apt/sources.list.d/arm.sources
           sudo dpkg --add-architecture arm64
           sudo apt-get update
           sudo apt-get -y dist-upgrade
