@@ -23,6 +23,16 @@ pub struct GopherEguiApp {
     vru_word_list: Vec<String>,
 }
 
+struct SaveConfig {
+    selected_controller: [i32; 4],
+    selected_profile: [String; 4],
+    controller_enabled: [bool; 4],
+    upscale: bool,
+    integer_scaling: bool,
+    fullscreen: bool,
+    emulate_vru: bool,
+}
+
 fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
     let mut profiles = vec![];
     for key in game_ui.config.input.input_profiles.keys() {
@@ -97,18 +107,9 @@ impl GopherEguiApp {
     }
 }
 
-fn save_config(
-    game_ui: &mut ui::Ui,
-    selected_controller: [i32; 4],
-    selected_profile: [String; 4],
-    controller_enabled: [bool; 4],
-    upscale: bool,
-    integer_scaling: bool,
-    fullscreen: bool,
-    emulate_vru: bool,
-) {
+fn save_config(game_ui: &mut ui::Ui, save_config_items: SaveConfig) {
     let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
-    for (pos, item) in selected_controller.iter().enumerate() {
+    for (pos, item) in save_config_items.selected_controller.iter().enumerate() {
         if *item != -1 {
             game_ui.config.input.controller_assignment[pos] = Some(
                 joystick_subsystem
@@ -121,28 +122,28 @@ fn save_config(
         }
     }
 
-    game_ui.config.input.input_profile_binding = selected_profile;
-    game_ui.config.input.controller_enabled = controller_enabled;
+    game_ui.config.input.input_profile_binding = save_config_items.selected_profile;
+    game_ui.config.input.controller_enabled = save_config_items.controller_enabled;
 
-    game_ui.config.video.upscale = upscale;
-    game_ui.config.video.integer_scaling = integer_scaling;
-    game_ui.config.video.fullscreen = fullscreen;
-    game_ui.config.input.emulate_vru = emulate_vru;
+    game_ui.config.video.upscale = save_config_items.upscale;
+    game_ui.config.video.integer_scaling = save_config_items.integer_scaling;
+    game_ui.config.video.fullscreen = save_config_items.fullscreen;
+    game_ui.config.input.emulate_vru = save_config_items.emulate_vru;
 }
 
 impl Drop for GopherEguiApp {
     fn drop(&mut self) {
         let mut game_ui = ui::Ui::new(self.config_dir.clone());
-        save_config(
-            &mut game_ui,
-            self.selected_controller,
-            self.selected_profile.clone(),
-            self.controller_enabled,
-            self.upscale,
-            self.integer_scaling,
-            self.fullscreen,
-            self.emulate_vru,
-        );
+        let save_config_items = SaveConfig {
+            selected_controller: self.selected_controller,
+            selected_profile: self.selected_profile.clone(),
+            controller_enabled: self.controller_enabled,
+            upscale: self.upscale,
+            integer_scaling: self.integer_scaling,
+            fullscreen: self.fullscreen,
+            emulate_vru: self.emulate_vru,
+        };
+        save_config(&mut game_ui, save_config_items);
     }
 }
 
@@ -227,16 +228,18 @@ impl eframe::App for GopherEguiApp {
                             panic!("could not create running file: {}", result.err().unwrap())
                         }
                         let mut device = device::Device::new(config_dir);
-                        save_config(
-                            &mut device.ui,
-                            selected_controller,
-                            selected_profile,
-                            controller_enabled,
-                            upscale,
-                            integer_scaling,
-                            fullscreen,
-                            emulate_vru,
-                        );
+
+                        let save_config_items = SaveConfig {
+                            selected_controller: selected_controller,
+                            selected_profile: selected_profile,
+                            controller_enabled: controller_enabled,
+                            upscale: upscale,
+                            integer_scaling: integer_scaling,
+                            fullscreen: fullscreen,
+                            emulate_vru: emulate_vru,
+                        };
+                        save_config(&mut device.ui, save_config_items);
+
                         if emulate_vru {
                             device.vru.window_notifier = Some(vru_window_notifier);
                             device.vru.word_receiver = Some(vru_word_receiver);
