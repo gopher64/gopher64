@@ -56,13 +56,10 @@ pub fn translate_address(
     address: u64,
     access_type: AccessType,
 ) -> (u64, bool, bool) {
-    let mut cached = false;
     if (address & 0xc0000000) != 0x80000000 {
         return device::tlb::get_physical_address(device, address, access_type);
-    } else if address & 0x20000000 == 0 {
-        cached = true;
     }
-    (address & 0x1FFFFFFF, cached, false)
+    (address & 0x1FFFFFFF, address & 0x20000000 == 0, false)
 }
 
 pub fn data_read(
