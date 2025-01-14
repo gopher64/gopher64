@@ -14,6 +14,7 @@ pub struct GopherEguiApp {
     input_profiles: Vec<String>,
     controller_enabled: [bool; 4],
     upscale: bool,
+    integer_scaling: bool,
     fullscreen: bool,
     emulate_vru: bool,
     show_vru_dialog: bool,
@@ -85,6 +86,7 @@ impl GopherEguiApp {
             input_profiles: get_input_profiles(&game_ui),
             controller_enabled: game_ui.config.input.controller_enabled,
             upscale: game_ui.config.video.upscale,
+            integer_scaling: game_ui.config.video.integer_scaling,
             fullscreen: game_ui.config.video.fullscreen,
             emulate_vru: game_ui.config.input.emulate_vru,
             show_vru_dialog: false,
@@ -101,6 +103,7 @@ fn save_config(
     selected_profile: [String; 4],
     controller_enabled: [bool; 4],
     upscale: bool,
+    integer_scaling: bool,
     fullscreen: bool,
     emulate_vru: bool,
 ) {
@@ -121,8 +124,9 @@ fn save_config(
     game_ui.config.input.input_profile_binding = selected_profile;
     game_ui.config.input.controller_enabled = controller_enabled;
 
-    game_ui.config.video.fullscreen = fullscreen;
     game_ui.config.video.upscale = upscale;
+    game_ui.config.video.integer_scaling = integer_scaling;
+    game_ui.config.video.fullscreen = fullscreen;
     game_ui.config.input.emulate_vru = emulate_vru;
 }
 
@@ -135,6 +139,7 @@ impl Drop for GopherEguiApp {
             self.selected_profile.clone(),
             self.controller_enabled,
             self.upscale,
+            self.integer_scaling,
             self.fullscreen,
             self.emulate_vru,
         );
@@ -186,6 +191,7 @@ impl eframe::App for GopherEguiApp {
                 let selected_profile = self.selected_profile.clone();
                 let controller_enabled = self.controller_enabled;
                 let upscale = self.upscale;
+                let integer_scaling = self.integer_scaling;
                 let fullscreen = self.fullscreen;
                 let emulate_vru = self.emulate_vru;
                 let config_dir = self.config_dir.clone();
@@ -227,6 +233,7 @@ impl eframe::App for GopherEguiApp {
                             selected_profile,
                             controller_enabled,
                             upscale,
+                            integer_scaling,
                             fullscreen,
                             emulate_vru,
                         );
@@ -306,7 +313,9 @@ impl eframe::App for GopherEguiApp {
             });
             ui.add_space(32.0);
             ui.checkbox(&mut self.upscale, "High-Res Graphics");
+            ui.checkbox(&mut self.integer_scaling, "Integer Scaling");
             ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
+            ui.add_space(32.0);
             ui.checkbox(
                 &mut self.emulate_vru,
                 "Emulate VRU (connects VRU to controller port 4)",

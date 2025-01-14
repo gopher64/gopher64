@@ -38,8 +38,9 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
         rdp_init(
             device.ui.window.as_ref().unwrap().raw() as *mut std::ffi::c_void,
             gfx_info,
-            fullscreen,
             device.ui.config.video.upscale,
+            device.ui.config.video.integer_scaling,
+            fullscreen,
         )
     }
 }

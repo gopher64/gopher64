@@ -51,6 +51,7 @@ enum vi_registers
 };
 
 static bool fullscreen;
+static bool integer_scaling;
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
 static SDL_WSIPlatform *wsi_platform;
@@ -166,13 +167,14 @@ int sdl_event_filter(void *userdata, SDL_Event *event)
 	return 0;
 }
 
-void rdp_init(void *_window, GFX_INFO _gfx_info, bool _fullscreen, bool _upscale)
+void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen)
 {
 	window = (SDL_Window *)_window;
 	SDL_AddEventWatch(sdl_event_filter, nullptr);
 
 	gfx_info = _gfx_info;
 	fullscreen = _fullscreen;
+	integer_scaling = _integer_scaling;
 	bool window_vsync = 0;
 	wsi = new WSI;
 	wsi_platform = new SDL_WSIPlatform;
@@ -234,34 +236,42 @@ void rdp_close()
 
 static void calculate_viewport(float *x, float *y, float *width, float *height)
 {
-	bool window_widescreen = false;
-	int32_t display_width = (window_widescreen ? 854 : 640);
-	int32_t display_height = 480;
+	const int32_t display_width = 640;
+	const int32_t display_height = 480;
 
 	int w, h;
 	SDL_GetWindowSize(window, &w, &h);
 
-	*width = w;
-	*height = h;
-	*x = 0;
-	*y = 0;
-	int32_t hw = display_height * *width;
-	int32_t wh = display_width * *height;
+	if (integer_scaling)
+	{
+		// Integer scaling path
+		int scale_x = w / display_width;
+		int scale_y = h / display_height;
+		int scale = (scale_x < scale_y) ? scale_x : scale_y;
+		if (scale < 1)
+			scale = 1;
 
-	// add letterboxes or pillarboxes if the window has a different aspect ratio
-	// than the current display mode
-	if (hw > wh)
-	{
-		int32_t w_max = wh / display_height;
-		*x += (*width - w_max) / 2;
-		*width = w_max;
+		// Calculate scaled dimensions
+		int scaled_width = display_width * scale;
+		int scaled_height = display_height * scale;
+
+		*width = scaled_width;
+		*height = scaled_height;
 	}
-	else if (hw < wh)
+	else
 	{
-		int32_t h_max = hw / display_width;
-		*y += (*height - h_max) / 2;
-		*height = h_max;
+		// Regular scaling path - maintain aspect ratio
+		float scale_x = w / (float)display_width;
+		float scale_y = h / (float)display_height;
+		float scale = (scale_x < scale_y) ? scale_x : scale_y;
+
+		*width = display_width * scale;
+		*height = display_height * scale;
 	}
+
+	// Center the viewport
+	*x = (w - *width) / 2.0f;
+	*y = (h - *height) / 2.0f;
 }
 
 static void render_frame(Vulkan::Device &device)
