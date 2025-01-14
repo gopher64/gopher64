@@ -60,13 +60,15 @@ jobs:
 
           sudo mv deb822sources /etc/apt/sources.list.d/ubuntu.sources
           sudo dpkg --add-architecture arm64
-          sudo apt update
-          sudo apt -y install libsdl2-dev:arm64 g++-aarch64-linux-gnu
+          sudo apt-get update
+          sudo apt-get -y dist-upgrade
+          sudo apt-get -y install libsdl2-dev:arm64 g++-aarch64-linux-gnu
       - name: Install SDL2
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
-          sudo apt update
-          sudo apt -y install libsdl2-dev
+          sudo apt-get update
+          sudo apt-get -y dist-upgrade
+          sudo apt-get -y install libsdl2-dev
       - name: Set aarch64 linker
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
