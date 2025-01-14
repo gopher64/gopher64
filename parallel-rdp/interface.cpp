@@ -236,8 +236,8 @@ void rdp_close()
 
 static void calculate_viewport(float *x, float *y, float *width, float *height)
 {
-	const int32_t display_width = 640;
-	const int32_t display_height = 480;
+	const int32_t display_width = 320;
+	const int32_t display_height = 240;
 
 	int w, h;
 	SDL_GetWindowSize(window, &w, &h);
