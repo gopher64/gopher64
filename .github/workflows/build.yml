@@ -81,7 +81,8 @@ jobs:
           sudo dpkg --add-architecture arm64
           sudo apt-get update
           sudo apt-get -y dist-upgrade
-          sudo apt-get -y install libsdl2-dev:arm64 g++-aarch64-linux-gnu
+          sudo apt-get -y install aptitude
+          sudo aptitude -y install libsdl2-dev:arm64 g++-aarch64-linux-gnu
       - name: Install SDL2
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
