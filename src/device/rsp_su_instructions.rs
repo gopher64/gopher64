@@ -984,10 +984,10 @@ pub fn ssv(device: &mut device::Device, opcode: u32) {
     let mut element = velement(opcode);
 
     if element % 2 == 0 {
-        device.rsp.mem[(address & 0xFFF) as usize..((address + 2) & 0xFFF) as usize]
-            .copy_from_slice(
-                &get_vpr16(device.rsp.cpu.vpr[rt(opcode) as usize], element / 2).to_be_bytes(),
-            );
+        let start = (address & 0xFFF) as usize;
+        device.rsp.mem[start..start + 2].copy_from_slice(
+            &get_vpr16(device.rsp.cpu.vpr[rt(opcode) as usize], element / 2).to_be_bytes(),
+        );
     } else {
         let end = element + 2;
         while element < end {
@@ -1006,10 +1006,10 @@ pub fn slv(device: &mut device::Device, opcode: u32) {
     let mut element = velement(opcode);
 
     if element % 4 == 0 {
-        device.rsp.mem[(address & 0xFFF) as usize..((address + 4) & 0xFFF) as usize]
-            .copy_from_slice(
-                &get_vpr32(device.rsp.cpu.vpr[rt(opcode) as usize], element / 4).to_be_bytes(),
-            );
+        let start = (address & 0xFFF) as usize;
+        device.rsp.mem[start..start + 4].copy_from_slice(
+            &get_vpr32(device.rsp.cpu.vpr[rt(opcode) as usize], element / 4).to_be_bytes(),
+        );
     } else {
         let end = element + 4;
         while element < end {
@@ -1028,10 +1028,10 @@ pub fn sdv(device: &mut device::Device, opcode: u32) {
     let mut element = velement(opcode);
 
     if element % 8 == 0 {
-        device.rsp.mem[(address & 0xFFF) as usize..((address + 8) & 0xFFF) as usize]
-            .copy_from_slice(
-                &get_vpr64(device.rsp.cpu.vpr[rt(opcode) as usize], element / 8).to_be_bytes(),
-            );
+        let start = (address & 0xFFF) as usize;
+        device.rsp.mem[start..start + 8].copy_from_slice(
+            &get_vpr64(device.rsp.cpu.vpr[rt(opcode) as usize], element / 8).to_be_bytes(),
+        );
     } else {
         let end = element + 8;
         while element < end {
@@ -1050,7 +1050,8 @@ pub fn sqv(device: &mut device::Device, opcode: u32) {
     let mut element = velement(opcode);
 
     if element == 0 && address % 16 == 0 {
-        device.rsp.mem[(address & 0xFFF) as usize..((address + 16) & 0xFFF) as usize]
+        let start = (address & 0xFFF) as usize;
+        device.rsp.mem[start..start + 16]
             .copy_from_slice(&get_vpr128(device.rsp.cpu.vpr[rt(opcode) as usize]).to_be_bytes());
     } else {
         let end = element + (16 - (address & 15)) as u8;
@@ -1073,7 +1074,8 @@ pub fn srv(device: &mut device::Device, opcode: u32) {
     address &= !15;
 
     if element == 0 && base == 0 {
-        device.rsp.mem[(address & 0xFFF) as usize..((address + 16) & 0xFFF) as usize]
+        let start = (address & 0xFFF) as usize;
+        device.rsp.mem[start..start + 16]
             .copy_from_slice(&get_vpr128(device.rsp.cpu.vpr[rt(opcode) as usize]).to_be_bytes());
     } else {
         while element < end {
