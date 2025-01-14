@@ -859,7 +859,7 @@ pub fn lpv(device: &mut device::Device, opcode: u32) {
     for i in 0..8 {
         value |= (((device.rsp.mem
             [((address.wrapping_add(((index.wrapping_add(i)) & 15) as u32)) & 0xFFF) as usize]
-            as i16)
+            as u16)
             << 8) as u128)
             << (16 * (7 - i));
     }
@@ -876,7 +876,7 @@ pub fn luv(device: &mut device::Device, opcode: u32) {
     for i in 0..8 {
         value |= (((device.rsp.mem
             [((address.wrapping_add(((index.wrapping_add(i)) & 15) as u32)) & 0xFFF) as usize]
-            as i16)
+            as u16)
             << 7) as u128)
             << (16 * (7 - i));
     }
@@ -893,7 +893,7 @@ pub fn lhv(device: &mut device::Device, opcode: u32) {
     for i in 0..8 {
         value |= (((device.rsp.mem
             [((address.wrapping_add(((index.wrapping_add(i * 2)) & 15) as u32)) & 0xFFF) as usize]
-            as i16)
+            as u16)
             << 7) as u128)
             << (16 * (7 - i));
     }
