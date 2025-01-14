@@ -237,8 +237,7 @@ pub fn set_buttons_from_controller(
 }
 
 pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
-    let context = ui.sdl_context.as_mut().unwrap();
-    let events = context.event_pump().unwrap();
+    let events = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     let keyboard_state = events.keyboard_state();
 
     let profile_name = ui.config.input.input_profile_binding[channel].clone();
@@ -333,10 +332,10 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         println!("Profile name cannot be empty");
         return;
     }
-    let joystick_subsystem = ui.sdl_context.as_ref().unwrap().joystick().unwrap();
+    let joystick_subsystem = ui.joystick_subsystem.as_ref().unwrap();
     let mut joysticks = vec![];
     for i in 0..joystick_subsystem.num_joysticks().unwrap() {
-        joysticks.push(ui.sdl_context.as_ref().unwrap().joystick().unwrap().open(i));
+        joysticks.push(joystick_subsystem.open(i));
     }
 
     let mut builder =
@@ -377,9 +376,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut new_joystick_axis = [(false, 0u32, 0); 18];
 
     let mut last_axis_result = (false, 0, 0);
-    let mut event_pump = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
+    let mut events = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     for (key, value) in key_labels.iter() {
-        for _event in event_pump.poll_iter() {} // clear events
+        for _event in events.poll_iter() {} // clear events
 
         ui::video::draw_text(
             format!("Select binding for: {key}").as_str(),
@@ -390,7 +389,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         let mut key_set = false;
         while !key_set {
             std::thread::sleep(std::time::Duration::from_millis(100));
-            for event in event_pump.poll_iter() {
+            for event in events.poll_iter() {
                 match event {
                     sdl2::event::Event::Window {
                         win_event: sdl2::event::WindowEvent::Close,
@@ -504,6 +503,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 
 pub fn init(ui: &mut ui::Ui) {
     let joystick_subsystem = ui.joystick_subsystem.as_ref().unwrap();
+    let controller_subsystem = ui.controller_subsystem.as_ref().unwrap();
     let mut taken = [false; 4];
     for i in 0..4 {
         let controller_assignment = &ui.config.input.controller_assignment[i];
@@ -521,25 +521,13 @@ pub fn init(ui: &mut ui::Ui) {
             }
             if joystick_index < u32::MAX {
                 if ui.config.input.input_profile_binding[i] == "default" {
-                    let controller_result = ui
-                        .sdl_context
-                        .as_ref()
-                        .unwrap()
-                        .game_controller()
-                        .unwrap()
-                        .open(joystick_index);
+                    let controller_result = controller_subsystem.open(joystick_index);
                     if controller_result.is_ok() {
                         ui.controllers[i].game_controller = Some(controller_result.unwrap());
                     }
                 }
                 if ui.controllers[i].game_controller.is_none() {
-                    let joystick_result = ui
-                        .sdl_context
-                        .as_ref()
-                        .unwrap()
-                        .joystick()
-                        .unwrap()
-                        .open(joystick_index);
+                    let joystick_result = joystick_subsystem.open(joystick_index);
                     if joystick_result.is_err() {
                         println!(
                             "could not connect joystick: {}",

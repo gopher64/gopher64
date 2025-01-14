@@ -36,7 +36,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
 
     unsafe {
         rdp_init(
-            device.ui.window.as_mut().unwrap().raw() as *mut std::ffi::c_void,
+            device.ui.window.as_ref().unwrap().raw() as *mut std::ffi::c_void,
             gfx_info,
             fullscreen,
             device.ui.config.video.upscale,
