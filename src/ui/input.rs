@@ -472,6 +472,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
             }
         }
     }
+
     let new_profile = ui::config::InputProfile {
         keys: new_keys,
         controller_buttons: Default::default(),
