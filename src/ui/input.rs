@@ -206,7 +206,12 @@ pub fn set_buttons_from_joystick(
     let profile_joystick_axis = profile.joystick_axis[i];
     if profile_joystick_axis.0 {
         let axis_position = joystick.axis(profile_joystick_axis.1).unwrap();
-        if axis_position as isize * profile_joystick_axis.2 as isize > 0
+        if profile_joystick_axis.3 {
+            // this axis is a trigger, with a default value of -32768
+            if axis_position > 0 {
+                *keys |= 1 << i;
+            }
+        } else if axis_position as isize * profile_joystick_axis.2 as isize > 0
             && axis_position.saturating_abs() > i16::MAX / 2
         {
             *keys |= 1 << i;
@@ -375,9 +380,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut new_keys = [(false, 0); 18];
     let mut new_joystick_buttons = [(false, 0u32); 14];
     let mut new_joystick_hat = [(false, 0u32, 0); 14];
-    let mut new_joystick_axis = [(false, 0u32, 0); 18];
+    let mut new_joystick_axis = [(false, 0u32, 0, false); 18];
 
-    let mut last_axis_result = (false, 0, 0);
+    let mut last_axis_result = (false, 0, 0, false);
     let mut events = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     let mut joystick_axis_default: std::collections::HashMap<
         u32,
@@ -447,24 +452,29 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                             .unwrap()
                             .get(&axis_idx)
                             .unwrap();
-                        if axis_default_value.saturating_abs() > 24576
-                            && axis_default_value * axis_value > 0
-                        {
-                            // only consider this value if the axis is in the opposite direction of the default value
-                            continue;
-                        }
-
-                        if axis_value.saturating_abs() > 24576 {
-                            let result = (
+                        let result;
+                        if axis_default_value.saturating_abs() < i16::MIN / 2 {
+                            // this axis is a trigger, with a default value of -32768
+                            result = (
                                 true,
                                 axis_idx as u32,
                                 axis_value / axis_value.saturating_abs(),
+                                true,
                             );
-                            if result != last_axis_result {
-                                new_joystick_axis[*value] = result;
-                                last_axis_result = result;
-                                key_set = true
-                            }
+                        } else if axis_value.saturating_abs() > i16::MAX / 2 {
+                            result = (
+                                true,
+                                axis_idx as u32,
+                                axis_value / axis_value.saturating_abs(),
+                                false,
+                            );
+                        } else {
+                            continue;
+                        }
+                        if result != last_axis_result {
+                            new_joystick_axis[*value] = result;
+                            last_axis_result = result;
+                            key_set = true
                         }
                     }
                     _ => {}

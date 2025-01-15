@@ -7,7 +7,7 @@ pub struct InputProfile {
     pub controller_axis: [(bool, i32, i16); 18],
     pub joystick_buttons: [(bool, u32); 14],
     pub joystick_hat: [(bool, u32, u8); 14],
-    pub joystick_axis: [(bool, u32, i16); 18],
+    pub joystick_axis: [(bool, u32, i16, bool); 18],
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
