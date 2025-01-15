@@ -455,12 +455,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         let result;
                         if *axis_default_value < i16::MIN / 2 {
                             // this axis is a trigger, with a default value of -32768
-                            result = (
-                                true,
-                                axis_idx as u32,
-                                axis_value / axis_value.saturating_abs(),
-                                true,
-                            );
+                            result = (true, axis_idx as u32, 0, true);
                         } else if axis_value.saturating_abs() > i16::MAX / 2 {
                             result = (
                                 true,
