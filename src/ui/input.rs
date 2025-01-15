@@ -335,7 +335,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let joystick_subsystem = ui.joystick_subsystem.as_ref().unwrap();
     let mut joysticks = vec![];
     for i in 0..joystick_subsystem.num_joysticks().unwrap() {
-        joysticks.push(joystick_subsystem.open(i));
+        if let Ok(stick) = joystick_subsystem.open(i) {
+            joysticks.push(stick);
+        }
     }
 
     let mut builder =
@@ -377,6 +379,24 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
 
     let mut last_axis_result = (false, 0, 0);
     let mut events = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
+    let mut joystick_axis_default: std::collections::HashMap<
+        u32,
+        std::collections::HashMap<u8, i16>,
+    > = std::collections::HashMap::new();
+
+    // Some controllers have triggers which show up as an axis, and have a value of -32768 when they are not pressed
+    // These triggers range from -32768 to 32767 depending on how hard the trigger is pressed
+    // So, we need to track the "default value" of the axis, and only consider the trigger pressed when the axis value is the opposite sign
+    events.pump_events();
+    for joystick in joysticks.iter() {
+        for i in 0..joystick.num_axes() {
+            let axis_value = joystick.axis(i).unwrap();
+            joystick_axis_default
+                .entry(joystick.instance_id())
+                .or_default()
+                .insert(i as u8, axis_value);
+        }
+    }
     for (key, value) in key_labels.iter() {
         for _event in events.poll_iter() {} // clear events
 
@@ -419,8 +439,21 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                     sdl2::event::Event::JoyAxisMotion {
                         axis_idx,
                         value: axis_value,
+                        which,
                         ..
                     } => {
+                        let axis_default_value = joystick_axis_default
+                            .get(&which)
+                            .unwrap()
+                            .get(&axis_idx)
+                            .unwrap();
+                        if axis_default_value.saturating_abs() > 24576
+                            && axis_default_value * axis_value > 0
+                        {
+                            // only consider this value if the axis is in the opposite direction of the default value
+                            continue;
+                        }
+
                         if axis_value.saturating_abs() > 24576 {
                             let result = (
                                 true,
@@ -439,7 +472,6 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
             }
         }
     }
-
     let new_profile = ui::config::InputProfile {
         keys: new_keys,
         controller_buttons: Default::default(),
