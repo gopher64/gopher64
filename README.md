@@ -24,6 +24,10 @@ Options:
   -V, --version
           Print version
 ```
+## discord
+
+There is no dedicated server at this point, but there is a #gopher64 channel on the simple64 server: https://discord.gg/R2cz7S94vD
+
 ## goals
 
 1. Performance. I want to be able to use this emulator on my laptop.
