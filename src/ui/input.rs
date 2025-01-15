@@ -453,7 +453,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                             .get(&axis_idx)
                             .unwrap();
                         let result;
-                        if axis_default_value.saturating_abs() < i16::MIN / 2 {
+                        if *axis_default_value < i16::MIN / 2 {
                             // this axis is a trigger, with a default value of -32768
                             result = (
                                 true,
