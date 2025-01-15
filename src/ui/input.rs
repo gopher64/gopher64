@@ -407,12 +407,14 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         key_set = true
                     }
                     sdl2::event::Event::JoyHatMotion { hat_idx, state, .. } => {
-                        new_joystick_hat[*value] = (
-                            true,
-                            hat_idx as u32,
-                            sdl2::joystick::HatState::to_raw(state),
-                        );
-                        key_set = true
+                        if state != sdl2::joystick::HatState::Centered {
+                            new_joystick_hat[*value] = (
+                                true,
+                                hat_idx as u32,
+                                sdl2::joystick::HatState::to_raw(state),
+                            );
+                            key_set = true
+                        }
                     }
                     sdl2::event::Event::JoyAxisMotion {
                         axis_idx,
