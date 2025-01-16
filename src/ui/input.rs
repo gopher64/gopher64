@@ -255,11 +255,10 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
                     << i;
             }
         }
-
-        if joystick.is_some() {
-            set_buttons_from_joystick(profile, i, joystick.as_ref().unwrap(), &mut keys);
-        } else if controller.is_some() {
+        if controller.is_some() {
             set_buttons_from_controller(profile, i, controller.as_ref().unwrap(), &mut keys);
+        } else if joystick.is_some() {
+            set_buttons_from_joystick(profile, i, joystick.as_ref().unwrap(), &mut keys);
         }
     }
 
@@ -270,10 +269,10 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
         (x, y) = set_axis_from_keys(profile, keyboard_state);
     }
 
-    if joystick.is_some() {
-        (x, y) = set_axis_from_joystick(profile, joystick.as_ref().unwrap())
-    } else if controller.is_some() {
+    if controller.is_some() {
         (x, y) = set_axis_from_controller(profile, controller.as_ref().unwrap())
+    } else if joystick.is_some() {
+        (x, y) = set_axis_from_joystick(profile, joystick.as_ref().unwrap())
     }
     bound_axis(&mut x, &mut y);
 
