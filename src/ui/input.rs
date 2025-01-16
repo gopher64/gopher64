@@ -16,13 +16,13 @@ const D_CBUTTON: usize = 10;
 const U_CBUTTON: usize = 11;
 const R_TRIG: usize = 12;
 const L_TRIG: usize = 13;
-const X_AXIS: usize = 16;
-const Y_AXIS: usize = 24;
-
 const AXIS_LEFT: usize = 14;
 const AXIS_RIGHT: usize = 15;
 const AXIS_UP: usize = 16;
 const AXIS_DOWN: usize = 17;
+
+const X_AXIS_SHIFT: usize = 16;
+const Y_AXIS_SHIFT: usize = 24;
 
 const MAX_AXIS_VALUE: f64 = 85.0;
 
@@ -307,8 +307,8 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     }
     bound_axis(&mut x, &mut y);
 
-    keys |= (x.round() as i8 as u8 as u32) << X_AXIS;
-    keys |= (y.round() as i8 as u8 as u32) << Y_AXIS;
+    keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
+    keys |= (y.round() as i8 as u8 as u32) << Y_AXIS_SHIFT;
     keys
 }
 
