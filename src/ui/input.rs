@@ -27,6 +27,7 @@ const AXIS_DOWN: usize = 17;
 const MAX_AXIS_VALUE: f64 = 85.0;
 
 pub struct Controllers {
+    pub rumble: bool,
     pub game_controller: Option<sdl2::controller::GameController>,
     pub joystick: Option<sdl2::joystick::Joystick>,
 }
@@ -233,6 +234,35 @@ pub fn set_buttons_from_controller(
         {
             *keys |= 1 << i;
         }
+    }
+}
+
+pub fn set_rumble(ui: &mut ui::Ui, channel: usize, rumble: u8) {
+    if !ui.controllers[channel].rumble {
+        return;
+    }
+    let controller = &mut ui.controllers[channel].game_controller;
+    let joystick = &mut ui.controllers[channel].joystick;
+    if controller.is_some() {
+        controller
+            .as_mut()
+            .unwrap()
+            .set_rumble(
+                (rumble & 1) as u16 * u16::MAX,
+                (rumble & 1) as u16 * u16::MAX,
+                (rumble & 1) as u32 * 60000,
+            )
+            .unwrap();
+    } else if joystick.is_some() {
+        joystick
+            .as_mut()
+            .unwrap()
+            .set_rumble(
+                (rumble & 1) as u16 * u16::MAX,
+                (rumble & 1) as u16 * u16::MAX,
+                (rumble & 1) as u32 * 60000,
+            )
+            .unwrap();
     }
 }
 
@@ -526,6 +556,14 @@ pub fn init(ui: &mut ui::Ui) {
                     let controller_result = controller_subsystem.open(joystick_index);
                     if controller_result.is_ok() {
                         ui.controllers[i].game_controller = Some(controller_result.unwrap());
+                        if ui.controllers[i]
+                            .game_controller
+                            .as_ref()
+                            .unwrap()
+                            .has_rumble()
+                        {
+                            ui.controllers[i].rumble = true;
+                        }
                     }
                 }
                 if ui.controllers[i].game_controller.is_none() {
@@ -537,6 +575,9 @@ pub fn init(ui: &mut ui::Ui) {
                         )
                     } else {
                         ui.controllers[i].joystick = Some(joystick_result.unwrap());
+                        if ui.controllers[i].joystick.as_ref().unwrap().has_rumble() {
+                            ui.controllers[i].rumble = true;
+                        }
                     }
                 }
             } else {

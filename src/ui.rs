@@ -59,18 +59,22 @@ impl Ui {
                 input::Controllers {
                     game_controller: None,
                     joystick: None,
+                    rumble: false,
                 },
                 input::Controllers {
                     game_controller: None,
                     joystick: None,
+                    rumble: false,
                 },
                 input::Controllers {
                     game_controller: None,
                     joystick: None,
+                    rumble: false,
                 },
                 input::Controllers {
                     game_controller: None,
                     joystick: None,
+                    rumble: false,
                 },
             ],
             config_file_path,
