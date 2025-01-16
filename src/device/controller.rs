@@ -16,8 +16,8 @@ const JDT_JOY_ABS_COUNTERS: u16 = 0x0001; /* joystick with absolute coordinates 
 //const JDT_JOY_REL_COUNTERS: u16 = 0x0002; /* joystick with relative coordinates (= mouse) */
 const JDT_JOY_PORT: u16 = 0x0004; /* has port for external paks */
 const PAK_CHUNK_SIZE: usize = 0x20;
-const CONT_STATUS_PAK_NOT_PRESENT: u8 = 0;
 const CONT_STATUS_PAK_PRESENT: u8 = 1;
+const CONT_STATUS_PAK_NOT_PRESENT: u8 = 2;
 const CONT_FLAVOR: u16 = JDT_JOY_ABS_COUNTERS | JDT_JOY_PORT;
 
 #[derive(Copy, Clone)]
