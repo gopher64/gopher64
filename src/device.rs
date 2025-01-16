@@ -286,6 +286,7 @@ impl Device {
                     rx_buf: None,
                     process: None,
                     pak_handler: None,
+                    change_pak: controller::PakType::None,
                 }; 5],
             },
             cart: cart_rom::Cart {

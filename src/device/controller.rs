@@ -20,10 +20,18 @@ const CONT_STATUS_PAK_PRESENT: u8 = 1;
 const CONT_STATUS_PAK_NOT_PRESENT: u8 = 2;
 const CONT_FLAVOR: u16 = JDT_JOY_ABS_COUNTERS | JDT_JOY_PORT;
 
+#[derive(Copy, Clone, PartialEq)]
+pub enum PakType {
+    None = 0,
+    MemPak = 1,
+    RumblePak = 2,
+}
+
 #[derive(Copy, Clone)]
 pub struct PakHandler {
     pub read: fn(&mut device::Device, usize, u16, usize, usize),
     pub write: fn(&mut device::Device, usize, u16, usize, usize),
+    pub get_type: fn() -> PakType,
 }
 
 pub fn process(device: &mut device::Device, channel: usize) {
@@ -45,7 +53,23 @@ pub fn process(device: &mut device::Device, channel: usize) {
         JCMD_CONTROLLER_READ => {
             let offset = device.pif.channels[channel].rx_buf.unwrap();
             let input = ui::input::get(&mut device.ui, channel);
-            device.pif.ram[offset..offset + 4].copy_from_slice(&input.to_ne_bytes());
+            device.pif.ram[offset..offset + 4].copy_from_slice(&input.0.to_ne_bytes());
+            if input.1 {
+                // pak change button pressed
+                if device::events::get_event(device, device::events::EventType::PakSwitch).is_none()
+                {
+                    device.pif.channels[channel].change_pak =
+                        (device.pif.channels[channel].pak_handler.unwrap().get_type)();
+                    device.pif.channels[channel].pak_handler = None;
+                    device::events::create_event(
+                        device,
+                        device::events::EventType::PakSwitch,
+                        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
+                            + (device.cpu.clock_rate), // 1 second
+                        pak_switch_event,
+                    )
+                }
+            }
         }
         JCMD_PAK_READ => pak_read_block(
             device,
@@ -121,4 +145,27 @@ pub fn data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 
         i += 1;
     }
     crc
+}
+
+pub fn pak_switch_event(device: &mut device::Device) {
+    for channel in device.pif.channels.iter_mut() {
+        if channel.change_pak != PakType::None {
+            if channel.change_pak == PakType::RumblePak {
+                let handler = device::controller::PakHandler {
+                    read: device::controller::mempak::read,
+                    write: device::controller::mempak::write,
+                    get_type: device::controller::mempak::get_type,
+                };
+                channel.pak_handler = Some(handler);
+            } else if channel.change_pak == PakType::MemPak {
+                let handler = device::controller::PakHandler {
+                    read: device::controller::rumble::read,
+                    write: device::controller::rumble::write,
+                    get_type: device::controller::rumble::get_type,
+                };
+                channel.pak_handler = Some(handler);
+            }
+            channel.change_pak = PakType::None;
+        }
+    }
 }

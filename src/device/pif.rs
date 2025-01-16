@@ -15,6 +15,7 @@ pub struct PifChannel {
     pub rx_buf: Option<usize>,
     pub process: Option<fn(&mut device::Device, usize)>,
     pub pak_handler: Option<device::controller::PakHandler>,
+    pub change_pak: device::controller::PakType,
 }
 
 pub const PIF_RAM_SIZE: usize = 64;
@@ -227,21 +228,12 @@ pub fn init(device: &mut device::Device) {
     let mempak_handler = device::controller::PakHandler {
         read: device::controller::mempak::read,
         write: device::controller::mempak::write,
+        get_type: device::controller::mempak::get_type,
     };
 
-    let rumble_handler = device::controller::PakHandler {
-        read: device::controller::rumble::read,
-        write: device::controller::rumble::write,
-    };
-
-    let rumble = true;
     for i in 0..4 {
         if device.ui.config.input.controller_enabled[i] {
-            if rumble {
-                device.pif.channels[i].pak_handler = Some(rumble_handler);
-            } else {
-                device.pif.channels[i].pak_handler = Some(mempak_handler);
-            }
+            device.pif.channels[i].pak_handler = Some(mempak_handler);
             device.pif.channels[i].process = Some(device::controller::process);
         }
     }
