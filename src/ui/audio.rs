@@ -19,7 +19,8 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
             .open_queue::<i16, _>(None, &desired_spec)
             .unwrap(),
     );
-    ui.audio_device.as_ref().unwrap().resume();
+    let audio_device = ui.audio_device.as_ref().unwrap();
+    audio_device.resume();
 
     let mempak_audio = sdl2::audio::AudioSpecWAV::load_wav_rw(
         &mut sdl2::rwops::RWops::from_bytes(include_bytes!("../../data/mempak.wav"))
@@ -36,9 +37,9 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         mempak_audio.format,
         mempak_audio.channels,
         mempak_audio.freq,
-        sdl2::audio::AudioFormat::S16LSB,
-        desired_spec.channels.unwrap(),
-        desired_spec.freq.unwrap(),
+        audio_device.spec().format,
+        audio_device.spec().channels,
+        audio_device.spec().freq,
     )
     .expect("Could not create AudioCVT");
 
