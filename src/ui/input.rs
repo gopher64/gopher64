@@ -16,17 +16,20 @@ const D_CBUTTON: usize = 10;
 const U_CBUTTON: usize = 11;
 const R_TRIG: usize = 12;
 const L_TRIG: usize = 13;
-const X_AXIS: usize = 16;
-const Y_AXIS: usize = 24;
-
 const AXIS_LEFT: usize = 14;
 const AXIS_RIGHT: usize = 15;
 const AXIS_UP: usize = 16;
 const AXIS_DOWN: usize = 17;
+const CHANGE_PAK: usize = 18;
+pub const PROFILE_SIZE: usize = 19;
+
+const X_AXIS_SHIFT: usize = 16;
+const Y_AXIS_SHIFT: usize = 24;
 
 const MAX_AXIS_VALUE: f64 = 85.0;
 
 pub struct Controllers {
+    pub rumble: bool,
     pub game_controller: Option<sdl2::controller::GameController>,
     pub joystick: Option<sdl2::joystick::Joystick>,
 }
@@ -149,7 +152,7 @@ pub fn set_axis_from_controller(
 
 pub fn set_axis_from_keys(
     profile: &ui::config::InputProfile,
-    keyboard_state: sdl2::keyboard::KeyboardState,
+    keyboard_state: &sdl2::keyboard::KeyboardState,
 ) -> (f64, f64) {
     let mut x = 0.0;
     let mut y = 0.0;
@@ -236,7 +239,69 @@ pub fn set_buttons_from_controller(
     }
 }
 
-pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
+pub fn set_rumble(ui: &mut ui::Ui, channel: usize, rumble: u8) {
+    if !ui.controllers[channel].rumble {
+        return;
+    }
+    let controller = &mut ui.controllers[channel].game_controller;
+    let joystick = &mut ui.controllers[channel].joystick;
+    if controller.is_some() {
+        controller
+            .as_mut()
+            .unwrap()
+            .set_rumble(
+                (rumble & 1) as u16 * u16::MAX,
+                (rumble & 1) as u16 * u16::MAX,
+                (rumble & 1) as u32 * 60000,
+            )
+            .unwrap();
+    } else if joystick.is_some() {
+        joystick
+            .as_mut()
+            .unwrap()
+            .set_rumble(
+                (rumble & 1) as u16 * u16::MAX,
+                (rumble & 1) as u16 * u16::MAX,
+                (rumble & 1) as u32 * 60000,
+            )
+            .unwrap();
+    }
+}
+
+pub fn change_paks(
+    profile: &ui::config::InputProfile,
+    joystick: &Option<sdl2::joystick::Joystick>,
+    controller: &Option<sdl2::controller::GameController>,
+    keyboard_state: &sdl2::keyboard::KeyboardState,
+) -> bool {
+    let controller_button = profile.controller_buttons[CHANGE_PAK];
+    let joystick_button = profile.joystick_buttons[CHANGE_PAK];
+    let joystick_hat = profile.joystick_hat[CHANGE_PAK];
+    let key = profile.keys[CHANGE_PAK];
+
+    let mut pressed = false;
+    if controller_button.0 {
+        pressed = controller
+            .as_ref()
+            .unwrap()
+            .button(get_button_from_i32(controller_button.1));
+    } else if joystick_button.0 {
+        pressed = joystick
+            .as_ref()
+            .unwrap()
+            .button(joystick_button.1)
+            .unwrap();
+    } else if joystick_hat.0 {
+        pressed = joystick.as_ref().unwrap().hat(joystick_hat.1).unwrap()
+            == sdl2::joystick::HatState::from_raw(joystick_hat.2);
+    } else if key.0 {
+        pressed =
+            keyboard_state.is_scancode_pressed(sdl2::keyboard::Scancode::from_i32(key.1).unwrap());
+    }
+    pressed
+}
+
+pub fn get(ui: &mut ui::Ui, channel: usize) -> (u32, bool) {
     let events = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     let keyboard_state = events.keyboard_state();
 
@@ -267,7 +332,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     let mut y: f64 = 0.0;
 
     if profile_name != "default" || channel == 0 {
-        (x, y) = set_axis_from_keys(profile, keyboard_state);
+        (x, y) = set_axis_from_keys(profile, &keyboard_state);
     }
 
     if controller.is_some() {
@@ -277,9 +342,13 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
     }
     bound_axis(&mut x, &mut y);
 
-    keys |= (x.round() as i8 as u8 as u32) << X_AXIS;
-    keys |= (y.round() as i8 as u8 as u32) << Y_AXIS;
-    keys
+    keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
+    keys |= (y.round() as i8 as u8 as u32) << Y_AXIS_SHIFT;
+
+    (
+        keys,
+        change_paks(profile, joystick, controller, &keyboard_state),
+    )
 }
 
 pub fn list_controllers(ui: &ui::Ui) {
@@ -359,7 +428,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     let font =
         rusttype::Font::try_from_bytes(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
 
-    let key_labels = [
+    let key_labels: [(&str, usize); PROFILE_SIZE] = [
         ("A", A_BUTTON),
         ("B", B_BUTTON),
         ("Start", START_BUTTON),
@@ -378,14 +447,15 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         ("Control Stick Down", AXIS_DOWN),
         ("Control Stick Left", AXIS_LEFT),
         ("Control Stick Right", AXIS_RIGHT),
+        ("Change Pak", CHANGE_PAK),
     ];
 
-    let mut new_keys = [(false, 0); 18];
-    let mut new_joystick_buttons = [(false, 0u32); 14];
-    let mut new_joystick_hat = [(false, 0u32, 0); 14];
-    let mut new_joystick_axis = [(false, 0u32, 0); 18];
-    let mut new_controller_buttons = [(false, 0i32); 14];
-    let mut new_controller_axis = [(false, 0i32, 0); 18];
+    let mut new_keys = [(false, 0); PROFILE_SIZE];
+    let mut new_joystick_buttons = [(false, 0u32); PROFILE_SIZE];
+    let mut new_joystick_hat = [(false, 0u32, 0); PROFILE_SIZE];
+    let mut new_joystick_axis = [(false, 0u32, 0); PROFILE_SIZE];
+    let mut new_controller_buttons = [(false, 0i32); PROFILE_SIZE];
+    let mut new_controller_axis = [(false, 0i32, 0); PROFILE_SIZE];
 
     let mut last_joystick_axis_result = (false, 0, 0);
     let mut last_controller_axis_result = (false, 0, 0);
@@ -489,9 +559,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
 }
 
 pub fn get_default_profile() -> ui::config::InputProfile {
-    let mut default_controller_buttons = [(false, 0); 14];
-    let mut default_controller_axis = [(false, 0, 0); 18];
-    let mut default_keys = [(false, 0); 18];
+    let mut default_controller_buttons = [(false, 0); PROFILE_SIZE];
+    let mut default_controller_axis = [(false, 0, 0); PROFILE_SIZE];
+    let mut default_keys = [(false, 0); PROFILE_SIZE];
     default_keys[R_DPAD] = (true, sdl2::keyboard::Scancode::D as i32);
     default_keys[L_DPAD] = (true, sdl2::keyboard::Scancode::A as i32);
     default_keys[D_DPAD] = (true, sdl2::keyboard::Scancode::S as i32);
@@ -510,6 +580,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
     default_keys[AXIS_RIGHT] = (true, sdl2::keyboard::Scancode::Right as i32);
     default_keys[AXIS_UP] = (true, sdl2::keyboard::Scancode::Up as i32);
     default_keys[AXIS_DOWN] = (true, sdl2::keyboard::Scancode::Down as i32);
+    default_keys[CHANGE_PAK] = (true, sdl2::keyboard::Scancode::Comma as i32);
 
     default_controller_buttons[R_DPAD] = (true, sdl2::controller::Button::DPadRight as i32);
     default_controller_buttons[L_DPAD] = (true, sdl2::controller::Button::DPadLeft as i32);
@@ -529,6 +600,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
     default_controller_axis[AXIS_RIGHT] = (true, sdl2::controller::Axis::LeftX as i32, 1);
     default_controller_axis[AXIS_UP] = (true, sdl2::controller::Axis::LeftY as i32, -1);
     default_controller_axis[AXIS_DOWN] = (true, sdl2::controller::Axis::LeftY as i32, 1);
+    default_controller_buttons[CHANGE_PAK] = (true, sdl2::controller::Button::Back as i32);
 
     ui::config::InputProfile {
         keys: default_keys,
@@ -567,6 +639,14 @@ pub fn init(ui: &mut ui::Ui) {
                     let controller_result = controller_subsystem.open(joystick_index);
                     if controller_result.is_ok() {
                         ui.controllers[i].game_controller = Some(controller_result.unwrap());
+                        if ui.controllers[i]
+                            .game_controller
+                            .as_ref()
+                            .unwrap()
+                            .has_rumble()
+                        {
+                            ui.controllers[i].rumble = true;
+                        }
                     }
                 }
 
@@ -579,6 +659,9 @@ pub fn init(ui: &mut ui::Ui) {
                         )
                     } else {
                         ui.controllers[i].joystick = Some(joystick_result.unwrap());
+                        if ui.controllers[i].joystick.as_ref().unwrap().has_rumble() {
+                            ui.controllers[i].rumble = true;
+                        }
                     }
                 }
             } else {

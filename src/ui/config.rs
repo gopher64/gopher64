@@ -2,12 +2,12 @@ use crate::ui;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct InputProfile {
-    pub keys: [(bool, i32); 18],
-    pub controller_buttons: [(bool, i32); 14],
-    pub controller_axis: [(bool, i32, i16); 18],
-    pub joystick_buttons: [(bool, u32); 14],
-    pub joystick_hat: [(bool, u32, u8); 14],
-    pub joystick_axis: [(bool, u32, i16); 18],
+    pub keys: [(bool, i32); ui::input::PROFILE_SIZE],
+    pub controller_buttons: [(bool, i32); ui::input::PROFILE_SIZE],
+    pub controller_axis: [(bool, i32, i16); ui::input::PROFILE_SIZE],
+    pub joystick_buttons: [(bool, u32); ui::input::PROFILE_SIZE],
+    pub joystick_hat: [(bool, u32, u8); ui::input::PROFILE_SIZE],
+    pub joystick_axis: [(bool, u32, i16); ui::input::PROFILE_SIZE],
     pub dinput: bool,
 }
 

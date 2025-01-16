@@ -15,6 +15,7 @@ pub struct PifChannel {
     pub rx_buf: Option<usize>,
     pub process: Option<fn(&mut device::Device, usize)>,
     pub pak_handler: Option<device::controller::PakHandler>,
+    pub change_pak: device::controller::PakType,
 }
 
 pub const PIF_RAM_SIZE: usize = 64;
@@ -225,8 +226,9 @@ pub fn init(device: &mut device::Device) {
     device.pif.ram[0x27] = device.cart.cic_seed;
 
     let mempak_handler = device::controller::PakHandler {
-        read: device::mempak::read,
-        write: device::mempak::write,
+        read: device::controller::mempak::read,
+        write: device::controller::mempak::write,
+        get_type: device::controller::mempak::get_type,
     };
 
     for i in 0..4 {
@@ -237,7 +239,7 @@ pub fn init(device: &mut device::Device) {
     }
     if device.ui.config.input.emulate_vru {
         device.pif.channels[3].pak_handler = None;
-        device.pif.channels[3].process = Some(device::vru::process);
+        device.pif.channels[3].process = Some(device::controller::vru::process);
     }
     device.pif.channels[4].process = Some(device::cart::process)
 }

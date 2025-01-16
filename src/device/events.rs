@@ -12,6 +12,7 @@ pub enum EventType {
     SPDma,
     Compare,
     Vru,
+    PakSwitch,
     Count,
 }
 

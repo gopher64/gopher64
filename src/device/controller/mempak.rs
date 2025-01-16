@@ -90,3 +90,7 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
         device.ui.saves.mempak.1 = true
     }
 }
+
+pub fn get_type() -> device::controller::PakType {
+    device::controller::PakType::MemPak
+}
