@@ -8,6 +8,7 @@ pub struct InputProfile {
     pub joystick_buttons: [(bool, u32); ui::input::PROFILE_SIZE],
     pub joystick_hat: [(bool, u32, u8); ui::input::PROFILE_SIZE],
     pub joystick_axis: [(bool, u32, i16); ui::input::PROFILE_SIZE],
+    pub dinput: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

@@ -21,6 +21,12 @@ struct Args {
     #[arg(
         short,
         long,
+        help = "Use DirectInput when configuring a new input profile."
+    )]
+    use_dinput: bool,
+    #[arg(
+        short,
+        long,
         value_name = "PROFILE_NAME",
         help = "Must also specify --port. Used to bind a previously created profile to a port"
     )]
@@ -139,6 +145,7 @@ fn main() {
             ui::input::configure_input_profile(
                 &mut device.ui,
                 args.configure_input_profile.unwrap(),
+                args.use_dinput,
             );
             return;
         }

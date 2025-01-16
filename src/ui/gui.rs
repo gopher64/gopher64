@@ -17,6 +17,7 @@ pub struct GopherEguiApp {
     integer_scaling: bool,
     fullscreen: bool,
     emulate_vru: bool,
+    dinput: bool,
     show_vru_dialog: bool,
     vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
     vru_word_notifier: Option<std::sync::mpsc::Sender<String>>,
@@ -100,6 +101,7 @@ impl GopherEguiApp {
             fullscreen: game_ui.config.video.fullscreen,
             emulate_vru: game_ui.config.input.emulate_vru,
             show_vru_dialog: false,
+            dinput: false,
             vru_window_receiver: None,
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
@@ -158,13 +160,19 @@ impl eframe::App for GopherEguiApp {
                         ui.text_edit_singleline(&mut self.profile_name)
                             .labelled_by(name_label.id);
                     });
+                    ui.checkbox(&mut self.dinput, "Use DirectInput");
                     ui.horizontal(|ui| {
                         if ui.button("Configure Profile").clicked() {
                             let profile_name = self.profile_name.clone();
                             let config_dir = self.config_dir.clone();
-                            execute(async {
+                            let dinput = self.dinput;
+                            execute(async move {
                                 let mut game_ui = ui::Ui::new(config_dir);
-                                ui::input::configure_input_profile(&mut game_ui, profile_name);
+                                ui::input::configure_input_profile(
+                                    &mut game_ui,
+                                    profile_name,
+                                    dinput,
+                                );
                             });
                             self.configure_profile = false;
                             if !self.profile_name.is_empty()
