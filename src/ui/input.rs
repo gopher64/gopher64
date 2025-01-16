@@ -483,6 +483,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         joystick_buttons: new_joystick_buttons,
         joystick_hat: new_joystick_hat,
         joystick_axis: new_joystick_axis,
+        dinput: dinput,
     };
     ui.config.input.input_profiles.insert(profile, new_profile);
 }
@@ -536,6 +537,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
         joystick_buttons: Default::default(),
         joystick_hat: Default::default(),
         joystick_axis: Default::default(),
+        dinput: false,
     }
 }
 
@@ -558,9 +560,14 @@ pub fn init(ui: &mut ui::Ui) {
                 }
             }
             if joystick_index < u32::MAX {
-                let controller_result = controller_subsystem.open(joystick_index);
-                if controller_result.is_ok() {
-                    ui.controllers[i].game_controller = Some(controller_result.unwrap());
+                let profile_name = ui.config.input.input_profile_binding[i].clone();
+                let profile = ui.config.input.input_profiles.get(&profile_name).unwrap();
+
+                if !profile.dinput {
+                    let controller_result = controller_subsystem.open(joystick_index);
+                    if controller_result.is_ok() {
+                        ui.controllers[i].game_controller = Some(controller_result.unwrap());
+                    }
                 }
 
                 if ui.controllers[i].game_controller.is_none() {
