@@ -228,7 +228,7 @@ pub fn init(device: &mut device::Device) {
     let mempak_handler = device::controller::PakHandler {
         read: device::controller::mempak::read,
         write: device::controller::mempak::write,
-        get_type: device::controller::mempak::get_type,
+        pak_type: device::controller::PakType::MemPak,
     };
 
     for i in 0..4 {

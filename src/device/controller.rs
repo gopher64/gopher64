@@ -31,7 +31,7 @@ pub enum PakType {
 pub struct PakHandler {
     pub read: fn(&mut device::Device, usize, u16, usize, usize),
     pub write: fn(&mut device::Device, usize, u16, usize, usize),
-    pub get_type: fn() -> PakType,
+    pub pak_type: PakType,
 }
 
 pub fn process(device: &mut device::Device, channel: usize) {
@@ -59,7 +59,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 if device::events::get_event(device, device::events::EventType::PakSwitch).is_none()
                 {
                     device.pif.channels[channel].change_pak =
-                        (device.pif.channels[channel].pak_handler.unwrap().get_type)();
+                        device.pif.channels[channel].pak_handler.unwrap().pak_type;
                     device.pif.channels[channel].pak_handler = None;
                     device::events::create_event(
                         device,
@@ -154,7 +154,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
                 let handler = device::controller::PakHandler {
                     read: device::controller::mempak::read,
                     write: device::controller::mempak::write,
-                    get_type: device::controller::mempak::get_type,
+                    pak_type: device::controller::PakType::MemPak,
                 };
                 channel.pak_handler = Some(handler);
                 ui::audio::play_pak_switch(&mut device.ui, PakType::MemPak);
@@ -162,7 +162,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
                 let handler = device::controller::PakHandler {
                     read: device::controller::rumble::read,
                     write: device::controller::rumble::write,
-                    get_type: device::controller::rumble::get_type,
+                    pak_type: device::controller::PakType::RumblePak,
                 };
                 channel.pak_handler = Some(handler);
                 ui::audio::play_pak_switch(&mut device.ui, PakType::RumblePak);

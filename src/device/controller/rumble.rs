@@ -18,7 +18,3 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
         device::ui::input::set_rumble(&mut device.ui, channel, rumble);
     }
 }
-
-pub fn get_type() -> device::controller::PakType {
-    device::controller::PakType::RumblePak
-}
