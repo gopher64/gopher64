@@ -255,6 +255,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> u32 {
                     << i;
             }
         }
+
         if controller.is_some() {
             set_buttons_from_controller(profile, i, controller.as_ref().unwrap(), &mut keys);
         } else if joystick.is_some() {
