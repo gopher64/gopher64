@@ -382,7 +382,6 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut new_joystick_axis = [(false, 0u32, 0); 18];
     let mut new_controller_buttons = [(false, 0i32); 14];
     let mut new_controller_axis = [(false, 0i32, 0); 18];
-    let mut is_controller = false;
 
     let mut last_joystick_axis_result = (false, 0, 0);
     let mut last_controller_axis_result = (false, 0, 0);
@@ -413,32 +412,34 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         key_set = true
                     }
                     sdl2::event::Event::ControllerButtonDown { button, .. } => {
-                        new_controller_buttons[*value] = (true, button as i32);
-                        key_set = true;
-                        is_controller = true;
+                        if !controllers.is_empty() {
+                            new_controller_buttons[*value] = (true, button as i32);
+                            key_set = true
+                        }
                     }
                     sdl2::event::Event::ControllerAxisMotion {
                         axis,
                         value: axis_value,
                         ..
                     } => {
-                        if axis_value.saturating_abs() > i16::MAX / 2 {
+                        if !controllers.is_empty() && axis_value.saturating_abs() > i16::MAX / 2 {
                             let result =
                                 (true, axis as i32, axis_value / axis_value.saturating_abs());
                             if result != last_controller_axis_result {
                                 new_controller_axis[*value] = result;
                                 last_controller_axis_result = result;
-                                key_set = true;
-                                is_controller = true;
+                                key_set = true
                             }
                         }
                     }
                     sdl2::event::Event::JoyButtonDown { button_idx, .. } => {
-                        new_joystick_buttons[*value] = (true, button_idx as u32);
-                        key_set = true
+                        if !joysticks.is_empty() {
+                            new_joystick_buttons[*value] = (true, button_idx as u32);
+                            key_set = true
+                        }
                     }
                     sdl2::event::Event::JoyHatMotion { hat_idx, state, .. } => {
-                        if state != sdl2::joystick::HatState::Centered {
+                        if !joysticks.is_empty() && state != sdl2::joystick::HatState::Centered {
                             new_joystick_hat[*value] = (
                                 true,
                                 hat_idx as u32,
@@ -452,7 +453,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         value: axis_value,
                         ..
                     } => {
-                        if axis_value.saturating_abs() > i16::MAX / 2 {
+                        if !joysticks.is_empty() && axis_value.saturating_abs() > i16::MAX / 2 {
                             let result = (
                                 true,
                                 axis_idx as u32,
@@ -471,11 +472,6 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         }
     }
 
-    if is_controller {
-        new_joystick_hat = Default::default();
-        new_joystick_axis = Default::default();
-        new_joystick_buttons = Default::default();
-    }
     let new_profile = ui::config::InputProfile {
         keys: new_keys,
         controller_buttons: new_controller_buttons,
