@@ -323,7 +323,7 @@ pub fn clear_bindings(ui: &mut ui::Ui) {
     }
 }
 
-pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
+pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     if profile == "default" {
         println!("Profile name cannot be default");
         return;
@@ -337,9 +337,13 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut controllers = vec![];
     let mut joysticks = vec![];
     for i in 0..joystick_subsystem.num_joysticks().unwrap() {
-        if let Ok(controller) = controller_subsystem.open(i) {
-            controllers.push(controller);
-        } else if let Ok(joystick) = joystick_subsystem.open(i) {
+        if !dinput {
+            if let Ok(controller) = controller_subsystem.open(i) {
+                controllers.push(controller);
+                continue;
+            }
+        }
+        if let Ok(joystick) = joystick_subsystem.open(i) {
             joysticks.push(joystick);
         }
     }
