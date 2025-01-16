@@ -157,6 +157,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
                     get_type: device::controller::mempak::get_type,
                 };
                 channel.pak_handler = Some(handler);
+                ui::audio::play_pak_switch(&mut device.ui, PakType::MemPak);
             } else if channel.change_pak == PakType::MemPak {
                 let handler = device::controller::PakHandler {
                     read: device::controller::rumble::read,
@@ -164,6 +165,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
                     get_type: device::controller::rumble::get_type,
                 };
                 channel.pak_handler = Some(handler);
+                ui::audio::play_pak_switch(&mut device.ui, PakType::RumblePak);
             }
             channel.change_pak = PakType::None;
         }

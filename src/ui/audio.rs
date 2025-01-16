@@ -1,6 +1,11 @@
 use crate::device;
 use crate::ui;
 
+pub struct PakAudio {
+    mempak: Vec<u8>,
+    rumblepak: Vec<u8>,
+}
+
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
     let desired_spec = sdl2::audio::AudioSpecDesired {
         freq: Some(frequency as i32),
@@ -15,6 +20,51 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
             .unwrap(),
     );
     ui.audio_device.as_ref().unwrap().resume();
+
+    let mempak_audio = sdl2::audio::AudioSpecWAV::load_wav_rw(
+        &mut sdl2::rwops::RWops::from_bytes(include_bytes!("../../data/mempak.wav"))
+            .expect("Could not mempak WAV file"),
+    )
+    .expect("Could not load mempak WAV file");
+    let rumblepak_audio = sdl2::audio::AudioSpecWAV::load_wav_rw(
+        &mut sdl2::rwops::RWops::from_bytes(include_bytes!("../../data/rumblepak.wav"))
+            .expect("Could not load rumblepak WAV file"),
+    )
+    .expect("Could not load rumblepak WAV file");
+
+    let cvt = sdl2::audio::AudioCVT::new(
+        mempak_audio.format,
+        mempak_audio.channels,
+        mempak_audio.freq,
+        sdl2::audio::AudioFormat::S16LSB,
+        desired_spec.channels.unwrap(),
+        desired_spec.freq.unwrap(),
+    )
+    .expect("Could not create AudioCVT");
+
+    let mempak_data = cvt.convert(mempak_audio.buffer().to_vec());
+    let rumblepak_data = cvt.convert(rumblepak_audio.buffer().to_vec());
+    ui.pak_audio = Some(PakAudio {
+        mempak: mempak_data,
+        rumblepak: rumblepak_data,
+    });
+}
+
+pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
+    let sound;
+    if pak == device::controller::PakType::RumblePak {
+        sound = &ui.pak_audio.as_ref().unwrap().rumblepak;
+    } else if pak == device::controller::PakType::MemPak {
+        sound = &ui.pak_audio.as_ref().unwrap().mempak;
+    } else {
+        return;
+    }
+    let audio_device = ui.audio_device.as_ref().unwrap();
+    let i16_buffer: Vec<i16> = sound
+        .chunks_exact(2)
+        .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]))
+        .collect();
+    audio_device.queue_audio(&i16_buffer).unwrap();
 }
 
 pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {

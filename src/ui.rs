@@ -18,6 +18,7 @@ pub struct Ui {
     pub sdl_context: Option<sdl2::Sdl>,
     pub video_subsystem: Option<sdl2::VideoSubsystem>,
     pub audio_subsystem: Option<sdl2::AudioSubsystem>,
+    pub pak_audio: Option<audio::PakAudio>,
     pub joystick_subsystem: Option<sdl2::JoystickSubsystem>,
     #[allow(dead_code)]
     pub controller_subsystem: Option<sdl2::GameControllerSubsystem>,
@@ -103,6 +104,7 @@ impl Ui {
             controller_subsystem: Some(controller_subsystem),
             window: None,
             audio_device: None,
+            pak_audio: None,
         }
     }
 }
