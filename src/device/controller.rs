@@ -148,9 +148,10 @@ pub fn data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 
 }
 
 pub fn pak_switch_event(device: &mut device::Device) {
-    for channel in device.pif.channels.iter_mut() {
+    for (i, channel) in device.pif.channels.iter_mut().enumerate() {
         if channel.change_pak != PakType::None {
             if channel.change_pak == PakType::RumblePak {
+                device::ui::input::set_rumble(&mut device.ui, i, 0);
                 let handler = device::controller::PakHandler {
                     read: device::controller::mempak::read,
                     write: device::controller::mempak::write,
