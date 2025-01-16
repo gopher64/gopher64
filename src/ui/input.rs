@@ -20,6 +20,7 @@ const AXIS_LEFT: usize = 14;
 const AXIS_RIGHT: usize = 15;
 const AXIS_UP: usize = 16;
 const AXIS_DOWN: usize = 17;
+pub const PROFILE_SIZE: usize = 18;
 
 const X_AXIS_SHIFT: usize = 16;
 const Y_AXIS_SHIFT: usize = 24;
@@ -400,10 +401,10 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         ("Control Stick Right", AXIS_RIGHT),
     ];
 
-    let mut new_keys = [(false, 0); 18];
-    let mut new_joystick_buttons = [(false, 0u32); 14];
-    let mut new_joystick_hat = [(false, 0u32, 0); 14];
-    let mut new_joystick_axis = [(false, 0u32, 0); 18];
+    let mut new_keys = [(false, 0); PROFILE_SIZE];
+    let mut new_joystick_buttons = [(false, 0u32); PROFILE_SIZE];
+    let mut new_joystick_hat = [(false, 0u32, 0); PROFILE_SIZE];
+    let mut new_joystick_axis = [(false, 0u32, 0); PROFILE_SIZE];
 
     let mut last_axis_result = (false, 0, 0);
     let mut events = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
@@ -482,9 +483,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
 }
 
 pub fn get_default_profile() -> ui::config::InputProfile {
-    let mut default_controller_buttons = [(false, 0); 14];
-    let mut default_controller_axis = [(false, 0, 0); 18];
-    let mut default_keys = [(false, 0); 18];
+    let mut default_controller_buttons = [(false, 0); PROFILE_SIZE];
+    let mut default_controller_axis = [(false, 0, 0); PROFILE_SIZE];
+    let mut default_keys = [(false, 0); PROFILE_SIZE];
     default_keys[R_DPAD] = (true, sdl2::keyboard::Scancode::D as i32);
     default_keys[L_DPAD] = (true, sdl2::keyboard::Scancode::A as i32);
     default_keys[D_DPAD] = (true, sdl2::keyboard::Scancode::S as i32);
