@@ -270,8 +270,8 @@ pub fn set_rumble(ui: &mut ui::Ui, channel: usize, rumble: u8) {
 
 pub fn change_paks(
     profile: &ui::config::InputProfile,
-    joystick: &sdl2::joystick::Joystick,
-    controller: &sdl2::controller::GameController,
+    joystick: &Option<sdl2::joystick::Joystick>,
+    controller: &Option<sdl2::controller::GameController>,
     keyboard_state: &sdl2::keyboard::KeyboardState,
 ) -> bool {
     let controller_button = profile.controller_buttons[CHANGE_PAK];
@@ -281,11 +281,18 @@ pub fn change_paks(
 
     let mut pressed = false;
     if controller_button.0 {
-        pressed = controller.button(get_button_from_i32(controller_button.1));
+        pressed = controller
+            .as_ref()
+            .unwrap()
+            .button(get_button_from_i32(controller_button.1));
     } else if joystick_button.0 {
-        pressed = joystick.button(joystick_button.1).unwrap();
+        pressed = joystick
+            .as_ref()
+            .unwrap()
+            .button(joystick_button.1)
+            .unwrap();
     } else if joystick_hat.0 {
-        pressed = joystick.hat(joystick_hat.1).unwrap()
+        pressed = joystick.as_ref().unwrap().hat(joystick_hat.1).unwrap()
             == sdl2::joystick::HatState::from_raw(joystick_hat.2);
     } else if key.0 {
         pressed =
@@ -340,12 +347,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> (u32, bool) {
 
     (
         keys,
-        change_paks(
-            profile,
-            joystick.as_ref().unwrap(),
-            controller.as_ref().unwrap(),
-            &keyboard_state,
-        ),
+        change_paks(profile, joystick, controller, &keyboard_state),
     )
 }
 
