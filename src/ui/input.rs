@@ -483,7 +483,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         joystick_buttons: new_joystick_buttons,
         joystick_hat: new_joystick_hat,
         joystick_axis: new_joystick_axis,
-        dinput: dinput,
+        dinput,
     };
     ui.config.input.input_profiles.insert(profile, new_profile);
 }
