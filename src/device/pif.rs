@@ -225,19 +225,29 @@ pub fn init(device: &mut device::Device) {
     device.pif.ram[0x27] = device.cart.cic_seed;
 
     let mempak_handler = device::controller::PakHandler {
-        read: device::mempak::read,
-        write: device::mempak::write,
+        read: device::controller::mempak::read,
+        write: device::controller::mempak::write,
     };
 
+    let rumble_handler = device::controller::PakHandler {
+        read: device::controller::rumble::read,
+        write: device::controller::rumble::write,
+    };
+
+    let rumble = true;
     for i in 0..4 {
         if device.ui.config.input.controller_enabled[i] {
-            device.pif.channels[i].pak_handler = Some(mempak_handler);
+            if rumble {
+                device.pif.channels[i].pak_handler = Some(rumble_handler);
+            } else {
+                device.pif.channels[i].pak_handler = Some(mempak_handler);
+            }
             device.pif.channels[i].process = Some(device::controller::process);
         }
     }
     if device.ui.config.input.emulate_vru {
         device.pif.channels[3].pak_handler = None;
-        device.pif.channels[3].process = Some(device::vru::process);
+        device.pif.channels[3].process = Some(device::controller::vru::process);
     }
     device.pif.channels[4].process = Some(device::cart::process)
 }

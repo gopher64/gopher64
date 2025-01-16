@@ -30,7 +30,6 @@ pub mod exceptions;
 pub mod fpu_instructions;
 pub mod is_viewer;
 pub mod memory;
-pub mod mempak;
 pub mod mi;
 pub mod pi;
 pub mod pif;
@@ -46,7 +45,6 @@ pub mod sram;
 pub mod tlb;
 pub mod unmapped;
 pub mod vi;
-pub mod vru;
 
 pub fn run_game(
     file_path: &std::path::Path,
@@ -68,7 +66,7 @@ pub fn run_game(
     mi::init(device);
     pif::init(device);
     if device.ui.config.input.emulate_vru {
-        vru::init(device);
+        controller::vru::init(device);
     }
     memory::init(device);
     rsp_interface::init(device);
@@ -179,7 +177,7 @@ pub struct Device {
     si: si::Si,
     ri: ri::Ri,
     flashram: sram::Flashram,
-    pub vru: vru::Vru,
+    pub vru: controller::vru::Vru,
 }
 
 impl Device {
@@ -419,7 +417,7 @@ impl Device {
                 silicon_id: [sram::FLASHRAM_TYPE_ID, sram::MX29L1100_ID],
                 mode: sram::FlashramMode::ReadArray,
             },
-            vru: vru::Vru {
+            vru: controller::vru::Vru {
                 status: 0,
                 voice_state: 0,
                 load_offset: 0,

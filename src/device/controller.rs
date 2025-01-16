@@ -1,6 +1,10 @@
 use crate::device;
 use crate::ui;
 
+pub mod mempak;
+pub mod rumble;
+pub mod vru;
+
 pub const JCMD_STATUS: u8 = 0x00;
 pub const JCMD_CONTROLLER_READ: u8 = 0x01;
 const JCMD_PAK_READ: u8 = 0x02;
