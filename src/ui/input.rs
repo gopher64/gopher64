@@ -332,10 +332,16 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         println!("Profile name cannot be empty");
         return;
     }
+    let controller_subsystem = ui.controller_subsystem.as_ref().unwrap();
     let joystick_subsystem = ui.joystick_subsystem.as_ref().unwrap();
+    let mut controllers = vec![];
     let mut joysticks = vec![];
     for i in 0..joystick_subsystem.num_joysticks().unwrap() {
-        joysticks.push(joystick_subsystem.open(i));
+        if let Ok(controller) = controller_subsystem.open(i) {
+            controllers.push(controller);
+        } else if let Ok(joystick) = joystick_subsystem.open(i) {
+            joysticks.push(joystick);
+        }
     }
 
     let mut builder =
@@ -374,8 +380,11 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut new_joystick_buttons = [(false, 0u32); 14];
     let mut new_joystick_hat = [(false, 0u32, 0); 14];
     let mut new_joystick_axis = [(false, 0u32, 0); 18];
+    let mut new_controller_buttons = [(false, 0i32); 14];
+    let mut new_controller_axis = [(false, 0i32, 0); 18];
 
-    let mut last_axis_result = (false, 0, 0);
+    let mut last_joystick_axis_result = (false, 0, 0);
+    let mut last_controller_axis_result = (false, 0, 0);
     let mut events = ui.sdl_context.as_ref().unwrap().event_pump().unwrap();
     for (key, value) in key_labels.iter() {
         for _event in events.poll_iter() {} // clear events
@@ -402,6 +411,25 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         new_keys[*value] = (true, scancode as i32);
                         key_set = true
                     }
+                    sdl2::event::Event::ControllerButtonDown { button, .. } => {
+                        new_controller_buttons[*value] = (true, button as i32);
+                        key_set = true
+                    }
+                    sdl2::event::Event::ControllerAxisMotion {
+                        axis,
+                        value: axis_value,
+                        ..
+                    } => {
+                        if axis_value.saturating_abs() > i16::MAX / 2 {
+                            let result =
+                                (true, axis as i32, axis_value / axis_value.saturating_abs());
+                            if result != last_controller_axis_result {
+                                new_controller_axis[*value] = result;
+                                last_controller_axis_result = result;
+                                key_set = true
+                            }
+                        }
+                    }
                     sdl2::event::Event::JoyButtonDown { button_idx, .. } => {
                         new_joystick_buttons[*value] = (true, button_idx as u32);
                         key_set = true
@@ -421,15 +449,15 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                         value: axis_value,
                         ..
                     } => {
-                        if axis_value.saturating_abs() > 24576 {
+                        if axis_value.saturating_abs() > i16::MAX / 2 {
                             let result = (
                                 true,
                                 axis_idx as u32,
                                 axis_value / axis_value.saturating_abs(),
                             );
-                            if result != last_axis_result {
+                            if result != last_joystick_axis_result {
                                 new_joystick_axis[*value] = result;
-                                last_axis_result = result;
+                                last_joystick_axis_result = result;
                                 key_set = true
                             }
                         }
@@ -442,8 +470,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
 
     let new_profile = ui::config::InputProfile {
         keys: new_keys,
-        controller_buttons: Default::default(),
-        controller_axis: Default::default(),
+        controller_buttons: new_controller_buttons,
+        controller_axis: new_controller_axis,
         joystick_buttons: new_joystick_buttons,
         joystick_hat: new_joystick_hat,
         joystick_axis: new_joystick_axis,
@@ -522,12 +550,11 @@ pub fn init(ui: &mut ui::Ui) {
                 }
             }
             if joystick_index < u32::MAX {
-                if ui.config.input.input_profile_binding[i] == "default" {
-                    let controller_result = controller_subsystem.open(joystick_index);
-                    if controller_result.is_ok() {
-                        ui.controllers[i].game_controller = Some(controller_result.unwrap());
-                    }
+                let controller_result = controller_subsystem.open(joystick_index);
+                if controller_result.is_ok() {
+                    ui.controllers[i].game_controller = Some(controller_result.unwrap());
                 }
+
                 if ui.controllers[i].game_controller.is_none() {
                     let joystick_result = joystick_subsystem.open(joystick_index);
                     if joystick_result.is_err() {
