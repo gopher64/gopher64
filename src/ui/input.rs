@@ -382,6 +382,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
     let mut new_joystick_axis = [(false, 0u32, 0); 18];
     let mut new_controller_buttons = [(false, 0i32); 14];
     let mut new_controller_axis = [(false, 0i32, 0); 18];
+    let mut is_controller = false;
 
     let mut last_joystick_axis_result = (false, 0, 0);
     let mut last_controller_axis_result = (false, 0, 0);
@@ -413,7 +414,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                     }
                     sdl2::event::Event::ControllerButtonDown { button, .. } => {
                         new_controller_buttons[*value] = (true, button as i32);
-                        key_set = true
+                        key_set = true;
+                        is_controller = true;
                     }
                     sdl2::event::Event::ControllerAxisMotion {
                         axis,
@@ -426,7 +428,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
                             if result != last_controller_axis_result {
                                 new_controller_axis[*value] = result;
                                 last_controller_axis_result = result;
-                                key_set = true
+                                key_set = true;
+                                is_controller = true;
                             }
                         }
                     }
@@ -468,6 +471,11 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String) {
         }
     }
 
+    if is_controller {
+        new_joystick_hat = Default::default();
+        new_joystick_axis = Default::default();
+        new_joystick_buttons = Default::default();
+    }
     let new_profile = ui::config::InputProfile {
         keys: new_keys,
         controller_buttons: new_controller_buttons,
