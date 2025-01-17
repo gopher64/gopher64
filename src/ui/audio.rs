@@ -2,8 +2,8 @@ use crate::device;
 use crate::ui;
 
 pub struct PakAudio {
-    mempak: Vec<u8>,
-    rumblepak: Vec<u8>,
+    mempak: Box<Vec<u8>>,
+    rumblepak: Box<Vec<u8>>,
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
@@ -43,11 +43,9 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
     )
     .expect("Could not create AudioCVT");
 
-    let mempak_data = cvt.convert(mempak_audio.buffer().to_vec());
-    let rumblepak_data = cvt.convert(rumblepak_audio.buffer().to_vec());
     ui.pak_audio = Some(PakAudio {
-        mempak: mempak_data,
-        rumblepak: rumblepak_data,
+        mempak: Box::new(cvt.convert(mempak_audio.buffer().to_vec())),
+        rumblepak: Box::new(cvt.convert(rumblepak_audio.buffer().to_vec())),
     });
 }
 
