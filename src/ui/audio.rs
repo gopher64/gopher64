@@ -22,16 +22,18 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
     let audio_device = ui.audio_device.as_ref().unwrap();
     audio_device.resume();
 
-    let mempak_audio = sdl2::audio::AudioSpecWAV::load_wav_rw(
+    let mempak_audio = Box::new(sdl2::audio::AudioSpecWAV::load_wav_rw(
         &mut sdl2::rwops::RWops::from_bytes(include_bytes!("../../data/mempak.wav"))
             .expect("Could not mempak WAV file"),
-    )
+    ))
     .expect("Could not load mempak WAV file");
-    let rumblepak_audio = sdl2::audio::AudioSpecWAV::load_wav_rw(
-        &mut sdl2::rwops::RWops::from_bytes(include_bytes!("../../data/rumblepak.wav"))
-            .expect("Could not load rumblepak WAV file"),
-    )
-    .expect("Could not load rumblepak WAV file");
+    let rumblepak_audio = Box::new(
+        sdl2::audio::AudioSpecWAV::load_wav_rw(
+            &mut sdl2::rwops::RWops::from_bytes(include_bytes!("../../data/rumblepak.wav"))
+                .expect("Could not load rumblepak WAV file"),
+        )
+        .expect("Could not load rumblepak WAV file"),
+    );
 
     let cvt = sdl2::audio::AudioCVT::new(
         mempak_audio.format,
