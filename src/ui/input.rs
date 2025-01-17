@@ -280,18 +280,18 @@ pub fn change_paks(
     let key = profile.keys[CHANGE_PAK];
 
     let mut pressed = false;
-    if controller_button.0 {
+    if controller_button.0 && controller.is_some() {
         pressed = controller
             .as_ref()
             .unwrap()
             .button(get_button_from_i32(controller_button.1));
-    } else if joystick_button.0 {
+    } else if joystick_button.0 && joystick.is_some() {
         pressed = joystick
             .as_ref()
             .unwrap()
             .button(joystick_button.1)
             .unwrap();
-    } else if joystick_hat.0 {
+    } else if joystick_hat.0 && joystick.is_some() {
         pressed = joystick.as_ref().unwrap().hat(joystick_hat.1).unwrap()
             == sdl2::joystick::HatState::from_raw(joystick_hat.2);
     } else if key.0 {
