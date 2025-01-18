@@ -60,8 +60,8 @@ pub fn check_relative_idle_loop(device: &mut device::Device, opcode: u32) {
     }
 }
 
-pub fn check_absolute_idle_loop(device: &mut device::Device, opcode: u32) {
-    if (opcode & 0x3FFFFFF) as u64 == (device.cpu.pc_phys & 0x0FFFFFFF) >> 2
+pub fn check_absolute_idle_loop(device: &mut device::Device, target: u64) {
+    if device.cpu.pc == target
         && device.memory.fast_read[(device.cpu.pc_phys >> 16) as usize](
             device,
             device.cpu.pc_phys + 4,
@@ -76,10 +76,10 @@ pub fn j(device: &mut device::Device, opcode: u32) {
     if device::cpu::in_delay_slot_taken(device) {
         return;
     }
-    check_absolute_idle_loop(device, opcode);
+    let target = (device.cpu.pc + 4) & 0xFFFFFFFFF0000000 | ((opcode & 0x3FFFFFF) << 2) as u64;
+    check_absolute_idle_loop(device, target);
     device.cpu.branch_state.state = device::cpu::State::Take;
-    device.cpu.branch_state.pc =
-        (device.cpu.pc + 4) & 0xFFFFFFFFF0000000 | ((opcode & 0x3FFFFFF) << 2) as u64
+    device.cpu.branch_state.pc = target
 }
 
 pub fn jal(device: &mut device::Device, opcode: u32) {
@@ -89,10 +89,10 @@ pub fn jal(device: &mut device::Device, opcode: u32) {
         device.cpu.gpr[31] = device.cpu.pc + 8
     }
     if !device::cpu::in_delay_slot_taken(device) {
-        check_absolute_idle_loop(device, opcode);
+        let target = (device.cpu.pc + 4) & 0xFFFFFFFFF0000000 | ((opcode & 0x3FFFFFF) << 2) as u64;
+        check_absolute_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc =
-            (device.cpu.pc + 4) & 0xFFFFFFFFF0000000 | ((opcode & 0x3FFFFFF) << 2) as u64
+        device.cpu.branch_state.pc = target
     } else if !device::cpu::in_delay_slot(device) {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -966,7 +966,6 @@ pub fn srav(device: &mut device::Device, opcode: u32) {
 
 pub fn jr(device: &mut device::Device, opcode: u32) {
     if !device::cpu::in_delay_slot_taken(device) {
-        check_relative_idle_loop(device, opcode);
         device.cpu.branch_state.state = device::cpu::State::Take;
         device.cpu.branch_state.pc = device.cpu.gpr[rs(opcode) as usize];
     } else if !device::cpu::in_delay_slot(device) {
@@ -978,7 +977,6 @@ pub fn jalr(device: &mut device::Device, opcode: u32) {
     let in_delay_slot_taken = device::cpu::in_delay_slot_taken(device);
 
     if !in_delay_slot_taken {
-        check_relative_idle_loop(device, opcode);
         device.cpu.branch_state.state = device::cpu::State::Take;
         device.cpu.branch_state.pc = device.cpu.gpr[rs(opcode) as usize];
     } else if !device::cpu::in_delay_slot(device) {
