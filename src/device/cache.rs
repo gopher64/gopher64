@@ -205,7 +205,7 @@ pub fn dcache_writeback(device: &mut device::Device, line_index: usize) {
     );
 }
 
-pub fn dcache_fill(device: &mut device::Device, line_index: usize, phys_address: u64) {
+fn dcache_fill(device: &mut device::Device, line_index: usize, phys_address: u64) {
     device::cop0::add_cycles(device, 7);
 
     device.memory.dcache[line_index].valid = true;

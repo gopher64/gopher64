@@ -91,7 +91,7 @@ pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mas
     }
 }
 
-pub fn run_rdp(device: &mut device::Device) {
+fn run_rdp(device: &mut device::Device) {
     let timer = ui::video::process_rdp_list();
 
     if timer != 0 {
@@ -120,7 +120,7 @@ pub fn write_regs_dps(device: &mut device::Device, address: u64, value: u32, mas
     )
 }
 
-pub fn update_dpc_status(device: &mut device::Device, w: u32) {
+fn update_dpc_status(device: &mut device::Device, w: u32) {
     /* clear / set xbus_dmem_dma */
     if w & DPC_CLR_XBUS_DMEM_DMA != 0 {
         device.rdp.regs_dpc[DPC_STATUS_REG as usize] &= !DPC_STATUS_XBUS_DMEM_DMA
@@ -173,7 +173,7 @@ pub fn init(device: &mut device::Device) {
         DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CBUF_READY;
 }
 
-pub fn rdp_interrupt_event(device: &mut device::Device) {
+fn rdp_interrupt_event(device: &mut device::Device) {
     ui::video::full_sync();
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_DP)

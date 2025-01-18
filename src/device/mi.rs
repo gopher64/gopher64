@@ -75,7 +75,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     device::exceptions::check_pending_interrupts(device)
 }
 
-pub fn update_init_mode(device: &mut device::Device, w: u32) {
+fn update_init_mode(device: &mut device::Device, w: u32) {
     device.mi.regs[MI_INIT_MODE_REG as usize] &= !MI_INIT_LENGTH_MASK;
     device.mi.regs[MI_INIT_MODE_REG as usize] |= w & MI_INIT_LENGTH_MASK;
 
@@ -103,7 +103,7 @@ pub fn update_init_mode(device: &mut device::Device, w: u32) {
     }
 }
 
-pub fn update_intr_mask(device: &mut device::Device, w: u32) {
+fn update_intr_mask(device: &mut device::Device, w: u32) {
     if w & MI_CLR_SP != 0 {
         device.mi.regs[MI_INTR_MASK_REG as usize] &= !MI_INTR_SP
     }

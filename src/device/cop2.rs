@@ -5,7 +5,7 @@ pub struct Cop2 {
     pub reg_latch: u64,
 }
 
-pub fn mfc2(device: &mut device::Device, opcode: u32) {
+fn mfc2(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU2
         == 0
     {
@@ -15,7 +15,7 @@ pub fn mfc2(device: &mut device::Device, opcode: u32) {
         device::cpu_instructions::se32((device.cpu.cop2.reg_latch) as u32 as i32)
 }
 
-pub fn dmfc2(device: &mut device::Device, opcode: u32) {
+fn dmfc2(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU2
         == 0
     {
@@ -24,7 +24,7 @@ pub fn dmfc2(device: &mut device::Device, opcode: u32) {
     device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] = device.cpu.cop2.reg_latch
 }
 
-pub fn cfc2(device: &mut device::Device, opcode: u32) {
+fn cfc2(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU2
         == 0
     {
@@ -34,7 +34,7 @@ pub fn cfc2(device: &mut device::Device, opcode: u32) {
         device::cpu_instructions::se32((device.cpu.cop2.reg_latch) as u32 as i32)
 }
 
-pub fn mtc2(device: &mut device::Device, opcode: u32) {
+fn mtc2(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU2
         == 0
     {
@@ -43,7 +43,7 @@ pub fn mtc2(device: &mut device::Device, opcode: u32) {
     device.cpu.cop2.reg_latch = device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize]
 }
 
-pub fn dmtc2(device: &mut device::Device, opcode: u32) {
+fn dmtc2(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU2
         == 0
     {
@@ -52,7 +52,7 @@ pub fn dmtc2(device: &mut device::Device, opcode: u32) {
     device.cpu.cop2.reg_latch = device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize]
 }
 
-pub fn ctc2(device: &mut device::Device, opcode: u32) {
+fn ctc2(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU2
         == 0
     {
@@ -72,7 +72,7 @@ pub fn reserved(device: &mut device::Device, opcode: u32) {
     device::exceptions::reserved_exception(device, device::cop0::COP0_CAUSE_CE2);
 }
 
-pub fn unusable(device: &mut device::Device, _opcode: u32) {
+fn unusable(device: &mut device::Device, _opcode: u32) {
     device::exceptions::cop_unusable_exception(device, device::cop0::COP0_CAUSE_CE2)
 }
 

@@ -99,18 +99,18 @@ pub struct Cop0 {
     pub tlb_entries: [device::tlb::TlbEntry; 32],
 }
 
-pub fn mfc0(device: &mut device::Device, opcode: u32) {
+fn mfc0(device: &mut device::Device, opcode: u32) {
     device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] = device::cpu_instructions::se32(
         (get_control_registers(device, device::cpu_instructions::rd(opcode))) as u32 as i32,
     )
 }
 
-pub fn dmfc0(device: &mut device::Device, opcode: u32) {
+fn dmfc0(device: &mut device::Device, opcode: u32) {
     device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] =
         get_control_registers(device, device::cpu_instructions::rd(opcode))
 }
 
-pub fn mtc0(device: &mut device::Device, opcode: u32) {
+fn mtc0(device: &mut device::Device, opcode: u32) {
     device::cop0::set_control_registers(
         device,
         device::cpu_instructions::rd(opcode),
@@ -120,7 +120,7 @@ pub fn mtc0(device: &mut device::Device, opcode: u32) {
     )
 }
 
-pub fn dmtc0(device: &mut device::Device, opcode: u32) {
+fn dmtc0(device: &mut device::Device, opcode: u32) {
     device::cop0::set_control_registers(
         device,
         device::cpu_instructions::rd(opcode),
@@ -128,24 +128,24 @@ pub fn dmtc0(device: &mut device::Device, opcode: u32) {
     )
 }
 
-pub fn tlbr(device: &mut device::Device, _opcode: u32) {
+fn tlbr(device: &mut device::Device, _opcode: u32) {
     device::tlb::read(device, device.cpu.cop0.regs[COP0_INDEX_REG as usize])
 }
 
-pub fn tlbwi(device: &mut device::Device, _opcode: u32) {
+fn tlbwi(device: &mut device::Device, _opcode: u32) {
     device::tlb::write(device, device.cpu.cop0.regs[COP0_INDEX_REG as usize])
 }
 
-pub fn tlbwr(device: &mut device::Device, _opcode: u32) {
+fn tlbwr(device: &mut device::Device, _opcode: u32) {
     let random = set_random_register(device);
     device::tlb::write(device, random)
 }
 
-pub fn tlbp(device: &mut device::Device, _opcode: u32) {
+fn tlbp(device: &mut device::Device, _opcode: u32) {
     device::tlb::probe(device)
 }
 
-pub fn eret(device: &mut device::Device, _opcode: u32) {
+fn eret(device: &mut device::Device, _opcode: u32) {
     if device.cpu.cop0.regs[COP0_STATUS_REG as usize] & COP0_STATUS_ERL != 0 {
         device.cpu.pc = device.cpu.cop0.regs[COP0_ERROREPC_REG as usize];
         device.cpu.cop0.regs[COP0_STATUS_REG as usize] &= !COP0_STATUS_ERL
@@ -158,7 +158,7 @@ pub fn eret(device: &mut device::Device, _opcode: u32) {
     device::exceptions::check_pending_interrupts(device)
 }
 
-pub fn execute_cp0(device: &mut device::Device, opcode: u32) {
+fn execute_cp0(device: &mut device::Device, opcode: u32) {
     device.cpu.cop0.instrs2[(opcode & 0x3F) as usize](device, opcode)
 }
 
@@ -174,7 +174,7 @@ pub fn reserved(device: &mut device::Device, _opcode: u32) {
     device::exceptions::reserved_exception(device, 0);
 }
 
-pub fn get_control_registers(device: &device::Device, index: u32) -> u64 {
+fn get_control_registers(device: &device::Device, index: u32) -> u64 {
     match index {
         COP0_COUNT_REG => device.cpu.cop0.regs[index as usize] >> 1,
         COP0_RANDOM_REG => set_random_register(device),
@@ -183,7 +183,7 @@ pub fn get_control_registers(device: &device::Device, index: u32) -> u64 {
     }
 }
 
-pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64) {
+fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64) {
     device.cpu.cop0.reg_latch = data;
     match index {
         COP0_COUNT_REG => {
@@ -230,7 +230,7 @@ pub fn set_control_registers(device: &mut device::Device, index: u32, mut data: 
     device::exceptions::check_pending_interrupts(device);
 }
 
-pub fn compare_event(device: &mut device::Device) {
+fn compare_event(device: &mut device::Device) {
     device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_EXCCODE_MASK;
     device.cpu.cop0.regs[COP0_CAUSE_REG as usize] |= COP0_CAUSE_IP7;
 
@@ -243,7 +243,7 @@ pub fn compare_event(device: &mut device::Device) {
     device::exceptions::check_pending_interrupts(device);
 }
 
-pub fn set_random_register(device: &device::Device) -> u64 {
+fn set_random_register(device: &device::Device) -> u64 {
     if device.cpu.cop0.regs[COP0_WIRED_REG as usize] > 31 {
         (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize]) & 0x3F
     } else {

@@ -8,7 +8,7 @@ pub fn ft(opcode: u32) -> u32 {
     (opcode >> 16) & 0x1F
 }
 
-pub fn fd(opcode: u32) -> u32 {
+fn fd(opcode: u32) -> u32 {
     (opcode >> 6) & 0x1F
 }
 

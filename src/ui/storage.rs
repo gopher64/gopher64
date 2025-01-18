@@ -28,7 +28,7 @@ pub struct Saves {
     pub romsave: (serde_json::Map<String, serde_json::Value>, bool),
 }
 
-pub fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
+fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
     match game_id {
         "NB7" | // Banjo-Tooie [Banjo to Kazooie no Daiboken 2 (J)]
         "NGT" | // City Tour GrandPrix - Zen Nihon GT Senshuken
@@ -141,7 +141,7 @@ pub fn load_saves(ui: &mut ui::Ui) {
     }
 }
 
-pub fn write_rom_save(ui: &ui::Ui) {
+fn write_rom_save(ui: &ui::Ui) {
     let f = std::fs::File::create(ui.paths.romsave_file_path.clone()).unwrap();
     serde_json::to_writer(f, &ui.saves.romsave.0).unwrap();
 }
@@ -164,7 +164,7 @@ pub fn write_saves(ui: &ui::Ui) {
     }
 }
 
-pub fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
+fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
     let path: &std::path::Path;
     let data: &Vec<u8>;
     match save_type {

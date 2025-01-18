@@ -27,19 +27,19 @@ pub struct Flashram {
     pub silicon_id: [u32; 2],
 }
 
-pub fn format_sram(device: &mut device::Device) {
+fn format_sram(device: &mut device::Device) {
     if device.ui.saves.sram.0.len() < SRAM_SIZE {
         device.ui.saves.sram.0.resize(SRAM_SIZE, 0xFF)
     }
 }
 
-pub fn format_flash(device: &mut device::Device) {
+fn format_flash(device: &mut device::Device) {
     if device.ui.saves.flash.0.len() < FLASHRAM_SIZE {
         device.ui.saves.flash.0.resize(FLASHRAM_SIZE, 0xFF)
     }
 }
 
-pub fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
+fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
     let masked_address = address as usize & SRAM_MASK;
 
     format_sram(device);
@@ -51,7 +51,7 @@ pub fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
     )
 }
 
-pub fn read_mem_flash(device: &device::Device, address: u64) -> u32 {
+fn read_mem_flash(device: &device::Device, address: u64) -> u32 {
     if (address & 0x1ffff) == 0x00000 && device.flashram.mode == FlashramMode::Status {
         /* read Status register */
         device.flashram.status
@@ -80,7 +80,7 @@ pub fn read_mem(
     }
 }
 
-pub fn write_mem_sram(device: &mut device::Device, address: u64, value: u32, mask: u32) {
+fn write_mem_sram(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let masked_address = address as usize & SRAM_MASK;
 
     format_sram(device);
@@ -96,7 +96,7 @@ pub fn write_mem_sram(device: &mut device::Device, address: u64, value: u32, mas
     device.ui.saves.sram.1 = true
 }
 
-pub fn write_mem_flash(device: &mut device::Device, address: u64, value: u32, mask: u32) {
+fn write_mem_flash(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     if (address & 0x1ffff) == 0x00000 && device.flashram.mode == FlashramMode::Status {
         /* clear/set Status register */
         device.flashram.status = (value & mask) & 0xff;
@@ -128,12 +128,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     );
 }
 
-pub fn dma_read_sram(
-    device: &mut device::Device,
-    mut cart_addr: u32,
-    mut dram_addr: u32,
-    length: u32,
-) {
+fn dma_read_sram(device: &mut device::Device, mut cart_addr: u32, mut dram_addr: u32, length: u32) {
     dram_addr &= device::rdram::RDRAM_MASK as u32;
     cart_addr &= SRAM_MASK as u32;
     let mut i = dram_addr;
@@ -150,7 +145,7 @@ pub fn dma_read_sram(
     device.ui.saves.sram.1 = true
 }
 
-pub fn dma_read_flash(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) {
+fn dma_read_flash(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) {
     format_flash(device);
 
     if (cart_addr & 0x1ffff) == 0x00000
@@ -178,7 +173,7 @@ pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, len
     device::pi::calculate_cycles(device, 2, length)
 }
 
-pub fn dma_write_sram(
+fn dma_write_sram(
     device: &mut device::Device,
     mut cart_addr: u32,
     mut dram_addr: u32,
@@ -198,7 +193,7 @@ pub fn dma_write_sram(
     }
 }
 
-pub fn dma_write_flash(
+fn dma_write_flash(
     device: &mut device::Device,
     mut cart_addr: u32,
     mut dram_addr: u32,
@@ -251,7 +246,7 @@ pub fn dma_write(device: &mut device::Device, cart_addr: u32, dram_addr: u32, le
     device::pi::calculate_cycles(device, 2, length)
 }
 
-pub fn flashram_command(device: &mut device::Device, command: u32) {
+fn flashram_command(device: &mut device::Device, command: u32) {
     match command & 0xff000000 {
         0x3c000000 => {
             /* set chip erase mode */

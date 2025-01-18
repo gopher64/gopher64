@@ -32,7 +32,7 @@ pub struct Vi {
 
 const LIMIT_BUFFER: u64 = 3;
 
-pub fn set_expected_refresh_rate(device: &mut device::Device) {
+fn set_expected_refresh_rate(device: &mut device::Device) {
     let expected_refresh_rate = device.vi.clock as f64
         / (device.vi.regs[VI_V_SYNC_REG as usize] + 1) as f64
         / ((device.vi.regs[VI_H_SYNC_REG as usize] & 0xFFF) + 1) as f64
@@ -48,7 +48,7 @@ pub fn set_expected_refresh_rate(device: &mut device::Device) {
     device.vi.limiter = Some(governor::RateLimiter::direct(quota))
 }
 
-pub fn set_vertical_interrupt(device: &mut device::Device) {
+fn set_vertical_interrupt(device: &mut device::Device) {
     if device::events::get_event(device, device::events::EventType::VI).is_none() {
         device::events::create_event(
             device,
@@ -59,7 +59,7 @@ pub fn set_vertical_interrupt(device: &mut device::Device) {
     }
 }
 
-pub fn set_current_line(device: &mut device::Device) {
+fn set_current_line(device: &mut device::Device) {
     let delay = device.vi.delay;
     let next_vi = device::events::get_event(device, device::events::EventType::VI);
     if next_vi.is_some() {
@@ -115,7 +115,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
 }
 
-pub fn vertical_interrupt_event(device: &mut device::Device) {
+fn vertical_interrupt_event(device: &mut device::Device) {
     device.cpu.running = ui::video::update_screen();
 
     /*
@@ -162,7 +162,7 @@ pub fn init(device: &mut device::Device) {
     */
 }
 
-pub fn speed_limiter(device: &device::Device) {
+fn speed_limiter(device: &device::Device) {
     let result = device.vi.limiter.as_ref().unwrap().check();
     if result.is_err() {
         let outcome = result.unwrap_err();

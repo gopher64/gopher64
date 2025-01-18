@@ -144,7 +144,7 @@ pub fn load_rom_save(device: &mut device::Device) {
     }
 }
 
-pub fn set_system_region(device: &mut device::Device, country: u8) {
+fn set_system_region(device: &mut device::Device, country: u8) {
     let pal_codes: [u8; 8] = [b'D', b'F', b'I', b'P', b'S', b'U', b'X', b'Y'];
     for i in pal_codes {
         if country == i {
@@ -153,7 +153,7 @@ pub fn set_system_region(device: &mut device::Device, country: u8) {
     }
 }
 
-pub fn set_cic(device: &mut device::Device) {
+fn set_cic(device: &mut device::Device) {
     let hash = calculate_hash(&device.cart.rom[0x40..0x1000]);
     match hash.as_str() {
         "B99F06C4802C2377E31E388435955EF3E99C618A6D55D24699D828EB1075F1EB" => {

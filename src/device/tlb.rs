@@ -145,7 +145,7 @@ pub fn probe(device: &mut device::Device) {
     }
 }
 
-pub fn tlb_unmap(device: &mut device::Device, index: u64) {
+fn tlb_unmap(device: &mut device::Device, index: u64) {
     let e = &mut device.cpu.cop0.tlb_entries[index as usize];
 
     if e.v_even != 0 {
@@ -183,7 +183,7 @@ pub fn tlb_unmap(device: &mut device::Device, index: u64) {
     }
 }
 
-pub fn tlb_map(device: &mut device::Device, index: u64) {
+fn tlb_map(device: &mut device::Device, index: u64) {
     let e = &mut device.cpu.cop0.tlb_entries[index as usize];
 
     if e.v_even != 0

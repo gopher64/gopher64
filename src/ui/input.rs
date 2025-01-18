@@ -34,7 +34,7 @@ pub struct Controllers {
     pub joystick: Option<sdl2::joystick::Joystick>,
 }
 
-pub fn bound_axis(x: &mut f64, y: &mut f64) {
+fn bound_axis(x: &mut f64, y: &mut f64) {
     let radius = 95.0; // this is roughly the maxium diagonal distance of the controller
 
     // Calculate the distance from the origin (0, 0)
@@ -48,7 +48,7 @@ pub fn bound_axis(x: &mut f64, y: &mut f64) {
     }
 }
 
-pub fn set_axis_from_joystick(
+fn set_axis_from_joystick(
     profile: &ui::config::InputProfile,
     joystick: &sdl2::joystick::Joystick,
 ) -> (f64, f64) {
@@ -114,7 +114,7 @@ fn get_button_from_i32(button: i32) -> sdl2::controller::Button {
     }
 }
 
-pub fn set_axis_from_controller(
+fn set_axis_from_controller(
     profile: &ui::config::InputProfile,
     controller: &sdl2::controller::GameController,
 ) -> (f64, f64) {
@@ -150,7 +150,7 @@ pub fn set_axis_from_controller(
     (x, y)
 }
 
-pub fn set_axis_from_keys(
+fn set_axis_from_keys(
     profile: &ui::config::InputProfile,
     keyboard_state: &sdl2::keyboard::KeyboardState,
 ) -> (f64, f64) {
@@ -187,7 +187,7 @@ pub fn set_axis_from_keys(
     (x, y)
 }
 
-pub fn set_buttons_from_joystick(
+fn set_buttons_from_joystick(
     profile: &ui::config::InputProfile,
     i: usize,
     joystick: &sdl2::joystick::Joystick,
@@ -217,7 +217,7 @@ pub fn set_buttons_from_joystick(
     }
 }
 
-pub fn set_buttons_from_controller(
+fn set_buttons_from_controller(
     profile: &ui::config::InputProfile,
     i: usize,
     controller: &sdl2::controller::GameController,
@@ -268,7 +268,7 @@ pub fn set_rumble(ui: &mut ui::Ui, channel: usize, rumble: u8) {
     }
 }
 
-pub fn change_paks(
+fn change_paks(
     profile: &ui::config::InputProfile,
     joystick: &Option<sdl2::joystick::Joystick>,
     controller: &Option<sdl2::controller::GameController>,

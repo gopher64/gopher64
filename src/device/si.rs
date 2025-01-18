@@ -34,7 +34,7 @@ pub fn read_regs(
     device.si.regs[((address & 0xFFFF) >> 2) as usize]
 }
 
-pub fn dma_read(device: &mut device::Device) {
+fn dma_read(device: &mut device::Device) {
     device.si.dma_dir = DmaDir::Read;
 
     let duration = device::pif::update_pif_ram(device);
@@ -49,7 +49,7 @@ pub fn dma_read(device: &mut device::Device) {
     )
 }
 
-pub fn dma_write(device: &mut device::Device) {
+fn dma_write(device: &mut device::Device) {
     device.si.dma_dir = DmaDir::Write;
 
     copy_pif_rdram(device);
@@ -78,7 +78,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 //rdram is in native endian format, and pif memory is in big endian format
-pub fn copy_pif_rdram(device: &mut device::Device) {
+fn copy_pif_rdram(device: &mut device::Device) {
     let dram_addr = device.si.regs[SI_DRAM_ADDR_REG as usize] as usize & device::rdram::RDRAM_MASK;
     if device.si.dma_dir == DmaDir::Write {
         let mut i = 0;

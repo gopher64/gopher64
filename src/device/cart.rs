@@ -22,7 +22,7 @@ pub struct AfRtc {
     pub control: u16,
 }
 
-pub fn byte2bcd(mut n: u32) -> u8 {
+fn byte2bcd(mut n: u32) -> u8 {
     n %= 100;
     (((n / 10) << 4) | (n % 10)) as u8
 }
@@ -95,13 +95,13 @@ pub fn process(device: &mut device::Device, channel: usize) {
     }
 }
 
-pub fn format_eeprom(device: &mut device::Device) {
+fn format_eeprom(device: &mut device::Device) {
     if device.ui.saves.eeprom.0.len() < EEPROM_MAX_SIZE {
         device.ui.saves.eeprom.0.resize(EEPROM_MAX_SIZE, 0xFF)
     }
 }
 
-pub fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usize) {
+fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usize) {
     let address = device.pif.ram[block] as usize * EEPROM_BLOCK_SIZE;
 
     format_eeprom(device);
@@ -110,7 +110,7 @@ pub fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usiz
         .copy_from_slice(&device.ui.saves.eeprom.0[address..address + EEPROM_BLOCK_SIZE]);
 }
 
-pub fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
+fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
     let address = device.pif.ram[block] as usize * EEPROM_BLOCK_SIZE;
 
     format_eeprom(device);
@@ -123,7 +123,7 @@ pub fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usi
     device.ui.saves.eeprom.1 = true
 }
 
-pub fn time2data(device: &mut device::Device, offset: usize) {
+fn time2data(device: &mut device::Device, offset: usize) {
     let now: chrono::DateTime<chrono::Local> = chrono::Local::now();
 
     device.pif.ram[offset] = byte2bcd(now.second());
@@ -136,7 +136,7 @@ pub fn time2data(device: &mut device::Device, offset: usize) {
     device.pif.ram[offset + 7] = byte2bcd((now.year() as u32 - 1900) / 100);
 }
 
-pub fn af_rtc_read_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
+fn af_rtc_read_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
     match device.pif.ram[block] {
         0 => {
             device.pif.ram[offset] = device.cart.rtc.control as u8;
@@ -155,7 +155,7 @@ pub fn af_rtc_read_block(device: &mut device::Device, block: usize, offset: usiz
         }
     }
 }
-pub fn af_rtc_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
+fn af_rtc_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
     match device.pif.ram[block] {
         0 => {
             device.cart.rtc.control =
