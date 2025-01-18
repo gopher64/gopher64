@@ -30,7 +30,7 @@ pub struct Pi {
     pub regs: [u32; PI_REGS_COUNT as usize],
 }
 
-pub struct PiHandler {
+struct PiHandler {
     read: fn(&mut device::Device, u32, u32, u32) -> u64,
     write: fn(&mut device::Device, u32, u32, u32) -> u64,
 }
