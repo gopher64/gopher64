@@ -7,6 +7,8 @@ pub struct GopherEguiApp {
     cache_dir: std::path::PathBuf,
     data_dir: std::path::PathBuf,
     configure_profile: bool,
+    netplay_create: bool,
+    netplay_join: bool,
     profile_name: String,
     controllers: Vec<String>,
     selected_controller: [i32; 4],
@@ -90,6 +92,8 @@ impl GopherEguiApp {
             config_dir: config_dir.clone(),
             data_dir: data_dir.clone(),
             configure_profile: false,
+            netplay_create: false,
+            netplay_join: false,
             profile_name: "".to_string(),
             selected_profile: game_ui.config.input.input_profile_binding.clone(),
             selected_controller,
@@ -151,6 +155,22 @@ impl Drop for GopherEguiApp {
 
 impl eframe::App for GopherEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if self.netplay_create {
+            egui::Window::new("Create Netplay Session").show(ctx, |ui| {
+                if ui.button("Close").clicked() {
+                    self.netplay_create = false
+                };
+            });
+        }
+
+        if self.netplay_join {
+            egui::Window::new("Join Netplay Session").show(ctx, |ui| {
+                if ui.button("Close").clicked() {
+                    self.netplay_join = false
+                };
+            });
+        }
+
         if self.configure_profile {
             egui::Window::new("Configure Input Profile")
                 // .open(&mut self.configure_profile)
@@ -192,87 +212,109 @@ impl eframe::App for GopherEguiApp {
             if self.configure_profile {
                 ui.disable()
             }
+            egui::Grid::new("button_grid")
+                .min_col_width(200.0)
+                .show(ui, |ui| {
+                    if ui.button("Open ROM").clicked() {
+                        // Spawn dialog on main thread
+                        let task = rfd::AsyncFileDialog::new().pick_file();
+                        let selected_controller = self.selected_controller;
+                        let selected_profile = self.selected_profile.clone();
+                        let controller_enabled = self.controller_enabled;
+                        let upscale = self.upscale;
+                        let integer_scaling = self.integer_scaling;
+                        let fullscreen = self.fullscreen;
+                        let emulate_vru = self.emulate_vru;
+                        let config_dir = self.config_dir.clone();
+                        let cache_dir = self.cache_dir.clone();
+                        let data_dir = self.data_dir.clone();
 
-            if ui.button("Open ROM").clicked() {
-                // Spawn dialog on main thread
-                let task = rfd::AsyncFileDialog::new().pick_file();
-                let selected_controller = self.selected_controller;
-                let selected_profile = self.selected_profile.clone();
-                let controller_enabled = self.controller_enabled;
-                let upscale = self.upscale;
-                let integer_scaling = self.integer_scaling;
-                let fullscreen = self.fullscreen;
-                let emulate_vru = self.emulate_vru;
-                let config_dir = self.config_dir.clone();
-                let cache_dir = self.cache_dir.clone();
-                let data_dir = self.data_dir.clone();
+                        let (vru_window_notifier, vru_window_receiver): (
+                            std::sync::mpsc::Sender<Vec<String>>,
+                            std::sync::mpsc::Receiver<Vec<String>>,
+                        ) = std::sync::mpsc::channel();
 
-                let (vru_window_notifier, vru_window_receiver): (
-                    std::sync::mpsc::Sender<Vec<String>>,
-                    std::sync::mpsc::Receiver<Vec<String>>,
-                ) = std::sync::mpsc::channel();
-
-                let (vru_word_notifier, vru_word_receiver): (
-                    std::sync::mpsc::Sender<String>,
-                    std::sync::mpsc::Receiver<String>,
-                ) = std::sync::mpsc::channel();
-
-                if emulate_vru {
-                    self.vru_window_receiver = Some(vru_window_receiver);
-                    self.vru_word_notifier = Some(vru_word_notifier);
-                }
-
-                let gui_ctx = ctx.clone();
-                execute(async move {
-                    let file = task.await;
-
-                    if let Some(file) = file {
-                        let running_file = cache_dir.join("game_running");
-                        if running_file.exists() {
-                            return;
-                        }
-                        let result = std::fs::File::create(running_file.clone());
-                        if result.is_err() {
-                            panic!("could not create running file: {}", result.err().unwrap())
-                        }
-                        let mut device = device::Device::new(config_dir);
-
-                        let save_config_items = SaveConfig {
-                            selected_controller,
-                            selected_profile,
-                            controller_enabled,
-                            upscale,
-                            integer_scaling,
-                            fullscreen,
-                            emulate_vru,
-                        };
-                        save_config(&mut device.ui, save_config_items);
+                        let (vru_word_notifier, vru_word_receiver): (
+                            std::sync::mpsc::Sender<String>,
+                            std::sync::mpsc::Receiver<String>,
+                        ) = std::sync::mpsc::channel();
 
                         if emulate_vru {
-                            device.vru.window_notifier = Some(vru_window_notifier);
-                            device.vru.word_receiver = Some(vru_word_receiver);
-                            device.vru.gui_ctx = Some(gui_ctx);
+                            self.vru_window_receiver = Some(vru_window_receiver);
+                            self.vru_word_notifier = Some(vru_word_notifier);
                         }
-                        device::run_game(
-                            std::path::Path::new(file.path()),
-                            data_dir,
-                            &mut device,
-                            fullscreen,
-                        );
-                        let result = std::fs::remove_file(running_file.clone());
-                        if result.is_err() {
-                            panic!("could not remove running file: {}", result.err().unwrap())
-                        }
+
+                        let gui_ctx = ctx.clone();
+                        execute(async move {
+                            let file = task.await;
+
+                            if let Some(file) = file {
+                                let running_file = cache_dir.join("game_running");
+                                if running_file.exists() {
+                                    return;
+                                }
+                                let result = std::fs::File::create(running_file.clone());
+                                if result.is_err() {
+                                    panic!(
+                                        "could not create running file: {}",
+                                        result.err().unwrap()
+                                    )
+                                }
+                                let mut device = device::Device::new(config_dir);
+
+                                let save_config_items = SaveConfig {
+                                    selected_controller,
+                                    selected_profile,
+                                    controller_enabled,
+                                    upscale,
+                                    integer_scaling,
+                                    fullscreen,
+                                    emulate_vru,
+                                };
+                                save_config(&mut device.ui, save_config_items);
+
+                                if emulate_vru {
+                                    device.vru.window_notifier = Some(vru_window_notifier);
+                                    device.vru.word_receiver = Some(vru_word_receiver);
+                                    device.vru.gui_ctx = Some(gui_ctx);
+                                }
+                                device::run_game(
+                                    std::path::Path::new(file.path()),
+                                    data_dir,
+                                    &mut device,
+                                    fullscreen,
+                                );
+                                let result = std::fs::remove_file(running_file.clone());
+                                if result.is_err() {
+                                    panic!(
+                                        "could not remove running file: {}",
+                                        result.err().unwrap()
+                                    )
+                                }
+                            }
+                        });
+                    }
+
+                    if ui.button("Netplay: Create Session").clicked()
+                        && !self.cache_dir.join("game_running").exists()
+                    {
+                        self.netplay_create = true;
+                    }
+
+                    ui.end_row();
+
+                    if ui.button("Configure Input Profile").clicked()
+                        && !self.cache_dir.join("game_running").exists()
+                    {
+                        self.configure_profile = true;
+                    }
+
+                    if ui.button("Netplay: Join Session").clicked()
+                        && !self.cache_dir.join("game_running").exists()
+                    {
+                        self.netplay_join = true;
                     }
                 });
-            }
-
-            if ui.button("Configure Input Profile").clicked() {
-                if self.cache_dir.join("game_running").exists() {
-                    return;
-                }
-                self.configure_profile = true;
-            }
 
             ui.add_space(32.0);
             ui.label("Controller Config:");
