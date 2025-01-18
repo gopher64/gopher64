@@ -12,7 +12,7 @@ pub fn rt(opcode: u32) -> u32 {
     (opcode >> 16) & 0x1F
 }
 
-pub fn sa(opcode: u32) -> u32 {
+fn sa(opcode: u32) -> u32 {
     (opcode >> 6) & 0x1F
 }
 
@@ -28,23 +28,23 @@ pub fn se16(value: i16) -> u64 {
     value as i64 as u64
 }
 
-pub fn se8(value: i8) -> u64 {
+fn se8(value: i8) -> u64 {
     value as i64 as u64
 }
 
-pub fn bshift<T: Into<u64>>(address: T) -> u64 {
+fn bshift<T: Into<u64>>(address: T) -> u64 {
     ((address.into() & 3) ^ 3) << 3
 }
 
-pub fn hshift<T: Into<u64>>(address: T) -> u64 {
+fn hshift<T: Into<u64>>(address: T) -> u64 {
     ((address.into() & 2) ^ 2) << 3
 }
 
-pub fn bits_below_mask<T: Into<u64>>(x: T) -> u64 {
+fn bits_below_mask<T: Into<u64>>(x: T) -> u64 {
     (1 << x.into()) - 1
 }
 
-pub fn bits_above_mask<T: Into<u64>>(x: T) -> u64 {
+fn bits_above_mask<T: Into<u64>>(x: T) -> u64 {
     !bits_below_mask(x)
 }
 
@@ -60,7 +60,7 @@ pub fn check_relative_idle_loop(device: &mut device::Device, opcode: u32) {
     }
 }
 
-pub fn check_absolute_idle_loop(device: &mut device::Device, target: u64) {
+fn check_absolute_idle_loop(device: &mut device::Device, target: u64) {
     if device.cpu.pc == target
         && device.memory.fast_read[(device.cpu.pc_phys >> 16) as usize](
             device,

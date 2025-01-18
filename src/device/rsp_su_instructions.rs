@@ -8,45 +8,45 @@ use crate::device;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-pub fn rd(opcode: u32) -> u32 {
+fn rd(opcode: u32) -> u32 {
     (opcode >> 11) & 0x1F
 }
 
-pub fn rs(opcode: u32) -> u32 {
+fn rs(opcode: u32) -> u32 {
     (opcode >> 21) & 0x1F
 }
 
-pub fn rt(opcode: u32) -> u32 {
+fn rt(opcode: u32) -> u32 {
     (opcode >> 16) & 0x1F
 }
 
-pub fn sa(opcode: u32) -> u32 {
+fn sa(opcode: u32) -> u32 {
     (opcode >> 6) & 0x1F
 }
 
-pub fn imm(opcode: u32) -> u16 {
+fn imm(opcode: u32) -> u16 {
     opcode as u16
 }
 
-pub fn se16(value: i16) -> u32 {
+fn se16(value: i16) -> u32 {
     value as i32 as u32
 }
 
-pub fn voffset(opcode: u32) -> u8 {
+fn voffset(opcode: u32) -> u8 {
     (opcode & 0x7F) as u8
 }
 
-pub fn velement(opcode: u32) -> u8 {
+fn velement(opcode: u32) -> u8 {
     ((opcode >> 7) & 0xF) as u8
 }
 
-pub fn sign_extend_7bit_offset(offset: u8, shift_amount: u32) -> u32 {
+fn sign_extend_7bit_offset(offset: u8, shift_amount: u32) -> u32 {
     let soffset = (((offset << 1) & 0x80) | offset) as i8;
 
     (((soffset) as i32) as u32) << shift_amount
 }
 
-pub fn modify_vpr8(vpr: &mut __m128i, element: u8, value: u8) {
+fn modify_vpr8(vpr: &mut __m128i, element: u8, value: u8) {
     unsafe {
         *vpr = match element & 15 {
             0 => _mm_insert_epi8(*vpr, value as i32, 15),
@@ -70,7 +70,7 @@ pub fn modify_vpr8(vpr: &mut __m128i, element: u8, value: u8) {
     }
 }
 
-pub fn get_vpr8(vpr: __m128i, element: u8) -> u8 {
+fn get_vpr8(vpr: __m128i, element: u8) -> u8 {
     unsafe {
         match element & 15 {
             0 => _mm_extract_epi8(vpr, 15) as u8,
@@ -126,7 +126,7 @@ pub fn get_vpr16(vpr: __m128i, element: u8) -> u16 {
     }
 }
 
-pub fn modify_vpr32(vpr: &mut __m128i, element: u8, value: u32) {
+fn modify_vpr32(vpr: &mut __m128i, element: u8, value: u32) {
     unsafe {
         *vpr = match element & 3 {
             0 => _mm_insert_epi32(*vpr, value as i32, 3),
@@ -138,7 +138,7 @@ pub fn modify_vpr32(vpr: &mut __m128i, element: u8, value: u32) {
     }
 }
 
-pub fn get_vpr32(vpr: __m128i, element: u8) -> u32 {
+fn get_vpr32(vpr: __m128i, element: u8) -> u32 {
     unsafe {
         match element & 3 {
             0 => _mm_extract_epi32(vpr, 3) as u32,
@@ -150,7 +150,7 @@ pub fn get_vpr32(vpr: __m128i, element: u8) -> u32 {
     }
 }
 
-pub fn modify_vpr64(vpr: &mut __m128i, element: u8, value: u64) {
+fn modify_vpr64(vpr: &mut __m128i, element: u8, value: u64) {
     unsafe {
         *vpr = match element & 1 {
             0 => _mm_insert_epi64(*vpr, value as i64, 1),
@@ -160,7 +160,7 @@ pub fn modify_vpr64(vpr: &mut __m128i, element: u8, value: u64) {
     }
 }
 
-pub fn get_vpr64(vpr: __m128i, element: u8) -> u64 {
+fn get_vpr64(vpr: __m128i, element: u8) -> u64 {
     unsafe {
         match element & 1 {
             0 => _mm_extract_epi64(vpr, 1) as u64,
@@ -170,11 +170,11 @@ pub fn get_vpr64(vpr: __m128i, element: u8) -> u64 {
     }
 }
 
-pub fn modify_vpr128(vpr: &mut __m128i, value: u128) {
+fn modify_vpr128(vpr: &mut __m128i, value: u128) {
     unsafe { *vpr = std::mem::transmute::<u128, __m128i>(value) }
 }
 
-pub fn get_vpr128(vpr: __m128i) -> u128 {
+fn get_vpr128(vpr: __m128i) -> u128 {
     unsafe { std::mem::transmute::<__m128i, u128>(vpr) }
 }
 

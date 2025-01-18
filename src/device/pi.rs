@@ -49,7 +49,7 @@ pub fn read_regs(
     }
 }
 
-pub fn dma_read(device: &mut device::Device) {
+fn dma_read(device: &mut device::Device) {
     let handler = get_handler(device.pi.regs[PI_CART_ADDR_REG as usize]);
 
     let cart_addr = device.pi.regs[PI_CART_ADDR_REG as usize] & !1;
@@ -79,7 +79,7 @@ pub fn dma_read(device: &mut device::Device) {
     device.pi.regs[PI_STATUS_REG as usize] |= PI_STATUS_DMA_BUSY
 }
 
-pub fn dma_write(device: &mut device::Device) {
+fn dma_write(device: &mut device::Device) {
     let handler = get_handler(device.pi.regs[PI_CART_ADDR_REG as usize]);
 
     let cart_addr = device.pi.regs[PI_CART_ADDR_REG as usize] & !1;
@@ -112,7 +112,7 @@ pub fn dma_write(device: &mut device::Device) {
     device.pi.regs[PI_STATUS_REG as usize] |= PI_STATUS_DMA_BUSY
 }
 
-pub fn get_handler(address: u32) -> PiHandler {
+fn get_handler(address: u32) -> PiHandler {
     let mut handler = PiHandler {
         read: device::cart_rom::dma_read,
         write: device::cart_rom::dma_write,

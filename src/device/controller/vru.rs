@@ -36,7 +36,7 @@ pub fn init(device: &mut device::Device) {
     create_word_mappings(device);
 }
 
-pub fn reset_vru(device: &mut device::Device) {
+fn reset_vru(device: &mut device::Device) {
     device.vru.status = 0x00;
     if device.cart.rom[0x3E] == /* Japan */ 0x4A || device.cart.rom[0x3E] == /* Demo */ 0x00 {
         device.vru.voice_state = VOICE_STATUS_READY;
@@ -250,11 +250,11 @@ pub fn process(device: &mut device::Device, channel: usize) {
     }
 }
 
-pub fn vru_talking_event(device: &mut device::Device) {
+fn vru_talking_event(device: &mut device::Device) {
     device.vru.talking = false
 }
 
-pub fn create_word_mappings(device: &mut device::Device) {
+fn create_word_mappings(device: &mut device::Device) {
     device.vru.word_mappings = HashMap::from([
         (
             String::from("03A50024000303CF00A80003036000EA"),

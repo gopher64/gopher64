@@ -73,7 +73,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         device::si::SI_STATUS_DMA_BUSY | device::si::SI_STATUS_IO_BUSY
 }
 
-pub fn process_channel(device: &mut device::Device, channel: usize) -> usize {
+fn process_channel(device: &mut device::Device, channel: usize) -> usize {
     /* don't process channel if it has been disabled */
     if device.pif.channels[channel].tx.is_none() {
         return 0;
@@ -103,14 +103,14 @@ pub fn update_pif_ram(device: &mut device::Device) -> u64 {
     (24000 + (active_channels * 30000)) as u64
 }
 
-pub fn disable_pif_channel(channel: &mut PifChannel) {
+fn disable_pif_channel(channel: &mut PifChannel) {
     channel.tx = None;
     channel.rx = None;
     channel.tx_buf = None;
     channel.rx_buf = None;
 }
 
-pub fn setup_pif_channel(device: &mut device::Device, channel: usize, buf: usize) -> usize {
+fn setup_pif_channel(device: &mut device::Device, channel: usize, buf: usize) -> usize {
     let tx = device.pif.ram[buf] & 0x3f;
     let rx = device.pif.ram[buf + 1] & 0x3f;
 
@@ -124,7 +124,7 @@ pub fn setup_pif_channel(device: &mut device::Device, channel: usize, buf: usize
     (2 + tx + rx) as usize
 }
 
-pub fn setup_channels_format(device: &mut device::Device) {
+fn setup_channels_format(device: &mut device::Device) {
     let mut i: usize = 0;
     let mut k: usize = 0;
     while i < PIF_RAM_SIZE && k < PIF_CHANNELS_COUNT {
@@ -244,7 +244,7 @@ pub fn init(device: &mut device::Device) {
     device.pif.channels[4].process = Some(device::cart::process)
 }
 
-pub fn process_cic_challenge(device: &mut device::Device) {
+fn process_cic_challenge(device: &mut device::Device) {
     let mut challenge: [u8; 30] = [0; 30];
     let mut response: [u8; 30] = [0; 30];
 
@@ -265,7 +265,7 @@ pub fn process_cic_challenge(device: &mut device::Device) {
     }
 }
 
-pub fn n64_cic_nus_6105(chl: [u8; 30], rsp: &mut [u8; 30], len: usize) {
+fn n64_cic_nus_6105(chl: [u8; 30], rsp: &mut [u8; 30], len: usize) {
     let lut0: [u8; 0x10] = [
         0x4, 0x7, 0xA, 0x7, 0xE, 0x5, 0xE, 0x1, 0xC, 0xF, 0x8, 0xF, 0x6, 0x3, 0x6, 0x9,
     ];

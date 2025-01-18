@@ -89,7 +89,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
     }
 }
 
-pub fn pak_read_block(
+fn pak_read_block(
     device: &mut device::Device,
     addr_acrc: usize,
     data: usize,
@@ -108,7 +108,7 @@ pub fn pak_read_block(
     }
 }
 
-pub fn pak_write_block(
+fn pak_write_block(
     device: &mut device::Device,
     addr_acrc: usize,
     data: usize,
@@ -127,7 +127,7 @@ pub fn pak_write_block(
     }
 }
 
-pub fn data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 {
+fn data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 {
     let mut i = 0;
     let mut crc = 0;
 
@@ -147,7 +147,7 @@ pub fn data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 
     crc
 }
 
-pub fn pak_switch_event(device: &mut device::Device) {
+fn pak_switch_event(device: &mut device::Device) {
     for (i, channel) in device.pif.channels.iter_mut().enumerate() {
         if channel.change_pak != PakType::None {
             if channel.change_pak == PakType::RumblePak {

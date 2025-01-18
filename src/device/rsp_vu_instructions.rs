@@ -9,41 +9,41 @@ use crate::device::rsp_su_instructions::{get_vpr16, modify_vpr16};
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-pub fn vt(opcode: u32) -> u32 {
+fn vt(opcode: u32) -> u32 {
     (opcode >> 16) & 0x1F
 }
 
-pub fn ve(opcode: u32) -> u32 {
+fn ve(opcode: u32) -> u32 {
     (opcode >> 21) & 0xF
 }
 
-pub fn vs(opcode: u32) -> u32 {
+fn vs(opcode: u32) -> u32 {
     (opcode >> 11) & 0x1F
 }
 
-pub fn vd(opcode: u32) -> u32 {
+fn vd(opcode: u32) -> u32 {
     (opcode >> 6) & 0x1F
 }
 
-pub fn de(opcode: u32) -> u32 {
+fn de(opcode: u32) -> u32 {
     (opcode >> 11) & 0x7
 }
 
-pub fn clamp_signed_32(value: i32) -> i16 {
+fn clamp_signed_32(value: i32) -> i16 {
     value.clamp(-32768, 32767) as i16
 }
 
-pub fn clamp_signed_64(value: i64) -> i16 {
+fn clamp_signed_64(value: i64) -> i16 {
     value.clamp(-32768, 32767) as i16
 }
 
-pub fn s_clip(x: i64, bits: u32) -> i64 {
+fn s_clip(x: i64, bits: u32) -> i64 {
     let b = 1_u64 << (bits - 1);
     let m = b * 2 - 1;
     ((((x as u64) & m) ^ b).wrapping_sub(b)) as i64
 }
 
-pub fn vte(device: &device::Device, vt: u32, index: usize) -> __m128i {
+fn vte(device: &device::Device, vt: u32, index: usize) -> __m128i {
     unsafe {
         _mm_shuffle_epi8(
             device.rsp.cpu.vpr[vt as usize],

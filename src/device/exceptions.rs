@@ -133,7 +133,7 @@ pub fn tlb_miss_exception(
     exception_general(device, vector_offset)
 }
 
-pub fn exception_general(device: &mut device::Device, vector_offset: u32) {
+fn exception_general(device: &mut device::Device, vector_offset: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_EXL
         == 0
     {

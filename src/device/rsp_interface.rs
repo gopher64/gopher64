@@ -129,7 +129,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, _mask: u
     // SH/SB are broken: They overwrite the whole 32 bit, filling everything that isn't written with zeroes
 }
 
-pub fn do_dma(device: &mut device::Device, dma: RspDma) {
+fn do_dma(device: &mut device::Device, dma: RspDma) {
     let l = dma.length;
 
     let length = ((l & 0xfff) | 7) + 1;
@@ -205,7 +205,7 @@ pub fn do_dma(device: &mut device::Device, dma: RspDma) {
     );
 }
 
-pub fn fifo_push(device: &mut device::Device, dir: DmaDir) {
+fn fifo_push(device: &mut device::Device, dir: DmaDir) {
     if device.rsp.regs[SP_DMA_FULL_REG as usize] != 0 {
         panic!("RSP DMA already full")
     }
@@ -237,7 +237,7 @@ pub fn fifo_push(device: &mut device::Device, dir: DmaDir) {
     }
 }
 
-pub fn fifo_pop(device: &mut device::Device) {
+fn fifo_pop(device: &mut device::Device) {
     if device.rsp.regs[SP_DMA_FULL_REG as usize] != 0 {
         device.rsp.fifo[0].dir = device.rsp.fifo[1].dir;
         device.rsp.fifo[0].length = device.rsp.fifo[1].length;
@@ -312,7 +312,7 @@ pub fn write_regs2(device: &mut device::Device, address: u64, value: u32, mask: 
     }
 }
 
-pub fn update_sp_status(device: &mut device::Device, w: u32) {
+fn update_sp_status(device: &mut device::Device, w: u32) {
     let was_halted = device.rsp.regs[SP_STATUS_REG as usize] & SP_STATUS_HALT != 0;
 
     /* clear / set halt */
@@ -426,7 +426,7 @@ pub fn update_sp_status(device: &mut device::Device, w: u32) {
     }
 }
 
-pub fn do_task(device: &mut device::Device) {
+fn do_task(device: &mut device::Device) {
     let timer = device::rsp_cpu::run(device);
 
     device::events::create_event(
@@ -437,7 +437,7 @@ pub fn do_task(device: &mut device::Device) {
     )
 }
 
-pub fn rsp_event(device: &mut device::Device) {
+fn rsp_event(device: &mut device::Device) {
     if device.rsp.cpu.broken {
         device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT | SP_STATUS_BROKE;
 

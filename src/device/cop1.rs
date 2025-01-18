@@ -173,7 +173,7 @@ pub fn sdc1(device: &mut device::Device, opcode: u32) {
     )
 }
 
-pub fn mfc1(device: &mut device::Device, opcode: u32) {
+fn mfc1(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -185,7 +185,7 @@ pub fn mfc1(device: &mut device::Device, opcode: u32) {
         device::cpu_instructions::se32(u32::from_ne_bytes(value.to_ne_bytes()) as i32);
 }
 
-pub fn dmfc1(device: &mut device::Device, opcode: u32) {
+fn dmfc1(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -197,7 +197,7 @@ pub fn dmfc1(device: &mut device::Device, opcode: u32) {
         u64::from_ne_bytes(value.to_ne_bytes());
 }
 
-pub fn cfc1(device: &mut device::Device, opcode: u32) {
+fn cfc1(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -209,7 +209,7 @@ pub fn cfc1(device: &mut device::Device, opcode: u32) {
     )
 }
 
-pub fn dcfc1(device: &mut device::Device, opcode: u32) {
+fn dcfc1(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -221,7 +221,7 @@ pub fn dcfc1(device: &mut device::Device, opcode: u32) {
     device::exceptions::floating_point_exception(device)
 }
 
-pub fn mtc1(device: &mut device::Device, opcode: u32) {
+fn mtc1(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -239,7 +239,7 @@ pub fn mtc1(device: &mut device::Device, opcode: u32) {
     )
 }
 
-pub fn dmtc1(device: &mut device::Device, opcode: u32) {
+fn dmtc1(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -252,7 +252,7 @@ pub fn dmtc1(device: &mut device::Device, opcode: u32) {
     set_fpr_double(device, device::fpu_instructions::fs(opcode) as usize, value)
 }
 
-pub fn ctc1(device: &mut device::Device, opcode: u32) {
+fn ctc1(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -266,7 +266,7 @@ pub fn ctc1(device: &mut device::Device, opcode: u32) {
     )
 }
 
-pub fn dctc1(device: &mut device::Device, opcode: u32) {
+fn dctc1(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -278,7 +278,7 @@ pub fn dctc1(device: &mut device::Device, opcode: u32) {
     device::exceptions::floating_point_exception(device)
 }
 
-pub fn execute_cop1_b(device: &mut device::Device, opcode: u32) {
+fn execute_cop1_b(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -288,7 +288,7 @@ pub fn execute_cop1_b(device: &mut device::Device, opcode: u32) {
     device.cpu.cop1.b_instrs[((opcode >> 16) & 0x3) as usize](device, opcode)
 }
 
-pub fn execute_cop1_s(device: &mut device::Device, opcode: u32) {
+fn execute_cop1_s(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -298,7 +298,7 @@ pub fn execute_cop1_s(device: &mut device::Device, opcode: u32) {
     device.cpu.cop1.s_instrs[(opcode & 0x3F) as usize](device, opcode)
 }
 
-pub fn execute_cop1_d(device: &mut device::Device, opcode: u32) {
+fn execute_cop1_d(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -308,7 +308,7 @@ pub fn execute_cop1_d(device: &mut device::Device, opcode: u32) {
     device.cpu.cop1.d_instrs[(opcode & 0x3F) as usize](device, opcode)
 }
 
-pub fn execute_cop1_l(device: &mut device::Device, opcode: u32) {
+fn execute_cop1_l(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -318,7 +318,7 @@ pub fn execute_cop1_l(device: &mut device::Device, opcode: u32) {
     device.cpu.cop1.l_instrs[(opcode & 0x3F) as usize](device, opcode)
 }
 
-pub fn execute_cop1_w(device: &mut device::Device, opcode: u32) {
+fn execute_cop1_w(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_CU1
         == 0
     {
@@ -328,7 +328,7 @@ pub fn execute_cop1_w(device: &mut device::Device, opcode: u32) {
     device.cpu.cop1.w_instrs[(opcode & 0x3F) as usize](device, opcode)
 }
 
-pub fn unusable(device: &mut device::Device, _opcode: u32) {
+fn unusable(device: &mut device::Device, _opcode: u32) {
     device::exceptions::cop_unusable_exception(device, device::cop0::COP0_CAUSE_CE1)
 }
 
@@ -342,7 +342,7 @@ pub fn reserved(device: &mut device::Device, opcode: u32) {
     device::exceptions::reserved_exception(device, device::cop0::COP0_CAUSE_CE1);
 }
 
-pub fn get_control_registers_fpu(device: &device::Device, index: u32) -> u32 {
+fn get_control_registers_fpu(device: &device::Device, index: u32) -> u32 {
     match index {
         0 => device.cpu.cop1.fcr0,
         31 => device.cpu.cop1.fcr31,
@@ -352,7 +352,7 @@ pub fn get_control_registers_fpu(device: &device::Device, index: u32) -> u32 {
     }
 }
 
-pub fn set_control_registers_fpu(device: &mut device::Device, index: u32, data: u32) {
+fn set_control_registers_fpu(device: &mut device::Device, index: u32, data: u32) {
     match index {
         0 => { // read only
         }

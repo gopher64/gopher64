@@ -57,7 +57,7 @@ pub fn trigger_event(device: &mut device::Device) {
     set_next_event(device);
 }
 
-pub fn set_next_event(device: &mut device::Device) {
+fn set_next_event(device: &mut device::Device) {
     device.cpu.next_event_count = u64::MAX;
     for (pos, i) in device.cpu.events.iter().enumerate() {
         if i.enabled && i.count < device.cpu.next_event_count {
