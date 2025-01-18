@@ -6,7 +6,8 @@ pub struct Netplay {
     session_name: String,
     password: String,
     player_name: String,
-    server: String,
+    server: (String, String),
+    servers: std::collections::HashMap<String, String>,
 }
 
 pub struct GopherEguiApp {
@@ -123,7 +124,8 @@ impl GopherEguiApp {
                 session_name: "".to_string(),
                 password: "".to_string(),
                 player_name: "".to_string(),
-                server: "".to_string(),
+                server: ("".to_string(), "".to_string()),
+                servers: std::collections::HashMap::new(),
             },
         }
     }
@@ -215,16 +217,24 @@ impl eframe::App for GopherEguiApp {
 
                     ui.label("Server:");
 
-                    let servers = ["Paris", "US"];
+                    if self.netplay.servers.is_empty() {
+                        self.netplay.servers =
+                            reqwest::blocking::get("https://m64p.s3.amazonaws.com/servers.json")
+                                .expect("could not get server list")
+                                .json::<std::collections::HashMap<String, String>>()
+                                .expect("could not decode json");
+                        let first_server = self.netplay.servers.iter().next().unwrap().clone();
+                        self.netplay.server = (first_server.0.clone(), first_server.1.clone());
+                    }
 
                     egui::ComboBox::from_id_salt("server-combobox")
-                        .selected_text(format!("{}", self.netplay.server))
+                        .selected_text(format!("{}", self.netplay.server.0))
                         .show_ui(ui, |ui| {
-                            for server in servers {
+                            for server in self.netplay.servers.iter() {
                                 ui.selectable_value(
                                     &mut self.netplay.server,
-                                    server.to_string(),
-                                    server,
+                                    (server.0.clone(), server.1.clone()),
+                                    server.0,
                                 );
                             }
                         });
