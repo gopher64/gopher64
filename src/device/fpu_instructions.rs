@@ -14,11 +14,12 @@ pub fn fd(opcode: u32) -> u32 {
 
 pub fn bc1f(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop1.fcr31 & device::cop1::FCR31_CMP_BIT == 0 {
-        device::cpu_instructions::check_relative_idle_loop(device, opcode);
-        device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(
+        let target = device.cpu.pc.wrapping_add(
             device::cpu_instructions::se16(device::cpu_instructions::imm(opcode) as i16) << 2,
         ) + 4;
+        device::cpu_instructions::check_idle_loop(device, target);
+        device.cpu.branch_state.state = device::cpu::State::Take;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -26,11 +27,12 @@ pub fn bc1f(device: &mut device::Device, opcode: u32) {
 
 pub fn bc1t(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop1.fcr31 & device::cop1::FCR31_CMP_BIT != 0 {
-        device::cpu_instructions::check_relative_idle_loop(device, opcode);
-        device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(
+        let target = device.cpu.pc.wrapping_add(
             device::cpu_instructions::se16(device::cpu_instructions::imm(opcode) as i16) << 2,
         ) + 4;
+        device::cpu_instructions::check_idle_loop(device, target);
+        device.cpu.branch_state.state = device::cpu::State::Take;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -38,11 +40,12 @@ pub fn bc1t(device: &mut device::Device, opcode: u32) {
 
 pub fn bc1fl(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop1.fcr31 & device::cop1::FCR31_CMP_BIT == 0 {
-        device::cpu_instructions::check_relative_idle_loop(device, opcode);
-        device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(
+        let target = device.cpu.pc.wrapping_add(
             device::cpu_instructions::se16(device::cpu_instructions::imm(opcode) as i16) << 2,
         ) + 4;
+        device::cpu_instructions::check_idle_loop(device, target);
+        device.cpu.branch_state.state = device::cpu::State::Take;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }
@@ -50,11 +53,12 @@ pub fn bc1fl(device: &mut device::Device, opcode: u32) {
 
 pub fn bc1tl(device: &mut device::Device, opcode: u32) {
     if device.cpu.cop1.fcr31 & device::cop1::FCR31_CMP_BIT != 0 {
-        device::cpu_instructions::check_relative_idle_loop(device, opcode);
-        device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(
+        let target = device.cpu.pc.wrapping_add(
             device::cpu_instructions::se16(device::cpu_instructions::imm(opcode) as i16) << 2,
         ) + 4;
+        device::cpu_instructions::check_idle_loop(device, target);
+        device.cpu.branch_state.state = device::cpu::State::Take;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }

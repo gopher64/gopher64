@@ -48,20 +48,8 @@ pub fn bits_above_mask<T: Into<u64>>(x: T) -> u64 {
     !bits_below_mask(x)
 }
 
-pub fn check_relative_idle_loop(device: &mut device::Device, opcode: u32) {
-    if imm(opcode) as i16 == -1
-        && device.memory.fast_read[(device.cpu.pc_phys >> 16) as usize](
-            device,
-            device.cpu.pc_phys + 4,
-            device::memory::AccessSize::Word,
-        ) == 0
-    {
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] = device.cpu.next_event_count
-    }
-}
-
-pub fn check_absolute_idle_loop(device: &mut device::Device, opcode: u32) {
-    if (opcode & 0x3FFFFFF) as u64 == (device.cpu.pc_phys & 0x0FFFFFFF) >> 2
+pub fn check_idle_loop(device: &mut device::Device, target: u64) {
+    if target == device.cpu.pc
         && device.memory.fast_read[(device.cpu.pc_phys >> 16) as usize](
             device,
             device.cpu.pc_phys + 4,
@@ -76,10 +64,10 @@ pub fn j(device: &mut device::Device, opcode: u32) {
     if device::cpu::in_delay_slot_taken(device) {
         return;
     }
-    check_absolute_idle_loop(device, opcode);
+    let target = (device.cpu.pc + 4) & 0xFFFFFFFFF0000000 | ((opcode & 0x3FFFFFF) << 2) as u64;
+    check_idle_loop(device, target);
     device.cpu.branch_state.state = device::cpu::State::Take;
-    device.cpu.branch_state.pc =
-        (device.cpu.pc + 4) & 0xFFFFFFFFF0000000 | ((opcode & 0x3FFFFFF) << 2) as u64
+    device.cpu.branch_state.pc = target
 }
 
 pub fn jal(device: &mut device::Device, opcode: u32) {
@@ -89,10 +77,10 @@ pub fn jal(device: &mut device::Device, opcode: u32) {
         device.cpu.gpr[31] = device.cpu.pc + 8
     }
     if !device::cpu::in_delay_slot_taken(device) {
-        check_absolute_idle_loop(device, opcode);
+        let target = (device.cpu.pc + 4) & 0xFFFFFFFFF0000000 | ((opcode & 0x3FFFFFF) << 2) as u64;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc =
-            (device.cpu.pc + 4) & 0xFFFFFFFFF0000000 | ((opcode & 0x3FFFFFF) << 2) as u64
+        device.cpu.branch_state.pc = target
     } else if !device::cpu::in_delay_slot(device) {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -100,9 +88,10 @@ pub fn jal(device: &mut device::Device, opcode: u32) {
 
 pub fn beq(device: &mut device::Device, opcode: u32) {
     if device.cpu.gpr[rs(opcode) as usize] == device.cpu.gpr[rt(opcode) as usize] {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -110,9 +99,10 @@ pub fn beq(device: &mut device::Device, opcode: u32) {
 
 pub fn bne(device: &mut device::Device, opcode: u32) {
     if device.cpu.gpr[rs(opcode) as usize] != device.cpu.gpr[rt(opcode) as usize] {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -120,9 +110,10 @@ pub fn bne(device: &mut device::Device, opcode: u32) {
 
 pub fn blez(device: &mut device::Device, opcode: u32) {
     if device.cpu.gpr[rs(opcode) as usize] as i64 <= 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -130,9 +121,10 @@ pub fn blez(device: &mut device::Device, opcode: u32) {
 
 pub fn bgtz(device: &mut device::Device, opcode: u32) {
     if device.cpu.gpr[rs(opcode) as usize] as i64 > 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -176,9 +168,10 @@ pub fn lui(device: &mut device::Device, opcode: u32) {
 
 pub fn beql(device: &mut device::Device, opcode: u32) {
     if device.cpu.gpr[rs(opcode) as usize] == device.cpu.gpr[rt(opcode) as usize] {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }
@@ -186,9 +179,10 @@ pub fn beql(device: &mut device::Device, opcode: u32) {
 
 pub fn bnel(device: &mut device::Device, opcode: u32) {
     if device.cpu.gpr[rs(opcode) as usize] != device.cpu.gpr[rt(opcode) as usize] {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }
@@ -196,9 +190,10 @@ pub fn bnel(device: &mut device::Device, opcode: u32) {
 
 pub fn blezl(device: &mut device::Device, opcode: u32) {
     if device.cpu.gpr[rs(opcode) as usize] as i64 <= 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }
@@ -206,9 +201,10 @@ pub fn blezl(device: &mut device::Device, opcode: u32) {
 
 pub fn bgtzl(device: &mut device::Device, opcode: u32) {
     if device.cpu.gpr[rs(opcode) as usize] as i64 > 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }
@@ -966,9 +962,10 @@ pub fn srav(device: &mut device::Device, opcode: u32) {
 
 pub fn jr(device: &mut device::Device, opcode: u32) {
     if !device::cpu::in_delay_slot_taken(device) {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.gpr[rs(opcode) as usize];
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.gpr[rs(opcode) as usize];
+        device.cpu.branch_state.pc = target;
     } else if !device::cpu::in_delay_slot(device) {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -978,9 +975,10 @@ pub fn jalr(device: &mut device::Device, opcode: u32) {
     let in_delay_slot_taken = device::cpu::in_delay_slot_taken(device);
 
     if !in_delay_slot_taken {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.gpr[rs(opcode) as usize];
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.gpr[rs(opcode) as usize];
+        device.cpu.branch_state.pc = target;
     } else if !device::cpu::in_delay_slot(device) {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -1274,9 +1272,10 @@ pub fn dsra32(device: &mut device::Device, opcode: u32) {
 
 pub fn bltz(device: &mut device::Device, opcode: u32) {
     if ((device.cpu.gpr[rs(opcode) as usize]) as i64) < 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -1284,9 +1283,10 @@ pub fn bltz(device: &mut device::Device, opcode: u32) {
 
 pub fn bgez(device: &mut device::Device, opcode: u32) {
     if (device.cpu.gpr[rs(opcode) as usize] as i64) >= 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -1294,9 +1294,10 @@ pub fn bgez(device: &mut device::Device, opcode: u32) {
 
 pub fn bltzl(device: &mut device::Device, opcode: u32) {
     if ((device.cpu.gpr[rs(opcode) as usize]) as i64) < 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }
@@ -1304,9 +1305,10 @@ pub fn bltzl(device: &mut device::Device, opcode: u32) {
 
 pub fn bgezl(device: &mut device::Device, opcode: u32) {
     if (device.cpu.gpr[rs(opcode) as usize] as i64) >= 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }
@@ -1350,9 +1352,10 @@ pub fn tnei(device: &mut device::Device, opcode: u32) {
 
 pub fn bltzal(device: &mut device::Device, opcode: u32) {
     if ((device.cpu.gpr[rs(opcode) as usize]) as i64) < 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -1363,9 +1366,10 @@ pub fn bgezal(device: &mut device::Device, opcode: u32) {
     let in_delay_slot = device::cpu::in_delay_slot(device);
 
     if device.cpu.gpr[rs(opcode) as usize] as i64 >= 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -1379,9 +1383,10 @@ pub fn bgezal(device: &mut device::Device, opcode: u32) {
 
 pub fn bltzall(device: &mut device::Device, opcode: u32) {
     if ((device.cpu.gpr[rs(opcode) as usize]) as i64) < 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }
@@ -1390,9 +1395,10 @@ pub fn bltzall(device: &mut device::Device, opcode: u32) {
 
 pub fn bgezall(device: &mut device::Device, opcode: u32) {
     if device.cpu.gpr[rs(opcode) as usize] as i64 >= 0 {
-        check_relative_idle_loop(device, opcode);
+        let target = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        check_idle_loop(device, target);
         device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.pc.wrapping_add(se16(imm(opcode) as i16) << 2) + 4;
+        device.cpu.branch_state.pc = target;
     } else {
         device.cpu.branch_state.state = device::cpu::State::Discard;
     }
