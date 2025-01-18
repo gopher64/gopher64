@@ -2,6 +2,11 @@ use crate::device;
 use crate::ui;
 use eframe::egui;
 
+pub struct Netplay {
+    session_name: String,
+    password: String,
+}
+
 pub struct GopherEguiApp {
     config_dir: std::path::PathBuf,
     cache_dir: std::path::PathBuf,
@@ -24,6 +29,7 @@ pub struct GopherEguiApp {
     vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
     vru_word_notifier: Option<std::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
+    netplay: Netplay,
 }
 
 struct SaveConfig {
@@ -109,6 +115,10 @@ impl GopherEguiApp {
             vru_window_receiver: None,
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
+            netplay: Netplay {
+                session_name: "".to_string(),
+                password: "".to_string(),
+            },
         }
     }
 }
@@ -157,9 +167,31 @@ impl eframe::App for GopherEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.netplay_create {
             egui::Window::new("Create Netplay Session").show(ctx, |ui| {
-                if ui.button("Close").clicked() {
-                    self.netplay_create = false
-                };
+                egui::Grid::new("button_grid").show(ui, |ui| {
+                    let profile_name_label = ui.label("Profile Name:");
+                    let mut size = ui.spacing().interact_size;
+                    size.x = 200.0;
+                    ui.add_sized(size, |ui: &mut egui::Ui| {
+                        ui.text_edit_singleline(&mut self.netplay.session_name)
+                            .labelled_by(profile_name_label.id)
+                    });
+
+                    ui.end_row();
+
+                    let password_label = ui.label("Password (Optional):");
+
+                    ui.text_edit_singleline(&mut self.netplay.password)
+                        .labelled_by(password_label.id);
+
+                    ui.end_row();
+
+                    if ui.button("Create Session").clicked() {}
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.button("Close").clicked() {
+                            self.netplay_create = false
+                        };
+                    })
+                });
             });
         }
 
@@ -176,7 +208,7 @@ impl eframe::App for GopherEguiApp {
                 // .open(&mut self.configure_profile)
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
-                        let name_label = ui.label("Profile Name: ");
+                        let name_label = ui.label("Profile Name:");
                         ui.text_edit_singleline(&mut self.profile_name)
                             .labelled_by(name_label.id);
                     });
@@ -201,9 +233,11 @@ impl eframe::App for GopherEguiApp {
                                 self.input_profiles.push(self.profile_name.clone())
                             }
                         };
-                        if ui.button("Close").clicked() {
-                            self.configure_profile = false
-                        };
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui.button("Close").clicked() {
+                                self.configure_profile = false
+                            };
+                        })
                     });
                 });
         }
