@@ -8,6 +8,7 @@ pub struct Netplay {
     player_name: String,
     server: (String, String),
     servers: std::collections::HashMap<String, String>,
+    server_receiver: Option<tokio::sync::mpsc::Receiver<std::collections::HashMap<String, String>>>,
 }
 
 pub struct GopherEguiApp {
@@ -121,6 +122,7 @@ impl GopherEguiApp {
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
             netplay: Netplay {
+                server_receiver: None,
                 session_name: "".to_string(),
                 password: "".to_string(),
                 player_name: "".to_string(),
@@ -218,17 +220,36 @@ impl eframe::App for GopherEguiApp {
                     ui.label("Server:");
 
                     if self.netplay.servers.is_empty() {
-                        self.netplay.servers =
-                            reqwest::blocking::get("https://m64p.s3.amazonaws.com/servers.json")
-                                .expect("could not get server list")
-                                .json::<std::collections::HashMap<String, String>>()
-                                .expect("could not decode json");
-                        let first_server = self.netplay.servers.iter().next().unwrap().clone();
-                        self.netplay.server = (first_server.0.clone(), first_server.1.clone());
+                        if self.netplay.server_receiver.is_none() {
+                            let (tx, rx) = tokio::sync::mpsc::channel(1);
+                            self.netplay.server_receiver = Some(rx);
+
+                            tokio::spawn(async move {
+                                if let Ok(response) =
+                                    reqwest::get("https://m64p.s3.amazonaws.com/servers.json").await
+                                {
+                                    if let Ok(servers) = response
+                                        .json::<std::collections::HashMap<String, String>>()
+                                        .await
+                                    {
+                                        let _ = tx.send(servers).await;
+                                    }
+                                }
+                            });
+                        } else {
+                            let result = self.netplay.server_receiver.as_mut().unwrap().try_recv();
+                            if result.is_ok() {
+                                self.netplay.servers = result.unwrap();
+                                self.netplay.server_receiver = None;
+                                let first_server = self.netplay.servers.iter().next().unwrap();
+                                self.netplay.server =
+                                    (first_server.0.clone(), first_server.1.clone());
+                            }
+                        }
                     }
 
                     egui::ComboBox::from_id_salt("server-combobox")
-                        .selected_text(format!("{}", self.netplay.server.0))
+                        .selected_text(self.netplay.server.0.to_string())
                         .show_ui(ui, |ui| {
                             for server in self.netplay.servers.iter() {
                                 ui.selectable_value(
