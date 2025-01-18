@@ -6,6 +6,7 @@ pub struct Netplay {
     session_name: String,
     password: String,
     player_name: String,
+    server: String,
 }
 
 pub struct GopherEguiApp {
@@ -122,6 +123,7 @@ impl GopherEguiApp {
                 session_name: "".to_string(),
                 password: "".to_string(),
                 player_name: "".to_string(),
+                server: "".to_string(),
             },
         }
     }
@@ -208,6 +210,30 @@ impl eframe::App for GopherEguiApp {
 
                     ui.text_edit_singleline(&mut self.netplay.player_name)
                         .labelled_by(player_name_label.id);
+
+                    ui.end_row();
+
+                    ui.label("Server:");
+
+                    let servers = ["Paris", "US"];
+
+                    egui::ComboBox::from_id_salt("server-combobox")
+                        .selected_text(format!("{}", self.netplay.server))
+                        .show_ui(ui, |ui| {
+                            for server in servers {
+                                ui.selectable_value(
+                                    &mut self.netplay.server,
+                                    server.to_string(),
+                                    server,
+                                );
+                            }
+                        });
+
+                    ui.end_row();
+
+                    ui.label("Your ping:");
+
+                    ui.label("value");
 
                     ui.end_row();
 
