@@ -5,6 +5,7 @@ use eframe::egui;
 pub struct Netplay {
     session_name: String,
     password: String,
+    player_name: String,
 }
 
 pub struct GopherEguiApp {
@@ -14,6 +15,7 @@ pub struct GopherEguiApp {
     configure_profile: bool,
     netplay_create: bool,
     netplay_join: bool,
+    netplay_wait: bool,
     profile_name: String,
     controllers: Vec<String>,
     selected_controller: [i32; 4],
@@ -100,6 +102,7 @@ impl GopherEguiApp {
             configure_profile: false,
             netplay_create: false,
             netplay_join: false,
+            netplay_wait: false,
             profile_name: "".to_string(),
             selected_profile: game_ui.config.input.input_profile_binding.clone(),
             selected_controller,
@@ -118,6 +121,7 @@ impl GopherEguiApp {
             netplay: Netplay {
                 session_name: "".to_string(),
                 password: "".to_string(),
+                player_name: "".to_string(),
             },
         }
     }
@@ -185,7 +189,32 @@ impl eframe::App for GopherEguiApp {
 
                     ui.end_row();
 
-                    if ui.button("Create Session").clicked() {}
+                    ui.label("ROM");
+                    if ui.button("Open ROM").clicked() {
+                        // Spawn dialog on main thread
+                        let task = rfd::AsyncFileDialog::new().pick_file();
+                        execute(async move {
+                            let file = task.await;
+
+                            if let Some(file) = file {
+                                let _rom_contents = device::get_rom_contents(file.path());
+                            }
+                        });
+                    }
+
+                    ui.end_row();
+
+                    let player_name_label = ui.label("Player Name:");
+
+                    ui.text_edit_singleline(&mut self.netplay.player_name)
+                        .labelled_by(player_name_label.id);
+
+                    ui.end_row();
+
+                    if ui.button("Create Session").clicked() {
+                        self.netplay_create = false;
+                        self.netplay_wait = true;
+                    }
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if ui.button("Close").clicked() {
                             self.netplay_create = false

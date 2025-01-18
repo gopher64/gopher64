@@ -53,6 +53,10 @@ pub fn run_game(
     fullscreen: bool,
 ) {
     let rom_contents = get_rom_contents(file_path);
+    if rom_contents.is_empty() {
+        println!("Could not read rom file");
+        return;
+    }
 
     cart_rom::init(device, rom_contents); // cart needs to come before rdram
 
@@ -106,11 +110,12 @@ fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
         }
         return data;
     } else {
-        panic!("unknown rom format")
+        let data: Vec<u8> = vec![];
+        data
     }
 }
 
-fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
+pub fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
     let mut contents = vec![];
     if file_path.extension().unwrap().eq_ignore_ascii_case("zip") {
         let zip_file = fs::File::open(file_path).unwrap();
