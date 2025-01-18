@@ -197,7 +197,7 @@ impl eframe::App for GopherEguiApp {
                     if ui.button("Open ROM").clicked() {
                         // Spawn dialog on main thread
                         let task = rfd::AsyncFileDialog::new().pick_file();
-                        execute(async move {
+                        tokio::spawn(async {
                             let file = task.await;
 
                             if let Some(file) = file {
@@ -283,7 +283,7 @@ impl eframe::App for GopherEguiApp {
                             let profile_name = self.profile_name.clone();
                             let config_dir = self.config_dir.clone();
                             let dinput = self.dinput;
-                            execute(async move {
+                            tokio::spawn(async move {
                                 let mut game_ui = ui::Ui::new(config_dir);
                                 ui::input::configure_input_profile(
                                     &mut game_ui,
@@ -344,7 +344,7 @@ impl eframe::App for GopherEguiApp {
                         }
 
                         let gui_ctx = ctx.clone();
-                        execute(async move {
+                        tokio::spawn(async move {
                             let file = task.await;
 
                             if let Some(file) = file {
@@ -525,10 +525,6 @@ impl eframe::App for GopherEguiApp {
             );
         }
     }
-}
-
-fn execute<F: std::future::Future<Output = ()> + Send + 'static>(f: F) {
-    std::thread::spawn(move || futures::executor::block_on(f));
 }
 
 fn add_japanese_font(ctx: &egui::Context) {

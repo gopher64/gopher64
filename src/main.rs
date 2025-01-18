@@ -62,7 +62,8 @@ struct Args {
     clear_input_bindings: bool,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let exe_path = std::env::current_exe().unwrap();
     let portable_dir = exe_path.parent();
     let portable = portable_dir.unwrap().join("portable.txt").exists();
