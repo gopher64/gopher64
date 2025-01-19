@@ -60,11 +60,7 @@ static uint32_t cmd_data[0x00040000 >> 2];
 static int cmd_cur;
 static int cmd_ptr;
 static bool emu_running;
-static uint64_t rdp_sync_signal;
 static GFX_INFO gfx_info;
-
-static uint64_t last_frame_counter;
-static uint64_t frame_counter;
 
 static const unsigned cmd_len_lut[64] = {
 	1,
@@ -209,8 +205,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_sc
 	wsi->begin_frame();
 
 	emu_running = true;
-	last_frame_counter = 0;
-	frame_counter = 0;
 }
 
 void rdp_close()
@@ -336,7 +330,6 @@ bool rdp_update_screen()
 	render_frame(device);
 	wsi->end_frame();
 	wsi->begin_frame();
-	frame_counter++;
 	return emu_running;
 }
 
@@ -443,15 +436,7 @@ uint64_t rdp_process_commands()
 
 		if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
-			if (frame_counter != last_frame_counter) // Only sync once per frame
-			{
-				rdp_sync_signal = processor->signal_timeline();
-				last_frame_counter = frame_counter;
-			}
-			else
-			{
-				rdp_sync_signal = 0;
-			}
+			processor->wait_for_timeline(processor->signal_timeline());
 
 			uint32_t width = viCalculateHorizonalWidth(*gfx_info.VI_H_START_REG, *gfx_info.VI_X_SCALE_REG, *gfx_info.VI_WIDTH_REG);
 			if (width == 0)
@@ -477,12 +462,4 @@ uint64_t rdp_process_commands()
 	*gfx_info.DPC_STATUS_REG |= DP_STATUS_CBUF_READY;
 
 	return interrupt_timer;
-}
-
-void rdp_full_sync()
-{
-	if (rdp_sync_signal)
-	{
-		processor->wait_for_timeline(rdp_sync_signal);
-	}
 }
