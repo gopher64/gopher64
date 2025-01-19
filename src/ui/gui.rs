@@ -9,6 +9,8 @@ pub struct Netplay {
     server: (String, String),
     servers: std::collections::HashMap<String, String>,
     server_receiver: Option<tokio::sync::mpsc::Receiver<std::collections::HashMap<String, String>>>,
+    broadcast_socket: Option<std::net::UdpSocket>,
+    broadcast_timer: Option<std::time::Instant>,
 }
 
 pub struct GopherEguiApp {
@@ -122,6 +124,8 @@ impl GopherEguiApp {
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
             netplay: Netplay {
+                broadcast_socket: None,
+                broadcast_timer: None,
                 server_receiver: None,
                 session_name: "".to_string(),
                 password: "".to_string(),
@@ -220,6 +224,24 @@ impl eframe::App for GopherEguiApp {
                     ui.label("Server:");
 
                     if self.netplay.servers.is_empty() {
+                        self.netplay.broadcast_socket = Some(
+                            std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
+                                .expect("couldn't bind to address"),
+                        );
+                        let socket = self.netplay.broadcast_socket.as_ref().unwrap();
+                        socket
+                            .set_broadcast(true)
+                            .expect("set_broadcast call failed");
+                        socket
+                            .set_nonblocking(true)
+                            .expect("could not set up socket");
+                        let data: [u8; 1] = [1];
+                        socket
+                            .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
+                            .expect("couldn't send data");
+                        self.netplay.broadcast_timer =
+                            Some(std::time::Instant::now() + std::time::Duration::from_secs(5));
+
                         if self.netplay.server_receiver.is_none() {
                             let (tx, rx) = tokio::sync::mpsc::channel(1);
                             self.netplay.server_receiver = Some(rx);
@@ -239,12 +261,42 @@ impl eframe::App for GopherEguiApp {
                         } else {
                             let result = self.netplay.server_receiver.as_mut().unwrap().try_recv();
                             if result.is_ok() {
-                                self.netplay.servers = result.unwrap();
+                                self.netplay.servers.extend(result.unwrap());
                                 self.netplay.server_receiver = None;
-                                let first_server = self.netplay.servers.iter().next().unwrap();
-                                self.netplay.server =
-                                    (first_server.0.clone(), first_server.1.clone());
+                                if self.netplay.server.0.is_empty() {
+                                    let first_server = self.netplay.servers.iter().next().unwrap();
+                                    self.netplay.server =
+                                        (first_server.0.clone(), first_server.1.clone());
+                                }
                             }
+                        }
+                    }
+                    if self.netplay.broadcast_timer.is_some()
+                        && std::time::Instant::now() > self.netplay.broadcast_timer.unwrap()
+                    {
+                        self.netplay.broadcast_socket = None;
+                        self.netplay.broadcast_timer = None;
+                    }
+                    if self.netplay.broadcast_socket.is_some() {
+                        let mut buffer = [0; 1024];
+                        let result = self
+                            .netplay
+                            .broadcast_socket
+                            .as_ref()
+                            .unwrap()
+                            .recv_from(&mut buffer);
+                        if result.is_ok() {
+                            let (amt, _src) = result.unwrap();
+                            let data: std::collections::HashMap<String, String> =
+                                serde_json::from_slice(&buffer[..amt]).unwrap();
+                            for server in data.iter() {
+                                let (server_name, server_ip) = server;
+                                self.netplay
+                                    .servers
+                                    .insert(server_name.to_string(), server_ip.to_string());
+                                self.netplay.server = (server.0.clone(), server.1.clone());
+                            }
+                            self.netplay.broadcast_socket = None;
                         }
                     }
 
