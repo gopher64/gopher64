@@ -26,8 +26,8 @@ pub struct Vru {
     pub words: Vec<String>,
     pub talking: bool,
     pub word_mappings: HashMap<String, String>,
-    pub window_notifier: Option<std::sync::mpsc::Sender<Vec<String>>>,
-    pub word_receiver: Option<std::sync::mpsc::Receiver<String>>,
+    pub window_notifier: Option<tokio::sync::mpsc::Sender<Vec<String>>>,
+    pub word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
     pub gui_ctx: Option<egui::Context>,
 }
 
@@ -187,7 +187,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 ui::vru::prompt_for_match(
                     &device.vru.words,
                     device.vru.window_notifier.as_ref().unwrap(),
-                    device.vru.word_receiver.as_ref().unwrap(),
+                    device.vru.word_receiver.as_mut().unwrap(),
                     device.vru.gui_ctx.as_ref().unwrap(),
                 )
             } else {

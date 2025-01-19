@@ -174,7 +174,5 @@ pub fn init(device: &mut device::Device) {
 }
 
 fn rdp_interrupt_event(device: &mut device::Device) {
-    ui::video::full_sync();
-
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_DP)
 }
