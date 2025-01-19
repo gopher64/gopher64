@@ -1,8 +1,10 @@
 use crate::device;
 use crate::ui::gui::GopherEguiApp;
 use eframe::egui;
+use sha2::{Digest, Sha256};
 
 const NETPLAY_VERSION: i32 = 17;
+const EMU_NAME: &str = "gopher64";
 pub struct Netplay {
     pub create: bool,
     pub join: bool,
@@ -44,6 +46,9 @@ pub struct NetplayMessage {
     room: Option<NetplayRoom>,
     accept: Option<i32>,
     message: Option<String>,
+    auth: Option<String>,
+    #[serde(rename = "authTime")]
+    auth_time: Option<String>,
 }
 
 pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
@@ -206,14 +211,20 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 } else if app.netplay.game_info.0.is_empty() {
                     app.netplay.error = "ROM not loaded".to_string();
                 } else {
+                    let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+                    let hasher = Sha256::new()
+                        .chain_update(now_utc.clone())
+                        .chain_update(EMU_NAME);
                     let netplay_message = NetplayMessage {
                         message_type: "request_create_room".to_string(),
                         player_name: Some(app.netplay.player_name.clone()),
                         client_sha: Some(env!("CARGO_PKG_VERSION").to_string()),
                         netplay_version: Some(NETPLAY_VERSION),
-                        emulator: Some("gopher64".to_string()),
+                        emulator: Some(EMU_NAME.to_string()),
                         accept: None,
                         message: None,
+                        auth_time: Some(now_utc),
+                        auth: Some(format!("{:x}", hasher.finalize())),
                         room: Some(NetplayRoom {
                             room_name: app.netplay.session_name.clone(),
                             password: Some(app.netplay.password.clone()),
