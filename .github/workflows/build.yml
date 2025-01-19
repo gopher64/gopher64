@@ -82,13 +82,13 @@ jobs:
           sudo apt-get update
           sudo apt-get -y dist-upgrade
           sudo apt-get -y install aptitude
-          sudo aptitude -y install libssl-dev:arm64 libsdl2-dev:arm64 g++-aarch64-linux-gnu
+          sudo aptitude -y install libsdl2-dev:arm64 g++-aarch64-linux-gnu
       - name: Install SDL2
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
           sudo apt-get update
           sudo apt-get -y dist-upgrade
-          sudo apt-get -y install libssl-dev libsdl2-dev
+          sudo apt-get -y install libsdl2-dev
       - name: Set aarch64 linker
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
