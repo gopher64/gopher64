@@ -311,12 +311,6 @@ fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
             ui.end_row();
 
-            ui.label("Your ping:");
-
-            ui.label("value");
-
-            ui.end_row();
-
             if ui.button("Create Session").clicked() {
                 app.netplay_create = false;
                 app.netplay_wait = true;
