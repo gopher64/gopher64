@@ -195,7 +195,7 @@ fn set_cic(device: &mut device::Device) {
     }
 }
 
-fn calculate_hash(data: &[u8]) -> String {
+pub fn calculate_hash(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(data);
     format!("{:X}", hasher.finalize())

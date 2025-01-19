@@ -9,9 +9,6 @@ pub struct GopherEguiApp {
     cache_dir: std::path::PathBuf,
     data_dir: std::path::PathBuf,
     configure_profile: bool,
-    netplay_create: bool,
-    netplay_join: bool,
-    netplay_wait: bool,
     profile_name: String,
     controllers: Vec<String>,
     selected_controller: [i32; 4],
@@ -96,9 +93,6 @@ impl GopherEguiApp {
             config_dir: config_dir.clone(),
             data_dir: data_dir.clone(),
             configure_profile: false,
-            netplay_create: false,
-            netplay_join: false,
-            netplay_wait: false,
             profile_name: "".to_string(),
             selected_profile: game_ui.config.input.input_profile_binding.clone(),
             selected_controller,
@@ -115,9 +109,16 @@ impl GopherEguiApp {
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
             netplay: netplay::Netplay {
+                error: "".to_string(),
                 broadcast_socket: None,
                 broadcast_timer: None,
                 server_receiver: None,
+                game_info_receiver: None,
+                rom_label: "Open ROM".to_string(),
+                create: false,
+                join: false,
+                wait: false,
+                game_info: ("".to_string(), "".to_string(), "".to_string()),
                 session_name: "".to_string(),
                 password: "".to_string(),
                 player_name: "".to_string(),
@@ -319,16 +320,20 @@ fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
 impl eframe::App for GopherEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if self.netplay_create {
+        if self.netplay.create {
             netplay::netplay_create(self, ctx);
         }
 
-        if self.netplay_join {
+        if self.netplay.join {
             netplay::netplay_join(self, ctx);
         }
 
-        if self.netplay_wait {
+        if self.netplay.wait {
             netplay::netplay_wait(self, ctx);
+        }
+
+        if !self.netplay.error.is_empty() {
+            netplay::netplay_error(self, ctx, self.netplay.error.clone());
         }
 
         if self.configure_profile {
@@ -349,7 +354,7 @@ impl eframe::App for GopherEguiApp {
                     if ui.button("Netplay: Create Session").clicked()
                         && !self.cache_dir.join("game_running").exists()
                     {
-                        self.netplay_create = true;
+                        self.netplay.create = true;
                     }
 
                     ui.end_row();
@@ -363,7 +368,7 @@ impl eframe::App for GopherEguiApp {
                     if ui.button("Netplay: Join Session").clicked()
                         && !self.cache_dir.join("game_running").exists()
                     {
-                        self.netplay_join = true;
+                        self.netplay.join = true;
                     }
                 });
 
