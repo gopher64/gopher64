@@ -222,24 +222,25 @@ fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
             ui.label("Server:");
 
             if app.netplay.servers.is_empty() {
-                app.netplay.broadcast_socket = Some(
-                    std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
-                        .expect("couldn't bind to address"),
-                );
-                let socket = app.netplay.broadcast_socket.as_ref().unwrap();
-                socket
-                    .set_broadcast(true)
-                    .expect("set_broadcast call failed");
-                socket
-                    .set_nonblocking(true)
-                    .expect("could not set up socket");
-                let data: [u8; 1] = [1];
-                socket
-                    .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
-                    .expect("couldn't send data");
-                app.netplay.broadcast_timer =
-                    Some(std::time::Instant::now() + std::time::Duration::from_secs(5));
-
+                if app.netplay.broadcast_socket.is_none() {
+                    app.netplay.broadcast_socket = Some(
+                        std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
+                            .expect("couldn't bind to address"),
+                    );
+                    let socket = app.netplay.broadcast_socket.as_ref().unwrap();
+                    socket
+                        .set_broadcast(true)
+                        .expect("set_broadcast call failed");
+                    socket
+                        .set_nonblocking(true)
+                        .expect("could not set up socket");
+                    let data: [u8; 1] = [1];
+                    socket
+                        .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
+                        .expect("couldn't send data");
+                    app.netplay.broadcast_timer =
+                        Some(std::time::Instant::now() + std::time::Duration::from_secs(5));
+                }
                 if app.netplay.server_receiver.is_none() {
                     let (tx, rx) = tokio::sync::mpsc::channel(1);
                     app.netplay.server_receiver = Some(rx);
@@ -256,25 +257,14 @@ fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             }
                         }
                     });
-                } else {
-                    let result = app.netplay.server_receiver.as_mut().unwrap().try_recv();
-                    if result.is_ok() {
-                        app.netplay.servers.extend(result.unwrap());
-                        app.netplay.server_receiver = None;
-                        if app.netplay.server.0.is_empty() {
-                            let first_server = app.netplay.servers.iter().next().unwrap();
-                            app.netplay.server = (first_server.0.clone(), first_server.1.clone());
-                        }
-                    }
                 }
             }
             if app.netplay.broadcast_timer.is_some()
                 && std::time::Instant::now() > app.netplay.broadcast_timer.unwrap()
             {
-                app.netplay.broadcast_socket = None;
                 app.netplay.broadcast_timer = None;
             }
-            if app.netplay.broadcast_socket.is_some() {
+            if app.netplay.broadcast_socket.is_some() && app.netplay.broadcast_timer.is_some() {
                 let mut buffer = [0; 1024];
                 let result = app
                     .netplay
@@ -294,6 +284,17 @@ fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         app.netplay.server = (server.0.clone(), server.1.clone());
                     }
                     app.netplay.broadcast_socket = None;
+                }
+            }
+            if app.netplay.server_receiver.is_some() {
+                let result = app.netplay.server_receiver.as_mut().unwrap().try_recv();
+                if result.is_ok() {
+                    app.netplay.servers.extend(result.unwrap());
+                    app.netplay.server_receiver = None;
+                    if app.netplay.server.0.is_empty() {
+                        let first_server = app.netplay.servers.iter().next().unwrap();
+                        app.netplay.server = (first_server.0.clone(), first_server.1.clone());
+                    }
                 }
             }
 
