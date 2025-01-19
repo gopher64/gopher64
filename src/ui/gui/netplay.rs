@@ -77,16 +77,29 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 let (tx, rx) = tokio::sync::mpsc::channel(1);
                 app.netplay.game_info_receiver = Some(rx);
                 let gui_ctx = ctx.clone();
+                app.netplay.rom_label = "Inspecting ROM".to_string();
                 tokio::spawn(async move {
                     let file = task.await;
 
                     if let Some(file) = file {
                         let rom_contents = device::get_rom_contents(file.path());
-                        let hash = device::cart_rom::calculate_hash(&rom_contents);
-                        let game_name = std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
-                            .unwrap()
-                            .to_string();
-                        let _ = tx.send((hash, game_name, file.file_name())).await;
+                        if !rom_contents.is_empty() {
+                            let hash = device::cart_rom::calculate_hash(&rom_contents);
+                            let game_name = std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
+                                .unwrap()
+                                .to_string();
+                            let _ = tx.send((hash, game_name, file.file_name())).await;
+                            gui_ctx.request_repaint();
+                        } else {
+                            let _ = tx
+                                .send(("".to_string(), "".to_string(), "Invalid ROM".to_string()))
+                                .await;
+                            gui_ctx.request_repaint();
+                        }
+                    } else {
+                        let _ = tx
+                            .send(("".to_string(), "".to_string(), "Open ROM".to_string()))
+                            .await;
                         gui_ctx.request_repaint();
                     }
                 });
@@ -183,9 +196,14 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
             if app.netplay.game_info_receiver.is_some() {
                 let result = app.netplay.game_info_receiver.as_mut().unwrap().try_recv();
                 if result.is_ok() {
-                    app.netplay.game_info = result.unwrap();
                     app.netplay.game_info_receiver = None;
-                    app.netplay.rom_label = app.netplay.game_info.2.clone();
+                    let data = result.unwrap();
+                    if !data.0.is_empty() {
+                        app.netplay.game_info = data;
+                        app.netplay.rom_label = app.netplay.game_info.2.clone();
+                    } else {
+                        app.netplay.rom_label = data.2;
+                    }
                 }
             }
 
