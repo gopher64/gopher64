@@ -31,8 +31,8 @@ pub struct GopherEguiApp {
     emulate_vru: bool,
     dinput: bool,
     show_vru_dialog: bool,
-    vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
-    vru_word_notifier: Option<std::sync::mpsc::Sender<String>>,
+    vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
+    vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
     netplay: Netplay,
 }
@@ -350,14 +350,14 @@ impl eframe::App for GopherEguiApp {
                         let data_dir = self.data_dir.clone();
 
                         let (vru_window_notifier, vru_window_receiver): (
-                            std::sync::mpsc::Sender<Vec<String>>,
-                            std::sync::mpsc::Receiver<Vec<String>>,
-                        ) = std::sync::mpsc::channel();
+                            tokio::sync::mpsc::Sender<Vec<String>>,
+                            tokio::sync::mpsc::Receiver<Vec<String>>,
+                        ) = tokio::sync::mpsc::channel(1);
 
                         let (vru_word_notifier, vru_word_receiver): (
-                            std::sync::mpsc::Sender<String>,
-                            std::sync::mpsc::Receiver<String>,
-                        ) = std::sync::mpsc::channel();
+                            tokio::sync::mpsc::Sender<String>,
+                            tokio::sync::mpsc::Receiver<String>,
+                        ) = tokio::sync::mpsc::channel(1);
 
                         if emulate_vru {
                             self.vru_window_receiver = Some(vru_window_receiver);
@@ -498,7 +498,7 @@ impl eframe::App for GopherEguiApp {
         });
 
         if self.emulate_vru && self.vru_window_receiver.is_some() {
-            let result = self.vru_window_receiver.as_ref().unwrap().try_recv();
+            let result = self.vru_window_receiver.as_mut().unwrap().try_recv();
             if result.is_ok() {
                 self.show_vru_dialog = true;
                 self.vru_word_list = result.unwrap();
@@ -526,7 +526,7 @@ impl eframe::App for GopherEguiApp {
                                     self.vru_word_notifier
                                         .as_ref()
                                         .unwrap()
-                                        .send(v.clone())
+                                        .try_send(v.clone())
                                         .unwrap();
                                     self.show_vru_dialog = false;
                                 }
@@ -538,7 +538,7 @@ impl eframe::App for GopherEguiApp {
                         self.vru_word_notifier
                             .as_ref()
                             .unwrap()
-                            .send(String::from(""))
+                            .try_send(String::from(""))
                             .unwrap();
                         self.show_vru_dialog = false;
                     }
