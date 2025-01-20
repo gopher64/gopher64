@@ -16,6 +16,8 @@ pub struct Netplay {
     pub player_name: String,
     pub error: String,
     pub rom_label: String,
+    pub begin_game: bool,
+    pub pending_begin: bool,
     pub motd: String,
     pub player_names: [String; 4],
     pub server: (String, String),
@@ -377,8 +379,37 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
         app.netplay.socket_waiting = true;
     }
 
+    if app.netplay.begin_game {
+        let begin_game = NetplayMessage {
+            message_type: "request_begin_game".to_string(),
+            player_name: None,
+            client_sha: None,
+            netplay_version: None,
+            player_names: None,
+            emulator: None,
+            accept: None,
+            message: None,
+            auth_time: None,
+            auth: None,
+            room: Some(NetplayRoom {
+                room_name: None,
+                password: None,
+                game_name: None,
+                md5: None,
+                protected: None,
+                port: app.netplay.waiting_session.as_ref().unwrap().port,
+            }),
+        };
+        socket
+            .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
+                serde_json::to_vec(&begin_game).unwrap(),
+            )))
+            .unwrap();
+        app.netplay.begin_game = false;
+    }
+
     if app.netplay.socket_waiting {
-        let data = app.netplay.socket.as_mut().unwrap().read();
+        let data = socket.read();
         if data.is_ok() {
             let message: NetplayMessage =
                 serde_json::from_slice(&data.unwrap().into_data()).unwrap();
@@ -390,6 +421,9 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         .into_owned();
                 } else if message.message_type == "reply_players" {
                     app.netplay.player_names = message.player_names.unwrap();
+                } else if message.message_type == "reply_begin_game" {
+                    app.netplay = Default::default();
+                    return;
                 }
             } else {
                 app.netplay.error = message.message.unwrap();
@@ -432,7 +466,20 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
         ui.label(app.netplay.motd.clone());
         ui.add_space(32.0);
         egui::Grid::new("netplay_wait_grid_2").show(ui, |ui| {
-            // if ui.button("Start Session").clicked() {}
+            let button_enabled;
+            if app.netplay.player_name == app.netplay.player_names[0] && !app.netplay.pending_begin
+            {
+                button_enabled = true;
+            } else {
+                button_enabled = false;
+            }
+            if ui
+                .add_enabled(button_enabled, egui::Button::new("Start Session"))
+                .clicked()
+            {
+                app.netplay.begin_game = true;
+                app.netplay.pending_begin = true;
+            }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
                     app.netplay = Default::default();
