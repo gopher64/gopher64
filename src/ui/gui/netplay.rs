@@ -405,6 +405,49 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
         }
         ctx.request_repaint();
     }
+    if app.netplay.game_info_receiver.is_some() {
+        let result = app.netplay.game_info_receiver.as_mut().unwrap().try_recv();
+        if result.is_ok() {
+            app.netplay.game_info_receiver = None;
+            let data = result.unwrap();
+            if !data.0.is_empty() {
+                app.netplay.game_info = data;
+
+                let netplay_message = NetplayMessage {
+                    message_type: "request_join_room".to_string(),
+                    player_name: Some(app.netplay.player_name.clone()),
+                    client_sha: Some(env!("CARGO_PKG_VERSION").to_string()),
+                    netplay_version: None,
+                    emulator: None,
+                    accept: None,
+                    message: None,
+                    rooms: None,
+                    auth_time: None,
+                    player_names: None,
+                    auth: None,
+                    room: Some(NetplayRoom {
+                        room_name: None,
+                        password: Some(app.netplay.password.clone()),
+                        game_name: None,
+                        md5: Some(app.netplay.game_info.0.clone()),
+                        protected: None,
+                        port: app.netplay.selected_session.as_ref().unwrap().port,
+                    }),
+                };
+                let socket = app.netplay.socket.as_mut().unwrap();
+                socket
+                    .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
+                        serde_json::to_vec(&netplay_message).unwrap(),
+                    )))
+                    .unwrap();
+
+                app.netplay.socket_waiting = true;
+            } else {
+                app.netplay.error = data.2;
+            }
+        }
+        ctx.request_repaint();
+    }
     egui::Window::new("Join Netplay Session").show(ctx, |ui| {
         ui.horizontal(|ui| {
             let mut size = ui.spacing().interact_size;
@@ -484,35 +527,42 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     {
                         app.netplay.error = "Session requires a password".to_string();
                     } else {
-                        let netplay_message = NetplayMessage {
-                            message_type: "request_join_room".to_string(),
-                            player_name: Some(app.netplay.player_name.clone()),
-                            client_sha: Some(env!("CARGO_PKG_VERSION").to_string()),
-                            netplay_version: None,
-                            emulator: None,
-                            accept: None,
-                            message: None,
-                            rooms: None,
-                            auth_time: None,
-                            player_names: None,
-                            auth: None,
-                            room: Some(NetplayRoom {
-                                room_name: None,
-                                password: Some(app.netplay.password.clone()),
-                                game_name: None,
-                                md5: None,
-                                protected: None,
-                                port: app.netplay.selected_session.as_ref().unwrap().port,
-                            }),
-                        };
-                        let socket = app.netplay.socket.as_mut().unwrap();
-                        socket
-                            .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
-                                serde_json::to_vec(&netplay_message).unwrap(),
-                            )))
-                            .unwrap();
+                        let task = rfd::AsyncFileDialog::new().pick_file();
+                        let (tx, rx) = tokio::sync::mpsc::channel(1);
+                        app.netplay.game_info_receiver = Some(rx);
+                        let gui_ctx = ctx.clone();
+                        tokio::spawn(async move {
+                            let file = task.await;
 
-                        app.netplay.socket_waiting = true;
+                            if let Some(file) = file {
+                                let rom_contents = device::get_rom_contents(file.path());
+                                if !rom_contents.is_empty() {
+                                    let hash = device::cart_rom::calculate_hash(&rom_contents);
+                                    let game_name =
+                                        std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
+                                            .unwrap()
+                                            .to_string();
+                                    let _ = tx.send((hash, game_name, file.file_name())).await;
+                                } else {
+                                    let _ = tx
+                                        .send((
+                                            "".to_string(),
+                                            "".to_string(),
+                                            "Invalid ROM".to_string(),
+                                        ))
+                                        .await;
+                                }
+                            } else {
+                                let _ = tx
+                                    .send((
+                                        "".to_string(),
+                                        "".to_string(),
+                                        "No ROM selected".to_string(),
+                                    ))
+                                    .await;
+                            }
+                            gui_ctx.request_repaint();
+                        });
                     }
                 };
             });
