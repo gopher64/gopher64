@@ -1,4 +1,5 @@
 use crate::device;
+use crate::netplay;
 use crate::ui::gui::GopherEguiApp;
 use eframe::egui;
 use sha2::{Digest, Sha256};
@@ -24,6 +25,7 @@ pub struct Netplay {
     pub chat_message: String,
     pub selected_session: Option<NetplayRoom>,
     pub pending_begin: bool,
+    pub peer_addr: Option<std::net::SocketAddr>,
     pub motd: String,
     pub sessions: Vec<NetplayRoom>,
     pub player_names: [String; 4],
@@ -49,7 +51,7 @@ pub struct NetplayRoom {
     #[serde(rename = "MD5")]
     md5: Option<String>,
     game_name: Option<String>,
-    port: Option<i32>,
+    pub port: Option<i32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -315,6 +317,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         .unwrap();
                     match socket.get_mut() {
                         tungstenite::stream::MaybeTlsStream::Plain(stream) => {
+                            app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
                             stream.set_nonblocking(true)
                         }
                         _ => unimplemented!(),
@@ -346,7 +349,10 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
         let (mut sock, _response) =
             tungstenite::connect(&app.netplay.server.1).expect("Can't connect");
         match sock.get_mut() {
-            tungstenite::stream::MaybeTlsStream::Plain(stream) => stream.set_nonblocking(true),
+            tungstenite::stream::MaybeTlsStream::Plain(stream) => {
+                app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
+                stream.set_nonblocking(true)
+            }
             _ => unimplemented!(),
         }
         .expect("could not set socket to non-blocking");
@@ -712,6 +718,18 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     app.netplay.chat_log.push_str(&message.message.unwrap());
                     app.netplay.chat_log.push('\n');
                 } else if message.message_type == "reply_begin_game" {
+                    let mut player = 0;
+                    for (i, name) in app.netplay.player_names.iter().enumerate() {
+                        if *name == app.netplay.player_name {
+                            player = i;
+                            break;
+                        }
+                    }
+                    netplay::init(
+                        app.netplay.waiting_session.as_ref().unwrap(),
+                        app.netplay.peer_addr.unwrap(),
+                        player as u8,
+                    );
                     app.netplay = Default::default();
                     return;
                 }

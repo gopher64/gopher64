@@ -4,6 +4,7 @@
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 mod device;
+mod netplay;
 mod ui;
 use clap::Parser;
 

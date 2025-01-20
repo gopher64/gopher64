@@ -2,7 +2,7 @@ use crate::device;
 use crate::ui;
 use eframe::egui;
 
-mod netplay;
+pub mod netplay;
 
 pub struct GopherEguiApp {
     config_dir: std::path::PathBuf,
