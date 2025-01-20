@@ -483,7 +483,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
             ui.label("Session Name");
             ui.label("Game Name");
             ui.label("Password Protected");
-
+            ui.end_row();
             if !app.netplay.server.0.is_empty() {
                 get_sessions(app, ctx);
             }
@@ -495,8 +495,8 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 );
                 ui.label(room.game_name.as_ref().unwrap());
                 ui.label(room.protected.unwrap_or(false).to_string());
+                ui.end_row();
             }
-            ui.end_row();
         });
         ui.horizontal(|ui| {
             let mut size = ui.spacing().interact_size;
