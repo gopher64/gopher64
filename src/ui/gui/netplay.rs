@@ -5,6 +5,8 @@ use sha2::{Digest, Sha256};
 
 const NETPLAY_VERSION: i32 = 17;
 const EMU_NAME: &str = "gopher64";
+
+#[derive(Default)]
 pub struct Netplay {
     pub create: bool,
     pub join: bool,
@@ -14,9 +16,15 @@ pub struct Netplay {
     pub player_name: String,
     pub error: String,
     pub rom_label: String,
+    pub motd: String,
+    pub player_names: [String; 4],
     pub server: (String, String),
+    pub socket_waiting: bool,
     pub game_info: (String, String, String),
     pub servers: std::collections::HashMap<String, String>,
+    pub waiting_session: Option<NetplayRoom>,
+    pub socket:
+        Option<tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>>,
     pub server_receiver:
         Option<tokio::sync::mpsc::Receiver<std::collections::HashMap<String, String>>>,
     pub game_info_receiver: Option<tokio::sync::mpsc::Receiver<(String, String, String)>>,
@@ -24,18 +32,18 @@ pub struct Netplay {
     pub broadcast_timer: Option<std::time::Instant>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, std::fmt::Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct NetplayRoom {
-    room_name: String,
+    room_name: Option<String>,
     password: Option<String>,
     protected: Option<bool>,
     #[serde(rename = "MD5")]
-    md5: String,
-    game_name: String,
+    md5: Option<String>,
+    game_name: Option<String>,
     port: Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, std::fmt::Debug)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct NetplayMessage {
     #[serde(rename = "type")]
     message_type: String,
@@ -47,13 +55,14 @@ pub struct NetplayMessage {
     accept: Option<i32>,
     message: Option<String>,
     auth: Option<String>,
+    player_names: Option<[String; 4]>,
     #[serde(rename = "authTime")]
     auth_time: Option<String>,
 }
 
 pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
     egui::Window::new("Create Netplay Session").show(ctx, |ui| {
-        egui::Grid::new("button_grid").show(ui, |ui| {
+        egui::Grid::new("netplay_create_grid").show(ui, |ui| {
             let profile_name_label = ui.label("Session Name:");
             let mut size = ui.spacing().interact_size;
             size.x = 200.0;
@@ -72,7 +81,10 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
             ui.end_row();
 
             ui.label("ROM");
-            if ui.button(app.netplay.rom_label.clone()).clicked() {
+            if app.netplay.rom_label.is_empty() {
+                app.netplay.rom_label = "Open ROM".to_string();
+            }
+            if ui.button(&app.netplay.rom_label).clicked() {
                 let task = rfd::AsyncFileDialog::new().pick_file();
                 let (tx, rx) = tokio::sync::mpsc::channel(1);
                 app.netplay.game_info_receiver = Some(rx);
@@ -223,6 +235,25 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
             ui.end_row();
 
+            if app.netplay.socket_waiting {
+                let data = app.netplay.socket.as_mut().unwrap().read();
+                if data.is_ok() {
+                    let message: NetplayMessage =
+                        serde_json::from_slice(&data.unwrap().into_data()).unwrap();
+                    if message.accept.unwrap() == 0 {
+                        if message.message_type == "reply_create_room" {
+                            app.netplay.create = false;
+                            app.netplay.wait = true;
+                            app.netplay.waiting_session = Some(message.room.unwrap());
+                        }
+                    } else {
+                        app.netplay.error = message.message.unwrap();
+                    }
+                    app.netplay.socket_waiting = false;
+                }
+                ctx.request_repaint();
+            }
+
             if ui.button("Create Session").clicked() {
                 if app.netplay.player_name.is_empty() {
                     app.netplay.error = "Player Name cannot be empty".to_string();
@@ -232,9 +263,12 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     app.netplay.error = "ROM not loaded".to_string();
                 } else {
                     let now_utc = chrono::Utc::now().timestamp_millis().to_string();
-                    let hasher = Sha256::new()
-                        .chain_update(now_utc.clone())
-                        .chain_update(EMU_NAME);
+                    let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
+                    let mut game_name = app.netplay.game_info.1.trim().to_string();
+                    if game_name.is_empty() {
+                        // If the ROM doesn't report a name, use the filename
+                        game_name = app.netplay.rom_label.clone();
+                    }
                     let netplay_message = NetplayMessage {
                         message_type: "request_create_room".to_string(),
                         player_name: Some(app.netplay.player_name.clone()),
@@ -244,36 +278,38 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         accept: None,
                         message: None,
                         auth_time: Some(now_utc),
+                        player_names: None,
                         auth: Some(format!("{:x}", hasher.finalize())),
                         room: Some(NetplayRoom {
-                            room_name: app.netplay.session_name.clone(),
+                            room_name: Some(app.netplay.session_name.clone()),
                             password: Some(app.netplay.password.clone()),
-                            game_name: app.netplay.game_info.1.trim().to_string(),
-                            md5: app.netplay.game_info.0.clone(),
+                            game_name: Some(game_name),
+                            md5: Some(app.netplay.game_info.0.clone()),
                             protected: None,
                             port: None,
                         }),
                     };
                     let (mut socket, _response) =
-                        tungstenite::connect(app.netplay.server.1.clone()).expect("Can't connect");
+                        tungstenite::connect(&app.netplay.server.1).expect("Can't connect");
                     socket
                         .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
                             serde_json::to_vec(&netplay_message).unwrap(),
                         )))
                         .unwrap();
-                    let data = socket.read().unwrap().into_data();
-                    let message: NetplayMessage = serde_json::from_slice(data.as_ref()).unwrap();
-                    if message.accept.unwrap() == 0 {
-                        app.netplay.create = false;
-                        app.netplay.wait = true;
-                    } else {
-                        app.netplay.error = message.message.unwrap();
+                    match socket.get_mut() {
+                        tungstenite::stream::MaybeTlsStream::Plain(stream) => {
+                            stream.set_nonblocking(true)
+                        }
+                        _ => unimplemented!(),
                     }
+                    .expect("could not set socket to non-blocking");
+                    app.netplay.socket_waiting = true;
+                    app.netplay.socket = Some(socket);
                 }
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
-                    app.netplay.create = false
+                    app.netplay = Default::default();
                 };
             })
         });
@@ -282,17 +318,124 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
 pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
     egui::Window::new("Join Netplay Session").show(ctx, |ui| {
-        if ui.button("Close").clicked() {
-            app.netplay.join = false
-        };
+        egui::Grid::new("netplay_join_grid").show(ui, |ui| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.button("Close").clicked() {
+                    app.netplay = Default::default();
+                };
+            });
+        });
     });
 }
 
 pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
+    let motd_message = NetplayMessage {
+        message_type: "request_motd".to_string(),
+        player_name: None,
+        client_sha: None,
+        netplay_version: None,
+        emulator: None,
+        accept: None,
+        player_names: None,
+        message: None,
+        auth_time: None,
+        auth: None,
+        room: None,
+    };
+    let request_players = NetplayMessage {
+        message_type: "request_players".to_string(),
+        player_name: None,
+        client_sha: None,
+        netplay_version: None,
+        player_names: None,
+        emulator: None,
+        accept: None,
+        message: None,
+        auth_time: None,
+        auth: None,
+        room: Some(NetplayRoom {
+            room_name: None,
+            password: None,
+            game_name: None,
+            md5: None,
+            protected: None,
+            port: app.netplay.waiting_session.as_ref().unwrap().port,
+        }),
+    };
+    let socket = app.netplay.socket.as_mut().unwrap();
+    if !app.netplay.socket_waiting {
+        socket
+            .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
+                serde_json::to_vec(&motd_message).unwrap(),
+            )))
+            .unwrap();
+        socket
+            .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
+                serde_json::to_vec(&request_players).unwrap(),
+            )))
+            .unwrap();
+        app.netplay.socket_waiting = true;
+    }
+
+    if app.netplay.socket_waiting {
+        let data = app.netplay.socket.as_mut().unwrap().read();
+        if data.is_ok() {
+            let message: NetplayMessage =
+                serde_json::from_slice(&data.unwrap().into_data()).unwrap();
+            if message.accept.unwrap() == 0 {
+                if message.message_type == "reply_motd" {
+                    app.netplay.motd = message.message.unwrap();
+                } else if message.message_type == "reply_players" {
+                    app.netplay.player_names = message.player_names.unwrap();
+                }
+            } else {
+                app.netplay.error = message.message.unwrap();
+            }
+        }
+        ctx.request_repaint();
+    }
+
     egui::Window::new("Pending Netplay Session").show(ctx, |ui| {
-        if ui.button("Close").clicked() {
-            app.netplay.wait = false
-        };
+        egui::Grid::new("netplay_wait_grid_1").show(ui, |ui| {
+            ui.label("Session Name:");
+            let room_name = app
+                .netplay
+                .waiting_session
+                .as_ref()
+                .unwrap()
+                .room_name
+                .as_ref()
+                .unwrap();
+            let game_name = app
+                .netplay
+                .waiting_session
+                .as_ref()
+                .unwrap()
+                .game_name
+                .as_ref()
+                .unwrap();
+            ui.label(room_name);
+            ui.end_row();
+            ui.label("Game Name:");
+            ui.label(game_name);
+            ui.end_row();
+            for i in 0..4 {
+                ui.label(format!("Player {}:", i + 1));
+                ui.label(app.netplay.player_names[i].clone());
+                ui.end_row();
+            }
+        });
+        ui.add_space(32.0);
+        ui.label(app.netplay.motd.clone());
+        ui.add_space(32.0);
+        egui::Grid::new("netplay_wait_grid_2").show(ui, |ui| {
+            if ui.button("Start Session").clicked() {}
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.button("Close").clicked() {
+                    app.netplay = Default::default();
+                };
+            });
+        });
     });
 }
 
