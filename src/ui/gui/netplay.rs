@@ -89,19 +89,17 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                                 .unwrap()
                                 .to_string();
                             let _ = tx.send((hash, game_name, file.file_name())).await;
-                            gui_ctx.request_repaint();
                         } else {
                             let _ = tx
                                 .send(("".to_string(), "".to_string(), "Invalid ROM".to_string()))
                                 .await;
-                            gui_ctx.request_repaint();
                         }
                     } else {
                         let _ = tx
                             .send(("".to_string(), "".to_string(), "Open ROM".to_string()))
                             .await;
-                        gui_ctx.request_repaint();
                     }
+                    gui_ctx.request_repaint();
                 });
             }
 
@@ -135,6 +133,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         .expect("couldn't send data");
                     app.netplay.broadcast_timer =
                         Some(std::time::Instant::now() + std::time::Duration::from_secs(5));
+                    ctx.request_repaint();
                 }
                 if app.netplay.server_receiver.is_none() {
                     let (tx, rx) = tokio::sync::mpsc::channel(1);
@@ -181,6 +180,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     }
                     app.netplay.broadcast_socket = None;
                 }
+                ctx.request_repaint();
             }
             if app.netplay.server_receiver.is_some() {
                 let result = app.netplay.server_receiver.as_mut().unwrap().try_recv();
@@ -192,6 +192,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         app.netplay.server = (first_server.0.clone(), first_server.1.clone());
                     }
                 }
+                ctx.request_repaint();
             }
             if app.netplay.game_info_receiver.is_some() {
                 let result = app.netplay.game_info_receiver.as_mut().unwrap().try_recv();
@@ -205,6 +206,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         app.netplay.rom_label = data.2;
                     }
                 }
+                ctx.request_repaint();
             }
 
             egui::ComboBox::from_id_salt("server-combobox")
