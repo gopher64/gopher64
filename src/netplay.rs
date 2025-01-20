@@ -1,7 +1,6 @@
-use crate::ui::gui;
-use eframe::egui;
+use crate::device;
+use crate::ui;
 use std::io::{Read, Write};
-
 //UDP packet formats
 //const UDP_SEND_KEY_INFO: u8 = 0;
 //const UDP_RECEIVE_KEY_INFO: u8 = 1;
@@ -16,11 +15,19 @@ use std::io::{Read, Write};
 //const TCP_RECEIVE_SETTINGS: u8 = 4;
 const TCP_REGISTER_PLAYER: u8 = 5;
 const TCP_GET_REGISTRATION: u8 = 6;
-//const TCP_DISCONNECT_NOTICE: u8 = 7;
+const TCP_DISCONNECT_NOTICE: u8 = 7;
 
-pub fn init(app: &mut gui::GopherEguiApp, ctx: &egui::Context, player: u8) {
-    let mut peer_addr = app.netplay.peer_addr.unwrap();
-    let session = app.netplay.waiting_session.as_ref().unwrap();
+pub struct Netplay {
+    // udp_socket: std::net::UdpSocket,
+    tcp_stream: std::net::TcpStream,
+    player_number: u8,
+}
+
+pub fn init(
+    mut peer_addr: std::net::SocketAddr,
+    session: ui::gui::gui_netplay::NetplayRoom,
+    player_number: u8,
+) -> Netplay {
     peer_addr.set_port(session.port.unwrap() as u16);
     let udp_socket;
     if peer_addr.is_ipv4() {
@@ -34,10 +41,10 @@ pub fn init(app: &mut gui::GopherEguiApp, ctx: &egui::Context, player: u8) {
 
     let mut stream = std::net::TcpStream::connect(peer_addr).unwrap();
 
-    let regid = (player + 1) as u32;
+    let regid = (player_number + 1) as u32;
     let mut request: [u8; 8] = [
         TCP_REGISTER_PLAYER,
-        player,
+        player_number,
         0, //plugin/pak
         0, //rawdata
         0, //regid (u32)
@@ -66,6 +73,18 @@ pub fn init(app: &mut gui::GopherEguiApp, ctx: &egui::Context, player: u8) {
         // reg_id of 0 means no player connected
         reg_id[i] = u32::from_be_bytes(response[(i * 6)..(i * 6) + 4].try_into().unwrap());
     }
+    Netplay {
+        // udp_socket,
+        tcp_stream: stream,
+        player_number,
+    }
+}
 
-    gui::open_rom(app, ctx);
+pub fn close(device: &mut device::Device) {
+    let netplay = device.netplay.as_mut().unwrap();
+    let regid = (netplay.player_number + 1) as u32;
+    let mut request: [u8; 5] = [TCP_DISCONNECT_NOTICE, 0, 0, 0, 0];
+    request[1..5].copy_from_slice(&regid.to_be_bytes());
+
+    netplay.tcp_stream.write(&request).unwrap();
 }

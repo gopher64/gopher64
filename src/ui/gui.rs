@@ -1,8 +1,8 @@
 use crate::device;
+use crate::netplay;
 use crate::ui;
 use eframe::egui;
-
-pub mod netplay;
+pub mod gui_netplay;
 
 pub struct GopherEguiApp {
     config_dir: std::path::PathBuf,
@@ -24,7 +24,7 @@ pub struct GopherEguiApp {
     vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
     vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
-    pub netplay: netplay::Netplay,
+    pub netplay: gui_netplay::GuiNetplay,
 }
 
 struct SaveConfig {
@@ -232,13 +232,7 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
 pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let task;
     let netplay;
-    if app.netplay.player_name.is_empty() {
-        task = Some(rfd::AsyncFileDialog::new().pick_file());
-        netplay = false;
-    } else {
-        task = None;
-        netplay = true;
-    }
+
     let selected_controller = app.selected_controller;
     let selected_profile = app.selected_profile.clone();
     let controller_enabled = app.controller_enabled;
@@ -249,9 +243,23 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let config_dir = app.config_dir.clone();
     let cache_dir = app.cache_dir.clone();
     let data_dir = app.data_dir.clone();
+    let peer_addr;
+    let session;
+    let player_number;
 
-    if netplay {
+    if app.netplay.player_name.is_empty() {
+        task = Some(rfd::AsyncFileDialog::new().pick_file());
+        netplay = false;
+        peer_addr = None;
+        session = None;
+        player_number = None;
+    } else {
+        task = None;
+        netplay = true;
         emulate_vru = false;
+        peer_addr = app.netplay.peer_addr.clone();
+        session = app.netplay.waiting_session.clone();
+        player_number = Some(app.netplay.player_number);
     }
 
     let (vru_window_notifier, vru_window_receiver): (
@@ -312,7 +320,13 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             }
 
             if netplay {
+                device.netplay = Some(netplay::init(
+                    peer_addr.unwrap(),
+                    session.unwrap(),
+                    player_number.unwrap(),
+                ));
                 device::run_game(rom_contents, data_dir, &mut device, fullscreen);
+                netplay::close(&mut device);
             } else {
                 let rom_contents = device::get_rom_contents(file.unwrap().path());
                 if rom_contents.is_empty() {
@@ -332,19 +346,19 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
 impl eframe::App for GopherEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if self.netplay.create {
-            netplay::netplay_create(self, ctx);
+            gui_netplay::netplay_create(self, ctx);
         }
 
         if self.netplay.join {
-            netplay::netplay_join(self, ctx);
+            gui_netplay::netplay_join(self, ctx);
         }
 
         if self.netplay.wait {
-            netplay::netplay_wait(self, ctx);
+            gui_netplay::netplay_wait(self, ctx);
         }
 
         if !self.netplay.error.is_empty() {
-            netplay::netplay_error(self, ctx, self.netplay.error.clone());
+            gui_netplay::netplay_error(self, ctx, self.netplay.error.clone());
         }
 
         if self.configure_profile {

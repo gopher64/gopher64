@@ -1,5 +1,5 @@
 use crate::device;
-use crate::netplay;
+use crate::ui::gui;
 use crate::ui::gui::GopherEguiApp;
 use eframe::egui;
 use sha2::{Digest, Sha256};
@@ -8,7 +8,7 @@ const NETPLAY_VERSION: i32 = 17;
 const EMU_NAME: &str = "gopher64";
 
 #[derive(Default)]
-pub struct Netplay {
+pub struct GuiNetplay {
     pub create: bool,
     pub join: bool,
     pub wait: bool,
@@ -29,6 +29,7 @@ pub struct Netplay {
     pub motd: String,
     pub sessions: Vec<NetplayRoom>,
     pub rom_contents: Vec<u8>,
+    pub player_number: u8,
     pub player_names: [String; 4],
     pub server: (String, String),
     pub socket_waiting: bool,
@@ -744,7 +745,8 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             break;
                         }
                     }
-                    netplay::init(app, ctx, player as u8);
+                    app.netplay.player_number = player as u8;
+                    gui::open_rom(app, ctx);
                     app.netplay = Default::default();
                     return;
                 }
