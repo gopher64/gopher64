@@ -15,7 +15,8 @@ pub struct Netplay {
     pub password: String,
     pub player_name: String,
     pub error: String,
-    pub rom_label: String,
+    pub create_rom_label: String,
+    pub join_rom_label: String,
     pub send_chat: bool,
     pub have_sessions: Option<(String, String)>,
     pub begin_game: bool,
@@ -173,15 +174,15 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
             ui.end_row();
 
             ui.label("ROM");
-            if app.netplay.rom_label.is_empty() {
-                app.netplay.rom_label = "Open ROM".to_string();
+            if app.netplay.create_rom_label.is_empty() {
+                app.netplay.create_rom_label = "Open ROM".to_string();
             }
-            if ui.button(&app.netplay.rom_label).clicked() {
+            if ui.button(&app.netplay.create_rom_label).clicked() {
                 let task = rfd::AsyncFileDialog::new().pick_file();
                 let (tx, rx) = tokio::sync::mpsc::channel(1);
                 app.netplay.game_info_receiver = Some(rx);
                 let gui_ctx = ctx.clone();
-                app.netplay.rom_label = "Inspecting ROM".to_string();
+                app.netplay.create_rom_label = "Inspecting ROM".to_string();
                 tokio::spawn(async move {
                     let file = task.await;
 
@@ -227,9 +228,9 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     let data = result.unwrap();
                     if !data.0.is_empty() {
                         app.netplay.game_info = data;
-                        app.netplay.rom_label = app.netplay.game_info.2.clone();
+                        app.netplay.create_rom_label = app.netplay.game_info.2.clone();
                     } else {
-                        app.netplay.rom_label = data.2;
+                        app.netplay.create_rom_label = data.2;
                     }
                 }
                 ctx.request_repaint();
@@ -282,7 +283,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     let mut game_name = app.netplay.game_info.1.trim().to_string();
                     if game_name.is_empty() {
                         // If the ROM doesn't report a name, use the filename
-                        game_name = app.netplay.rom_label.clone();
+                        game_name = app.netplay.create_rom_label.clone();
                     }
                     let netplay_message = NetplayMessage {
                         message_type: "request_create_room".to_string(),
@@ -444,6 +445,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 app.netplay.socket_waiting = true;
             } else {
                 app.netplay.error = data.2;
+                app.netplay.join_rom_label = "Join Session (Open ROM)".to_string();
             }
         }
         ctx.request_repaint();
@@ -510,7 +512,10 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     app.netplay = Default::default();
                 };
-                if ui.button("Join Session (Open ROM)").clicked() {
+                if app.netplay.join_rom_label.is_empty() {
+                    app.netplay.join_rom_label = "Join Session (Open ROM)".to_string();
+                }
+                if ui.button(&app.netplay.join_rom_label).clicked() {
                     if app.netplay.player_name.is_empty() {
                         app.netplay.error = "Player Name cannot be empty".to_string();
                     } else if app.netplay.selected_session.is_none() {
@@ -530,6 +535,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         let (tx, rx) = tokio::sync::mpsc::channel(1);
                         app.netplay.game_info_receiver = Some(rx);
                         let gui_ctx = ctx.clone();
+                        app.netplay.join_rom_label = "Inspecting ROM".to_string();
                         tokio::spawn(async move {
                             let file = task.await;
 
