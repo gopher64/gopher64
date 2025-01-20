@@ -7,6 +7,8 @@ use sha2::{Digest, Sha256};
 const NETPLAY_VERSION: i32 = 17;
 const EMU_NAME: &str = "gopher64";
 
+type GameInfo = (String, String, String, Vec<u8>);
+
 #[derive(Default)]
 pub struct GuiNetplay {
     pub create: bool,
@@ -33,14 +35,14 @@ pub struct GuiNetplay {
     pub player_names: [String; 4],
     pub server: (String, String),
     pub socket_waiting: bool,
-    pub game_info: (String, String, String, Vec<u8>),
+    pub game_info: GameInfo,
     pub servers: std::collections::HashMap<String, String>,
     pub waiting_session: Option<NetplayRoom>,
     pub socket:
         Option<tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>>,
     pub server_receiver:
         Option<tokio::sync::mpsc::Receiver<std::collections::HashMap<String, String>>>,
-    pub game_info_receiver: Option<tokio::sync::mpsc::Receiver<(String, String, String, Vec<u8>)>>,
+    pub game_info_receiver: Option<tokio::sync::mpsc::Receiver<GameInfo>>,
     pub broadcast_socket: Option<std::net::UdpSocket>,
     pub broadcast_timer: Option<std::time::Instant>,
 }

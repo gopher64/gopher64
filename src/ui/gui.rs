@@ -257,7 +257,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
         task = None;
         netplay = true;
         emulate_vru = false;
-        peer_addr = app.netplay.peer_addr.clone();
+        peer_addr = app.netplay.peer_addr;
         session = app.netplay.waiting_session.clone();
         player_number = Some(app.netplay.player_number);
     }
@@ -283,12 +283,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let rom_contents = app.netplay.rom_contents.clone();
     let gui_ctx = ctx.clone();
     tokio::spawn(async move {
-        let file;
-        if !netplay {
-            file = task.unwrap().await;
-        } else {
-            file = None;
-        }
+        let file = if !netplay { task.unwrap().await } else { None };
 
         if file.is_some() || netplay {
             let running_file = cache_dir.join("game_running");

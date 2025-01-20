@@ -29,14 +29,13 @@ pub fn init(
     player_number: u8,
 ) -> Netplay {
     peer_addr.set_port(session.port.unwrap() as u16);
-    let udp_socket;
-    if peer_addr.is_ipv4() {
-        udp_socket = std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
-            .expect("couldn't bind to address");
+    let udp_socket = if peer_addr.is_ipv4() {
+        std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
+            .expect("couldn't bind to address")
     } else {
-        udp_socket = std::net::UdpSocket::bind((std::net::Ipv6Addr::UNSPECIFIED, 0))
-            .expect("couldn't bind to address");
-    }
+        std::net::UdpSocket::bind((std::net::Ipv6Addr::UNSPECIFIED, 0))
+            .expect("couldn't bind to address")
+    };
     udp_socket.connect(peer_addr).unwrap();
 
     let mut stream = std::net::TcpStream::connect(peer_addr).unwrap();
@@ -54,7 +53,7 @@ pub fn init(
     ];
 
     request[4..8].copy_from_slice(&regid.to_be_bytes());
-    stream.write(&request).unwrap();
+    stream.write_all(&request).unwrap();
 
     let mut response: [u8; 2] = [0, 0];
     stream.read_exact(&mut response).unwrap();
@@ -64,7 +63,7 @@ pub fn init(
     let _buffer_target = response[1];
 
     let request: [u8; 1] = [TCP_GET_REGISTRATION];
-    stream.write(&request).unwrap();
+    stream.write_all(&request).unwrap();
     let mut response: [u8; 24] = [0; 24];
     stream.read_exact(&mut response).unwrap();
 
@@ -86,5 +85,5 @@ pub fn close(device: &mut device::Device) {
     let mut request: [u8; 5] = [TCP_DISCONNECT_NOTICE, 0, 0, 0, 0];
     request[1..5].copy_from_slice(&regid.to_be_bytes());
 
-    netplay.tcp_stream.write(&request).unwrap();
+    netplay.tcp_stream.write_all(&request).unwrap();
 }
