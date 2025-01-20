@@ -493,7 +493,6 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     Some(room.clone()),
                     room.room_name.as_ref().unwrap(),
                 );
-                ui.label(room.room_name.as_ref().unwrap());
                 ui.label(room.game_name.as_ref().unwrap());
                 ui.label(room.protected.unwrap_or(false).to_string());
             }
