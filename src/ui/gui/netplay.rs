@@ -402,6 +402,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 app.netplay.socket_waiting = false;
             } else {
                 app.netplay.error = message.message.unwrap();
+                app.netplay.join_rom_label = "Join Session (Open ROM)".to_string();
             }
         }
         ctx.request_repaint();
