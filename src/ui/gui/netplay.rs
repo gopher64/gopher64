@@ -16,7 +16,10 @@ pub struct Netplay {
     pub player_name: String,
     pub error: String,
     pub rom_label: String,
+    pub send_chat: bool,
     pub begin_game: bool,
+    pub chat_log: String,
+    pub chat_message: String,
     pub pending_begin: bool,
     pub motd: String,
     pub player_names: [String; 4],
@@ -255,7 +258,8 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 }
                 ctx.request_repaint();
             }
-
+        });
+        ui.horizontal(|ui| {
             if ui.button("Create Session").clicked() {
                 if app.netplay.player_name.is_empty() {
                     app.netplay.error = "Player Name cannot be empty".to_string();
@@ -309,6 +313,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     app.netplay.socket = Some(socket);
                 }
             }
+
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
                     app.netplay = Default::default();
@@ -320,7 +325,8 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
 pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
     egui::Window::new("Join Netplay Session").show(ctx, |ui| {
-        egui::Grid::new("netplay_join_grid").show(ui, |ui| {
+        egui::Grid::new("netplay_join_grid").show(ui, |_ui| {});
+        ui.horizontal(|ui| {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
                     app.netplay = Default::default();
@@ -408,6 +414,36 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
         app.netplay.begin_game = false;
     }
 
+    if app.netplay.send_chat {
+        let send_chat = NetplayMessage {
+            message_type: "request_chat_message".to_string(),
+            player_name: Some(app.netplay.player_name.clone()),
+            client_sha: None,
+            netplay_version: None,
+            player_names: None,
+            emulator: None,
+            accept: None,
+            message: Some(app.netplay.chat_message.clone()),
+            auth_time: None,
+            auth: None,
+            room: Some(NetplayRoom {
+                room_name: None,
+                password: None,
+                game_name: None,
+                md5: None,
+                protected: None,
+                port: app.netplay.waiting_session.as_ref().unwrap().port,
+            }),
+        };
+        app.netplay.chat_message.clear();
+        socket
+            .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
+                serde_json::to_vec(&send_chat).unwrap(),
+            )))
+            .unwrap();
+        app.netplay.send_chat = false;
+    }
+
     if app.netplay.socket_waiting {
         let data = socket.read();
         if data.is_ok() {
@@ -421,6 +457,9 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         .into_owned();
                 } else if message.message_type == "reply_players" {
                     app.netplay.player_names = message.player_names.unwrap();
+                } else if message.message_type == "reply_chat_message" {
+                    app.netplay.chat_log.push_str(&message.message.unwrap());
+                    app.netplay.chat_log.push_str("\n");
                 } else if message.message_type == "reply_begin_game" {
                     app.netplay = Default::default();
                     return;
@@ -462,10 +501,40 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 ui.end_row();
             }
         });
-        ui.add_space(32.0);
+        egui::ScrollArea::vertical()
+            .max_height(100.0)
+            .stick_to_bottom(true)
+            .show(ui, |ui| {
+                ui.add(
+                    egui::TextEdit::multiline(&mut app.netplay.chat_log)
+                        .interactive(false)
+                        .desired_width(ui.available_width()),
+                );
+            });
+        // egui::Grid::new("netplay_wait_grid_2").show(ui, |ui| {
+        ui.horizontal(|ui| {
+            let mut size = ui.spacing().interact_size;
+            size.x = 200.0;
+
+            ui.add_sized(
+                size,
+                egui::TextEdit::singleline(&mut app.netplay.chat_message),
+            );
+
+            if ui
+                .add_enabled(!app.netplay.send_chat, egui::Button::new("Send Message"))
+                .clicked()
+            {
+                if !app.netplay.chat_message.is_empty() {
+                    app.netplay.send_chat = true;
+                }
+            }
+        });
+        ui.add_space(16.0);
         ui.label(app.netplay.motd.clone());
-        ui.add_space(32.0);
-        egui::Grid::new("netplay_wait_grid_2").show(ui, |ui| {
+        ui.add_space(16.0);
+
+        ui.horizontal(|ui| {
             let button_enabled;
             if app.netplay.player_name == app.netplay.player_names[0] && !app.netplay.pending_begin
             {
