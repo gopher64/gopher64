@@ -291,12 +291,7 @@ fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 device.vru.word_receiver = Some(vru_word_receiver);
                 device.vru.gui_ctx = Some(gui_ctx);
             }
-            device::run_game(
-                std::path::Path::new(file.path()),
-                data_dir,
-                &mut device,
-                fullscreen,
-            );
+            device::run_game(file.path(), data_dir, &mut device, fullscreen);
             let result = std::fs::remove_file(running_file.clone());
             if result.is_err() {
                 panic!("could not remove running file: {}", result.err().unwrap())
