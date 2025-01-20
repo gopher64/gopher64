@@ -4,6 +4,7 @@
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 mod device;
+mod netplay;
 mod ui;
 use clap::Parser;
 
@@ -156,7 +157,12 @@ async fn main() {
 
         if args.game.is_some() {
             let file_path = std::path::Path::new(args.game.as_ref().unwrap());
-            device::run_game(file_path, data_dir, &mut device, args.fullscreen);
+            let rom_contents = device::get_rom_contents(file_path);
+            if rom_contents.is_empty() {
+                println!("Could not read rom file");
+                return;
+            }
+            device::run_game(rom_contents, data_dir, &mut device, args.fullscreen);
         }
     } else {
         let options = eframe::NativeOptions {

@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui::gui;
 use crate::ui::gui::GopherEguiApp;
 use eframe::egui;
 use sha2::{Digest, Sha256};
@@ -6,8 +7,10 @@ use sha2::{Digest, Sha256};
 const NETPLAY_VERSION: i32 = 17;
 const EMU_NAME: &str = "gopher64";
 
+type GameInfo = (String, String, String, Vec<u8>);
+
 #[derive(Default)]
-pub struct Netplay {
+pub struct GuiNetplay {
     pub create: bool,
     pub join: bool,
     pub wait: bool,
@@ -24,19 +27,22 @@ pub struct Netplay {
     pub chat_message: String,
     pub selected_session: Option<NetplayRoom>,
     pub pending_begin: bool,
+    pub peer_addr: Option<std::net::SocketAddr>,
     pub motd: String,
     pub sessions: Vec<NetplayRoom>,
+    pub rom_contents: Vec<u8>,
+    pub player_number: u8,
     pub player_names: [String; 4],
     pub server: (String, String),
     pub socket_waiting: bool,
-    pub game_info: (String, String, String),
+    pub game_info: GameInfo,
     pub servers: std::collections::HashMap<String, String>,
     pub waiting_session: Option<NetplayRoom>,
     pub socket:
         Option<tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>>,
     pub server_receiver:
         Option<tokio::sync::mpsc::Receiver<std::collections::HashMap<String, String>>>,
-    pub game_info_receiver: Option<tokio::sync::mpsc::Receiver<(String, String, String)>>,
+    pub game_info_receiver: Option<tokio::sync::mpsc::Receiver<GameInfo>>,
     pub broadcast_socket: Option<std::net::UdpSocket>,
     pub broadcast_timer: Option<std::time::Instant>,
 }
@@ -49,7 +55,7 @@ pub struct NetplayRoom {
     #[serde(rename = "MD5")]
     md5: Option<String>,
     game_name: Option<String>,
-    port: Option<i32>,
+    pub port: Option<i32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -193,15 +199,27 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             let game_name = std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
                                 .unwrap()
                                 .to_string();
-                            let _ = tx.send((hash, game_name, file.file_name())).await;
+                            let _ = tx
+                                .send((hash, game_name, file.file_name(), rom_contents))
+                                .await;
                         } else {
                             let _ = tx
-                                .send(("".to_string(), "".to_string(), "Invalid ROM".to_string()))
+                                .send((
+                                    "".to_string(),
+                                    "".to_string(),
+                                    "Invalid ROM".to_string(),
+                                    vec![],
+                                ))
                                 .await;
                         }
                     } else {
                         let _ = tx
-                            .send(("".to_string(), "".to_string(), "Open ROM".to_string()))
+                            .send((
+                                "".to_string(),
+                                "".to_string(),
+                                "Open ROM".to_string(),
+                                vec![],
+                            ))
                             .await;
                     }
                     gui_ctx.request_repaint();
@@ -228,6 +246,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     let data = result.unwrap();
                     if !data.0.is_empty() {
                         app.netplay.game_info = data;
+                        app.netplay.rom_contents = app.netplay.game_info.3.clone();
                         app.netplay.create_rom_label = app.netplay.game_info.2.clone();
                     } else {
                         app.netplay.create_rom_label = data.2;
@@ -278,6 +297,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 } else if app.netplay.game_info.0.is_empty() {
                     app.netplay.error = "ROM not loaded".to_string();
                 } else {
+                    app.netplay.rom_contents = app.netplay.game_info.3.clone();
                     let now_utc = chrono::Utc::now().timestamp_millis().to_string();
                     let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
                     let mut game_name = app.netplay.game_info.1.trim().to_string();
@@ -315,6 +335,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         .unwrap();
                     match socket.get_mut() {
                         tungstenite::stream::MaybeTlsStream::Plain(stream) => {
+                            app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
                             stream.set_nonblocking(true)
                         }
                         _ => unimplemented!(),
@@ -346,7 +367,10 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
         let (mut sock, _response) =
             tungstenite::connect(&app.netplay.server.1).expect("Can't connect");
         match sock.get_mut() {
-            tungstenite::stream::MaybeTlsStream::Plain(stream) => stream.set_nonblocking(true),
+            tungstenite::stream::MaybeTlsStream::Plain(stream) => {
+                app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
+                stream.set_nonblocking(true)
+            }
             _ => unimplemented!(),
         }
         .expect("could not set socket to non-blocking");
@@ -555,13 +579,16 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                                         std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
                                             .unwrap()
                                             .to_string();
-                                    let _ = tx.send((hash, game_name, file.file_name())).await;
+                                    let _ = tx
+                                        .send((hash, game_name, file.file_name(), rom_contents))
+                                        .await;
                                 } else {
                                     let _ = tx
                                         .send((
                                             "".to_string(),
                                             "".to_string(),
                                             "Invalid ROM".to_string(),
+                                            vec![],
                                         ))
                                         .await;
                                 }
@@ -571,6 +598,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                                         "".to_string(),
                                         "".to_string(),
                                         "No ROM selected".to_string(),
+                                        vec![],
                                     ))
                                     .await;
                             }
@@ -712,6 +740,15 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     app.netplay.chat_log.push_str(&message.message.unwrap());
                     app.netplay.chat_log.push('\n');
                 } else if message.message_type == "reply_begin_game" {
+                    let mut player = 0;
+                    for (i, name) in app.netplay.player_names.iter().enumerate() {
+                        if *name == app.netplay.player_name {
+                            player = i;
+                            break;
+                        }
+                    }
+                    app.netplay.player_number = player as u8;
+                    gui::open_rom(app, ctx);
                     app.netplay = Default::default();
                     return;
                 }

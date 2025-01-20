@@ -10,6 +10,7 @@ include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
+use crate::netplay;
 use crate::ui;
 use std::collections::HashMap;
 use std::fs;
@@ -47,17 +48,11 @@ pub mod unmapped;
 pub mod vi;
 
 pub fn run_game(
-    file_path: &std::path::Path,
+    rom_contents: Vec<u8>,
     data_dir: std::path::PathBuf,
     device: &mut Device,
     fullscreen: bool,
 ) {
-    let rom_contents = get_rom_contents(file_path);
-    if rom_contents.is_empty() {
-        println!("Could not read rom file");
-        return;
-    }
-
     cart_rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
@@ -166,6 +161,7 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
 }
 
 pub struct Device {
+    pub netplay: Option<netplay::Netplay>,
     pub ui: ui::Ui,
     byte_swap: usize,
     cpu: cpu::Cpu,
@@ -195,6 +191,7 @@ impl Device {
             byte_swap = 3;
         }
         Device {
+            netplay: None,
             ui: ui::Ui::new(config_dir),
             byte_swap,
             cpu: cpu::Cpu {
