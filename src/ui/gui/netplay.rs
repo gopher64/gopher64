@@ -459,7 +459,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     app.netplay.player_names = message.player_names.unwrap();
                 } else if message.message_type == "reply_chat_message" {
                     app.netplay.chat_log.push_str(&message.message.unwrap());
-                    app.netplay.chat_log.push_str("\n");
+                    app.netplay.chat_log.push('\n');
                 } else if message.message_type == "reply_begin_game" {
                     app.netplay = Default::default();
                     return;
@@ -525,10 +525,9 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
             if ui
                 .add_enabled(!app.netplay.send_chat, egui::Button::new("Send Message"))
                 .clicked()
+                && !app.netplay.chat_message.is_empty()
             {
-                if !app.netplay.chat_message.is_empty() {
-                    app.netplay.send_chat = true;
-                }
+                app.netplay.send_chat = true;
             }
         });
 
@@ -537,13 +536,8 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
         ui.add_space(16.0);
 
         ui.horizontal(|ui| {
-            let button_enabled;
-            if app.netplay.player_name == app.netplay.player_names[0] && !app.netplay.pending_begin
-            {
-                button_enabled = true;
-            } else {
-                button_enabled = false;
-            }
+            let button_enabled = app.netplay.player_name == app.netplay.player_names[0]
+                && !app.netplay.pending_begin;
             if ui
                 .add_enabled(button_enabled, egui::Button::new("Start Session"))
                 .clicked()
