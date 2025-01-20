@@ -511,14 +511,15 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         .desired_width(ui.available_width()),
                 );
             });
-        // egui::Grid::new("netplay_wait_grid_2").show(ui, |ui| {
+
         ui.horizontal(|ui| {
             let mut size = ui.spacing().interact_size;
             size.x = 200.0;
 
             ui.add_sized(
                 size,
-                egui::TextEdit::singleline(&mut app.netplay.chat_message),
+                egui::TextEdit::singleline(&mut app.netplay.chat_message)
+                    .hint_text("Enter chat message here"),
             );
 
             if ui
@@ -530,6 +531,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 }
             }
         });
+
         ui.add_space(16.0);
         ui.label(app.netplay.motd.clone());
         ui.add_space(16.0);
