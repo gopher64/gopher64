@@ -245,10 +245,14 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let upscale = app.upscale;
     let integer_scaling = app.integer_scaling;
     let fullscreen = app.fullscreen;
-    let emulate_vru = app.emulate_vru;
+    let mut emulate_vru = app.emulate_vru;
     let config_dir = app.config_dir.clone();
     let cache_dir = app.cache_dir.clone();
     let data_dir = app.data_dir.clone();
+
+    if netplay {
+        emulate_vru = false;
+    }
 
     let (vru_window_notifier, vru_window_receiver): (
         tokio::sync::mpsc::Sender<Vec<String>>,
