@@ -482,25 +482,32 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     });
             });
         });
-        egui::Grid::new("netplay_join_grid").show(ui, |ui| {
-            ui.label("Session Name");
-            ui.label("Game Name");
-            ui.label("Password Protected");
-            ui.end_row();
-            if !app.netplay.server.0.is_empty() {
-                get_sessions(app, ctx);
-            }
-            for room in app.netplay.sessions.iter() {
-                ui.selectable_value(
-                    &mut app.netplay.selected_session,
-                    Some(room.clone()),
-                    room.room_name.as_ref().unwrap(),
-                );
-                ui.label(room.game_name.as_ref().unwrap());
-                ui.label(room.protected.unwrap_or(false).to_string());
+        if !app.netplay.server.0.is_empty() {
+            get_sessions(app, ctx);
+        }
+        ui.add_space(16.0);
+        if app.netplay.sessions.is_empty() {
+            ui.label("No sessions available");
+        } else {
+            egui::Grid::new("netplay_join_grid").show(ui, |ui| {
+                ui.label(egui::RichText::new("Session Name (click to select)").underline());
+                ui.label(egui::RichText::new("Game Name").underline());
+                ui.label(egui::RichText::new("Password Protected").underline());
                 ui.end_row();
-            }
-        });
+
+                for room in app.netplay.sessions.iter() {
+                    ui.selectable_value(
+                        &mut app.netplay.selected_session,
+                        Some(room.clone()),
+                        room.room_name.as_ref().unwrap(),
+                    );
+                    ui.label(room.game_name.as_ref().unwrap());
+                    ui.label(room.protected.unwrap_or(false).to_string());
+                    ui.end_row();
+                }
+            });
+        }
+        ui.add_space(16.0);
         ui.horizontal(|ui| {
             let mut size = ui.spacing().interact_size;
             size.x = 130.0;
