@@ -429,7 +429,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
         ui.label(app.netplay.motd.clone());
         ui.add_space(32.0);
         egui::Grid::new("netplay_wait_grid_2").show(ui, |ui| {
-            if ui.button("Start Session").clicked() {}
+            // if ui.button("Start Session").clicked() {}
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
                     app.netplay = Default::default();
