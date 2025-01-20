@@ -47,17 +47,11 @@ pub mod unmapped;
 pub mod vi;
 
 pub fn run_game(
-    file_path: &std::path::Path,
+    rom_contents: Vec<u8>,
     data_dir: std::path::PathBuf,
     device: &mut Device,
     fullscreen: bool,
 ) {
-    let rom_contents = get_rom_contents(file_path);
-    if rom_contents.is_empty() {
-        println!("Could not read rom file");
-        return;
-    }
-
     cart_rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp

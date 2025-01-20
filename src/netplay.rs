@@ -1,6 +1,6 @@
+use crate::ui::gui;
+use eframe::egui;
 use std::io::{Read, Write};
-
-use crate::ui;
 
 //UDP packet formats
 //const UDP_SEND_KEY_INFO: u8 = 0;
@@ -18,11 +18,9 @@ const TCP_REGISTER_PLAYER: u8 = 5;
 const TCP_GET_REGISTRATION: u8 = 6;
 //const TCP_DISCONNECT_NOTICE: u8 = 7;
 
-pub fn init(
-    session: &ui::gui::netplay::NetplayRoom,
-    mut peer_addr: std::net::SocketAddr,
-    player: u8,
-) {
+pub fn init(app: &mut gui::GopherEguiApp, ctx: &egui::Context, player: u8) {
+    let mut peer_addr = app.netplay.peer_addr.unwrap();
+    let session = app.netplay.waiting_session.as_ref().unwrap();
     peer_addr.set_port(session.port.unwrap() as u16);
     let udp_socket;
     if peer_addr.is_ipv4() {
@@ -68,4 +66,6 @@ pub fn init(
         // reg_id of 0 means no player connected
         reg_id[i] = u32::from_be_bytes(response[(i * 6)..(i * 6) + 4].try_into().unwrap());
     }
+
+    gui::open_rom(app, ctx);
 }

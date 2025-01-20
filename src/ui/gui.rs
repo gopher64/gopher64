@@ -24,7 +24,7 @@ pub struct GopherEguiApp {
     vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
     vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
-    netplay: netplay::Netplay,
+    pub netplay: netplay::Netplay,
 }
 
 struct SaveConfig {
@@ -229,8 +229,16 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
     );
 }
 
-fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
-    let task = rfd::AsyncFileDialog::new().pick_file();
+pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
+    let task;
+    let netplay;
+    if app.netplay.player_name.is_empty() {
+        task = Some(rfd::AsyncFileDialog::new().pick_file());
+        netplay = false;
+    } else {
+        task = None;
+        netplay = true;
+    }
     let selected_controller = app.selected_controller;
     let selected_profile = app.selected_profile.clone();
     let controller_enabled = app.controller_enabled;
@@ -260,13 +268,20 @@ fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
         app.vru_word_notifier = None;
     }
 
+    let rom_contents = app.netplay.rom_contents.clone();
     let gui_ctx = ctx.clone();
     tokio::spawn(async move {
-        let file = task.await;
+        let file;
+        if !netplay {
+            file = task.unwrap().await;
+        } else {
+            file = None;
+        }
 
-        if let Some(file) = file {
+        if file.is_some() || netplay {
             let running_file = cache_dir.join("game_running");
             if running_file.exists() {
+                println!("Game already running");
                 return;
             }
             let result = std::fs::File::create(running_file.clone());
@@ -291,7 +306,17 @@ fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 device.vru.word_receiver = Some(vru_word_receiver);
                 device.vru.gui_ctx = Some(gui_ctx);
             }
-            device::run_game(file.path(), data_dir, &mut device, fullscreen);
+
+            if netplay {
+                device::run_game(rom_contents, data_dir, &mut device, fullscreen);
+            } else {
+                let rom_contents = device::get_rom_contents(file.unwrap().path());
+                if rom_contents.is_empty() {
+                    println!("Could not read rom file");
+                } else {
+                    device::run_game(rom_contents, data_dir, &mut device, fullscreen);
+                }
+            }
             let result = std::fs::remove_file(running_file.clone());
             if result.is_err() {
                 panic!("could not remove running file: {}", result.err().unwrap())
