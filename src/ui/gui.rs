@@ -108,23 +108,7 @@ impl GopherEguiApp {
             vru_window_receiver: None,
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
-            netplay: netplay::Netplay {
-                error: "".to_string(),
-                broadcast_socket: None,
-                broadcast_timer: None,
-                server_receiver: None,
-                game_info_receiver: None,
-                rom_label: "Open ROM".to_string(),
-                create: false,
-                join: false,
-                wait: false,
-                game_info: ("".to_string(), "".to_string(), "".to_string()),
-                session_name: "".to_string(),
-                password: "".to_string(),
-                player_name: "".to_string(),
-                server: ("".to_string(), "".to_string()),
-                servers: std::collections::HashMap::new(),
-            },
+            netplay: Default::default(),
         }
     }
 }
@@ -271,6 +255,9 @@ fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     if emulate_vru {
         app.vru_window_receiver = Some(vru_window_receiver);
         app.vru_word_notifier = Some(vru_word_notifier);
+    } else {
+        app.vru_window_receiver = None;
+        app.vru_word_notifier = None;
     }
 
     let gui_ctx = ctx.clone();
