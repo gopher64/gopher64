@@ -384,7 +384,10 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 serde_json::from_slice(&data.unwrap().into_data()).unwrap();
             if message.accept.unwrap() == 0 {
                 if message.message_type == "reply_motd" {
-                    app.netplay.motd = message.message.unwrap();
+                    let re = regex::Regex::new(r"<[^>]*>").unwrap();
+                    app.netplay.motd = re
+                        .replace_all(message.message.unwrap().as_str(), "")
+                        .into_owned();
                 } else if message.message_type == "reply_players" {
                     app.netplay.player_names = message.player_names.unwrap();
                 }
