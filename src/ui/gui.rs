@@ -239,7 +239,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let upscale = app.upscale;
     let integer_scaling = app.integer_scaling;
     let fullscreen = app.fullscreen;
-    let mut emulate_vru = app.emulate_vru;
+    let emulate_vru = app.emulate_vru;
     let config_dir = app.config_dir.clone();
     let cache_dir = app.cache_dir.clone();
     let data_dir = app.data_dir.clone();
@@ -256,7 +256,6 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     } else {
         task = None;
         netplay = true;
-        emulate_vru = false;
         peer_addr = app.netplay.peer_addr;
         session = app.netplay.waiting_session.clone();
         player_number = Some(app.netplay.player_number);
@@ -272,7 +271,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
         tokio::sync::mpsc::Receiver<String>,
     ) = tokio::sync::mpsc::channel(1);
 
-    if emulate_vru {
+    if emulate_vru && !netplay {
         app.vru_window_receiver = Some(vru_window_receiver);
         app.vru_word_notifier = Some(vru_word_notifier);
     } else {
@@ -308,12 +307,6 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             };
             save_config(&mut device.ui, save_config_items);
 
-            if emulate_vru {
-                device.vru.window_notifier = Some(vru_window_notifier);
-                device.vru.word_receiver = Some(vru_word_receiver);
-                device.vru.gui_ctx = Some(gui_ctx);
-            }
-
             if netplay {
                 device.netplay = Some(netplay::init(
                     peer_addr.unwrap(),
@@ -323,6 +316,12 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 device::run_game(rom_contents, data_dir, &mut device, fullscreen);
                 netplay::close(&mut device);
             } else {
+                if emulate_vru {
+                    device.vru.window_notifier = Some(vru_window_notifier);
+                    device.vru.word_receiver = Some(vru_word_receiver);
+                    device.vru.gui_ctx = Some(gui_ctx);
+                }
+
                 let rom_contents = device::get_rom_contents(file.unwrap().path());
                 if rom_contents.is_empty() {
                     println!("Could not read rom file");
