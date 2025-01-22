@@ -121,26 +121,29 @@ pub fn init(ui: &mut ui::Ui, data_dir: std::path::PathBuf) {
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
-    let eep = std::fs::read(&mut ui.paths.eep_file_path);
-    if eep.is_ok() {
-        ui.saves.eeprom.0 = eep.unwrap();
+    if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
+        let eep = std::fs::read(&mut ui.paths.eep_file_path);
+        if eep.is_ok() {
+            ui.saves.eeprom.0 = eep.unwrap();
+        }
+        let sra = std::fs::read(&mut ui.paths.sra_file_path);
+        if sra.is_ok() {
+            ui.saves.sram.0 = sra.unwrap();
+        }
+        let fla = std::fs::read(&mut ui.paths.fla_file_path);
+        if fla.is_ok() {
+            ui.saves.flash.0 = fla.unwrap();
+        }
+        let mempak = std::fs::read(&mut ui.paths.pak_file_path);
+        if mempak.is_ok() {
+            ui.saves.mempak.0 = mempak.unwrap();
+        }
+        let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
+        if romsave.is_ok() {
+            ui.saves.romsave.0 = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
+        }
     }
-    let sra = std::fs::read(&mut ui.paths.sra_file_path);
-    if sra.is_ok() {
-        ui.saves.sram.0 = sra.unwrap();
-    }
-    let fla = std::fs::read(&mut ui.paths.fla_file_path);
-    if fla.is_ok() {
-        ui.saves.flash.0 = fla.unwrap();
-    }
-    let mempak = std::fs::read(&mut ui.paths.pak_file_path);
-    if mempak.is_ok() {
-        ui.saves.mempak.0 = mempak.unwrap();
-    }
-    let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
-    if romsave.is_ok() {
-        ui.saves.romsave.0 = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
-    }
+
     if netplay.is_some() {
         if netplay.as_ref().unwrap().player_number == 0 {
             netplay::send_save(
