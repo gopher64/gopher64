@@ -297,7 +297,6 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 } else if app.netplay.game_info.0.is_empty() {
                     app.netplay.error = "ROM not loaded".to_string();
                 } else {
-                    app.netplay.rom_contents = app.netplay.game_info.3.clone();
                     let now_utc = chrono::Utc::now().timestamp_millis().to_string();
                     let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
                     let mut game_name = app.netplay.game_info.1.trim().to_string();
@@ -438,6 +437,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
             let data = result.unwrap();
             if !data.0.is_empty() {
                 app.netplay.game_info = data;
+                app.netplay.rom_contents = app.netplay.game_info.3.clone();
 
                 let netplay_message = NetplayMessage {
                     message_type: "request_join_room".to_string(),
