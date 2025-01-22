@@ -347,9 +347,10 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
-                    let socket = app.netplay.socket.as_mut().unwrap();
-                    socket.close(None).unwrap();
-                    while socket.read().is_ok() {}
+                    if let Some(socket) = app.netplay.socket.as_mut() {
+                        socket.close(None).unwrap();
+                        while socket.read().is_ok() {}
+                    }
                     app.netplay = Default::default();
                 };
             })
@@ -545,9 +546,10 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
-                    let socket = app.netplay.socket.as_mut().unwrap();
-                    socket.close(None).unwrap();
-                    while socket.read().is_ok() {}
+                    if let Some(socket) = app.netplay.socket.as_mut() {
+                        socket.close(None).unwrap();
+                        while socket.read().is_ok() {}
+                    }
                     app.netplay = Default::default();
                 };
                 if app.netplay.join_rom_label.is_empty() {
@@ -847,9 +849,10 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
-                    let socket = app.netplay.socket.as_mut().unwrap();
-                    socket.close(None).unwrap();
-                    while socket.read().is_ok() {}
+                    if let Some(socket) = app.netplay.socket.as_mut() {
+                        socket.close(None).unwrap();
+                        while socket.read().is_ok() {}
+                    }
                     app.netplay = Default::default();
                 };
             });
