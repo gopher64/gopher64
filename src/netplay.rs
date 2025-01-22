@@ -26,6 +26,7 @@ pub struct Netplay {
     status: u8,
     buffer_target: u8,
     pub fast_forward: bool,
+    pub error_notifier: tokio::sync::mpsc::Sender<String>,
 }
 
 pub struct PlayerData {
@@ -89,7 +90,8 @@ pub fn send_input(netplay: &Netplay, input: (u32, bool)) {
     netplay.udp_socket.send(&request).unwrap();
 }
 
-pub fn get_input(netplay: &mut Netplay, channel: usize) -> (u32, bool) {
+pub fn get_input(device: &mut device::Device, channel: usize) -> (u32, bool) {
+    let netplay = device.netplay.as_mut().unwrap();
     let mut input = None;
 
     let current_instant = std::time::Instant::now();
@@ -101,7 +103,15 @@ pub fn get_input(netplay: &mut Netplay, channel: usize) -> (u32, bool) {
             .remove(&netplay.player_data[channel].count);
 
         if std::time::Instant::now() + std::time::Duration::from_secs(10) > current_instant {
-            println!("Netplay: timed out waiting for input");
+            netplay
+                .error_notifier
+                .try_send("Timed out waiting for input. Lost connection to server".to_string())
+                .unwrap();
+            input = Some(InputEvent {
+                input: 0,
+                plugin: 0,
+            });
+            device.cpu.running = false;
         }
     }
 
@@ -141,15 +151,21 @@ fn process_incoming(netplay: &mut Netplay) {
                 }
                 if current_status != netplay.status {
                     if ((current_status & 0x1) ^ (netplay.status & 0x1)) != 0 {
-                        println!(
-                            "Netplay: players have desynced at VI {}",
-                            netplay.vi_counter
-                        );
+                        netplay
+                            .error_notifier
+                            .try_send(format!(
+                                "Players have desynced at VI {}",
+                                netplay.vi_counter
+                            ))
+                            .unwrap();
                     }
                     for dis in 1..5 {
                         if ((current_status & (0x1 << dis)) ^ (netplay.status & (0x1 << dis))) != 0
                         {
-                            println!("Netplay: player {} has disconnected", dis);
+                            netplay
+                                .error_notifier
+                                .try_send(format!("Player {} has disconnected", dis))
+                                .unwrap();
                         }
                     }
                     netplay.status = current_status;
@@ -191,6 +207,7 @@ pub fn init(
     mut peer_addr: std::net::SocketAddr,
     session: ui::gui::gui_netplay::NetplayRoom,
     player_number: u8,
+    error_notifier: tokio::sync::mpsc::Sender<String>,
 ) -> Netplay {
     peer_addr.set_port(session.port.unwrap() as u16);
     let udp_socket = if peer_addr.is_ipv4() {
@@ -245,6 +262,7 @@ pub fn init(
         status: 0,
         buffer_target,
         fast_forward: false,
+        error_notifier,
         player_data: [
             PlayerData {
                 lag: 0,

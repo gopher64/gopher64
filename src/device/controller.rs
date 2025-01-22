@@ -61,7 +61,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     netplay::send_input(device.netplay.as_ref().unwrap(), local_input);
                 }
 
-                netplay::get_input(device.netplay.as_mut().unwrap(), channel)
+                netplay::get_input(device, channel)
             };
 
             device.pif.ram[offset..offset + 4].copy_from_slice(&input.0.to_ne_bytes());
