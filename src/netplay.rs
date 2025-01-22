@@ -59,7 +59,7 @@ pub fn send_sync_check(device: &mut device::Device) {
 
         netplay.udp_socket.send(&request).unwrap();
     }
-    netplay.vi_counter += 1;
+    netplay.vi_counter = netplay.vi_counter.wrapping_add(1);
 }
 
 pub fn update_input() {}
