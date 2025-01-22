@@ -1,4 +1,5 @@
 # gopher64
+(gopher64 also has a GUI that can be launched by just running the executable)
 
 ```
 Usage: gopher64 [OPTIONS] [GAME]
@@ -11,6 +12,8 @@ Options:
           
   -c, --configure-input-profile <PROFILE_NAME>
           Create a new input profile (keyboard/gamepad mappings).
+  -u, --use-dinput
+          Use DirectInput when configuring a new input profile.
   -b, --bind-input-profile <PROFILE_NAME>
           Must also specify --port. Used to bind a previously created profile to a port
   -l, --list-controllers
@@ -19,6 +22,8 @@ Options:
           Must also specify --port. Used to assign a controller listed in --list-controllers to a port
   -p, --port <PORT>
           Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller
+  -z, --clear-input-bindings
+          Clear all input profile bindings and controller assignments
   -h, --help
           Print help
   -V, --version
@@ -27,6 +32,18 @@ Options:
 ## discord
 
 There is no dedicated server at this point, but there is a #gopher64 channel on the simple64 server: https://discord.gg/R2cz7S94vD
+
+## controls
+
+Keys are mapped according to mupen64plus defaults: https://mupen64plus.org/wiki/index.php/KeyboardSetup#2._Default_Key_Mappings_for_SDL-Input_Plugin. Xbox-style controllers also have a default mapping applied.
+
+You can create you own mappings by running `./gopher64 --configure-input-profile my_profile`. You then bind that profile to a port: `./gopher64 --bind-input-profile my_profile --port 1`
+
+In order to use a controller (for example, an Xbox controller), run `./gopher64 --list-controllers` to get a list of attached controllers, and then assign it by doing `./gopher64 --assign-controller <controller_number> --port 1`
+
+## portable mode
+
+If you would like to keep all the game data in the same folder as executable, you just need to create a file called "portable.txt" in the same directory as the executable.
 
 ## goals
 
@@ -41,18 +58,6 @@ There is no dedicated server at this point, but there is a #gopher64 channel on 
 3. `cd gopher64`
 4. `cargo build --release`
 5. `./target/release/gopher64 /path/to/rom.z64`
-
-## controls
-
-Keys are mapped according to mupen64plus defaults: https://mupen64plus.org/wiki/index.php/KeyboardSetup#2._Default_Key_Mappings_for_SDL-Input_Plugin. Xbox-style controllers also have a default mapping applied.
-
-You can create you own mappings by running `./gopher64 --configure-input-profile my_profile`. You then bind that profile to a port: `./gopher64 --bind-input-profile my_profile --port 1`
-
-In order to use a controller (for example, an Xbox controller), run `./gopher64 --list-controllers` to get a list of attached controllers, and then assign it by doing `./gopher64 --assign-controller <controller_number> --port 1`
-
-## portable mode
-
-If you would like to keep all the game data in the same folder as executable, you just need to create a file called "portable.txt" in the same directory as the executable.
 
 ## contributing
 
