@@ -96,23 +96,23 @@ fn process_incoming(netplay: &mut Netplay) {
                         }
                     }
                     netplay.status = current_status;
+                }
 
-                    let mut buffer_offset = 5;
-                    for _i in 0..buf[4] {
-                        let count = u32::from_be_bytes(
-                            buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
-                        );
-                        buffer_offset += 4;
+                let mut buffer_offset = 5;
+                for _i in 0..buf[4] {
+                    let count = u32::from_be_bytes(
+                        buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
+                    );
+                    buffer_offset += 4;
 
-                        let input = u32::from_be_bytes(
-                            buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
-                        );
-                        buffer_offset += 4;
-                        let plugin = buf[buffer_offset];
-                        buffer_offset += 1;
-                        let input_event = InputEvent { input, plugin };
-                        netplay.input_events[player].insert(count, input_event);
-                    }
+                    let input = u32::from_be_bytes(
+                        buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
+                    );
+                    buffer_offset += 4;
+                    let plugin = buf[buffer_offset];
+                    buffer_offset += 1;
+                    let input_event = InputEvent { input, plugin };
+                    netplay.input_events[player].insert(count, input_event);
                 }
             }
             _ => {
