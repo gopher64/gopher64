@@ -138,9 +138,12 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
         if mempak.is_ok() {
             ui.saves.mempak.0 = mempak.unwrap();
         }
-        let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
-        if romsave.is_ok() {
-            ui.saves.romsave.0 = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
+        if netplay.is_none() {
+            // can't do romsaves with the current netplay implementation
+            let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
+            if romsave.is_ok() {
+                ui.saves.romsave.0 = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
+            }
         }
     }
 
@@ -196,7 +199,6 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
                 device::controller::mempak::MEMPAK_SIZE * 4,
             );
         }
-        ui.saves.romsave.0 = Default::default(); // can't do romsaves with the current netplay implementation
     }
 }
 
