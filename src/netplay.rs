@@ -21,7 +21,15 @@ pub struct Netplay {
     udp_socket: std::net::UdpSocket,
     pub tcp_stream: std::net::TcpStream,
     pub player_number: u8,
+    player_lag: [u8; 4],
     vi_counter: u32,
+    status: u8,
+    input_events: [std::collections::HashMap<u32, InputEvent>; 4],
+}
+
+struct InputEvent {
+    input: u32,
+    plugin: u8,
 }
 
 pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8], size: usize) {
@@ -66,7 +74,47 @@ fn process_incoming(netplay: &mut Netplay) {
     let mut buf: [u8; 1024] = [0; 1024];
     while let Ok(_incoming) = netplay.udp_socket.recv(&mut buf) {
         match buf[0] {
-            UDP_RECEIVE_KEY_INFO | UDP_RECEIVE_KEY_INFO_GRATUITOUS => {}
+            UDP_RECEIVE_KEY_INFO | UDP_RECEIVE_KEY_INFO_GRATUITOUS => {
+                let player = buf[1] as usize;
+                //current_status is a status update from the server
+                //it will let us know if another player has disconnected, or the games have desynced
+                let current_status = buf[2];
+                if buf[0] == UDP_RECEIVE_KEY_INFO {
+                    netplay.player_lag[player] = buf[3];
+                }
+                if current_status != netplay.status {
+                    if ((current_status & 0x1) ^ (netplay.status & 0x1)) != 0 {
+                        println!(
+                            "Netplay: players have desynced at VI {}",
+                            netplay.vi_counter
+                        );
+                    }
+                    for dis in 1..5 {
+                        if ((current_status & (0x1 << dis)) ^ (netplay.status & (0x1 << dis))) != 0
+                        {
+                            println!("Netplay: player {} has disconnected", dis);
+                        }
+                    }
+                    netplay.status = current_status;
+
+                    let mut buffer_offset = 5;
+                    for _i in 0..buf[4] {
+                        let count = u32::from_be_bytes(
+                            buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
+                        );
+                        buffer_offset += 4;
+
+                        let input = u32::from_be_bytes(
+                            buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
+                        );
+                        buffer_offset += 4;
+                        let plugin = buf[buffer_offset];
+                        buffer_offset += 1;
+                        let input_event = InputEvent { input, plugin };
+                        netplay.input_events[player].insert(count, input_event);
+                    }
+                }
+            }
             _ => {
                 panic! {"unknown UDP packet"}
             }
@@ -133,6 +181,14 @@ pub fn init(
         tcp_stream: stream,
         player_number,
         vi_counter: 0,
+        status: 0,
+        player_lag: [0; 4],
+        input_events: [
+            std::collections::HashMap::new(),
+            std::collections::HashMap::new(),
+            std::collections::HashMap::new(),
+            std::collections::HashMap::new(),
+        ],
     }
 }
 
