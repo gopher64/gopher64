@@ -16,7 +16,7 @@ const JDT_AF_RTC: u16 = 0x1000; /* RTC */
 const JDT_EEPROM_4K: u16 = 0x8000; /* 4k EEPROM */
 const JDT_EEPROM_16K: u16 = 0xc000; /* 16k EEPROM */
 const EEPROM_BLOCK_SIZE: usize = 8;
-const EEPROM_MAX_SIZE: usize = 0x800;
+pub const EEPROM_MAX_SIZE: usize = 0x800;
 
 pub struct AfRtc {
     pub control: u16,

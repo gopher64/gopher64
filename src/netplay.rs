@@ -9,8 +9,8 @@ use std::io::{Read, Write};
 //const UDP_SYNC_DATA: u8 = 4;
 
 //TCP packet formats
-//const TCP_SEND_SAVE: u8 = 1;
-//const TCP_RECEIVE_SAVE: u8 = 2;
+const TCP_SEND_SAVE: u8 = 1;
+const TCP_RECEIVE_SAVE: u8 = 2;
 //const TCP_SEND_SETTINGS: u8 = 3;
 //const TCP_RECEIVE_SETTINGS: u8 = 4;
 const TCP_REGISTER_PLAYER: u8 = 5;
@@ -19,8 +19,31 @@ const TCP_DISCONNECT_NOTICE: u8 = 7;
 
 pub struct Netplay {
     // udp_socket: std::net::UdpSocket,
-    tcp_stream: std::net::TcpStream,
-    player_number: u8,
+    pub tcp_stream: std::net::TcpStream,
+    pub player_number: u8,
+}
+
+pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8], size: usize) {
+    let mut request: Vec<u8> = [TCP_SEND_SAVE].to_vec();
+    request.extend_from_slice(save_type.as_bytes());
+    request.push(0); // null terminate string
+    request.extend_from_slice(&(size as u32).to_be_bytes());
+
+    let mut send_data = save_data.to_owned();
+    send_data.resize(size, 0); // pad with zeros if needed
+    request.extend(send_data);
+    netplay.tcp_stream.write_all(&request).unwrap();
+}
+
+pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<u8>, size: usize) {
+    let mut request: Vec<u8> = [TCP_RECEIVE_SAVE].to_vec();
+    request.extend_from_slice(save_type.as_bytes());
+    request.push(0); // null terminate string
+    netplay.tcp_stream.write_all(&request).unwrap();
+
+    let mut response: Vec<u8> = vec![0; size];
+    netplay.tcp_stream.read_exact(&mut response).unwrap();
+    *save_data = response;
 }
 
 pub fn init(

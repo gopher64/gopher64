@@ -2,8 +2,8 @@ use crate::device;
 use crate::ui;
 
 const SRAM_MASK: usize = 0xFFFF;
-const SRAM_SIZE: usize = 0x8000;
-const FLASHRAM_SIZE: usize = 0x20000;
+pub const SRAM_SIZE: usize = 0x8000;
+pub const FLASHRAM_SIZE: usize = 0x20000;
 pub const FLASHRAM_TYPE_ID: u32 = 0x11118001;
 pub const MX29L1100_ID: u32 = 0x00c2001e;
 const MX29L0000_ID: u32 = 0x00c20000;

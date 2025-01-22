@@ -1,3 +1,5 @@
+use crate::device;
+use crate::netplay;
 use crate::ui;
 
 #[derive(PartialEq)]
@@ -118,7 +120,7 @@ pub fn init(ui: &mut ui::Ui, data_dir: std::path::PathBuf) {
         .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".romsave");
 }
 
-pub fn load_saves(ui: &mut ui::Ui) {
+pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
     let eep = std::fs::read(&mut ui.paths.eep_file_path);
     if eep.is_ok() {
         ui.saves.eeprom.0 = eep.unwrap();
@@ -139,6 +141,60 @@ pub fn load_saves(ui: &mut ui::Ui) {
     if romsave.is_ok() {
         ui.saves.romsave.0 = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
     }
+    if netplay.is_some() {
+        if netplay.as_ref().unwrap().player_number == 0 {
+            netplay::send_save(
+                netplay.as_mut().unwrap(),
+                "eep",
+                &ui.saves.eeprom.0,
+                device::cart::EEPROM_MAX_SIZE,
+            );
+            netplay::send_save(
+                netplay.as_mut().unwrap(),
+                "sra",
+                &ui.saves.sram.0,
+                device::sram::SRAM_SIZE,
+            );
+            netplay::send_save(
+                netplay.as_mut().unwrap(),
+                "fla",
+                &ui.saves.flash.0,
+                device::sram::FLASHRAM_SIZE,
+            );
+            netplay::send_save(
+                netplay.as_mut().unwrap(),
+                "mpk",
+                &ui.saves.mempak.0,
+                device::controller::mempak::MEMPAK_SIZE * 4,
+            );
+        } else {
+            netplay::receive_save(
+                netplay.as_mut().unwrap(),
+                "eep",
+                &mut ui.saves.eeprom.0,
+                device::cart::EEPROM_MAX_SIZE,
+            );
+            netplay::receive_save(
+                netplay.as_mut().unwrap(),
+                "sra",
+                &mut ui.saves.sram.0,
+                device::sram::SRAM_SIZE,
+            );
+            netplay::receive_save(
+                netplay.as_mut().unwrap(),
+                "fla",
+                &mut ui.saves.flash.0,
+                device::sram::FLASHRAM_SIZE,
+            );
+            netplay::receive_save(
+                netplay.as_mut().unwrap(),
+                "mpk",
+                &mut ui.saves.mempak.0,
+                device::controller::mempak::MEMPAK_SIZE * 4,
+            );
+        }
+        ui.saves.romsave.0 = Default::default(); // can't do romsaves with the current netplay implementation
+    }
 }
 
 fn write_rom_save(ui: &ui::Ui) {
@@ -146,21 +202,23 @@ fn write_rom_save(ui: &ui::Ui) {
     serde_json::to_writer(f, &ui.saves.romsave.0).unwrap();
 }
 
-pub fn write_saves(ui: &ui::Ui) {
-    if ui.saves.eeprom.1 {
-        write_save(ui, SaveTypes::Eeprom16k)
-    }
-    if ui.saves.sram.1 {
-        write_save(ui, SaveTypes::Sram)
-    }
-    if ui.saves.flash.1 {
-        write_save(ui, SaveTypes::Flash)
-    }
-    if ui.saves.mempak.1 {
-        write_save(ui, SaveTypes::Mempak)
-    }
-    if ui.saves.romsave.1 {
-        write_save(ui, SaveTypes::Romsave)
+pub fn write_saves(ui: &ui::Ui, netplay: &Option<netplay::Netplay>) {
+    if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
+        if ui.saves.eeprom.1 {
+            write_save(ui, SaveTypes::Eeprom16k)
+        }
+        if ui.saves.sram.1 {
+            write_save(ui, SaveTypes::Sram)
+        }
+        if ui.saves.flash.1 {
+            write_save(ui, SaveTypes::Flash)
+        }
+        if ui.saves.mempak.1 {
+            write_save(ui, SaveTypes::Mempak)
+        }
+        if ui.saves.romsave.1 && netplay.is_none() {
+            write_save(ui, SaveTypes::Romsave)
+        }
     }
 }
 
