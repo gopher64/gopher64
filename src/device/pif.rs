@@ -103,7 +103,7 @@ pub fn update_pif_ram(device: &mut device::Device) -> u64 {
     }
 
     if device.netplay.is_some() {
-        netplay::update_input()
+        netplay::update_input(device.netplay.as_mut().unwrap());
     }
 
     (24000 + (active_channels * 30000)) as u64

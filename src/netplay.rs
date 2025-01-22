@@ -3,9 +3,9 @@ use crate::ui;
 use std::io::{Read, Write};
 //UDP packet formats
 //const UDP_SEND_KEY_INFO: u8 = 0;
-//const UDP_RECEIVE_KEY_INFO: u8 = 1;
+const UDP_RECEIVE_KEY_INFO: u8 = 1;
 //const UDP_REQUEST_KEY_INFO: u8 = 2;
-//const UDP_RECEIVE_KEY_INFO_GRATUITOUS: u8 = 3;
+const UDP_RECEIVE_KEY_INFO_GRATUITOUS: u8 = 3;
 const UDP_SYNC_DATA: u8 = 4;
 
 //TCP packet formats
@@ -62,7 +62,21 @@ pub fn send_sync_check(device: &mut device::Device) {
     netplay.vi_counter = netplay.vi_counter.wrapping_add(1);
 }
 
-pub fn update_input() {}
+fn process_incoming(netplay: &mut Netplay) {
+    let mut buf: [u8; 1024] = [0; 1024];
+    while let Ok(_incoming) = netplay.udp_socket.recv(&mut buf) {
+        match buf[0] {
+            UDP_RECEIVE_KEY_INFO | UDP_RECEIVE_KEY_INFO_GRATUITOUS => {}
+            _ => {
+                panic! {"unknown UDP packet"}
+            }
+        }
+    }
+}
+
+pub fn update_input(netplay: &mut Netplay) {
+    process_incoming(netplay)
+}
 
 pub fn init(
     mut peer_addr: std::net::SocketAddr,
