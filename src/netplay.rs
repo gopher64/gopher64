@@ -21,10 +21,15 @@ pub struct Netplay {
     udp_socket: std::net::UdpSocket,
     pub tcp_stream: std::net::TcpStream,
     pub player_number: u8,
-    player_lag: [u8; 4],
+    player_data: [PlayerData; 4],
     vi_counter: u32,
     status: u8,
     input_events: [std::collections::HashMap<u32, InputEvent>; 4],
+}
+
+struct PlayerData {
+    lag: u8,
+    count: u32,
 }
 
 struct InputEvent {
@@ -80,7 +85,7 @@ fn process_incoming(netplay: &mut Netplay) {
                 //it will let us know if another player has disconnected, or the games have desynced
                 let current_status = buf[2];
                 if buf[0] == UDP_RECEIVE_KEY_INFO {
-                    netplay.player_lag[player] = buf[3];
+                    netplay.player_data[player].lag = buf[3];
                 }
                 if current_status != netplay.status {
                     if ((current_status & 0x1) ^ (netplay.status & 0x1)) != 0 {
@@ -104,6 +109,12 @@ fn process_incoming(netplay: &mut Netplay) {
                         buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
                     );
                     buffer_offset += 4;
+
+                    if (count - netplay.player_data[player].count) > (u32::MAX / 2) {
+                        //event doesn't need to be recorded
+                        buffer_offset += 5;
+                        continue;
+                    }
 
                     let input = u32::from_be_bytes(
                         buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
@@ -182,7 +193,12 @@ pub fn init(
         player_number,
         vi_counter: 0,
         status: 0,
-        player_lag: [0; 4],
+        player_data: [
+            PlayerData { lag: 0, count: 0 },
+            PlayerData { lag: 0, count: 0 },
+            PlayerData { lag: 0, count: 0 },
+            PlayerData { lag: 0, count: 0 },
+        ],
         input_events: [
             std::collections::HashMap::new(),
             std::collections::HashMap::new(),
