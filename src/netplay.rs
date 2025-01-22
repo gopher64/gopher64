@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 //UDP packet formats
 const UDP_SEND_KEY_INFO: u8 = 0;
 const UDP_RECEIVE_KEY_INFO: u8 = 1;
-//const UDP_REQUEST_KEY_INFO: u8 = 2;
+const UDP_REQUEST_KEY_INFO: u8 = 2;
 const UDP_RECEIVE_KEY_INFO_GRATUITOUS: u8 = 3;
 const UDP_SYNC_DATA: u8 = 4;
 
@@ -22,6 +22,7 @@ pub struct Netplay {
     pub tcp_stream: std::net::TcpStream,
     pub player_number: u8,
     pub player_data: [PlayerData; 4],
+    buffer_size: [u8; 4],
     vi_counter: u32,
     status: u8,
     input_events: [std::collections::HashMap<u32, InputEvent>; 4],
@@ -98,6 +99,18 @@ pub fn get_input(netplay: &mut Netplay, channel: usize) -> (u32, bool) {
         input.as_ref().unwrap().input,
         input.as_ref().unwrap().plugin != 0,
     )
+}
+
+pub fn request_input(netplay: &Netplay, channel: usize) {
+    let mut request: Vec<u8> = [UDP_REQUEST_KEY_INFO].to_vec();
+    request.push(channel as u8); //The player we need input for
+    request.extend_from_slice(
+        &(netplay.player_data[netplay.player_number as usize].reg_id).to_be_bytes(),
+    );
+    request.extend_from_slice(&(netplay.player_data[channel].count).to_be_bytes());
+    request.push(0); //spectator mode
+    request.push(netplay.buffer_size[channel]);
+    netplay.udp_socket.send(&request).unwrap();
 }
 
 fn process_incoming(netplay: &mut Netplay) {
@@ -218,6 +231,7 @@ pub fn init(
         player_number,
         vi_counter: 0,
         status: 0,
+        buffer_size: [0; 4],
         player_data: [
             PlayerData {
                 lag: 0,
