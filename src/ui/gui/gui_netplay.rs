@@ -347,6 +347,9 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
+                    let socket = app.netplay.socket.as_mut().unwrap();
+                    socket.close(None).unwrap();
+                    while socket.read().is_ok() {}
                     app.netplay = Default::default();
                 };
             })
@@ -542,6 +545,9 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
+                    let socket = app.netplay.socket.as_mut().unwrap();
+                    socket.close(None).unwrap();
+                    while socket.read().is_ok() {}
                     app.netplay = Default::default();
                 };
                 if app.netplay.join_rom_label.is_empty() {
@@ -647,8 +653,9 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
             port: app.netplay.waiting_session.as_ref().unwrap().port,
         }),
     };
-    let socket = app.netplay.socket.as_mut().unwrap();
+
     if !app.netplay.socket_waiting {
+        let socket = app.netplay.socket.as_mut().unwrap();
         socket
             .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
                 serde_json::to_vec(&motd_message).unwrap(),
@@ -684,6 +691,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 port: app.netplay.waiting_session.as_ref().unwrap().port,
             }),
         };
+        let socket = app.netplay.socket.as_mut().unwrap();
         socket
             .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
                 serde_json::to_vec(&begin_game).unwrap(),
@@ -715,6 +723,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
             }),
         };
         app.netplay.chat_message.clear();
+        let socket = app.netplay.socket.as_mut().unwrap();
         socket
             .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
                 serde_json::to_vec(&send_chat).unwrap(),
@@ -724,6 +733,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
 
     if app.netplay.socket_waiting {
+        let socket = app.netplay.socket.as_mut().unwrap();
         let data = socket.read();
         if data.is_ok() {
             let message: NetplayMessage =
@@ -748,6 +758,8 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         }
                     }
                     app.netplay.player_number = player as u8;
+                    socket.close(None).unwrap();
+                    while socket.read().is_ok() {}
                     gui::open_rom(app, ctx);
                     app.netplay = Default::default();
                     return;
@@ -835,6 +847,9 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Close").clicked() {
+                    let socket = app.netplay.socket.as_mut().unwrap();
+                    socket.close(None).unwrap();
+                    while socket.read().is_ok() {}
                     app.netplay = Default::default();
                 };
             });

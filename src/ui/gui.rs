@@ -22,6 +22,7 @@ pub struct GopherEguiApp {
     dinput: bool,
     show_vru_dialog: bool,
     vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
+    netplay_error_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
     vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
     pub netplay: gui_netplay::GuiNetplay,
@@ -105,6 +106,7 @@ impl GopherEguiApp {
             emulate_vru: game_ui.config.input.emulate_vru,
             show_vru_dialog: false,
             dinput: false,
+            netplay_error_receiver: None,
             vru_window_receiver: None,
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
@@ -261,6 +263,11 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
         player_number = Some(app.netplay.player_number);
     }
 
+    let (netplay_error_notifier, netplay_error_receiver): (
+        tokio::sync::mpsc::Sender<String>,
+        tokio::sync::mpsc::Receiver<String>,
+    ) = tokio::sync::mpsc::channel(8);
+
     let (vru_window_notifier, vru_window_receiver): (
         tokio::sync::mpsc::Sender<Vec<String>>,
         tokio::sync::mpsc::Receiver<Vec<String>>,
@@ -271,6 +278,9 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
         tokio::sync::mpsc::Receiver<String>,
     ) = tokio::sync::mpsc::channel(1);
 
+    if netplay {
+        app.netplay_error_receiver = Some(netplay_error_receiver);
+    }
     if emulate_vru && !netplay {
         app.vru_window_receiver = Some(vru_window_receiver);
         app.vru_word_notifier = Some(vru_word_notifier);
@@ -312,6 +322,8 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     peer_addr.unwrap(),
                     session.unwrap(),
                     player_number.unwrap(),
+                    netplay_error_notifier,
+                    gui_ctx,
                 ));
                 device::run_game(rom_contents, data_dir, &mut device, fullscreen);
                 netplay::close(&mut device);
@@ -349,6 +361,13 @@ impl eframe::App for GopherEguiApp {
 
         if self.netplay.wait {
             gui_netplay::netplay_wait(self, ctx);
+        }
+
+        if self.netplay_error_receiver.is_some() {
+            let result = self.netplay_error_receiver.as_mut().unwrap().try_recv();
+            if result.is_ok() {
+                self.netplay.error = result.unwrap();
+            }
         }
 
         if !self.netplay.error.is_empty() {

@@ -1,4 +1,5 @@
 use crate::device;
+use crate::netplay;
 use crate::ui;
 
 pub mod mempak;
@@ -52,7 +53,17 @@ pub fn process(device: &mut device::Device, channel: usize) {
         }
         JCMD_CONTROLLER_READ => {
             let offset = device.pif.channels[channel].rx_buf.unwrap();
-            let input = ui::input::get(&mut device.ui, channel);
+            let input = if device.netplay.is_none() {
+                ui::input::get(&mut device.ui, channel)
+            } else {
+                if device.netplay.as_ref().unwrap().player_number as usize == channel {
+                    let local_input = ui::input::get(&mut device.ui, 0);
+                    netplay::send_input(device.netplay.as_ref().unwrap(), local_input);
+                }
+
+                netplay::get_input(device, channel)
+            };
+
             device.pif.ram[offset..offset + 4].copy_from_slice(&input.0.to_ne_bytes());
             if input.1 {
                 // pak change button pressed
@@ -151,7 +162,12 @@ fn pak_switch_event(device: &mut device::Device) {
     for (i, channel) in device.pif.channels.iter_mut().enumerate() {
         if channel.change_pak != PakType::None {
             if channel.change_pak == PakType::RumblePak {
-                device::ui::input::set_rumble(&mut device.ui, i, 0);
+                if device.netplay.is_none() {
+                    device::ui::input::set_rumble(&mut device.ui, i, 0);
+                } else if device.netplay.as_ref().unwrap().player_number as usize == i {
+                    device::ui::input::set_rumble(&mut device.ui, 0, 0);
+                }
+
                 let handler = device::controller::PakHandler {
                     read: device::controller::mempak::read,
                     write: device::controller::mempak::write,

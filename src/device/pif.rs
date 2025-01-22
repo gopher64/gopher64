@@ -100,6 +100,7 @@ pub fn update_pif_ram(device: &mut device::Device) -> u64 {
     for k in 0..PIF_CHANNELS_COUNT {
         active_channels += process_channel(device, k)
     }
+
     (24000 + (active_channels * 30000)) as u64
 }
 
@@ -232,7 +233,12 @@ pub fn init(device: &mut device::Device) {
     };
 
     for i in 0..4 {
-        if device.ui.config.input.controller_enabled[i] {
+        if device.netplay.is_none() {
+            if device.ui.config.input.controller_enabled[i] {
+                device.pif.channels[i].pak_handler = Some(mempak_handler);
+                device.pif.channels[i].process = Some(device::controller::process);
+            }
+        } else if device.netplay.as_ref().unwrap().player_data[i].reg_id != 0 {
             device.pif.channels[i].pak_handler = Some(mempak_handler);
             device.pif.channels[i].process = Some(device::controller::process);
         }

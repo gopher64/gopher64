@@ -164,7 +164,7 @@ pub struct Device {
     pub netplay: Option<netplay::Netplay>,
     pub ui: ui::Ui,
     byte_swap: usize,
-    cpu: cpu::Cpu,
+    pub cpu: cpu::Cpu,
     pif: pif::Pif,
     cart: cart_rom::Cart,
     memory: memory::Memory,
