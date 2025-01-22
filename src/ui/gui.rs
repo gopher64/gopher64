@@ -323,6 +323,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     session.unwrap(),
                     player_number.unwrap(),
                     netplay_error_notifier,
+                    gui_ctx,
                 ));
                 device::run_game(rom_contents, data_dir, &mut device, fullscreen);
                 netplay::close(&mut device);
