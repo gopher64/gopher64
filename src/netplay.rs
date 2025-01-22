@@ -299,4 +299,9 @@ pub fn close(device: &mut device::Device) {
     request[1..5].copy_from_slice(&regid.to_be_bytes());
 
     netplay.tcp_stream.write_all(&request).unwrap();
+    netplay.tcp_stream.flush().unwrap();
+    netplay
+        .tcp_stream
+        .shutdown(std::net::Shutdown::Both)
+        .unwrap();
 }
