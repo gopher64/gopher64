@@ -157,7 +157,7 @@ fn process_incoming(netplay: &mut Netplay) {
                     );
                     buffer_offset += 4;
 
-                    if (count - netplay.player_data[player].count) > (u32::MAX / 2) {
+                    if (count.wrapping_sub(netplay.player_data[player].count)) > (u32::MAX / 2) {
                         //event doesn't need to be recorded
                         buffer_offset += 5;
                         continue;
