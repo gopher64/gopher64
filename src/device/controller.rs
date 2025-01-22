@@ -162,7 +162,12 @@ fn pak_switch_event(device: &mut device::Device) {
     for (i, channel) in device.pif.channels.iter_mut().enumerate() {
         if channel.change_pak != PakType::None {
             if channel.change_pak == PakType::RumblePak {
-                device::ui::input::set_rumble(&mut device.ui, i, 0);
+                if device.netplay.is_none() {
+                    device::ui::input::set_rumble(&mut device.ui, i, 0);
+                } else if device.netplay.as_ref().unwrap().player_number as usize == i {
+                    device::ui::input::set_rumble(&mut device.ui, 0, 0);
+                }
+
                 let handler = device::controller::PakHandler {
                     read: device::controller::mempak::read,
                     write: device::controller::mempak::write,
