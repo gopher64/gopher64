@@ -74,13 +74,13 @@ pub fn run_game(
     cpu::init(device);
 
     ui::storage::init(&mut device.ui, data_dir);
-    ui::storage::load_saves(&mut device.ui);
+    ui::storage::load_saves(&mut device.ui, &mut device.netplay);
     cart_rom::load_rom_save(device);
 
     cpu::run(device);
 
     ui::video::close();
-    ui::storage::write_saves(&device.ui);
+    ui::storage::write_saves(&device.ui, &device.netplay);
 }
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {

@@ -1,6 +1,6 @@
 use crate::device;
 
-const MEMPAK_SIZE: usize = 0x8000;
+pub const MEMPAK_SIZE: usize = 0x8000;
 const MPK_PAGE_SIZE: usize = 256;
 
 fn format_mempak(device: &mut device::Device) {
