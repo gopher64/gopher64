@@ -56,8 +56,6 @@ pub fn process(device: &mut device::Device, channel: usize) {
             let input = if device.netplay.is_none() {
                 ui::input::get(&mut device.ui, channel)
             } else {
-                netplay::request_input(device.netplay.as_ref().unwrap(), channel);
-
                 if device.netplay.as_ref().unwrap().player_number as usize == channel {
                     let local_input = ui::input::get(&mut device.ui, 0);
                     netplay::send_input(device.netplay.as_ref().unwrap(), local_input);

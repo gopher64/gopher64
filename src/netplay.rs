@@ -93,6 +93,7 @@ pub fn get_input(netplay: &mut Netplay, channel: usize) -> (u32, bool) {
     let mut input = None;
 
     while input.is_none() {
+        request_input(netplay, channel);
         process_incoming(netplay);
         input = netplay.player_data[channel]
             .input_events
@@ -109,7 +110,7 @@ pub fn get_input(netplay: &mut Netplay, channel: usize) -> (u32, bool) {
     )
 }
 
-pub fn request_input(netplay: &Netplay, channel: usize) {
+fn request_input(netplay: &Netplay, channel: usize) {
     let mut request: Vec<u8> = [UDP_REQUEST_KEY_INFO].to_vec();
     request.push(channel as u8); //The player we need input for
     request.extend_from_slice(
