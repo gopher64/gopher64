@@ -92,12 +92,17 @@ pub fn send_input(netplay: &Netplay, input: (u32, bool)) {
 pub fn get_input(netplay: &mut Netplay, channel: usize) -> (u32, bool) {
     let mut input = None;
 
+    let current_instant = std::time::Instant::now();
     while input.is_none() {
         request_input(netplay, channel);
         process_incoming(netplay);
         input = netplay.player_data[channel]
             .input_events
             .remove(&netplay.player_data[channel].count);
+
+        if std::time::Instant::now() + std::time::Duration::from_secs(10) > current_instant {
+            println!("Netplay: timed out waiting for input");
+        }
     }
 
     netplay.fast_forward = netplay.player_data[channel].lag > 0
