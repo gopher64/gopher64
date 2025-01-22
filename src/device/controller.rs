@@ -1,4 +1,5 @@
 use crate::device;
+use crate::netplay;
 use crate::ui;
 
 pub mod mempak;
@@ -52,7 +53,19 @@ pub fn process(device: &mut device::Device, channel: usize) {
         }
         JCMD_CONTROLLER_READ => {
             let offset = device.pif.channels[channel].rx_buf.unwrap();
-            let input = ui::input::get(&mut device.ui, channel);
+            let input;
+            if device.netplay.is_none() {
+                input = ui::input::get(&mut device.ui, channel);
+            } else {
+                netplay::update_input(device.netplay.as_mut().unwrap());
+
+                if device.netplay.as_ref().unwrap().player_number as usize == channel {
+                    let local_input = ui::input::get(&mut device.ui, 0);
+                    netplay::send_input(device.netplay.as_ref().unwrap(), local_input);
+                }
+                input = netplay::get_input(device.netplay.as_mut().unwrap(), channel);
+            }
+
             device.pif.ram[offset..offset + 4].copy_from_slice(&input.0.to_ne_bytes());
             if input.1 {
                 // pak change button pressed

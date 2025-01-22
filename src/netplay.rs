@@ -2,7 +2,7 @@ use crate::device;
 use crate::ui;
 use std::io::{Read, Write};
 //UDP packet formats
-//const UDP_SEND_KEY_INFO: u8 = 0;
+const UDP_SEND_KEY_INFO: u8 = 0;
 const UDP_RECEIVE_KEY_INFO: u8 = 1;
 //const UDP_REQUEST_KEY_INFO: u8 = 2;
 const UDP_RECEIVE_KEY_INFO_GRATUITOUS: u8 = 3;
@@ -21,15 +21,16 @@ pub struct Netplay {
     udp_socket: std::net::UdpSocket,
     pub tcp_stream: std::net::TcpStream,
     pub player_number: u8,
-    player_data: [PlayerData; 4],
+    pub player_data: [PlayerData; 4],
     vi_counter: u32,
     status: u8,
     input_events: [std::collections::HashMap<u32, InputEvent>; 4],
 }
 
-struct PlayerData {
+pub struct PlayerData {
     lag: u8,
     count: u32,
+    pub reg_id: u32,
 }
 
 struct InputEvent {
@@ -73,6 +74,30 @@ pub fn send_sync_check(device: &mut device::Device) {
         netplay.udp_socket.send(&request).unwrap();
     }
     netplay.vi_counter = netplay.vi_counter.wrapping_add(1);
+}
+
+pub fn send_input(netplay: &Netplay, input: (u32, bool)) {
+    let mut request: Vec<u8> = [UDP_SEND_KEY_INFO].to_vec();
+    request.push(netplay.player_number);
+    request.extend_from_slice(
+        &(netplay.player_data[netplay.player_number as usize].count).to_be_bytes(),
+    );
+    request.extend_from_slice(&(input.0).to_be_bytes());
+    request.push(input.1 as u8);
+    netplay.udp_socket.send(&request).unwrap();
+}
+
+pub fn get_input(netplay: &mut Netplay, channel: usize) -> (u32, bool) {
+    let input = netplay.input_events[channel].remove(&netplay.player_data[channel].count);
+    if input.is_none() {
+        panic!("need input from player {}", channel);
+    }
+
+    netplay.player_data[channel].count = netplay.player_data[channel].count.wrapping_add(1);
+    (
+        input.as_ref().unwrap().input,
+        input.as_ref().unwrap().plugin != 0,
+    )
 }
 
 fn process_incoming(netplay: &mut Netplay) {
@@ -194,10 +219,26 @@ pub fn init(
         vi_counter: 0,
         status: 0,
         player_data: [
-            PlayerData { lag: 0, count: 0 },
-            PlayerData { lag: 0, count: 0 },
-            PlayerData { lag: 0, count: 0 },
-            PlayerData { lag: 0, count: 0 },
+            PlayerData {
+                lag: 0,
+                count: 0,
+                reg_id: reg_id[0],
+            },
+            PlayerData {
+                lag: 0,
+                count: 0,
+                reg_id: reg_id[1],
+            },
+            PlayerData {
+                lag: 0,
+                count: 0,
+                reg_id: reg_id[2],
+            },
+            PlayerData {
+                lag: 0,
+                count: 0,
+                reg_id: reg_id[3],
+            },
         ],
         input_events: [
             std::collections::HashMap::new(),
