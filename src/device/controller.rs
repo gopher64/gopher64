@@ -53,9 +53,8 @@ pub fn process(device: &mut device::Device, channel: usize) {
         }
         JCMD_CONTROLLER_READ => {
             let offset = device.pif.channels[channel].rx_buf.unwrap();
-            let input;
-            if device.netplay.is_none() {
-                input = ui::input::get(&mut device.ui, channel);
+            let input = if device.netplay.is_none() {
+                ui::input::get(&mut device.ui, channel)
             } else {
                 netplay::request_input(device.netplay.as_ref().unwrap(), channel);
 
@@ -64,9 +63,9 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     netplay::send_input(device.netplay.as_ref().unwrap(), local_input);
                 }
 
-                netplay::update_input(device.netplay.as_mut().unwrap());
-                input = netplay::get_input(device.netplay.as_mut().unwrap(), channel);
-            }
+                netplay::process_incoming(device.netplay.as_mut().unwrap());
+                netplay::get_input(device.netplay.as_mut().unwrap(), channel)
+            };
 
             device.pif.ram[offset..offset + 4].copy_from_slice(&input.0.to_ne_bytes());
             if input.1 {

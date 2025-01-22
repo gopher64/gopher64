@@ -114,7 +114,7 @@ pub fn request_input(netplay: &Netplay, channel: usize) {
     netplay.udp_socket.send(&request).unwrap();
 }
 
-fn process_incoming(netplay: &mut Netplay) {
+pub fn process_incoming(netplay: &mut Netplay) {
     let mut buf: [u8; 1024] = [0; 1024];
     while let Ok(_incoming) = netplay.udp_socket.recv(&mut buf) {
         match buf[0] {
@@ -172,10 +172,6 @@ fn process_incoming(netplay: &mut Netplay) {
             }
         }
     }
-}
-
-pub fn update_input(netplay: &mut Netplay) {
-    process_incoming(netplay)
 }
 
 pub fn init(
