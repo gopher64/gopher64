@@ -78,6 +78,7 @@ pub fn init(
             .expect("couldn't bind to address")
     };
     udp_socket.connect(peer_addr).unwrap();
+    udp_socket.set_nonblocking(true).unwrap();
 
     let mut stream = std::net::TcpStream::connect(peer_addr).unwrap();
 
