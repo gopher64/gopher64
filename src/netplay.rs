@@ -94,20 +94,20 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> (u32, bool) {
     let netplay = device.netplay.as_mut().unwrap();
     let mut input = None;
 
-    let current_instant = std::time::Instant::now();
-    let mut request_timer = current_instant;
+    let timeout = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    let mut request_timer = std::time::Instant::now() + std::time::Duration::from_millis(5);
     while input.is_none() {
-        if request_timer + std::time::Duration::from_millis(5) > std::time::Instant::now() {
+        if std::time::Instant::now() > request_timer {
             // sends a request packet every 5ms
             request_input(netplay, channel);
-            request_timer = std::time::Instant::now();
+            request_timer = std::time::Instant::now() + std::time::Duration::from_millis(5);
         }
         process_incoming(netplay);
         input = netplay.player_data[channel]
             .input_events
             .remove(&netplay.player_data[channel].count);
 
-        if current_instant + std::time::Duration::from_secs(10) > std::time::Instant::now() {
+        if std::time::Instant::now() > timeout {
             netplay
                 .error_notifier
                 .try_send("Timed out waiting for input. Lost connection to server".to_string())
