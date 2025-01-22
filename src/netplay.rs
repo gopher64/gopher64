@@ -96,6 +96,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> (u32, bool) {
 
     let timeout = std::time::Instant::now() + std::time::Duration::from_secs(10);
     let mut request_timer = std::time::Instant::now() + std::time::Duration::from_millis(5);
+    request_input(netplay, channel);
     while input.is_none() {
         if std::time::Instant::now() > request_timer {
             // sends a request packet every 5ms
