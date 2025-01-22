@@ -125,12 +125,14 @@ fn vertical_interrupt_event(device: &mut device::Device) {
         }
     */
 
+    let mut enable_speed_limiter = true;
     if device.netplay.is_some() {
         netplay::send_sync_check(device);
+        enable_speed_limiter = !device.netplay.as_ref().unwrap().fast_forward;
     }
 
     device.vi.vi_counter += 1;
-    if device.vi.vi_counter % LIMIT_BUFFER == 0 {
+    if device.vi.vi_counter % LIMIT_BUFFER == 0 && enable_speed_limiter {
         speed_limiter(device);
     }
 

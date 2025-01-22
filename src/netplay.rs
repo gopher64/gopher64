@@ -24,6 +24,8 @@ pub struct Netplay {
     pub player_data: [PlayerData; 4],
     vi_counter: u32,
     status: u8,
+    buffer_target: u8,
+    pub fast_forward: bool,
 }
 
 pub struct PlayerData {
@@ -88,6 +90,9 @@ pub fn send_input(netplay: &Netplay, input: (u32, bool)) {
 }
 
 pub fn get_input(netplay: &mut Netplay, channel: usize) -> (u32, bool) {
+    netplay.fast_forward = netplay.player_data[channel].lag > 0
+        && netplay.player_data[channel].input_events.len() as u8 > netplay.buffer_target;
+
     let input = netplay.player_data[channel]
         .input_events
         .remove(&netplay.player_data[channel].count);
@@ -212,7 +217,7 @@ pub fn init(
     if response[0] != 1 {
         panic!("Failed to register player");
     }
-    let _buffer_target = response[1];
+    let buffer_target = response[1];
 
     let request: [u8; 1] = [TCP_GET_REGISTRATION];
     stream.write_all(&request).unwrap();
@@ -230,6 +235,8 @@ pub fn init(
         player_number,
         vi_counter: 0,
         status: 0,
+        buffer_target,
+        fast_forward: false,
         player_data: [
             PlayerData {
                 lag: 0,
