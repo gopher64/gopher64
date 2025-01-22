@@ -349,7 +349,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     let socket = app.netplay.socket.as_mut().unwrap();
                     socket.close(None).unwrap();
-                    while socket.flush().is_ok() {}
+                    while socket.read().is_ok() {}
                     app.netplay = Default::default();
                 };
             })
@@ -547,7 +547,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     let socket = app.netplay.socket.as_mut().unwrap();
                     socket.close(None).unwrap();
-                    while socket.flush().is_ok() {}
+                    while socket.read().is_ok() {}
                     app.netplay = Default::default();
                 };
                 if app.netplay.join_rom_label.is_empty() {
@@ -759,7 +759,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     }
                     app.netplay.player_number = player as u8;
                     socket.close(None).unwrap();
-                    while socket.flush().is_ok() {}
+                    while socket.read().is_ok() {}
                     gui::open_rom(app, ctx);
                     app.netplay = Default::default();
                     return;
@@ -849,7 +849,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     let socket = app.netplay.socket.as_mut().unwrap();
                     socket.close(None).unwrap();
-                    while socket.flush().is_ok() {}
+                    while socket.read().is_ok() {}
                     app.netplay = Default::default();
                 };
             });

@@ -102,7 +102,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> (u32, bool) {
             .input_events
             .remove(&netplay.player_data[channel].count);
 
-        if std::time::Instant::now() + std::time::Duration::from_secs(10) > current_instant {
+        if current_instant + std::time::Duration::from_secs(10) > std::time::Instant::now() {
             netplay
                 .error_notifier
                 .try_send("Timed out waiting for input. Lost connection to server".to_string())
