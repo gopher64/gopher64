@@ -6,7 +6,7 @@ use std::io::{Read, Write};
 //const UDP_RECEIVE_KEY_INFO: u8 = 1;
 //const UDP_REQUEST_KEY_INFO: u8 = 2;
 //const UDP_RECEIVE_KEY_INFO_GRATUITOUS: u8 = 3;
-//const UDP_SYNC_DATA: u8 = 4;
+const UDP_SYNC_DATA: u8 = 4;
 
 //TCP packet formats
 const TCP_SEND_SAVE: u8 = 1;
@@ -18,9 +18,10 @@ const TCP_GET_REGISTRATION: u8 = 6;
 const TCP_DISCONNECT_NOTICE: u8 = 7;
 
 pub struct Netplay {
-    // udp_socket: std::net::UdpSocket,
+    udp_socket: std::net::UdpSocket,
     pub tcp_stream: std::net::TcpStream,
     pub player_number: u8,
+    vi_counter: u32,
 }
 
 pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8], size: usize) {
@@ -45,6 +46,23 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     netplay.tcp_stream.read_exact(&mut response).unwrap();
     *save_data = response;
 }
+
+pub fn send_sync_check(device: &mut device::Device) {
+    let netplay = device.netplay.as_mut().unwrap();
+    if netplay.vi_counter % 600 == 0 {
+        let mut request: Vec<u8> = [UDP_SYNC_DATA].to_vec();
+        request.extend_from_slice(&(netplay.vi_counter).to_be_bytes());
+
+        for i in 0..device::cop0::COP0_REGS_COUNT as usize {
+            request.extend_from_slice(&(device.cpu.cop0.regs[i] as u32).to_be_bytes());
+        }
+
+        netplay.udp_socket.send(&request).unwrap();
+    }
+    netplay.vi_counter += 1;
+}
+
+pub fn update_input() {}
 
 pub fn init(
     mut peer_addr: std::net::SocketAddr,
@@ -96,9 +114,10 @@ pub fn init(
         reg_id[i] = u32::from_be_bytes(response[(i * 6)..(i * 6) + 4].try_into().unwrap());
     }
     Netplay {
-        // udp_socket,
+        udp_socket,
         tcp_stream: stream,
         player_number,
+        vi_counter: 0,
     }
 }
 

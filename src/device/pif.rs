@@ -1,5 +1,6 @@
 mod rom;
 use crate::device;
+use crate::netplay;
 
 pub struct Pif {
     pub rom: [u8; 1984],
@@ -100,6 +101,11 @@ pub fn update_pif_ram(device: &mut device::Device) -> u64 {
     for k in 0..PIF_CHANNELS_COUNT {
         active_channels += process_channel(device, k)
     }
+
+    if device.netplay.is_some() {
+        netplay::update_input()
+    }
+
     (24000 + (active_channels * 30000)) as u64
 }
 

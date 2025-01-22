@@ -1,4 +1,5 @@
 use crate::device;
+use crate::netplay;
 use crate::ui;
 use governor::clock::Clock;
 
@@ -123,6 +124,10 @@ fn vertical_interrupt_event(device: &mut device::Device) {
             FRAME_COUNTER += 1;
         }
     */
+
+    if device.netplay.is_some() {
+        netplay::send_sync_check(device);
+    }
 
     device.vi.vi_counter += 1;
     if device.vi.vi_counter % LIMIT_BUFFER == 0 {
