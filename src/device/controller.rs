@@ -63,7 +63,6 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     netplay::send_input(device.netplay.as_ref().unwrap(), local_input);
                 }
 
-                netplay::process_incoming(device.netplay.as_mut().unwrap());
                 netplay::get_input(device.netplay.as_mut().unwrap(), channel)
             };
 

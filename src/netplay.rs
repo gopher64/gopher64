@@ -90,15 +90,17 @@ pub fn send_input(netplay: &Netplay, input: (u32, bool)) {
 }
 
 pub fn get_input(netplay: &mut Netplay, channel: usize) -> (u32, bool) {
+    let mut input = None;
+
+    while input.is_none() {
+        process_incoming(netplay);
+        input = netplay.player_data[channel]
+            .input_events
+            .remove(&netplay.player_data[channel].count);
+    }
+
     netplay.fast_forward = netplay.player_data[channel].lag > 0
         && netplay.player_data[channel].input_events.len() as u8 > netplay.buffer_target;
-
-    let input = netplay.player_data[channel]
-        .input_events
-        .remove(&netplay.player_data[channel].count);
-    if input.is_none() {
-        panic!("need input from player {}", channel);
-    }
 
     netplay.player_data[channel].count = netplay.player_data[channel].count.wrapping_add(1);
     (
@@ -119,7 +121,7 @@ pub fn request_input(netplay: &Netplay, channel: usize) {
     netplay.udp_socket.send(&request).unwrap();
 }
 
-pub fn process_incoming(netplay: &mut Netplay) {
+fn process_incoming(netplay: &mut Netplay) {
     let mut buf: [u8; 1024] = [0; 1024];
     while let Ok(_incoming) = netplay.udp_socket.recv(&mut buf) {
         match buf[0] {
