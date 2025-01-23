@@ -323,6 +323,7 @@ impl Device {
             rdram: rdram::Rdram {
                 mem: vec![],
                 size: 0x800000,
+                regs: [[0; rdram::RDRAM_REGS_COUNT as usize]; 4],
             },
             rsp: rsp_interface::Rsp {
                 cpu: rsp_cpu::Cpu {
@@ -403,6 +404,7 @@ impl Device {
             },
             ri: ri::Ri {
                 regs: [0; ri::RI_REGS_COUNT as usize],
+                ram_init: false,
             },
             vi: vi::Vi {
                 regs: [0; vi::VI_REGS_COUNT as usize],
