@@ -18,6 +18,8 @@ const TCP_REGISTER_PLAYER: u8 = 5;
 const TCP_GET_REGISTRATION: u8 = 6;
 const TCP_DISCONNECT_NOTICE: u8 = 7;
 
+const CS4: u32 = 32;
+
 pub struct Netplay {
     udp_socket: std::net::UdpSocket,
     tcp_stream: std::net::TcpStream,
@@ -226,6 +228,8 @@ pub fn init(
         std::net::UdpSocket::bind((std::net::Ipv6Addr::UNSPECIFIED, 0))
             .expect("couldn't bind to address")
     };
+    let socket_ref = socket2::SockRef::from(&udp_socket);
+    socket_ref.set_tos(CS4 << 2).unwrap();
     udp_socket.connect(peer_addr).unwrap();
     udp_socket.set_nonblocking(true).unwrap();
 
