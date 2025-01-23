@@ -41,6 +41,10 @@ You can create you own mappings by running `./gopher64 --configure-input-profile
 
 In order to use a controller (for example, an Xbox controller), run `./gopher64 --list-controllers` to get a list of attached controllers, and then assign it by doing `./gopher64 --assign-controller <controller_number> --port 1`
 
+## netplay
+
+Gopher64 supports netplay (online play with others). It has a few public netplay servers. If you are interested in running a public netplay server, please let me know (open an issue or discussion, or contact me on Discord). You can also run the server (https://github.com/simple64/simple64-netplay-server) yourself on a LAN.
+
 ## portable mode
 
 If you would like to keep all the game data in the same folder as executable, you just need to create a file called "portable.txt" in the same directory as the executable.
