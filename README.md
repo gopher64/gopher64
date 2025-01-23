@@ -31,7 +31,7 @@ Options:
 ```
 ## discord
 
-There is no dedicated server at this point, but there is a #gopher64 channel on the simple64 server: https://discord.gg/R2cz7S94vD
+https://discord.gg/9RGXq8W8JQ
 
 ## controls
 
