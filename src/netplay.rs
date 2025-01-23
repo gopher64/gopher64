@@ -105,15 +105,14 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> (u32, bool) {
     let mut input = None;
 
     let timeout = std::time::Instant::now() + std::time::Duration::from_secs(10);
-    let mut request_timer = std::time::Instant::now() + std::time::Duration::from_millis(5);
-    request_input(netplay, channel);
+    let mut request_timer = std::time::Instant::now() - std::time::Duration::from_millis(5);
     while input.is_none() {
+        process_incoming(netplay); // we execute process_incoming before request_input so that we send an accurate buffer count
         if std::time::Instant::now() > request_timer {
             // sends a request packet every 5ms
             request_input(netplay, channel);
             request_timer = std::time::Instant::now() + std::time::Duration::from_millis(5);
         }
-        process_incoming(netplay);
         input = netplay.player_data[channel]
             .input_events
             .remove(&netplay.player_data[channel].count);
