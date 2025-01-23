@@ -404,6 +404,7 @@ impl Device {
             },
             ri: ri::Ri {
                 regs: [0; ri::RI_REGS_COUNT as usize],
+                ram_init: false,
             },
             vi: vi::Vi {
                 regs: [0; vi::VI_REGS_COUNT as usize],
