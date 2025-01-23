@@ -24,6 +24,7 @@ encoding_rs = "0.8"
 mimalloc = "0.1"
 regex = "1.11"
 tungstenite = "0.26"
+socket2 = "0.5"
 clap = { version = "4.4", features = ["derive"] }
 
 [dependencies.reqwest]

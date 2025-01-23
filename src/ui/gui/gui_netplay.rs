@@ -193,25 +193,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     let file = task.await;
 
                     if let Some(file) = file {
-                        let rom_contents = device::get_rom_contents(file.path());
-                        if !rom_contents.is_empty() {
-                            let hash = device::cart_rom::calculate_hash(&rom_contents);
-                            let game_name = std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
-                                .unwrap()
-                                .to_string();
-                            let _ = tx
-                                .send((hash, game_name, file.file_name(), rom_contents))
-                                .await;
-                        } else {
-                            let _ = tx
-                                .send((
-                                    "".to_string(),
-                                    "".to_string(),
-                                    "Invalid ROM".to_string(),
-                                    vec![],
-                                ))
-                                .await;
-                        }
+                        parse_rom_file(file, tx).await
                     } else {
                         let _ = tx
                             .send((
@@ -299,7 +281,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 } else {
                     let now_utc = chrono::Utc::now().timestamp_millis().to_string();
                     let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
-                    let mut game_name = app.netplay.game_info.1.trim().to_string();
+                    let mut game_name = app.netplay.game_info.1.to_string();
                     if game_name.is_empty() {
                         // If the ROM doesn't report a name, use the filename
                         game_name = app.netplay.create_rom_label.clone();
@@ -349,7 +331,12 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     if let Some(socket) = app.netplay.socket.as_mut() {
                         socket.close(None).unwrap();
-                        while socket.read().is_ok() {}
+                        loop {
+                            match socket.read() {
+                                Err(tungstenite::Error::ConnectionClosed) => break,
+                                _ => continue,
+                            };
+                        }
                     }
                     app.netplay = Default::default();
                 };
@@ -406,6 +393,30 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
         app.netplay.have_sessions = Some(app.netplay.server.clone());
         app.netplay.socket_waiting = true;
         ctx.request_repaint();
+    }
+}
+
+async fn parse_rom_file(file: rfd::FileHandle, tx: tokio::sync::mpsc::Sender<GameInfo>) {
+    let rom_contents = device::get_rom_contents(file.path());
+    if !rom_contents.is_empty() {
+        let hash = device::cart_rom::calculate_hash(&rom_contents);
+        let game_name = std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
+            .unwrap()
+            .trim()
+            .replace('\0', "")
+            .to_string();
+        let _ = tx
+            .send((hash, game_name, file.file_name(), rom_contents))
+            .await;
+    } else {
+        let _ = tx
+            .send((
+                "".to_string(),
+                "".to_string(),
+                "Invalid ROM".to_string(),
+                vec![],
+            ))
+            .await;
     }
 }
 
@@ -548,7 +559,12 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     if let Some(socket) = app.netplay.socket.as_mut() {
                         socket.close(None).unwrap();
-                        while socket.read().is_ok() {}
+                        loop {
+                            match socket.read() {
+                                Err(tungstenite::Error::ConnectionClosed) => break,
+                                _ => continue,
+                            };
+                        }
                     }
                     app.netplay = Default::default();
                 };
@@ -580,26 +596,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             let file = task.await;
 
                             if let Some(file) = file {
-                                let rom_contents = device::get_rom_contents(file.path());
-                                if !rom_contents.is_empty() {
-                                    let hash = device::cart_rom::calculate_hash(&rom_contents);
-                                    let game_name =
-                                        std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
-                                            .unwrap()
-                                            .to_string();
-                                    let _ = tx
-                                        .send((hash, game_name, file.file_name(), rom_contents))
-                                        .await;
-                                } else {
-                                    let _ = tx
-                                        .send((
-                                            "".to_string(),
-                                            "".to_string(),
-                                            "Invalid ROM".to_string(),
-                                            vec![],
-                                        ))
-                                        .await;
-                                }
+                                parse_rom_file(file, tx).await
                             } else {
                                 let _ = tx
                                     .send((
@@ -761,7 +758,13 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     }
                     app.netplay.player_number = player as u8;
                     socket.close(None).unwrap();
-                    while socket.read().is_ok() {}
+                    loop {
+                        match socket.read() {
+                            Err(tungstenite::Error::ConnectionClosed) => break,
+                            _ => continue,
+                        };
+                    }
+
                     gui::open_rom(app, ctx);
                     app.netplay = Default::default();
                     return;
@@ -851,7 +854,12 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     if let Some(socket) = app.netplay.socket.as_mut() {
                         socket.close(None).unwrap();
-                        while socket.read().is_ok() {}
+                        loop {
+                            match socket.read() {
+                                Err(tungstenite::Error::ConnectionClosed) => break,
+                                _ => continue,
+                            };
+                        }
                     }
                     app.netplay = Default::default();
                 };
