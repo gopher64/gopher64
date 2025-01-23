@@ -349,7 +349,12 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     if let Some(socket) = app.netplay.socket.as_mut() {
                         socket.close(None).unwrap();
-                        while socket.read().is_ok() {}
+                        loop {
+                            match socket.read() {
+                                Err(tungstenite::Error::ConnectionClosed) => break,
+                                _ => continue,
+                            };
+                        }
                     }
                     app.netplay = Default::default();
                 };
@@ -548,7 +553,12 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     if let Some(socket) = app.netplay.socket.as_mut() {
                         socket.close(None).unwrap();
-                        while socket.read().is_ok() {}
+                        loop {
+                            match socket.read() {
+                                Err(tungstenite::Error::ConnectionClosed) => break,
+                                _ => continue,
+                            };
+                        }
                     }
                     app.netplay = Default::default();
                 };
@@ -761,7 +771,13 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     }
                     app.netplay.player_number = player as u8;
                     socket.close(None).unwrap();
-                    while socket.read().is_ok() {}
+                    loop {
+                        match socket.read() {
+                            Err(tungstenite::Error::ConnectionClosed) => break,
+                            _ => continue,
+                        };
+                    }
+
                     gui::open_rom(app, ctx);
                     app.netplay = Default::default();
                     return;
@@ -851,7 +867,12 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Close").clicked() {
                     if let Some(socket) = app.netplay.socket.as_mut() {
                         socket.close(None).unwrap();
-                        while socket.read().is_ok() {}
+                        loop {
+                            match socket.read() {
+                                Err(tungstenite::Error::ConnectionClosed) => break,
+                                _ => continue,
+                            };
+                        }
                     }
                     app.netplay = Default::default();
                 };
