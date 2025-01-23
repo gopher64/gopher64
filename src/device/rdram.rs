@@ -1,11 +1,24 @@
 use crate::device;
 use std::alloc::{alloc_zeroed, Layout};
 
+//const RDRAM_CONFIG_REG: u32 = 0;
+//const RDRAM_DEVICE_ID_REG: u32 = 1;
+//const RDRAM_DELAY_REG: u32 = 2;
+const RDRAM_MODE_REG: u32 = 3;
+//const RDRAM_REF_INTERVAL_REG: u32 = 4;
+//const RDRAM_REF_ROW_REG: u32 = 5;
+//const RDRAM_RAS_INTERVAL_REG: u32 = 6;
+//const RDRAM_MIN_INTERVAL_REG: u32 = 7;
+//const RDRAM_ADDR_SELECT_REG: u32 = 8;
+//const RDRAM_DEVICE_MANUF_REG: u32 = 9;
+pub const RDRAM_REGS_COUNT: u32 = 10;
+
 pub const RDRAM_MASK: usize = 0xFFFFFF;
 
 pub struct Rdram {
     pub mem: Vec<u8>,
     pub size: u32,
+    pub regs: [[u32; RDRAM_REGS_COUNT as usize]; 4],
 }
 
 pub fn read_mem_fast(
@@ -56,16 +69,26 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
 }
 
 pub fn read_regs(
-    _device: &mut device::Device,
+    device: &mut device::Device,
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    println!("Warning: read from RDRAM reg {:#x}", address);
-    0
+    let chip_id = address >> 13 & 3;
+    let reg = (address & 0x3FF) >> 2;
+    match reg as u32 {
+        RDRAM_MODE_REG => device.pi.regs[reg as usize] ^ 0xc0c0c0c0,
+        _ => device.rdram.regs[chip_id as usize][reg as usize],
+    }
 }
 
-pub fn write_regs(_device: &mut device::Device, _address: u64, _value: u32, _mask: u32) {
-    panic!("rdram write reg");
+pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
+    let chip_id = address >> 13 & 3;
+    let reg = (address & 0x3FF) >> 2;
+    device::memory::masked_write_32(
+        &mut device.rdram.regs[chip_id as usize][reg as usize],
+        value,
+        mask,
+    )
 }
 
 pub fn init(device: &mut device::Device) {
@@ -79,6 +102,11 @@ pub fn init(device: &mut device::Device) {
     // hack, skip RDRAM initialization
     device.rdram.mem[device.cart.rdram_size_offset..device.cart.rdram_size_offset + 4]
         .copy_from_slice(&device.rdram.size.to_ne_bytes());
+
+    device.ri.regs[device::ri::RI_MODE_REG as usize] = 0x0e;
+    device.ri.regs[device::ri::RI_CONFIG_REG as usize] = 0x40;
+    device.ri.regs[device::ri::RI_SELECT_REG as usize] = 0x14;
+    device.ri.regs[device::ri::RI_REFRESH_REG as usize] = 0x00063634;
 }
 
 pub fn rdram_calculate_cycles(length: u64) -> u64 {
