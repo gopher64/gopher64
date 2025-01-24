@@ -146,15 +146,13 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
         }
     }
 
-    if audio_queued < acceptable_latency {
-        if !unsafe {
+    if audio_queued < acceptable_latency && !unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio_stream,
                 primary_buffer.as_ptr() as *const std::ffi::c_void,
                 primary_buffer.len() as i32,
             )
         } {
-            panic!("Could not play audio");
-        }
+        panic!("Could not play audio");
     }
 }
