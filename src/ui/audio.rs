@@ -58,6 +58,9 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
             std::ptr::null_mut(),
         )
     };
+    if !unsafe { sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.pak_audio_stream) } {
+        panic!("Could not resume pak audio stream");
+    }
 
     ui.audio_spec = Some(audio_spec);
 }
