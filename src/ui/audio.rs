@@ -65,6 +65,19 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
     ui.audio_spec = Some(audio_spec);
 }
 
+pub fn close(ui: &mut ui::Ui) {
+    unsafe {
+        if !ui.audio_stream.is_null() {
+            sdl3_sys::audio::SDL_DestroyAudioStream(ui.audio_stream);
+            ui.audio_stream = std::ptr::null_mut();
+        }
+        if !ui.pak_audio_stream.is_null() {
+            sdl3_sys::audio::SDL_DestroyAudioStream(ui.pak_audio_stream);
+            ui.pak_audio_stream = std::ptr::null_mut();
+        }
+    }
+}
+
 pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
     if ui.pak_audio_stream.is_null() {
         return;

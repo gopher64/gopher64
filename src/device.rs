@@ -80,6 +80,7 @@ pub fn run_game(
     cpu::run(device);
 
     ui::video::close(&device.ui);
+    ui::audio::close(&mut device.ui);
     ui::storage::write_saves(&device.ui, &device.netplay);
 }
 
