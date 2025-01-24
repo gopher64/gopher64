@@ -21,6 +21,11 @@ std::vector<const char *> SDL_WSIPlatform::get_instance_extensions()
 
 	unsigned int extensionCount = 0;
 	char const *const *extensions = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
+	if (extensions == NULL)
+	{
+		printf("Error getting instance extensions\n");
+	}
+
 	std::vector<const char *> extensionNames(extensionCount);
 	for (int i = 0; i < extensionCount; ++i)
 	{
