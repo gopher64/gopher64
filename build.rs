@@ -52,7 +52,7 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/vulkan")
         .include("parallel-rdp/parallel-rdp-standalone/vulkan-headers/include")
         .include("parallel-rdp/parallel-rdp-standalone/util")
-        .includes(std::env::var("DEP_SDL3_INCLUDE"));
+        .include(std::path::PathBuf::from(sdl3_src::SOURCE_DIR).join("include"));
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
