@@ -710,7 +710,6 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 
 pub fn init(ui: &mut ui::Ui) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
-    ui::sdl_init(sdl3_sys::init::SDL_INIT_HAPTIC);
 
     ui.keyboard_state = unsafe { sdl3_sys::keyboard::SDL_GetKeyboardState(std::ptr::null_mut()) };
 
