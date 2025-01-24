@@ -217,6 +217,8 @@ void rdp_close()
 		delete wsi_platform;
 		wsi_platform = nullptr;
 	}
+
+	SDL_DestroyWindow(window);
 }
 
 static void calculate_viewport(float *x, float *y, float *width, float *height)
