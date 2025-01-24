@@ -28,7 +28,7 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         )
     };
     if ui.audio_stream.is_null() {
-        panic!("Could not open audio stream");
+        return;
     }
 
     if !unsafe { sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio_stream) } {
@@ -88,6 +88,10 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
 }
 
 pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
+    if ui.audio_stream.is_null() {
+        return;
+    }
+
     let sound;
     if pak == device::controller::PakType::RumblePak {
         sound = &ui.pak_audio.as_ref().unwrap().rumblepak.converted_data;
@@ -108,6 +112,10 @@ pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
 }
 
 pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
+    if device.ui.audio_stream.is_null() {
+        return;
+    }
+
     let mut primary_buffer: Vec<i16> = vec![0; length as usize / 2];
     let mut i = 0;
     while i < length as usize / 2 {

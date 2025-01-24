@@ -27,7 +27,7 @@ std::vector<const char *> SDL_WSIPlatform::get_instance_extensions()
 		printf("Error getting instance extensions\n");
 	}
 
-	std::vector<const char *> extensionNames(extensionCount);
+	std::vector<const char *> extensionNames;
 	for (int i = 0; i < extensionCount; ++i)
 	{
 		extensionNames.push_back(extensions[i]);
