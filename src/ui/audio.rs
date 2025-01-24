@@ -123,27 +123,13 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
     let audio_queued =
         unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(device.ui.audio_stream) } as f64;
     let acceptable_latency = (device.ui.audio_spec.unwrap().freq as f64 * 0.2) * 4.0;
-    let min_latency = (device.ui.audio_spec.unwrap().freq as f64 * 0.02) * 4.0;
-
-    if audio_queued < min_latency {
-        let silence_buffer: Vec<i16> = vec![0; ((min_latency - audio_queued) * 2.0) as usize & !1];
-        if !unsafe {
-            sdl3_sys::audio::SDL_PutAudioStreamData(
-                device.ui.audio_stream,
-                silence_buffer.as_ptr() as *const std::ffi::c_void,
-                silence_buffer.len() as i32,
-            )
-        } {
-            panic!("Could not play audio");
-        }
-    }
 
     if audio_queued < acceptable_latency
         && !unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio_stream,
                 primary_buffer.as_ptr() as *const std::ffi::c_void,
-                primary_buffer.len() as i32,
+                primary_buffer.len() as i32 * 2,
             )
         }
     {
