@@ -46,7 +46,7 @@ fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
     profiles
 }
 
-fn get_controllers() -> Vec<String> {
+pub fn get_controllers() -> Vec<String> {
     let mut controllers: Vec<String> = vec![];
 
     let mut joystick_count = 0;

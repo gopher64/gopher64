@@ -7,6 +7,7 @@ mod device;
 mod netplay;
 mod ui;
 use clap::Parser;
+use ui::gui;
 
 /// N64 emulator
 #[derive(Parser, Debug)]
@@ -120,7 +121,10 @@ async fn main() {
             }
         }
         if args.list_controllers {
-            ui::input::list_controllers();
+            let controllers = gui::get_controllers();
+            for (i, controller) in controllers.iter().enumerate() {
+                println!("Controller {}: {}", i, controller);
+            }
             return;
         }
         if args.assign_controller.is_some() {

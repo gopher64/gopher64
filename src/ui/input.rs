@@ -372,26 +372,6 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> (u32, bool) {
     )
 }
 
-pub fn list_controllers() {
-    let mut joystick_count = 0;
-    let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
-    if joysticks.is_null() {
-        println!("No controllers connected");
-        return;
-    }
-    for offset in 0..joystick_count as isize {
-        let name = unsafe {
-            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(
-                *(joysticks.offset(offset)),
-            ))
-        }
-        .to_str()
-        .unwrap();
-        println!("{}: {}", offset, name)
-    }
-    unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) };
-}
-
 pub fn assign_controller(ui: &mut ui::Ui, controller: i32, port: usize) {
     let mut joystick_count = 0;
     let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
