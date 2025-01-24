@@ -38,7 +38,9 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         panic!("Could not open audio stream");
     }
 
-    unsafe { sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio_stream) };
+    if !unsafe { sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio_stream) } {
+        panic!("Could not resume audio stream");
+    }
 
     ui.pak_audio = Some(PakAudio {
         mempak: PakAudioData {
@@ -101,12 +103,14 @@ pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
     } else {
         return;
     }
-    unsafe {
+    if !unsafe {
         sdl3_sys::audio::SDL_PutAudioStreamData(
             ui.audio_stream,
             sound.as_ptr() as *const std::ffi::c_void,
             sound.len() as i32,
-        );
+        )
+    } {
+        panic!("Could not play audio");
     }
 }
 
@@ -131,22 +135,26 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
 
     if audio_queued < min_latency {
         let silence_buffer: Vec<i16> = vec![0; ((min_latency - audio_queued) * 2.0) as usize & !1];
-        unsafe {
+        if !unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio_stream,
                 silence_buffer.as_ptr() as *const std::ffi::c_void,
                 silence_buffer.len() as i32,
-            );
+            )
+        } {
+            panic!("Could not play audio");
         }
     }
 
     if audio_queued < acceptable_latency {
-        unsafe {
+        if !unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio_stream,
                 primary_buffer.as_ptr() as *const std::ffi::c_void,
                 primary_buffer.len() as i32,
-            );
+            )
+        } {
+            panic!("Could not play audio");
         }
     }
 }

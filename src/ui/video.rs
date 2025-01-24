@@ -23,7 +23,12 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
     }
 
     let window = unsafe { sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), 640, 480, flags) };
-    unsafe { sdl3_sys::video::SDL_ShowWindow(window) };
+    if window.is_null() {
+        panic!("Could not create window");
+    }
+    if !unsafe { sdl3_sys::video::SDL_ShowWindow(window) } {
+        panic!("Could not show window");
+    }
 
     let gfx_info = GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
@@ -112,5 +117,7 @@ pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer, font
     }
 
     // Present the canvas
-    unsafe { sdl3_sys::render::SDL_RenderPresent(renderer) };
+    if !unsafe { sdl3_sys::render::SDL_RenderPresent(renderer) } {
+        panic!("Could not present renderer");
+    }
 }

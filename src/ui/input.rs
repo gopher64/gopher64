@@ -508,7 +508,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     } {
         panic!("Could not create window and renderer")
     }
-    unsafe { sdl3_sys::video::SDL_ShowWindow(window) };
+    if !unsafe { sdl3_sys::video::SDL_ShowWindow(window) } {
+        panic!("Could not show window")
+    }
     let font =
         rusttype::Font::try_from_bytes(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
 
@@ -739,11 +741,19 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 }
 
 pub fn init(ui: &mut ui::Ui) {
-    if !unsafe { sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_JOYSTICK) } {
-        panic!("Could not initialize SDL joystick");
-    }
-    if !unsafe { sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_GAMEPAD) } {
-        panic!("Could not initialize SDL gamepad");
+    unsafe {
+        let init = sdl3_sys::init::SDL_WasInit(0);
+        if init & sdl3_sys::init::SDL_INIT_JOYSTICK == 0
+            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_JOYSTICK)
+        {
+            panic!("Could not initialize SDL joystick");
+        }
+
+        if init & sdl3_sys::init::SDL_INIT_GAMEPAD == 0
+            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_GAMEPAD)
+        {
+            panic!("Could not initialize SDL gamepad");
+        }
     }
 
     let mut taken = [false; 4];
