@@ -79,7 +79,7 @@ pub fn run_game(
 
     cpu::run(device);
 
-    ui::video::close();
+    ui::video::close(&device.ui);
     ui::storage::write_saves(&device.ui, &device.netplay);
 }
 

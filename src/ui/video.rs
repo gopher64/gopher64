@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::device;
+use crate::ui;
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
     unsafe {
@@ -22,11 +23,12 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
         flags |= sdl3_sys::video::SDL_WINDOW_RESIZABLE;
     }
 
-    let window = unsafe { sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), 640, 480, flags) };
-    if window.is_null() {
+    device.ui.window =
+        unsafe { sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), 640, 480, flags) };
+    if device.ui.window.is_null() {
         panic!("Could not create window");
     }
-    if !unsafe { sdl3_sys::video::SDL_ShowWindow(window) } {
+    if !unsafe { sdl3_sys::video::SDL_ShowWindow(device.ui.window) } {
         panic!("Could not show window");
     }
 
@@ -47,7 +49,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
 
     unsafe {
         rdp_init(
-            window as *mut std::ffi::c_void,
+            device.ui.window as *mut std::ffi::c_void,
             gfx_info,
             device.ui.config.video.upscale,
             device.ui.config.video.integer_scaling,
@@ -56,9 +58,10 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
     }
 }
 
-pub fn close() {
+pub fn close(ui: &ui::Ui) {
     unsafe {
         rdp_close();
+        sdl3_sys::video::SDL_DestroyWindow(ui.window);
     }
 }
 
