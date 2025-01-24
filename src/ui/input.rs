@@ -546,8 +546,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     let mut last_joystick_axis_result = (false, 0, 0);
     let mut last_controller_axis_result = (false, 0, 0);
     for (key, value) in key_labels.iter() {
-        let event = std::ptr::null_mut();
-        while unsafe { sdl3_sys::events::SDL_PollEvent(event) } {} // clear events
+        let mut event: sdl3_sys::events::SDL_Event = Default::default();
+        while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {} // clear events
 
         ui::video::draw_text(
             format!("Select binding for: {key}").as_str(),
@@ -558,23 +558,23 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         let mut key_set = false;
         while !key_set {
             std::thread::sleep(std::time::Duration::from_millis(100));
-            while unsafe { sdl3_sys::events::SDL_PollEvent(event) } {
-                let event_type = unsafe { (*event).r#type };
+            while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
+                let event_type = unsafe { event.r#type };
                 if event_type == u32::from(sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
                     close_controllers(open_joysticks, open_controllers);
                     return;
                 } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_KEY_DOWN) {
-                    new_keys[*value] = (true, i32::from(unsafe { (*event).key.scancode }));
+                    new_keys[*value] = (true, i32::from(unsafe { event.key.scancode }));
                     key_set = true
                 } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
                     if !open_controllers.is_empty() {
                         new_controller_buttons[*value] =
-                            (true, i32::from(unsafe { (*event).gbutton.button }));
+                            (true, i32::from(unsafe { event.gbutton.button }));
                         key_set = true
                     }
                 } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION) {
-                    let axis_value = unsafe { (*event).gaxis.value };
-                    let axis = unsafe { (*event).gaxis.axis };
+                    let axis_value = unsafe { event.gaxis.value };
+                    let axis = unsafe { event.gaxis.axis };
                     if !open_controllers.is_empty() && axis_value.saturating_abs() > i16::MAX / 2 {
                         let result = (true, axis as i32, axis_value / axis_value.saturating_abs());
                         if result != last_controller_axis_result {
@@ -587,20 +587,20 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
                 {
                     if !open_joysticks.is_empty() {
                         new_joystick_buttons[*value] =
-                            (true, i32::from(unsafe { (*event).jbutton.button }));
+                            (true, i32::from(unsafe { event.jbutton.button }));
                         key_set = true
                     }
                 } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION) {
-                    let state = unsafe { (*event).jhat.value };
-                    let hat = unsafe { (*event).jhat.hat };
+                    let state = unsafe { event.jhat.value };
+                    let hat = unsafe { event.jhat.hat };
                     if !open_joysticks.is_empty() && state != sdl3_sys::joystick::SDL_HAT_CENTERED {
                         new_joystick_hat[*value] = (true, hat as i32, state);
                         key_set = true
                     }
                 } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_AXIS_MOTION)
                 {
-                    let axis_value = unsafe { (*event).jaxis.value };
-                    let axis = unsafe { (*event).jaxis.axis };
+                    let axis_value = unsafe { event.jaxis.value };
+                    let axis = unsafe { event.jaxis.axis };
                     if !open_joysticks.is_empty() && axis_value.saturating_abs() > i16::MAX / 2 {
                         let result = (true, axis as i32, axis_value / axis_value.saturating_abs());
                         if result != last_joystick_axis_result {
