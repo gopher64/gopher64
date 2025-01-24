@@ -39,7 +39,6 @@ features = ["xdg-portal","tokio"]
 
 [build-dependencies]
 winres = "0.1"
-sdl3-src = "3.2"
 bindgen = "0.71"
 cc = { version = "1.2", features = ["parallel"] }
 
