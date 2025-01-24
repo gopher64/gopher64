@@ -15,15 +15,9 @@ pub struct Ui {
     pub game_hash: String,
     pub paths: storage::Paths,
     pub saves: storage::Saves,
-    pub sdl_context: Option<sdl2::Sdl>,
-    pub video_subsystem: Option<sdl2::VideoSubsystem>,
-    pub audio_subsystem: Option<sdl2::AudioSubsystem>,
     pub pak_audio: Option<audio::PakAudio>,
-    pub joystick_subsystem: Option<sdl2::JoystickSubsystem>,
-    #[allow(dead_code)]
-    pub controller_subsystem: Option<sdl2::GameControllerSubsystem>,
-    pub window: Option<sdl2::video::Window>,
-    pub audio_device: Option<sdl2::audio::AudioQueue<i16>>,
+    pub audio_stream: Option<*mut sdl3_sys::audio::SDL_AudioStream>,
+    pub audio_spec: Option<sdl3_sys::audio::SDL_AudioSpec>,
 }
 
 impl Drop for Ui {
@@ -39,12 +33,6 @@ fn write_config(ui: &Ui) {
 
 impl Ui {
     pub fn new(config_dir: std::path::PathBuf) -> Ui {
-        let sdl_context = sdl2::init().unwrap();
-        let video_subsystem = sdl_context.video().unwrap();
-        let audio_subsystem = sdl_context.audio().unwrap();
-        let joystick_subsystem = sdl_context.joystick().unwrap();
-        let controller_subsystem = sdl_context.game_controller().unwrap();
-
         let config_file_path = config_dir.join("config.json");
         let config_file = std::fs::read(config_file_path.clone());
         let mut config_map = config::Config::new();
@@ -58,23 +46,27 @@ impl Ui {
         Ui {
             controllers: [
                 input::Controllers {
-                    game_controller: None,
-                    joystick: None,
+                    game_controller: std::ptr::null_mut(),
+                    joystick: std::ptr::null_mut(),
+                    keyboard_state: std::ptr::null(),
                     rumble: false,
                 },
                 input::Controllers {
-                    game_controller: None,
-                    joystick: None,
+                    game_controller: std::ptr::null_mut(),
+                    joystick: std::ptr::null_mut(),
+                    keyboard_state: std::ptr::null(),
                     rumble: false,
                 },
                 input::Controllers {
-                    game_controller: None,
-                    joystick: None,
+                    game_controller: std::ptr::null_mut(),
+                    joystick: std::ptr::null_mut(),
+                    keyboard_state: std::ptr::null(),
                     rumble: false,
                 },
                 input::Controllers {
-                    game_controller: None,
-                    joystick: None,
+                    game_controller: std::ptr::null_mut(),
+                    joystick: std::ptr::null_mut(),
+                    keyboard_state: std::ptr::null(),
                     rumble: false,
                 },
             ],
@@ -97,14 +89,9 @@ impl Ui {
                 mempak: (Vec::new(), false),
                 romsave: (serde_json::Map::new(), false),
             },
-            sdl_context: Some(sdl_context),
-            video_subsystem: Some(video_subsystem),
-            audio_subsystem: Some(audio_subsystem),
-            joystick_subsystem: Some(joystick_subsystem),
-            controller_subsystem: Some(controller_subsystem),
-            window: None,
-            audio_device: None,
             pak_audio: None,
+            audio_stream: None,
+            audio_spec: None,
         }
     }
 }

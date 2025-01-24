@@ -3,21 +3,18 @@ include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::device;
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
-    let mut builder = device
-        .ui
-        .video_subsystem
-        .as_ref()
-        .unwrap()
-        .window("gopher64", 640, 480);
+    let title = std::ffi::CString::new("gopher64").unwrap();
 
-    builder.position_centered().vulkan();
+    let mut flags = sdl3_sys::video::SDL_WINDOW_VULKAN;
 
     if fullscreen {
-        builder.fullscreen_desktop();
+        flags |= sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
     } else {
-        builder.resizable();
+        flags |= sdl3_sys::video::SDL_WINDOW_RESIZABLE;
     }
-    device.ui.window = Some(builder.build().unwrap());
+
+    let window = unsafe { sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), 640, 480, flags) };
+    unsafe { sdl3_sys::video::SDL_ShowWindow(window) };
 
     let gfx_info = GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
@@ -36,7 +33,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
 
     unsafe {
         rdp_init(
-            device.ui.window.as_ref().unwrap().raw() as *mut std::ffi::c_void,
+            window as *mut std::ffi::c_void,
             gfx_info,
             device.ui.config.video.upscale,
             device.ui.config.video.integer_scaling,
@@ -66,19 +63,23 @@ pub fn process_rdp_list() -> u64 {
     unsafe { rdp_process_commands() }
 }
 
-pub fn draw_text(
-    text: &str,
-    canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
-    font: &rusttype::Font,
-) {
+pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer, font: &rusttype::Font) {
     let text_size = 32;
     let scale = rusttype::Scale::uniform(text_size as f32);
     let v_metrics = font.v_metrics(scale);
     let offset = rusttype::point(10.0, 10.0 + v_metrics.ascent);
 
     // Clear the canvas
-    canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
-    canvas.clear();
+    unsafe {
+        sdl3_sys::render::SDL_SetRenderDrawColor(
+            renderer,
+            0,
+            0,
+            0,
+            sdl3_sys::pixels::SDL_ALPHA_OPAQUE,
+        );
+        sdl3_sys::render::SDL_RenderClear(renderer);
+    };
 
     for glyph in font.layout(text, scale, offset) {
         if let Some(bb) = glyph.pixel_bounding_box() {
@@ -86,15 +87,21 @@ pub fn draw_text(
                 let x = x as i32 + bb.min.x;
                 let y = y as i32 + bb.min.y + (240 - text_size);
                 if v > 0.5 {
-                    canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 255, 255));
-                    canvas
-                        .draw_point(sdl2::rect::Point::new(x, y))
-                        .expect("Error drawing pixel");
+                    unsafe {
+                        sdl3_sys::render::SDL_SetRenderDrawColor(
+                            renderer,
+                            255,
+                            255,
+                            255,
+                            sdl3_sys::pixels::SDL_ALPHA_OPAQUE,
+                        );
+                        sdl3_sys::render::SDL_RenderPoint(renderer, x as f32, y as f32);
+                    };
                 }
             });
         }
     }
 
     // Present the canvas
-    canvas.present();
+    unsafe { sdl3_sys::render::SDL_RenderPresent(renderer) };
 }

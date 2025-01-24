@@ -47,7 +47,7 @@ struct Args {
         value_name = "CONTROLLER_NUMBER",
         help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
     )]
-    assign_controller: Option<u32>,
+    assign_controller: Option<i32>,
     #[arg(
         short,
         long,
@@ -119,7 +119,7 @@ async fn main() {
             }
         }
         if args.list_controllers {
-            ui::input::list_controllers(&device.ui);
+            ui::input::list_controllers();
             return;
         }
         if args.assign_controller.is_some() {

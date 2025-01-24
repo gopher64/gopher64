@@ -5,9 +5,9 @@ pub struct InputProfile {
     pub keys: [(bool, i32); ui::input::PROFILE_SIZE],
     pub controller_buttons: [(bool, i32); ui::input::PROFILE_SIZE],
     pub controller_axis: [(bool, i32, i16); ui::input::PROFILE_SIZE],
-    pub joystick_buttons: [(bool, u32); ui::input::PROFILE_SIZE],
-    pub joystick_hat: [(bool, u32, u8); ui::input::PROFILE_SIZE],
-    pub joystick_axis: [(bool, u32, i16); ui::input::PROFILE_SIZE],
+    pub joystick_buttons: [(bool, i32); ui::input::PROFILE_SIZE],
+    pub joystick_hat: [(bool, i32, u8); ui::input::PROFILE_SIZE],
+    pub joystick_axis: [(bool, i32, i16); ui::input::PROFILE_SIZE],
     pub dinput: bool,
 }
 
@@ -15,7 +15,7 @@ pub struct InputProfile {
 pub struct Input {
     pub input_profiles: std::collections::HashMap<String, InputProfile>,
     pub input_profile_binding: [String; 4],
-    pub controller_assignment: [Option<String>; 4],
+    pub controller_assignment: [Option<[u8; 16]>; 4],
     pub controller_enabled: [bool; 4],
     pub emulate_vru: bool,
 }

@@ -129,28 +129,19 @@ static const unsigned cmd_len_lut[64] = {
 	1,
 };
 
-int sdl_event_filter(void *userdata, SDL_Event *event)
+bool sdl_event_filter(void *userdata, SDL_Event *event)
 {
-	if (event->type == SDL_WINDOWEVENT)
+	if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
 	{
-		switch (event->window.event)
-		{
-		case SDL_WINDOWEVENT_CLOSE:
-			emu_running = false;
-			break;
-		case SDL_WINDOWEVENT_RESIZED:
-			if (emu_running)
-			{
-				wsi_platform->do_resize();
-			}
-			break;
-		default:
-			break;
-		}
+		emu_running = false;
 	}
-	else if (fullscreen && event->type == SDL_KEYDOWN)
+	else if (event->type == SDL_EVENT_WINDOW_RESIZED && emu_running)
 	{
-		switch (event->key.keysym.scancode)
+		wsi_platform->do_resize();
+	}
+	else if (event->type == SDL_EVENT_KEY_DOWN && fullscreen)
+	{
+		switch (event->key.scancode)
 		{
 		case SDL_SCANCODE_ESCAPE:
 			emu_running = false;
@@ -394,8 +385,8 @@ uint64_t rdp_process_commands()
 		do
 		{
 			offset &= 0xFF8;
-			cmd_data[2 * cmd_ptr + 0] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset));
-			cmd_data[2 * cmd_ptr + 1] = SDL_SwapBE32(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset + 4));
+			cmd_data[2 * cmd_ptr + 0] = SDL_Swap32BE(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset));
+			cmd_data[2 * cmd_ptr + 1] = SDL_Swap32BE(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset + 4));
 			offset += sizeof(uint64_t);
 			cmd_ptr++;
 		} while (--length > 0);

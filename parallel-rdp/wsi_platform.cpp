@@ -1,11 +1,11 @@
 #include "wsi_platform.hpp"
-#include <SDL_vulkan.h>
+#include <SDL3/SDL_vulkan.h>
 
 VkSurfaceKHR SDL_WSIPlatform::create_surface(VkInstance instance, VkPhysicalDevice gpu)
 {
 	VkSurfaceKHR surface = nullptr;
-	SDL_bool result = SDL_Vulkan_CreateSurface(window, instance, &surface);
-	if (result != SDL_TRUE)
+	bool result = SDL_Vulkan_CreateSurface(window, instance, NULL, &surface);
+	if (result != true)
 	{
 		printf("Error creating surface\n");
 	}
@@ -20,12 +20,11 @@ std::vector<const char *> SDL_WSIPlatform::get_instance_extensions()
 {
 
 	unsigned int extensionCount = 0;
-	SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr);
+	char const *const *extensions = SDL_Vulkan_GetInstanceExtensions(&extensionCount);
 	std::vector<const char *> extensionNames(extensionCount);
-	SDL_bool result = SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, extensionNames.data());
-	if (result != SDL_TRUE)
+	for (int i = 0; i < extensionCount; ++i)
 	{
-		printf("Error creating surface\n");
+		extensionNames.push_back(extensions[i]);
 	}
 	return extensionNames;
 }
