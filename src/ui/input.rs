@@ -434,6 +434,10 @@ fn close_controllers(
 }
 
 pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
+    if !unsafe { sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_VIDEO) } {
+        panic!("Could not initialize SDL video");
+    }
+
     if profile == "default" {
         println!("Profile name cannot be default");
         return;
@@ -477,6 +481,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     } {
         panic!("Could not create window and renderer")
     }
+    unsafe { sdl3_sys::video::SDL_ShowWindow(window) };
     let font =
         rusttype::Font::try_from_bytes(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
 
@@ -707,6 +712,12 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 }
 
 pub fn init(ui: &mut ui::Ui) {
+    if !unsafe { sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_JOYSTICK) } {
+        panic!("Could not initialize SDL joystick");
+    }
+    if !unsafe { sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_GAMEPAD) } {
+        panic!("Could not initialize SDL gamepad");
+    }
     let mut taken = [false; 4];
     for i in 0..4 {
         let controller_assignment = &ui.config.input.controller_assignment[i];

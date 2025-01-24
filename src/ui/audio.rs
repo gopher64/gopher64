@@ -12,6 +12,10 @@ pub struct PakAudio {
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
+    if !unsafe { sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_AUDIO) } {
+        panic!("Could not initialize SDL audio");
+    }
+
     let desired_spec = sdl3_sys::audio::SDL_AudioSpec {
         format: sdl3_sys::audio::SDL_AUDIO_S16LE,
         freq: frequency as i32,

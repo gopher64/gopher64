@@ -22,6 +22,9 @@ pub struct Ui {
 
 impl Drop for Ui {
     fn drop(&mut self) {
+        unsafe {
+            sdl3_sys::init::SDL_Quit();
+        }
         write_config(self);
     }
 }

@@ -3,6 +3,10 @@ include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::device;
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
+    if !unsafe { sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_VIDEO) } {
+        panic!("Could not initialize SDL video");
+    }
+
     let title = std::ffi::CString::new("gopher64").unwrap();
 
     let mut flags = sdl3_sys::video::SDL_WINDOW_VULKAN;
