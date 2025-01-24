@@ -12,14 +12,7 @@ pub struct PakAudio {
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
-    unsafe {
-        let init = sdl3_sys::init::SDL_WasInit(0);
-        if init & sdl3_sys::init::SDL_INIT_AUDIO == 0
-            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_AUDIO)
-        {
-            panic!("Could not initialize SDL audio");
-        }
-    }
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_AUDIO);
 
     let audio_spec = sdl3_sys::audio::SDL_AudioSpec {
         format: sdl3_sys::audio::SDL_AUDIO_S16LE,
@@ -146,13 +139,15 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
         }
     }
 
-    if audio_queued < acceptable_latency && !unsafe {
+    if audio_queued < acceptable_latency
+        && !unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio_stream,
                 primary_buffer.as_ptr() as *const std::ffi::c_void,
                 primary_buffer.len() as i32,
             )
-        } {
+        }
+    {
         panic!("Could not play audio");
     }
 }

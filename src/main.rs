@@ -106,21 +106,7 @@ async fn main() {
     let args_count = args_as_strings.len();
     if args_count > 1 {
         let mut device = device::Device::new(config_dir);
-
-        unsafe {
-            let init = sdl3_sys::init::SDL_WasInit(0);
-            if init & sdl3_sys::init::SDL_INIT_JOYSTICK == 0
-                && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_JOYSTICK)
-            {
-                panic!("Could not initialize SDL joystick");
-            }
-
-            if init & sdl3_sys::init::SDL_INIT_GAMEPAD == 0
-                && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_GAMEPAD)
-            {
-                panic!("Could not initialize SDL gamepad");
-            }
-        }
+        ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
 
         if args.clear_input_bindings {
             ui::input::clear_bindings(&mut device.ui);

@@ -441,25 +441,8 @@ fn close_controllers(
 }
 
 pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
-    unsafe {
-        let init = sdl3_sys::init::SDL_WasInit(0);
-        if init & sdl3_sys::init::SDL_INIT_VIDEO == 0
-            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_VIDEO)
-        {
-            panic!("Could not initialize SDL video");
-        }
-        if init & sdl3_sys::init::SDL_INIT_JOYSTICK == 0
-            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_JOYSTICK)
-        {
-            panic!("Could not initialize SDL joystick");
-        }
-
-        if init & sdl3_sys::init::SDL_INIT_GAMEPAD == 0
-            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_GAMEPAD)
-        {
-            panic!("Could not initialize SDL gamepad");
-        }
-    }
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
 
     if profile == "default" {
         println!("Profile name cannot be default");
@@ -741,20 +724,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 }
 
 pub fn init(ui: &mut ui::Ui) {
-    unsafe {
-        let init = sdl3_sys::init::SDL_WasInit(0);
-        if init & sdl3_sys::init::SDL_INIT_JOYSTICK == 0
-            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_JOYSTICK)
-        {
-            panic!("Could not initialize SDL joystick");
-        }
-
-        if init & sdl3_sys::init::SDL_INIT_GAMEPAD == 0
-            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_GAMEPAD)
-        {
-            panic!("Could not initialize SDL gamepad");
-        }
-    }
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
 
     let mut taken = [false; 4];
     for i in 0..4 {

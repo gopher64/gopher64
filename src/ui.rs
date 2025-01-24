@@ -35,6 +35,15 @@ fn write_config(ui: &Ui) {
     serde_json::to_writer_pretty(f, &ui.config).unwrap();
 }
 
+pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
+    unsafe {
+        let init = sdl3_sys::init::SDL_WasInit(0);
+        if init & flag == 0 && !sdl3_sys::init::SDL_InitSubSystem(flag) {
+            panic!("Could not initialize SDL subsystem: {}", flag);
+        }
+    }
+}
+
 impl Ui {
     pub fn new(config_dir: std::path::PathBuf) -> Ui {
         let config_file_path = config_dir.join("config.json");

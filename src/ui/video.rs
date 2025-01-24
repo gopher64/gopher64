@@ -4,14 +4,7 @@ use crate::device;
 use crate::ui;
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
-    unsafe {
-        let init = sdl3_sys::init::SDL_WasInit(0);
-        if init & sdl3_sys::init::SDL_INIT_VIDEO == 0
-            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_VIDEO)
-        {
-            panic!("Could not initialize SDL video");
-        }
-    }
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
 
     let title = std::ffi::CString::new("gopher64").unwrap();
 
