@@ -1,14 +1,14 @@
 use crate::device;
 use crate::ui;
 
-struct PakAudioData {
-    converted_data: Vec<u8>,
-    source: Vec<u8>,
+pub struct PakAudioData {
+    pub converted_data: Vec<u8>,
+    pub source: Vec<u8>,
 }
 
 pub struct PakAudio {
-    mempak: PakAudioData,
-    rumblepak: PakAudioData,
+    pub mempak: PakAudioData,
+    pub rumblepak: PakAudioData,
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
@@ -35,18 +35,7 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         panic!("Could not resume audio stream");
     }
 
-    ui.pak_audio = Some(PakAudio {
-        mempak: PakAudioData {
-            converted_data: Vec::new(),
-            source: include_bytes!("../../data/mempak.wav").to_vec(),
-        },
-        rumblepak: PakAudioData {
-            converted_data: Vec::new(),
-            source: include_bytes!("../../data/rumblepak.wav").to_vec(),
-        },
-    });
-    let pak_audio = ui.pak_audio.as_mut().unwrap();
-    for item in [&mut pak_audio.mempak, &mut pak_audio.rumblepak] {
+    for item in [&mut ui.pak_audio.mempak, &mut ui.pak_audio.rumblepak] {
         let mut wav_length = item.source.len() as u32;
 
         let mut wav_audio_spec: sdl3_sys::audio::SDL_AudioSpec = Default::default();
@@ -94,9 +83,9 @@ pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
 
     let sound;
     if pak == device::controller::PakType::RumblePak {
-        sound = &ui.pak_audio.as_ref().unwrap().rumblepak.converted_data;
+        sound = &ui.pak_audio.rumblepak.converted_data;
     } else if pak == device::controller::PakType::MemPak {
-        sound = &ui.pak_audio.as_ref().unwrap().mempak.converted_data;
+        sound = &ui.pak_audio.mempak.converted_data;
     } else {
         return;
     }

@@ -15,7 +15,7 @@ pub struct Ui {
     pub game_hash: String,
     pub paths: storage::Paths,
     pub saves: storage::Saves,
-    pub pak_audio: Option<audio::PakAudio>,
+    pub pak_audio: audio::PakAudio,
     pub window: *mut sdl3_sys::video::SDL_Window,
     pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub audio_spec: Option<sdl3_sys::audio::SDL_AudioSpec>,
@@ -102,7 +102,16 @@ impl Ui {
                 mempak: (Vec::new(), false),
                 romsave: (serde_json::Map::new(), false),
             },
-            pak_audio: None,
+            pak_audio: audio::PakAudio {
+                mempak: audio::PakAudioData {
+                    converted_data: Vec::new(),
+                    source: include_bytes!("../data/mempak.wav").to_vec(),
+                },
+                rumblepak: audio::PakAudioData {
+                    converted_data: Vec::new(),
+                    source: include_bytes!("../data/rumblepak.wav").to_vec(),
+                },
+            },
             window: std::ptr::null_mut(),
             audio_stream: std::ptr::null_mut(),
             audio_spec: None,
