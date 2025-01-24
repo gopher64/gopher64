@@ -14,6 +14,7 @@ VkSurfaceKHR SDL_WSIPlatform::create_surface(VkInstance instance, VkPhysicalDevi
 
 void SDL_WSIPlatform::destroy_surface(VkInstance instance, VkSurfaceKHR surface)
 {
+	SDL_Vulkan_DestroySurface(instance, surface, NULL);
 }
 
 std::vector<const char *> SDL_WSIPlatform::get_instance_extensions()
