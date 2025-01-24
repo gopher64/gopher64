@@ -58,7 +58,7 @@ fn set_axis_from_joystick(
         let axis_position = unsafe {
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_LEFT].1)
         };
-        if axis_position * profile.joystick_axis[AXIS_LEFT].2 > 0 {
+        if axis_position as isize * profile.joystick_axis[AXIS_LEFT].2 as isize > 0 {
             x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
         }
     }
@@ -66,7 +66,7 @@ fn set_axis_from_joystick(
         let axis_position = unsafe {
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_RIGHT].1)
         };
-        if axis_position * profile.joystick_axis[AXIS_RIGHT].2 > 0 {
+        if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].2 as isize > 0 {
             x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
         }
     }
@@ -74,7 +74,7 @@ fn set_axis_from_joystick(
         let axis_position = unsafe {
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_DOWN].1)
         };
-        if axis_position * profile.joystick_axis[AXIS_DOWN].2 > 0 {
+        if axis_position as isize * profile.joystick_axis[AXIS_DOWN].2 as isize > 0 {
             y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
         }
     }
@@ -82,7 +82,7 @@ fn set_axis_from_joystick(
         let axis_position = unsafe {
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_UP].1)
         };
-        if axis_position * profile.joystick_axis[AXIS_UP].2 > 0 {
+        if axis_position as isize * profile.joystick_axis[AXIS_UP].2 as isize > 0 {
             y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
         }
     }
@@ -135,7 +135,7 @@ fn set_axis_from_controller(
                 get_axis_from_i32(profile.controller_axis[AXIS_LEFT].1),
             )
         };
-        if axis_position * profile.controller_axis[AXIS_LEFT].2 > 0 {
+        if axis_position as isize * profile.controller_axis[AXIS_LEFT].2 as isize > 0 {
             x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
         }
     }
@@ -146,7 +146,7 @@ fn set_axis_from_controller(
                 get_axis_from_i32(profile.controller_axis[AXIS_RIGHT].1),
             )
         };
-        if axis_position * profile.controller_axis[AXIS_RIGHT].2 > 0 {
+        if axis_position as isize * profile.controller_axis[AXIS_RIGHT].2 as isize > 0 {
             x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
         }
     }
@@ -157,7 +157,7 @@ fn set_axis_from_controller(
                 get_axis_from_i32(profile.controller_axis[AXIS_DOWN].1),
             )
         };
-        if axis_position * profile.controller_axis[AXIS_DOWN].2 > 0 {
+        if axis_position as isize * profile.controller_axis[AXIS_DOWN].2 as isize > 0 {
             y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
         }
     }
@@ -168,7 +168,7 @@ fn set_axis_from_controller(
                 get_axis_from_i32(profile.controller_axis[AXIS_UP].1),
             )
         };
-        if axis_position * profile.controller_axis[AXIS_UP].2 > 0 {
+        if axis_position as isize * profile.controller_axis[AXIS_UP].2 as isize > 0 {
             y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
         }
     }
@@ -230,7 +230,7 @@ fn set_buttons_from_joystick(
     if profile_joystick_axis.0 {
         let axis_position =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile_joystick_axis.1) };
-        if axis_position * profile_joystick_axis.2 > 0
+        if axis_position as isize * profile_joystick_axis.2 as isize > 0
             && axis_position.saturating_abs() > i16::MAX / 2
         {
             *keys |= 1 << i;
@@ -263,7 +263,7 @@ fn set_buttons_from_controller(
                 get_axis_from_i32(profile_controller_axis.1),
             )
         };
-        if axis_position * profile_controller_axis.2 > 0
+        if axis_position as isize * profile_controller_axis.2 as isize > 0
             && axis_position.saturating_abs() > i16::MAX / 2
         {
             *keys |= 1 << i;
@@ -710,6 +710,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 
 pub fn init(ui: &mut ui::Ui) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_HAPTIC);
 
     ui.keyboard_state = unsafe { sdl3_sys::keyboard::SDL_GetKeyboardState(std::ptr::null_mut()) };
 
