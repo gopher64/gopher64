@@ -1,14 +1,9 @@
 use crate::device;
 use crate::ui;
 
-pub struct PakAudioData {
-    pub converted_data: Vec<u8>,
-    pub source: Vec<u8>,
-}
-
 pub struct PakAudio {
-    pub mempak: PakAudioData,
-    pub rumblepak: PakAudioData,
+    pub mempak: Vec<u8>,
+    pub rumblepak: Vec<u8>,
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
@@ -35,15 +30,15 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         panic!("Could not resume audio stream");
     }
 
+    let mut wav_audio_spec: sdl3_sys::audio::SDL_AudioSpec = Default::default();
     for item in [&mut ui.pak_audio.mempak, &mut ui.pak_audio.rumblepak] {
-        let mut wav_length = item.source.len() as u32;
+        let mut wav_length = item.len() as u32;
 
-        let mut wav_audio_spec: sdl3_sys::audio::SDL_AudioSpec = Default::default();
         let mut wav_buf_ptr: *mut u8 = std::ptr::null_mut();
         if !unsafe {
             sdl3_sys::audio::SDL_LoadWAV_IO(
                 sdl3_sys::iostream::SDL_IOFromConstMem(
-                    item.source.as_ptr() as *const std::ffi::c_void,
+                    item.as_ptr() as *const std::ffi::c_void,
                     wav_length as usize,
                 ),
                 true,
@@ -54,44 +49,35 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         } {
             panic!("Could not load WAV file");
         }
-
-        let mut dst_ptr: *mut u8 = std::ptr::null_mut();
-        let mut dst_length: i32 = 0;
-        if !unsafe {
-            sdl3_sys::audio::SDL_ConvertAudioSamples(
-                &wav_audio_spec,
-                wav_buf_ptr,
-                wav_length as i32,
-                &audio_spec,
-                &mut dst_ptr,
-                &mut dst_length,
-            )
-        } {
-            panic!("Could not convert WAV file");
-        }
-        item.converted_data =
-            unsafe { Vec::from_raw_parts(dst_ptr, dst_length as usize, dst_length as usize) };
     }
+    ui.pak_audio_stream = unsafe {
+        sdl3_sys::audio::SDL_OpenAudioDeviceStream(
+            sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+            &wav_audio_spec,
+            None,
+            std::ptr::null_mut(),
+        )
+    };
 
     ui.audio_spec = Some(audio_spec);
 }
 
 pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
-    if ui.audio_stream.is_null() {
+    if ui.pak_audio_stream.is_null() {
         return;
     }
 
     let sound;
     if pak == device::controller::PakType::RumblePak {
-        sound = &ui.pak_audio.rumblepak.converted_data;
+        sound = &ui.pak_audio.rumblepak;
     } else if pak == device::controller::PakType::MemPak {
-        sound = &ui.pak_audio.mempak.converted_data;
+        sound = &ui.pak_audio.mempak;
     } else {
         return;
     }
     if !unsafe {
         sdl3_sys::audio::SDL_PutAudioStreamData(
-            ui.audio_stream,
+            ui.pak_audio_stream,
             sound.as_ptr() as *const std::ffi::c_void,
             sound.len() as i32,
         )
