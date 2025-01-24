@@ -377,13 +377,14 @@ pub fn assign_controller(ui: &mut ui::Ui, controller: i32, port: usize) {
     let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
     if !joysticks.is_null() {
         if controller < joystick_count {
-            let guid = unsafe {
-                sdl3_sys::joystick::SDL_GetJoystickGUIDForID(
+            let path = unsafe {
+                std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
                     *(joysticks.offset(controller as isize)),
-                )
-                .data
+                ))
+                .to_string_lossy()
+                .to_string()
             };
-            ui.config.input.controller_assignment[port - 1] = Some(guid);
+            ui.config.input.controller_assignment[port - 1] = Some(path);
         } else {
             println!("Invalid controller number")
         }
@@ -717,17 +718,20 @@ pub fn init(ui: &mut ui::Ui) {
         let controller_assignment = &ui.config.input.controller_assignment[i];
         if controller_assignment.is_some() {
             let mut joystick_id = 0;
-            let assigned_guid = controller_assignment.unwrap();
+            let assigned_path = controller_assignment.as_ref().unwrap();
 
             let mut joystick_count = 0;
             let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
             if !joysticks.is_null() {
                 for offset in 0..joystick_count as isize {
-                    let guid = unsafe {
-                        sdl3_sys::joystick::SDL_GetJoystickGUIDForID(*(joysticks.offset(offset)))
-                            .data
+                    let path = unsafe {
+                        std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
+                            *(joysticks.offset(offset)),
+                        ))
+                        .to_string_lossy()
+                        .to_string()
                     };
-                    if guid == assigned_guid && !taken[offset as usize] {
+                    if path == *assigned_path && !taken[offset as usize] {
                         joystick_id = unsafe { *(joysticks.offset(offset)) };
                         taken[offset as usize] = true;
                         break;

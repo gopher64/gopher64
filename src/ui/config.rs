@@ -15,7 +15,7 @@ pub struct InputProfile {
 pub struct Input {
     pub input_profiles: std::collections::HashMap<String, InputProfile>,
     pub input_profile_binding: [String; 4],
-    pub controller_assignment: [Option<[u8; 16]>; 4],
+    pub controller_assignment: [Option<String>; 4],
     pub controller_enabled: [bool; 4],
     pub emulate_vru: bool,
 }
