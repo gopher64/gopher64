@@ -796,3 +796,16 @@ pub fn init(ui: &mut ui::Ui) {
         }
     }
 }
+
+pub fn close(ui: &mut ui::Ui) {
+    for controller in ui.controllers.iter_mut() {
+        if !controller.joystick.is_null() {
+            unsafe { sdl3_sys::joystick::SDL_CloseJoystick(controller.joystick) }
+            controller.joystick = std::ptr::null_mut();
+        }
+        if !controller.game_controller.is_null() {
+            unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller.game_controller) }
+            controller.game_controller = std::ptr::null_mut();
+        }
+    }
+}
