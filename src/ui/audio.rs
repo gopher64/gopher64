@@ -35,8 +35,8 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         let mut wav_length = item.len() as u32;
 
         let mut wav_buf_ptr: *mut u8 = std::ptr::null_mut();
-        if !unsafe {
-            sdl3_sys::audio::SDL_LoadWAV_IO(
+        unsafe {
+            if !sdl3_sys::audio::SDL_LoadWAV_IO(
                 sdl3_sys::iostream::SDL_IOFromConstMem(
                     item.as_ptr() as *const std::ffi::c_void,
                     wav_length as usize,
@@ -45,9 +45,10 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
                 &mut wav_audio_spec,
                 &mut wav_buf_ptr,
                 &mut wav_length,
-            )
-        } {
-            panic!("Could not load WAV file");
+            ) {
+                panic!("Could not load WAV file");
+            }
+            sdl3_sys::stdinc::SDL_free(wav_buf_ptr as *mut std::ffi::c_void);
         }
     }
     ui.pak_audio_stream = unsafe {
