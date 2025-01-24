@@ -596,6 +596,12 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     }
 
     close_controllers(open_joysticks, open_controllers);
+
+    unsafe {
+        sdl3_sys::render::SDL_DestroyRenderer(renderer);
+        sdl3_sys::video::SDL_DestroyWindow(window);
+    }
+
     let new_profile = ui::config::InputProfile {
         keys: new_keys,
         controller_buttons: new_controller_buttons,
@@ -755,7 +761,9 @@ pub fn init(ui: &mut ui::Ui) {
 
                 if !profile.dinput {
                     let gamepad = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick_id) };
-                    if !gamepad.is_null() {
+                    if gamepad.is_null() {
+                        println!("could not connect gamepad: {}", joystick_id)
+                    } else {
                         ui.controllers[i].game_controller = gamepad;
                         let properties =
                             unsafe { sdl3_sys::gamepad::SDL_GetGamepadProperties(gamepad) };
@@ -769,9 +777,7 @@ pub fn init(ui: &mut ui::Ui) {
                             )
                         };
                     }
-                }
-
-                if ui.controllers[i].game_controller.is_null() {
+                } else {
                     let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) };
                     if joystick.is_null() {
                         println!("could not connect joystick: {}", joystick_id)
