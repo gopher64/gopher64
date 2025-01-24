@@ -16,7 +16,7 @@ pub struct Ui {
     pub paths: storage::Paths,
     pub saves: storage::Saves,
     pub pak_audio: Option<audio::PakAudio>,
-    pub audio_stream: Option<*mut sdl3_sys::audio::SDL_AudioStream>,
+    pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub audio_spec: Option<sdl3_sys::audio::SDL_AudioSpec>,
 }
 
@@ -93,7 +93,7 @@ impl Ui {
                 romsave: (serde_json::Map::new(), false),
             },
             pak_audio: None,
-            audio_stream: None,
+            audio_stream: std::ptr::null_mut(),
             audio_spec: None,
         }
     }

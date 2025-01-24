@@ -3,8 +3,13 @@ include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::device;
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
-    if !unsafe { sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_VIDEO) } {
-        panic!("Could not initialize SDL video");
+    unsafe {
+        let init = sdl3_sys::init::SDL_WasInit(0);
+        if init & sdl3_sys::init::SDL_INIT_VIDEO == 0
+            && !sdl3_sys::init::SDL_InitSubSystem(sdl3_sys::init::SDL_INIT_VIDEO)
+        {
+            panic!("Could not initialize SDL video");
+        }
     }
 
     let title = std::ffi::CString::new("gopher64").unwrap();
