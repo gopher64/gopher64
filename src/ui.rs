@@ -7,6 +7,7 @@ pub mod video;
 pub mod vru;
 
 pub struct Ui {
+    pub keyboard_state: *const bool,
     pub controllers: [input::Controllers; 4],
     pub config_file_path: std::path::PathBuf,
     pub config: config::Config,
@@ -62,28 +63,25 @@ impl Ui {
                 input::Controllers {
                     game_controller: std::ptr::null_mut(),
                     joystick: std::ptr::null_mut(),
-                    keyboard_state: std::ptr::null(),
                     rumble: false,
                 },
                 input::Controllers {
                     game_controller: std::ptr::null_mut(),
                     joystick: std::ptr::null_mut(),
-                    keyboard_state: std::ptr::null(),
                     rumble: false,
                 },
                 input::Controllers {
                     game_controller: std::ptr::null_mut(),
                     joystick: std::ptr::null_mut(),
-                    keyboard_state: std::ptr::null(),
                     rumble: false,
                 },
                 input::Controllers {
                     game_controller: std::ptr::null_mut(),
                     joystick: std::ptr::null_mut(),
-                    keyboard_state: std::ptr::null(),
                     rumble: false,
                 },
             ],
+            keyboard_state: std::ptr::null_mut(),
             config_file_path,
             config: config_map,
             save_type: vec![],

@@ -32,7 +32,6 @@ pub struct Controllers {
     pub rumble: bool,
     pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
     pub joystick: *mut sdl3_sys::joystick::SDL_Joystick,
-    pub keyboard_state: *const bool,
 }
 
 fn bound_axis(x: &mut f64, y: &mut f64) {
@@ -335,12 +334,11 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> (u32, bool) {
     let mut keys = 0;
     let controller = ui.controllers[channel].game_controller;
     let joystick = ui.controllers[channel].joystick;
-    let keyboard_state = ui.controllers[channel].keyboard_state;
     for i in 0..14 {
         if profile_name != "default" || channel == 0 {
             let profile_key = profile.keys[i];
             if profile_key.0 {
-                keys |= (unsafe { *keyboard_state.offset(profile_key.1 as isize) } as u32) << i;
+                keys |= (unsafe { *ui.keyboard_state.offset(profile_key.1 as isize) } as u32) << i;
             }
         }
 
@@ -355,7 +353,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> (u32, bool) {
     let mut y: f64 = 0.0;
 
     if profile_name != "default" || channel == 0 {
-        (x, y) = set_axis_from_keys(profile, keyboard_state);
+        (x, y) = set_axis_from_keys(profile, ui.keyboard_state);
     }
 
     if !controller.is_null() {
@@ -370,7 +368,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> (u32, bool) {
 
     (
         keys,
-        change_paks(profile, joystick, controller, keyboard_state),
+        change_paks(profile, joystick, controller, ui.keyboard_state),
     )
 }
 
@@ -725,6 +723,8 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 
 pub fn init(ui: &mut ui::Ui) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+
+    ui.keyboard_state = unsafe { sdl3_sys::keyboard::SDL_GetKeyboardState(std::ptr::null_mut()) };
 
     let mut taken = [false; 4];
     for i in 0..4 {
