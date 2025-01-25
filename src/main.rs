@@ -170,7 +170,12 @@ async fn main() {
         }
     } else {
         let options = eframe::NativeOptions {
-            viewport: eframe::egui::ViewportBuilder::default().with_inner_size([640.0, 480.0]),
+            viewport: eframe::egui::ViewportBuilder::default()
+                .with_inner_size([640.0, 480.0])
+                .with_icon(
+                    eframe::icon_data::from_png_bytes(include_bytes!("../data/gopher64.png"))
+                        .unwrap(),
+                ),
             ..Default::default()
         };
         eframe::run_native(
