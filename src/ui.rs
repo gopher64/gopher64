@@ -48,6 +48,8 @@ pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
 
 impl Ui {
     pub fn new(config_dir: std::path::PathBuf) -> Ui {
+        sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+
         let config_file_path = config_dir.join("config.json");
         let config_file = std::fs::read(config_file_path.clone());
         let mut config_map = config::Config::new();

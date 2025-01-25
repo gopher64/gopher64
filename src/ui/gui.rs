@@ -97,8 +97,6 @@ impl GopherEguiApp {
         let game_ui = ui::Ui::new(config_dir.clone());
         let controller_paths = get_controller_paths();
 
-        ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
-
         let mut selected_controller = [-1, -1, -1, -1];
         for (pos, item) in game_ui
             .config

@@ -421,7 +421,6 @@ fn close_controllers(
 
 pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
-    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
 
     if profile == "default" {
         println!("Profile name cannot be default");
@@ -709,8 +708,6 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 }
 
 pub fn init(ui: &mut ui::Ui) {
-    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
-
     ui.keyboard_state = unsafe { sdl3_sys::keyboard::SDL_GetKeyboardState(std::ptr::null_mut()) };
 
     let mut taken = [false; 4];
