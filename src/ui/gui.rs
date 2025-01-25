@@ -46,43 +46,35 @@ fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
     profiles
 }
 
-pub fn get_controller_names() -> Vec<String> {
+pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
     let mut controllers: Vec<String> = vec![];
 
-    let mut joystick_count = 0;
-    let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
-    if !joysticks.is_null() {
-        for offset in 0..joystick_count as isize {
-            let name = unsafe {
-                std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(
-                    *(joysticks.offset(offset)),
-                ))
-            };
-            controllers.push(name.to_string_lossy().to_string());
-        }
-        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) };
+    for offset in 0..game_ui.num_joysticks as isize {
+        let name = unsafe {
+            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(
+                *(game_ui.joysticks.offset(offset)),
+            ))
+        };
+        controllers.push(name.to_string_lossy().to_string());
     }
+
     controllers
 }
 
-pub fn get_controller_paths() -> Vec<String> {
+pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
     let mut controller_paths: Vec<String> = vec![];
 
-    let mut joystick_count = 0;
-    let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
-    if !joysticks.is_null() {
-        for offset in 0..joystick_count as isize {
-            let path = unsafe {
-                std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
-                    *(joysticks.offset(offset)),
-                ))
-                .to_string_lossy()
-                .to_string()
-            };
-            controller_paths.push(path);
-        }
-        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) };
+    for offset in 0..game_ui.num_joysticks as isize {
+        let path = unsafe {
+            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
+                *(game_ui.joysticks.offset(offset)),
+            ))
+            .to_string_lossy()
+            .to_string()
+        };
+        controller_paths.push(path);
     }
+
     controller_paths
 }
 
@@ -95,7 +87,7 @@ impl GopherEguiApp {
     ) -> GopherEguiApp {
         add_japanese_font(&cc.egui_ctx);
         let game_ui = ui::Ui::new(config_dir.clone());
-        let controller_paths = get_controller_paths();
+        let controller_paths = get_controller_paths(&game_ui);
 
         let mut selected_controller = [-1, -1, -1, -1];
         for (pos, item) in game_ui
@@ -122,7 +114,7 @@ impl GopherEguiApp {
             profile_name: "".to_string(),
             selected_profile: game_ui.config.input.input_profile_binding.clone(),
             selected_controller,
-            controller_names: get_controller_names(),
+            controller_names: get_controller_names(&game_ui),
             input_profiles: get_input_profiles(&game_ui),
             controller_enabled: game_ui.config.input.controller_enabled,
             upscale: game_ui.config.video.upscale,
@@ -141,7 +133,7 @@ impl GopherEguiApp {
 }
 
 fn save_config(game_ui: &mut ui::Ui, save_config_items: SaveConfig) {
-    let controller_paths = get_controller_paths();
+    let controller_paths = get_controller_paths(game_ui);
     for (pos, item) in save_config_items.selected_controller.iter().enumerate() {
         if *item != -1 {
             game_ui.config.input.controller_assignment[pos] =

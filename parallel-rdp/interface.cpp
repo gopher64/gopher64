@@ -157,7 +157,12 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen)
 {
 	window = (SDL_Window *)_window;
-	SDL_AddEventWatch(sdl_event_filter, nullptr);
+	bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
+	if (!result)
+	{
+		printf("Could not add event watch.\n");
+		return;
+	}
 
 	gfx_info = _gfx_info;
 	fullscreen = _fullscreen;
