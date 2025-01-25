@@ -109,7 +109,7 @@ impl GopherEguiApp {
         {
             if item.is_some() {
                 for (path_pos, path) in controller_paths.iter().enumerate() {
-                    if *item.as_ref().unwrap() == *path {
+                    if item.as_deref().unwrap() == *path {
                         selected_controller[pos] = path_pos as i32;
                         break;
                     }
