@@ -1,7 +1,7 @@
 #pragma once
 
 #include "wsi.hpp"
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 class SDL_WSIPlatform : public Vulkan::WSIPlatform
 {

@@ -19,6 +19,10 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy, rustfmt
+      - name: Install SDL2
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libsdl2-dev
       - name: Rustfmt Check
         uses: actions-rust-lang/rustfmt@v1
       - name: Lint

@@ -7,6 +7,7 @@ mod device;
 mod netplay;
 mod ui;
 use clap::Parser;
+use ui::gui;
 
 /// N64 emulator
 #[derive(Parser, Debug)]
@@ -47,7 +48,7 @@ struct Args {
         value_name = "CONTROLLER_NUMBER",
         help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
     )]
-    assign_controller: Option<u32>,
+    assign_controller: Option<i32>,
     #[arg(
         short,
         long,
@@ -119,7 +120,10 @@ async fn main() {
             }
         }
         if args.list_controllers {
-            ui::input::list_controllers(&device.ui);
+            let controllers = gui::get_controller_names();
+            for (i, controller) in controllers.iter().enumerate() {
+                println!("Controller {}: {}", i, controller);
+            }
             return;
         }
         if args.assign_controller.is_some() {

@@ -10,7 +10,7 @@ pub struct GopherEguiApp {
     data_dir: std::path::PathBuf,
     configure_profile: bool,
     profile_name: String,
-    controllers: Vec<String>,
+    controller_names: Vec<String>,
     selected_controller: [i32; 4],
     selected_profile: [String; 4],
     input_profiles: Vec<String>,
@@ -46,15 +46,44 @@ fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
     profiles
 }
 
-fn get_controllers(game_ui: &ui::Ui) -> Vec<String> {
+pub fn get_controller_names() -> Vec<String> {
     let mut controllers: Vec<String> = vec![];
 
-    let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
-    let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
-    for i in 0..num_joysticks {
-        controllers.push(joystick_subsystem.name_for_index(i).unwrap());
+    let mut joystick_count = 0;
+    let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
+    if !joysticks.is_null() {
+        for offset in 0..joystick_count as isize {
+            let name = unsafe {
+                std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(
+                    *(joysticks.offset(offset)),
+                ))
+            };
+            controllers.push(name.to_string_lossy().to_string());
+        }
+        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) };
     }
     controllers
+}
+
+pub fn get_controller_paths() -> Vec<String> {
+    let mut controller_paths: Vec<String> = vec![];
+
+    let mut joystick_count = 0;
+    let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
+    if !joysticks.is_null() {
+        for offset in 0..joystick_count as isize {
+            let path = unsafe {
+                std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
+                    *(joysticks.offset(offset)),
+                ))
+                .to_string_lossy()
+                .to_string()
+            };
+            controller_paths.push(path);
+        }
+        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) };
+    }
+    controller_paths
 }
 
 impl GopherEguiApp {
@@ -66,12 +95,8 @@ impl GopherEguiApp {
     ) -> GopherEguiApp {
         add_japanese_font(&cc.egui_ctx);
         let game_ui = ui::Ui::new(config_dir.clone());
-        let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
-        let num_joysticks = joystick_subsystem.num_joysticks().unwrap();
-        let mut guids: Vec<String> = vec![];
-        for i in 0..num_joysticks {
-            guids.push(joystick_subsystem.device_guid(i).unwrap().to_string());
-        }
+        let controller_paths = get_controller_paths();
+
         let mut selected_controller = [-1, -1, -1, -1];
         for (pos, item) in game_ui
             .config
@@ -81,9 +106,9 @@ impl GopherEguiApp {
             .enumerate()
         {
             if item.is_some() {
-                for (guid_pos, guid) in guids.iter().enumerate() {
-                    if item.as_deref().unwrap() == *guid {
-                        selected_controller[pos] = guid_pos as i32;
+                for (path_pos, path) in controller_paths.iter().enumerate() {
+                    if item.as_deref().unwrap() == *path {
+                        selected_controller[pos] = path_pos as i32;
                         break;
                     }
                 }
@@ -97,7 +122,7 @@ impl GopherEguiApp {
             profile_name: "".to_string(),
             selected_profile: game_ui.config.input.input_profile_binding.clone(),
             selected_controller,
-            controllers: get_controllers(&game_ui),
+            controller_names: get_controller_names(),
             input_profiles: get_input_profiles(&game_ui),
             controller_enabled: game_ui.config.input.controller_enabled,
             upscale: game_ui.config.video.upscale,
@@ -116,15 +141,11 @@ impl GopherEguiApp {
 }
 
 fn save_config(game_ui: &mut ui::Ui, save_config_items: SaveConfig) {
-    let joystick_subsystem = game_ui.joystick_subsystem.as_ref().unwrap();
+    let controller_paths = get_controller_paths();
     for (pos, item) in save_config_items.selected_controller.iter().enumerate() {
         if *item != -1 {
-            game_ui.config.input.controller_assignment[pos] = Some(
-                joystick_subsystem
-                    .device_guid(*item as u32)
-                    .unwrap()
-                    .to_string(),
-            );
+            game_ui.config.input.controller_assignment[pos] =
+                Some(controller_paths[*item as usize].clone());
         } else {
             game_ui.config.input.controller_assignment[pos] = None
         }
@@ -437,7 +458,7 @@ impl eframe::App for GopherEguiApp {
                     let controller_text = if self.selected_controller[i] == -1 {
                         "None".to_string()
                     } else {
-                        self.controllers[self.selected_controller[i] as usize].clone()
+                        self.controller_names[self.selected_controller[i] as usize].clone()
                     };
                     egui::ComboBox::from_id_salt(format!("controller-combo-{}", i))
                         .selected_text(controller_text)
@@ -447,11 +468,11 @@ impl eframe::App for GopherEguiApp {
                                 -1,
                                 "None".to_string(),
                             );
-                            for j in 0..self.controllers.len() {
+                            for j in 0..self.controller_names.len() {
                                 ui.selectable_value(
                                     &mut self.selected_controller[i],
                                     j as i32,
-                                    self.controllers[j].clone(),
+                                    self.controller_names[j].clone(),
                                 );
                             }
                         });

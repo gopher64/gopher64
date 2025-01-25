@@ -102,7 +102,7 @@ jobs:
           path: target/${{ matrix.target }}/release/gopher64
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2025
     strategy:
       fail-fast: false
       matrix:

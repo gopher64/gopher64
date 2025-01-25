@@ -7,6 +7,7 @@ pub mod video;
 pub mod vru;
 
 pub struct Ui {
+    pub keyboard_state: *const bool,
     pub controllers: [input::Controllers; 4],
     pub config_file_path: std::path::PathBuf,
     pub config: config::Config,
@@ -15,19 +16,19 @@ pub struct Ui {
     pub game_hash: String,
     pub paths: storage::Paths,
     pub saves: storage::Saves,
-    pub sdl_context: Option<sdl2::Sdl>,
-    pub video_subsystem: Option<sdl2::VideoSubsystem>,
-    pub audio_subsystem: Option<sdl2::AudioSubsystem>,
-    pub pak_audio: Option<audio::PakAudio>,
-    pub joystick_subsystem: Option<sdl2::JoystickSubsystem>,
-    #[allow(dead_code)]
-    pub controller_subsystem: Option<sdl2::GameControllerSubsystem>,
-    pub window: Option<sdl2::video::Window>,
-    pub audio_device: Option<sdl2::audio::AudioQueue<i16>>,
+    pub pak_audio: audio::PakAudio,
+    pub window: *mut sdl3_sys::video::SDL_Window,
+    pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
+    pub pak_audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
+    pub audio_freq: f64,
+    pub audio_device: u32,
 }
 
 impl Drop for Ui {
     fn drop(&mut self) {
+        unsafe {
+            sdl3_sys::init::SDL_Quit();
+        }
         write_config(self);
     }
 }
@@ -37,13 +38,18 @@ fn write_config(ui: &Ui) {
     serde_json::to_writer_pretty(f, &ui.config).unwrap();
 }
 
+pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
+    unsafe {
+        let init = sdl3_sys::init::SDL_WasInit(0);
+        if init & flag == 0 && !sdl3_sys::init::SDL_InitSubSystem(flag) {
+            panic!("Could not initialize SDL subsystem: {}", flag);
+        }
+    }
+}
+
 impl Ui {
     pub fn new(config_dir: std::path::PathBuf) -> Ui {
-        let sdl_context = sdl2::init().unwrap();
-        let video_subsystem = sdl_context.video().unwrap();
-        let audio_subsystem = sdl_context.audio().unwrap();
-        let joystick_subsystem = sdl_context.joystick().unwrap();
-        let controller_subsystem = sdl_context.game_controller().unwrap();
+        sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
 
         let config_file_path = config_dir.join("config.json");
         let config_file = std::fs::read(config_file_path.clone());
@@ -58,26 +64,27 @@ impl Ui {
         Ui {
             controllers: [
                 input::Controllers {
-                    game_controller: None,
-                    joystick: None,
+                    game_controller: std::ptr::null_mut(),
+                    joystick: std::ptr::null_mut(),
                     rumble: false,
                 },
                 input::Controllers {
-                    game_controller: None,
-                    joystick: None,
+                    game_controller: std::ptr::null_mut(),
+                    joystick: std::ptr::null_mut(),
                     rumble: false,
                 },
                 input::Controllers {
-                    game_controller: None,
-                    joystick: None,
+                    game_controller: std::ptr::null_mut(),
+                    joystick: std::ptr::null_mut(),
                     rumble: false,
                 },
                 input::Controllers {
-                    game_controller: None,
-                    joystick: None,
+                    game_controller: std::ptr::null_mut(),
+                    joystick: std::ptr::null_mut(),
                     rumble: false,
                 },
             ],
+            keyboard_state: std::ptr::null_mut(),
             config_file_path,
             config: config_map,
             save_type: vec![],
@@ -97,14 +104,15 @@ impl Ui {
                 mempak: (Vec::new(), false),
                 romsave: (serde_json::Map::new(), false),
             },
-            sdl_context: Some(sdl_context),
-            video_subsystem: Some(video_subsystem),
-            audio_subsystem: Some(audio_subsystem),
-            joystick_subsystem: Some(joystick_subsystem),
-            controller_subsystem: Some(controller_subsystem),
-            window: None,
-            audio_device: None,
-            pak_audio: None,
+            pak_audio: audio::PakAudio {
+                mempak: include_bytes!("../data/mempak.wav").to_vec(),
+                rumblepak: include_bytes!("../data/rumblepak.wav").to_vec(),
+            },
+            window: std::ptr::null_mut(),
+            audio_stream: std::ptr::null_mut(),
+            pak_audio_stream: std::ptr::null_mut(),
+            audio_freq: 0.0,
+            audio_device: 0,
         }
     }
 }

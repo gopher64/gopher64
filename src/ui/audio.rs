@@ -2,74 +2,101 @@ use crate::device;
 use crate::ui;
 
 pub struct PakAudio {
-    mempak: Vec<u8>,
-    rumblepak: Vec<u8>,
+    pub mempak: Vec<u8>,
+    pub rumblepak: Vec<u8>,
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
-    let desired_spec = sdl2::audio::AudioSpecDesired {
-        freq: Some(frequency as i32),
-        channels: Some(2),
-        samples: None,
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_AUDIO);
+
+    let audio_spec = sdl3_sys::audio::SDL_AudioSpec {
+        format: sdl3_sys::audio::SDL_AUDIO_S16LE,
+        freq: frequency as i32,
+        channels: 2,
     };
-    ui.audio_device = Some(
-        ui.audio_subsystem
-            .as_ref()
-            .unwrap()
-            .open_queue::<i16, _>(None, &desired_spec)
-            .unwrap(),
-    );
-    let audio_device = ui.audio_device.as_ref().unwrap();
-    audio_device.resume();
-
-    let mempak_audio = Box::new(sdl2::audio::AudioSpecWAV::load_wav_rw(
-        &mut sdl2::rwops::RWops::from_bytes(include_bytes!("../../data/mempak.wav"))
-            .expect("Could not mempak WAV file"),
-    ))
-    .expect("Could not load mempak WAV file");
-    let rumblepak_audio = Box::new(
-        sdl2::audio::AudioSpecWAV::load_wav_rw(
-            &mut sdl2::rwops::RWops::from_bytes(include_bytes!("../../data/rumblepak.wav"))
-                .expect("Could not load rumblepak WAV file"),
+    ui.audio_device = unsafe {
+        sdl3_sys::audio::SDL_OpenAudioDevice(
+            sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+            &audio_spec,
         )
-        .expect("Could not load rumblepak WAV file"),
-    );
+    };
+    if ui.audio_device == 0 {
+        panic!("Could not open audio device");
+    }
 
-    let cvt = sdl2::audio::AudioCVT::new(
-        mempak_audio.format,
-        mempak_audio.channels,
-        mempak_audio.freq,
-        audio_device.spec().format,
-        audio_device.spec().channels,
-        audio_device.spec().freq,
-    )
-    .expect("Could not create AudioCVT");
+    let mut dst = Default::default();
+    if !unsafe {
+        sdl3_sys::audio::SDL_GetAudioDeviceFormat(ui.audio_device, &mut dst, std::ptr::null_mut())
+    } {
+        panic!("Could not get audio device format");
+    }
 
-    ui.pak_audio = Some(PakAudio {
-        mempak: cvt.convert(mempak_audio.buffer().to_vec()),
-        rumblepak: cvt.convert(rumblepak_audio.buffer().to_vec()),
-    });
+    ui.audio_stream = unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&audio_spec, &dst) };
+    if ui.audio_stream.is_null() {
+        return;
+    }
+    if !unsafe { sdl3_sys::audio::SDL_BindAudioStream(ui.audio_device, ui.audio_stream) } {
+        panic!("Could not bind audio stream");
+    }
+
+    let wav_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
+        format: sdl3_sys::audio::SDL_AUDIO_S16LE,
+        freq: 24000,
+        channels: 1,
+    };
+
+    ui.pak_audio_stream = unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&wav_audio_spec, &dst) };
+    if !unsafe { sdl3_sys::audio::SDL_BindAudioStream(ui.audio_device, ui.pak_audio_stream) } {
+        panic!("Could not bind audio stream");
+    }
+
+    ui.audio_freq = audio_spec.freq as f64;
+}
+
+pub fn close(ui: &mut ui::Ui) {
+    unsafe {
+        if !ui.audio_stream.is_null() {
+            sdl3_sys::audio::SDL_DestroyAudioStream(ui.audio_stream);
+            ui.audio_stream = std::ptr::null_mut();
+        }
+        if !ui.pak_audio_stream.is_null() {
+            sdl3_sys::audio::SDL_DestroyAudioStream(ui.pak_audio_stream);
+            ui.pak_audio_stream = std::ptr::null_mut();
+        }
+        sdl3_sys::audio::SDL_CloseAudioDevice(ui.audio_device);
+        ui.audio_device = 0;
+    }
 }
 
 pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
+    if ui.pak_audio_stream.is_null() {
+        return;
+    }
+
     let sound;
     if pak == device::controller::PakType::RumblePak {
-        sound = &ui.pak_audio.as_ref().unwrap().rumblepak;
+        sound = &ui.pak_audio.rumblepak;
     } else if pak == device::controller::PakType::MemPak {
-        sound = &ui.pak_audio.as_ref().unwrap().mempak;
+        sound = &ui.pak_audio.mempak;
     } else {
         return;
     }
-    let audio_device = ui.audio_device.as_ref().unwrap();
-    let i16_buffer: Vec<i16> = sound
-        .chunks_exact(2)
-        .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]))
-        .collect();
-    audio_device.queue_audio(&i16_buffer).unwrap();
+    if !unsafe {
+        sdl3_sys::audio::SDL_PutAudioStreamData(
+            ui.pak_audio_stream,
+            sound.as_ptr() as *const std::ffi::c_void,
+            sound.len() as i32,
+        )
+    } {
+        panic!("Could not play audio");
+    }
 }
 
 pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
-    let audio_device = device.ui.audio_device.as_ref().unwrap();
+    if device.ui.audio_stream.is_null() {
+        return;
+    }
+
     let mut primary_buffer: Vec<i16> = vec![0; length as usize / 2];
     let mut i = 0;
     while i < length as usize / 2 {
@@ -83,16 +110,33 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
         i += 2;
     }
 
-    let audio_queued = audio_device.size() as f64;
-    let acceptable_latency = (audio_device.spec().freq as f64 * 0.2) * 4.0;
-    let min_latency = (audio_device.spec().freq as f64 * 0.02) * 4.0;
+    let audio_queued =
+        unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(device.ui.audio_stream) } as f64;
+    let acceptable_latency = (device.ui.audio_freq * 0.2) * 4.0;
+    let min_latency = (device.ui.audio_freq * 0.02) * 4.0;
 
     if audio_queued < min_latency {
-        let silence_buffer: Vec<i16> = vec![0; ((min_latency - audio_queued) * 2.0) as usize & !1];
-        audio_device.queue_audio(&silence_buffer).unwrap();
+        let silence_buffer: Vec<u8> = vec![0; (min_latency - audio_queued) as usize & !3];
+        if !unsafe {
+            sdl3_sys::audio::SDL_PutAudioStreamData(
+                device.ui.audio_stream,
+                silence_buffer.as_ptr() as *const std::ffi::c_void,
+                silence_buffer.len() as i32,
+            )
+        } {
+            panic!("Could not play audio");
+        }
     }
 
-    if audio_queued < acceptable_latency {
-        audio_device.queue_audio(&primary_buffer).unwrap();
+    if audio_queued < acceptable_latency
+        && !unsafe {
+            sdl3_sys::audio::SDL_PutAudioStreamData(
+                device.ui.audio_stream,
+                primary_buffer.as_ptr() as *const std::ffi::c_void,
+                primary_buffer.len() as i32 * 2,
+            )
+        }
+    {
+        panic!("Could not play audio");
     }
 }

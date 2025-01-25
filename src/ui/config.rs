@@ -5,9 +5,9 @@ pub struct InputProfile {
     pub keys: [(bool, i32); ui::input::PROFILE_SIZE],
     pub controller_buttons: [(bool, i32); ui::input::PROFILE_SIZE],
     pub controller_axis: [(bool, i32, i16); ui::input::PROFILE_SIZE],
-    pub joystick_buttons: [(bool, u32); ui::input::PROFILE_SIZE],
-    pub joystick_hat: [(bool, u32, u8); ui::input::PROFILE_SIZE],
-    pub joystick_axis: [(bool, u32, i16); ui::input::PROFILE_SIZE],
+    pub joystick_buttons: [(bool, i32); ui::input::PROFILE_SIZE],
+    pub joystick_hat: [(bool, i32, u8); ui::input::PROFILE_SIZE],
+    pub joystick_axis: [(bool, i32, i16); ui::input::PROFILE_SIZE],
     pub dinput: bool,
 }
 
