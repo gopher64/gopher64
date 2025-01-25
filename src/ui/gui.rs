@@ -133,7 +133,7 @@ impl GopherEguiApp {
 }
 
 fn save_config(game_ui: &mut ui::Ui, save_config_items: SaveConfig) {
-    let controller_paths = get_controller_paths(&game_ui);
+    let controller_paths = get_controller_paths(game_ui);
     for (pos, item) in save_config_items.selected_controller.iter().enumerate() {
         if *item != -1 {
             game_ui.config.input.controller_assignment[pos] =
