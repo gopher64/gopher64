@@ -17,7 +17,7 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
     ui.audio_device = unsafe {
         sdl3_sys::audio::SDL_OpenAudioDevice(
             sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-            std::ptr::null(),
+            &audio_spec,
         )
     };
     if ui.audio_device == 0 {
