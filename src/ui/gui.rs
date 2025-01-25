@@ -1,3 +1,5 @@
+use core::panic;
+
 use crate::device;
 use crate::netplay;
 use crate::ui;
@@ -51,17 +53,19 @@ pub fn get_controller_names() -> Vec<String> {
 
     let mut joystick_count = 0;
     let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
-    if !joysticks.is_null() {
-        for offset in 0..joystick_count as isize {
-            let name = unsafe {
-                std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(
-                    *(joysticks.offset(offset)),
-                ))
-            };
-            controllers.push(name.to_string_lossy().to_string());
-        }
-        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) };
+    if joysticks.is_null() {
+        panic!("Could not get joystick list");
     }
+    for offset in 0..joystick_count as isize {
+        let name = unsafe {
+            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(
+                *(joysticks.offset(offset)),
+            ))
+        };
+        controllers.push(name.to_string_lossy().to_string());
+    }
+    unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) };
+
     controllers
 }
 
@@ -70,19 +74,21 @@ pub fn get_controller_paths() -> Vec<String> {
 
     let mut joystick_count = 0;
     let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut joystick_count) };
-    if !joysticks.is_null() {
-        for offset in 0..joystick_count as isize {
-            let path = unsafe {
-                std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
-                    *(joysticks.offset(offset)),
-                ))
-                .to_string_lossy()
-                .to_string()
-            };
-            controller_paths.push(path);
-        }
-        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) };
+    if joysticks.is_null() {
+        panic!("Could not get joystick list");
     }
+    for offset in 0..joystick_count as isize {
+        let path = unsafe {
+            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
+                *(joysticks.offset(offset)),
+            ))
+            .to_string_lossy()
+            .to_string()
+        };
+        controller_paths.push(path);
+    }
+    unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) };
+
     controller_paths
 }
 
