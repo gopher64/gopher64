@@ -20,7 +20,7 @@ pub struct Ui {
     pub window: *mut sdl3_sys::video::SDL_Window,
     pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub pak_audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
-    pub audio_spec: Option<sdl3_sys::audio::SDL_AudioSpec>,
+    pub audio_freq: f64,
 }
 
 impl Drop for Ui {
@@ -110,7 +110,7 @@ impl Ui {
             window: std::ptr::null_mut(),
             audio_stream: std::ptr::null_mut(),
             pak_audio_stream: std::ptr::null_mut(),
-            audio_spec: None,
+            audio_freq: 0.0,
         }
     }
 }

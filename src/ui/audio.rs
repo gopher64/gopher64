@@ -30,27 +30,12 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         panic!("Could not resume audio stream");
     }
 
-    let mut wav_audio_spec: sdl3_sys::audio::SDL_AudioSpec = Default::default();
-    for item in [&mut ui.pak_audio.mempak, &mut ui.pak_audio.rumblepak] {
-        let mut wav_length = item.len() as u32;
+    let wav_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
+        format: sdl3_sys::audio::SDL_AUDIO_S16LE,
+        freq: 24000,
+        channels: 2,
+    };
 
-        let mut wav_buf_ptr: *mut u8 = std::ptr::null_mut();
-        unsafe {
-            if !sdl3_sys::audio::SDL_LoadWAV_IO(
-                sdl3_sys::iostream::SDL_IOFromConstMem(
-                    item.as_ptr() as *const std::ffi::c_void,
-                    wav_length as usize,
-                ),
-                true,
-                &mut wav_audio_spec,
-                &mut wav_buf_ptr,
-                &mut wav_length,
-            ) {
-                panic!("Could not load WAV file");
-            }
-            sdl3_sys::stdinc::SDL_free(wav_buf_ptr as *mut std::ffi::c_void);
-        }
-    }
     ui.pak_audio_stream = unsafe {
         sdl3_sys::audio::SDL_OpenAudioDeviceStream(
             sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
@@ -63,7 +48,7 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         panic!("Could not resume pak audio stream");
     }
 
-    ui.audio_spec = Some(audio_spec);
+    ui.audio_freq = audio_spec.freq as f64;
 }
 
 pub fn close(ui: &mut ui::Ui) {
@@ -123,8 +108,8 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
 
     let audio_queued =
         unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(device.ui.audio_stream) } as f64;
-    let acceptable_latency = (device.ui.audio_spec.unwrap().freq as f64 * 0.2) * 4.0;
-    let min_latency = (device.ui.audio_spec.unwrap().freq as f64 * 0.02) * 4.0;
+    let acceptable_latency = (device.ui.audio_freq * 0.2) * 4.0;
+    let min_latency = (device.ui.audio_freq * 0.02) * 4.0;
 
     if audio_queued < min_latency {
         let silence_buffer: Vec<u8> = vec![0; (min_latency - audio_queued) as usize & !3];
