@@ -751,12 +751,10 @@ pub fn init(ui: &mut ui::Ui) {
                         ui.controllers[i].game_controller = gamepad;
                         let properties =
                             unsafe { sdl3_sys::gamepad::SDL_GetGamepadProperties(gamepad) };
-                        let rumble_prop =
-                            std::ffi::CString::new("SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN").unwrap();
                         ui.controllers[i].rumble = unsafe {
                             sdl3_sys::properties::SDL_GetBooleanProperty(
                                 properties,
-                                rumble_prop.as_ptr(),
+                                sdl3_sys::gamepad::SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN,
                                 false,
                             )
                         };
@@ -769,12 +767,10 @@ pub fn init(ui: &mut ui::Ui) {
                         ui.controllers[i].joystick = joystick;
                         let properties =
                             unsafe { sdl3_sys::joystick::SDL_GetJoystickProperties(joystick) };
-                        let rumble_prop =
-                            std::ffi::CString::new("SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN").unwrap();
                         ui.controllers[i].rumble = unsafe {
                             sdl3_sys::properties::SDL_GetBooleanProperty(
                                 properties,
-                                rumble_prop.as_ptr(),
+                                sdl3_sys::joystick::SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN,
                                 false,
                             )
                         };
