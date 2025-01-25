@@ -220,15 +220,21 @@ pub fn init(
     gui_ctx: egui::Context,
 ) -> Netplay {
     peer_addr.set_port(session.port.unwrap() as u16);
-    let udp_socket = if peer_addr.is_ipv4() {
-        std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
-            .expect("couldn't bind to address")
+    let udp_socket;
+    if peer_addr.is_ipv4() {
+        udp_socket = std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
+            .expect("couldn't bind to address");
+        socket2::SockRef::from(&udp_socket)
+            .set_tos(CS4 << 2)
+            .unwrap();
     } else {
-        std::net::UdpSocket::bind((std::net::Ipv6Addr::UNSPECIFIED, 0))
-            .expect("couldn't bind to address")
+        udp_socket = std::net::UdpSocket::bind((std::net::Ipv6Addr::UNSPECIFIED, 0))
+            .expect("couldn't bind to address");
+        socket2::SockRef::from(&udp_socket)
+            .set_tclass_v6(CS4 << 2)
+            .unwrap();
     };
-    let socket_ref = socket2::SockRef::from(&udp_socket);
-    socket_ref.set_tos(CS4 << 2).unwrap();
+
     udp_socket.connect(peer_addr).unwrap();
     udp_socket.set_nonblocking(true).unwrap();
 
