@@ -106,6 +106,7 @@ async fn main() {
     let args_as_strings: Vec<String> = std::env::args().collect();
     let args_count = args_as_strings.len();
     if args_count > 1 {
+        ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
         let mut device = device::Device::new(config_dir);
 
         if args.clear_input_bindings {
