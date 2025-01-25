@@ -82,7 +82,8 @@ jobs:
           sudo dpkg --add-architecture arm64
           sudo apt-get update
           sudo apt-get -y dist-upgrade
-          sudo apt-get -y install build-essential:arm64 git:arm64 make:arm64 \
+          sudo apt-get -y install aptitude
+          sudo aptitude -y install build-essential:arm64 git:arm64 make:arm64 \
           pkg-config:arm64 cmake:arm64 ninja-build:arm64 gnome-desktop-testing:arm64 libasound2-dev:arm64 libpulse-dev:arm64 \
           libaudio-dev:arm64 libjack-dev:arm64 libsndio-dev:arm64 libx11-dev:arm64 libxext-dev:arm64 \
           libxrandr-dev:arm64 libxcursor-dev:arm64 libxfixes-dev:arm64 libxi-dev:arm64 libxss-dev:arm64 \
