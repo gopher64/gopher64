@@ -1,5 +1,3 @@
-use core::panic;
-
 use crate::device;
 use crate::netplay;
 use crate::ui;
