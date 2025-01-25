@@ -120,7 +120,7 @@ async fn main() {
             }
         }
         if args.list_controllers {
-            let controllers = gui::get_controller_names();
+            let controllers = gui::get_controller_names(&device.ui);
             for (i, controller) in controllers.iter().enumerate() {
                 println!("Controller {}: {}", i, controller);
             }

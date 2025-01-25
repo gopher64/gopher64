@@ -22,11 +22,14 @@ pub struct Ui {
     pub pak_audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub audio_freq: f64,
     pub audio_device: u32,
+    pub num_joysticks: i32,
+    pub joysticks: *mut sdl3_sys::joystick::SDL_JoystickID,
 }
 
 impl Drop for Ui {
     fn drop(&mut self) {
         unsafe {
+            sdl3_sys::stdinc::SDL_free(self.joysticks as *mut std::ffi::c_void);
             sdl3_sys::init::SDL_Quit();
         }
         write_config(self);
@@ -50,6 +53,11 @@ pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
 impl Ui {
     pub fn new(config_dir: std::path::PathBuf) -> Ui {
         sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+        let mut num_joysticks = 0;
+        let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
+        if joysticks.is_null() {
+            panic!("Could not get joystick list");
+        }
 
         let config_file_path = config_dir.join("config.json");
         let config_file = std::fs::read(config_file_path.clone());
@@ -113,6 +121,8 @@ impl Ui {
             pak_audio_stream: std::ptr::null_mut(),
             audio_freq: 0.0,
             audio_device: 0,
+            num_joysticks,
+            joysticks,
         }
     }
 }
