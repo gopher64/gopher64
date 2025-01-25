@@ -495,7 +495,6 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     let mut new_controller_axis = [(false, 0i32, 0); PROFILE_SIZE];
 
     let mut last_joystick_axis_result = (false, 0, 0);
-    let mut last_controller_axis_result = (false, 0, 0);
     for (key, value) in key_labels.iter() {
         let mut event: sdl3_sys::events::SDL_Event = Default::default();
         while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {} // clear events
@@ -528,9 +527,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
                     let axis = unsafe { event.gaxis.axis };
                     if !open_controllers.is_empty() && axis_value.saturating_abs() > i16::MAX / 2 {
                         let result = (true, axis as i32, axis_value / axis_value.saturating_abs());
-                        if result != last_controller_axis_result {
+                        if result != last_joystick_axis_result {
                             new_controller_axis[*value] = result;
-                            last_controller_axis_result = result;
+                            last_joystick_axis_result = result;
                             key_set = true
                         }
                     }
