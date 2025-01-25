@@ -14,38 +14,40 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         freq: frequency as i32,
         channels: 2,
     };
-    ui.audio_stream = unsafe {
-        sdl3_sys::audio::SDL_OpenAudioDeviceStream(
+    ui.audio_device = unsafe {
+        sdl3_sys::audio::SDL_OpenAudioDevice(
             sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-            &audio_spec,
-            None,
-            std::ptr::null_mut(),
+            std::ptr::null(),
         )
     };
+    if ui.audio_device == 0 {
+        panic!("Could not open audio device");
+    }
+
+    let mut dst = Default::default();
+    if !unsafe {
+        sdl3_sys::audio::SDL_GetAudioDeviceFormat(ui.audio_device, &mut dst, std::ptr::null_mut())
+    } {
+        panic!("Could not get audio device format");
+    }
+
+    ui.audio_stream = unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&audio_spec, &dst) };
     if ui.audio_stream.is_null() {
         return;
     }
-
-    if !unsafe { sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio_stream) } {
-        panic!("Could not resume audio stream");
+    if !unsafe { sdl3_sys::audio::SDL_BindAudioStream(ui.audio_device, ui.audio_stream) } {
+        panic!("Could not bind audio stream");
     }
 
     let wav_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
         format: sdl3_sys::audio::SDL_AUDIO_S16LE,
         freq: 24000,
-        channels: 2,
+        channels: 1,
     };
 
-    ui.pak_audio_stream = unsafe {
-        sdl3_sys::audio::SDL_OpenAudioDeviceStream(
-            sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-            &wav_audio_spec,
-            None,
-            std::ptr::null_mut(),
-        )
-    };
-    if !unsafe { sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.pak_audio_stream) } {
-        panic!("Could not resume pak audio stream");
+    ui.pak_audio_stream = unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&wav_audio_spec, &dst) };
+    if !unsafe { sdl3_sys::audio::SDL_BindAudioStream(ui.audio_device, ui.pak_audio_stream) } {
+        panic!("Could not bind audio stream");
     }
 
     ui.audio_freq = audio_spec.freq as f64;
@@ -61,6 +63,8 @@ pub fn close(ui: &mut ui::Ui) {
             sdl3_sys::audio::SDL_DestroyAudioStream(ui.pak_audio_stream);
             ui.pak_audio_stream = std::ptr::null_mut();
         }
+        sdl3_sys::audio::SDL_CloseAudioDevice(ui.audio_device);
+        ui.audio_device = 0;
     }
 }
 
