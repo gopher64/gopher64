@@ -230,6 +230,7 @@ pub fn init(
     } else {
         udp_socket = std::net::UdpSocket::bind((std::net::Ipv6Addr::UNSPECIFIED, 0))
             .expect("couldn't bind to address");
+        #[cfg(not(target_os = "windows"))]
         socket2::SockRef::from(&udp_socket)
             .set_tclass_v6(CS4 << 2)
             .unwrap();
