@@ -52,7 +52,7 @@ impl Config {
         if config_file.is_ok() {
             let result = serde_json::from_slice(config_file.unwrap().as_ref());
             if let Ok(result) = result {
-                result
+                return result;
             }
         }
         let mut input_profiles = std::collections::HashMap::new();
