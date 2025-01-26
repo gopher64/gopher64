@@ -158,21 +158,4 @@ fn main() {
         simd_build.include(".");
         simd_build.compile("simd");
     }
-
-    if os == "macos" {
-        let moltenvk_path = out_path.join("MoltenVK").join("v1.2.11");
-        if !moltenvk_path.join("libMoltenVK.a").exists() {
-            if let Ok(response) =
-                reqwest::blocking::get("https://github.com/gopher64/compat/raw/refs/heads/main/MoltenVK/v1.2.11/libMoltenVK.a")
-            {
-                std::fs::create_dir_all(moltenvk_path.clone()).unwrap();
-                std::fs::write(moltenvk_path.join("libMoltenVK.a"), response.bytes().unwrap()).unwrap();
-            } else {
-                panic!("Failed to download MoltenVK");
-            }
-        }
-        println!("cargo:rustc-link-search={}", moltenvk_path.display());
-
-        println!("cargo:rustc-link-lib=static=MoltenVK");
-    }
 }
