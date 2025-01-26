@@ -3,7 +3,6 @@ use crate::netplay;
 use crate::ui;
 use eframe::egui;
 
-use super::config;
 pub mod gui_netplay;
 
 pub struct GopherEguiApp {
@@ -62,7 +61,7 @@ pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
     controllers
 }
 
-pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
+fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
     let mut controller_paths: Vec<String> = vec![];
 
     for offset in 0..game_ui.num_joysticks as isize {
@@ -132,7 +131,7 @@ impl GopherEguiApp {
 }
 
 fn save_config(
-    config: &mut config::Config,
+    config: &mut ui::config::Config,
     controller_paths: Vec<String>,
     save_config_items: SaveConfig,
 ) {
@@ -165,7 +164,7 @@ impl Drop for GopherEguiApp {
             fullscreen: self.fullscreen,
             emulate_vru: self.emulate_vru,
         };
-        let mut config = config::Config::new();
+        let mut config = ui::config::Config::new();
         save_config(
             &mut config,
             self.controller_paths.clone(),
