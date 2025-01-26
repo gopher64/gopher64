@@ -86,8 +86,7 @@ pub fn dma_read(
 
             device.ui.saves.romsave.0.insert(
                 (cart_addr + i).to_string(),
-                serde_json::to_value(device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap])
-                    .unwrap(),
+                device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
             );
         }
     }
@@ -139,8 +138,7 @@ pub fn load_rom_save(device: &mut device::Device) {
         return;
     }
     for (key, value) in device.ui.saves.romsave.0.iter() {
-        device.cart.rom[key.parse::<usize>().unwrap()] =
-            serde_json::from_value(value.clone()).unwrap()
+        device.cart.rom[key.parse::<usize>().unwrap()] = *value
     }
 }
 

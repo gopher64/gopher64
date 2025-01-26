@@ -142,7 +142,7 @@ impl Ui {
                 sram: (Vec::new(), false),
                 flash: (Vec::new(), false),
                 mempak: (Vec::new(), false),
-                romsave: (serde_json::Map::new(), false),
+                romsave: (std::collections::HashMap::new(), false),
             },
             pak_audio: audio::PakAudio {
                 mempak: include_bytes!("../data/mempak.wav").to_vec(),

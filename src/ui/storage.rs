@@ -27,7 +27,7 @@ pub struct Saves {
     pub sram: (Vec<u8>, bool),
     pub flash: (Vec<u8>, bool),
     pub mempak: (Vec<u8>, bool),
-    pub romsave: (serde_json::Map<String, serde_json::Value>, bool),
+    pub romsave: (std::collections::HashMap<String, u8>, bool),
 }
 
 fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
@@ -142,7 +142,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             // can't do romsaves with the current netplay implementation
             let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
             if romsave.is_ok() {
-                ui.saves.romsave.0 = serde_json::from_slice(romsave.unwrap().as_ref()).unwrap();
+                ui.saves.romsave.0 = postcard::from_bytes(romsave.unwrap().as_ref()).unwrap();
             }
         }
     }
@@ -203,8 +203,8 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
 }
 
 fn write_rom_save(ui: &ui::Ui) {
-    let f = std::fs::File::create(ui.paths.romsave_file_path.clone()).unwrap();
-    serde_json::to_writer(f, &ui.saves.romsave.0).unwrap();
+    let data = postcard::to_stdvec(&ui.saves.romsave.0).unwrap();
+    std::fs::write(ui.paths.romsave_file_path.clone(), data).unwrap();
 }
 
 pub fn write_saves(ui: &ui::Ui, netplay: &Option<netplay::Netplay>) {
