@@ -3,6 +3,7 @@
 #include "rdp_device.hpp"
 #include "interface.hpp"
 #include "spirv.hpp"
+#include <SDL3/SDL_vulkan.h>
 
 using namespace Vulkan;
 
@@ -175,7 +176,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_sc
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
 	wsi->set_backbuffer_srgb(false);
 	Context::SystemHandles handles = {};
-	if (!::Vulkan::Context::init_loader(nullptr))
+	if (!::Vulkan::Context::init_loader((PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr()))
 	{
 		rdp_close();
 	}
