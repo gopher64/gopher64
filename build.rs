@@ -158,4 +158,18 @@ fn main() {
         simd_build.include(".");
         simd_build.compile("simd");
     }
+
+    if os == "macos" {
+        let moltenvk_path = out_path.join("MoltenVK").join("v1.2.11");
+        if !moltenvk_path.join("libMoltenVK.a").exists() {
+            sevenz_rust::decompress_file(
+                "src/compat/MoltenVK/v1.2.11/libMoltenVK.7z",
+                moltenvk_path.clone(),
+            )
+            .expect("Failed to extract MoltenVK");
+        }
+        println!("cargo:rustc-link-search={}", moltenvk_path.display());
+
+        println!("cargo:rustc-link-lib=static=MoltenVK");
+    }
 }

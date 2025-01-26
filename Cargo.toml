@@ -41,6 +41,7 @@ features = ["xdg-portal","tokio"]
 [build-dependencies]
 winres = "0.1"
 bindgen = "0.71"
+sevenz-rust = "0.6"
 cc = { version = "1.2", features = ["parallel"] }
 
 [profile.release]
