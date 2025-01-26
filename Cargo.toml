@@ -41,8 +41,12 @@ features = ["xdg-portal","tokio"]
 [build-dependencies]
 winres = "0.1"
 bindgen = "0.71"
-sevenz-rust = "0.6"
 cc = { version = "1.2", features = ["parallel"] }
+
+[build-dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["http2","rustls-tls","charset","blocking"]
 
 [profile.release]
 lto = true
