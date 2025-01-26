@@ -85,7 +85,7 @@ pub fn dma_read(
                 device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
 
             device.ui.saves.romsave.0.insert(
-                (cart_addr + i).to_string(),
+                cart_addr + i,
                 device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
             );
         }
@@ -138,7 +138,7 @@ pub fn load_rom_save(device: &mut device::Device) {
         return;
     }
     for (key, value) in device.ui.saves.romsave.0.iter() {
-        device.cart.rom[key.parse::<usize>().unwrap()] = *value
+        device.cart.rom[*key as usize] = *value
     }
 }
 

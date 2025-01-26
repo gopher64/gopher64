@@ -27,7 +27,7 @@ pub struct Saves {
     pub sram: (Vec<u8>, bool),
     pub flash: (Vec<u8>, bool),
     pub mempak: (Vec<u8>, bool),
-    pub romsave: (std::collections::HashMap<String, u8>, bool),
+    pub romsave: (std::collections::HashMap<u32, u8>, bool),
 }
 
 fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
