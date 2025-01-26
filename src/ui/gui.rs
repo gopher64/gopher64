@@ -248,6 +248,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let peer_addr;
     let session;
     let player_number;
+    let cache_dir = app.dirs.cache_dir.clone();
 
     if app.netplay.player_name.is_empty() {
         task = Some(rfd::AsyncFileDialog::new().pick_file());
@@ -295,8 +296,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
         let file = if !netplay { task.unwrap().await } else { None };
 
         if file.is_some() || netplay {
-            let mut device = device::Device::new();
-            let running_file = device.ui.dirs.cache_dir.join("game_running");
+            let running_file = cache_dir.join("game_running");
             if running_file.exists() {
                 println!("Game already running");
                 return;
@@ -305,6 +305,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             if result.is_err() {
                 panic!("could not create running file: {}", result.err().unwrap())
             }
+            let mut device = device::Device::new();
 
             let save_config_items = SaveConfig {
                 selected_controller,
