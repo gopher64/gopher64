@@ -168,7 +168,7 @@ fn main() {
             )
             .expect("Failed to extract MoltenVK");
         }
-        println!("cargo:rustc-link-search={}", moltenvk_path.display());
+        //println!("cargo:rustc-link-search={}", moltenvk_path.display());
 
         //println!("cargo:rustc-link-lib=static=MoltenVK");
     }
