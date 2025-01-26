@@ -2,6 +2,7 @@ use crate::device;
 use crate::netplay;
 use crate::ui;
 use eframe::egui;
+
 pub mod gui_netplay;
 
 pub struct GopherEguiApp {
@@ -13,6 +14,7 @@ pub struct GopherEguiApp {
     selected_profile: [String; 4],
     input_profiles: Vec<String>,
     controller_enabled: [bool; 4],
+    controller_paths: Vec<String>,
     upscale: bool,
     integer_scaling: bool,
     fullscreen: bool,
@@ -39,7 +41,7 @@ struct SaveConfig {
 fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
     let mut profiles = vec![];
     for key in game_ui.config.input.input_profiles.keys() {
-        profiles.push((*key).clone())
+        profiles.push(key.clone())
     }
     profiles
 }
@@ -59,7 +61,7 @@ pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
     controllers
 }
 
-pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
+fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
     let mut controller_paths: Vec<String> = vec![];
 
     for offset in 0..game_ui.num_joysticks as isize {
@@ -113,6 +115,7 @@ impl GopherEguiApp {
             emulate_vru: game_ui.config.input.emulate_vru,
             show_vru_dialog: false,
             dinput: false,
+            controller_paths,
             netplay_error_receiver: None,
             vru_window_receiver: None,
             vru_word_notifier: None,
@@ -127,29 +130,31 @@ impl GopherEguiApp {
     }
 }
 
-fn save_config(game_ui: &mut ui::Ui, save_config_items: SaveConfig) {
-    let controller_paths = get_controller_paths(game_ui);
+fn save_config(
+    config: &mut ui::config::Config,
+    controller_paths: Vec<String>,
+    save_config_items: SaveConfig,
+) {
     for (pos, item) in save_config_items.selected_controller.iter().enumerate() {
         if *item != -1 {
-            game_ui.config.input.controller_assignment[pos] =
+            config.input.controller_assignment[pos] =
                 Some(controller_paths[*item as usize].clone());
         } else {
-            game_ui.config.input.controller_assignment[pos] = None
+            config.input.controller_assignment[pos] = None
         }
     }
 
-    game_ui.config.input.input_profile_binding = save_config_items.selected_profile;
-    game_ui.config.input.controller_enabled = save_config_items.controller_enabled;
+    config.input.input_profile_binding = save_config_items.selected_profile;
+    config.input.controller_enabled = save_config_items.controller_enabled;
 
-    game_ui.config.video.upscale = save_config_items.upscale;
-    game_ui.config.video.integer_scaling = save_config_items.integer_scaling;
-    game_ui.config.video.fullscreen = save_config_items.fullscreen;
-    game_ui.config.input.emulate_vru = save_config_items.emulate_vru;
+    config.video.upscale = save_config_items.upscale;
+    config.video.integer_scaling = save_config_items.integer_scaling;
+    config.video.fullscreen = save_config_items.fullscreen;
+    config.input.emulate_vru = save_config_items.emulate_vru;
 }
 
 impl Drop for GopherEguiApp {
     fn drop(&mut self) {
-        let mut game_ui = ui::Ui::new();
         let save_config_items = SaveConfig {
             selected_controller: self.selected_controller,
             selected_profile: self.selected_profile.clone(),
@@ -159,7 +164,12 @@ impl Drop for GopherEguiApp {
             fullscreen: self.fullscreen,
             emulate_vru: self.emulate_vru,
         };
-        save_config(&mut game_ui, save_config_items);
+        let mut config = ui::config::Config::new();
+        save_config(
+            &mut config,
+            self.controller_paths.clone(),
+            save_config_items,
+        );
     }
 }
 
@@ -253,6 +263,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let session;
     let player_number;
     let cache_dir = app.dirs.cache_dir.clone();
+    let controller_paths = app.controller_paths.clone();
 
     if app.netplay.player_name.is_empty() {
         task = Some(rfd::AsyncFileDialog::new().pick_file());
@@ -320,7 +331,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 fullscreen,
                 emulate_vru,
             };
-            save_config(&mut device.ui, save_config_items);
+            save_config(&mut device.ui.config, controller_paths, save_config_items);
 
             if netplay {
                 device.netplay = Some(netplay::init(
@@ -346,7 +357,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     device::run_game(rom_contents, &mut device, fullscreen);
                 }
             }
-            let result = std::fs::remove_file(running_file.clone());
+            let result = std::fs::remove_file(running_file);
             if result.is_err() {
                 panic!("could not remove running file: {}", result.err().unwrap())
             }

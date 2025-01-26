@@ -347,7 +347,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
 fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
     if app.netplay.have_sessions.is_some()
-        && app.netplay.server != app.netplay.have_sessions.as_ref().unwrap().clone()
+        && app.netplay.server != *app.netplay.have_sessions.as_ref().unwrap()
     {
         // User has changed the server
         app.netplay.have_sessions = None;

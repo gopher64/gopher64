@@ -68,7 +68,7 @@ struct Args {
 async fn main() {
     let dirs = ui::get_dirs();
 
-    let mut result = std::fs::create_dir_all(dirs.config_dir.clone());
+    let mut result = std::fs::create_dir_all(dirs.config_dir);
     if result.is_err() {
         panic!("could not create config dir: {}", result.err().unwrap())
     }
@@ -76,7 +76,7 @@ async fn main() {
     if result.is_err() {
         panic!("could not create cache dir: {}", result.err().unwrap())
     }
-    result = std::fs::create_dir_all(dirs.data_dir.clone().join("saves"));
+    result = std::fs::create_dir_all(dirs.data_dir.join("saves"));
     if result.is_err() {
         panic!("could not create data dir: {}", result.err().unwrap())
     }
