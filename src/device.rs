@@ -47,12 +47,7 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub fn run_game(
-    rom_contents: Vec<u8>,
-    data_dir: std::path::PathBuf,
-    device: &mut Device,
-    fullscreen: bool,
-) {
+pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
     cart_rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
@@ -73,7 +68,7 @@ pub fn run_game(
     vi::init(device);
     cpu::init(device);
 
-    ui::storage::init(&mut device.ui, data_dir);
+    ui::storage::init(&mut device.ui);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
     cart_rom::load_rom_save(device);
 
@@ -184,7 +179,7 @@ pub struct Device {
 }
 
 impl Device {
-    pub fn new(config_dir: std::path::PathBuf) -> Device {
+    pub fn new() -> Device {
         let mut byte_swap: usize = 0;
         let test: [u8; 4] = [1, 2, 3, 4];
         // if the host computer is little endian, that means the RDRAM will be stored as little endian
@@ -194,7 +189,7 @@ impl Device {
         }
         Device {
             netplay: None,
-            ui: ui::Ui::new(config_dir),
+            ui: ui::Ui::new(),
             byte_swap,
             cpu: cpu::Cpu {
                 cop0: cop0::Cop0 {

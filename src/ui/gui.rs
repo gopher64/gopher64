@@ -5,9 +5,7 @@ use eframe::egui;
 pub mod gui_netplay;
 
 pub struct GopherEguiApp {
-    config_dir: std::path::PathBuf,
-    cache_dir: std::path::PathBuf,
-    data_dir: std::path::PathBuf,
+    dirs: ui::Dirs,
     configure_profile: bool,
     profile_name: String,
     controller_names: Vec<String>,
@@ -79,14 +77,9 @@ pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
 }
 
 impl GopherEguiApp {
-    pub fn new(
-        cc: &eframe::CreationContext<'_>,
-        config_dir: std::path::PathBuf,
-        cache_dir: std::path::PathBuf,
-        data_dir: std::path::PathBuf,
-    ) -> GopherEguiApp {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> GopherEguiApp {
         add_japanese_font(&cc.egui_ctx);
-        let game_ui = ui::Ui::new(config_dir.clone());
+        let game_ui = ui::Ui::new();
         let controller_paths = get_controller_paths(&game_ui);
 
         let mut selected_controller = [-1, -1, -1, -1];
@@ -107,9 +100,6 @@ impl GopherEguiApp {
             }
         }
         GopherEguiApp {
-            cache_dir: cache_dir.clone(),
-            config_dir: config_dir.clone(),
-            data_dir: data_dir.clone(),
             configure_profile: false,
             profile_name: "".to_string(),
             selected_profile: game_ui.config.input.input_profile_binding.clone(),
@@ -128,6 +118,11 @@ impl GopherEguiApp {
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
             netplay: Default::default(),
+            dirs: ui::Dirs {
+                config_dir: game_ui.dirs.config_dir.clone(),
+                cache_dir: game_ui.dirs.cache_dir.clone(),
+                data_dir: game_ui.dirs.data_dir.clone(),
+            },
         }
     }
 }
@@ -154,7 +149,7 @@ fn save_config(game_ui: &mut ui::Ui, save_config_items: SaveConfig) {
 
 impl Drop for GopherEguiApp {
     fn drop(&mut self) {
-        let mut game_ui = ui::Ui::new(self.config_dir.clone());
+        let mut game_ui = ui::Ui::new();
         let save_config_items = SaveConfig {
             selected_controller: self.selected_controller,
             selected_profile: self.selected_profile.clone(),
@@ -181,10 +176,9 @@ fn configure_profile(app: &mut GopherEguiApp, ctx: &egui::Context) {
             ui.horizontal(|ui| {
                 if ui.button("Configure Profile").clicked() {
                     let profile_name = app.profile_name.clone();
-                    let config_dir = app.config_dir.clone();
                     let dinput = app.dinput;
                     tokio::spawn(async move {
-                        let mut game_ui = ui::Ui::new(config_dir);
+                        let mut game_ui = ui::Ui::new();
                         ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
                     });
                     app.configure_profile = false;
@@ -255,12 +249,10 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let integer_scaling = app.integer_scaling;
     let fullscreen = app.fullscreen;
     let emulate_vru = app.emulate_vru;
-    let config_dir = app.config_dir.clone();
-    let cache_dir = app.cache_dir.clone();
-    let data_dir = app.data_dir.clone();
     let peer_addr;
     let session;
     let player_number;
+    let cache_dir = app.dirs.cache_dir.clone();
 
     if app.netplay.player_name.is_empty() {
         task = Some(rfd::AsyncFileDialog::new().pick_file());
@@ -317,7 +309,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             if result.is_err() {
                 panic!("could not create running file: {}", result.err().unwrap())
             }
-            let mut device = device::Device::new(config_dir);
+            let mut device = device::Device::new();
 
             let save_config_items = SaveConfig {
                 selected_controller,
@@ -338,7 +330,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     netplay_error_notifier,
                     gui_ctx,
                 ));
-                device::run_game(rom_contents, data_dir, &mut device, fullscreen);
+                device::run_game(rom_contents, &mut device, fullscreen);
                 netplay::close(&mut device);
             } else {
                 if emulate_vru {
@@ -351,7 +343,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if rom_contents.is_empty() {
                     println!("Could not read rom file");
                 } else {
-                    device::run_game(rom_contents, data_dir, &mut device, fullscreen);
+                    device::run_game(rom_contents, &mut device, fullscreen);
                 }
             }
             let result = std::fs::remove_file(running_file.clone());
@@ -403,7 +395,7 @@ impl eframe::App for GopherEguiApp {
                     }
 
                     if ui.button("Netplay: Create Session").clicked()
-                        && !self.cache_dir.join("game_running").exists()
+                        && !self.dirs.cache_dir.join("game_running").exists()
                     {
                         self.netplay.create = true;
                     }
@@ -411,13 +403,13 @@ impl eframe::App for GopherEguiApp {
                     ui.end_row();
 
                     if ui.button("Configure Input Profile").clicked()
-                        && !self.cache_dir.join("game_running").exists()
+                        && !self.dirs.cache_dir.join("game_running").exists()
                     {
                         self.configure_profile = true;
                     }
 
                     if ui.button("Netplay: Join Session").clicked()
-                        && !self.cache_dir.join("game_running").exists()
+                        && !self.dirs.cache_dir.join("game_running").exists()
                     {
                         self.netplay.join = true;
                     }
