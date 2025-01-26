@@ -118,7 +118,11 @@ impl GopherEguiApp {
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
             netplay: Default::default(),
-            dirs: ui::get_dirs(),
+            dirs: ui::Dirs {
+                config_dir: game_ui.dirs.config_dir.clone(),
+                cache_dir: game_ui.dirs.cache_dir.clone(),
+                data_dir: game_ui.dirs.data_dir.clone(),
+            },
         }
     }
 }
