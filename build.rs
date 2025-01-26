@@ -170,6 +170,6 @@ fn main() {
         }
         println!("cargo:rustc-link-search={}", moltenvk_path.display());
 
-        println!("cargo:rustc-link-lib=static=MoltenVK");
+        println!("cargo:rustc-link-lib=static=MoltenV2K");
     }
 }
