@@ -29,8 +29,6 @@ pub struct Video {
 pub struct Config {
     pub input: Input,
     pub video: Video,
-    #[serde(skip)]
-    file_path: std::path::PathBuf,
 }
 
 impl Drop for Config {
@@ -40,7 +38,9 @@ impl Drop for Config {
 }
 
 fn write_config(config: &Config) {
-    let f = std::fs::File::create(config.file_path.clone()).unwrap();
+    let dirs = ui::get_dirs();
+    let file_path = dirs.config_dir.join("config.json");
+    let f = std::fs::File::create(file_path).unwrap();
     serde_json::to_writer_pretty(f, &config).unwrap();
 }
 
@@ -48,19 +48,16 @@ impl Config {
     pub fn new() -> Config {
         let dirs = ui::get_dirs();
         let file_path = dirs.config_dir.join("config.json");
-        let config_file = std::fs::read(file_path.clone());
+        let config_file = std::fs::read(file_path);
         if config_file.is_ok() {
             let result = serde_json::from_slice(config_file.unwrap().as_ref());
-            if result.is_ok() {
-                let mut config: Config = result.unwrap();
-                config.file_path = file_path;
-                return config;
+            if let Ok(result) = result {
+                result
             }
         }
         let mut input_profiles = std::collections::HashMap::new();
         input_profiles.insert("default".to_string(), ui::input::get_default_profile());
         Config {
-            file_path,
             input: Input {
                 input_profile_binding: [
                     "default".to_string(),
