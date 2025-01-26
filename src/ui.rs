@@ -16,7 +16,6 @@ pub struct Ui {
     pub dirs: Dirs,
     pub keyboard_state: *const bool,
     pub controllers: [input::Controllers; 4],
-    pub config_file_path: std::path::PathBuf,
     pub config: config::Config,
     pub save_type: Vec<storage::SaveTypes>,
     pub game_id: String,
@@ -39,13 +38,7 @@ impl Drop for Ui {
             sdl3_sys::stdinc::SDL_free(self.joysticks as *mut std::ffi::c_void);
             sdl3_sys::init::SDL_Quit();
         }
-        write_config(self);
     }
-}
-
-fn write_config(ui: &Ui) {
-    let f = std::fs::File::create(ui.config_file_path.clone()).unwrap();
-    serde_json::to_writer_pretty(f, &ui.config).unwrap();
 }
 
 pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
@@ -91,15 +84,6 @@ impl Ui {
         }
 
         let dirs = get_dirs();
-        let config_file_path = dirs.config_dir.join("config.json");
-        let config_file = std::fs::read(config_file_path.clone());
-        let mut config_map = config::Config::new();
-        if config_file.is_ok() {
-            let result = serde_json::from_slice(config_file.unwrap().as_ref());
-            if result.is_ok() {
-                config_map = result.unwrap();
-            }
-        }
 
         Ui {
             controllers: [
@@ -125,8 +109,7 @@ impl Ui {
                 },
             ],
             keyboard_state: std::ptr::null_mut(),
-            config_file_path,
-            config: config_map,
+            config: config::Config::new(),
             save_type: vec![],
             game_id: String::new(),
             game_hash: String::new(),
