@@ -88,11 +88,11 @@ fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
     }
 }
 
-pub fn init(ui: &mut ui::Ui, data_dir: std::path::PathBuf) {
+pub fn init(ui: &mut ui::Ui) {
     let id = ui.game_id.as_str();
     ui.save_type = get_save_type(id);
 
-    let base_path = data_dir.join("saves");
+    let base_path = ui.dirs.data_dir.join("saves");
 
     ui.paths.eep_file_path.clone_from(&base_path);
     ui.paths

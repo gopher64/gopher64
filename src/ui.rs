@@ -6,7 +6,14 @@ pub mod storage;
 pub mod video;
 pub mod vru;
 
+pub struct Dirs {
+    pub config_dir: std::path::PathBuf,
+    pub cache_dir: std::path::PathBuf,
+    pub data_dir: std::path::PathBuf,
+}
+
 pub struct Ui {
+    pub dirs: Dirs,
     pub keyboard_state: *const bool,
     pub controllers: [input::Controllers; 4],
     pub config_file_path: std::path::PathBuf,
@@ -50,8 +57,32 @@ pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
     }
 }
 
+pub fn get_dirs() -> Dirs {
+    let exe_path = std::env::current_exe().unwrap();
+    let portable_dir = exe_path.parent();
+    let portable = portable_dir.unwrap().join("portable.txt").exists();
+    let config_dir;
+    let cache_dir;
+    let data_dir;
+    if portable {
+        config_dir = portable_dir.unwrap().join("portable_data").join("config");
+        cache_dir = portable_dir.unwrap().join("portable_data").join("cache");
+        data_dir = portable_dir.unwrap().join("portable_data").join("data");
+    } else {
+        config_dir = dirs::config_dir().unwrap().join("gopher64");
+        cache_dir = dirs::cache_dir().unwrap().join("gopher64");
+        data_dir = dirs::data_dir().unwrap().join("gopher64");
+    };
+
+    Dirs {
+        config_dir,
+        cache_dir,
+        data_dir,
+    }
+}
+
 impl Ui {
-    pub fn new(config_dir: std::path::PathBuf) -> Ui {
+    pub fn new() -> Ui {
         sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
         let mut num_joysticks = 0;
         let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
@@ -59,7 +90,8 @@ impl Ui {
             panic!("Could not get joystick list");
         }
 
-        let config_file_path = config_dir.join("config.json");
+        let dirs = get_dirs();
+        let config_file_path = dirs.config_dir.join("config.json");
         let config_file = std::fs::read(config_file_path.clone());
         let mut config_map = config::Config::new();
         if config_file.is_ok() {
@@ -123,6 +155,7 @@ impl Ui {
             audio_device: 0,
             num_joysticks,
             joysticks,
+            dirs,
         }
     }
 }
