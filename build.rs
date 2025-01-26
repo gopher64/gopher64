@@ -165,6 +165,7 @@ fn main() {
             if let Ok(response) =
                 reqwest::blocking::get("https://github.com/gopher64/compat/raw/refs/heads/main/MoltenVK/v1.2.11/libMoltenVK.a")
             {
+                std::fs::create_dir_all(moltenvk_path.clone()).unwrap();
                 std::fs::write(moltenvk_path.join("libMoltenVK.a"), response.bytes().unwrap()).unwrap();
             } else {
                 panic!("Failed to download MoltenVK");
