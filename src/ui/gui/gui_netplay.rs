@@ -757,17 +757,22 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         }
                     }
                     app.netplay.player_number = player as u8;
-                    socket.close(None).unwrap();
-                    loop {
-                        match socket.read() {
-                            Err(tungstenite::Error::ConnectionClosed) => break,
-                            _ => continue,
-                        };
-                    }
 
-                    gui::open_rom(app, ctx);
-                    app.netplay = Default::default();
-                    return;
+                    if message.accept.unwrap() == 0 {
+                        socket.close(None).unwrap();
+                        loop {
+                            match socket.read() {
+                                Err(tungstenite::Error::ConnectionClosed) => break,
+                                _ => continue,
+                            };
+                        }
+
+                        gui::open_rom(app, ctx);
+                        app.netplay = Default::default();
+                        return;
+                    } else {
+                        app.netplay.error = message.message.unwrap();
+                    }
                 }
             } else {
                 app.netplay.error = message.message.unwrap();
