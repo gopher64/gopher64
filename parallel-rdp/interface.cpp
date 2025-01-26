@@ -175,7 +175,11 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_sc
 	wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank : PresentMode::UnlockedMaybeTear);
 	wsi->set_backbuffer_srgb(false);
 	Context::SystemHandles handles = {};
+#ifdef __APPLE__
+	if (!::Vulkan::Context::init_loader(vkGetInstanceProcAddr))
+#else
 	if (!::Vulkan::Context::init_loader(nullptr))
+#endif
 	{
 		rdp_close();
 	}
