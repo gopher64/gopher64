@@ -42,7 +42,7 @@ struct SaveConfig {
 fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
     let mut profiles = vec![];
     for key in game_ui.config.input.input_profiles.keys() {
-        profiles.push((*key).clone())
+        profiles.push(key.clone())
     }
     profiles
 }
@@ -358,7 +358,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     device::run_game(rom_contents, &mut device, fullscreen);
                 }
             }
-            let result = std::fs::remove_file(running_file.clone());
+            let result = std::fs::remove_file(running_file);
             if result.is_err() {
                 panic!("could not remove running file: {}", result.err().unwrap())
             }
