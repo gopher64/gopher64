@@ -303,27 +303,42 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     tokio::spawn(async move {
         let file = if !netplay { task.unwrap().await } else { None };
 
-        if file.is_some() || netplay {
-            let running_file = cache_dir.join("game_running");
-            if running_file.exists() {
-                println!("Game already running");
-                return;
-            }
-            let result = std::fs::File::create(running_file.clone());
-            if result.is_err() {
-                panic!("could not create running file: {}", result.err().unwrap())
-            }
-            let mut device = device::Device::new();
+        let running_file = cache_dir.join("game_running");
+        if running_file.exists() {
+            println!("Game already running");
+            return;
+        }
+        let result = std::fs::File::create(running_file.clone());
+        if result.is_err() {
+            panic!("could not create running file: {}", result.err().unwrap())
+        }
 
-            let save_config_items = SaveConfig {
-                selected_controller,
-                selected_profile,
-                controller_enabled,
-                upscale,
-                integer_scaling,
-                fullscreen,
-                emulate_vru,
-            };
+        let save_config_items = SaveConfig {
+            selected_controller,
+            selected_profile,
+            controller_enabled,
+            upscale,
+            integer_scaling,
+            fullscreen,
+            emulate_vru,
+        };
+
+        if cfg!(target_os = "macos") && file.is_some() {
+            // mac os requires the process to be started on the main thread
+            // this means that netplay and VRU emulation will not work on mac os
+
+            let mut config = ui::config::Config::new();
+            save_config(&mut config, controller_paths, save_config_items);
+
+            let status = std::process::Command::new(std::env::current_exe().unwrap())
+                .arg(file.unwrap().path())
+                .status()
+                .expect("failed to execute process");
+            if !status.success() {
+                panic!("process exited with: {}", status);
+            }
+        } else if file.is_some() || netplay {
+            let mut device = device::Device::new();
             save_config(&mut device.ui.config, controller_paths, save_config_items);
 
             if netplay {
@@ -350,10 +365,11 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     device::run_game(rom_contents, &mut device, fullscreen);
                 }
             }
-            let result = std::fs::remove_file(running_file);
-            if result.is_err() {
-                panic!("could not remove running file: {}", result.err().unwrap())
-            }
+        }
+
+        let result = std::fs::remove_file(running_file);
+        if result.is_err() {
+            panic!("could not remove running file: {}", result.err().unwrap())
         }
     });
 }
@@ -397,8 +413,8 @@ impl eframe::App for GopherEguiApp {
                     if ui.button("Open ROM").clicked() {
                         open_rom(self, ctx);
                     }
-
-                    if ui.button("Netplay: Create Session").clicked()
+                    if !cfg!(target_os = "macos")
+                        && ui.button("Netplay: Create Session").clicked()
                         && !self.dirs.cache_dir.join("game_running").exists()
                     {
                         self.netplay.create = true;
@@ -412,7 +428,8 @@ impl eframe::App for GopherEguiApp {
                         self.configure_profile = true;
                     }
 
-                    if ui.button("Netplay: Join Session").clicked()
+                    if !cfg!(target_os = "macos")
+                        && ui.button("Netplay: Join Session").clicked()
                         && !self.dirs.cache_dir.join("game_running").exists()
                     {
                         self.netplay.join = true;
@@ -472,10 +489,12 @@ impl eframe::App for GopherEguiApp {
             ui.checkbox(&mut self.integer_scaling, "Integer Scaling");
             ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
             ui.add_space(32.0);
-            ui.checkbox(
-                &mut self.emulate_vru,
-                "Emulate VRU (connects VRU to controller port 4)",
-            );
+            if !cfg!(target_os = "macos") {
+                ui.checkbox(
+                    &mut self.emulate_vru,
+                    "Emulate VRU (connects VRU to controller port 4)",
+                );
+            }
             ui.add_space(32.0);
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
         });
