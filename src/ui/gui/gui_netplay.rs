@@ -146,7 +146,7 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
         ctx.request_repaint();
     }
     if app.netplay.server_receiver.is_some() {
-        let result = app.netplay.server_receiver.as_mut().unwrap().try_recv();
+        let result = app.netplay.server_receiver.as_ref().unwrap().try_recv();
         if result.is_ok() {
             app.netplay.servers.extend(result.unwrap());
             app.netplay.server_receiver = None;
@@ -221,7 +221,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
             get_servers(app, ctx);
 
             if app.netplay.game_info_receiver.is_some() {
-                let result = app.netplay.game_info_receiver.as_mut().unwrap().try_recv();
+                let result = app.netplay.game_info_receiver.as_ref().unwrap().try_recv();
                 if result.is_ok() {
                     app.netplay.game_info_receiver = None;
                     let data = result.unwrap();
@@ -443,7 +443,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
         ctx.request_repaint();
     }
     if app.netplay.game_info_receiver.is_some() {
-        let result = app.netplay.game_info_receiver.as_mut().unwrap().try_recv();
+        let result = app.netplay.game_info_receiver.as_ref().unwrap().try_recv();
         if result.is_ok() {
             app.netplay.game_info_receiver = None;
             let data = result.unwrap();

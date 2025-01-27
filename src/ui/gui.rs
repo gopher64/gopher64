@@ -407,7 +407,7 @@ impl eframe::App for GopherEguiApp {
         }
 
         if self.netplay_error_receiver.is_some() {
-            let result = self.netplay_error_receiver.as_mut().unwrap().try_recv();
+            let result = self.netplay_error_receiver.as_ref().unwrap().try_recv();
             if result.is_ok() {
                 self.netplay.error = result.unwrap();
             }
@@ -518,7 +518,7 @@ impl eframe::App for GopherEguiApp {
         });
 
         if self.emulate_vru && self.vru_window_receiver.is_some() {
-            let result = self.vru_window_receiver.as_mut().unwrap().try_recv();
+            let result = self.vru_window_receiver.as_ref().unwrap().try_recv();
             if result.is_ok() {
                 self.show_vru_dialog = true;
                 self.vru_word_list = result.unwrap();

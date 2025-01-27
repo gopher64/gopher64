@@ -187,7 +187,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 ui::vru::prompt_for_match(
                     &device.vru.words,
                     device.vru.window_notifier.as_ref().unwrap(),
-                    device.vru.word_receiver.as_mut().unwrap(),
+                    device.vru.word_receiver.as_ref().unwrap(),
                     device.vru.gui_ctx.as_ref().unwrap(),
                 )
             } else {
