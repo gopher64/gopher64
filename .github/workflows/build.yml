@@ -11,11 +11,15 @@ env:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,73 +30,6 @@ jobs:
           rustflags: ""
       - name: Install SDL Dependencies
         # https://wiki.libsdl.org/SDL3/README/linux#build-dependencies
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          cat <<EOF > deb822sources
-          Types: deb
-          URIs: http://archive.ubuntu.com/ubuntu/
-          Suites: noble
-          Components: main multiverse universe
-          Architectures: amd64
-
-          Types: deb
-          URIs: http://security.ubuntu.com/ubuntu/
-          Suites: noble-security
-          Components: main multiverse universe
-          Architectures: amd64
-
-          Types: deb
-          URIs: http://archive.ubuntu.com/ubuntu/
-          Suites: noble-updates
-          Components: main multiverse universe
-          Architectures: amd64
-
-          Types: deb
-          URIs: http://archive.ubuntu.com/ubuntu/
-          Suites: noble-backports
-          Components: main multiverse universe
-          Architectures: amd64
-
-          Types: deb
-          URIs: http://ports.ubuntu.com/
-          Suites: noble
-          Components: main multiverse universe
-          Architectures: arm64
-
-          Types: deb
-          URIs: http://ports.ubuntu.com/
-          Suites: noble-security
-          Components: main multiverse universe
-          Architectures: arm64
-
-          Types: deb
-          URIs: http://ports.ubuntu.com/
-          Suites: noble-updates
-          Components: main multiverse universe
-          Architectures: arm64
-
-          Types: deb
-          URIs: http://ports.ubuntu.com/
-          Suites: noble-backports
-          Components: main multiverse universe
-          Architectures: arm64
-          EOF
-
-          sudo mv deb822sources /etc/apt/sources.list.d/ubuntu.sources
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update
-          sudo apt-get -y dist-upgrade
-          sudo apt-get -y install aptitude
-          sudo aptitude -y install build-essential:arm64 git:arm64 make:arm64 \
-          pkg-config:arm64 cmake:arm64 ninja-build:arm64 gnome-desktop-testing:arm64 libasound2-dev:arm64 libpulse-dev:arm64 \
-          libaudio-dev:arm64 libjack-dev:arm64 libsndio-dev:arm64 libx11-dev:arm64 libxext-dev:arm64 \
-          libxrandr-dev:arm64 libxcursor-dev:arm64 libxfixes-dev:arm64 libxi-dev:arm64 libxss-dev:arm64 \
-          libxkbcommon-dev:arm64 libdrm-dev:arm64 libgbm-dev:arm64 libgl1-mesa-dev:arm64 libgles2-mesa-dev:arm64 \
-          libegl1-mesa-dev:arm64 libdbus-1-dev:arm64 libibus-1.0-dev:arm64 libudev-dev:arm64 fcitx-libs-dev:arm64 \
-          libpipewire-0.3-dev:arm64 libwayland-dev:arm64 libdecor-0-dev:arm64 liburing-dev:arm64 g++-aarch64-linux-gnu
-      - name: Install SDL Dependencies
-        # https://wiki.libsdl.org/SDL3/README/linux#build-dependencies
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
           sudo apt-get update
           sudo apt-get -y dist-upgrade
@@ -103,9 +40,6 @@ jobs:
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev \
           libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
-      - name: Set aarch64 linker
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
@@ -139,7 +73,7 @@ jobs:
           path: target/${{ matrix.target }}/release/gopher64.exe
 
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-14
     strategy:
       fail-fast: false
       matrix:
