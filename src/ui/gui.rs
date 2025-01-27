@@ -181,8 +181,23 @@ fn configure_profile(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     let profile_name = app.profile_name.clone();
                     let dinput = app.dinput;
                     std::thread::spawn(move || {
-                        let mut game_ui = ui::Ui::new();
-                        ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
+                        if cfg!(target_os = "macos") {
+                            let mut command =
+                                std::process::Command::new(std::env::current_exe().unwrap());
+                            if dinput {
+                                command.arg("--use-dinput");
+                            }
+                            command.arg("--configure-input-profile");
+                            command.arg(profile_name);
+
+                            let status = command.status().expect("failed to execute process");
+                            if !status.success() {
+                                panic!("process exited with: {}", status);
+                            }
+                        } else {
+                            let mut game_ui = ui::Ui::new();
+                            ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
+                        }
                     });
                     app.configure_profile = false;
                     if !app.profile_name.is_empty()
