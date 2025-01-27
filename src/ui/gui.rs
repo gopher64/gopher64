@@ -257,7 +257,6 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
 }
 
 pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
-    let task;
     let netplay;
 
     let selected_controller = app.selected_controller;
@@ -274,13 +273,11 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let controller_paths = app.controller_paths.clone();
 
     if app.netplay.player_name.is_empty() {
-        task = Some(rfd::AsyncFileDialog::new().pick_file());
         netplay = false;
         peer_addr = None;
         session = None;
         player_number = None;
     } else {
-        task = None;
         netplay = true;
         peer_addr = app.netplay.peer_addr;
         session = app.netplay.waiting_session.clone();
@@ -315,8 +312,12 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
     let rom_contents = app.netplay.rom_contents.clone();
     let gui_ctx = ctx.clone();
-    std::thread::spawn(async move || {
-        let file = if !netplay { task.unwrap().await } else { None };
+    std::thread::spawn(move || {
+        let file = if !netplay {
+            rfd::FileDialog::new().pick_file()
+        } else {
+            None
+        };
 
         let running_file = cache_dir.join("game_running");
         if running_file.exists() {
@@ -349,7 +350,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             if fullscreen {
                 command.arg("--fullscreen");
             }
-            command.arg(file.unwrap().path());
+            command.arg(file.unwrap().as_path());
 
             let status = command.status().expect("failed to execute process");
             if !status.success() {
@@ -376,7 +377,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     device.vru.gui_ctx = Some(gui_ctx);
                 }
 
-                let rom_contents = device::get_rom_contents(file.unwrap().path());
+                let rom_contents = device::get_rom_contents(file.unwrap().as_path());
                 if rom_contents.is_empty() {
                     println!("Could not read rom file");
                 } else {
