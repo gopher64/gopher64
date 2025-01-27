@@ -403,11 +403,7 @@ fn parse_rom_file(file: std::path::PathBuf, tx: std::sync::mpsc::Sender<GameInfo
         tx.send((
             hash,
             game_name,
-            file.as_path()
-                .file_name()
-                .unwrap()
-                .to_string_lossy()
-                .to_string(),
+            file.file_name().unwrap().to_string_lossy().to_string(),
             rom_contents,
         ))
         .unwrap();
