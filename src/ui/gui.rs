@@ -319,16 +319,6 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             None
         };
 
-        let running_file = cache_dir.join("game_running");
-        if running_file.exists() {
-            println!("Game already running");
-            return;
-        }
-        let result = std::fs::File::create(running_file.clone());
-        if result.is_err() {
-            panic!("could not create running file: {}", result.err().unwrap())
-        }
-
         let save_config_items = SaveConfig {
             selected_controller,
             selected_profile,
@@ -357,6 +347,16 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 panic!("process exited with: {}", status);
             }
         } else if file.is_some() || netplay {
+            let running_file = cache_dir.join("game_running");
+            if running_file.exists() {
+                println!("Game already running");
+                return;
+            }
+            let result = std::fs::File::create(running_file.clone());
+            if result.is_err() {
+                panic!("could not create running file: {}", result.err().unwrap())
+            }
+
             let mut device = device::Device::new();
             save_config(&mut device.ui.config, controller_paths, save_config_items);
 
@@ -384,11 +384,10 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     device::run_game(rom_contents, &mut device, fullscreen);
                 }
             }
-        }
-
-        let result = std::fs::remove_file(running_file);
-        if result.is_err() {
-            panic!("could not remove running file: {}", result.err().unwrap())
+            let result = std::fs::remove_file(running_file);
+            if result.is_err() {
+                panic!("could not remove running file: {}", result.err().unwrap())
+            }
         }
     });
 }
