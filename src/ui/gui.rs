@@ -21,9 +21,9 @@ pub struct GopherEguiApp {
     emulate_vru: bool,
     dinput: bool,
     show_vru_dialog: bool,
-    vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
-    netplay_error_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
-    vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
+    vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
+    netplay_error_receiver: Option<std::sync::mpsc::Receiver<String>>,
+    vru_word_notifier: Option<std::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
     pub netplay: gui_netplay::GuiNetplay,
 }
@@ -180,9 +180,24 @@ fn configure_profile(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Configure Profile").clicked() {
                     let profile_name = app.profile_name.clone();
                     let dinput = app.dinput;
-                    tokio::spawn(async move {
-                        let mut game_ui = ui::Ui::new();
-                        ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
+                    std::thread::spawn(move || {
+                        if cfg!(target_os = "macos") {
+                            let mut command =
+                                std::process::Command::new(std::env::current_exe().unwrap());
+                            if dinput {
+                                command.arg("--use-dinput");
+                            }
+                            command.arg("--configure-input-profile");
+                            command.arg(profile_name);
+
+                            let status = command.status().expect("failed to execute process");
+                            if !status.success() {
+                                panic!("process exited with: {}", status);
+                            }
+                        } else {
+                            let mut game_ui = ui::Ui::new();
+                            ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
+                        }
                     });
                     app.configure_profile = false;
                     if !app.profile_name.is_empty()
@@ -221,7 +236,7 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             app.vru_word_notifier
                                 .as_ref()
                                 .unwrap()
-                                .try_send(v.clone())
+                                .send(v.clone())
                                 .unwrap();
                             app.show_vru_dialog = false;
                         }
@@ -233,7 +248,7 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 app.vru_word_notifier
                     .as_ref()
                     .unwrap()
-                    .try_send(String::from(""))
+                    .send(String::from(""))
                     .unwrap();
                 app.show_vru_dialog = false;
             }
@@ -242,7 +257,6 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
 }
 
 pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
-    let task;
     let netplay;
 
     let selected_controller = app.selected_controller;
@@ -259,13 +273,11 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let controller_paths = app.controller_paths.clone();
 
     if app.netplay.player_name.is_empty() {
-        task = Some(rfd::AsyncFileDialog::new().pick_file());
         netplay = false;
         peer_addr = None;
         session = None;
         player_number = None;
     } else {
-        task = None;
         netplay = true;
         peer_addr = app.netplay.peer_addr;
         session = app.netplay.waiting_session.clone();
@@ -273,19 +285,19 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
 
     let (netplay_error_notifier, netplay_error_receiver): (
-        tokio::sync::mpsc::Sender<String>,
-        tokio::sync::mpsc::Receiver<String>,
-    ) = tokio::sync::mpsc::channel(8);
+        std::sync::mpsc::Sender<String>,
+        std::sync::mpsc::Receiver<String>,
+    ) = std::sync::mpsc::channel();
 
     let (vru_window_notifier, vru_window_receiver): (
-        tokio::sync::mpsc::Sender<Vec<String>>,
-        tokio::sync::mpsc::Receiver<Vec<String>>,
-    ) = tokio::sync::mpsc::channel(1);
+        std::sync::mpsc::Sender<Vec<String>>,
+        std::sync::mpsc::Receiver<Vec<String>>,
+    ) = std::sync::mpsc::channel();
 
     let (vru_word_notifier, vru_word_receiver): (
-        tokio::sync::mpsc::Sender<String>,
-        tokio::sync::mpsc::Receiver<String>,
-    ) = tokio::sync::mpsc::channel(1);
+        std::sync::mpsc::Sender<String>,
+        std::sync::mpsc::Receiver<String>,
+    ) = std::sync::mpsc::channel();
 
     if netplay {
         app.netplay_error_receiver = Some(netplay_error_receiver);
@@ -300,10 +312,41 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
     let rom_contents = app.netplay.rom_contents.clone();
     let gui_ctx = ctx.clone();
-    tokio::spawn(async move {
-        let file = if !netplay { task.unwrap().await } else { None };
+    std::thread::spawn(move || {
+        let file = if !netplay {
+            rfd::FileDialog::new().pick_file()
+        } else {
+            None
+        };
 
-        if file.is_some() || netplay {
+        let save_config_items = SaveConfig {
+            selected_controller,
+            selected_profile,
+            controller_enabled,
+            upscale,
+            integer_scaling,
+            fullscreen,
+            emulate_vru,
+        };
+
+        if cfg!(target_os = "macos") && file.is_some() {
+            // mac os requires the process to be started on the main thread
+            // this means that netplay and VRU emulation will not work on mac os
+            {
+                let mut config = ui::config::Config::new();
+                save_config(&mut config, controller_paths, save_config_items);
+            }
+            let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+            if fullscreen {
+                command.arg("--fullscreen");
+            }
+            command.arg(file.unwrap().as_path());
+
+            let status = command.status().expect("failed to execute process");
+            if !status.success() {
+                panic!("process exited with: {}", status);
+            }
+        } else if file.is_some() || netplay {
             let running_file = cache_dir.join("game_running");
             if running_file.exists() {
                 println!("Game already running");
@@ -313,17 +356,8 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             if result.is_err() {
                 panic!("could not create running file: {}", result.err().unwrap())
             }
-            let mut device = device::Device::new();
 
-            let save_config_items = SaveConfig {
-                selected_controller,
-                selected_profile,
-                controller_enabled,
-                upscale,
-                integer_scaling,
-                fullscreen,
-                emulate_vru,
-            };
+            let mut device = device::Device::new();
             save_config(&mut device.ui.config, controller_paths, save_config_items);
 
             if netplay {
@@ -343,7 +377,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     device.vru.gui_ctx = Some(gui_ctx);
                 }
 
-                let rom_contents = device::get_rom_contents(file.unwrap().path());
+                let rom_contents = device::get_rom_contents(file.unwrap().as_path());
                 if rom_contents.is_empty() {
                     println!("Could not read rom file");
                 } else {
@@ -373,7 +407,7 @@ impl eframe::App for GopherEguiApp {
         }
 
         if self.netplay_error_receiver.is_some() {
-            let result = self.netplay_error_receiver.as_mut().unwrap().try_recv();
+            let result = self.netplay_error_receiver.as_ref().unwrap().try_recv();
             if result.is_ok() {
                 self.netplay.error = result.unwrap();
             }
@@ -397,8 +431,8 @@ impl eframe::App for GopherEguiApp {
                     if ui.button("Open ROM").clicked() {
                         open_rom(self, ctx);
                     }
-
-                    if ui.button("Netplay: Create Session").clicked()
+                    if !cfg!(target_os = "macos")
+                        && ui.button("Netplay: Create Session").clicked()
                         && !self.dirs.cache_dir.join("game_running").exists()
                     {
                         self.netplay.create = true;
@@ -412,7 +446,8 @@ impl eframe::App for GopherEguiApp {
                         self.configure_profile = true;
                     }
 
-                    if ui.button("Netplay: Join Session").clicked()
+                    if !cfg!(target_os = "macos")
+                        && ui.button("Netplay: Join Session").clicked()
                         && !self.dirs.cache_dir.join("game_running").exists()
                     {
                         self.netplay.join = true;
@@ -472,16 +507,18 @@ impl eframe::App for GopherEguiApp {
             ui.checkbox(&mut self.integer_scaling, "Integer Scaling");
             ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
             ui.add_space(32.0);
-            ui.checkbox(
-                &mut self.emulate_vru,
-                "Emulate VRU (connects VRU to controller port 4)",
-            );
+            if !cfg!(target_os = "macos") {
+                ui.checkbox(
+                    &mut self.emulate_vru,
+                    "Emulate VRU (connects VRU to controller port 4)",
+                );
+            }
             ui.add_space(32.0);
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
         });
 
         if self.emulate_vru && self.vru_window_receiver.is_some() {
-            let result = self.vru_window_receiver.as_mut().unwrap().try_recv();
+            let result = self.vru_window_receiver.as_ref().unwrap().try_recv();
             if result.is_ok() {
                 self.show_vru_dialog = true;
                 self.vru_word_list = result.unwrap();

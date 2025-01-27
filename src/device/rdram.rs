@@ -73,7 +73,7 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    let chip_id = address >> 13 & 3;
+    let chip_id = (address >> 13) & 3;
     let reg = (address & 0x3FF) >> 2;
     match reg as u32 {
         RDRAM_MODE_REG => device.pi.regs[reg as usize] ^ 0xc0c0c0c0,
@@ -82,7 +82,7 @@ pub fn read_regs(
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    let chip_id = address >> 13 & 3;
+    let chip_id = (address >> 13) & 3;
     let reg = (address & 0x3FF) >> 2;
     device::memory::masked_write_32(
         &mut device.rdram.regs[chip_id as usize][reg as usize],

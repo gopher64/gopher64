@@ -721,7 +721,7 @@ pub fn lsv(device: &mut device::Device, opcode: u32) {
         modify_vpr16(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
             element / 2,
-            (device.rsp.mem[(address & 0xFFF) as usize] as u16) << 8
+            ((device.rsp.mem[(address & 0xFFF) as usize] as u16) << 8)
                 | (device.rsp.mem[((address + 1) & 0xFFF) as usize] as u16),
         );
     } else {
