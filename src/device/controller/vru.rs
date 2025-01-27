@@ -26,8 +26,8 @@ pub struct Vru {
     pub words: Vec<String>,
     pub talking: bool,
     pub word_mappings: HashMap<String, String>,
-    pub window_notifier: Option<tokio::sync::mpsc::Sender<Vec<String>>>,
-    pub word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+    pub window_notifier: Option<std::sync::mpsc::Sender<Vec<String>>>,
+    pub word_receiver: Option<std::sync::mpsc::Receiver<String>>,
     pub gui_ctx: Option<egui::Context>,
 }
 

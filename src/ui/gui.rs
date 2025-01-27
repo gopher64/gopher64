@@ -21,9 +21,9 @@ pub struct GopherEguiApp {
     emulate_vru: bool,
     dinput: bool,
     show_vru_dialog: bool,
-    vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
-    netplay_error_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
-    vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
+    vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
+    netplay_error_receiver: Option<std::sync::mpsc::Receiver<String>>,
+    vru_word_notifier: Option<std::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
     pub netplay: gui_netplay::GuiNetplay,
 }
@@ -180,7 +180,7 @@ fn configure_profile(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if ui.button("Configure Profile").clicked() {
                     let profile_name = app.profile_name.clone();
                     let dinput = app.dinput;
-                    tokio::spawn(async move {
+                    std::thread::spawn(move || {
                         let mut game_ui = ui::Ui::new();
                         ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
                     });
@@ -221,7 +221,7 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             app.vru_word_notifier
                                 .as_ref()
                                 .unwrap()
-                                .try_send(v.clone())
+                                .send(v.clone())
                                 .unwrap();
                             app.show_vru_dialog = false;
                         }
@@ -233,7 +233,7 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 app.vru_word_notifier
                     .as_ref()
                     .unwrap()
-                    .try_send(String::from(""))
+                    .send(String::from(""))
                     .unwrap();
                 app.show_vru_dialog = false;
             }
@@ -273,19 +273,19 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
 
     let (netplay_error_notifier, netplay_error_receiver): (
-        tokio::sync::mpsc::Sender<String>,
-        tokio::sync::mpsc::Receiver<String>,
-    ) = tokio::sync::mpsc::channel(8);
+        std::sync::mpsc::Sender<String>,
+        std::sync::mpsc::Receiver<String>,
+    ) = std::sync::mpsc::channel();
 
     let (vru_window_notifier, vru_window_receiver): (
-        tokio::sync::mpsc::Sender<Vec<String>>,
-        tokio::sync::mpsc::Receiver<Vec<String>>,
-    ) = tokio::sync::mpsc::channel(1);
+        std::sync::mpsc::Sender<Vec<String>>,
+        std::sync::mpsc::Receiver<Vec<String>>,
+    ) = std::sync::mpsc::channel();
 
     let (vru_word_notifier, vru_word_receiver): (
-        tokio::sync::mpsc::Sender<String>,
-        tokio::sync::mpsc::Receiver<String>,
-    ) = tokio::sync::mpsc::channel(1);
+        std::sync::mpsc::Sender<String>,
+        std::sync::mpsc::Receiver<String>,
+    ) = std::sync::mpsc::channel();
 
     if netplay {
         app.netplay_error_receiver = Some(netplay_error_receiver);
@@ -300,7 +300,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
     let rom_contents = app.netplay.rom_contents.clone();
     let gui_ctx = ctx.clone();
-    tokio::spawn(async move {
+    std::thread::spawn(async move || {
         let file = if !netplay { task.unwrap().await } else { None };
 
         let running_file = cache_dir.join("game_running");

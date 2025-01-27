@@ -41,8 +41,8 @@ pub struct GuiNetplay {
     pub socket:
         Option<tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>>,
     pub server_receiver:
-        Option<tokio::sync::mpsc::Receiver<std::collections::HashMap<String, String>>>,
-    pub game_info_receiver: Option<tokio::sync::mpsc::Receiver<GameInfo>>,
+        Option<std::sync::mpsc::Receiver<std::collections::HashMap<String, String>>>,
+    pub game_info_receiver: Option<std::sync::mpsc::Receiver<GameInfo>>,
     pub broadcast_socket: Option<std::net::UdpSocket>,
     pub broadcast_timer: Option<std::time::Instant>,
 }
@@ -99,10 +99,10 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
             ctx.request_repaint();
         }
         if app.netplay.server_receiver.is_none() {
-            let (tx, rx) = tokio::sync::mpsc::channel(1);
+            let (tx, rx) = std::sync::mpsc::channel();
             app.netplay.server_receiver = Some(rx);
             let gui_ctx = ctx.clone();
-            tokio::spawn(async move {
+            std::thread::spawn(async move || {
                 if let Ok(response) =
                     reqwest::get("https://m64p.s3.amazonaws.com/servers.json").await
                 {
@@ -110,7 +110,7 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         .json::<std::collections::HashMap<String, String>>()
                         .await
                     {
-                        let _ = tx.send(servers).await;
+                        let _ = tx.send(servers);
                         gui_ctx.request_repaint();
                     }
                 }
@@ -185,24 +185,22 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
             }
             if ui.button(&app.netplay.create_rom_label).clicked() {
                 let task = rfd::AsyncFileDialog::new().pick_file();
-                let (tx, rx) = tokio::sync::mpsc::channel(1);
+                let (tx, rx) = std::sync::mpsc::channel();
                 app.netplay.game_info_receiver = Some(rx);
                 let gui_ctx = ctx.clone();
                 app.netplay.create_rom_label = "Inspecting ROM".to_string();
-                tokio::spawn(async move {
+                std::thread::spawn(async move || {
                     let file = task.await;
 
                     if let Some(file) = file {
-                        parse_rom_file(file, tx).await
+                        parse_rom_file(file, tx);
                     } else {
-                        let _ = tx
-                            .send((
-                                "".to_string(),
-                                "".to_string(),
-                                "Open ROM".to_string(),
-                                vec![],
-                            ))
-                            .await;
+                        let _ = tx.send((
+                            "".to_string(),
+                            "".to_string(),
+                            "Open ROM".to_string(),
+                            vec![],
+                        ));
                     }
                     gui_ctx.request_repaint();
                 });
@@ -396,7 +394,7 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
 }
 
-async fn parse_rom_file(file: rfd::FileHandle, tx: tokio::sync::mpsc::Sender<GameInfo>) {
+fn parse_rom_file(file: rfd::FileHandle, tx: std::sync::mpsc::Sender<GameInfo>) {
     let rom_contents = device::get_rom_contents(file.path());
     if !rom_contents.is_empty() {
         let hash = device::cart_rom::calculate_hash(&rom_contents);
@@ -405,18 +403,14 @@ async fn parse_rom_file(file: rfd::FileHandle, tx: tokio::sync::mpsc::Sender<Gam
             .trim()
             .replace('\0', "")
             .to_string();
-        let _ = tx
-            .send((hash, game_name, file.file_name(), rom_contents))
-            .await;
+        let _ = tx.send((hash, game_name, file.file_name(), rom_contents));
     } else {
-        let _ = tx
-            .send((
-                "".to_string(),
-                "".to_string(),
-                "Invalid ROM".to_string(),
-                vec![],
-            ))
-            .await;
+        let _ = tx.send((
+            "".to_string(),
+            "".to_string(),
+            "Invalid ROM".to_string(),
+            vec![],
+        ));
     }
 }
 
@@ -588,24 +582,22 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         app.netplay.error = "Session requires a password".to_string();
                     } else {
                         let task = rfd::AsyncFileDialog::new().pick_file();
-                        let (tx, rx) = tokio::sync::mpsc::channel(1);
+                        let (tx, rx) = std::sync::mpsc::channel();
                         app.netplay.game_info_receiver = Some(rx);
                         let gui_ctx = ctx.clone();
                         app.netplay.join_rom_label = "Inspecting ROM".to_string();
-                        tokio::spawn(async move {
+                        std::thread::spawn(async move || {
                             let file = task.await;
 
                             if let Some(file) = file {
-                                parse_rom_file(file, tx).await
+                                parse_rom_file(file, tx);
                             } else {
-                                let _ = tx
-                                    .send((
-                                        "".to_string(),
-                                        "".to_string(),
-                                        "No ROM selected".to_string(),
-                                        vec![],
-                                    ))
-                                    .await;
+                                let _ = tx.send((
+                                    "".to_string(),
+                                    "".to_string(),
+                                    "No ROM selected".to_string(),
+                                    vec![],
+                                ));
                             }
                             gui_ctx.request_repaint();
                         });
