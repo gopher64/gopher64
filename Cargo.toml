@@ -1,7 +1,8 @@
 [package]
 name = "gopher64"
 version = "0.1.23"
-edition = "2024"
+edition = "2021"
+rust-version = "1.82"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -30,7 +31,7 @@ clap = { version = "4.4", features = ["derive"] }
 [dependencies.reqwest]
 version = "0.12"
 default-features = false
-features = ["http2","rustls-tls","charset","json"]
+features = ["http2","rustls-tls","charset","json","blocking"]
 
 [build-dependencies]
 winres = "0.1"
