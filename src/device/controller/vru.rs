@@ -288,10 +288,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03A50024000303CF00A80003035D001200F900EA"),
             String::from("pikachu"),
         ),
-        (
-            String::from("040801740024"),
-            String::from("hey!"),
-        ),
+        (String::from("040801740024"), String::from("hey!")),
         (
             String::from("03CF00C603360405000F0234"),
             String::from("come-here"),
@@ -324,10 +321,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("02E2006903FC000303B402E2018F"),
             String::from("lets-play"),
         ),
-        (
-            String::from("040B00C002EB0213"),
-            String::from("hello"),
-        ),
+        (String::from("040B00C002EB0213"), String::from("hello")),
         (
             String::from("043B0213000303AB00A5034803FC006903FC00A503270024"),
             String::from("open-sesame"),
@@ -356,14 +350,8 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("042F01AD033603FC012602F10024"),
             String::from("im-sorry"),
         ),
-        (
-            String::from("03FC023A0024"),
-            String::from("sorry"),
-        ),
-        (
-            String::from("03FC012602F10024"),
-            String::from("sorry"),
-        ),
+        (String::from("03FC023A0024"), String::from("sorry")),
+        (String::from("03FC012602F10024"), String::from("sorry")),
         (
             String::from("042F01B00003036000ED03DB030C00EA"),
             String::from("i-choose-you"),
@@ -392,10 +380,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03A50024000303D8000303CF00C9"),
             String::from("pikka"),
         ),
-        (
-            String::from("03A50024000303CF00A8"),
-            String::from("pika"),
-        ),
+        (String::from("03A50024000303CF00A8"), String::from("pika")),
         (
             String::from("03A50024000303CF00A8000303A50024000303CF00A8"),
             String::from("pikapika"),
@@ -440,10 +425,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03F600C60348000603870234"),
             String::from("thunder"),
         ),
-        (
-            String::from("03F600C6033F0234"),
-            String::from("thunder"),
-        ),
+        (String::from("03F600C6033F0234"), String::from("thunder")),
         (
             String::from("0432009F02E20066000303D8000303C602F10045000303D802F40087000303C6"),
             String::from("electric-rat"),
@@ -489,7 +471,9 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("boing-boing"),
         ),
         (
-            String::from("043801290348000303C000ED036C00A5033C0066000303D803FC000303C603FC000303BA018F00060366"),
+            String::from(
+                "043801290348000303C000ED036C00A5033C0066000303D803FC000303C603FC000303BA018F00060366",
+            ),
             String::from("on-to-the-next-stage!"),
         ),
         (
@@ -516,10 +500,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("039F020A02EE0006038700A5033C0087000303AB009F02EE"),
             String::from("golden-apple"),
         ),
-        (
-            String::from("03A5002400030360"),
-            String::from("peach"),
-        ),
+        (String::from("03A5002400030360"), String::from("peach")),
         (
             String::from("03FC000303C602FD012C00060372029D0024"),
             String::from("strawberry"),
@@ -556,10 +537,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("032101A702EE00060390040B02340006037E"),
             String::from("wild-herb"),
         ),
-        (
-            String::from("03D502D60348"),
-            String::from("corn"),
-        ),
+        (String::from("03D502D60348"), String::from("corn")),
         (
             String::from("03B1014D000303B4000303D502D60348"),
             String::from("popcorn"),
@@ -592,18 +570,12 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03CC008102F700A8000303C6"),
             String::from("carrot"),
         ),
-        (
-            String::from("03CC02A300A8000303C6"),
-            String::from("carrot"),
-        ),
+        (String::from("03CC02A300A8000303C6"), String::from("carrot")),
         (
             String::from("043200C60339030900A50348"),
             String::from("onion"),
         ),
-        (
-            String::from("043200A5033F00A50348"),
-            String::from("onion"),
-        ),
+        (String::from("043200A5033F00A50348"), String::from("onion")),
         (
             String::from("043501080339030900A50348"),
             String::from("onion"),
@@ -621,7 +593,9 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("sweet-potato"),
         ),
         (
-            String::from("0411014D000303C603FC03150024000303C6000303AB00C9000303BA018F0006038D0213"),
+            String::from(
+                "0411014D000303C603FC03150024000303C6000303AB00C9000303BA018F0006038D0213",
+            ),
             String::from("hot-sweet-potato"),
         ),
         (
@@ -732,10 +706,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03CF00C9000303B4000303CC018F000303D8"),
             String::from("cupcake"),
         ),
-        (
-            String::from("03840174002703DB0024"),
-            String::from("daisy"),
-        ),
+        (String::from("03840174002703DB0024"), String::from("daisy")),
         (
             String::from("03A50045000303C000E70339030900A8"),
             String::from("petunia"),
@@ -768,10 +739,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03FC00C6034803F002EB01DD0234"),
             String::from("sunflower"),
         ),
-        (
-            String::from("02DF003C02DF0024"),
-            String::from("lily"),
-        ),
+        (String::from("02DF003C02DF0024"), String::from("lily")),
         (
             String::from("02FD021603DE0006037500C900060390"),
             String::from("rose-bud"),
@@ -852,10 +820,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03D5014D000303AB0234000303D501CE0348"),
             String::from("copper-coin"),
         ),
-        (
-            String::from("02FA00EA0006036F0024"),
-            String::from("ruby"),
-        ),
+        (String::from("02FA00EA0006036F0024"), String::from("ruby")),
         (
             String::from("03FC008A03F001AA0300"),
             String::from("sapphire"),
@@ -904,10 +869,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("037502340006039003F00069036C0234"),
             String::from("bird-feather"),
         ),
-        (
-            String::from("037B020A02EE000303C6"),
-            String::from("bolt"),
-        ),
+        (String::from("037B020A02EE000303C6"), String::from("bolt")),
         (
             String::from("032A0087000603A203390045000303C6"),
             String::from("magnet"),
@@ -920,10 +882,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("0333025500060375009F02EE"),
             String::from("marble"),
         ),
-        (
-            String::from("03D802F4018F000303C6"),
-            String::from("crate"),
-        ),
+        (String::from("03D802F4018F000303C6"), String::from("crate")),
         (
             String::from("03D50255000603900006037B02D9000603900006037B014D000303D803FC"),
             String::from("cardboard-box"),
@@ -936,10 +895,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("043B021603EA022804050297"),
             String::from("over-here"),
         ),
-        (
-            String::from("040B009F02EB0213"),
-            String::from("hello"),
-        ),
+        (String::from("040B009F02EB0213"), String::from("hello")),
         (
             String::from("039C010B00060390034501950024000303C6"),
             String::from("good-night"),
@@ -972,18 +928,9 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("036C0087000303C603FC03F001AD0348"),
             String::from("thats-fine"),
         ),
-        (
-            String::from("043B0213000303CC01740024"),
-            String::from("ok"),
-        ),
-        (
-            String::from("04020276"),
-            String::from("sure"),
-        ),
-        (
-            String::from("02FD01B0000303C6"),
-            String::from("right"),
-        ),
+        (String::from("043B0213000303CC01740024"), String::from("ok")),
+        (String::from("04020276"), String::from("sure")),
+        (String::from("02FD01B0000303C6"), String::from("right")),
         (
             String::from("02E2006903FC0006038A00ED036C0087000303C6"),
             String::from("lets-do-that"),
@@ -1012,18 +959,12 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03CF00C9000303BD00A8000303C301F2000303C6"),
             String::from("cut-it-out"),
         ),
-        (
-            String::from("03450213"),
-            String::from("no"),
-        ),
+        (String::from("03450213"), String::from("no")),
         (
             String::from("0318018F0006038700A80006039F0213"),
             String::from("way-to-go"),
         ),
-        (
-            String::from("03F002EB01DD0234"),
-            String::from("flower"),
-        ),
+        (String::from("03F002EB01DD0234"), String::from("flower")),
         (
             String::from("038400840348000303C603FC"),
             String::from("dance"),
@@ -1104,14 +1045,8 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03F90009030C00E102E2018F000303BD0234"),
             String::from("see-you-later"),
         ),
-        (
-            String::from("03F90009030C00EA"),
-            String::from("see-you"),
-        ),
-        (
-            String::from("037B01B0"),
-            String::from("bye"),
-        ),
+        (String::from("03F90009030C00EA"), String::from("see-you")),
+        (String::from("037B01B0"), String::from("bye")),
         (
             String::from("0411031B00A8000303BD0219030900A80006038A00CF0042035A"),
             String::from("what-are-you-doing?"),
@@ -1164,10 +1099,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("04290045000303C603FC021603EA0237036C02B8"),
             String::from("its-over-there"),
         ),
-        (
-            String::from("02DF003C02DF0024"),
-            String::from("lily"),
-        ),
+        (String::from("02DF003C02DF0024"), String::from("lily")),
         (
             String::from("03FC00C6034803F002EB01DD0234"),
             String::from("sunflower"),
@@ -1188,10 +1120,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("0438012C0006038100480402"),
             String::from("oddish"),
         ),
-        (
-            String::from("03A202E800E70336"),
-            String::from("gloom"),
-        ),
+        (String::from("03A202E800E70336"), String::from("gloom")),
         (
             String::from("03EA01A702EE000303B402E800E70336"),
             String::from("vileplume"),
@@ -1200,14 +1129,8 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("042F01AD033603FC02BE0024"),
             String::from("im-sorry"),
         ),
-        (
-            String::from("03FC02BE0024"),
-            String::from("sorry"),
-        ),
-        (
-            String::from("03CC0084033F00A50348"),
-            String::from("cannon"),
-        ),
+        (String::from("03FC02BE0024"), String::from("sorry")),
+        (String::from("03CC0084033F00A50348"), String::from("cannon")),
         (
             String::from("03810045000603930045000303C301F2000303C6"),
             String::from("dig-it-out"),
@@ -1216,18 +1139,9 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03810045000603A2036C017A0234"),
             String::from("dig-there"),
         ),
-        (
-            String::from("03810045000603A2"),
-            String::from("dig"),
-        ),
-        (
-            String::from("03AE010202EE"),
-            String::from("pull"),
-        ),
-        (
-            String::from("033F00C9000303C6"),
-            String::from("nut"),
-        ),
+        (String::from("03810045000603A2"), String::from("dig")),
+        (String::from("03AE010202EE"), String::from("pull")),
+        (String::from("033F00C9000303C6"), String::from("nut")),
         (
             String::from("03780108033C0084033F00C9"),
             String::from("banana"),
@@ -1244,10 +1158,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("0372029D002400060390000303C602F4006903E40234"),
             String::from("buried-treasure"),
         ),
-        (
-            String::from("0408005D02EB0213"),
-            String::from("hello"),
-        ),
+        (String::from("0408005D02EB0213"), String::from("hello")),
         (
             String::from("042F01A702E500CC03E7030C00EA"),
             String::from("i-love-you"),
@@ -1312,26 +1223,17 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("041101290348000303BD0234"),
             String::from("haunter"),
         ),
-        (
-            String::from("02FD0129035A"),
-            String::from("wrong"),
-        ),
+        (String::from("02FD0129035A"), String::from("wrong")),
         (
             String::from("036C0087000303C603DE02FD0129035A"),
             String::from("thats-wrong"),
         ),
-        (
-            String::from("03D503150045000303C6"),
-            String::from("quit"),
-        ),
+        (String::from("03D503150045000303C6"), String::from("quit")),
         (
             String::from("03CF00C9000303B700450006038D01F2000303C6"),
             String::from("cut-it-out"),
         ),
-        (
-            String::from("03CF00A503270297"),
-            String::from("c-mere"),
-        ),
+        (String::from("03CF00A503270297"), String::from("c-mere")),
         (
             String::from("03CF00A5033604050297"),
             String::from("come-here"),
@@ -1348,26 +1250,17 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("0321012C0003036001F2000303C6"),
             String::from("watch-out"),
         ),
-        (
-            String::from("036C02B8"),
-            String::from("there"),
-        ),
+        (String::from("036C02B8"), String::from("there")),
         (
             String::from("03FC03150042035A034501F2"),
             String::from("swing-now"),
         ),
-        (
-            String::from("03FC03150042035A"),
-            String::from("swing"),
-        ),
+        (String::from("03FC03150042035A"), String::from("swing")),
         (
             String::from("039F020D02FD01B0000303C6"),
             String::from("go-right"),
         ),
-        (
-            String::from("02FD01B0000303C6"),
-            String::from("right"),
-        ),
+        (String::from("02FD01B0000303C6"), String::from("right")),
         (
             String::from("03F00258036C022E02FD01B0000303C6"),
             String::from("farther-right"),
@@ -1376,10 +1269,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("039F020A02E2006903F0000303C6"),
             String::from("go-left"),
         ),
-        (
-            String::from("02E2006903F0000303C6"),
-            String::from("left"),
-        ),
+        (String::from("02E2006903F0000303C6"), String::from("left")),
         (
             String::from("03F00258036C022B02E2006903F0000303C6"),
             String::from("farther-left"),
@@ -1472,10 +1362,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("02DF004803F900420348000303BD00A503270024"),
             String::from("listen-to-me"),
         ),
-        (
-            String::from("03F002FA00EA000303C6"),
-            String::from("fruit"),
-        ),
+        (String::from("03F002FA00EA000303C6"), String::from("fruit")),
         (
             String::from("03450213000303C6000303A8008700060390"),
             String::from("notepad"),
@@ -1500,14 +1387,8 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("0411014D000303C603FC03150024000303B4000303BA018F0006038D0213"),
             String::from("hot-sweet-potato"),
         ),
-        (
-            String::from("03D200E102EE"),
-            String::from("cool"),
-        ),
-        (
-            String::from("03F001AD0348"),
-            String::from("fine"),
-        ),
+        (String::from("03D200E102EE"), String::from("cool")),
+        (String::from("03F001AD0348"), String::from("fine")),
         (
             String::from("0309023703FC0213000303C9030C00EA000303C6"),
             String::from("youre-so-cute"),
@@ -1572,14 +1453,8 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("032A0087000603A2033F00A8000303C6"),
             String::from("magnet"),
         ),
-        (
-            String::from("03D501CE0348"),
-            String::from("coin"),
-        ),
-        (
-            String::from("036600D5009F02EE"),
-            String::from("jewel"),
-        ),
+        (String::from("03D501CE0348"), String::from("coin")),
+        (String::from("036600D5009F02EE"), String::from("jewel")),
         (
             String::from("0333025500060375009F02EE"),
             String::from("marble"),
@@ -1596,10 +1471,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03D50315004803DE000303C301AD0336"),
             String::from("quiz-time"),
         ),
-        (
-            String::from("03B7002703E70024"),
-            String::from("tv"),
-        ),
+        (String::from("03B7002703E70024"), String::from("tv")),
         (
             String::from("042F01B0000303D503150045000303C6"),
             String::from("i-quit"),
@@ -1616,10 +1488,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03150024000303CF00A50348000303B402E2018F"),
             String::from("we-can-play"),
         ),
-        (
-            String::from("0372008700060390"),
-            String::from("bad"),
-        ),
+        (String::from("0372008700060390"), String::from("bad")),
         (
             String::from("0345014D000303C90045000303C3012F03F0"),
             String::from("knock-it-off"),
@@ -1636,10 +1505,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("042F01AD03360345014D000303C6000303B402E201740042035A"),
             String::from("im-not-playing"),
         ),
-        (
-            String::from("03D503150045000303C6"),
-            String::from("quit"),
-        ),
+        (String::from("03D503150045000303C6"), String::from("quit")),
         (
             String::from("03FC000303C3014D000303B4036C0087000303C6"),
             String::from("stop-that"),
@@ -1660,10 +1526,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03D802DF00210348036C0087000303BD00C9000303B4"),
             String::from("clean-that-up"),
         ),
-        (
-            String::from("03B70048040200EA"),
-            String::from("tissue"),
-        ),
+        (String::from("03B70048040200EA"), String::from("tissue")),
         (
             String::from("037500C002EE0006037500AB03FC02D9"),
             String::from("bulbasaur"),
@@ -1768,10 +1631,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03FC000303A502880213"),
             String::from("spearow"),
         ),
-        (
-            String::from("03ED02880213"),
-            String::from("fearow"),
-        ),
+        (String::from("03ED02880213"), String::from("fearow")),
         (
             String::from("04260024000303CF00A5034803DE"),
             String::from("ekans"),
@@ -1788,10 +1648,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03A50024000303CF00A80003036000EA"),
             String::from("pikachu"),
         ),
-        (
-            String::from("02FD01B00003036000EA"),
-            String::from("raichu"),
-        ),
+        (String::from("02FD01B00003036000EA"), String::from("raichu")),
         (
             String::from("03FC00840348040202FA00EA"),
             String::from("sandshrew"),
@@ -1884,22 +1741,13 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("0438012C0006038100480402"),
             String::from("oddish"),
         ),
-        (
-            String::from("03A202E800E70336"),
-            String::from("gloom"),
-        ),
+        (String::from("03A202E800E70336"), String::from("gloom")),
         (
             String::from("03EA01A702EE000303B402E800E70336"),
             String::from("vileplume"),
         ),
-        (
-            String::from("03B1024000AB03FC"),
-            String::from("paras"),
-        ),
-        (
-            String::from("03A802A300AB03FC"),
-            String::from("paras"),
-        ),
+        (String::from("03B1024000AB03FC"), String::from("paras")),
+        (String::from("03A802A300AB03FC"), String::from("paras")),
         (
             String::from("03B1024000AB03FC0066000303D8000303C6"),
             String::from("parasect"),
@@ -1920,10 +1768,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03810045000603A202E500A8000303C6"),
             String::from("diglett"),
         ),
-        (
-            String::from("0327001501F503F6"),
-            String::from("meowth"),
-        ),
+        (String::from("0327001501F503F6"), String::from("meowth")),
         (
             String::from("03AB023703E400A50348"),
             String::from("persian"),
@@ -2024,14 +1869,8 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03A202F4008A03EA02E50234"),
             String::from("graveler"),
         ),
-        (
-            String::from("039F020A02E500A50336"),
-            String::from("golem"),
-        ),
-        (
-            String::from("039F014402EE0336"),
-            String::from("golem"),
-        ),
+        (String::from("039F020A02E500A50336"), String::from("golem")),
+        (String::from("039F014402EE0336"), String::from("golem")),
         (
             String::from("03B1021003390024000303BD00A8"),
             String::from("ponyta"),
@@ -2060,18 +1899,12 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("032A0087000603A2033F00A8000303C3014A0348"),
             String::from("magneton"),
         ),
-        (
-            String::from("0008"),
-            String::from("farfetch"),
-        ),
+        (String::from("0008"), String::from("farfetch")),
         (
             String::from("038D02130006039002F100150213"),
             String::from("dodrio"),
         ),
-        (
-            String::from("03F9001B02EE"),
-            String::from("seel"),
-        ),
+        (String::from("03F9001B02EE"), String::from("seel")),
         (
             String::from("038A00EA0006039F014A035A"),
             String::from("dewgong"),
@@ -2080,14 +1913,8 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("038A00EA0006039F014A0348"),
             String::from("dewgong"),
         ),
-        (
-            String::from("03A202FD01AD032D0234"),
-            String::from("grimer"),
-        ),
-        (
-            String::from("032D00C9000303D8"),
-            String::from("muk"),
-        ),
+        (String::from("03A202FD01AD032D0234"), String::from("grimer")),
+        (String::from("032D00C9000303D8"), String::from("muk")),
         (
             String::from("0402005D02EE000603870234"),
             String::from("shellder"),
@@ -2100,10 +1927,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("0396008A03FC000303C602DF00"),
             String::from("gastly"),
         ),
-        (
-            String::from("0396008A03FC02DF0024"),
-            String::from("gastly"),
-        ),
+        (String::from("0396008A03FC02DF0024"), String::from("gastly")),
         (
             String::from("041101290348000303BD0234"),
             String::from("haunter"),
@@ -2232,10 +2056,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03CC018C035A0006039900AB03FC000303D5014A0348"),
             String::from("kangaskhan"),
         ),
-        (
-            String::from("041102DC03F90024"),
-            String::from("horsea"),
-        ),
+        (String::from("041102DC03F90024"), String::from("horsea")),
         (
             String::from("03F900240006039002F700A8"),
             String::from("seadra"),
@@ -2260,10 +2081,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("0327004803FC000303BD0231033301AD0336"),
             String::from("mr.mime"),
         ),
-        (
-            String::from("03FC01B3036C0234"),
-            String::from("scyther"),
-        ),
+        (String::from("03FC01B3036C0234"), String::from("scyther")),
         (
             String::from("03630042035A000303D803FC"),
             String::from("jynx"),
@@ -2280,18 +2098,9 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("032A0087000603A203330255"),
             String::from("magmar"),
         ),
-        (
-            String::from("03A50042034803FC0234"),
-            String::from("pinsir"),
-        ),
-        (
-            String::from("03C3020D02FD012F03FC"),
-            String::from("tauros"),
-        ),
-        (
-            String::from("03C30246021603FC"),
-            String::from("tauros"),
-        ),
+        (String::from("03A50042034803FC0234"), String::from("pinsir")),
+        (String::from("03C3020D02FD012F03FC"), String::from("tauros")),
+        (String::from("03C30246021603FC"), String::from("tauros")),
         (
             String::from("032A0087000603630045000303D50255000303B4"),
             String::from("magikarp"),
@@ -2312,14 +2121,8 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("02E20087000303B402F700AB03FC"),
             String::from("lapras"),
         ),
-        (
-            String::from("03810045000303C30213"),
-            String::from("ditto"),
-        ),
-        (
-            String::from("0426002703E70024"),
-            String::from("eevee"),
-        ),
+        (String::from("03810045000303C30213"), String::from("ditto")),
+        (String::from("0426002703E70024"), String::from("eevee")),
         (
             String::from("03EA018F000303B102BE0015014A0348"),
             String::from("vaporeon"),
@@ -2416,10 +2219,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("0327030C00EA000303C000EA"),
             String::from("mewtwo"),
         ),
-        (
-            String::from("0327030C00EA"),
-            String::from("mew"),
-        ),
+        (String::from("0327030C00EA"), String::from("mew")),
         (
             String::from("03C3014D000303AB00AB03EA000603630045000603A202DF0024000303AB00AB03F0"),
             String::from("top-of-jigglypuff"),
@@ -2456,10 +2256,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("038700C9000603A2000303C602F100150213"),
             String::from("dugtrio"),
         ),
-        (
-            String::from("03A50045000603630024"),
-            String::from("pidgey"),
-        ),
+        (String::from("03A50045000603630024"), String::from("pidgey")),
         (
             String::from("038D02130006038A00DB0213"),
             String::from("doduo"),
@@ -2528,30 +2325,18 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("02E2006903FC000303B402E2018F"),
             String::from("lets-play"),
         ),
-        (
-            String::from("02FD0129035A"),
-            String::from("wrong"),
-        ),
+        (String::from("02FD0129035A"), String::from("wrong")),
         (
             String::from("0372008700060390000303A50024000303CF00A80003036000EA"),
             String::from("bad-pikachu"),
         ),
-        (
-            String::from("0327004803FC"),
-            String::from("miss"),
-        ),
+        (String::from("0327004803FC"), String::from("miss")),
         (
             String::from("038D02100348000303C6000303D5012302DF0045000303C6"),
             String::from("dont-call-it"),
         ),
-        (
-            String::from("041101F503FC"),
-            String::from("house"),
-        ),
-        (
-            String::from("041102100336"),
-            String::from("home"),
-        ),
+        (String::from("041101F503FC"), String::from("house")),
+        (String::from("041102100336"), String::from("home")),
         (
             String::from("03EA00A202F1004500060381000F00C60348"),
             String::from("viridian"),
@@ -2560,10 +2345,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03EA00A202F1004500060381000F00C6034803F002C400AB03FC000303C6"),
             String::from("viridian-forest"),
         ),
-        (
-            String::from("043B0213000303CF0234"),
-            String::from("ochre"),
-        ),
+        (String::from("043B0213000303CF0234"), String::from("ochre")),
         (
             String::from("043B0213000303CF0225031E010B0006039003DE"),
             String::from("ochre-woods"),
@@ -2604,10 +2386,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03D502130006037E03ED004803FF0042035A0411020A02EE"),
             String::from("cobalt-fishing-hole"),
         ),
-        (
-            String::from("03D5021603FC000303C6"),
-            String::from("coast"),
-        ),
+        (String::from("03D5021603FC000303C6"), String::from("coast")),
         (
             String::from("03D502130006037B012302EE000303C6000303D5021603FC000303C6"),
             String::from("cobalt-coast"),
@@ -2620,16 +2399,15 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03BD0231033F00A8000303B4"),
             String::from("turnip"),
         ),
-        (
-            String::from("03BD02310348000303B4"),
-            String::from("turnip"),
-        ),
+        (String::from("03BD02310348000303B4"), String::from("turnip")),
         (
             String::from("03FC03150024000303C6000303AB00A8000303BA018F0006038D0213"),
             String::from("sweet-potato"),
         ),
         (
-            String::from("0411014D000303C603FC03150024000303C6000303AE010B000303BA018F0006038D0213"),
+            String::from(
+                "0411014D000303C603FC03150024000303C6000303AE010B000303BA018F0006038D0213",
+            ),
             String::from("hot-sweet-potato"),
         ),
         (
@@ -2640,18 +2418,12 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("04080084034B00420348036C02B8"),
             String::from("hang-in-there"),
         ),
-        (
-            String::from("03AE010202EE"),
-            String::from("pull"),
-        ),
+        (String::from("03AE010202EE"), String::from("pull")),
         (
             String::from("02F1001B02DF0045000303B700420348"),
             String::from("reel-it-in"),
         ),
-        (
-            String::from("034501F2"),
-            String::from("now"),
-        ),
+        (String::from("034501F2"), String::from("now")),
         (
             String::from("03CC00870003035D0045000303C6"),
             String::from("catch-it"),
@@ -2676,14 +2448,8 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("02F1003C02DF002703F90045000303C6"),
             String::from("release-it"),
         ),
-        (
-            String::from("02E500C6034800030360"),
-            String::from("lunch"),
-        ),
-        (
-            String::from("03FC033C0087000303D8"),
-            String::from("snack"),
-        ),
+        (String::from("02E500C6034800030360"), String::from("lunch")),
+        (String::from("03FC033C0087000303D8"), String::from("snack")),
         (
             String::from("02E2006903F90024000303C6"),
             String::from("lets-eat"),
@@ -2700,10 +2466,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("042F01B0000603930045000303B70045000303C6"),
             String::from("i-get-it"),
         ),
-        (
-            String::from("0411032101B0"),
-            String::from("why?"),
-        ),
+        (String::from("0411032101B0"), String::from("why?")),
         (
             String::from("041101F2000303CF00C60336"),
             String::from("how-come?"),
@@ -2728,10 +2491,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03FC000303C3014D000303B4036C0087000303C6"),
             String::from("stop-that"),
         ),
-        (
-            String::from("03D503150045000303C6"),
-            String::from("quit"),
-        ),
+        (String::from("03D503150045000303C6"), String::from("quit")),
         (
             String::from("03CF00C9000303B70045000303C301F2000303C6"),
             String::from("cut-it-out"),
@@ -2744,10 +2504,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("02E20066000303C603DE0006039F0213"),
             String::from("lets-go"),
         ),
-        (
-            String::from("031B0225012F03F0"),
-            String::from("we-re-off"),
-        ),
+        (String::from("031B0225012F03F0"), String::from("we-re-off")),
         (
             String::from("03BA008700060393030902190045000303C6"),
             String::from("tag-youre-it"),
@@ -2804,18 +2561,12 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("039F0213000303BD00C6033302460213"),
             String::from("go-tomorrow"),
         ),
-        (
-            String::from("02FD014D000303D8"),
-            String::from("rock"),
-        ),
+        (String::from("02FD014D000303D8"), String::from("rock")),
         (
             String::from("03F9004803DE023703FC"),
             String::from("scissors"),
         ),
-        (
-            String::from("03A8018F000303AB0234"),
-            String::from("paper"),
-        ),
+        (String::from("03A8018F000303AB0234"), String::from("paper")),
         (
             String::from("0381002A000303B10255000303C6"),
             String::from("depart"),
@@ -2872,10 +2623,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03450213000602E50042032A002A000303C6"),
             String::from("no-limit"),
         ),
-        (
-            String::from("03B7005A0348"),
-            String::from("ten"),
-        ),
+        (String::from("03B7005A0348"), String::from("ten")),
         (
             String::from("03E7002A03F6000303B700090348"),
             String::from("fifteen"),
@@ -2888,18 +2636,12 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03C30318004B0339038A002403EA019E03EA"),
             String::from("twenty-five"),
         ),
-        (
-            String::from("036C02AC03BA0027"),
-            String::from("thirty"),
-        ),
+        (String::from("036C02AC03BA0027"), String::from("thirty")),
         (
             String::from("036C02AC03BA002703EA019E03EA"),
             String::from("thirty-five"),
         ),
-        (
-            String::from("03EA02D6000603900048"),
-            String::from("forty"),
-        ),
+        (String::from("03EA02D6000603900048"), String::from("forty")),
         (
             String::from("03EA02D600060390004803EA019E03EA"),
             String::from("forty-five"),
@@ -2928,10 +2670,7 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03FC004B036C00630348000303B7000903EA019E03EA"),
             String::from("seventy-five"),
         ),
-        (
-            String::from("042C018C03B70009"),
-            String::from("eighty"),
-        ),
+        (String::from("042C018C03B70009"), String::from("eighty")),
         (
             String::from("042C018C03B7000903EA019E03EA"),
             String::from("eighty-five"),
