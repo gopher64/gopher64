@@ -330,10 +330,12 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             let mut config = ui::config::Config::new();
             save_config(&mut config, controller_paths, save_config_items);
 
-            let status = std::process::Command::new(std::env::current_exe().unwrap())
-                .arg(file.unwrap().path())
-                .status()
-                .expect("failed to execute process");
+            let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+            command.arg(file.unwrap().path());
+            if fullscreen {
+                command.arg("--fullscreen");
+            }
+            let status = command.status().expect("failed to execute process");
             if !status.success() {
                 panic!("process exited with: {}", status);
             }
