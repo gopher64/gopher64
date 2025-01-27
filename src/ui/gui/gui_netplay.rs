@@ -110,7 +110,7 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         .json::<std::collections::HashMap<String, String>>()
                         .await
                     {
-                        let _ = tx.send(servers);
+                        tx.send(servers).unwrap();
                         gui_ctx.request_repaint();
                     }
                 }
@@ -195,12 +195,13 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     if let Some(file) = file {
                         parse_rom_file(file, tx);
                     } else {
-                        let _ = tx.send((
+                        tx.send((
                             "".to_string(),
                             "".to_string(),
                             "Open ROM".to_string(),
                             vec![],
-                        ));
+                        ))
+                        .unwrap();
                     }
                     gui_ctx.request_repaint();
                 });
@@ -403,14 +404,16 @@ fn parse_rom_file(file: rfd::FileHandle, tx: std::sync::mpsc::Sender<GameInfo>) 
             .trim()
             .replace('\0', "")
             .to_string();
-        let _ = tx.send((hash, game_name, file.file_name(), rom_contents));
+        tx.send((hash, game_name, file.file_name(), rom_contents))
+            .unwrap();
     } else {
-        let _ = tx.send((
+        tx.send((
             "".to_string(),
             "".to_string(),
             "Invalid ROM".to_string(),
             vec![],
-        ));
+        ))
+        .unwrap();
     }
 }
 
@@ -592,12 +595,13 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             if let Some(file) = file {
                                 parse_rom_file(file, tx);
                             } else {
-                                let _ = tx.send((
+                                tx.send((
                                     "".to_string(),
                                     "".to_string(),
                                     "No ROM selected".to_string(),
                                     vec![],
-                                ));
+                                ))
+                                .unwrap();
                             }
                             gui_ctx.request_repaint();
                         });
