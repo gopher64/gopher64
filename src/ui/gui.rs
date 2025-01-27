@@ -326,10 +326,10 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
         if cfg!(target_os = "macos") && file.is_some() {
             // mac os requires the process to be started on the main thread
             // this means that netplay and VRU emulation will not work on mac os
-
-            let mut config = ui::config::Config::new();
-            save_config(&mut config, controller_paths, save_config_items);
-
+            {
+                let mut config = ui::config::Config::new();
+                save_config(&mut config, controller_paths, save_config_items);
+            }
             let mut command = std::process::Command::new(std::env::current_exe().unwrap());
             if fullscreen {
                 command.arg("--fullscreen");
