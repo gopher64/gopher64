@@ -149,9 +149,14 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                 device.pi.regs[PI_STATUS_REG as usize] = 0
             }
         }
-        PI_BSD_DOM1_LAT_REG | PI_BSD_DOM1_PWD_REG | PI_BSD_DOM1_PGS_REG | PI_BSD_DOM1_RLS_REG
-        | PI_BSD_DOM2_LAT_REG | PI_BSD_DOM2_PWD_REG | PI_BSD_DOM2_PGS_REG | PI_BSD_DOM2_RLS_REG => {
+        PI_BSD_DOM1_LAT_REG | PI_BSD_DOM1_PWD_REG | PI_BSD_DOM2_LAT_REG | PI_BSD_DOM2_PWD_REG => {
             device::memory::masked_write_32(&mut device.pi.regs[reg as usize], value & 0xFF, mask)
+        }
+        PI_BSD_DOM1_PGS_REG | PI_BSD_DOM2_PGS_REG => {
+            device::memory::masked_write_32(&mut device.pi.regs[reg as usize], value & 0xF, mask)
+        }
+        PI_BSD_DOM1_RLS_REG | PI_BSD_DOM2_RLS_REG => {
+            device::memory::masked_write_32(&mut device.pi.regs[reg as usize], value & 0x3, mask)
         }
         _ => device::memory::masked_write_32(&mut device.pi.regs[reg as usize], value, mask),
     }
