@@ -77,7 +77,7 @@ pub fn read_regs(
     let reg = (address & 0x3FF) >> 2;
     match reg as u32 {
         RDRAM_MODE_REG => device.pi.regs[reg as usize] ^ 0xc0c0c0c0,
-        0x200 => 0x00000000, //Row, needed for libdragon
+        0x80 => 0x00000000, //Row, needed for libdragon
         _ => device.rdram.regs[chip_id as usize][reg as usize],
     }
 }
