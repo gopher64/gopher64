@@ -164,10 +164,24 @@ async fn main() {
                 ),
             ..Default::default()
         };
+
+        let controllers_paths;
+        let controller_names;
+        {
+            let game_ui = ui::Ui::new();
+            controllers_paths = gui::get_controller_paths(&game_ui);
+            controller_names = gui::get_controller_names(&game_ui);
+        }
         eframe::run_native(
             "gopher64",
             options,
-            Box::new(|cc| Ok(Box::new(ui::gui::GopherEguiApp::new(cc)))),
+            Box::new(|cc| {
+                Ok(Box::new(ui::gui::GopherEguiApp::new(
+                    cc,
+                    controllers_paths,
+                    controller_names,
+                )))
+            }),
         )
         .unwrap();
     }
