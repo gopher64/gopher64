@@ -45,7 +45,10 @@ pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
     unsafe {
         let init = sdl3_sys::init::SDL_WasInit(0);
         if init & flag == 0 && !sdl3_sys::init::SDL_InitSubSystem(flag) {
-            panic!("Could not initialize SDL subsystem: {}", flag);
+            let err = std::ffi::CStr::from_ptr(sdl3_sys::error::SDL_GetError())
+                .to_str()
+                .unwrap();
+            panic!("Could not initialize SDL subsystem: {}, {}", flag, err);
         }
     }
 }
