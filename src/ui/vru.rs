@@ -5,7 +5,7 @@ use crate::ui;
 pub fn prompt_for_match(
     words: &[String],
     window_notifier: &std::sync::mpsc::Sender<Vec<String>>,
-    word_index_receiver: &mut std::sync::mpsc::Receiver<String>,
+    word_index_receiver: &std::sync::mpsc::Receiver<String>,
     gui_ctx: &egui::Context,
 ) -> u16 {
     let mut dedup_words = words.to_owned();
