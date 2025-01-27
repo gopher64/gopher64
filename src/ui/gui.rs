@@ -38,9 +38,9 @@ struct SaveConfig {
     emulate_vru: bool,
 }
 
-fn get_input_profiles(game_ui: &ui::Ui) -> Vec<String> {
+fn get_input_profiles(config: &ui::config::Config) -> Vec<String> {
     let mut profiles = vec![];
-    for key in game_ui.config.input.input_profiles.keys() {
+    for key in config.input.input_profiles.keys() {
         profiles.push(key.clone())
     }
     profiles
@@ -61,7 +61,7 @@ pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
     controllers
 }
 
-fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
+pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
     let mut controller_paths: Vec<String> = vec![];
 
     for offset in 0..game_ui.num_joysticks as isize {
@@ -79,19 +79,16 @@ fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
 }
 
 impl GopherEguiApp {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> GopherEguiApp {
+    pub fn new(
+        cc: &eframe::CreationContext<'_>,
+        controller_paths: Vec<String>,
+        controller_names: Vec<String>,
+    ) -> GopherEguiApp {
         add_japanese_font(&cc.egui_ctx);
-        let game_ui = ui::Ui::new();
-        let controller_paths = get_controller_paths(&game_ui);
+        let config = ui::config::Config::new();
 
         let mut selected_controller = [-1, -1, -1, -1];
-        for (pos, item) in game_ui
-            .config
-            .input
-            .controller_assignment
-            .iter()
-            .enumerate()
-        {
+        for (pos, item) in config.input.controller_assignment.iter().enumerate() {
             if item.is_some() {
                 for (path_pos, path) in controller_paths.iter().enumerate() {
                     if item.as_deref().unwrap() == *path {
@@ -104,15 +101,15 @@ impl GopherEguiApp {
         GopherEguiApp {
             configure_profile: false,
             profile_name: "".to_string(),
-            selected_profile: game_ui.config.input.input_profile_binding.clone(),
+            selected_profile: config.input.input_profile_binding.clone(),
             selected_controller,
-            controller_names: get_controller_names(&game_ui),
-            input_profiles: get_input_profiles(&game_ui),
-            controller_enabled: game_ui.config.input.controller_enabled,
-            upscale: game_ui.config.video.upscale,
-            integer_scaling: game_ui.config.video.integer_scaling,
-            fullscreen: game_ui.config.video.fullscreen,
-            emulate_vru: game_ui.config.input.emulate_vru,
+            controller_names,
+            input_profiles: get_input_profiles(&config),
+            controller_enabled: config.input.controller_enabled,
+            upscale: config.video.upscale,
+            integer_scaling: config.video.integer_scaling,
+            fullscreen: config.video.fullscreen,
+            emulate_vru: config.input.emulate_vru,
             show_vru_dialog: false,
             dinput: false,
             controller_paths,
@@ -121,11 +118,7 @@ impl GopherEguiApp {
             vru_word_notifier: None,
             vru_word_list: Vec::new(),
             netplay: Default::default(),
-            dirs: ui::Dirs {
-                config_dir: game_ui.dirs.config_dir.clone(),
-                cache_dir: game_ui.dirs.cache_dir.clone(),
-                data_dir: game_ui.dirs.data_dir.clone(),
-            },
+            dirs: ui::get_dirs(),
         }
     }
 }
