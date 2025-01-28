@@ -90,7 +90,9 @@ jobs:
           rustflags: ""
       - name: Build
         run: |
+          # https://github.com/Themaister/parallel-rdp/issues/70
           curl -L https://raw.githubusercontent.com/Homebrew/homebrew-core/5be67e19124b615f6a4698329334cec0a201323e/Formula/molten-vk.rb > molten-vk.rb
+          brew style --fix molten-vk.rb
           brew install molten-vk.rb
           cargo build --release -v --target=${{ matrix.target }}
       - name: Upload file
