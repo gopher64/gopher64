@@ -160,15 +160,6 @@ fn main() {
     }
 
     if os == "macos" {
-        let moltken_vk_dir = out_path.join("MoltenVK_v1.2.11");
-        if !moltken_vk_dir.join("libMoltenVK.a").exists() {
-            if let Ok(response) = reqwest::blocking::get("https://github.com/gopher64/compat/raw/refs/heads/main/MoltenVK/v1.2.11/libMoltenVK.a").unwrap().bytes()
-            {
-                std::fs::create_dir_all(moltken_vk_dir.clone()).unwrap();
-                std::fs::write(moltken_vk_dir.join("libMoltenVK.a"), response).unwrap();
-            }
-        }
-        println!("cargo:rustc-link-search={}", moltken_vk_dir.display());
-        println!("cargo:rustc-link-lib=static=MoltenVK");
+        println!("cargo:rustc-link-lib=framework=MoltenVK");
     }
 }
