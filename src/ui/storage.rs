@@ -1,4 +1,3 @@
-use crate::device;
 use crate::netplay;
 use crate::ui;
 
@@ -138,12 +137,9 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
         if mempak.is_ok() {
             ui.saves.mempak.0 = mempak.unwrap();
         }
-        if netplay.is_none() {
-            // can't do romsaves with the current netplay implementation
-            let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
-            if romsave.is_ok() {
-                ui.saves.romsave.0 = postcard::from_bytes(romsave.unwrap().as_ref()).unwrap();
-            }
+        let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
+        if romsave.is_ok() {
+            ui.saves.romsave.0 = postcard::from_bytes(romsave.unwrap().as_ref()).unwrap();
         }
     }
 
@@ -153,51 +149,41 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
                 netplay.as_mut().unwrap(),
                 "eep",
                 &ui.saves.eeprom.0,
-                device::cart::EEPROM_MAX_SIZE,
+                ui.saves.eeprom.0.len(),
             );
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "sra",
                 &ui.saves.sram.0,
-                device::sram::SRAM_SIZE,
+                ui.saves.sram.0.len(),
             );
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "fla",
                 &ui.saves.flash.0,
-                device::sram::FLASHRAM_SIZE,
+                ui.saves.flash.0.len(),
             );
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "mpk",
                 &ui.saves.mempak.0,
-                device::controller::mempak::MEMPAK_SIZE * 4,
+                ui.saves.mempak.0.len(),
+            );
+            let romsave_bytes = postcard::to_stdvec(&ui.saves.romsave.0).unwrap();
+            netplay::send_save(
+                netplay.as_mut().unwrap(),
+                "rom",
+                &romsave_bytes,
+                romsave_bytes.len(),
             );
         } else {
-            netplay::receive_save(
-                netplay.as_mut().unwrap(),
-                "eep",
-                &mut ui.saves.eeprom.0,
-                device::cart::EEPROM_MAX_SIZE,
-            );
-            netplay::receive_save(
-                netplay.as_mut().unwrap(),
-                "sra",
-                &mut ui.saves.sram.0,
-                device::sram::SRAM_SIZE,
-            );
-            netplay::receive_save(
-                netplay.as_mut().unwrap(),
-                "fla",
-                &mut ui.saves.flash.0,
-                device::sram::FLASHRAM_SIZE,
-            );
-            netplay::receive_save(
-                netplay.as_mut().unwrap(),
-                "mpk",
-                &mut ui.saves.mempak.0,
-                device::controller::mempak::MEMPAK_SIZE * 4,
-            );
+            netplay::receive_save(netplay.as_mut().unwrap(), "eep", &mut ui.saves.eeprom.0);
+            netplay::receive_save(netplay.as_mut().unwrap(), "sra", &mut ui.saves.sram.0);
+            netplay::receive_save(netplay.as_mut().unwrap(), "fla", &mut ui.saves.flash.0);
+            netplay::receive_save(netplay.as_mut().unwrap(), "mpk", &mut ui.saves.mempak.0);
+            let mut romsave_bytes: Vec<u8> = vec![];
+            netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut romsave_bytes);
+            ui.saves.romsave.0 = postcard::from_bytes(&romsave_bytes).unwrap();
         }
     }
 }
@@ -221,7 +207,7 @@ pub fn write_saves(ui: &ui::Ui, netplay: &Option<netplay::Netplay>) {
         if ui.saves.mempak.1 {
             write_save(ui, SaveTypes::Mempak)
         }
-        if ui.saves.romsave.1 && netplay.is_none() {
+        if ui.saves.romsave.1 {
             write_save(ui, SaveTypes::Romsave)
         }
     }
