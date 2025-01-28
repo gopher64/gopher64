@@ -11,12 +11,13 @@ const UDP_SYNC_DATA: u8 = 4;
 
 //TCP packet formats
 const TCP_SEND_SAVE: u8 = 1;
-const TCP_RECEIVE_SAVE: u8 = 2;
+//const TCP_RECEIVE_SAVE: u8 = 2;
 //const TCP_SEND_SETTINGS: u8 = 3;
 //const TCP_RECEIVE_SETTINGS: u8 = 4;
 const TCP_REGISTER_PLAYER: u8 = 5;
 const TCP_GET_REGISTRATION: u8 = 6;
 const TCP_DISCONNECT_NOTICE: u8 = 7;
+const TCP_RECEIVE_SAVE_WITH_SIZE: u8 = 8;
 
 const CS4: u32 = 32;
 
@@ -57,19 +58,21 @@ pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8], size:
     request.push(0); // null terminate string
     request.extend_from_slice(&(size as u32).to_be_bytes());
 
-    let mut send_data = save_data.to_owned();
-    send_data.resize(size, 0); // pad with zeros if needed
-    request.extend(send_data);
+    if size > 0 {
+        request.extend(save_data.to_owned());
+    }
     netplay.tcp_stream.write_all(&request).unwrap();
 }
 
-pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<u8>, size: usize) {
-    let mut request: Vec<u8> = [TCP_RECEIVE_SAVE].to_vec();
+pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<u8>) {
+    let mut request: Vec<u8> = [TCP_RECEIVE_SAVE_WITH_SIZE].to_vec();
     request.extend_from_slice(save_type.as_bytes());
     request.push(0); // null terminate string
     netplay.tcp_stream.write_all(&request).unwrap();
 
-    let mut response: Vec<u8> = vec![0; size];
+    let mut size: [u8; 4] = [0; 4];
+    netplay.tcp_stream.read_exact(&mut size).unwrap();
+    let mut response: Vec<u8> = vec![0; u32::from_be_bytes(size) as usize];
     netplay.tcp_stream.read_exact(&mut response).unwrap();
     *save_data = response;
 }
