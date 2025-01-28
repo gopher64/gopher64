@@ -160,7 +160,7 @@ fn main() {
     }
 
     if os == "macos" {
-        println!("cargo:rustc-link-search=framework=/opt/homebrew/Frameworks");
-        println!("cargo:rustc-link-lib=framework=MoltenVK");
+        println!("cargo:rustc-link-search=dylib=/opt/homebrew/lib");
+        println!("cargo:rustc-link-lib=dylib=MoltenVK");
     }
 }

@@ -90,7 +90,7 @@ jobs:
           rustflags: ""
       - name: Build
         run: |
-          brew install molten-vk -v
+          brew install molten-vk
           cargo build --release -v --target=${{ matrix.target }}
       - name: Upload file
         uses: actions/upload-artifact@v4
