@@ -9,7 +9,6 @@ VkSurfaceKHR SDL_WSIPlatform::create_surface(VkInstance instance, VkPhysicalDevi
 	{
 		printf("Error creating surface\n");
 	}
-
 	return surface;
 }
 
