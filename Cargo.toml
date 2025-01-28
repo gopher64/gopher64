@@ -38,6 +38,11 @@ winres = "0.1"
 bindgen = "0.71"
 cc = { version = "1.2", features = ["parallel"] }
 
+[build-dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["http2","rustls-tls","charset","json","blocking"]
+
 [profile.release]
 lto = true
 codegen-units = 1
