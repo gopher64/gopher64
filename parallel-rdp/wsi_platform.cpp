@@ -9,6 +9,11 @@ VkSurfaceKHR SDL_WSIPlatform::create_surface(VkInstance instance, VkPhysicalDevi
 	{
 		printf("Error creating surface\n");
 	}
+	PFN_vkVoidFunction dummy = vkGetInstanceProcAddr(instance, "dummy");
+	if (dummy != NULL)
+	{
+		dummy();
+	}
 	return surface;
 }
 
