@@ -164,6 +164,6 @@ fn main() {
         println!("cargo:rustc-link-search=native=/opt/homebrew/lib");
         // Add Homebrew lib path for Intel Macs
         println!("cargo:rustc-link-search=native=/usr/local/lib");
-        println!("cargo:rustc-link-lib=static=MoltenVK");
+        println!("cargo:rustc-link-lib=static:+whole-archive=MoltenVK");
     }
 }
