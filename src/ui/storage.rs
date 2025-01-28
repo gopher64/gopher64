@@ -169,7 +169,10 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
                 &ui.saves.mempak.0,
                 ui.saves.mempak.0.len(),
             );
-            let romsave_bytes = postcard::to_stdvec(&ui.saves.romsave.0).unwrap();
+            let mut romsave_bytes: Vec<u8> = vec![];
+            if ui.saves.romsave.0.len() > 0 {
+                romsave_bytes = postcard::to_stdvec(&ui.saves.romsave.0).unwrap();
+            }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "rom",
@@ -183,7 +186,9 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             netplay::receive_save(netplay.as_mut().unwrap(), "mpk", &mut ui.saves.mempak.0);
             let mut romsave_bytes: Vec<u8> = vec![];
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut romsave_bytes);
-            ui.saves.romsave.0 = postcard::from_bytes(&romsave_bytes).unwrap();
+            if romsave_bytes.len() > 0 {
+                ui.saves.romsave.0 = postcard::from_bytes(&romsave_bytes).unwrap();
+            }
         }
     }
 }
