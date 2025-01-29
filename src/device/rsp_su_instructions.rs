@@ -566,7 +566,6 @@ pub fn mfc0(device: &mut device::Device, opcode: u32) {
         )
     }
     device.rsp.cpu.cycle_counter += 4; // needed for DK64
-    device.rsp.cpu.sync_point = true;
 }
 
 pub fn mtc0(device: &mut device::Device, opcode: u32) {
@@ -592,7 +591,6 @@ pub fn mtc0(device: &mut device::Device, opcode: u32) {
             !device::rsp_interface::SP_STATUS_HALT; // set halt when event happens
         device.rsp.cpu.halted = true // the RSP can halt itself by setting SP_SET_HALT
     }
-    device.rsp.cpu.sync_point = true;
 }
 
 pub fn mfc2(device: &mut device::Device, opcode: u32) {
