@@ -268,15 +268,13 @@ pub fn read_regs(
             device.rsp.regs[reg as usize]
         }
         SP_STATUS_REG => {
-            let value = device.rsp.regs[reg as usize];
-            if value == device.rsp.last_status_value
-                && value != SP_STATUS_INTR_BREAK
-                && value & SP_STATUS_HALT == 0
-            {
+            let value = device.rsp.regs[reg as usize]
+                & !(SP_STATUS_HALT | SP_STATUS_BROKE | SP_STATUS_INTR_BREAK);
+            if value == device.rsp.last_status_value {
                 device.rsp.cpu.sync_point = true;
             }
             device.rsp.last_status_value = value;
-            value
+            device.rsp.regs[reg as usize]
         }
         SP_SEMAPHORE_REG => {
             let value = device.rsp.regs[reg as usize];
