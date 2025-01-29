@@ -62,6 +62,7 @@ static int cmd_cur;
 static int cmd_ptr;
 static bool emu_running;
 static GFX_INFO gfx_info;
+static uint64_t sync_signal;
 
 static const unsigned cmd_len_lut[64] = {
 	1,
@@ -383,8 +384,6 @@ uint64_t rdp_process_commands()
 	if ((cmd_ptr + length) & ~(0x0003FFFF >> 3))
 		return interrupt_timer;
 
-	*gfx_info.DPC_STATUS_REG |= DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK;
-
 	uint32_t offset = DP_CURRENT;
 	if (*gfx_info.DPC_STATUS_REG & DP_STATUS_XBUS_DMA)
 	{
@@ -433,7 +432,7 @@ uint64_t rdp_process_commands()
 
 		if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
-			processor->wait_for_timeline(processor->signal_timeline());
+			sync_signal = processor->signal_timeline();
 
 			uint32_t width = viCalculateHorizonalWidth(*gfx_info.VI_H_START_REG, *gfx_info.VI_X_SCALE_REG, *gfx_info.VI_WIDTH_REG);
 			if (width == 0)
@@ -446,8 +445,6 @@ uint64_t rdp_process_commands()
 				height = 240;
 			}
 			interrupt_timer = width * height * 4;
-
-			*gfx_info.DPC_STATUS_REG &= ~(DP_STATUS_PIPE_BUSY | DP_STATUS_START_GCLK);
 		}
 
 		cmd_cur += cmd_length;
@@ -456,7 +453,11 @@ uint64_t rdp_process_commands()
 	cmd_ptr = 0;
 	cmd_cur = 0;
 	*gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
-	*gfx_info.DPC_STATUS_REG |= DP_STATUS_CBUF_READY;
 
 	return interrupt_timer;
+}
+
+void rdp_full_sync()
+{
+	processor->wait_for_timeline(sync_signal);
 }
