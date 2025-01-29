@@ -270,7 +270,7 @@ pub fn read_regs(
         SP_STATUS_REG => {
             let value = device.rsp.regs[reg as usize]
                 & !(SP_STATUS_HALT | SP_STATUS_BROKE | SP_STATUS_INTR_BREAK);
-            if value == device.rsp.last_status_value {
+            if value == device.rsp.last_status_value && value != 0 {
                 device.rsp.cpu.sync_point = true;
             }
             device.rsp.last_status_value = value;
@@ -438,12 +438,13 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
     if device.rsp.regs[SP_STATUS_REG as usize] & SP_STATUS_HALT == 0 && was_halted {
         device.rsp.cpu.broken = false;
         device.rsp.cpu.halted = false;
-        device.rsp.cpu.sync_point = false;
         do_task(device);
     }
 }
 
 fn do_task(device: &mut device::Device) {
+    device.rsp.cpu.sync_point = false;
+    device.rsp.last_status_value = 0;
     let timer = device::rsp_cpu::run(device);
 
     device::events::create_event(
@@ -467,7 +468,6 @@ fn rsp_event(device: &mut device::Device) {
         device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT;
         return;
     }
-    device.rsp.cpu.sync_point = false;
     do_task(device)
 }
 
