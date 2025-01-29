@@ -81,6 +81,7 @@ pub struct Rsp {
     pub regs2: [u32; SP_REGS2_COUNT as usize],
     pub mem: [u8; 0x2000],
     pub fifo: [RspDma; 2],
+    pub last_status_value: u32,
 }
 
 pub fn read_mem_fast(
@@ -267,8 +268,15 @@ pub fn read_regs(
             device.rsp.regs[reg as usize]
         }
         SP_STATUS_REG => {
-            device.rsp.cpu.sync_point = true;
-            device.rsp.regs[reg as usize]
+            let value = device.rsp.regs[reg as usize];
+            if value == device.rsp.last_status_value
+                && value != SP_STATUS_INTR_BREAK
+                && value & SP_STATUS_HALT == 0
+            {
+                device.rsp.cpu.sync_point = true;
+            }
+            device.rsp.last_status_value = value;
+            value
         }
         SP_SEMAPHORE_REG => {
             let value = device.rsp.regs[reg as usize];
