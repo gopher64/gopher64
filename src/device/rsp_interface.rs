@@ -273,6 +273,9 @@ pub fn read_regs(
             if value == device.rsp.last_status_value && value != 0 {
                 device.rsp.cpu.sync_point = true;
             }
+            if value & (SP_STATUS_DMA_BUSY | SP_STATUS_DMA_FULL) != 0 {
+                device.rsp.cpu.sync_point = true;
+            }
             device.rsp.last_status_value = value;
             device.rsp.regs[reg as usize]
         }
