@@ -27,8 +27,8 @@ const DPC_STATUS_PIPE_BUSY: u32 = 1 << 5;
 const DPC_STATUS_CMD_BUSY: u32 = 1 << 6;
 const DPC_STATUS_CBUF_READY: u32 = 1 << 7;
 //const DPC_STATUS_DMA_BUSY: u32 = 1 << 8;
-//const DPC_STATUS_END_VALID: u32 = 1 << 9;
-const DPC_STATUS_START_VALID: u32 = 1 << 10;
+//const DPC_STATUS_END_PENDING: u32 = 1 << 9;
+const DPC_STATUS_START_PENDING: u32 = 1 << 10;
 /* DPC status - write */
 const DPC_CLR_XBUS_DMEM_DMA: u32 = 1 << 0;
 const DPC_SET_XBUS_DMEM_DMA: u32 = 1 << 1;
@@ -70,14 +70,14 @@ pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mas
         DPC_CURRENT_REG | DPC_CLOCK_REG | DPC_BUFBUSY_REG | DPC_PIPEBUSY_REG | DPC_TMEM_REG => {}
         DPC_STATUS_REG => update_dpc_status(device, value & mask),
         DPC_START_REG => {
-            if (device.rdp.regs_dpc[DPC_STATUS_REG as usize] & DPC_STATUS_START_VALID) == 0 {
+            if (device.rdp.regs_dpc[DPC_STATUS_REG as usize] & DPC_STATUS_START_PENDING) == 0 {
                 device::memory::masked_write_32(
                     &mut device.rdp.regs_dpc[reg as usize],
                     value & 0xFFFFF8,
                     mask,
                 )
             }
-            device.rdp.regs_dpc[DPC_STATUS_REG as usize] |= DPC_STATUS_START_VALID
+            device.rdp.regs_dpc[DPC_STATUS_REG as usize] |= DPC_STATUS_START_PENDING
         }
         DPC_END_REG => {
             device::memory::masked_write_32(
@@ -85,10 +85,10 @@ pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mas
                 value & 0xFFFFF8,
                 mask,
             );
-            if (device.rdp.regs_dpc[DPC_STATUS_REG as usize] & DPC_STATUS_START_VALID) != 0 {
+            if (device.rdp.regs_dpc[DPC_STATUS_REG as usize] & DPC_STATUS_START_PENDING) != 0 {
                 device.rdp.regs_dpc[DPC_CURRENT_REG as usize] =
                     device.rdp.regs_dpc[DPC_START_REG as usize];
-                device.rdp.regs_dpc[DPC_STATUS_REG as usize] &= !DPC_STATUS_START_VALID
+                device.rdp.regs_dpc[DPC_STATUS_REG as usize] &= !DPC_STATUS_START_PENDING
             }
             if device.rdp.regs_dpc[DPC_STATUS_REG as usize] & DPC_STATUS_FREEZE == 0 {
                 run_rdp(device)
