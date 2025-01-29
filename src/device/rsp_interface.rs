@@ -285,10 +285,7 @@ pub fn read_regs(
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
-        SP_STATUS_REG => {
-            device.rsp.cpu.sync_point = true;
-            update_sp_status(device, value)
-        }
+        SP_STATUS_REG => update_sp_status(device, value),
         SP_RD_LEN_REG => {
             device::memory::masked_write_32(&mut device.rsp.regs[reg as usize], value, mask);
             fifo_push(device, DmaDir::Write)
