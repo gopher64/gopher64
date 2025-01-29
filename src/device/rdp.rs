@@ -52,7 +52,16 @@ pub fn read_regs_dpc(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    device.rdp.regs_dpc[((address & 0xFFFF) >> 2) as usize]
+    let reg = (address & 0xFFFF) >> 2;
+    match reg as u32 {
+        DPC_CURRENT_REG => {
+            if device.rdp.wait_frozen {
+                device.rsp.cpu.sync_point = true;
+            }
+            device.rdp.regs_dpc[reg as usize]
+        }
+        _ => device.rdp.regs_dpc[reg as usize],
+    }
 }
 
 pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mask: u32) {

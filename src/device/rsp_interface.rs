@@ -81,6 +81,7 @@ pub struct Rsp {
     pub regs2: [u32; SP_REGS2_COUNT as usize],
     pub mem: [u8; 0x2000],
     pub fifo: [RspDma; 2],
+    pub last_status_value: u32,
 }
 
 pub fn read_mem_fast(
@@ -260,8 +261,27 @@ pub fn read_regs(
 ) -> u32 {
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
+        SP_DMA_BUSY_REG | SP_DMA_FULL_REG => {
+            if device.rsp.regs[reg as usize] != 0 {
+                device.rsp.cpu.sync_point = true;
+            }
+            device.rsp.regs[reg as usize]
+        }
+        SP_STATUS_REG => {
+            let value = device.rsp.regs[reg as usize]
+                & !(SP_STATUS_HALT | SP_STATUS_BROKE | SP_STATUS_INTR_BREAK);
+            if value == device.rsp.last_status_value && value != 0 {
+                device.rsp.cpu.sync_point = true;
+            }
+            device.rsp.last_status_value = value;
+            device.rsp.regs[reg as usize]
+        }
         SP_SEMAPHORE_REG => {
             let value = device.rsp.regs[reg as usize];
+            if value == 1 {
+                device.rsp.cpu.sync_point = true;
+                device.rsp.cpu.cycle_counter += 4; // needed for DK64
+            }
             device.rsp.regs[reg as usize] = 1;
             value
         }
@@ -284,9 +304,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
         SP_SEMAPHORE_REG => {
             device::memory::masked_write_32(&mut device.rsp.regs[reg as usize], 0, mask)
         }
-        _ => {
-            device::memory::masked_write_32(&mut device.rsp.regs[reg as usize], value, mask);
-        }
+        _ => device::memory::masked_write_32(&mut device.rsp.regs[reg as usize], value, mask),
     }
 }
 
@@ -421,12 +439,13 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
     if device.rsp.regs[SP_STATUS_REG as usize] & SP_STATUS_HALT == 0 && was_halted {
         device.rsp.cpu.broken = false;
         device.rsp.cpu.halted = false;
-        device.rsp.cpu.sync_point = false;
         do_task(device);
     }
 }
 
 fn do_task(device: &mut device::Device) {
+    device.rsp.cpu.sync_point = false;
+    device.rsp.last_status_value = 0;
     let timer = device::rsp_cpu::run(device);
 
     device::events::create_event(
@@ -450,7 +469,6 @@ fn rsp_event(device: &mut device::Device) {
         device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT;
         return;
     }
-    device.rsp.cpu.sync_point = false;
     do_task(device)
 }
 
