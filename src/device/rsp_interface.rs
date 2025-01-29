@@ -82,6 +82,7 @@ pub struct Rsp {
     pub mem: [u8; 0x2000],
     pub fifo: [RspDma; 2],
     pub last_status_value: u32,
+    pub run_after_dma: bool,
 }
 
 pub fn read_mem_fast(
@@ -250,7 +251,11 @@ fn fifo_pop(device: &mut device::Device) {
         do_dma(device, device.rsp.fifo[0])
     } else {
         device.rsp.regs[SP_DMA_BUSY_REG as usize] = 0;
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_DMA_BUSY
+        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_DMA_BUSY;
+        if device.rsp.run_after_dma {
+            device.rsp.run_after_dma = false;
+            do_task(device);
+        }
     }
 }
 
@@ -449,14 +454,18 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
 fn do_task(device: &mut device::Device) {
     device.rsp.cpu.sync_point = false;
     device.rsp.last_status_value = 0;
-    let timer = device::rsp_cpu::run(device);
+    if device.rsp.regs[SP_DMA_BUSY_REG as usize] == 1 {
+        device.rsp.run_after_dma = true
+    } else {
+        let timer = device::rsp_cpu::run(device);
 
-    device::events::create_event(
-        device,
-        device::events::EventType::SP,
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
-        rsp_event,
-    )
+        device::events::create_event(
+            device,
+            device::events::EventType::SP,
+            device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
+            rsp_event,
+        )
+    }
 }
 
 fn rsp_event(device: &mut device::Device) {

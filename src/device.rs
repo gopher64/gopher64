@@ -368,6 +368,7 @@ impl Device {
                 regs2: [0; rsp_interface::SP_REGS2_COUNT as usize],
                 mem: [0; 0x2000],
                 last_status_value: 0,
+                run_after_dma: false,
                 fifo: [rsp_interface::RspDma {
                     dir: rsp_interface::DmaDir::None,
                     length: 0,
