@@ -271,8 +271,10 @@ pub fn read_regs(
             device.rsp.regs[reg as usize]
         }
         SP_SEMAPHORE_REG => {
-            device.rsp.cpu.sync_point = true;
             let value = device.rsp.regs[reg as usize];
+            if value == 1 {
+                device.rsp.cpu.sync_point = true;
+            }
             device.rsp.regs[reg as usize] = 1;
             value
         }
@@ -296,7 +298,6 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             fifo_push(device, DmaDir::Read)
         }
         SP_SEMAPHORE_REG => {
-            device.rsp.cpu.sync_point = true;
             device::memory::masked_write_32(&mut device.rsp.regs[reg as usize], 0, mask)
         }
         _ => device::memory::masked_write_32(&mut device.rsp.regs[reg as usize], value, mask),
