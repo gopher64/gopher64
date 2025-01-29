@@ -565,7 +565,6 @@ pub fn mfc0(device: &mut device::Device, opcode: u32) {
             device::memory::AccessSize::Word,
         )
     }
-    device.rsp.cpu.cycle_counter += 4; // needed for DK64
 }
 
 pub fn mtc0(device: &mut device::Device, opcode: u32) {
