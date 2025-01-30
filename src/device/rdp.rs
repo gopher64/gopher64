@@ -54,6 +54,7 @@ pub fn read_regs_dpc(
 ) -> u32 {
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
+        DPC_CLOCK_REG => 0xFFFFFF, // needed for JFG
         DPC_CURRENT_REG => {
             if device.rdp.wait_frozen {
                 device.rsp.cpu.sync_point = true;
