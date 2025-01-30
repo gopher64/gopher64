@@ -73,10 +73,6 @@ pub fn process_rdp_list() -> u64 {
     unsafe { rdp_process_commands() }
 }
 
-pub fn full_sync() {
-    unsafe { rdp_full_sync() }
-}
-
 pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer, font: &rusttype::Font) {
     let text_size = 32;
     let scale = rusttype::Scale::uniform(text_size as f32);
