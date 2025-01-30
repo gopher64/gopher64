@@ -42,11 +42,6 @@ jobs:
           version: ${{ matrix.target }}-1.0
       - name: Build
         run: |
-          sudo fallocate -l 4G /swapfile2
-          sudo chmod 600 /swapfile2
-          sudo mkswap /swapfile2
-          sudo swapon /swapfile2
-          free -h
           cargo build --release -v --target=${{ matrix.target }}
       - name: Upload file
         uses: actions/upload-artifact@v4
