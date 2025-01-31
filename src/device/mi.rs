@@ -163,23 +163,6 @@ pub fn set_rcp_interrupt(device: &mut device::Device, interrupt: u32) {
     device::exceptions::check_pending_interrupts(device)
 }
 
-pub fn schedule_rcp_interrupt(device: &mut device::Device, interrupt: u32) {
-    device.mi.regs[MI_INTR_REG as usize] |= interrupt;
-
-    if device.mi.regs[MI_INTR_REG as usize] & device.mi.regs[MI_INTR_MASK_REG as usize] != 0 {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
-            !device::cop0::COP0_CAUSE_EXCCODE_MASK;
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |= device::cop0::COP0_CAUSE_IP2;
-    }
-
-    device::events::create_event(
-        device,
-        device::events::EventType::InterruptCheck,
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize],
-        device::exceptions::check_pending_interrupts,
-    )
-}
-
 pub fn init(device: &mut device::Device) {
     device.mi.regs[MI_VERSION_REG as usize] = 0x02020102
 }
