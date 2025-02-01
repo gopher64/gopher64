@@ -361,7 +361,7 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
     }
     /* set SP interrupt */
     if (w & SP_SET_INTR) != 0 && (w & SP_CLR_INTR) == 0 {
-        device::mi::schedule_rcp_interrupt(device, device::mi::MI_INTR_SP);
+        device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_SP);
     }
 
     /* clear / set single step */

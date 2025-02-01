@@ -8,7 +8,7 @@ pub enum EventType {
     PI,
     DP,
     SP,
-    InterruptCheck,
+    Interrupt,
     SPDma,
     Compare,
     Vru,
