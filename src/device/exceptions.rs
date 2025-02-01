@@ -30,6 +30,15 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
         return;
     }
 
+    device::events::create_event(
+        device,
+        device::events::EventType::Interrupt,
+        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize],
+        interrupt_exception,
+    );
+}
+
+pub fn interrupt_exception(device: &mut device::Device) {
     exception_general(device, 0x180);
 }
 
