@@ -215,6 +215,7 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
                 compare_event,
             );
             device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_IP7;
+            device.cpu.cop0.pending_compare_interrupt = false;
         }
         COP0_STATUS_REG => {
             if data & COP0_STATUS_FR != device.cpu.cop0.regs[index as usize] & COP0_STATUS_FR {
