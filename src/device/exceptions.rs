@@ -2,21 +2,31 @@ use crate::device;
 
 pub fn check_pending_interrupts(device: &mut device::Device) {
     if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize]
-        & device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize]
-        & device::cop0::COP0_CAUSE_IP_MASK)
-        == 0
-    {
-        // interrupt disabled, or no pending interrupts
-        return;
-    }
-
-    if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize]
         & (device::cop0::COP0_STATUS_IE
             | device::cop0::COP0_STATUS_EXL
             | device::cop0::COP0_STATUS_ERL))
         != device::cop0::COP0_STATUS_IE
     {
         // interrupts disabled globally, or error/exception is already set
+        return;
+    }
+
+    if device.mi.regs[device::mi::MI_INTR_REG as usize]
+        & device.mi.regs[device::mi::MI_INTR_MASK_REG as usize]
+        != 0
+    {
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP2;
+    } else if device.cpu.cop0.pending_compare_interrupt {
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP7;
+        device.cpu.cop0.pending_compare_interrupt = false;
+    }
+
+    if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize]
+        & device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize]
+        & device::cop0::COP0_CAUSE_IP_MASK)
+        == 0
+    {
+        // interrupt disabled, or no pending interrupts
         return;
     }
 

@@ -2,8 +2,8 @@ use crate::device;
 
 const MI_INIT_MODE_REG: u32 = 0;
 const MI_VERSION_REG: u32 = 1;
-const MI_INTR_REG: u32 = 2;
-const MI_INTR_MASK_REG: u32 = 3;
+pub const MI_INTR_REG: u32 = 2;
+pub const MI_INTR_MASK_REG: u32 = 3;
 pub const MI_REGS_COUNT: u32 = 4;
 
 /* read */
@@ -64,11 +64,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
         _ => device::memory::masked_write_32(&mut device.mi.regs[reg as usize], value, mask),
     }
 
-    if device.mi.regs[MI_INTR_REG as usize] & device.mi.regs[MI_INTR_MASK_REG as usize] != 0 {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
-            !device::cop0::COP0_CAUSE_EXCCODE_MASK;
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |= device::cop0::COP0_CAUSE_IP2;
-    } else {
+    if device.mi.regs[MI_INTR_REG as usize] & device.mi.regs[MI_INTR_MASK_REG as usize] == 0 {
         device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
             !device::cop0::COP0_CAUSE_IP2;
     }
@@ -149,17 +145,10 @@ pub fn clear_rcp_interrupt(device: &mut device::Device, interrupt: u32) {
         device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
             !device::cop0::COP0_CAUSE_IP2;
     }
-    device::exceptions::check_pending_interrupts(device)
 }
 
 pub fn set_rcp_interrupt(device: &mut device::Device, interrupt: u32) {
     device.mi.regs[MI_INTR_REG as usize] |= interrupt;
-
-    if device.mi.regs[MI_INTR_REG as usize] & device.mi.regs[MI_INTR_MASK_REG as usize] != 0 {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
-            !device::cop0::COP0_CAUSE_EXCCODE_MASK;
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |= device::cop0::COP0_CAUSE_IP2;
-    }
     device::exceptions::check_pending_interrupts(device)
 }
 
