@@ -30,12 +30,16 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
         return;
     }
 
-    device::events::create_event(
-        device,
-        device::events::EventType::Interrupt,
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize],
-        interrupt_exception,
-    );
+    if device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] == device::cop0::COP0_CAUSE_IP7 {
+        interrupt_exception(device);
+    } else {
+        device::events::create_event(
+            device,
+            device::events::EventType::Interrupt,
+            device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize],
+            interrupt_exception,
+        );
+    }
 }
 
 pub fn interrupt_exception(device: &mut device::Device) {
