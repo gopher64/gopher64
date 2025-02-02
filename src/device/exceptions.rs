@@ -30,7 +30,7 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
         return;
     }
 
-    if device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] == device::cop0::COP0_CAUSE_IP7 {
+    if device.cpu.cop0.is_event {
         interrupt_exception(device);
     } else {
         device::events::create_event(

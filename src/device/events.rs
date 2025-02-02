@@ -53,7 +53,9 @@ pub fn trigger_event(device: &mut device::Device) {
     device.cpu.events[next_event_name].enabled = false;
 
     let handler = device.cpu.events[next_event_name].handler;
+    device.cpu.cop0.is_event = true;
     handler(device);
+    device.cpu.cop0.is_event = false;
     set_next_event(device);
 }
 

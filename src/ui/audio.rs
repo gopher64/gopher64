@@ -116,7 +116,7 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
     let min_latency = (device.ui.audio_freq * 0.02) * 4.0;
 
     if audio_queued < min_latency {
-        let silence_buffer: Vec<u8> = vec![0; (min_latency - audio_queued) as usize & !3];
+        let silence_buffer: Vec<u8> = vec![0; min_latency as usize & !3];
         if !unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio_stream,

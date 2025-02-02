@@ -97,6 +97,7 @@ pub struct Cop0 {
     pub tlb_lut_r: Vec<device::tlb::TlbLut>,
     pub tlb_lut_w: Vec<device::tlb::TlbLut>,
     pub tlb_entries: [device::tlb::TlbEntry; 32],
+    pub is_event: bool,
     pub pending_compare_interrupt: bool,
 }
 

@@ -196,6 +196,7 @@ impl Device {
                     regs: [0; cop0::COP0_REGS_COUNT as usize],
                     reg_write_masks: [0; cop0::COP0_REGS_COUNT as usize],
                     reg_latch: 0,
+                    is_event: false,
                     pending_compare_interrupt: false,
                     instrs: [cop0::reserved; 32],
                     instrs2: [cop0::reserved; 32],
