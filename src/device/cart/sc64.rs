@@ -21,6 +21,10 @@ pub struct Sc64 {
     pub sector: u32,
 }
 
+fn format_sdcard(device: &mut device::Device) {
+    if device.ui.saves.sdcard.0.is_empty() {}
+}
+
 pub fn read_regs(
     device: &mut device::Device,
     address: u64,
@@ -63,12 +67,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     }
                     'C' => {
                         // set config
-                        let previous_value =
-                            device.sc64.cfg[device.sc64.regs[SC64_DATA0_REG as usize] as usize];
-
-                        device.sc64.cfg[device.sc64.regs[SC64_DATA0_REG as usize] as usize] =
-                            device.sc64.regs[SC64_DATA1_REG as usize];
-                        device.sc64.regs[SC64_DATA1_REG as usize] = previous_value;
+                        std::mem::swap(
+                            &mut device.sc64.cfg
+                                [device.sc64.regs[SC64_DATA0_REG as usize] as usize],
+                            &mut device.sc64.regs[SC64_DATA1_REG as usize],
+                        );
                     }
                     'i' => {
                         // sd card operation
@@ -90,6 +93,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         device.sc64.sector = device.sc64.regs[SC64_DATA0_REG as usize];
                     }
                     's' => {
+                        format_sdcard(device);
                         // read sd card
                         let address = device.sc64.regs[SC64_DATA0_REG as usize] as u64;
                         let offset = (device.sc64.sector * 512) as usize;
@@ -97,25 +101,27 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let mut i = 0;
 
                         while i < length {
-                            let mut data = 0;
                             if offset + i < device.ui.saves.sdcard.0.len() {
-                                data = u32::from_be_bytes(
-                                    device.ui.saves.sdcard.0
-                                        [(offset + i) as usize..(offset + i + 4) as usize]
+                                let data = u32::from_be_bytes(
+                                    device.ui.saves.sdcard.0[(offset + i)..(offset + i + 4)]
                                         .try_into()
                                         .unwrap(),
                                 );
+
+                                device.memory.memory_map_write[(address >> 16) as usize](
+                                    device,
+                                    address + i as u64,
+                                    data,
+                                    0xFFFFFFFF,
+                                );
+                            } else {
+                                panic!("sd card read out of bounds")
                             }
-                            device.memory.memory_map_write[(address >> 16) as usize](
-                                device,
-                                address + i as u64,
-                                data,
-                                0xFFFFFFFF,
-                            );
                             i += 4;
                         }
                     }
                     'S' => {
+                        format_sdcard(device);
                         // write sd card
                         let address = device.sc64.regs[SC64_DATA0_REG as usize] as u64;
                         let offset = (device.sc64.sector * 512) as usize;
@@ -130,9 +136,10 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                     device::memory::AccessSize::Word,
                                 )
                                 .to_be_bytes();
-                                device.ui.saves.sdcard.0
-                                    [(offset + i) as usize..(offset + i + 4) as usize]
+                                device.ui.saves.sdcard.0[(offset + i)..(offset + i + 4)]
                                     .copy_from_slice(&data);
+                            } else {
+                                panic!("sd card write out of bounds")
                             }
                             i += 4;
                         }

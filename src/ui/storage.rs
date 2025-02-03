@@ -8,6 +8,7 @@ pub enum SaveTypes {
     Sram,
     Flash,
     Mempak,
+    Sdcard,
     Romsave,
 }
 
@@ -16,6 +17,7 @@ pub struct Paths {
     pub sra_file_path: std::path::PathBuf,
     pub fla_file_path: std::path::PathBuf,
     pub pak_file_path: std::path::PathBuf,
+    pub sdcard_file_path: std::path::PathBuf,
     pub romsave_file_path: std::path::PathBuf,
 }
 
@@ -128,6 +130,11 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
         .pak_file_path
         .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".mpk");
 
+    ui.paths.sdcard_file_path.clone_from(&base_path);
+    ui.paths
+        .sdcard_file_path
+        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".img");
+
     ui.paths.romsave_file_path.clone_from(&base_path);
     ui.paths
         .romsave_file_path
@@ -135,8 +142,6 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
-    ui.saves.sdcard.0 = std::fs::read("/var/home/loganmc10/Downloads/test.img").unwrap();
-
     if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
         let eep = std::fs::read(&mut ui.paths.eep_file_path);
         if eep.is_ok() {
@@ -157,6 +162,12 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
         let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
         if romsave.is_ok() {
             ui.saves.romsave.0 = postcard::from_bytes(romsave.unwrap().as_ref()).unwrap();
+        }
+        if netplay.is_none() {
+            let sdcard = std::fs::read(&mut ui.paths.sdcard_file_path);
+            if sdcard.is_ok() {
+                ui.saves.sdcard.0 = sdcard.unwrap();
+            }
         }
     }
 
@@ -229,6 +240,9 @@ pub fn write_saves(ui: &ui::Ui, netplay: &Option<netplay::Netplay>) {
         if ui.saves.mempak.1 {
             write_save(ui, SaveTypes::Mempak)
         }
+        if ui.saves.sdcard.1 && netplay.is_none() {
+            write_save(ui, SaveTypes::Sdcard)
+        }
         if ui.saves.romsave.1 {
             write_save(ui, SaveTypes::Romsave)
         }
@@ -254,6 +268,10 @@ fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
         SaveTypes::Mempak => {
             path = ui.paths.pak_file_path.as_ref();
             data = ui.saves.mempak.0.as_ref();
+        }
+        SaveTypes::Sdcard => {
+            path = ui.paths.sdcard_file_path.as_ref();
+            data = ui.saves.sdcard.0.as_ref();
         }
         SaveTypes::Romsave => {
             write_rom_save(ui);
