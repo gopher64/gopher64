@@ -30,9 +30,9 @@ pub struct Saves {
     pub romsave: (std::collections::HashMap<u32, u8>, bool),
 }
 
-fn get_save_type(rom: &Vec<u8>, game_id: &str) -> Vec<SaveTypes> {
-    let header_type = std::str::from_utf8(rom[0x3C..0x3E].try_into().unwrap()).unwrap();
-    if header_type == "ED" {
+fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
+    let header_type = std::str::from_utf8(rom[0x3C..0x3E].try_into().unwrap());
+    if header_type.is_ok() && header_type.unwrap() == "ED" {
         let save_type = rom[0x3F] >> 4;
         match save_type {
             0 => return vec![],
