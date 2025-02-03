@@ -105,8 +105,7 @@ fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
 }
 
 pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
-    let id = ui.game_id.as_str();
-    ui.save_type = get_save_type(rom, id);
+    ui.save_type = get_save_type(rom, &ui.game_id);
 
     let base_path = ui.dirs.data_dir.join("saves");
 
@@ -115,7 +114,11 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
         .trim()
         .replace('\0', "");
 
-    let prefix = if game_name.is_empty() { id } else { &game_name };
+    let prefix = if game_name.is_empty() {
+        &ui.game_id
+    } else {
+        &game_name
+    };
 
     ui.paths.eep_file_path.clone_from(&base_path);
     ui.paths
