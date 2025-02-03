@@ -255,7 +255,7 @@ pub fn write_saves(ui: &ui::Ui, netplay: &Option<netplay::Netplay>) {
         if ui.saves.mempak.1 {
             write_save(ui, SaveTypes::Mempak)
         }
-        if ui.saves.sdcard.1 && netplay.is_none() {
+        if ui.saves.sdcard.1 {
             write_save(ui, SaveTypes::Sdcard)
         }
         if ui.saves.romsave.1 {
