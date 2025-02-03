@@ -68,7 +68,7 @@ pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
     vi::init(device);
     cpu::init(device);
 
-    ui::storage::init(&mut device.ui);
+    ui::storage::init(&mut device.ui, &device.cart.rom);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
     cart_rom::load_rom_save(device);
 
