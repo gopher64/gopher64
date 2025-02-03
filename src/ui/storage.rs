@@ -135,6 +135,8 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
+    ui.saves.sdcard.0 = std::fs::read("/var/home/loganmc10/Downloads/test.img").unwrap();
+
     if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
         let eep = std::fs::read(&mut ui.paths.eep_file_path);
         if eep.is_ok() {

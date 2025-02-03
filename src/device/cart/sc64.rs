@@ -92,12 +92,13 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     's' => {
                         // read sd card
                         let address = device.sc64.regs[SC64_DATA0_REG as usize] as u64;
-                        let offset = device.sc64.sector * 512;
-                        let length = device.sc64.regs[SC64_DATA1_REG as usize] * 512;
-                        let mut i = 0;
+                        let offset = (device.sc64.sector * 512) as usize;
+                        let length = (device.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
+                        let mut i: usize = 0;
+
                         while i < length {
                             let mut data = 0;
-                            if offset + i < device.ui.saves.sdcard.0.len() as u32 {
+                            if offset + i < device.ui.saves.sdcard.0.len() {
                                 data = u32::from_be_bytes(
                                     device.ui.saves.sdcard.0
                                         [(offset + i) as usize..(offset + i + 4) as usize]
