@@ -128,6 +128,7 @@ impl Ui {
                 sram: (Vec::new(), false),
                 flash: (Vec::new(), false),
                 mempak: (Vec::new(), false),
+                sdcard: (Vec::new(), false),
                 romsave: (std::collections::HashMap::new(), false),
             },
             pak_audio: audio::PakAudio {

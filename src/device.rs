@@ -19,7 +19,6 @@ use std::io::Read;
 pub mod ai;
 pub mod cache;
 pub mod cart;
-pub mod cart_rom;
 pub mod controller;
 pub mod cop0;
 pub mod cop1;
@@ -42,13 +41,12 @@ pub mod rsp_interface;
 pub mod rsp_su_instructions;
 pub mod rsp_vu_instructions;
 pub mod si;
-pub mod sram;
 pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
 pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
-    cart_rom::init(device, rom_contents); // cart needs to come before rdram
+    cart::rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
     rdram::init(device);
@@ -70,7 +68,7 @@ pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
 
     ui::storage::init(&mut device.ui, &device.cart.rom);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
-    cart_rom::load_rom_save(device);
+    cart::rom::load_rom_save(device);
 
     cpu::run(device);
 
@@ -163,18 +161,19 @@ pub struct Device {
     byte_swap: usize,
     pub cpu: cpu::Cpu,
     pif: pif::Pif,
-    cart: cart_rom::Cart,
+    cart: cart::rom::Cart,
     memory: memory::Memory,
     pub rsp: rsp_interface::Rsp,
     pub rdp: rdp::Rdp,
     pub rdram: rdram::Rdram,
     mi: mi::Mi,
     pi: pi::Pi,
+    sc64: cart::sc64::Sc64,
     pub vi: vi::Vi,
     ai: ai::Ai,
     si: si::Si,
     ri: ri::Ri,
-    flashram: sram::Flashram,
+    flashram: cart::sram::Flashram,
     pub vru: controller::vru::Vru,
 }
 
@@ -290,13 +289,13 @@ impl Device {
                     change_pak: controller::PakType::None,
                 }; 5],
             },
-            cart: cart_rom::Cart {
+            cart: cart::rom::Cart {
                 rom: Vec::new(),
                 is_viewer_buffer: [0; 0xFFFF],
                 pal: false,
                 latch: 0,
                 cic_seed: 0,
-                cic_type: cart_rom::CicType::CicNus6102,
+                cic_type: cart::rom::CicType::CicNus6102,
                 rdram_size_offset: 0,
                 rtc: cart::AfRtc { control: 0x0200 },
             },
@@ -389,6 +388,13 @@ impl Device {
             pi: pi::Pi {
                 regs: [0; pi::PI_REGS_COUNT as usize],
             },
+            sc64: cart::sc64::Sc64 {
+                regs: [0; cart::sc64::SC64_REGS_COUNT as usize],
+                regs_locked: true,
+                cfg: [0; cart::sc64::SC64_CFG_COUNT as usize],
+                sector: 0,
+                buffer: [0; 8192],
+            },
             ai: ai::Ai {
                 regs: [0; ai::AI_REGS_COUNT as usize],
                 last_read: 0,
@@ -416,12 +422,12 @@ impl Device {
                 limiter: None,
                 vi_counter: 0,
             },
-            flashram: sram::Flashram {
+            flashram: cart::sram::Flashram {
                 status: 0,
                 erase_page: 0,
                 page_buf: [0xff; 128],
-                silicon_id: [sram::FLASHRAM_TYPE_ID, sram::MX29L1100_ID],
-                mode: sram::FlashramMode::ReadArray,
+                silicon_id: [cart::sram::FLASHRAM_TYPE_ID, cart::sram::MX29L1100_ID],
+                mode: cart::sram::FlashramMode::ReadArray,
             },
             vru: controller::vru::Vru {
                 status: 0,

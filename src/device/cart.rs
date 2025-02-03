@@ -4,6 +4,10 @@ use chrono::Timelike;
 use crate::device;
 use crate::ui;
 
+pub mod rom;
+pub mod sc64;
+pub mod sram;
+
 const JCMD_STATUS: u8 = 0x00;
 const JCMD_EEPROM_READ: u8 = 0x04;
 const JCMD_EEPROM_WRITE: u8 = 0x05;

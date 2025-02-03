@@ -19,6 +19,8 @@ pub const MM_CART_ROM: usize = 0x10000000;
 const MM_PIF_MEM: usize = 0x1fc00000;
 //const MM_DOM1_ADDR3: usize = 0x1fd00000;
 const MM_IS_VIEWER: usize = 0x13ff0000;
+pub const MM_SC64_BUFFER: usize = 0x1ffe0000;
+const MM_SC64_REGS: usize = 0x1fff0000;
 
 #[derive(PartialEq)]
 pub enum AccessType {
@@ -142,18 +144,24 @@ pub fn init(device: &mut device::Device) {
             device.memory.memory_map_read[i] = device::si::read_regs;
             device.memory.memory_map_write[i] = device::si::write_regs;
         } else if (MM_DOM2_ADDR2 >> 16..=(MM_DOM2_ADDR2 + 0x1FFFF) >> 16).contains(&i) {
-            device.memory.memory_map_read[i] = device::sram::read_mem;
-            device.memory.memory_map_write[i] = device::sram::write_mem;
+            device.memory.memory_map_read[i] = device::cart::sram::read_mem;
+            device.memory.memory_map_write[i] = device::cart::sram::write_mem;
         } else if i >= MM_CART_ROM >> 16 && i <= (MM_CART_ROM + device.cart.rom.len() - 1) >> 16 {
-            device.memory.fast_read[i] = device::cart_rom::read_mem_fast;
-            device.memory.memory_map_read[i] = device::cart_rom::read_mem;
-            device.memory.memory_map_write[i] = device::cart_rom::write_mem;
+            device.memory.fast_read[i] = device::cart::rom::read_mem_fast;
+            device.memory.memory_map_read[i] = device::cart::rom::read_mem;
+            device.memory.memory_map_write[i] = device::cart::rom::write_mem;
         } else if i >= MM_IS_VIEWER >> 16 && i <= (MM_IS_VIEWER + 0xFFFF) >> 16 {
             device.memory.memory_map_read[i] = device::is_viewer::read_mem;
             device.memory.memory_map_write[i] = device::is_viewer::write_mem;
         } else if i >= MM_PIF_MEM >> 16 && i <= (MM_PIF_MEM + 0xFFFF) >> 16 {
             device.memory.memory_map_read[i] = device::pif::read_mem;
             device.memory.memory_map_write[i] = device::pif::write_mem;
+        } else if i >= MM_SC64_BUFFER >> 16 && i <= (MM_SC64_BUFFER + 0xFFFF) >> 16 {
+            device.memory.memory_map_read[i] = device::cart::sc64::read_mem;
+            device.memory.memory_map_write[i] = device::cart::sc64::write_mem;
+        } else if i >= MM_SC64_REGS >> 16 && i <= (MM_SC64_REGS + 0xFFFF) >> 16 {
+            device.memory.memory_map_read[i] = device::cart::sc64::read_regs;
+            device.memory.memory_map_write[i] = device::cart::sc64::write_regs;
         }
     }
     device::cache::init(device)
