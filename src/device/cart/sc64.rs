@@ -1,5 +1,7 @@
 use crate::device;
 
+pub const SDCARD_SIZE: usize = 0x4000000;
+
 const SC64_SCR_REG: u32 = 0;
 const SC64_DATA0_REG: u32 = 1;
 const SC64_DATA1_REG: u32 = 2;
@@ -22,7 +24,11 @@ pub struct Sc64 {
 }
 
 fn format_sdcard(device: &mut device::Device) {
-    if device.ui.saves.sdcard.0.is_empty() {}
+    if device.ui.saves.sdcard.0.is_empty() {
+        device.ui.saves.sdcard.0.resize(SDCARD_SIZE, 0);
+        let buf = std::io::Cursor::new(&mut device.ui.saves.sdcard.0);
+        fatfs::format_volume(buf, fatfs::FormatVolumeOptions::new()).unwrap();
+    }
 }
 
 pub fn read_regs(
