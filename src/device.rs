@@ -68,7 +68,7 @@ pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
     vi::init(device);
     cpu::init(device);
 
-    ui::storage::init(device);
+    ui::storage::init(&mut device.ui, &device.cart.rom);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
     cart_rom::load_rom_save(device);
 
@@ -163,7 +163,7 @@ pub struct Device {
     byte_swap: usize,
     pub cpu: cpu::Cpu,
     pif: pif::Pif,
-    pub cart: cart_rom::Cart,
+    cart: cart_rom::Cart,
     memory: memory::Memory,
     pub rsp: rsp_interface::Rsp,
     pub rdp: rdp::Rdp,

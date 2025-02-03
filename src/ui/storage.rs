@@ -1,4 +1,3 @@
-use crate::device;
 use crate::netplay;
 use crate::ui;
 
@@ -102,11 +101,9 @@ fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
     }
 }
 
-pub fn init(device: &mut device::Device) {
-    let ui = &mut device.ui;
-
+pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
     let id = ui.game_id.as_str();
-    ui.save_type = get_save_type(&device.cart.rom, id);
+    ui.save_type = get_save_type(rom, id);
 
     let base_path = ui.dirs.data_dir.join("saves");
 
