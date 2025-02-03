@@ -115,6 +115,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                             i += 4;
                         }
                     }
+                    'S' => {
+                        // write sd card
+                    }
                     _ => {
                         panic!(
                             "unknown sc64 command: {}",
@@ -169,12 +172,11 @@ pub fn dma_read(
     let mut j = cart_addr;
 
     while i < dram_addr + length && i < device.rdram.size {
-        device.ui.saves.sdcard.0[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
+        device.sc64.buffer[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
         i += 1;
         j += 1;
     }
 
-    device.ui.saves.sdcard.1 = true;
     device::pi::calculate_cycles(device, 1, length)
 }
 
