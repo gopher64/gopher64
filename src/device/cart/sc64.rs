@@ -117,6 +117,26 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     }
                     'S' => {
                         // write sd card
+                        let address = device.sc64.regs[SC64_DATA0_REG as usize] as u64;
+                        let offset = (device.sc64.sector * 512) as usize;
+                        let length = (device.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
+                        let mut i = 0;
+
+                        while i < length {
+                            if offset + i < device.ui.saves.sdcard.0.len() {
+                                let data = device.memory.memory_map_read[(address >> 16) as usize](
+                                    device,
+                                    address + i as u64,
+                                    device::memory::AccessSize::Word,
+                                )
+                                .to_be_bytes();
+                                device.ui.saves.sdcard.0
+                                    [(offset + i) as usize..(offset + i + 4) as usize]
+                                    .copy_from_slice(&data);
+                            }
+                            i += 4;
+                        }
+                        device.ui.saves.sdcard.1 = true;
                     }
                     _ => {
                         panic!(
