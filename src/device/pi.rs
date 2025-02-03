@@ -114,15 +114,18 @@ fn dma_write(device: &mut device::Device) {
 
 fn get_handler(address: u32) -> PiHandler {
     let mut handler = PiHandler {
-        read: device::cart_rom::dma_read,
-        write: device::cart_rom::dma_write,
+        read: device::cart::rom::dma_read,
+        write: device::cart::rom::dma_write,
     };
-    if address >= device::memory::MM_CART_ROM as u32 {
-        handler.read = device::cart_rom::dma_read;
-        handler.write = device::cart_rom::dma_write;
+    if address >= device::memory::MM_SC64_BUFFER as u32 {
+        handler.read = device::cart::sc64::dma_read;
+        handler.write = device::cart::sc64::dma_write;
+    } else if address >= device::memory::MM_CART_ROM as u32 {
+        handler.read = device::cart::rom::dma_read;
+        handler.write = device::cart::rom::dma_write;
     } else if address >= device::memory::MM_DOM2_ADDR2 as u32 {
-        handler.read = device::sram::dma_read;
-        handler.write = device::sram::dma_write;
+        handler.read = device::cart::sram::dma_read;
+        handler.write = device::cart::sram::dma_write;
     } else {
         panic!("unknown pi handler")
     }

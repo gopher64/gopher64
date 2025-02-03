@@ -8,6 +8,7 @@ pub enum SaveTypes {
     Sram,
     Flash,
     Mempak,
+    Sdcard,
     Romsave,
 }
 
@@ -16,6 +17,7 @@ pub struct Paths {
     pub sra_file_path: std::path::PathBuf,
     pub fla_file_path: std::path::PathBuf,
     pub pak_file_path: std::path::PathBuf,
+    pub sdcard_file_path: std::path::PathBuf,
     pub romsave_file_path: std::path::PathBuf,
 }
 
@@ -26,6 +28,7 @@ pub struct Saves {
     pub sram: (Vec<u8>, bool),
     pub flash: (Vec<u8>, bool),
     pub mempak: (Vec<u8>, bool),
+    pub sdcard: (Vec<u8>, bool),
     pub romsave: (std::collections::HashMap<u32, u8>, bool),
 }
 
@@ -102,35 +105,50 @@ fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
 }
 
 pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
-    let id = ui.game_id.as_str();
-    ui.save_type = get_save_type(rom, id);
+    ui.save_type = get_save_type(rom, &ui.game_id);
 
     let base_path = ui.dirs.data_dir.join("saves");
+
+    let game_name = std::str::from_utf8(&rom[0x20..0x20 + 0x14])
+        .unwrap()
+        .trim()
+        .replace('\0', "");
+
+    let prefix = if game_name.is_empty() {
+        &ui.game_id
+    } else {
+        &game_name
+    };
 
     ui.paths.eep_file_path.clone_from(&base_path);
     ui.paths
         .eep_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".eep");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".eep");
 
     ui.paths.sra_file_path.clone_from(&base_path);
     ui.paths
         .sra_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".sra");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".sra");
 
     ui.paths.fla_file_path.clone_from(&base_path);
     ui.paths
         .fla_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".fla");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".fla");
 
     ui.paths.pak_file_path.clone_from(&base_path);
     ui.paths
         .pak_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".mpk");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".mpk");
+
+    ui.paths.sdcard_file_path.clone_from(&base_path);
+    ui.paths
+        .sdcard_file_path
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".img");
 
     ui.paths.romsave_file_path.clone_from(&base_path);
     ui.paths
         .romsave_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".romsave");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".romsave");
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
@@ -150,6 +168,10 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
         let mempak = std::fs::read(&mut ui.paths.pak_file_path);
         if mempak.is_ok() {
             ui.saves.mempak.0 = mempak.unwrap();
+        }
+        let sdcard = std::fs::read(&mut ui.paths.sdcard_file_path);
+        if sdcard.is_ok() {
+            ui.saves.sdcard.0 = sdcard.unwrap();
         }
         let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
         if romsave.is_ok() {
@@ -183,6 +205,12 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
                 &ui.saves.mempak.0,
                 ui.saves.mempak.0.len(),
             );
+            netplay::send_save(
+                netplay.as_mut().unwrap(),
+                "img",
+                &ui.saves.sdcard.0,
+                ui.saves.sdcard.0.len(),
+            );
             let mut romsave_bytes: Vec<u8> = vec![];
             if !ui.saves.romsave.0.is_empty() {
                 romsave_bytes = postcard::to_stdvec(&ui.saves.romsave.0).unwrap();
@@ -198,6 +226,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             netplay::receive_save(netplay.as_mut().unwrap(), "sra", &mut ui.saves.sram.0);
             netplay::receive_save(netplay.as_mut().unwrap(), "fla", &mut ui.saves.flash.0);
             netplay::receive_save(netplay.as_mut().unwrap(), "mpk", &mut ui.saves.mempak.0);
+            netplay::receive_save(netplay.as_mut().unwrap(), "img", &mut ui.saves.sdcard.0);
             let mut romsave_bytes: Vec<u8> = vec![];
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut romsave_bytes);
             if !romsave_bytes.is_empty() {
@@ -226,6 +255,9 @@ pub fn write_saves(ui: &ui::Ui, netplay: &Option<netplay::Netplay>) {
         if ui.saves.mempak.1 {
             write_save(ui, SaveTypes::Mempak)
         }
+        if ui.saves.sdcard.1 && netplay.is_none() {
+            write_save(ui, SaveTypes::Sdcard)
+        }
         if ui.saves.romsave.1 {
             write_save(ui, SaveTypes::Romsave)
         }
@@ -251,6 +283,10 @@ fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
         SaveTypes::Mempak => {
             path = ui.paths.pak_file_path.as_ref();
             data = ui.saves.mempak.0.as_ref();
+        }
+        SaveTypes::Sdcard => {
+            path = ui.paths.sdcard_file_path.as_ref();
+            data = ui.saves.sdcard.0.as_ref();
         }
         SaveTypes::Romsave => {
             write_rom_save(ui);

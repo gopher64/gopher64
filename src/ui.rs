@@ -121,6 +121,7 @@ impl Ui {
                 fla_file_path: std::path::PathBuf::new(),
                 sra_file_path: std::path::PathBuf::new(),
                 pak_file_path: std::path::PathBuf::new(),
+                sdcard_file_path: std::path::PathBuf::new(),
                 romsave_file_path: std::path::PathBuf::new(),
             },
             saves: storage::Saves {
@@ -128,6 +129,7 @@ impl Ui {
                 sram: (Vec::new(), false),
                 flash: (Vec::new(), false),
                 mempak: (Vec::new(), false),
+                sdcard: (Vec::new(), false),
                 romsave: (std::collections::HashMap::new(), false),
             },
             pak_audio: audio::PakAudio {
