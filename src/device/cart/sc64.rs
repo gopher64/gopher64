@@ -158,13 +158,24 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
 }
 
 pub fn dma_read(
-    _device: &mut device::Device,
-    mut _cart_addr: u32,
-    mut _dram_addr: u32,
-    _length: u32,
+    device: &mut device::Device,
+    mut cart_addr: u32,
+    mut dram_addr: u32,
+    length: u32,
 ) -> u64 {
-    panic!("sc64 dma read not implemented");
-    //device::pi::calculate_cycles(device, 1, length)
+    dram_addr &= device::rdram::RDRAM_MASK as u32;
+    cart_addr &= SC64_BUFFER_MASK as u32;
+    let mut i = dram_addr;
+    let mut j = cart_addr;
+
+    while i < dram_addr + length && i < device.rdram.size {
+        device.ui.saves.sdcard.0[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
+        i += 1;
+        j += 1;
+    }
+
+    device.ui.saves.sdcard.1 = true;
+    device::pi::calculate_cycles(device, 1, length)
 }
 
 pub fn dma_write(
