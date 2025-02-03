@@ -169,15 +169,13 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
         if mempak.is_ok() {
             ui.saves.mempak.0 = mempak.unwrap();
         }
+        let sdcard = std::fs::read(&mut ui.paths.sdcard_file_path);
+        if sdcard.is_ok() {
+            ui.saves.sdcard.0 = sdcard.unwrap();
+        }
         let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
         if romsave.is_ok() {
             ui.saves.romsave.0 = postcard::from_bytes(romsave.unwrap().as_ref()).unwrap();
-        }
-        if netplay.is_none() {
-            let sdcard = std::fs::read(&mut ui.paths.sdcard_file_path);
-            if sdcard.is_ok() {
-                ui.saves.sdcard.0 = sdcard.unwrap();
-            }
         }
     }
 
@@ -207,6 +205,12 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
                 &ui.saves.mempak.0,
                 ui.saves.mempak.0.len(),
             );
+            netplay::send_save(
+                netplay.as_mut().unwrap(),
+                "img",
+                &ui.saves.sdcard.0,
+                ui.saves.sdcard.0.len(),
+            );
             let mut romsave_bytes: Vec<u8> = vec![];
             if !ui.saves.romsave.0.is_empty() {
                 romsave_bytes = postcard::to_stdvec(&ui.saves.romsave.0).unwrap();
@@ -222,6 +226,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             netplay::receive_save(netplay.as_mut().unwrap(), "sra", &mut ui.saves.sram.0);
             netplay::receive_save(netplay.as_mut().unwrap(), "fla", &mut ui.saves.flash.0);
             netplay::receive_save(netplay.as_mut().unwrap(), "mpk", &mut ui.saves.mempak.0);
+            netplay::receive_save(netplay.as_mut().unwrap(), "img", &mut ui.saves.sdcard.0);
             let mut romsave_bytes: Vec<u8> = vec![];
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut romsave_bytes);
             if !romsave_bytes.is_empty() {
