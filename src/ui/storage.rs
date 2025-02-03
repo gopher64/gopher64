@@ -115,12 +115,7 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
         .trim()
         .replace('\0', "");
 
-    let prefix;
-    if game_name.is_empty() {
-        prefix = id;
-    } else {
-        prefix = &game_name;
-    }
+    let prefix = if game_name.is_empty() { id } else { &game_name };
 
     ui.paths.eep_file_path.clone_from(&base_path);
     ui.paths
