@@ -1,3 +1,4 @@
+use crate::device;
 use crate::netplay;
 use crate::ui;
 
@@ -29,7 +30,21 @@ pub struct Saves {
     pub romsave: (std::collections::HashMap<u32, u8>, bool),
 }
 
-fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
+fn get_save_type(rom: &Vec<u8>, game_id: &str) -> Vec<SaveTypes> {
+    let header_type = std::str::from_utf8(rom[0x3C..0x3E].try_into().unwrap()).unwrap();
+    if header_type == "ED" {
+        let save_type = rom[0x3F] >> 4;
+        match save_type {
+            0 => return vec![],
+            1 => return vec![SaveTypes::Eeprom4k],
+            2 => return vec![SaveTypes::Eeprom16k],
+            3 => return vec![SaveTypes::Sram],
+            4 => panic!("Unsupported save type: {:X}", save_type),
+            5 => return vec![SaveTypes::Flash],
+            6 => panic!("Unsupported save type: {:X}", save_type),
+            _ => panic!("Unknown save type: {:X}", save_type),
+        }
+    }
     match game_id {
         "NB7" | // Banjo-Tooie [Banjo to Kazooie no Daiboken 2 (J)]
         "NGT" | // City Tour GrandPrix - Zen Nihon GT Senshuken
@@ -87,9 +102,11 @@ fn get_save_type(game_id: &str) -> Vec<SaveTypes> {
     }
 }
 
-pub fn init(ui: &mut ui::Ui) {
+pub fn init(device: &mut device::Device) {
+    let ui = &mut device.ui;
+
     let id = ui.game_id.as_str();
-    ui.save_type = get_save_type(id);
+    ui.save_type = get_save_type(&device.cart.rom, id);
 
     let base_path = ui.dirs.data_dir.join("saves");
 
