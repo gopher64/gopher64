@@ -398,8 +398,7 @@ fn parse_rom_file(file: std::path::PathBuf, tx: std::sync::mpsc::Sender<GameInfo
         let game_name = std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
             .unwrap()
             .trim()
-            .replace('\0', "")
-            .to_string();
+            .replace('\0', "");
         tx.send((
             hash,
             game_name,

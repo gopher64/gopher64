@@ -110,35 +110,47 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
 
     let base_path = ui.dirs.data_dir.join("saves");
 
+    let game_name = std::str::from_utf8(&rom[0x20..0x20 + 0x14])
+        .unwrap()
+        .trim()
+        .replace('\0', "");
+
+    let prefix;
+    if game_name.is_empty() {
+        prefix = id;
+    } else {
+        prefix = &game_name;
+    }
+
     ui.paths.eep_file_path.clone_from(&base_path);
     ui.paths
         .eep_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".eep");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".eep");
 
     ui.paths.sra_file_path.clone_from(&base_path);
     ui.paths
         .sra_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".sra");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".sra");
 
     ui.paths.fla_file_path.clone_from(&base_path);
     ui.paths
         .fla_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".fla");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".fla");
 
     ui.paths.pak_file_path.clone_from(&base_path);
     ui.paths
         .pak_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".mpk");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".mpk");
 
     ui.paths.sdcard_file_path.clone_from(&base_path);
     ui.paths
         .sdcard_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".img");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".img");
 
     ui.paths.romsave_file_path.clone_from(&base_path);
     ui.paths
         .romsave_file_path
-        .push(ui.game_id.to_owned() + "-" + &ui.game_hash + ".romsave");
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".romsave");
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
