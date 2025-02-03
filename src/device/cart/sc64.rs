@@ -94,7 +94,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let address = device.sc64.regs[SC64_DATA0_REG as usize] as u64;
                         let offset = (device.sc64.sector * 512) as usize;
                         let length = (device.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
-                        let mut i: usize = 0;
+                        let mut i = 0;
 
                         while i < length {
                             let mut data = 0;
