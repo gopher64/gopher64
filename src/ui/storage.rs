@@ -109,10 +109,11 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
 
     let base_path = ui.dirs.data_dir.join("saves");
 
-    let game_name = std::str::from_utf8(&rom[0x20..0x20 + 0x14])
-        .unwrap()
-        .trim()
-        .replace('\0', "");
+    let mut game_name = "".to_owned();
+    let header_value = std::str::from_utf8(&rom[0x20..0x34]);
+    if header_value.is_ok() {
+        game_name = header_value.unwrap().trim().replace('\0', "");
+    }
 
     let prefix = if game_name.is_empty() {
         &ui.game_id
