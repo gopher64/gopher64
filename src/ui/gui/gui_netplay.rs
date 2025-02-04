@@ -1,6 +1,6 @@
 use crate::device;
-use crate::ui::gui;
 use crate::ui::gui::GopherEguiApp;
+use crate::ui::{self, gui};
 use eframe::egui;
 use sha2::{Digest, Sha256};
 
@@ -395,15 +395,7 @@ fn parse_rom_file(file: std::path::PathBuf, tx: std::sync::mpsc::Sender<GameInfo
     let rom_contents = device::get_rom_contents(file.as_path());
     if !rom_contents.is_empty() {
         let hash = device::cart::rom::calculate_hash(&rom_contents);
-        let mut game_name = "Unknown".to_owned();
-        let header_value = std::str::from_utf8(&rom_contents[0x20..0x34]);
-        if header_value.is_ok() {
-            let re = regex::Regex::new(r"[^a-zA-Z0-9_ -]").unwrap();
-            game_name = re
-                .replace_all(header_value.unwrap(), "")
-                .trim()
-                .replace('\0', "");
-        }
+        let game_name = ui::storage::get_game_name(&rom_contents);
 
         tx.send((
             hash,
