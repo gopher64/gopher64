@@ -399,8 +399,10 @@ fn parse_rom_file(file: std::path::PathBuf, tx: std::sync::mpsc::Sender<GameInfo
         let header_value = std::str::from_utf8(&rom_contents[0x20..0x34]);
         if header_value.is_ok() {
             let re = regex::Regex::new(r"[^a-zA-Z0-9_ -]").unwrap();
-            let cleaned_up = re.replace_all(header_value.unwrap(), "");
-            game_name = cleaned_up.trim().replace('\0', "");
+            game_name = re
+                .replace_all(header_value.unwrap(), "")
+                .trim()
+                .replace('\0', "");
         }
 
         tx.send((
