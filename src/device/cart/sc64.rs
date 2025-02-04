@@ -151,6 +151,8 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         }
                         device.ui.saves.sdcard.1 = true;
                     }
+                    'U' => {} // USB_WRITE_STATUS, ignored
+                    'M' => {} // USB_WRITE, ignored
                     _ => {
                         panic!(
                             "unknown sc64 command: {}",
