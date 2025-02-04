@@ -112,7 +112,9 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
     let mut game_name = "".to_owned();
     let header_value = std::str::from_utf8(&rom[0x20..0x34]);
     if header_value.is_ok() {
-        game_name = header_value.unwrap().trim().replace('\0', "");
+        let re = regex::Regex::new(r"[^a-zA-Z0-9_ -]").unwrap();
+        let cleaned_up = re.replace_all(header_value.unwrap(), "");
+        game_name = cleaned_up.trim().replace('\0', "");
     }
 
     let prefix = if game_name.is_empty() {
