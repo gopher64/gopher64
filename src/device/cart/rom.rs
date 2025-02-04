@@ -56,7 +56,25 @@ pub fn read_mem(
     }
 }
 
-pub fn write_mem(device: &mut device::Device, _address: u64, value: u32, mask: u32) {
+pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
+    if device.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
+        let masked_address = address as usize & CART_MASK;
+        let mut data = u32::from_be_bytes(
+            device.cart.rom[masked_address..masked_address + 4]
+                .try_into()
+                .unwrap(),
+        );
+        device::memory::masked_write_32(&mut data, value, mask);
+        device.cart.rom[masked_address..masked_address + 4].copy_from_slice(&data.to_be_bytes());
+        for i in 0..4 {
+            device.ui.saves.romsave.0.insert(
+                (masked_address + i) as u32,
+                device.cart.rom[masked_address + i],
+            );
+        }
+        device.ui.saves.romsave.1 = true;
+    }
+
     device.cart.latch = value & mask;
 
     device.pi.regs[device::pi::PI_STATUS_REG as usize] |= device::pi::PI_STATUS_IO_BUSY;
@@ -76,22 +94,26 @@ pub fn dma_read(
     mut dram_addr: u32,
     length: u32,
 ) -> u64 {
-    dram_addr &= device::rdram::RDRAM_MASK as u32;
-    cart_addr &= CART_MASK as u32;
+    if device.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
+        dram_addr &= device::rdram::RDRAM_MASK as u32;
+        cart_addr &= CART_MASK as u32;
 
-    for i in 0..length {
-        if cart_addr + i < device.cart.rom.len() as u32 {
-            device.cart.rom[(cart_addr + i) as usize] =
-                device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
+        for i in 0..length {
+            if cart_addr + i < device.cart.rom.len() as u32 {
+                device.cart.rom[(cart_addr + i) as usize] =
+                    device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
 
-            device.ui.saves.romsave.0.insert(
-                cart_addr + i,
-                device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
-            );
+                device
+                    .ui
+                    .saves
+                    .romsave
+                    .0
+                    .insert(cart_addr + i, device.cart.rom[(cart_addr + i) as usize]);
+            }
         }
-    }
 
-    device.ui.saves.romsave.1 = true;
+        device.ui.saves.romsave.1 = true;
+    }
 
     device::pi::calculate_cycles(device, 1, length)
 }
@@ -183,6 +205,7 @@ fn set_cic(device: &mut device::Device) {
             device.cart.cic_type = CicType::CicNus5167;
             device.cart.cic_seed = 0xdd;
             device.cart.rdram_size_offset = 0x318;
+            device.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] = 1;
         }
         _ => {
             device.cart.cic_type = CicType::CicNus6102;
