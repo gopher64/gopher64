@@ -59,6 +59,9 @@ pub fn read_mem(
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     if device.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
         let masked_address = address as usize & CART_MASK;
+        if device.cart.rom.len() < masked_address + 4 {
+            device.cart.rom.resize(masked_address + 4, 0);
+        }
         let mut data = u32::from_be_bytes(
             device.cart.rom[masked_address..masked_address + 4]
                 .try_into()
@@ -98,6 +101,9 @@ pub fn dma_read(
         dram_addr &= device::rdram::RDRAM_MASK as u32;
         cart_addr &= CART_MASK as u32;
 
+        if device.cart.rom.len() < (cart_addr + length) as usize {
+            device.cart.rom.resize((cart_addr + length) as usize, 0);
+        }
         for i in 0..length {
             if cart_addr + i < device.cart.rom.len() as u32 {
                 device.cart.rom[(cart_addr + i) as usize] =
@@ -160,6 +166,9 @@ pub fn load_rom_save(device: &mut device::Device) {
         return;
     }
     for (key, value) in device.ui.saves.romsave.0.iter() {
+        if device.cart.rom.len() < *key as usize + 1 {
+            device.cart.rom.resize(*key as usize + 1, 0);
+        }
         device.cart.rom[*key as usize] = *value
     }
 }
