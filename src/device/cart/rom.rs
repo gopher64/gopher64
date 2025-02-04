@@ -99,17 +99,15 @@ pub fn dma_read(
         cart_addr &= CART_MASK as u32;
 
         for i in 0..length {
-            if cart_addr + i < device.cart.rom.len() as u32 {
-                device.cart.rom[(cart_addr + i) as usize] =
-                    device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
+            device.cart.rom[(cart_addr + i) as usize] =
+                device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
 
-                device
-                    .ui
-                    .saves
-                    .romsave
-                    .0
-                    .insert(cart_addr + i, device.cart.rom[(cart_addr + i) as usize]);
-            }
+            device
+                .ui
+                .saves
+                .romsave
+                .0
+                .insert(cart_addr + i, device.cart.rom[(cart_addr + i) as usize]);
         }
 
         device.ui.saves.romsave.1 = true;
