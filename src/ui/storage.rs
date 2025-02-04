@@ -252,7 +252,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
                 ui.saves.sdcard.0 = decompress_file(&compressed_sd);
             }
 
-            let mut compressed_romsave: Vec<u8> = vec![];
+            let mut compressed_romsave = Vec::new();
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut compressed_romsave);
             if !compressed_romsave.is_empty() {
                 let romsave_bytes = decompress_file(&compressed_romsave);
