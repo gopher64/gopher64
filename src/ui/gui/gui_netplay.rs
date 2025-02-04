@@ -395,10 +395,12 @@ fn parse_rom_file(file: std::path::PathBuf, tx: std::sync::mpsc::Sender<GameInfo
     let rom_contents = device::get_rom_contents(file.as_path());
     if !rom_contents.is_empty() {
         let hash = device::cart::rom::calculate_hash(&rom_contents);
-        let game_name = std::str::from_utf8(&rom_contents[0x20..0x20 + 0x14])
-            .unwrap()
-            .trim()
-            .replace('\0', "");
+        let mut game_name = "Unknown".to_owned();
+        let header_value = std::str::from_utf8(&rom_contents[0x20..0x34]);
+        if header_value.is_ok() {
+            game_name = header_value.unwrap().trim().replace('\0', "");
+        }
+
         tx.send((
             hash,
             game_name,
