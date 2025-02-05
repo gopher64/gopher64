@@ -18,7 +18,7 @@ eframe = "0.31"
 sha2 = "0.10"
 rusttype = "0.9"
 sdl3-sys = { version = "0.4", features = ["build-from-source-static"] }
-rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "tokio"] }
+rfd = "0.15"
 spin_sleep = "1.3"
 encoding_rs = "0.8"
 mimalloc = "0.1"
