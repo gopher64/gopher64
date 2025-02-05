@@ -133,7 +133,8 @@ fn get_handler(address: u32) -> PiHandler {
         handler.read = device::cart::sram::dma_read;
         handler.write = device::cart::sram::dma_write;
     } else {
-        panic!("unknown pi handler")
+        handler.read = unknown_dma_read;
+        handler.write = unknown_dma_write;
     }
     handler
 }
@@ -202,4 +203,27 @@ pub fn dma_event(device: &mut device::Device) {
     device.pi.regs[PI_STATUS_REG as usize] |= PI_STATUS_INTERRUPT;
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_PI)
+}
+
+fn unknown_dma_read(
+    device: &mut device::Device,
+    mut _cart_addr: u32,
+    mut _dram_addr: u32,
+    length: u32,
+) -> u64 {
+    device::pi::calculate_cycles(device, 1, length)
+}
+
+fn unknown_dma_write(
+    device: &mut device::Device,
+    mut _cart_addr: u32,
+    mut dram_addr: u32,
+    length: u32,
+) -> u64 {
+    dram_addr &= device::rdram::RDRAM_MASK as u32;
+
+    for i in 0..length {
+        device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap] = 0;
+    }
+    device::pi::calculate_cycles(device, 1, length)
 }
