@@ -105,7 +105,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let (phys_address, cached, err) = device::memory::translate_address(
                             device,
                             device.sc64.regs[SC64_DATA0_REG as usize] as u64,
-                            device::memory::AccessType::Read,
+                            device::memory::AccessType::Write,
                         );
                         if err {
                             panic!("TLB exception in SC64");
