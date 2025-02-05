@@ -44,7 +44,7 @@ pub fn read_regs(
     match reg as u32 {
         SC64_SCR_REG | SC64_DATA0_REG | SC64_DATA1_REG => device.sc64.regs[reg as usize],
         SC64_IDENTIFIER_REG => 0x53437632,
-        _ => panic!("unknown read reg {} address {:x}", reg, address),
+        _ => panic!("unknown read reg {} address {:#x}", reg, address),
     }
 }
 
@@ -182,7 +182,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             }
         }
         _ => panic!(
-            "unknown write reg {} address {:x} value {}",
+            "unknown write reg {} address {:#x} value {}",
             reg,
             address,
             char::from_u32(value & mask).unwrap()

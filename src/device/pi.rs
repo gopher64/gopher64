@@ -117,13 +117,19 @@ fn get_handler(address: u32) -> PiHandler {
         read: device::cart::rom::dma_read,
         write: device::cart::rom::dma_write,
     };
-    if address >= device::memory::MM_SC64_BUFFER as u32 {
+    if address >= device::memory::MM_SC64_BUFFER as u32
+        && address < (device::memory::MM_SC64_BUFFER + 0x2000) as u32
+    {
         handler.read = device::cart::sc64::dma_read;
         handler.write = device::cart::sc64::dma_write;
-    } else if address >= device::memory::MM_CART_ROM as u32 {
+    } else if address >= device::memory::MM_CART_ROM as u32
+        && address < device::memory::MM_PIF_MEM as u32
+    {
         handler.read = device::cart::rom::dma_read;
         handler.write = device::cart::rom::dma_write;
-    } else if address >= device::memory::MM_DOM2_ADDR2 as u32 {
+    } else if address >= device::memory::MM_DOM2_ADDR2 as u32
+        && address < device::memory::MM_CART_ROM as u32
+    {
         handler.read = device::cart::sram::dma_read;
         handler.write = device::cart::sram::dma_write;
     } else {
