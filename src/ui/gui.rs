@@ -320,19 +320,19 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     tokio::spawn(async move {
         let file = if !netplay { task.unwrap().await } else { None };
 
-        let save_config_items = SaveConfig {
-            selected_controller,
-            selected_profile,
-            controller_enabled,
-            upscale,
-            integer_scaling,
-            fullscreen,
-            emulate_vru,
-        };
-
         std::thread::Builder::new()
             .name("n64".to_string())
             .spawn(move || {
+                let save_config_items = SaveConfig {
+                    selected_controller,
+                    selected_profile,
+                    controller_enabled,
+                    upscale,
+                    integer_scaling,
+                    fullscreen,
+                    emulate_vru,
+                };
+
                 if cfg!(target_os = "macos") && file.is_some() {
                     // mac os requires the process to be started on the main thread
                     // this means that netplay and VRU emulation will not work on mac os
