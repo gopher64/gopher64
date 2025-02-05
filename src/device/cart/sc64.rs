@@ -102,15 +102,6 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     's' => {
                         format_sdcard(device);
                         // read sd card
-                        let (phys_address, cached, err) = device::memory::translate_address(
-                            device,
-                            device.sc64.regs[SC64_DATA0_REG as usize] as u64,
-                            device::memory::AccessType::Write,
-                        );
-                        if err {
-                            panic!("TLB exception in SC64");
-                        }
-
                         let offset = (device.sc64.sector * 512) as usize;
                         let length = (device.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
                         let mut i = 0;
@@ -125,10 +116,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 
                                 device::memory::data_write(
                                     device,
-                                    phys_address + i as u64,
+                                    (device.sc64.regs[SC64_DATA0_REG as usize] & 0x1FFFFFFF) as u64
+                                        + i as u64,
                                     data,
                                     0xFFFFFFFF,
-                                    cached,
+                                    false,
                                 );
                             } else {
                                 panic!("sd card read out of bounds")
@@ -139,15 +131,6 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     'S' => {
                         format_sdcard(device);
                         // write sd card
-                        let (phys_address, cached, err) = device::memory::translate_address(
-                            device,
-                            device.sc64.regs[SC64_DATA0_REG as usize] as u64,
-                            device::memory::AccessType::Read,
-                        );
-                        if err {
-                            panic!("TLB exception in SC64");
-                        }
-
                         let offset = (device.sc64.sector * 512) as usize;
                         let length = (device.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
                         let mut i = 0;
@@ -156,9 +139,10 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                             if offset + i < device.ui.saves.sdcard.0.len() {
                                 let data = device::memory::data_read(
                                     device,
-                                    phys_address + i as u64,
+                                    (device.sc64.regs[SC64_DATA0_REG as usize] & 0x1FFFFFFF) as u64
+                                        + i as u64,
                                     device::memory::AccessSize::Word,
-                                    cached,
+                                    false,
                                 )
                                 .to_be_bytes();
                                 device.ui.saves.sdcard.0[(offset + i)..(offset + i + 4)]
