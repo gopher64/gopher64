@@ -30,7 +30,7 @@ pub struct Netplay {
     status: u8,
     buffer_target: u8,
     pub fast_forward: bool,
-    pub error_notifier: std::sync::mpsc::Sender<String>,
+    pub error_notifier: tokio::sync::mpsc::Sender<String>,
     pub gui_ctx: egui::Context,
 }
 
@@ -47,7 +47,7 @@ struct InputEvent {
 }
 
 fn send_error(netplay: &mut Netplay, error: String) {
-    netplay.error_notifier.send(error).unwrap();
+    netplay.error_notifier.try_send(error).unwrap();
 
     netplay.gui_ctx.request_repaint(); // this is so the window pops up right away
 }
@@ -219,7 +219,7 @@ pub fn init(
     mut peer_addr: std::net::SocketAddr,
     session: ui::gui::gui_netplay::NetplayRoom,
     player_number: u8,
-    error_notifier: std::sync::mpsc::Sender<String>,
+    error_notifier: tokio::sync::mpsc::Sender<String>,
     gui_ctx: egui::Context,
 ) -> Netplay {
     peer_addr.set_port(session.port.unwrap() as u16);

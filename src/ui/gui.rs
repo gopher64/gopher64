@@ -21,9 +21,9 @@ pub struct GopherEguiApp {
     emulate_vru: bool,
     dinput: bool,
     show_vru_dialog: bool,
-    vru_window_receiver: Option<std::sync::mpsc::Receiver<Vec<String>>>,
-    netplay_error_receiver: Option<std::sync::mpsc::Receiver<String>>,
-    vru_word_notifier: Option<std::sync::mpsc::Sender<String>>,
+    vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
+    netplay_error_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+    vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
     pub netplay: gui_netplay::GuiNetplay,
 }
@@ -84,7 +84,7 @@ impl GopherEguiApp {
         controller_paths: Vec<String>,
         controller_names: Vec<String>,
     ) -> GopherEguiApp {
-        add_japanese_font(&cc.egui_ctx);
+        add_fonts(&cc.egui_ctx);
         let config = ui::config::Config::new();
 
         let mut selected_controller = [-1, -1, -1, -1];
@@ -236,7 +236,7 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             app.vru_word_notifier
                                 .as_ref()
                                 .unwrap()
-                                .send(v.clone())
+                                .try_send(v.clone())
                                 .unwrap();
                             app.show_vru_dialog = false;
                         }
@@ -248,7 +248,7 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 app.vru_word_notifier
                     .as_ref()
                     .unwrap()
-                    .send(String::from(""))
+                    .try_send(String::from(""))
                     .unwrap();
                 app.show_vru_dialog = false;
             }
@@ -285,19 +285,19 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
 
     let (netplay_error_notifier, netplay_error_receiver): (
-        std::sync::mpsc::Sender<String>,
-        std::sync::mpsc::Receiver<String>,
-    ) = std::sync::mpsc::channel();
+        tokio::sync::mpsc::Sender<String>,
+        tokio::sync::mpsc::Receiver<String>,
+    ) = tokio::sync::mpsc::channel(1);
 
     let (vru_window_notifier, vru_window_receiver): (
-        std::sync::mpsc::Sender<Vec<String>>,
-        std::sync::mpsc::Receiver<Vec<String>>,
-    ) = std::sync::mpsc::channel();
+        tokio::sync::mpsc::Sender<Vec<String>>,
+        tokio::sync::mpsc::Receiver<Vec<String>>,
+    ) = tokio::sync::mpsc::channel(1);
 
     let (vru_word_notifier, vru_word_receiver): (
-        std::sync::mpsc::Sender<String>,
-        std::sync::mpsc::Receiver<String>,
-    ) = std::sync::mpsc::channel();
+        tokio::sync::mpsc::Sender<String>,
+        tokio::sync::mpsc::Receiver<String>,
+    ) = tokio::sync::mpsc::channel(1);
 
     if netplay {
         app.netplay_error_receiver = Some(netplay_error_receiver);
@@ -312,83 +312,89 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
     let rom_contents = app.netplay.rom_contents.clone();
     let gui_ctx = ctx.clone();
-    std::thread::spawn(move || {
-        let file = if !netplay {
-            rfd::FileDialog::new().pick_file()
-        } else {
-            None
-        };
 
-        let save_config_items = SaveConfig {
-            selected_controller,
-            selected_profile,
-            controller_enabled,
-            upscale,
-            integer_scaling,
-            fullscreen,
-            emulate_vru,
-        };
+    let mut task = None;
+    if !netplay {
+        task = Some(rfd::AsyncFileDialog::new().pick_file());
+    }
+    tokio::spawn(async move {
+        let file = if !netplay { task.unwrap().await } else { None };
 
-        if cfg!(target_os = "macos") && file.is_some() {
-            // mac os requires the process to be started on the main thread
-            // this means that netplay and VRU emulation will not work on mac os
-            {
-                let mut config = ui::config::Config::new();
-                save_config(&mut config, controller_paths, save_config_items);
-            }
-            let mut command = std::process::Command::new(std::env::current_exe().unwrap());
-            if fullscreen {
-                command.arg("--fullscreen");
-            }
-            command.arg(file.unwrap().as_path());
+        std::thread::Builder::new()
+            .name("n64".to_string())
+            .spawn(move || {
+                let save_config_items = SaveConfig {
+                    selected_controller,
+                    selected_profile,
+                    controller_enabled,
+                    upscale,
+                    integer_scaling,
+                    fullscreen,
+                    emulate_vru,
+                };
 
-            let status = command.status().expect("failed to execute process");
-            if !status.success() {
-                panic!("process exited with: {}", status);
-            }
-        } else if file.is_some() || netplay {
-            let running_file = cache_dir.join("game_running");
-            if running_file.exists() {
-                println!("Game already running");
-                return;
-            }
-            let result = std::fs::File::create(running_file.clone());
-            if result.is_err() {
-                panic!("could not create running file: {}", result.err().unwrap())
-            }
+                if cfg!(target_os = "macos") && file.is_some() {
+                    // mac os requires the process to be started on the main thread
+                    // this means that netplay and VRU emulation will not work on mac os
+                    {
+                        let mut config = ui::config::Config::new();
+                        save_config(&mut config, controller_paths, save_config_items);
+                    }
+                    let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+                    if fullscreen {
+                        command.arg("--fullscreen");
+                    }
+                    command.arg(file.unwrap().path());
 
-            let mut device = device::Device::new();
-            save_config(&mut device.ui.config, controller_paths, save_config_items);
+                    let status = command.status().expect("failed to execute process");
+                    if !status.success() {
+                        panic!("process exited with: {}", status);
+                    }
+                } else if file.is_some() || netplay {
+                    let running_file = cache_dir.join("game_running");
+                    if running_file.exists() {
+                        println!("Game already running");
+                        return;
+                    }
+                    let result = std::fs::File::create(running_file.clone());
+                    if result.is_err() {
+                        panic!("could not create running file: {}", result.err().unwrap())
+                    }
 
-            if netplay {
-                device.netplay = Some(netplay::init(
-                    peer_addr.unwrap(),
-                    session.unwrap(),
-                    player_number.unwrap(),
-                    netplay_error_notifier,
-                    gui_ctx,
-                ));
-                device::run_game(rom_contents, &mut device, fullscreen);
-                netplay::close(&mut device);
-            } else {
-                if emulate_vru {
-                    device.vru.window_notifier = Some(vru_window_notifier);
-                    device.vru.word_receiver = Some(vru_word_receiver);
-                    device.vru.gui_ctx = Some(gui_ctx);
+                    let mut device = device::Device::new();
+                    save_config(&mut device.ui.config, controller_paths, save_config_items);
+
+                    if netplay {
+                        device.netplay = Some(netplay::init(
+                            peer_addr.unwrap(),
+                            session.unwrap(),
+                            player_number.unwrap(),
+                            netplay_error_notifier,
+                            gui_ctx,
+                        ));
+                        device::run_game(rom_contents, &mut device, fullscreen);
+                        netplay::close(&mut device);
+                    } else {
+                        if emulate_vru {
+                            device.vru.window_notifier = Some(vru_window_notifier);
+                            device.vru.word_receiver = Some(vru_word_receiver);
+                            device.vru.gui_ctx = Some(gui_ctx);
+                        }
+
+                        let rom_contents = device::get_rom_contents(file.unwrap().path());
+                        if rom_contents.is_empty() {
+                            println!("Could not read rom file");
+                        } else {
+                            device::run_game(rom_contents, &mut device, fullscreen);
+                        }
+                    }
+                    let result = std::fs::remove_file(running_file);
+                    if result.is_err() {
+                        panic!("could not remove running file: {}", result.err().unwrap())
+                    }
                 }
-
-                let rom_contents = device::get_rom_contents(file.unwrap().as_path());
-                if rom_contents.is_empty() {
-                    println!("Could not read rom file");
-                } else {
-                    device::run_game(rom_contents, &mut device, fullscreen);
-                }
-            }
-            let result = std::fs::remove_file(running_file);
-            if result.is_err() {
-                panic!("could not remove running file: {}", result.err().unwrap())
-            }
-        }
+            })
+            .unwrap();
     });
 }
 
@@ -407,7 +413,7 @@ impl eframe::App for GopherEguiApp {
         }
 
         if self.netplay_error_receiver.is_some() {
-            let result = self.netplay_error_receiver.as_ref().unwrap().try_recv();
+            let result = self.netplay_error_receiver.as_mut().unwrap().try_recv();
             if result.is_ok() {
                 self.netplay.error = result.unwrap();
             }
@@ -518,7 +524,7 @@ impl eframe::App for GopherEguiApp {
         });
 
         if self.emulate_vru && self.vru_window_receiver.is_some() {
-            let result = self.vru_window_receiver.as_ref().unwrap().try_recv();
+            let result = self.vru_window_receiver.as_mut().unwrap().try_recv();
             if result.is_ok() {
                 self.show_vru_dialog = true;
                 self.vru_word_list = result.unwrap();
@@ -531,7 +537,21 @@ impl eframe::App for GopherEguiApp {
     }
 }
 
-fn add_japanese_font(ctx: &egui::Context) {
+fn add_fonts(ctx: &egui::Context) {
+    ctx.add_font(eframe::epaint::text::FontInsert::new(
+        "regular_font",
+        egui::FontData::from_static(include_bytes!("../../data/Roboto-Regular.ttf")),
+        vec![
+            eframe::epaint::text::InsertFontFamily {
+                family: egui::FontFamily::Proportional,
+                priority: egui::epaint::text::FontPriority::Highest,
+            },
+            eframe::epaint::text::InsertFontFamily {
+                family: egui::FontFamily::Monospace,
+                priority: egui::epaint::text::FontPriority::Highest,
+            },
+        ],
+    ));
     ctx.add_font(eframe::epaint::text::FontInsert::new(
         "japanese_font",
         egui::FontData::from_static(include_bytes!("../../data/NotoSansJP-Regular.ttf")),
