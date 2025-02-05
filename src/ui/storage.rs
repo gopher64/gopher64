@@ -43,10 +43,10 @@ fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
             1 => return vec![SaveTypes::Eeprom4k],
             2 => return vec![SaveTypes::Eeprom16k],
             3 => return vec![SaveTypes::Sram],
-            4 => panic!("Unsupported save type: {:X}", save_type),
+            4 => panic!("Unsupported save type: {}", save_type),
             5 => return vec![SaveTypes::Flash],
-            6 => panic!("Unsupported save type: {:X}", save_type),
-            _ => panic!("Unknown save type: {:X}", save_type),
+            6 => panic!("Unsupported save type: {}", save_type),
+            _ => panic!("Unknown save type: {}", save_type),
         }
     }
     match game_id {

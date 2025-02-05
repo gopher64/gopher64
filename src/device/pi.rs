@@ -117,17 +117,24 @@ fn get_handler(address: u32) -> PiHandler {
         read: device::cart::rom::dma_read,
         write: device::cart::rom::dma_write,
     };
-    if address >= device::memory::MM_SC64_BUFFER as u32 {
+    if address >= device::memory::MM_SC64_BUFFER as u32
+        && address < (device::memory::MM_SC64_BUFFER + 0x2000) as u32
+    {
         handler.read = device::cart::sc64::dma_read;
         handler.write = device::cart::sc64::dma_write;
-    } else if address >= device::memory::MM_CART_ROM as u32 {
+    } else if address >= device::memory::MM_CART_ROM as u32
+        && address < device::memory::MM_PIF_MEM as u32
+    {
         handler.read = device::cart::rom::dma_read;
         handler.write = device::cart::rom::dma_write;
-    } else if address >= device::memory::MM_DOM2_ADDR2 as u32 {
+    } else if address >= device::memory::MM_DOM2_ADDR2 as u32
+        && address < device::memory::MM_CART_ROM as u32
+    {
         handler.read = device::cart::sram::dma_read;
         handler.write = device::cart::sram::dma_write;
     } else {
-        panic!("unknown pi handler")
+        handler.read = unknown_dma_read;
+        handler.write = unknown_dma_write;
     }
     handler
 }
@@ -196,4 +203,27 @@ pub fn dma_event(device: &mut device::Device) {
     device.pi.regs[PI_STATUS_REG as usize] |= PI_STATUS_INTERRUPT;
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_PI)
+}
+
+fn unknown_dma_read(
+    device: &mut device::Device,
+    mut _cart_addr: u32,
+    mut _dram_addr: u32,
+    length: u32,
+) -> u64 {
+    device::pi::calculate_cycles(device, 1, length)
+}
+
+fn unknown_dma_write(
+    device: &mut device::Device,
+    mut _cart_addr: u32,
+    mut dram_addr: u32,
+    length: u32,
+) -> u64 {
+    dram_addr &= device::rdram::RDRAM_MASK as u32;
+
+    for i in 0..length {
+        device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap] = 0;
+    }
+    device::pi::calculate_cycles(device, 1, length)
 }
