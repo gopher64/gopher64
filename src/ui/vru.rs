@@ -4,14 +4,14 @@ use crate::ui;
 
 pub fn prompt_for_match(
     words: &[String],
-    window_notifier: &std::sync::mpsc::Sender<Vec<String>>,
-    word_index_receiver: &std::sync::mpsc::Receiver<String>,
+    window_notifier: &tokio::sync::mpsc::Sender<Vec<String>>,
+    word_index_receiver: &mut tokio::sync::mpsc::Receiver<String>,
     gui_ctx: &egui::Context,
 ) -> u16 {
     let mut dedup_words = words.to_owned();
     dedup_words.sort();
     dedup_words.dedup();
-    window_notifier.send(dedup_words).unwrap();
+    window_notifier.try_send(dedup_words).unwrap();
     gui_ctx.request_repaint(); // this is so the window pops up right away
     let mut result = word_index_receiver.try_recv();
     while result.is_err() {
