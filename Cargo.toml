@@ -28,11 +28,7 @@ socket2 = "0.5"
 fatfs = "0.3"
 postcard = { version = "1.1", features = ["use-std"] }
 clap = { version = "4.4", features = ["derive"] }
-
-[dependencies.reqwest]
-version = "0.12"
-default-features = false
-features = ["http2","rustls-tls","charset","json","blocking"]
+reqwest = { version = "0.12", default-features = false, features = ["http2","rustls-tls","charset","json","blocking"] }
 
 [build-dependencies]
 winres = "0.1"
