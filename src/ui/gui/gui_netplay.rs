@@ -102,13 +102,11 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
             let (tx, rx) = std::sync::mpsc::channel();
             app.netplay.server_receiver = Some(rx);
             let gui_ctx = ctx.clone();
-            std::thread::spawn(move || {
-                if let Ok(response) =
-                    reqwest::blocking::get("https://m64p.s3.amazonaws.com/servers.json")
-                        .unwrap()
-                        .json::<std::collections::HashMap<String, String>>()
-                {
-                    tx.send(response).unwrap();
+            let task = reqwest::get("https://m64p.s3.amazonaws.com/servers.json");
+            tokio::spawn(async move {
+                let response = task.await;
+                if let Ok(response) = response {
+                    tx.send(response.json().await.unwrap()).unwrap();
                     gui_ctx.request_repaint();
                 }
             });
@@ -185,8 +183,9 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 app.netplay.game_info_receiver = Some(rx);
                 let gui_ctx = ctx.clone();
                 app.netplay.create_rom_label = "Inspecting ROM".to_string();
-                std::thread::spawn(move || {
-                    let file = rfd::FileDialog::new().pick_file();
+                let task = rfd::AsyncFileDialog::new().pick_file();
+                tokio::spawn(async move {
+                    let file = task.await;
 
                     if let Some(file) = file {
                         parse_rom_file(file, tx);
@@ -391,19 +390,14 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
 }
 
-fn parse_rom_file(file: std::path::PathBuf, tx: std::sync::mpsc::Sender<GameInfo>) {
-    let rom_contents = device::get_rom_contents(file.as_path());
+fn parse_rom_file(file: rfd::FileHandle, tx: std::sync::mpsc::Sender<GameInfo>) {
+    let rom_contents = device::get_rom_contents(file.path());
     if !rom_contents.is_empty() {
         let hash = device::cart::rom::calculate_hash(&rom_contents);
         let game_name = ui::storage::get_game_name(&rom_contents);
 
-        tx.send((
-            hash,
-            game_name,
-            file.file_name().unwrap().to_string_lossy().to_string(),
-            rom_contents,
-        ))
-        .unwrap();
+        tx.send((hash, game_name, file.file_name(), rom_contents))
+            .unwrap();
     } else {
         tx.send((
             "".to_string(),
@@ -586,8 +580,9 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         app.netplay.game_info_receiver = Some(rx);
                         let gui_ctx = ctx.clone();
                         app.netplay.join_rom_label = "Inspecting ROM".to_string();
-                        std::thread::spawn(move || {
-                            let file = rfd::FileDialog::new().pick_file();
+                        let task = rfd::AsyncFileDialog::new().pick_file();
+                        tokio::spawn(async move {
+                            let file = task.await;
 
                             if let Some(file) = file {
                                 parse_rom_file(file, tx);

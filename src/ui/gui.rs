@@ -84,7 +84,7 @@ impl GopherEguiApp {
         controller_paths: Vec<String>,
         controller_names: Vec<String>,
     ) -> GopherEguiApp {
-        add_japanese_font(&cc.egui_ctx);
+        add_fonts(&cc.egui_ctx);
         let config = ui::config::Config::new();
 
         let mut selected_controller = [-1, -1, -1, -1];
@@ -312,12 +312,13 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
     let rom_contents = app.netplay.rom_contents.clone();
     let gui_ctx = ctx.clone();
-    std::thread::spawn(move || {
-        let file = if !netplay {
-            rfd::FileDialog::new().pick_file()
-        } else {
-            None
-        };
+
+    let mut task = None;
+    if !netplay {
+        task = Some(rfd::AsyncFileDialog::new().pick_file());
+    }
+    tokio::spawn(async move {
+        let file = if !netplay { task.unwrap().await } else { None };
 
         let save_config_items = SaveConfig {
             selected_controller,
@@ -340,7 +341,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             if fullscreen {
                 command.arg("--fullscreen");
             }
-            command.arg(file.unwrap().as_path());
+            command.arg(file.unwrap().path());
 
             let status = command.status().expect("failed to execute process");
             if !status.success() {
@@ -377,7 +378,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     device.vru.gui_ctx = Some(gui_ctx);
                 }
 
-                let rom_contents = device::get_rom_contents(file.unwrap().as_path());
+                let rom_contents = device::get_rom_contents(file.unwrap().path());
                 if rom_contents.is_empty() {
                     println!("Could not read rom file");
                 } else {
@@ -531,7 +532,21 @@ impl eframe::App for GopherEguiApp {
     }
 }
 
-fn add_japanese_font(ctx: &egui::Context) {
+fn add_fonts(ctx: &egui::Context) {
+    ctx.add_font(eframe::epaint::text::FontInsert::new(
+        "regular_font",
+        egui::FontData::from_static(include_bytes!("../../data/Roboto-Regular.ttf")),
+        vec![
+            eframe::epaint::text::InsertFontFamily {
+                family: egui::FontFamily::Proportional,
+                priority: egui::epaint::text::FontPriority::Highest,
+            },
+            eframe::epaint::text::InsertFontFamily {
+                family: egui::FontFamily::Monospace,
+                priority: egui::epaint::text::FontPriority::Highest,
+            },
+        ],
+    ));
     ctx.add_font(eframe::epaint::text::FontInsert::new(
         "japanese_font",
         egui::FontData::from_static(include_bytes!("../../data/NotoSansJP-Regular.ttf")),
