@@ -330,66 +330,71 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
             emulate_vru,
         };
 
-        if cfg!(target_os = "macos") && file.is_some() {
-            // mac os requires the process to be started on the main thread
-            // this means that netplay and VRU emulation will not work on mac os
-            {
-                let mut config = ui::config::Config::new();
-                save_config(&mut config, controller_paths, save_config_items);
-            }
-            let mut command = std::process::Command::new(std::env::current_exe().unwrap());
-            if fullscreen {
-                command.arg("--fullscreen");
-            }
-            command.arg(file.unwrap().path());
+        std::thread::Builder::new()
+            .name("n64".to_string())
+            .spawn(move || {
+                if cfg!(target_os = "macos") && file.is_some() {
+                    // mac os requires the process to be started on the main thread
+                    // this means that netplay and VRU emulation will not work on mac os
+                    {
+                        let mut config = ui::config::Config::new();
+                        save_config(&mut config, controller_paths, save_config_items);
+                    }
+                    let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+                    if fullscreen {
+                        command.arg("--fullscreen");
+                    }
+                    command.arg(file.unwrap().path());
 
-            let status = command.status().expect("failed to execute process");
-            if !status.success() {
-                panic!("process exited with: {}", status);
-            }
-        } else if file.is_some() || netplay {
-            let running_file = cache_dir.join("game_running");
-            if running_file.exists() {
-                println!("Game already running");
-                return;
-            }
-            let result = std::fs::File::create(running_file.clone());
-            if result.is_err() {
-                panic!("could not create running file: {}", result.err().unwrap())
-            }
+                    let status = command.status().expect("failed to execute process");
+                    if !status.success() {
+                        panic!("process exited with: {}", status);
+                    }
+                } else if file.is_some() || netplay {
+                    let running_file = cache_dir.join("game_running");
+                    if running_file.exists() {
+                        println!("Game already running");
+                        return;
+                    }
+                    let result = std::fs::File::create(running_file.clone());
+                    if result.is_err() {
+                        panic!("could not create running file: {}", result.err().unwrap())
+                    }
 
-            let mut device = device::Device::new();
-            save_config(&mut device.ui.config, controller_paths, save_config_items);
+                    let mut device = device::Device::new();
+                    save_config(&mut device.ui.config, controller_paths, save_config_items);
 
-            if netplay {
-                device.netplay = Some(netplay::init(
-                    peer_addr.unwrap(),
-                    session.unwrap(),
-                    player_number.unwrap(),
-                    netplay_error_notifier,
-                    gui_ctx,
-                ));
-                device::run_game(rom_contents, &mut device, fullscreen);
-                netplay::close(&mut device);
-            } else {
-                if emulate_vru {
-                    device.vru.window_notifier = Some(vru_window_notifier);
-                    device.vru.word_receiver = Some(vru_word_receiver);
-                    device.vru.gui_ctx = Some(gui_ctx);
+                    if netplay {
+                        device.netplay = Some(netplay::init(
+                            peer_addr.unwrap(),
+                            session.unwrap(),
+                            player_number.unwrap(),
+                            netplay_error_notifier,
+                            gui_ctx,
+                        ));
+                        device::run_game(rom_contents, &mut device, fullscreen);
+                        netplay::close(&mut device);
+                    } else {
+                        if emulate_vru {
+                            device.vru.window_notifier = Some(vru_window_notifier);
+                            device.vru.word_receiver = Some(vru_word_receiver);
+                            device.vru.gui_ctx = Some(gui_ctx);
+                        }
+
+                        let rom_contents = device::get_rom_contents(file.unwrap().path());
+                        if rom_contents.is_empty() {
+                            println!("Could not read rom file");
+                        } else {
+                            device::run_game(rom_contents, &mut device, fullscreen);
+                        }
+                    }
+                    let result = std::fs::remove_file(running_file);
+                    if result.is_err() {
+                        panic!("could not remove running file: {}", result.err().unwrap())
+                    }
                 }
-
-                let rom_contents = device::get_rom_contents(file.unwrap().path());
-                if rom_contents.is_empty() {
-                    println!("Could not read rom file");
-                } else {
-                    device::run_game(rom_contents, &mut device, fullscreen);
-                }
-            }
-            let result = std::fs::remove_file(running_file);
-            if result.is_err() {
-                panic!("could not remove running file: {}", result.err().unwrap())
-            }
-        }
+            })
+            .unwrap();
     });
 }
 
