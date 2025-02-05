@@ -109,6 +109,7 @@ pub fn dma_read(
                     .romsave
                     .0
                     .insert(cart_addr + i, device.cart.rom[(cart_addr + i) as usize]);
+
                 device.ui.saves.romsave.1 = true;
             }
         }
