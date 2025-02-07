@@ -4,19 +4,19 @@ use crate::ui;
 use governor::clock::Clock;
 
 const VI_STATUS_REG: u32 = 0;
-//const VI_ORIGIN_REG: u32 = 1;
-pub const VI_WIDTH_REG: u32 = 2;
+pub const VI_ORIGIN_REG: u32 = 1;
+//const VI_WIDTH_REG: u32 = 2;
 //const VI_V_INTR_REG: u32 = 3;
 const VI_CURRENT_REG: u32 = 4;
 //const VI_BURST_REG: u32 = 5;
 const VI_V_SYNC_REG: u32 = 6;
 const VI_H_SYNC_REG: u32 = 7;
 //const VI_LEAP_REG: u32 = 8;
-pub const VI_H_START_REG: u32 = 9;
-pub const VI_V_START_REG: u32 = 10;
+//const VI_H_START_REG: u32 = 9;
+//const VI_V_START_REG: u32 = 10;
 //const VI_V_BURST_REG: u32 = 11;
-pub const VI_X_SCALE_REG: u32 = 12;
-pub const VI_Y_SCALE_REG: u32 = 13;
+//const VI_X_SCALE_REG: u32 = 12;
+//const VI_Y_SCALE_REG: u32 = 13;
 pub const VI_REGS_COUNT: u32 = 14;
 
 pub struct Vi {

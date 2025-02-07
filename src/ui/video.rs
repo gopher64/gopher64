@@ -33,11 +33,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
         DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
         DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
         DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
-        VI_H_START_REG: &mut device.vi.regs[device::vi::VI_H_START_REG as usize],
-        VI_V_START_REG: &mut device.vi.regs[device::vi::VI_V_START_REG as usize],
-        VI_X_SCALE_REG: &mut device.vi.regs[device::vi::VI_X_SCALE_REG as usize],
-        VI_Y_SCALE_REG: &mut device.vi.regs[device::vi::VI_Y_SCALE_REG as usize],
-        VI_WIDTH_REG: &mut device.vi.regs[device::vi::VI_WIDTH_REG as usize],
+        VI_ORIGIN_REG: &mut device.vi.regs[device::vi::VI_ORIGIN_REG as usize],
     };
 
     unsafe {
