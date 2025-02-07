@@ -59,7 +59,6 @@ pub fn update_screen() -> bool {
 }
 
 pub fn full_sync() {
-    // when the window is closed, running is set to false
     unsafe { rdp_full_sync() }
 }
 
