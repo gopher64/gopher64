@@ -381,6 +381,7 @@ impl Device {
                 regs_dpc: [0; rdp::DPC_REGS_COUNT as usize],
                 regs_dps: [0; rdp::DPS_REGS_COUNT as usize],
                 wait_frozen: false,
+                last_status_value: 0,
             },
             mi: mi::Mi {
                 regs: [0; mi::MI_REGS_COUNT as usize],
