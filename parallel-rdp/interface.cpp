@@ -395,7 +395,7 @@ uint64_t rdp_process_commands()
 		{
 			sync_signal = processor->signal_timeline();
 
-			interrupt_timer = 100000;
+			interrupt_timer = 60000;
 		}
 
 		cmd_cur += cmd_length;
