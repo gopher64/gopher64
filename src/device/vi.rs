@@ -4,7 +4,7 @@ use crate::ui;
 use governor::clock::Clock;
 
 const VI_STATUS_REG: u32 = 0;
-pub const VI_ORIGIN_REG: u32 = 1;
+//const VI_ORIGIN_REG: u32 = 1;
 //const VI_WIDTH_REG: u32 = 2;
 //const VI_V_INTR_REG: u32 = 3;
 const VI_CURRENT_REG: u32 = 4;
