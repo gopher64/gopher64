@@ -33,11 +33,6 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
         DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
         DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
         DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
-        VI_H_START_REG: &mut device.vi.regs[device::vi::VI_H_START_REG as usize],
-        VI_V_START_REG: &mut device.vi.regs[device::vi::VI_V_START_REG as usize],
-        VI_X_SCALE_REG: &mut device.vi.regs[device::vi::VI_X_SCALE_REG as usize],
-        VI_Y_SCALE_REG: &mut device.vi.regs[device::vi::VI_Y_SCALE_REG as usize],
-        VI_WIDTH_REG: &mut device.vi.regs[device::vi::VI_WIDTH_REG as usize],
     };
 
     unsafe {
@@ -61,6 +56,10 @@ pub fn close(ui: &ui::Ui) {
 pub fn update_screen() -> bool {
     // when the window is closed, running is set to false
     unsafe { rdp_update_screen() }
+}
+
+pub fn full_sync() {
+    unsafe { rdp_full_sync() }
 }
 
 pub fn set_register(reg: u32, value: u32) {

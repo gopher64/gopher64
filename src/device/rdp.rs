@@ -45,6 +45,7 @@ pub struct Rdp {
     pub regs_dpc: [u32; DPC_REGS_COUNT as usize],
     pub regs_dps: [u32; DPS_REGS_COUNT as usize],
     pub wait_frozen: bool,
+    pub last_status_value: u32,
 }
 
 pub fn read_regs_dpc(
@@ -54,6 +55,15 @@ pub fn read_regs_dpc(
 ) -> u32 {
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
+        DPC_STATUS_REG => {
+            let value =
+                device.rdp.regs_dpc[reg as usize] & (DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY);
+            if value == device.rdp.last_status_value && value != 0 {
+                device.rsp.cpu.sync_point = true;
+            }
+            device.rdp.last_status_value = value;
+            device.rdp.regs_dpc[reg as usize]
+        }
         DPC_CLOCK_REG => 0xFFFFFF, // needed for JFG
         DPC_CURRENT_REG => {
             if device.rdp.wait_frozen {
@@ -103,7 +113,8 @@ pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mas
 
 fn run_rdp(device: &mut device::Device) {
     let timer = ui::video::process_rdp_list();
-    device.rdp.regs_dpc[DPC_STATUS_REG as usize] |= DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY;
+    device.rdp.regs_dpc[DPC_STATUS_REG as usize] |=
+        DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY;
 
     if timer != 0 {
         device::events::create_event(
@@ -185,7 +196,10 @@ pub fn init(device: &mut device::Device) {
 }
 
 fn rdp_interrupt_event(device: &mut device::Device) {
-    device.rdp.regs_dpc[DPC_STATUS_REG as usize] &= !(DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY);
+    ui::video::full_sync();
+
+    device.rdp.regs_dpc[DPC_STATUS_REG as usize] &=
+        !(DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY);
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_DP)
 }
