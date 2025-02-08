@@ -196,8 +196,6 @@ pub fn init(device: &mut device::Device) {
 }
 
 fn rdp_interrupt_event(device: &mut device::Device) {
-    ui::video::full_sync();
-
     device.rdp.regs_dpc[DPC_STATUS_REG as usize] &=
         !(DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY);
 

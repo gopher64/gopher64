@@ -62,7 +62,6 @@ static int cmd_cur;
 static int cmd_ptr;
 static bool emu_running;
 static GFX_INFO gfx_info;
-static uint64_t sync_signal;
 
 static const unsigned cmd_len_lut[64] = {
 	1,
@@ -393,7 +392,7 @@ uint64_t rdp_process_commands()
 
 		if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
-			sync_signal = processor->signal_timeline();
+			processor->wait_for_timeline(processor->signal_timeline());
 
 			interrupt_timer = 60000;
 		}
@@ -406,9 +405,4 @@ uint64_t rdp_process_commands()
 	*gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
 
 	return interrupt_timer;
-}
-
-void rdp_full_sync()
-{
-	processor->wait_for_timeline(sync_signal);
 }

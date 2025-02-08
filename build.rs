@@ -99,7 +99,6 @@ fn main() {
         .allowlist_function("rdp_set_vi_register")
         .allowlist_function("rdp_update_screen")
         .allowlist_function("rdp_process_commands")
-        .allowlist_function("rdp_full_sync")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");
