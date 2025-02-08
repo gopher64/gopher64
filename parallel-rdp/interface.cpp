@@ -330,6 +330,45 @@ bool rdp_update_screen()
 	return emu_running;
 }
 
+static uint32_t viCalculateHorizonalWidth(uint32_t hstart, uint32_t xscale, uint32_t width)
+{
+	if (xscale == 0)
+		return 320;
+
+	uint32_t start = ((hstart & 0x03FF0000) >> 16) & 0x3FF;
+	uint32_t end = (hstart & 0x3FF);
+	uint32_t delta;
+	if (end > start)
+		delta = end - start;
+	else
+		delta = start - end;
+	uint32_t scale = (xscale & 0xFFF);
+
+	if (delta == 0)
+	{
+		delta = width;
+	}
+
+	return (delta * scale) / 0x400;
+}
+
+static uint32_t viCalculateVerticalHeight(uint32_t vstart, uint32_t yscale)
+{
+	if (yscale == 0)
+		return 240;
+
+	uint32_t start = ((vstart & 0x03FF0000) >> 16) & 0x3FF;
+	uint32_t end = (vstart & 0x3FF);
+	uint32_t delta;
+	if (end > start)
+		delta = end - start;
+	else
+		delta = start - end;
+	uint32_t scale = (yscale & 0xFFF);
+
+	return (delta * scale) / 0x800;
+}
+
 uint64_t rdp_process_commands()
 {
 	uint64_t interrupt_timer = 0;
@@ -394,7 +433,17 @@ uint64_t rdp_process_commands()
 		{
 			processor->wait_for_timeline(processor->signal_timeline());
 
-			interrupt_timer = 60000;
+			uint32_t width = viCalculateHorizonalWidth(*gfx_info.VI_H_START_REG, *gfx_info.VI_X_SCALE_REG, *gfx_info.VI_WIDTH_REG);
+			if (width == 0)
+			{
+				width = 320;
+			}
+			uint32_t height = viCalculateVerticalHeight(*gfx_info.VI_V_START_REG, *gfx_info.VI_Y_SCALE_REG);
+			if (height == 0)
+			{
+				height = 240;
+			}
+			interrupt_timer = width * height;
 		}
 
 		cmd_cur += cmd_length;
