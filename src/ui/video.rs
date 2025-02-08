@@ -58,10 +58,6 @@ pub fn update_screen() -> bool {
     unsafe { rdp_update_screen() }
 }
 
-pub fn full_sync() {
-    unsafe { rdp_full_sync() }
-}
-
 pub fn set_register(reg: u32, value: u32) {
     unsafe {
         rdp_set_vi_register(reg, value);
