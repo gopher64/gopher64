@@ -111,7 +111,7 @@ pub fn read_regs(
     _access_size: device::memory::AccessSize,
 ) -> u32 {
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    let return_value = match reg as u32 {
         AI_LEN_REG => {
             let value = get_remaining_dma_length(device);
             if value < device.ai.last_read {
@@ -128,7 +128,9 @@ pub fn read_regs(
             value as u32
         }
         _ => device.ai.regs[reg as usize],
-    }
+    };
+    device::cop0::add_cycles(device, 20);
+    return_value
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {

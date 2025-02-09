@@ -40,6 +40,7 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
+    device::cop0::add_cycles(device, 20);
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
         PI_WR_LEN_REG | PI_RD_LEN_REG => 0x7F,

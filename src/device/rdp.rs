@@ -53,6 +53,7 @@ pub fn read_regs_dpc(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
+    device::cop0::add_cycles(device, 20);
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
         DPC_STATUS_REG => {
@@ -131,6 +132,7 @@ pub fn read_regs_dps(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
+    device::cop0::add_cycles(device, 20);
     device.rdp.regs_dps[((address & 0xFFFF) >> 2) as usize]
 }
 

@@ -12,11 +12,11 @@ const VI_CURRENT_REG: u32 = 4;
 const VI_V_SYNC_REG: u32 = 6;
 const VI_H_SYNC_REG: u32 = 7;
 //const VI_LEAP_REG: u32 = 8;
-pub const VI_H_START_REG: u32 = 9;
-pub const VI_V_START_REG: u32 = 10;
+//const VI_H_START_REG: u32 = 9;
+//const VI_V_START_REG: u32 = 10;
 //const VI_V_BURST_REG: u32 = 11;
-pub const VI_X_SCALE_REG: u32 = 12;
-pub const VI_Y_SCALE_REG: u32 = 13;
+//const VI_X_SCALE_REG: u32 = 12;
+//const VI_Y_SCALE_REG: u32 = 13;
 pub const VI_REGS_COUNT: u32 = 14;
 
 pub struct Vi {
@@ -89,6 +89,7 @@ pub fn read_regs(
     if reg as u32 == VI_CURRENT_REG {
         set_current_line(device)
     }
+    device::cop0::add_cycles(device, 20);
     device.vi.regs[reg as usize]
 }
 

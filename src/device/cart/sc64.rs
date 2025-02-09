@@ -37,6 +37,7 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
+    device::cop0::add_cycles(device, 20);
     if device.sc64.regs_locked {
         return 0;
     }

@@ -101,8 +101,10 @@ pub fn read_mem_fast(
 pub fn read_mem(
     device: &mut device::Device,
     address: u64,
-    _access_size: device::memory::AccessSize,
+    access_size: device::memory::AccessSize,
 ) -> u32 {
+    device::cop0::add_cycles(device, access_size as u64 / 4);
+
     let masked_address = address as usize & RSP_MEM_MASK;
     u32::from_be_bytes(
         device.rsp.mem[masked_address..masked_address + 4]
@@ -264,6 +266,7 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
+    device::cop0::add_cycles(device, 20);
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
         SP_DMA_BUSY_REG | SP_DMA_FULL_REG => {
@@ -321,6 +324,7 @@ pub fn read_regs2(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
+    device::cop0::add_cycles(device, 20);
     device.rsp.regs2[((address & 0xFFFF) >> 2) as usize]
 }
 
