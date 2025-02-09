@@ -110,7 +110,7 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    device::cop0::add_cycles(device, 20);
+    let return_value;
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
         AI_LEN_REG => {
@@ -126,10 +126,12 @@ pub fn read_regs(
 
                 device.ai.last_read = value;
             }
-            value as u32
+            return_value = value as u32
         }
-        _ => device.ai.regs[reg as usize],
+        _ => return_value = device.ai.regs[reg as usize],
     }
+    device::cop0::add_cycles(device, 20);
+    return_value
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {

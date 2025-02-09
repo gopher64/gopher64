@@ -85,11 +85,11 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    device::cop0::add_cycles(device, 20);
     let reg = (address & 0xFFFF) >> 2;
     if reg as u32 == VI_CURRENT_REG {
         set_current_line(device)
     }
+    device::cop0::add_cycles(device, 20);
     device.vi.regs[reg as usize]
 }
 
