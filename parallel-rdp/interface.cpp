@@ -330,7 +330,7 @@ bool rdp_update_screen()
 	return emu_running;
 }
 
-static uint32_t viCalculateHorizonalWidth(uint32_t hstart, uint32_t xscale, uint32_t width)
+static uint32_t viCalculateHorizonalWidth(uint32_t hstart, uint32_t xscale)
 {
 	uint32_t start = (hstart >> 16) & 0x3FF;
 	uint32_t end = (hstart & 0x3FF);
@@ -422,7 +422,7 @@ uint64_t rdp_process_commands()
 		{
 			processor->wait_for_timeline(processor->signal_timeline());
 
-			uint32_t width = viCalculateHorizonalWidth(*gfx_info.VI_H_START_REG, *gfx_info.VI_X_SCALE_REG, *gfx_info.VI_WIDTH_REG);
+			uint32_t width = viCalculateHorizonalWidth(*gfx_info.VI_H_START_REG, *gfx_info.VI_X_SCALE_REG);
 			if (width == 0)
 			{
 				width = 320;

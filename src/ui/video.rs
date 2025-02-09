@@ -37,7 +37,6 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
         VI_V_START_REG: &mut device.vi.regs[device::vi::VI_V_START_REG as usize],
         VI_X_SCALE_REG: &mut device.vi.regs[device::vi::VI_X_SCALE_REG as usize],
         VI_Y_SCALE_REG: &mut device.vi.regs[device::vi::VI_Y_SCALE_REG as usize],
-        VI_WIDTH_REG: &mut device.vi.regs[device::vi::VI_WIDTH_REG as usize],
     };
 
     unsafe {
