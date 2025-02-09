@@ -73,6 +73,7 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
+    device::cop0::add_cycles(device, 20);
     let chip_id = (address >> 13) & 3;
     let reg = (address & 0x3FF) >> 2;
     match reg as u32 {
