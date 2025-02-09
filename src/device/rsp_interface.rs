@@ -103,10 +103,7 @@ pub fn read_mem(
     address: u64,
     access_size: device::memory::AccessSize,
 ) -> u32 {
-    device::cop0::add_cycles(
-        device,
-        device::rdram::rdram_calculate_cycles(access_size as u64) / (access_size as u64 / 4),
-    );
+    device::cop0::add_cycles(device, access_size as u64 / 4);
 
     let masked_address = address as usize & RSP_MEM_MASK;
     u32::from_be_bytes(
