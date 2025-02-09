@@ -62,6 +62,7 @@ static int cmd_cur;
 static int cmd_ptr;
 static bool emu_running;
 static GFX_INFO gfx_info;
+static uint32_t region;
 
 static const unsigned cmd_len_lut[64] = {
 	1,
@@ -330,34 +331,6 @@ bool rdp_update_screen()
 	return emu_running;
 }
 
-static uint32_t viCalculateHorizonalWidth(uint32_t hstart, uint32_t xscale)
-{
-	uint32_t start = (hstart >> 16) & 0x3FF;
-	uint32_t end = (hstart & 0x3FF);
-	uint32_t delta;
-	if (end > start)
-		delta = end - start;
-	else
-		delta = 0;
-	uint32_t scale = (xscale & 0xFFF);
-
-	return (delta * scale) / 0x400;
-}
-
-static uint32_t viCalculateVerticalHeight(uint32_t vstart, uint32_t yscale)
-{
-	uint32_t start = (vstart >> 16) & 0x3FF;
-	uint32_t end = (vstart & 0x3FF);
-	uint32_t delta;
-	if (end > start)
-		delta = end - start;
-	else
-		delta = 0;
-	uint32_t scale = (yscale & 0xFFF);
-
-	return (delta * scale) / 0x800;
-}
-
 uint64_t rdp_process_commands()
 {
 	uint64_t interrupt_timer = 0;
@@ -406,6 +379,7 @@ uint64_t rdp_process_commands()
 	while (cmd_cur - cmd_ptr < 0)
 	{
 		uint32_t w1 = cmd_data[2 * cmd_cur];
+		uint32_t w2 = cmd_data[2 * cmd_cur + 1];
 		uint32_t command = (w1 >> 24) & 63;
 		int cmd_length = cmd_len_lut[command];
 
@@ -418,21 +392,21 @@ uint64_t rdp_process_commands()
 		if (command >= 8)
 			processor->enqueue_command(cmd_length * 2, &cmd_data[2 * cmd_cur]);
 
+		if (RDP::Op(command) == RDP::Op::SetScissor)
+		{
+			uint32_t upper_left_x = ((w1 >> 12) & 0xFFF) >> 2;
+			uint32_t upper_left_y = (w1 & 0xFFF) >> 2;
+			uint32_t lower_right_x = ((w2 >> 12) & 0xFFF) >> 2;
+			uint32_t lower_right_y = (w2 & 0xFFF) >> 2;
+			region = (lower_right_x - upper_left_x) * (lower_right_y - upper_left_y);
+		}
 		if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
 			processor->wait_for_timeline(processor->signal_timeline());
 
-			uint32_t width = viCalculateHorizonalWidth(*gfx_info.VI_H_START_REG, *gfx_info.VI_X_SCALE_REG);
-			if (width == 0)
-			{
-				width = 320;
-			}
-			uint32_t height = viCalculateVerticalHeight(*gfx_info.VI_V_START_REG, *gfx_info.VI_Y_SCALE_REG);
-			if (height == 0)
-			{
-				height = 240;
-			}
-			interrupt_timer = width * height;
+			interrupt_timer = region;
+			if (interrupt_timer == 0)
+				interrupt_timer = 5000;
 		}
 
 		cmd_cur += cmd_length;
