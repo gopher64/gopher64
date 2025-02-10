@@ -41,13 +41,13 @@ pub struct Cpu {
     pub cycle_counter: u64,
     #[serde(
         serialize_with = "savestates::serialize_m128i_array",
-        deserialize_with = "savestates::deserialize_m128i_array16"
+        deserialize_with = "savestates::deserialize_m128i_array"
     )]
     pub shuffle: [__m128i; 16],
     pub gpr: [u32; 32],
     #[serde(
         serialize_with = "savestates::serialize_m128i_array",
-        deserialize_with = "savestates::deserialize_m128i_array32"
+        deserialize_with = "savestates::deserialize_m128i_array"
     )]
     pub vpr: [__m128i; 32],
     #[serde(with = "serde_big_array::BigArray")]
