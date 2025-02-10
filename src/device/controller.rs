@@ -21,16 +21,18 @@ const CONT_STATUS_PAK_PRESENT: u8 = 1;
 const CONT_STATUS_PAK_NOT_PRESENT: u8 = 2;
 const CONT_FLAVOR: u16 = JDT_JOY_ABS_COUNTERS | JDT_JOY_PORT;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, serde::Serialize)]
 pub enum PakType {
     None = 0,
     MemPak = 1,
     RumblePak = 2,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize)]
 pub struct PakHandler {
+    #[serde(skip)]
     pub read: fn(&mut device::Device, usize, u16, usize, usize),
+    #[serde(skip)]
     pub write: fn(&mut device::Device, usize, u16, usize, usize),
     pub pak_type: PakType,
 }

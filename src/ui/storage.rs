@@ -21,6 +21,7 @@ pub struct Paths {
     pub pak_file_path: std::path::PathBuf,
     pub sdcard_file_path: std::path::PathBuf,
     pub romsave_file_path: std::path::PathBuf,
+    pub savestate_file_path: std::path::PathBuf,
 }
 
 // the bool indicates whether the save has been written to
@@ -122,7 +123,9 @@ pub fn get_game_name(rom: &[u8]) -> String {
 pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
     ui.save_type = get_save_type(rom, &ui.game_id);
 
-    let base_path = ui.dirs.data_dir.join("saves");
+    let saves_path = ui.dirs.data_dir.join("saves");
+
+    let states_path = ui.dirs.data_dir.join("states");
 
     let game_name = get_game_name(rom);
 
@@ -132,35 +135,40 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
         &game_name
     };
 
-    ui.paths.eep_file_path.clone_from(&base_path);
+    ui.paths.eep_file_path.clone_from(&saves_path);
     ui.paths
         .eep_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".eep");
 
-    ui.paths.sra_file_path.clone_from(&base_path);
+    ui.paths.sra_file_path.clone_from(&saves_path);
     ui.paths
         .sra_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".sra");
 
-    ui.paths.fla_file_path.clone_from(&base_path);
+    ui.paths.fla_file_path.clone_from(&saves_path);
     ui.paths
         .fla_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".fla");
 
-    ui.paths.pak_file_path.clone_from(&base_path);
+    ui.paths.pak_file_path.clone_from(&saves_path);
     ui.paths
         .pak_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".mpk");
 
-    ui.paths.sdcard_file_path.clone_from(&base_path);
+    ui.paths.sdcard_file_path.clone_from(&saves_path);
     ui.paths
         .sdcard_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".img");
 
-    ui.paths.romsave_file_path.clone_from(&base_path);
+    ui.paths.romsave_file_path.clone_from(&saves_path);
     ui.paths
         .romsave_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".romsave");
+
+    ui.paths.savestate_file_path.clone_from(&states_path);
+    ui.paths
+        .savestate_file_path
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".state");
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {

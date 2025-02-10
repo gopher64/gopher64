@@ -5,6 +5,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 mod device;
 mod netplay;
+mod savestates;
 mod ui;
 use clap::Parser;
 use ui::gui;
@@ -78,7 +79,11 @@ async fn main() {
     }
     result = std::fs::create_dir_all(dirs.data_dir.join("saves"));
     if result.is_err() {
-        panic!("could not create data dir: {}", result.err().unwrap())
+        panic!("could not create save dir: {}", result.err().unwrap())
+    }
+    result = std::fs::create_dir_all(dirs.data_dir.join("states"));
+    if result.is_err() {
+        panic!("could not create state dir: {}", result.err().unwrap())
     }
     let running_file = dirs.cache_dir.join("game_running");
     if running_file.exists() {

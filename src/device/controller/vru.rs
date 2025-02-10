@@ -17,17 +17,22 @@ const VOICE_STATUS_BUSY: u8 = 0x05;
 const JDT_VRU: u16 = 0x0100; /* VRU */
 const CONT_FLAVOR: u16 = JDT_VRU;
 
+#[derive(serde::Serialize)]
 pub struct Vru {
     pub status: u8,
     pub voice_state: u8,
     pub load_offset: u8,
     pub voice_init: u8,
+    #[serde(serialize_with = "<[_]>::serialize")]
     pub word_buffer: [u16; 40],
     pub words: Vec<String>,
     pub talking: bool,
     pub word_mappings: HashMap<String, String>,
+    #[serde(skip)]
     pub window_notifier: Option<tokio::sync::mpsc::Sender<Vec<String>>>,
+    #[serde(skip)]
     pub word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+    #[serde(skip)]
     pub gui_ctx: Option<egui::Context>,
 }
 

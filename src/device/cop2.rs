@@ -1,6 +1,8 @@
 use crate::device;
 
+#[derive(serde::Serialize)]
 pub struct Cop2 {
+    #[serde(skip)]
     pub instrs: [fn(&mut device::Device, u32); 32],
     pub reg_latch: u64,
 }

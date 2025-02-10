@@ -16,10 +16,11 @@ pub enum EventType {
     Count,
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, serde::Serialize)]
 pub struct Event {
     pub enabled: bool,
     pub count: u64,
+    #[serde(skip)]
     pub handler: fn(&mut device::Device),
 }
 

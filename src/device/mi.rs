@@ -44,6 +44,7 @@ const MI_SET_RDRAM: u32 = 1 << 13;
 
 const MI_INIT_LENGTH_MASK: u32 = 0b1111111;
 
+#[derive(serde::Serialize)]
 pub struct Mi {
     pub regs: [u32; MI_REGS_COUNT as usize],
 }

@@ -24,6 +24,7 @@ const FCR31_CAUSE_MASK: u32 = 0b00000000000000111111000000000000;
 const FCR31_ENABLE_MASK: u32 = 0b00000000000000000000111110000000;
 const FCR31_WRITE_MASK: u32 = 0b00000001100000111111111111111111;
 
+#[derive(serde::Serialize)]
 pub struct Cop1 {
     pub fcr0: u32,
     pub fcr31: u32,
@@ -31,11 +32,17 @@ pub struct Cop1 {
     //pub flush_mode: u32,
     pub fgr32: [[u8; 4]; 32],
     pub fgr64: [[u8; 8]; 32],
+    #[serde(skip)]
     pub instrs: [fn(&mut device::Device, u32); 32],
+    #[serde(skip)]
     pub b_instrs: [fn(&mut device::Device, u32); 4],
+    #[serde(skip)]
     pub s_instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip)]
     pub d_instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip)]
     pub w_instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip)]
     pub l_instrs: [fn(&mut device::Device, u32); 64],
 }
 

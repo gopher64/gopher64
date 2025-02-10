@@ -123,6 +123,7 @@ impl Ui {
                 pak_file_path: std::path::PathBuf::new(),
                 sdcard_file_path: std::path::PathBuf::new(),
                 romsave_file_path: std::path::PathBuf::new(),
+                savestate_file_path: std::path::PathBuf::new(),
             },
             saves: storage::Saves {
                 eeprom: (Vec::new(), false),

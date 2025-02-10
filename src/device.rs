@@ -155,8 +155,11 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
     swap_rom(contents)
 }
 
+#[derive(serde::Serialize)]
 pub struct Device {
+    #[serde(skip)]
     pub netplay: Option<netplay::Netplay>,
+    #[serde(skip)]
     pub ui: ui::Ui,
     byte_swap: usize,
     pub cpu: cpu::Cpu,

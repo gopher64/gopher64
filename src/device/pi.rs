@@ -26,6 +26,7 @@ const PI_STATUS_INTERRUPT: u32 = 1 << 3;
 const PI_STATUS_RESET: u32 = 1 << 0;
 const PI_STATUS_CLR_INTR: u32 = 1 << 1;
 
+#[derive(serde::Serialize)]
 pub struct Pi {
     pub regs: [u32; PI_REGS_COUNT as usize],
 }

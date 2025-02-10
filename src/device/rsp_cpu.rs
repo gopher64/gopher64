@@ -3,9 +3,11 @@ use device::__m128i;
 #[cfg(target_arch = "aarch64")]
 include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 use crate::device;
+use crate::savestates;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
+#[derive(serde::Serialize)]
 pub struct BranchState {
     pub state: device::cpu::State,
     pub pc: u32,
@@ -17,13 +19,15 @@ pub struct Instructions {
     pub opcode: u32,
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, serde::Serialize)]
 pub enum InstructionType {
     Su,
     Vu,
 }
 
+#[derive(serde::Serialize)]
 pub struct Cpu {
+    #[serde(skip)]
     pub instructions: [Instructions; 0x1000 / 4],
     pub last_instruction_type: InstructionType,
     pub instruction_type: InstructionType,
@@ -33,29 +37,49 @@ pub struct Cpu {
     pub halted: bool,
     pub sync_point: bool,
     pub cycle_counter: u64,
+    #[serde(serialize_with = "savestates::serialize_m128i_array")]
     pub shuffle: [__m128i; 16],
     pub gpr: [u32; 32],
+    #[serde(serialize_with = "savestates::serialize_m128i_array")]
     pub vpr: [__m128i; 32],
+    #[serde(serialize_with = "<[_]>::serialize")]
     pub reciprocals: [u16; 512],
+    #[serde(serialize_with = "<[_]>::serialize")]
     pub inverse_square_roots: [u16; 512],
+    #[serde(serialize_with = "savestates::serialize_m128i")]
     pub vcol: __m128i,
+    #[serde(serialize_with = "savestates::serialize_m128i")]
     pub vcoh: __m128i,
+    #[serde(serialize_with = "savestates::serialize_m128i")]
     pub vccl: __m128i,
+    #[serde(serialize_with = "savestates::serialize_m128i")]
     pub vcch: __m128i,
+    #[serde(serialize_with = "savestates::serialize_m128i")]
     pub vce: __m128i,
+    #[serde(serialize_with = "savestates::serialize_m128i")]
     pub accl: __m128i,
+    #[serde(serialize_with = "savestates::serialize_m128i")]
     pub accm: __m128i,
+    #[serde(serialize_with = "savestates::serialize_m128i")]
     pub acch: __m128i,
     pub divdp: bool,
     pub divin: i16,
     pub divout: i16,
+    #[serde(skip)]
     pub special_instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip)]
     pub regimm_instrs: [fn(&mut device::Device, u32); 32],
+    #[serde(skip)]
     pub cop0_instrs: [fn(&mut device::Device, u32); 32],
+    #[serde(skip)]
     pub cop2_instrs: [fn(&mut device::Device, u32); 32],
+    #[serde(skip)]
     pub lwc2_instrs: [fn(&mut device::Device, u32); 32],
+    #[serde(skip)]
     pub swc2_instrs: [fn(&mut device::Device, u32); 32],
+    #[serde(skip)]
     pub instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip)]
     pub vec_instrs: [fn(&mut device::Device, u32); 64],
 }
 

@@ -60,14 +60,14 @@ const SP_SET_SIG7: u32 = 1 << 24;
 
 const RSP_MEM_MASK: usize = 0x1FFF;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, serde::Serialize)]
 pub enum DmaDir {
     None,
     Write,
     Read,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize)]
 pub struct RspDma {
     pub dir: DmaDir,
     pub length: u32,
@@ -75,10 +75,12 @@ pub struct RspDma {
     pub dramaddr: u32,
 }
 
+#[derive(serde::Serialize)]
 pub struct Rsp {
     pub cpu: device::rsp_cpu::Cpu,
     pub regs: [u32; SP_REGS_COUNT as usize],
     pub regs2: [u32; SP_REGS2_COUNT as usize],
+    #[serde(serialize_with = "<[_]>::serialize")]
     pub mem: [u8; 0x2000],
     pub fifo: [RspDma; 2],
     pub last_status_value: u32,

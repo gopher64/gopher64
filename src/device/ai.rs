@@ -12,6 +12,7 @@ pub const AI_REGS_COUNT: u32 = 6;
 const AI_STATUS_BUSY: u32 = 0x40000000;
 const AI_STATUS_FULL: u32 = 0x80000000;
 
+#[derive(serde::Serialize)]
 pub struct Ai {
     pub regs: [u32; AI_REGS_COUNT as usize],
     pub fifo: [AiDma; 2],
@@ -19,7 +20,7 @@ pub struct Ai {
     pub delayed_carry: bool,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize)]
 pub struct AiDma {
     pub address: u64,
     pub length: u64,

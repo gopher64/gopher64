@@ -37,11 +37,17 @@ pub enum AccessSize {
     Icache = 32,
 }
 
+#[derive(serde::Serialize)]
 pub struct Memory {
+    #[serde(skip)]
     pub fast_read: [fn(&mut device::Device, u64, AccessSize) -> u32; 0x2000], // fast_read is used for lookups that try to detect idle loops
+    #[serde(skip)]
     pub memory_map_read: [fn(&mut device::Device, u64, AccessSize) -> u32; 0x2000],
+    #[serde(skip)]
     pub memory_map_write: [fn(&mut device::Device, u64, u32, u32); 0x2000],
+    #[serde(serialize_with = "<[_]>::serialize")]
     pub icache: [device::cache::ICache; 512],
+    #[serde(serialize_with = "<[_]>::serialize")]
     pub dcache: [device::cache::DCache; 512],
 }
 

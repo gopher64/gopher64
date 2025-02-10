@@ -41,6 +41,7 @@ const DPC_CLR_PIPE_CTR: u32 = 1 << 7;
 const DPC_CLR_CMD_CTR: u32 = 1 << 8;
 const DPC_CLR_CLOCK_CTR: u32 = 1 << 9;
 
+#[derive(serde::Serialize)]
 pub struct Rdp {
     pub regs_dpc: [u32; DPC_REGS_COUNT as usize],
     pub regs_dps: [u32; DPS_REGS_COUNT as usize],
