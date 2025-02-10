@@ -60,7 +60,7 @@ static WSI *wsi;
 static uint32_t cmd_data[0x00040000 >> 2];
 static int cmd_cur;
 static int cmd_ptr;
-static CALLBACK callback;
+static CALL_BACK callback;
 static GFX_INFO gfx_info;
 static uint32_t region;
 
@@ -334,9 +334,9 @@ void rdp_update_screen()
 	wsi->begin_frame();
 }
 
-CALLBACK rdp_check_callback()
+CALL_BACK rdp_check_callback()
 {
-	CALLBACK return_value = callback;
+	CALL_BACK return_value = callback;
 	callback.save_state = false;
 	return return_value;
 }

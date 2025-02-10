@@ -22,13 +22,13 @@ extern "C"
 	{
 		bool emu_running;
 		bool save_state;
-	} CALLBACK;
+	} CALL_BACK;
 
 	void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen);
 	void rdp_close();
 	void rdp_set_vi_register(uint32_t reg, uint32_t value);
 	void rdp_update_screen();
-	CALLBACK rdp_check_callback();
+	CALL_BACK rdp_check_callback();
 	uint64_t rdp_process_commands();
 
 #ifdef __cplusplus

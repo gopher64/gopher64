@@ -280,7 +280,7 @@ fn decompress_file(input: &[u8]) -> Vec<u8> {
     decompressed_file
 }
 
-fn compress_file(input: &[u8]) -> Vec<u8> {
+pub fn compress_file(input: &[u8]) -> Vec<u8> {
     let mut compressed_file = Vec::new();
     {
         let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut compressed_file));
