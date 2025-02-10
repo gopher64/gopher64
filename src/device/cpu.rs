@@ -33,13 +33,13 @@ pub struct Cpu {
     pub llbit: bool,
     pub clock_rate: u64,
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_64")]
+    #[serde(default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 64],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_64")]
+    #[serde(default = "savestates::default_instructions")]
     pub special_instrs: [fn(&mut device::Device, u32); 64],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_32")]
+    #[serde(default = "savestates::default_instructions")]
     pub regimm_instrs: [fn(&mut device::Device, u32); 32],
     pub events: [device::events::Event; device::events::EventType::Count as usize],
     pub next_event_count: u64,

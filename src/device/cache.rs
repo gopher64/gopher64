@@ -8,7 +8,7 @@ pub struct ICache {
     pub index: u16,
     pub words: [u32; 8],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_8")]
+    #[serde(default = "savestates::default_instructions")]
     pub instruction: [fn(&mut device::Device, u32); 8],
 }
 

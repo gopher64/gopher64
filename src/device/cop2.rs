@@ -4,7 +4,7 @@ use crate::savestates;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cop2 {
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_32")]
+    #[serde(default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 32],
     pub reg_latch: u64,
 }

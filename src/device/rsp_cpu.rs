@@ -98,28 +98,28 @@ pub struct Cpu {
     pub divin: i16,
     pub divout: i16,
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_64")]
+    #[serde(default = "savestates::default_instructions")]
     pub special_instrs: [fn(&mut device::Device, u32); 64],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_32")]
+    #[serde(default = "savestates::default_instructions")]
     pub regimm_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_32")]
+    #[serde(default = "savestates::default_instructions")]
     pub cop0_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_32")]
+    #[serde(default = "savestates::default_instructions")]
     pub cop2_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_32")]
+    #[serde(default = "savestates::default_instructions")]
     pub lwc2_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_32")]
+    #[serde(default = "savestates::default_instructions")]
     pub swc2_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_64")]
+    #[serde(default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 64],
     #[serde(skip)]
-    #[serde(default = "savestates::default_instruction_64")]
+    #[serde(default = "savestates::default_instructions")]
     pub vec_instrs: [fn(&mut device::Device, u32); 64],
 }
 
