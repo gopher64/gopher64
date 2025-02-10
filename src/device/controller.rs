@@ -1,7 +1,4 @@
-use crate::device;
-use crate::netplay;
-use crate::savestates;
-use crate::ui;
+use crate::{device, netplay, savestates, ui};
 
 pub mod mempak;
 pub mod rumble;
@@ -31,11 +28,9 @@ pub enum PakType {
 
 #[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PakHandler {
-    #[serde(skip)]
-    #[serde(default = "savestates::default_pak_handler")]
+    #[serde(skip, default = "savestates::default_pak_handler")]
     pub read: fn(&mut device::Device, usize, u16, usize, usize),
-    #[serde(skip)]
-    #[serde(default = "savestates::default_pak_handler")]
+    #[serde(skip, default = "savestates::default_pak_handler")]
     pub write: fn(&mut device::Device, usize, u16, usize, usize),
     pub pak_type: PakType,
 }

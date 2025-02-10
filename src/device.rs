@@ -10,11 +10,8 @@ include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-use crate::netplay;
-use crate::ui;
-use std::collections::HashMap;
-use std::fs;
-use std::io::Read;
+use crate::{netplay, ui};
+use std::{collections::HashMap, fs, io::Read};
 
 pub mod ai;
 pub mod cache;
@@ -159,8 +156,7 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
 pub struct Device {
     #[serde(skip)]
     pub netplay: Option<netplay::Netplay>,
-    #[serde(skip)]
-    #[serde(default = "ui::Ui::default")]
+    #[serde(skip, default = "ui::Ui::default")]
     pub ui: ui::Ui,
     byte_swap: usize,
     pub save_state: bool,

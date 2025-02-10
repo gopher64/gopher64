@@ -1,10 +1,8 @@
-use crate::device;
-use crate::savestates;
+use crate::{device, savestates};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cop2 {
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 32],
     pub reg_latch: u64,
 }

@@ -1,5 +1,4 @@
-use crate::netplay;
-use crate::ui;
+use crate::{netplay, ui};
 use std::io::Read;
 use std::io::Write;
 

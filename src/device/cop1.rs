@@ -1,5 +1,4 @@
-use crate::device;
-use crate::savestates;
+use crate::{device, savestates};
 
 //const FCR31_FLAG_INEXACT_BIT: u32 = 1 << 2;
 //const FCR31_FLAG_UNDERFLOW_BIT: u32 = 1 << 3;
@@ -33,23 +32,17 @@ pub struct Cop1 {
     //pub flush_mode: u32,
     pub fgr32: [[u8; 4]; 32],
     pub fgr64: [[u8; 8]; 32],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub b_instrs: [fn(&mut device::Device, u32); 4],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub s_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub d_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub w_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub l_instrs: [fn(&mut device::Device, u32); 64],
 }
 

@@ -2,8 +2,7 @@
 use device::__m128i;
 #[cfg(target_arch = "aarch64")]
 include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
-use crate::device;
-use crate::savestates;
+use crate::{device, savestates};
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
@@ -15,8 +14,7 @@ pub struct BranchState {
 
 #[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Instructions {
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instruction")]
+    #[serde(skip, default = "savestates::default_instruction")]
     pub func: fn(&mut device::Device, u32),
     pub opcode: u32,
 }
@@ -97,29 +95,21 @@ pub struct Cpu {
     pub divdp: bool,
     pub divin: i16,
     pub divout: i16,
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub special_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub regimm_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub cop0_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub cop2_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub lwc2_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub swc2_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub vec_instrs: [fn(&mut device::Device, u32); 64],
 }
 

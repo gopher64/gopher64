@@ -1,5 +1,4 @@
-use crate::device;
-use crate::savestates;
+use crate::{device, savestates};
 
 pub const COP0_INDEX_REG: u32 = 0;
 const COP0_RANDOM_REG: u32 = 1;
@@ -94,11 +93,9 @@ pub struct Cop0 {
     pub reg_latch: u64,
     pub regs: [u64; COP0_REGS_COUNT as usize],
     pub reg_write_masks: [u64; COP0_REGS_COUNT as usize],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs2: [fn(&mut device::Device, u32); 32],
     pub tlb_lut_r: Vec<device::tlb::TlbLut>,
     pub tlb_lut_w: Vec<device::tlb::TlbLut>,

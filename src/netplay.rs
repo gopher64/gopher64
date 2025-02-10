@@ -1,5 +1,4 @@
-use crate::device;
-use crate::ui;
+use crate::{device, ui};
 use eframe::egui;
 use std::io::{Read, Write};
 //UDP packet formats

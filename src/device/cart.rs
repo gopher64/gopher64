@@ -1,8 +1,7 @@
 use chrono::Datelike;
 use chrono::Timelike;
 
-use crate::device;
-use crate::ui;
+use crate::{device, ui};
 
 pub mod rom;
 pub mod sc64;

@@ -1,5 +1,4 @@
-use crate::device;
-use crate::savestates;
+use crate::{device, savestates};
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum EventType {
@@ -21,8 +20,7 @@ pub enum EventType {
 pub struct Event {
     pub enabled: bool,
     pub count: u64,
-    #[serde(skip)]
-    #[serde(default = "savestates::default_event_handler")]
+    #[serde(skip, default = "savestates::default_event_handler")]
     pub handler: fn(&mut device::Device),
 }
 

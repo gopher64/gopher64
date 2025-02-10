@@ -1,5 +1,4 @@
-use crate::device;
-use crate::ui;
+use crate::{device, ui};
 
 const AI_DRAM_ADDR_REG: u32 = 0;
 const AI_LEN_REG: u32 = 1;

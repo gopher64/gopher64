@@ -1,5 +1,4 @@
-use crate::device;
-use crate::ui;
+use crate::{device, ui};
 
 const SRAM_MASK: usize = 0xFFFF;
 pub const SRAM_SIZE: usize = 0x8000;

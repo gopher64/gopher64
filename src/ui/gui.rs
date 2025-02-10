@@ -1,6 +1,4 @@
-use crate::device;
-use crate::netplay;
-use crate::ui;
+use crate::{device, netplay, ui};
 use eframe::egui;
 
 pub mod gui_netplay;

@@ -1,6 +1,4 @@
-use crate::device;
-use crate::netplay;
-use crate::ui;
+use crate::{device, netplay, ui};
 use governor::clock::Clock;
 
 const VI_STATUS_REG: u32 = 0;

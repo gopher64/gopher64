@@ -1,5 +1,4 @@
-use crate::device;
-use crate::savestates;
+use crate::{device, savestates};
 
 #[derive(PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum State {
@@ -32,14 +31,11 @@ pub struct Cpu {
     pub running: bool,
     pub llbit: bool,
     pub clock_rate: u64,
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub special_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip)]
-    #[serde(default = "savestates::default_instructions")]
+    #[serde(skip, default = "savestates::default_instructions")]
     pub regimm_instrs: [fn(&mut device::Device, u32); 32],
     pub events: [device::events::Event; device::events::EventType::Count as usize],
     pub next_event_count: u64,

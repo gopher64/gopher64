@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
-use crate::device;
-use crate::ui;
+use crate::{device, ui};
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);

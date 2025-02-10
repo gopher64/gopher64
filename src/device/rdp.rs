@@ -1,6 +1,4 @@
-use crate::device;
-use crate::savestates;
-use crate::ui;
+use crate::{device, savestates, ui};
 
 pub const DPC_START_REG: u32 = 0;
 pub const DPC_END_REG: u32 = 1;
