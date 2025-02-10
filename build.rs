@@ -168,7 +168,7 @@ fn main() {
     }
 
     let git_output = std::process::Command::new("git")
-        .args(&["rev-parse", "HEAD"])
+        .args(["rev-parse", "HEAD"])
         .output()
         .unwrap();
 
