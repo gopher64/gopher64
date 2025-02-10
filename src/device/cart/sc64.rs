@@ -16,9 +16,9 @@ pub const SC64_CFG_COUNT: u32 = 15;
 
 const SC64_BUFFER_MASK: usize = 0x1FFF;
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Sc64 {
-    #[serde(serialize_with = "<[_]>::serialize")]
+    #[serde(with = "serde_big_array::BigArray")]
     pub buffer: [u8; 8192],
     pub regs: [u32; SC64_REGS_COUNT as usize],
     pub regs_locked: bool,

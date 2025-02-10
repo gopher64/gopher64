@@ -7,27 +7,29 @@ use crate::savestates;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct BranchState {
     pub state: device::cpu::State,
     pub pc: u32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Instructions {
+    #[serde(skip)]
+    #[serde(default = "savestates::default_instruction")]
     pub func: fn(&mut device::Device, u32),
     pub opcode: u32,
 }
 
-#[derive(PartialEq, Copy, Clone, serde::Serialize)]
+#[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub enum InstructionType {
     Su,
     Vu,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cpu {
-    #[serde(skip)]
+    #[serde(with = "serde_big_array::BigArray")]
     pub instructions: [Instructions; 0x1000 / 4],
     pub last_instruction_type: InstructionType,
     pub instruction_type: InstructionType,
@@ -37,49 +39,87 @@ pub struct Cpu {
     pub halted: bool,
     pub sync_point: bool,
     pub cycle_counter: u64,
-    #[serde(serialize_with = "savestates::serialize_m128i_array")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i_array",
+        deserialize_with = "savestates::deserialize_m128i_array16"
+    )]
     pub shuffle: [__m128i; 16],
     pub gpr: [u32; 32],
-    #[serde(serialize_with = "savestates::serialize_m128i_array")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i_array",
+        deserialize_with = "savestates::deserialize_m128i_array32"
+    )]
     pub vpr: [__m128i; 32],
-    #[serde(serialize_with = "<[_]>::serialize")]
+    #[serde(with = "serde_big_array::BigArray")]
     pub reciprocals: [u16; 512],
-    #[serde(serialize_with = "<[_]>::serialize")]
+    #[serde(with = "serde_big_array::BigArray")]
     pub inverse_square_roots: [u16; 512],
-    #[serde(serialize_with = "savestates::serialize_m128i")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i",
+        deserialize_with = "savestates::deserialize_m128i"
+    )]
     pub vcol: __m128i,
-    #[serde(serialize_with = "savestates::serialize_m128i")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i",
+        deserialize_with = "savestates::deserialize_m128i"
+    )]
     pub vcoh: __m128i,
-    #[serde(serialize_with = "savestates::serialize_m128i")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i",
+        deserialize_with = "savestates::deserialize_m128i"
+    )]
     pub vccl: __m128i,
-    #[serde(serialize_with = "savestates::serialize_m128i")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i",
+        deserialize_with = "savestates::deserialize_m128i"
+    )]
     pub vcch: __m128i,
-    #[serde(serialize_with = "savestates::serialize_m128i")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i",
+        deserialize_with = "savestates::deserialize_m128i"
+    )]
     pub vce: __m128i,
-    #[serde(serialize_with = "savestates::serialize_m128i")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i",
+        deserialize_with = "savestates::deserialize_m128i"
+    )]
     pub accl: __m128i,
-    #[serde(serialize_with = "savestates::serialize_m128i")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i",
+        deserialize_with = "savestates::deserialize_m128i"
+    )]
     pub accm: __m128i,
-    #[serde(serialize_with = "savestates::serialize_m128i")]
+    #[serde(
+        serialize_with = "savestates::serialize_m128i",
+        deserialize_with = "savestates::deserialize_m128i"
+    )]
     pub acch: __m128i,
     pub divdp: bool,
     pub divin: i16,
     pub divout: i16,
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_64")]
     pub special_instrs: [fn(&mut device::Device, u32); 64],
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_32")]
     pub regimm_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_32")]
     pub cop0_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_32")]
     pub cop2_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_32")]
     pub lwc2_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_32")]
     pub swc2_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_64")]
     pub instrs: [fn(&mut device::Device, u32); 64],
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_64")]
     pub vec_instrs: [fn(&mut device::Device, u32); 64],
 }
 

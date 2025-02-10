@@ -9,7 +9,7 @@ pub const MX29L1100_ID: u32 = 0x00c2001e;
 const MX29L0000_ID: u32 = 0x00c20000;
 const MX29L0001_ID: u32 = 0x00c20001;
 
-#[derive(PartialEq, serde::Serialize)]
+#[derive(PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum FlashramMode {
     ReadArray,
     ReadSiliconId,
@@ -19,12 +19,12 @@ pub enum FlashramMode {
     PageProgram,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Flashram {
     pub status: u32,
     pub mode: FlashramMode,
     pub erase_page: u16,
-    #[serde(serialize_with = "<[_]>::serialize")]
+    #[serde(with = "serde_big_array::BigArray")]
     pub page_buf: [u8; 128],
     pub silicon_id: [u32; 2],
 }

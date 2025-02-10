@@ -14,14 +14,14 @@ pub const SI_STATUS_IO_BUSY: u32 = 1 << 1;
 //const SI_STATUS_DMA_ERROR: u32 = 1 << 3;
 const SI_STATUS_INTERRUPT: u32 = 1 << 12;
 
-#[derive(PartialEq, serde::Serialize)]
+#[derive(PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum DmaDir {
     None,
     Write,
     Read,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Si {
     pub regs: [u32; SI_REGS_COUNT as usize],
     pub dma_dir: DmaDir,

@@ -1,16 +1,16 @@
 mod rom;
 use crate::device;
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Pif {
-    #[serde(serialize_with = "<[_]>::serialize")]
+    #[serde(with = "serde_big_array::BigArray")]
     pub rom: [u8; 1984],
-    #[serde(serialize_with = "<[_]>::serialize")]
+    #[serde(with = "serde_big_array::BigArray")]
     pub ram: [u8; 64],
     pub channels: [PifChannel; 5],
 }
 
-#[derive(Copy, Clone, serde::Serialize)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PifChannel {
     pub tx: Option<usize>,
     pub tx_buf: Option<usize>,

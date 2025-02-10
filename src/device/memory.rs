@@ -1,4 +1,5 @@
 use crate::device;
+use crate::savestates;
 
 const MM_RDRAM_DRAM: usize = 0x00000000;
 const MM_RDRAM_REGS: usize = 0x03f00000;
@@ -28,26 +29,30 @@ pub enum AccessType {
     Read,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum AccessSize {
     // None = 0,
+    #[default]
     Word = 4,
     Dword = 8,
     Dcache = 16,
     Icache = 32,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Memory {
     #[serde(skip)]
+    #[serde(default = "savestates::default_memory_read")]
     pub fast_read: [fn(&mut device::Device, u64, AccessSize) -> u32; 0x2000], // fast_read is used for lookups that try to detect idle loops
     #[serde(skip)]
+    #[serde(default = "savestates::default_memory_read")]
     pub memory_map_read: [fn(&mut device::Device, u64, AccessSize) -> u32; 0x2000],
     #[serde(skip)]
+    #[serde(default = "savestates::default_memory_write")]
     pub memory_map_write: [fn(&mut device::Device, u64, u32, u32); 0x2000],
-    #[serde(serialize_with = "<[_]>::serialize")]
+    #[serde(with = "serde_big_array::BigArray")]
     pub icache: [device::cache::ICache; 512],
-    #[serde(serialize_with = "<[_]>::serialize")]
+    #[serde(with = "serde_big_array::BigArray")]
     pub dcache: [device::cache::DCache; 512],
 }
 

@@ -1,12 +1,12 @@
 use crate::device;
 
-#[derive(Copy, Clone, serde::Serialize)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TlbLut {
     pub address: u64,
     pub cached: bool,
 }
 
-#[derive(Copy, Clone, serde::Serialize)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TlbEntry {
     pub mask: u64,
     pub vpn2: u64,

@@ -1,4 +1,5 @@
 use crate::device;
+use crate::savestates;
 
 pub const COP0_INDEX_REG: u32 = 0;
 const COP0_RANDOM_REG: u32 = 1;
@@ -88,14 +89,16 @@ const COP0_XCONTEXT_REG_MASK: u64 =
 const COP0_PARITYERR_REG_MASK: u64 = 0b00000000000000000000000011111111;
 const COP0_TAGLO_REG_MASK: u64 = 0b00001111111111111111111111000000;
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cop0 {
     pub reg_latch: u64,
     pub regs: [u64; COP0_REGS_COUNT as usize],
     pub reg_write_masks: [u64; COP0_REGS_COUNT as usize],
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_32")]
     pub instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip)]
+    #[serde(default = "savestates::default_instruction_32")]
     pub instrs2: [fn(&mut device::Device, u32); 32],
     pub tlb_lut_r: Vec<device::tlb::TlbLut>,
     pub tlb_lut_w: Vec<device::tlb::TlbLut>,

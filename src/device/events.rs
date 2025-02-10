@@ -1,4 +1,5 @@
 use crate::device;
+use crate::savestates;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum EventType {
@@ -16,11 +17,12 @@ pub enum EventType {
     Count,
 }
 
-#[derive(PartialEq, Copy, Clone, serde::Serialize)]
+#[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Event {
     pub enabled: bool,
     pub count: u64,
     #[serde(skip)]
+    #[serde(default = "savestates::default_event_handler")]
     pub handler: fn(&mut device::Device),
 }
 

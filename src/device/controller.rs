@@ -1,5 +1,6 @@
 use crate::device;
 use crate::netplay;
+use crate::savestates;
 use crate::ui;
 
 pub mod mempak;
@@ -21,18 +22,20 @@ const CONT_STATUS_PAK_PRESENT: u8 = 1;
 const CONT_STATUS_PAK_NOT_PRESENT: u8 = 2;
 const CONT_FLAVOR: u16 = JDT_JOY_ABS_COUNTERS | JDT_JOY_PORT;
 
-#[derive(Copy, Clone, PartialEq, serde::Serialize)]
+#[derive(Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum PakType {
     None = 0,
     MemPak = 1,
     RumblePak = 2,
 }
 
-#[derive(Copy, Clone, serde::Serialize)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PakHandler {
     #[serde(skip)]
+    #[serde(default = "savestates::default_pak_handler")]
     pub read: fn(&mut device::Device, usize, u16, usize, usize),
     #[serde(skip)]
+    #[serde(default = "savestates::default_pak_handler")]
     pub write: fn(&mut device::Device, usize, u16, usize, usize),
     pub pak_type: PakType,
 }

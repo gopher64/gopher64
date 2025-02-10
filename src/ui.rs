@@ -78,14 +78,7 @@ pub fn get_dirs() -> Dirs {
 }
 
 impl Ui {
-    pub fn new() -> Ui {
-        sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
-        let mut num_joysticks = 0;
-        let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
-        if joysticks.is_null() {
-            panic!("Could not get joystick list");
-        }
-
+    fn construct_ui(num_joysticks: i32, joysticks: *mut u32) -> Ui {
         let dirs = get_dirs();
 
         Ui {
@@ -146,5 +139,19 @@ impl Ui {
             joysticks,
             dirs,
         }
+    }
+
+    pub fn default() -> Ui {
+        Self::construct_ui(0, std::ptr::null_mut())
+    }
+
+    pub fn new() -> Ui {
+        sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+        let mut num_joysticks = 0;
+        let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
+        if joysticks.is_null() {
+            panic!("Could not get joystick list");
+        }
+        Self::construct_ui(num_joysticks, joysticks)
     }
 }

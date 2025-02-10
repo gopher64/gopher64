@@ -19,7 +19,7 @@ const VI_H_SYNC_REG: u32 = 7;
 //const VI_Y_SCALE_REG: u32 = 13;
 pub const VI_REGS_COUNT: u32 = 14;
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Vi {
     pub regs: [u32; VI_REGS_COUNT as usize],
     pub clock: u64,

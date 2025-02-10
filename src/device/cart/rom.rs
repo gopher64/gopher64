@@ -1,7 +1,7 @@
 use crate::device;
 use sha2::{Digest, Sha256};
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum CicType {
     CicNus6101,
     CicNus6102,
@@ -13,10 +13,10 @@ pub enum CicType {
 
 const CART_MASK: usize = 0xFFFFFFF;
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cart {
     pub rom: Vec<u8>,
-    #[serde(serialize_with = "<[_]>::serialize")]
+    #[serde(with = "serde_big_array::BigArray")]
     pub is_viewer_buffer: [u8; 0xFFFF],
     pub pal: bool,
     pub latch: u32,
