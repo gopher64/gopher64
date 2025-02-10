@@ -288,7 +288,7 @@ pub fn compress_file(input: &[u8]) -> Vec<u8> {
             .start_file(
                 "save",
                 zip::write::SimpleFileOptions::default()
-                    .compression_method(zip::CompressionMethod::Deflated),
+                    .compression_method(zip::CompressionMethod::Zstd),
             )
             .unwrap();
         writer.write_all(input).unwrap();
