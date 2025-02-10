@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::device;
+use crate::savestates;
 use crate::ui;
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
@@ -53,9 +54,20 @@ pub fn close(ui: &ui::Ui) {
     }
 }
 
-pub fn update_screen() -> bool {
+pub fn update_screen() {
     // when the window is closed, running is set to false
     unsafe { rdp_update_screen() }
+}
+
+pub fn check_callback(device: &mut device::Device) {
+    let callback;
+    unsafe {
+        callback = rdp_check_callback();
+    }
+    device.cpu.running = callback.emu_running;
+    if callback.save_state {
+        savestates::create_savestate(device);
+    }
 }
 
 pub fn set_register(reg: u32, value: u32) {

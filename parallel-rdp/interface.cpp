@@ -60,7 +60,7 @@ static WSI *wsi;
 static uint32_t cmd_data[0x00040000 >> 2];
 static int cmd_cur;
 static int cmd_ptr;
-static bool emu_running;
+static CALLBACK callback;
 static GFX_INFO gfx_info;
 static uint32_t region;
 
@@ -135,18 +135,22 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 {
 	if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
 	{
-		emu_running = false;
+		callback.emu_running = false;
 	}
-	else if (event->type == SDL_EVENT_WINDOW_RESIZED && emu_running)
+	else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running)
 	{
 		wsi_platform->do_resize();
 	}
-	else if (event->type == SDL_EVENT_KEY_DOWN && fullscreen)
+	else if (event->type == SDL_EVENT_KEY_DOWN)
 	{
 		switch (event->key.scancode)
 		{
 		case SDL_SCANCODE_ESCAPE:
-			emu_running = false;
+			if (fullscreen)
+				callback.emu_running = false;
+			break;
+		case SDL_SCANCODE_F5:
+			callback.save_state = true;
 			break;
 		default:
 			break;
@@ -202,7 +206,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_sc
 	}
 	wsi->begin_frame();
 
-	emu_running = true;
+	callback.emu_running = true;
 }
 
 void rdp_close()
@@ -322,13 +326,19 @@ void rdp_set_vi_register(uint32_t reg, uint32_t value)
 	processor->set_vi_register(RDP::VIRegister(reg), value);
 }
 
-bool rdp_update_screen()
+void rdp_update_screen()
 {
 	auto &device = wsi->get_device();
 	render_frame(device);
 	wsi->end_frame();
 	wsi->begin_frame();
-	return emu_running;
+}
+
+CALLBACK rdp_check_callback()
+{
+	CALLBACK return_value = callback;
+	callback.save_state = false;
+	return return_value;
 }
 
 uint64_t rdp_process_commands()

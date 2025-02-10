@@ -120,7 +120,8 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 fn vertical_interrupt_event(device: &mut device::Device) {
-    device.cpu.running = ui::video::update_screen();
+    ui::video::update_screen();
+    ui::video::check_callback(device);
 
     /*
         unsafe {
