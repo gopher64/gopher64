@@ -166,4 +166,12 @@ fn main() {
         println!("cargo:rustc-link-search=native=/usr/local/lib");
         println!("cargo:rustc-link-lib=static=MoltenVK");
     }
+
+    let git_output = std::process::Command::new("git")
+        .args(&["rev-parse", "HEAD"])
+        .output()
+        .unwrap();
+
+    let git_hash = String::from_utf8(git_output.stdout).unwrap();
+    println!("cargo:rustc-env=GIT_HASH={}", git_hash);
 }

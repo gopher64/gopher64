@@ -284,7 +284,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     let netplay_message = NetplayMessage {
                         message_type: "request_create_room".to_string(),
                         player_name: Some(app.netplay.player_name.clone()),
-                        client_sha: Some(env!("CARGO_PKG_VERSION").to_string()),
+                        client_sha: Some(env!("GIT_HASH").to_string()),
                         netplay_version: Some(NETPLAY_VERSION),
                         emulator: Some(EMU_NAME.to_string()),
                         accept: None,
@@ -449,7 +449,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 let netplay_message = NetplayMessage {
                     message_type: "request_join_room".to_string(),
                     player_name: Some(app.netplay.player_name.clone()),
-                    client_sha: Some(env!("CARGO_PKG_VERSION").to_string()),
+                    client_sha: Some(env!("GIT_HASH").to_string()),
                     netplay_version: None,
                     emulator: None,
                     accept: None,
