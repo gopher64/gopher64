@@ -37,5 +37,4 @@ bindgen = "0.71"
 cc = { version = "1.2", features = ["parallel"] }
 
 [profile.release]
-lto = true
 codegen-units = 1
