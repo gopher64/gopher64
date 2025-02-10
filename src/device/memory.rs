@@ -31,8 +31,8 @@ pub enum AccessType {
 
 #[derive(Copy, Clone, Default)]
 pub enum AccessSize {
-    // None = 0,
     #[default]
+    None = 0,
     Word = 4,
     Dword = 8,
     Dcache = 16,
