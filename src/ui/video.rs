@@ -60,10 +60,7 @@ pub fn update_screen() {
 }
 
 pub fn check_callback(device: &mut device::Device) {
-    let callback;
-    unsafe {
-        callback = rdp_check_callback();
-    }
+    let callback = unsafe { rdp_check_callback() };
     device.cpu.running = callback.emu_running;
     if callback.save_state {
         savestates::create_savestate(device);
