@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::device;
-use crate::savestates;
 use crate::ui;
 
 pub fn init(device: &mut device::Device, fullscreen: bool) {
@@ -63,7 +62,9 @@ pub fn check_callback(device: &mut device::Device) {
     let callback = unsafe { rdp_check_callback() };
     device.cpu.running = callback.emu_running;
     if callback.save_state {
-        savestates::create_savestate(device);
+        device.save_state = true;
+    } else if callback.load_state {
+        device.load_state = true;
     }
 }
 

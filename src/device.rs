@@ -162,6 +162,8 @@ pub struct Device {
     #[serde(skip)]
     pub ui: ui::Ui,
     byte_swap: usize,
+    pub save_state: bool,
+    pub load_state: bool,
     pub cpu: cpu::Cpu,
     pif: pif::Pif,
     cart: cart::rom::Cart,
@@ -193,6 +195,8 @@ impl Device {
             netplay: None,
             ui: ui::Ui::new(),
             byte_swap,
+            save_state: false,
+            load_state: false,
             cpu: cpu::Cpu {
                 cop0: cop0::Cop0 {
                     regs: [0; cop0::COP0_REGS_COUNT as usize],

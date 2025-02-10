@@ -152,6 +152,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 		case SDL_SCANCODE_F5:
 			callback.save_state = true;
 			break;
+		case SDL_SCANCODE_F7:
+			callback.load_state = true;
+			break;
 		default:
 			break;
 		}
@@ -338,6 +341,7 @@ CALL_BACK rdp_check_callback()
 {
 	CALL_BACK return_value = callback;
 	callback.save_state = false;
+	callback.load_state = false;
 	return return_value;
 }
 

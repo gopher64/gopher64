@@ -36,3 +36,11 @@ pub fn create_savestate(device: &device::Device) {
     let compressed_file = ui::storage::compress_file(&postcard::to_stdvec(device).unwrap());
     std::fs::write(device.ui.paths.savestate_file_path.clone(), compressed_file).unwrap();
 }
+
+pub fn load_savestate(device: &mut device::Device) {
+    let savestate = std::fs::read(&mut device.ui.paths.savestate_file_path);
+    if savestate.is_ok() {
+        let _savestate_bytes = ui::storage::decompress_file(&savestate.unwrap());
+        //let state = postcard::from_bytes(&savestate_bytes).unwrap();
+    }
+}

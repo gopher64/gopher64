@@ -270,7 +270,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
     }
 }
 
-fn decompress_file(input: &[u8]) -> Vec<u8> {
+pub fn decompress_file(input: &[u8]) -> Vec<u8> {
     let mut decompressed_file = Vec::new();
     {
         let mut reader = zip::ZipArchive::new(std::io::Cursor::new(input)).unwrap();
