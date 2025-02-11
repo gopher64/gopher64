@@ -22,9 +22,9 @@ impl<'de, const N: usize> Visitor<'de> for M128iArrayVisitor<N> {
         A: SeqAccess<'de>,
     {
         let mut arr: [__m128i; N] = unsafe { [_mm_setzero_si128(); N] };
-        for index in 0..N {
+        for (index, item) in arr.iter_mut().enumerate().take(N) {
             match seq.next_element::<u128>()? {
-                Some(value) => arr[index] = unsafe { std::mem::transmute(value) },
+                Some(value) => *item = unsafe { std::mem::transmute::<u128, __m128i>(value) },
                 None => return Err(serde::de::Error::invalid_length(index, &self)),
             }
         }
@@ -54,7 +54,7 @@ where
     D: Deserializer<'de>,
 {
     let bytes = u128::deserialize(deserializer)?;
-    Ok(unsafe { std::mem::transmute(bytes) })
+    Ok(unsafe { std::mem::transmute::<u128, __m128i>(bytes) })
 }
 
 pub fn serialize_m128i_array<S>(value: &[__m128i], serializer: S) -> Result<S::Ok, S::Error>
