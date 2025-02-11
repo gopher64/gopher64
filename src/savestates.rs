@@ -174,6 +174,9 @@ pub fn load_savestate(device: &mut device::Device) {
                 }
             }
         }
+
+        ui::audio::close(&mut device.ui);
+        ui::audio::init(&mut device.ui, device.ai.freq);
     }
 }
 
