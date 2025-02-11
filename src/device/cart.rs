@@ -22,6 +22,16 @@ const EEPROM_BLOCK_SIZE: usize = 8;
 pub const EEPROM_MAX_SIZE: usize = 0x800;
 
 #[derive(serde::Serialize, serde::Deserialize)]
+pub enum CicType {
+    CicNus6101,
+    CicNus6102,
+    CicNus6103,
+    CicNus6105,
+    CicNus6106,
+    CicNus5167,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct AfRtc {
     pub control: u16,
 }
@@ -29,6 +39,21 @@ pub struct AfRtc {
 fn byte2bcd(mut n: u32) -> u8 {
     n %= 100;
     (((n / 10) << 4) | (n % 10)) as u8
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Cart {
+    pub rom: Vec<u8>,
+    #[serde(with = "serde_big_array::BigArray")]
+    pub is_viewer_buffer: [u8; 0xFFFF],
+    pub pal: bool,
+    pub latch: u32,
+    pub cic_type: CicType,
+    pub cic_seed: u8,
+    pub rdram_size_offset: usize,
+    pub rtc: AfRtc,
+    pub sc64: sc64::Sc64,
+    pub flashram: sram::Flashram,
 }
 
 pub fn process(device: &mut device::Device, channel: usize) {

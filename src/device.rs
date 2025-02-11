@@ -163,19 +163,17 @@ pub struct Device {
     pub load_state: bool,
     pub cpu: cpu::Cpu,
     pif: pif::Pif,
-    cart: cart::rom::Cart,
+    cart: cart::Cart,
     memory: memory::Memory,
     pub rsp: rsp_interface::Rsp,
     pub rdp: rdp::Rdp,
     pub rdram: rdram::Rdram,
     mi: mi::Mi,
     pi: pi::Pi,
-    sc64: cart::sc64::Sc64,
     pub vi: vi::Vi,
     ai: ai::Ai,
     si: si::Si,
     ri: ri::Ri,
-    flashram: cart::sram::Flashram,
     pub vru: controller::vru::Vru,
 }
 
@@ -293,15 +291,29 @@ impl Device {
                     change_pak: controller::PakType::None,
                 }; 5],
             },
-            cart: cart::rom::Cart {
+            cart: cart::Cart {
                 rom: Vec::new(),
                 is_viewer_buffer: [0; 0xFFFF],
                 pal: false,
                 latch: 0,
                 cic_seed: 0,
-                cic_type: cart::rom::CicType::CicNus6102,
+                cic_type: cart::CicType::CicNus6102,
                 rdram_size_offset: 0,
                 rtc: cart::AfRtc { control: 0x0200 },
+                sc64: cart::sc64::Sc64 {
+                    regs: [0; cart::sc64::SC64_REGS_COUNT as usize],
+                    regs_locked: true,
+                    cfg: [0; cart::sc64::SC64_CFG_COUNT as usize],
+                    sector: 0,
+                    buffer: [0; 8192],
+                },
+                flashram: cart::sram::Flashram {
+                    status: 0,
+                    erase_page: 0,
+                    page_buf: [0xff; 128],
+                    silicon_id: [cart::sram::FLASHRAM_TYPE_ID, cart::sram::MX29L1100_ID],
+                    mode: cart::sram::FlashramMode::ReadArray,
+                },
             },
             memory: memory::Memory {
                 fast_read: [unmapped::read_mem; 0x2000],
@@ -393,13 +405,6 @@ impl Device {
             pi: pi::Pi {
                 regs: [0; pi::PI_REGS_COUNT as usize],
             },
-            sc64: cart::sc64::Sc64 {
-                regs: [0; cart::sc64::SC64_REGS_COUNT as usize],
-                regs_locked: true,
-                cfg: [0; cart::sc64::SC64_CFG_COUNT as usize],
-                sector: 0,
-                buffer: [0; 8192],
-            },
             ai: ai::Ai {
                 regs: [0; ai::AI_REGS_COUNT as usize],
                 last_read: 0,
@@ -426,13 +431,6 @@ impl Device {
                 count_per_scanline: 0,
                 limiter: None,
                 vi_counter: 0,
-            },
-            flashram: cart::sram::Flashram {
-                status: 0,
-                erase_page: 0,
-                page_buf: [0xff; 128],
-                silicon_id: [cart::sram::FLASHRAM_TYPE_ID, cart::sram::MX29L1100_ID],
-                mode: cart::sram::FlashramMode::ReadArray,
             },
             vru: controller::vru::Vru {
                 status: 0,

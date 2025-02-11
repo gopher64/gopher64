@@ -53,10 +53,11 @@ fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
 }
 
 fn read_mem_flash(device: &device::Device, address: u64) -> u32 {
-    if (address & 0x1ffff) == 0x00000 && device.flashram.mode == FlashramMode::Status {
+    if (address & 0x1ffff) == 0x00000 && device.cart.flashram.mode == FlashramMode::Status {
         /* read Status register */
-        device.flashram.status
-    } else if (address & 0x1ffff) == 0x0000 && device.flashram.mode == FlashramMode::ReadArray {
+        device.cart.flashram.status
+    } else if (address & 0x1ffff) == 0x0000 && device.cart.flashram.mode == FlashramMode::ReadArray
+    {
         /* flashram MMIO read are not supported except for the "dummy" read @0x0000 done before DMA.
          * returns a "dummy" value. */
         return 0;
@@ -98,9 +99,9 @@ fn write_mem_sram(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 fn write_mem_flash(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    if (address & 0x1ffff) == 0x00000 && device.flashram.mode == FlashramMode::Status {
+    if (address & 0x1ffff) == 0x00000 && device.cart.flashram.mode == FlashramMode::Status {
         /* clear/set Status register */
-        device.flashram.status = (value & mask) & 0xff;
+        device.cart.flashram.status = (value & mask) & 0xff;
     } else if (address & 0x1ffff) == 0x10000 {
         /* set command */
         format_flash(device);
@@ -151,11 +152,11 @@ fn dma_read_flash(device: &mut device::Device, cart_addr: u32, dram_addr: u32, l
 
     if (cart_addr & 0x1ffff) == 0x00000
         && length == 128
-        && device.flashram.mode == FlashramMode::PageProgram
+        && device.cart.flashram.mode == FlashramMode::PageProgram
     {
         /* load page buf using DMA */
         for i in 0..length {
-            device.flashram.page_buf[i as usize] =
+            device.cart.flashram.page_buf[i as usize] =
                 device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
         }
     } else {
@@ -204,20 +205,22 @@ fn dma_write_flash(
 
     if (cart_addr & 0x1ffff) == 0x00000
         && length == 8
-        && device.flashram.mode == FlashramMode::ReadSiliconId
+        && device.cart.flashram.mode == FlashramMode::ReadSiliconId
     {
         /* read Silicon ID using DMA */
         device.rdram.mem[dram_addr as usize..dram_addr as usize + 4]
-            .copy_from_slice(&device.flashram.silicon_id[0].to_ne_bytes());
+            .copy_from_slice(&device.cart.flashram.silicon_id[0].to_ne_bytes());
         dram_addr += 4;
         device.rdram.mem[dram_addr as usize..dram_addr as usize + 4]
-            .copy_from_slice(&device.flashram.silicon_id[1].to_ne_bytes());
-    } else if (cart_addr & 0x1ffff) < 0x10000 && device.flashram.mode == FlashramMode::ReadArray {
+            .copy_from_slice(&device.cart.flashram.silicon_id[1].to_ne_bytes());
+    } else if (cart_addr & 0x1ffff) < 0x10000
+        && device.cart.flashram.mode == FlashramMode::ReadArray
+    {
         format_flash(device);
         /* adjust flashram address before starting DMA. */
-        if device.flashram.silicon_id[1] == MX29L1100_ID
-            || device.flashram.silicon_id[1] == MX29L0000_ID
-            || device.flashram.silicon_id[1] == MX29L0001_ID
+        if device.cart.flashram.silicon_id[1] == MX29L1100_ID
+            || device.cart.flashram.silicon_id[1] == MX29L0000_ID
+            || device.cart.flashram.silicon_id[1] == MX29L0001_ID
         {
             /* "old" flash needs special address adjusting */
             cart_addr = (cart_addr & 0xffff) * 2;
@@ -251,27 +254,27 @@ fn flashram_command(device: &mut device::Device, command: u32) {
     match command & 0xff000000 {
         0x3c000000 => {
             /* set chip erase mode */
-            device.flashram.mode = FlashramMode::ChipErase;
+            device.cart.flashram.mode = FlashramMode::ChipErase;
         }
 
         0x4b000000 => {
             /* set sector erase mode, set erase sector */
-            device.flashram.mode = FlashramMode::SectorErase;
-            device.flashram.erase_page = command as u16;
+            device.cart.flashram.mode = FlashramMode::SectorErase;
+            device.cart.flashram.erase_page = command as u16;
         }
 
         0x78000000 => {
             /* set erase busy flag */
-            device.flashram.status |= 0x02;
+            device.cart.flashram.status |= 0x02;
 
             /* do chip/sector erase */
-            if device.flashram.mode == FlashramMode::SectorErase {
-                let offset: usize = (device.flashram.erase_page & 0xff80) as usize * 128;
+            if device.cart.flashram.mode == FlashramMode::SectorErase {
+                let offset: usize = (device.cart.flashram.erase_page & 0xff80) as usize * 128;
                 for i in 0..128 * 128 {
                     device.ui.saves.flash.0[offset + i] = 0xFF;
                 }
                 device.ui.saves.flash.1 = true
-            } else if device.flashram.mode == FlashramMode::ChipErase {
+            } else if device.cart.flashram.mode == FlashramMode::ChipErase {
                 for i in 0..FLASHRAM_SIZE {
                     device.ui.saves.flash.0[i] = 0xFF;
                 }
@@ -281,47 +284,47 @@ fn flashram_command(device: &mut device::Device, command: u32) {
             }
 
             /* clear erase busy flag, set erase success flag, transition to status mode */
-            device.flashram.status &= !0x02;
-            device.flashram.status |= 0x08;
-            device.flashram.mode = FlashramMode::Status;
+            device.cart.flashram.status &= !0x02;
+            device.cart.flashram.status |= 0x08;
+            device.cart.flashram.mode = FlashramMode::Status;
         }
 
         0xa5000000 => {
             /* set program busy flag */
-            device.flashram.status |= 0x01;
+            device.cart.flashram.status |= 0x01;
 
             /* program selected page */
             let offset: usize = (command & 0xffff) as usize * 128;
             for i in 0..128 {
-                device.ui.saves.flash.0[offset + i] = device.flashram.page_buf[i];
+                device.ui.saves.flash.0[offset + i] = device.cart.flashram.page_buf[i];
             }
             device.ui.saves.flash.1 = true;
 
             /* clear program busy flag, set program success flag, transition to status mode */
-            device.flashram.status &= !0x01;
-            device.flashram.status |= 0x04;
-            device.flashram.mode = FlashramMode::Status;
+            device.cart.flashram.status &= !0x01;
+            device.cart.flashram.status |= 0x04;
+            device.cart.flashram.mode = FlashramMode::Status;
         }
 
         0xb4000000 => {
             /* set page program mode */
-            device.flashram.mode = FlashramMode::PageProgram;
+            device.cart.flashram.mode = FlashramMode::PageProgram;
         }
 
         0xd2000000 => {
             /* set status mode */
-            device.flashram.mode = FlashramMode::Status;
+            device.cart.flashram.mode = FlashramMode::Status;
         }
 
         0xe1000000 => {
             /* set silicon_id mode */
-            device.flashram.mode = FlashramMode::ReadSiliconId;
-            device.flashram.status |= 0x01; /* Needed for Pokemon Puzzle League */
+            device.cart.flashram.mode = FlashramMode::ReadSiliconId;
+            device.cart.flashram.status |= 0x01; /* Needed for Pokemon Puzzle League */
         }
 
         0xf0000000 => {
             /* set read mode */
-            device.flashram.mode = FlashramMode::ReadArray;
+            device.cart.flashram.mode = FlashramMode::ReadArray;
         }
 
         _ => {

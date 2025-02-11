@@ -40,12 +40,12 @@ pub fn read_regs(
     _access_size: device::memory::AccessSize,
 ) -> u32 {
     device::cop0::add_cycles(device, 20);
-    if device.sc64.regs_locked {
+    if device.cart.sc64.regs_locked {
         return 0;
     }
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
-        SC64_SCR_REG | SC64_DATA0_REG | SC64_DATA1_REG => device.sc64.regs[reg as usize],
+        SC64_SCR_REG | SC64_DATA0_REG | SC64_DATA1_REG => device.cart.sc64.regs[reg as usize],
         SC64_IDENTIFIER_REG => 0x53437632,
         _ => panic!("unknown read reg {} address {:#x}", reg, address),
     }
@@ -55,37 +55,41 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
         SC64_KEY_REG => {
-            device::memory::masked_write_32(&mut device.sc64.regs[reg as usize], value, mask);
-            if device.sc64.regs[SC64_KEY_REG as usize] == 0x4F434B5F {
-                device.sc64.regs_locked = false;
-            } else if device.sc64.regs[SC64_KEY_REG as usize] == 0xFFFFFFFF {
-                device.sc64.regs_locked = true;
+            device::memory::masked_write_32(&mut device.cart.sc64.regs[reg as usize], value, mask);
+            if device.cart.sc64.regs[SC64_KEY_REG as usize] == 0x4F434B5F {
+                device.cart.sc64.regs_locked = false;
+            } else if device.cart.sc64.regs[SC64_KEY_REG as usize] == 0xFFFFFFFF {
+                device.cart.sc64.regs_locked = true;
             }
         }
         SC64_DATA0_REG | SC64_DATA1_REG => {
-            if !device.sc64.regs_locked {
-                device::memory::masked_write_32(&mut device.sc64.regs[reg as usize], value, mask);
+            if !device.cart.sc64.regs_locked {
+                device::memory::masked_write_32(
+                    &mut device.cart.sc64.regs[reg as usize],
+                    value,
+                    mask,
+                );
             }
         }
         SC64_SCR_REG => {
-            if !device.sc64.regs_locked {
+            if !device.cart.sc64.regs_locked {
                 match char::from_u32(value & mask).unwrap() {
                     'c' => {
                         // get config
-                        device.sc64.regs[SC64_DATA1_REG as usize] =
-                            device.sc64.cfg[device.sc64.regs[SC64_DATA0_REG as usize] as usize]
+                        device.cart.sc64.regs[SC64_DATA1_REG as usize] = device.cart.sc64.cfg
+                            [device.cart.sc64.regs[SC64_DATA0_REG as usize] as usize]
                     }
                     'C' => {
                         // set config
                         std::mem::swap(
-                            &mut device.sc64.cfg
-                                [device.sc64.regs[SC64_DATA0_REG as usize] as usize],
-                            &mut device.sc64.regs[SC64_DATA1_REG as usize],
+                            &mut device.cart.sc64.cfg
+                                [device.cart.sc64.regs[SC64_DATA0_REG as usize] as usize],
+                            &mut device.cart.sc64.regs[SC64_DATA1_REG as usize],
                         );
                     }
                     'i' => {
                         // sd card operation
-                        match device.sc64.regs[SC64_DATA1_REG as usize] {
+                        match device.cart.sc64.regs[SC64_DATA1_REG as usize] {
                             0 => { //Init SD card
                             }
                             1 => { //Deinit SD card
@@ -93,21 +97,23 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                             _ => {
                                 panic!(
                                     "unknown sc64 sd card operation: {}",
-                                    device.sc64.regs[SC64_DATA1_REG as usize]
+                                    device.cart.sc64.regs[SC64_DATA1_REG as usize]
                                 )
                             }
                         }
                     }
                     'I' => {
                         // set sd sector
-                        device.sc64.sector = device.sc64.regs[SC64_DATA0_REG as usize];
+                        device.cart.sc64.sector = device.cart.sc64.regs[SC64_DATA0_REG as usize];
                     }
                     's' => {
                         format_sdcard(device);
                         // read sd card
-                        let address = device.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
-                        let offset = (device.sc64.sector * 512) as usize;
-                        let length = (device.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
+                        let address =
+                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
+                        let offset = (device.cart.sc64.sector * 512) as usize;
+                        let length =
+                            (device.cart.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
                         let mut i = 0;
 
                         while i < length {
@@ -134,9 +140,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     'S' => {
                         format_sdcard(device);
                         // write sd card
-                        let address = device.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
-                        let offset = (device.sc64.sector * 512) as usize;
-                        let length = (device.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
+                        let address =
+                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
+                        let offset = (device.cart.sc64.sector * 512) as usize;
+                        let length =
+                            (device.cart.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
                         let mut i = 0;
 
                         while i < length {
@@ -184,7 +192,7 @@ pub fn read_mem(
 ) -> u32 {
     let masked_address = address as usize & SC64_BUFFER_MASK;
     u32::from_be_bytes(
-        device.sc64.buffer[masked_address..masked_address + 4]
+        device.cart.sc64.buffer[masked_address..masked_address + 4]
             .try_into()
             .unwrap(),
     )
@@ -193,12 +201,13 @@ pub fn read_mem(
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let masked_address = address as usize & SC64_BUFFER_MASK;
     let mut data = u32::from_be_bytes(
-        device.sc64.buffer[masked_address..masked_address + 4]
+        device.cart.sc64.buffer[masked_address..masked_address + 4]
             .try_into()
             .unwrap(),
     );
     device::memory::masked_write_32(&mut data, value, mask);
-    device.sc64.buffer[masked_address..masked_address + 4].copy_from_slice(&data.to_be_bytes());
+    device.cart.sc64.buffer[masked_address..masked_address + 4]
+        .copy_from_slice(&data.to_be_bytes());
 }
 
 pub fn dma_read(
@@ -213,7 +222,7 @@ pub fn dma_read(
     let mut j = cart_addr;
 
     while i < dram_addr + length && i < device.rdram.size {
-        device.sc64.buffer[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
+        device.cart.sc64.buffer[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
         i += 1;
         j += 1;
     }
@@ -233,7 +242,7 @@ pub fn dma_write(
     let mut j = cart_addr;
 
     while i < dram_addr + length && i < device.rdram.size {
-        device.rdram.mem[i as usize ^ device.byte_swap] = device.sc64.buffer[j as usize];
+        device.rdram.mem[i as usize ^ device.byte_swap] = device.cart.sc64.buffer[j as usize];
         i += 1;
         j += 1;
     }
