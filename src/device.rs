@@ -58,6 +58,7 @@ pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
         controller::vru::init(device);
     }
     memory::init(device);
+    cache::init(device);
     rsp_interface::init(device);
     rdp::init(device);
     vi::init(device);

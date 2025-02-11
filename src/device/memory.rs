@@ -171,5 +171,4 @@ pub fn init(device: &mut device::Device) {
             device.memory.memory_map_write[i] = device::cart::sc64::write_regs;
         }
     }
-    device::cache::init(device)
 }
