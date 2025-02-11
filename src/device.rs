@@ -178,6 +178,10 @@ pub struct Device {
     pub vru: controller::vru::Vru,
 }
 
+pub fn zero_m128i() -> __m128i {
+    unsafe { _mm_setzero_si128() }
+}
+
 impl Device {
     pub fn new() -> Device {
         let mut byte_swap: usize = 0;

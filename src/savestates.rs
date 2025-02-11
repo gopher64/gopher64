@@ -19,7 +19,7 @@ impl<'de, const N: usize> Visitor<'de> for M128iArrayVisitor<N> {
     where
         A: SeqAccess<'de>,
     {
-        let mut arr: [__m128i; N] = unsafe { [_mm_setzero_si128(); N] };
+        let mut arr: [__m128i; N] = [device::zero_m128i(); N];
         for (index, item) in arr.iter_mut().enumerate().take(N) {
             match seq.next_element::<u128>()? {
                 Some(value) => *item = unsafe { std::mem::transmute::<u128, __m128i>(value) },
