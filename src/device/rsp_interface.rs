@@ -207,7 +207,6 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
             + device::rdram::rdram_calculate_cycles((count * length) as u64)
             + 9,
-        device::rsp_interface::fifo_pop,
     );
 }
 
@@ -243,7 +242,7 @@ fn fifo_push(device: &mut device::Device, dir: DmaDir) {
     }
 }
 
-fn fifo_pop(device: &mut device::Device) {
+pub fn fifo_pop(device: &mut device::Device) {
     if device.rsp.regs[SP_DMA_FULL_REG as usize] != 0 {
         device.rsp.fifo[0].dir = device.rsp.fifo[1].dir;
         device.rsp.fifo[0].length = device.rsp.fifo[1].length;
@@ -469,12 +468,11 @@ fn do_task(device: &mut device::Device) {
             device,
             device::events::EventType::SP,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
-            rsp_event,
         )
     }
 }
 
-fn rsp_event(device: &mut device::Device) {
+pub fn rsp_event(device: &mut device::Device) {
     if device.rsp.cpu.broken {
         device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT | SP_STATUS_BROKE;
 

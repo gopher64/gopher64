@@ -131,7 +131,6 @@ fn run_rdp(device: &mut device::Device) {
             device,
             device::events::EventType::DP,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
-            rdp_interrupt_event,
         )
     }
 }
@@ -206,7 +205,7 @@ pub fn init(device: &mut device::Device) {
         DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CBUF_READY;
 }
 
-fn rdp_interrupt_event(device: &mut device::Device) {
+pub fn rdp_interrupt_event(device: &mut device::Device) {
     device.rdp.regs_dpc[DPC_STATUS_REG as usize] &=
         !(DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY);
 

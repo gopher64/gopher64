@@ -1,4 +1,4 @@
-use crate::{device, savestates};
+use crate::device;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum EventType {
@@ -20,20 +20,12 @@ pub enum EventType {
 pub struct Event {
     pub enabled: bool,
     pub count: u64,
-    #[serde(skip, default = "savestates::default_event_handler")]
-    pub handler: fn(&mut device::Device),
 }
 
-pub fn create_event(
-    device: &mut device::Device,
-    name: EventType,
-    when: u64,
-    handler: fn(&mut device::Device),
-) {
+pub fn create_event(device: &mut device::Device, name: EventType, when: u64) {
     device.cpu.events[name as usize] = Event {
         enabled: true,
         count: when,
-        handler,
     };
     set_next_event(device);
 }
@@ -49,11 +41,28 @@ pub fn remove_event(device: &mut device::Device, name: EventType) {
     device.cpu.events[name as usize].enabled = false;
 }
 
+fn get_event_handler(name: usize) -> fn(&mut device::Device) {
+    match name {
+        name if name == EventType::AI as usize => device::ai::dma_event,
+        name if name == EventType::SI as usize => device::si::dma_event,
+        name if name == EventType::VI as usize => device::vi::vertical_interrupt_event,
+        name if name == EventType::PI as usize => device::pi::dma_event,
+        name if name == EventType::DP as usize => device::rdp::rdp_interrupt_event,
+        name if name == EventType::SP as usize => device::rsp_interface::rsp_event,
+        name if name == EventType::Interrupt as usize => device::exceptions::interrupt_exception,
+        name if name == EventType::SPDma as usize => device::rsp_interface::fifo_pop,
+        name if name == EventType::Compare as usize => device::cop0::compare_event,
+        name if name == EventType::Vru as usize => device::controller::vru::vru_talking_event,
+        name if name == EventType::PakSwitch as usize => device::controller::pak_switch_event,
+        _ => dummy_event,
+    }
+}
+
 pub fn trigger_event(device: &mut device::Device) {
     let next_event_name = device.cpu.next_event;
     device.cpu.events[next_event_name].enabled = false;
 
-    let handler = device.cpu.events[next_event_name].handler;
+    let handler = get_event_handler(next_event_name);
     device.cpu.cop0.is_event = true;
     handler(device);
     device.cpu.cop0.is_event = false;

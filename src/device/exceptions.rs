@@ -37,7 +37,6 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
             device,
             device::events::EventType::Interrupt,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize],
-            interrupt_exception,
         );
     }
 }

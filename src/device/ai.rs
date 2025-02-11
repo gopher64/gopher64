@@ -67,7 +67,6 @@ fn do_dma(device: &mut device::Device) {
         device,
         device::events::EventType::AI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + device.ai.fifo[0].duration,
-        dma_event,
     );
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_AI);
 }
@@ -156,7 +155,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     }
 }
 
-fn dma_event(device: &mut device::Device) {
+pub fn dma_event(device: &mut device::Device) {
     if device.ai.last_read != 0 {
         let diff = device.ai.fifo[0].length - device.ai.last_read;
         ui::audio::play_audio(

@@ -65,7 +65,6 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         device,
         device::events::EventType::PI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
-        device::pi::dma_event,
     );
 }
 

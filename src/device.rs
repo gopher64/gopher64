@@ -274,7 +274,6 @@ impl Device {
                 events: [events::Event {
                     enabled: false,
                     count: u64::MAX,
-                    handler: events::dummy_event,
                 }; events::EventType::Count as usize],
                 next_event_count: u64::MAX,
                 next_event: 0,

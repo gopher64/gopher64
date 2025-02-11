@@ -55,7 +55,6 @@ fn set_vertical_interrupt(device: &mut device::Device) {
             device,
             device::events::EventType::VI,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + device.vi.delay,
-            vertical_interrupt_event,
         )
     }
 }
@@ -117,7 +116,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
 }
 
-fn vertical_interrupt_event(device: &mut device::Device) {
+pub fn vertical_interrupt_event(device: &mut device::Device) {
     ui::video::update_screen();
     ui::video::check_callback(device);
 
@@ -147,7 +146,6 @@ fn vertical_interrupt_event(device: &mut device::Device) {
         device,
         device::events::EventType::VI,
         device.cpu.next_event_count + device.vi.delay,
-        vertical_interrupt_event,
     )
 }
 

@@ -167,10 +167,6 @@ where
     [device::cop0::reserved; N]
 }
 
-pub fn default_event_handler() -> fn(&mut device::Device) {
-    device::pi::dma_event
-}
-
 pub fn default_memory_read(
 ) -> [fn(&mut device::Device, u64, device::memory::AccessSize) -> u32; 0x2000] {
     [device::rdram::read_mem; 0x2000]

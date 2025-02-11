@@ -77,7 +77,6 @@ pub fn process(device: &mut device::Device, channel: usize) {
                         device::events::EventType::PakSwitch,
                         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
                             + (device.cpu.clock_rate), // 1 second
-                        pak_switch_event,
                     )
                 }
             }
@@ -158,7 +157,7 @@ fn data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 {
     crc
 }
 
-fn pak_switch_event(device: &mut device::Device) {
+pub fn pak_switch_event(device: &mut device::Device) {
     for (i, channel) in device.pif.channels.iter_mut().enumerate() {
         if channel.change_pak != PakType::None {
             if channel.change_pak == PakType::RumblePak {

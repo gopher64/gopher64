@@ -69,7 +69,6 @@ fn dma_read(device: &mut device::Device) {
         device,
         device::events::EventType::PI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
-        dma_event,
     );
 
     /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */
@@ -102,7 +101,6 @@ fn dma_write(device: &mut device::Device) {
         device,
         device::events::EventType::PI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
-        dma_event,
     );
 
     /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */

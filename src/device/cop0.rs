@@ -216,7 +216,6 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
                 device,
                 device::events::EventType::Compare,
                 device.cpu.cop0.regs[COP0_COUNT_REG as usize] + ((compare_event_diff as u64) << 1),
-                compare_event,
             );
             device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_IP7;
             device.cpu.cop0.pending_compare_interrupt = false;
@@ -236,13 +235,12 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
     device::exceptions::check_pending_interrupts(device);
 }
 
-fn compare_event(device: &mut device::Device) {
+pub fn compare_event(device: &mut device::Device) {
     device.cpu.cop0.pending_compare_interrupt = true;
     device::events::create_event(
         device,
         device::events::EventType::Compare,
         device.cpu.next_event_count + (u32::MAX as u64),
-        compare_event,
     );
     device::exceptions::check_pending_interrupts(device);
 }
@@ -381,10 +379,5 @@ pub fn init(device: &mut device::Device) {
     device.cpu.cop0.regs[COP0_BADVADDR_REG as usize] = 0xFFFFFFFF;
     device.cpu.cop0.regs[COP0_CONTEXT_REG as usize] = 0x7FFFF0;
 
-    device::events::create_event(
-        device,
-        device::events::EventType::Compare,
-        u32::MAX as u64,
-        compare_event,
-    )
+    device::events::create_event(device, device::events::EventType::Compare, u32::MAX as u64)
 }
