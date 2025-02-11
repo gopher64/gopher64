@@ -30,13 +30,16 @@ pub struct Ui {
     pub num_joysticks: i32,
     pub fullscreen: bool,
     pub joysticks: *mut sdl3_sys::joystick::SDL_JoystickID,
+    pub with_sdl: bool,
 }
 
 impl Drop for Ui {
     fn drop(&mut self) {
-        unsafe {
-            sdl3_sys::stdinc::SDL_free(self.joysticks as *mut std::ffi::c_void);
-            sdl3_sys::init::SDL_Quit();
+        if self.with_sdl {
+            unsafe {
+                sdl3_sys::stdinc::SDL_free(self.joysticks as *mut std::ffi::c_void);
+                sdl3_sys::init::SDL_Quit();
+            }
         }
     }
 }
@@ -78,7 +81,7 @@ pub fn get_dirs() -> Dirs {
 }
 
 impl Ui {
-    fn construct_ui(num_joysticks: i32, joysticks: *mut u32) -> Ui {
+    fn construct_ui(num_joysticks: i32, joysticks: *mut u32, with_sdl: bool) -> Ui {
         let dirs = get_dirs();
 
         Ui {
@@ -138,11 +141,12 @@ impl Ui {
             num_joysticks,
             joysticks,
             dirs,
+            with_sdl,
         }
     }
 
     pub fn default() -> Ui {
-        Self::construct_ui(0, std::ptr::null_mut())
+        Self::construct_ui(0, std::ptr::null_mut(), false)
     }
 
     pub fn new() -> Ui {
@@ -152,6 +156,6 @@ impl Ui {
         if joysticks.is_null() {
             panic!("Could not get joystick list");
         }
-        Self::construct_ui(num_joysticks, joysticks)
+        Self::construct_ui(num_joysticks, joysticks, true)
     }
 }

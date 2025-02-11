@@ -31,6 +31,7 @@ extern "C"
 	void rdp_update_screen();
 	CALL_BACK rdp_check_callback();
 	uint64_t rdp_process_commands();
+	void rdp_new_processor(GFX_INFO _gfx_info, bool _upscale);
 
 #ifdef __cplusplus
 }

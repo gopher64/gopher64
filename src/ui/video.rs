@@ -57,6 +57,21 @@ pub fn update_screen() {
     unsafe { rdp_update_screen() }
 }
 
+pub fn load_state(device: &mut device::Device) {
+    let gfx_info = GFX_INFO {
+        RDRAM: device.rdram.mem.as_mut_ptr(),
+        DMEM: device.rsp.mem.as_mut_ptr(),
+        RDRAM_SIZE: device.rdram.size,
+        DPC_CURRENT_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
+        DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
+        DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
+        DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
+    };
+    unsafe {
+        rdp_new_processor(gfx_info, device.ui.config.video.upscale);
+    }
+}
+
 pub fn check_callback(device: &mut device::Device) {
     let callback = unsafe { rdp_check_callback() };
     device.cpu.running = callback.emu_running;
