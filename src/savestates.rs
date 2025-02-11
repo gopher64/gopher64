@@ -176,10 +176,9 @@ pub fn load_savestate(device: &mut device::Device) {
         }
 
         ui::audio::close(&mut device.ui);
-        ui::audio::init(&mut device.ui, device.ai.freq);
-
         ui::video::close(&device.ui);
         ui::video::init(device);
+        ui::audio::init(&mut device.ui, device.ai.freq);
     }
 }
 
