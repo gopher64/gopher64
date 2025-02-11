@@ -125,9 +125,9 @@ pub fn load_savestate(device: &mut device::Device) {
         while mem_addr < 0x2000 {
             let data =
                 u32::from_be_bytes(device.rsp.mem[mem_addr..mem_addr + 4].try_into().unwrap());
-            device.rsp.cpu.instructions[((mem_addr & 0xFFF) / 4) as usize].func =
+            device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].func =
                 device::rsp_cpu::decode_opcode(device, data);
-            device.rsp.cpu.instructions[((mem_addr & 0xFFF) / 4) as usize].opcode = data;
+            device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].opcode = data;
             mem_addr += 4;
         }
 
