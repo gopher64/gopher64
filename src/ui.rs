@@ -28,6 +28,7 @@ pub struct Ui {
     pub pak_audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub audio_device: u32,
     pub num_joysticks: i32,
+    pub fullscreen: bool,
     pub joysticks: *mut sdl3_sys::joystick::SDL_JoystickID,
 }
 
@@ -133,6 +134,7 @@ impl Ui {
             audio_stream: std::ptr::null_mut(),
             pak_audio_stream: std::ptr::null_mut(),
             audio_device: 0,
+            fullscreen: false,
             num_joysticks,
             joysticks,
             dirs,

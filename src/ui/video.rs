@@ -2,14 +2,14 @@
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::{device, ui};
 
-pub fn init(device: &mut device::Device, fullscreen: bool) {
+pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
 
     let title = std::ffi::CString::new("gopher64").unwrap();
 
     let mut flags = sdl3_sys::video::SDL_WINDOW_VULKAN;
 
-    if fullscreen {
+    if device.ui.fullscreen {
         flags |= sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
     } else {
         flags |= sdl3_sys::video::SDL_WINDOW_RESIZABLE;
@@ -40,7 +40,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
             gfx_info,
             device.ui.config.video.upscale,
             device.ui.config.video.integer_scaling,
-            fullscreen,
+            device.ui.fullscreen,
         )
     }
 }

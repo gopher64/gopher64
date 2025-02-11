@@ -339,7 +339,8 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             netplay_error_notifier,
                             gui_ctx,
                         ));
-                        device::run_game(rom_contents, &mut device, fullscreen);
+                        device.ui.fullscreen = fullscreen;
+                        device::run_game(rom_contents, &mut device);
                         netplay::close(&mut device);
                     } else {
                         if emulate_vru {
@@ -352,7 +353,8 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         if rom_contents.is_empty() {
                             println!("Could not read rom file");
                         } else {
-                            device::run_game(rom_contents, &mut device, fullscreen);
+                            device.ui.fullscreen = fullscreen;
+                            device::run_game(rom_contents, &mut device);
                         }
                     }
                     let result = std::fs::remove_file(running_file);

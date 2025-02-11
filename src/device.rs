@@ -42,14 +42,14 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
+pub fn run_game(rom_contents: Vec<u8>, device: &mut Device) {
     cart::rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
     rdram::init(device);
 
     ui::audio::init(&mut device.ui, device.ai.freq);
-    ui::video::init(device, fullscreen);
+    ui::video::init(device);
     ui::input::init(&mut device.ui);
 
     mi::init(device);

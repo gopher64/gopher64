@@ -161,7 +161,8 @@ async fn main() {
             .stack_size(16 * 1024 * 1024)
             .spawn(move || {
                 let mut device = device::Device::new();
-                device::run_game(rom_contents, &mut device, args.fullscreen);
+                device.ui.fullscreen = args.fullscreen;
+                device::run_game(rom_contents, &mut device);
             })
             .unwrap();
 
