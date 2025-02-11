@@ -3,7 +3,7 @@
 
 #[cfg(target_arch = "aarch64")]
 #[derive(Copy, Clone)]
-#[allow(dead_code, improper_ctypes)]
+#[allow(dead_code)]
 pub struct __m128i(std::arch::aarch64::int64x2_t);
 #[cfg(target_arch = "aarch64")]
 include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
