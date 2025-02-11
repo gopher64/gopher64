@@ -25,6 +25,7 @@ pub struct Paths {
 
 // the bool indicates whether the save has been written to
 // if that is the case, it will be flushed to the disk when the program closes
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Saves {
     pub eeprom: (Vec<u8>, bool),
     pub sram: (Vec<u8>, bool),
@@ -227,7 +228,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
 
             let mut compressed_sd = Vec::new();
             if !ui.saves.sdcard.0.is_empty() {
-                compressed_sd = compress_file(&ui.saves.sdcard.0, "save");
+                compressed_sd = compress_file(&[(&ui.saves.sdcard.0, "save")]);
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -239,7 +240,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             let mut compressed_romsave = Vec::new();
             if !ui.saves.romsave.0.is_empty() {
                 compressed_romsave =
-                    compress_file(&postcard::to_stdvec(&ui.saves.romsave.0).unwrap(), "save");
+                    compress_file(&[(&postcard::to_stdvec(&ui.saves.romsave.0).unwrap(), "save")]);
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -279,18 +280,20 @@ pub fn decompress_file(input: &[u8], name: &str) -> Vec<u8> {
     decompressed_file
 }
 
-pub fn compress_file(input: &[u8], name: &str) -> Vec<u8> {
+pub fn compress_file(data: &[(&[u8], &str)]) -> Vec<u8> {
     let mut compressed_file = Vec::new();
     {
         let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut compressed_file));
-        writer
-            .start_file(
-                name,
-                zip::write::SimpleFileOptions::default()
-                    .compression_method(zip::CompressionMethod::Zstd),
-            )
-            .unwrap();
-        writer.write_all(input).unwrap();
+        for item in data {
+            writer
+                .start_file(
+                    item.1,
+                    zip::write::SimpleFileOptions::default()
+                        .compression_method(zip::CompressionMethod::Zstd),
+                )
+                .unwrap();
+            writer.write_all(item.0).unwrap();
+        }
     }
     compressed_file
 }
