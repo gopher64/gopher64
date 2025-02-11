@@ -48,7 +48,7 @@ pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
     // rdram pointer is shared with parallel-rdp
     rdram::init(device);
 
-    ui::audio::init(&mut device.ui, 33600);
+    ui::audio::init(&mut device.ui, device.ai.freq);
     ui::video::init(device, fullscreen);
     ui::input::init(&mut device.ui);
 
@@ -171,7 +171,7 @@ pub struct Device {
     mi: mi::Mi,
     pi: pi::Pi,
     pub vi: vi::Vi,
-    ai: ai::Ai,
+    pub ai: ai::Ai,
     si: si::Si,
     ri: ri::Ri,
     pub vru: controller::vru::Vru,
@@ -408,6 +408,7 @@ impl Device {
             ai: ai::Ai {
                 regs: [0; ai::AI_REGS_COUNT as usize],
                 last_read: 0,
+                freq: 33600,
                 delayed_carry: false,
                 fifo: [ai::AiDma {
                     address: 0,

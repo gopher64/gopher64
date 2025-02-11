@@ -49,8 +49,6 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
     if !unsafe { sdl3_sys::audio::SDL_BindAudioStream(ui.audio_device, ui.pak_audio_stream) } {
         panic!("Could not bind audio stream");
     }
-
-    ui.audio_freq = audio_spec.freq as f64;
 }
 
 pub fn close(ui: &mut ui::Ui) {
@@ -112,8 +110,8 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
 
     let audio_queued =
         unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(device.ui.audio_stream) } as f64;
-    let acceptable_latency = (device.ui.audio_freq * 0.2) * 4.0;
-    let min_latency = (device.ui.audio_freq * 0.02) * 4.0;
+    let acceptable_latency = (device.ai.freq as f64 * 0.2) * 4.0;
+    let min_latency = (device.ai.freq as f64 * 0.02) * 4.0;
 
     if audio_queued < min_latency {
         let silence_buffer: Vec<u8> = vec![0; min_latency as usize & !3];

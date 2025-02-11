@@ -17,6 +17,7 @@ pub struct Ai {
     pub fifo: [AiDma; 2],
     pub last_read: u64,
     pub delayed_carry: bool,
+    pub freq: u64,
 }
 
 #[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
@@ -145,9 +146,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
         AI_STATUS_REG => device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_AI),
         AI_DACRATE_REG => {
             if device.ai.regs[reg as usize] != value & mask {
-                let frequency = device.vi.clock / (1 + (value & mask)) as u64;
+                device.ai.freq = device.vi.clock / (1 + (value & mask)) as u64;
                 ui::audio::close(&mut device.ui);
-                ui::audio::init(&mut device.ui, frequency)
+                ui::audio::init(&mut device.ui, device.ai.freq)
             }
             device::memory::masked_write_32(&mut device.ai.regs[reg as usize], value, mask)
         }
