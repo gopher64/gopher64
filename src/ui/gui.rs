@@ -305,7 +305,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
         std::thread::Builder::new()
             .name("n64".to_string())
-            .stack_size(16 * 1024 * 1024)
+            .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
             .spawn(move || {
                 let save_config_items = SaveConfig {
                     selected_controller,

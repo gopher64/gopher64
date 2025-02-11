@@ -158,7 +158,7 @@ async fn main() {
         }
         let handle = std::thread::Builder::new()
             .name("n64".to_string())
-            .stack_size(16 * 1024 * 1024)
+            .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
             .spawn(move || {
                 let mut device = device::Device::new();
                 device.ui.fullscreen = args.fullscreen;
