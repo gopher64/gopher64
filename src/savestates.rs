@@ -86,7 +86,7 @@ pub fn load_savestate(device: &mut device::Device) {
         let device_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "device");
         let save_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "saves");
         let _state: device::Device = postcard::from_bytes(&device_bytes).unwrap();
-        let _saves: device::Device = postcard::from_bytes(&save_bytes).unwrap();
+        let _saves: ui::storage::Saves = postcard::from_bytes(&save_bytes).unwrap();
     }
 }
 
