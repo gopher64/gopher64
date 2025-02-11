@@ -279,9 +279,9 @@ impl Device {
                 events: [events::Event {
                     enabled: false,
                     count: u64::MAX,
-                }; events::EventType::Count as usize],
+                }; events::EVENT_TYPE_COUNT],
                 next_event_count: u64::MAX,
-                next_event: 0,
+                next_event: events::EVENT_TYPE_NONE,
             },
             pif: pif::Pif {
                 rom: [0; 1984],

@@ -203,7 +203,7 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
 
     device::events::create_event(
         device,
-        device::events::EventType::SPDma,
+        device::events::EVENT_TYPE_SPDMA,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
             + device::rdram::rdram_calculate_cycles((count * length) as u64)
             + 9,
@@ -351,7 +351,7 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
         device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_HALT
     }
     if w & SP_SET_HALT != 0 && w & SP_CLR_HALT == 0 {
-        device::events::remove_event(device, device::events::EventType::SP);
+        device::events::remove_event(device, device::events::EVENT_TYPE_SP);
         device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT
     }
 
@@ -466,7 +466,7 @@ fn do_task(device: &mut device::Device) {
 
         device::events::create_event(
             device,
-            device::events::EventType::SP,
+            device::events::EVENT_TYPE_SP,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
         )
     }

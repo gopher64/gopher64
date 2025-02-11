@@ -129,7 +129,7 @@ fn run_rdp(device: &mut device::Device) {
         }
         device::events::create_event(
             device,
-            device::events::EventType::DP,
+            device::events::EVENT_TYPE_DP,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
         )
     }

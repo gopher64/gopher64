@@ -45,7 +45,7 @@ fn dma_read(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::SI,
+        device::events::EVENT_TYPE_SI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + duration,
     )
 }
@@ -59,7 +59,7 @@ fn dma_write(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::SI,
+        device::events::EVENT_TYPE_SI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + 6000, //based on https://github.com/rasky/n64-systembench
     )
 }

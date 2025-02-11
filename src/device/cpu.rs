@@ -37,7 +37,7 @@ pub struct Cpu {
     pub special_instrs: [fn(&mut device::Device, u32); 64],
     #[serde(skip, default = "savestates::default_instructions")]
     pub regimm_instrs: [fn(&mut device::Device, u32); 32],
-    pub events: [device::events::Event; device::events::EventType::Count as usize],
+    pub events: [device::events::Event; device::events::EVENT_TYPE_COUNT],
     pub next_event_count: u64,
     pub next_event: usize,
 }

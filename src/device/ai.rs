@@ -32,7 +32,7 @@ fn get_remaining_dma_length(device: &mut device::Device) -> u64 {
         return 0;
     }
 
-    let next_ai_event = device::events::get_event(device, device::events::EventType::AI);
+    let next_ai_event = device::events::get_event(device, device::events::EVENT_TYPE_AI);
     if next_ai_event.is_none() {
         return 0;
     }
@@ -65,7 +65,7 @@ fn do_dma(device: &mut device::Device) {
     /* schedule end of dma event */
     device::events::create_event(
         device,
-        device::events::EventType::AI,
+        device::events::EVENT_TYPE_AI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + device.ai.fifo[0].duration,
     );
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_AI);

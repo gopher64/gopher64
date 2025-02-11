@@ -69,7 +69,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     device.si.dma_dir = device::si::DmaDir::Write;
     device::events::create_event(
         device,
-        device::events::EventType::SI,
+        device::events::EVENT_TYPE_SI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + 3200,
     ); //based on https://github.com/rasky/n64-systembench
     device.si.regs[device::si::SI_STATUS_REG as usize] |=

@@ -67,7 +67,7 @@ fn dma_read(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::PI,
+        device::events::EVENT_TYPE_PI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
     );
 
@@ -99,7 +99,7 @@ fn dma_write(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::PI,
+        device::events::EVENT_TYPE_PI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
     );
 

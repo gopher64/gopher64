@@ -67,14 +67,13 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.ram[offset..offset + 4].copy_from_slice(&input.0.to_ne_bytes());
             if input.1 {
                 // pak change button pressed
-                if device::events::get_event(device, device::events::EventType::PakSwitch).is_none()
-                {
+                if device::events::get_event(device, device::events::EVENT_TYPE_PAK).is_none() {
                     device.pif.channels[channel].change_pak =
                         device.pif.channels[channel].pak_handler.unwrap().pak_type;
                     device.pif.channels[channel].pak_handler = None;
                     device::events::create_event(
                         device,
-                        device::events::EventType::PakSwitch,
+                        device::events::EVENT_TYPE_PAK,
                         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
                             + (device.cpu.clock_rate), // 1 second
                     )
