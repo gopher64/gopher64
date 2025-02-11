@@ -53,9 +53,7 @@ pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::De
     }
 }
 
-pub fn init(device: &mut device::Device) {
-    device.cpu.clock_rate = 93750000;
-
+pub fn map_instructions(device: &mut device::Device) {
     device.cpu.instrs = [
         device::cop0::reserved,           // SPECIAL
         device::cop0::reserved,           // REGIMM
@@ -222,6 +220,13 @@ pub fn init(device: &mut device::Device) {
         device::cop0::reserved,            // 30
         device::cop0::reserved,            // 31
     ];
+}
+
+pub fn init(device: &mut device::Device) {
+    device.cpu.clock_rate = 93750000;
+
+    map_instructions(device);
+
     device::cop0::init(device);
     device::cop1::init(device);
     device::cop2::init(device);

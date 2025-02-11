@@ -219,62 +219,7 @@ pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::De
     }
 }
 
-pub fn init(device: &mut device::Device) {
-    device.rsp.cpu.reciprocals[0] = u16::MAX;
-    let mut index = 1;
-    while index < 512 {
-        let a = (index + 512) as u64;
-        let b = (1_u64 << 34) / a;
-        device.rsp.cpu.reciprocals[index] = ((b + 1) >> 8) as u16;
-        index += 1;
-    }
-
-    index = 0;
-    while index < 512 {
-        let mut shift = 0;
-        if index % 2 == 1 {
-            shift = 1
-        }
-        let a = ((index + 512) >> shift) as u64;
-        let mut b = (1 << 17) as u64;
-        //find the largest b where b < 1.0 / sqrt(a)
-        while a * (b + 1) * (b + 1) < (1_u64 << 44) {
-            b += 1;
-        }
-        device.rsp.cpu.inverse_square_roots[index] = (b >> 1) as u16;
-        index += 1;
-    }
-
-    device.rsp.cpu.shuffle = unsafe {
-        [
-            //vector
-            _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0), //01234567
-            _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0), //01234567
-            //scalar quarter
-            _mm_set_epi8(15, 14, 15, 14, 11, 10, 11, 10, 7, 6, 7, 6, 3, 2, 3, 2), //00224466
-            _mm_set_epi8(13, 12, 13, 12, 9, 8, 9, 8, 5, 4, 5, 4, 1, 0, 1, 0),     //11335577
-            //scalar half
-            _mm_set_epi8(15, 14, 15, 14, 15, 14, 15, 14, 7, 6, 7, 6, 7, 6, 7, 6), //00004444
-            _mm_set_epi8(13, 12, 13, 12, 13, 12, 13, 12, 5, 4, 5, 4, 5, 4, 5, 4), //11115555
-            _mm_set_epi8(11, 10, 11, 10, 11, 10, 11, 10, 3, 2, 3, 2, 3, 2, 3, 2), //22226666
-            _mm_set_epi8(9, 8, 9, 8, 9, 8, 9, 8, 1, 0, 1, 0, 1, 0, 1, 0),         //33337777
-            //scalar whole
-            _mm_set_epi8(
-                15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14,
-            ), //00000000
-            _mm_set_epi8(
-                13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12,
-            ), //11111111
-            _mm_set_epi8(
-                11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10,
-            ), //22222222
-            _mm_set_epi8(9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8), //33333333
-            _mm_set_epi8(7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6), //44444444
-            _mm_set_epi8(5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4), //55555555
-            _mm_set_epi8(3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2), //66666666
-            _mm_set_epi8(1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0), //77777777
-        ]
-    };
+pub fn map_instructions(device: &mut device::Device) {
     device.rsp.cpu.instrs = [
         device::rsp_su_instructions::reserved, // SPECIAL
         device::rsp_su_instructions::reserved, // REGIMM
@@ -650,4 +595,64 @@ pub fn init(device: &mut device::Device) {
         device::rsp_vu_instructions::vzero, // 62
         device::rsp_vu_instructions::vnop,  // 63
     ]
+}
+
+pub fn init(device: &mut device::Device) {
+    device.rsp.cpu.reciprocals[0] = u16::MAX;
+    let mut index = 1;
+    while index < 512 {
+        let a = (index + 512) as u64;
+        let b = (1_u64 << 34) / a;
+        device.rsp.cpu.reciprocals[index] = ((b + 1) >> 8) as u16;
+        index += 1;
+    }
+
+    index = 0;
+    while index < 512 {
+        let mut shift = 0;
+        if index % 2 == 1 {
+            shift = 1
+        }
+        let a = ((index + 512) >> shift) as u64;
+        let mut b = (1 << 17) as u64;
+        //find the largest b where b < 1.0 / sqrt(a)
+        while a * (b + 1) * (b + 1) < (1_u64 << 44) {
+            b += 1;
+        }
+        device.rsp.cpu.inverse_square_roots[index] = (b >> 1) as u16;
+        index += 1;
+    }
+
+    device.rsp.cpu.shuffle = unsafe {
+        [
+            //vector
+            _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0), //01234567
+            _mm_set_epi8(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0), //01234567
+            //scalar quarter
+            _mm_set_epi8(15, 14, 15, 14, 11, 10, 11, 10, 7, 6, 7, 6, 3, 2, 3, 2), //00224466
+            _mm_set_epi8(13, 12, 13, 12, 9, 8, 9, 8, 5, 4, 5, 4, 1, 0, 1, 0),     //11335577
+            //scalar half
+            _mm_set_epi8(15, 14, 15, 14, 15, 14, 15, 14, 7, 6, 7, 6, 7, 6, 7, 6), //00004444
+            _mm_set_epi8(13, 12, 13, 12, 13, 12, 13, 12, 5, 4, 5, 4, 5, 4, 5, 4), //11115555
+            _mm_set_epi8(11, 10, 11, 10, 11, 10, 11, 10, 3, 2, 3, 2, 3, 2, 3, 2), //22226666
+            _mm_set_epi8(9, 8, 9, 8, 9, 8, 9, 8, 1, 0, 1, 0, 1, 0, 1, 0),         //33337777
+            //scalar whole
+            _mm_set_epi8(
+                15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14, 15, 14,
+            ), //00000000
+            _mm_set_epi8(
+                13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12, 13, 12,
+            ), //11111111
+            _mm_set_epi8(
+                11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10, 11, 10,
+            ), //22222222
+            _mm_set_epi8(9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8, 9, 8), //33333333
+            _mm_set_epi8(7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6), //44444444
+            _mm_set_epi8(5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4), //55555555
+            _mm_set_epi8(3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2), //66666666
+            _mm_set_epi8(1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0), //77777777
+        ]
+    };
+
+    map_instructions(device);
 }

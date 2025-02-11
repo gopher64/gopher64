@@ -261,42 +261,7 @@ pub fn add_cycles(device: &mut device::Device, cycles: u64) {
     device.cpu.cop0.regs[COP0_COUNT_REG as usize] += cycles // COUNT_REG is shifted right 1 bit when read by MFC0
 }
 
-pub fn init(device: &mut device::Device) {
-    device.cpu.cop0.reg_write_masks = [
-        COP0_INDEX_REG_MASK,
-        0, // Random, read only
-        COP0_ENTRYLO_REG_MASK,
-        COP0_ENTRYLO_REG_MASK,
-        COP0_CONTEXT_REG_MASK,
-        COP0_PAGEMASK_REG_MASK,
-        COP0_WIRED_REG_MASK,
-        0,               // 7
-        0,               // BadVAddr, read only
-        u32::MAX as u64, // count
-        COP0_ENTRYHI_REG_MASK,
-        u32::MAX as u64, // compare
-        COP0_STATUS_REG_MASK,
-        COP0_CAUSE_REG_MASK,
-        u64::MAX, // EPC
-        0,        // previd, read only
-        COP0_CONFIG_REG_MASK,
-        COP0_LLADDR_REG_MASK,
-        COP0_WATCHLO_REG_MASK,
-        COP0_WATCHHI_REG_MASK,
-        COP0_XCONTEXT_REG_MASK,
-        0, // 21
-        0, // 22
-        0, // 23
-        0, // 24
-        0, // 25
-        COP0_PARITYERR_REG_MASK,
-        0, // cache error
-        COP0_TAGLO_REG_MASK,
-        0,        // taghi
-        u64::MAX, // ErrorPC
-        0,        // 31
-    ];
-
+pub fn map_instructions(device: &mut device::Device) {
     device.cpu.cop0.instrs = [
         device::cop0::mfc0,        // 0
         device::cop0::dmfc0,       // 1
@@ -366,6 +331,46 @@ pub fn init(device: &mut device::Device) {
         device::cop0::reserved, // 30
         device::cop0::reserved, // 31
     ];
+}
+
+pub fn init(device: &mut device::Device) {
+    device.cpu.cop0.reg_write_masks = [
+        COP0_INDEX_REG_MASK,
+        0, // Random, read only
+        COP0_ENTRYLO_REG_MASK,
+        COP0_ENTRYLO_REG_MASK,
+        COP0_CONTEXT_REG_MASK,
+        COP0_PAGEMASK_REG_MASK,
+        COP0_WIRED_REG_MASK,
+        0,               // 7
+        0,               // BadVAddr, read only
+        u32::MAX as u64, // count
+        COP0_ENTRYHI_REG_MASK,
+        u32::MAX as u64, // compare
+        COP0_STATUS_REG_MASK,
+        COP0_CAUSE_REG_MASK,
+        u64::MAX, // EPC
+        0,        // previd, read only
+        COP0_CONFIG_REG_MASK,
+        COP0_LLADDR_REG_MASK,
+        COP0_WATCHLO_REG_MASK,
+        COP0_WATCHHI_REG_MASK,
+        COP0_XCONTEXT_REG_MASK,
+        0, // 21
+        0, // 22
+        0, // 23
+        0, // 24
+        0, // 25
+        COP0_PARITYERR_REG_MASK,
+        0, // cache error
+        COP0_TAGLO_REG_MASK,
+        0,        // taghi
+        u64::MAX, // ErrorPC
+        0,        // 31
+    ];
+
+    map_instructions(device);
+
     // taken from VR4300 manual
     device.cpu.cop0.regs[COP0_RANDOM_REG as usize] = 0b00000000000000000000000000011111;
     device.cpu.cop0.regs[COP0_CONFIG_REG as usize] = 0b01110000000001101110010001100000;

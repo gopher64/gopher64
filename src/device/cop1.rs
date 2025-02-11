@@ -455,10 +455,7 @@ pub fn get_fpr_double(device: &device::Device, index: usize) -> f64 {
     }
 }
 
-pub fn init(device: &mut device::Device) {
-    set_fgr_registers(device, 0);
-    device.cpu.cop1.fcr0 = 0b101000000000;
-
+pub fn map_instructions(device: &mut device::Device) {
     device.cpu.cop1.b_instrs = [
         device::fpu_instructions::bc1f,  // 0
         device::fpu_instructions::bc1t,  // 1
@@ -768,6 +765,13 @@ pub fn init(device: &mut device::Device) {
         device::cop1::reserved,       // 30
         device::cop1::reserved,       // 31
     ]
+}
+
+pub fn init(device: &mut device::Device) {
+    set_fgr_registers(device, 0);
+    device.cpu.cop1.fcr0 = 0b101000000000;
+
+    map_instructions(device);
 }
 
 pub fn set_fgr_registers(device: &mut device::Device, status_reg: u64) {
