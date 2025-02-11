@@ -1,10 +1,8 @@
+use crate::{device, ui};
 #[cfg(target_arch = "aarch64")]
 use device::__m128i;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
-#[cfg(target_arch = "aarch64")]
-include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
-use crate::{device, ui};
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
