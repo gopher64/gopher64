@@ -33,7 +33,7 @@ pub struct Vi {
 
 const LIMIT_BUFFER: u64 = 3;
 
-fn set_expected_refresh_rate(device: &mut device::Device) {
+pub fn set_expected_refresh_rate(device: &mut device::Device) {
     let expected_refresh_rate = device.vi.clock as f64
         / (device.vi.regs[VI_V_SYNC_REG as usize] + 1) as f64
         / ((device.vi.regs[VI_H_SYNC_REG as usize] & 0xFFF) + 1) as f64

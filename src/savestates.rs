@@ -113,6 +113,7 @@ pub fn load_savestate(device: &mut device::Device) {
         device.vru.talking = state.vru.talking;
         device.vru.word_mappings = state.vru.word_mappings;
 
+        device::vi::set_expected_refresh_rate(device);
         device::cpu::map_instructions(device);
         device::cop0::map_instructions(device);
         device::cop1::map_instructions(device);
