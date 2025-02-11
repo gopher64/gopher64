@@ -227,7 +227,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
 
             let mut compressed_sd = Vec::new();
             if !ui.saves.sdcard.0.is_empty() {
-                compressed_sd = compress_file(&ui.saves.sdcard.0);
+                compressed_sd = compress_file(&ui.saves.sdcard.0, "save");
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -239,7 +239,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             let mut compressed_romsave = Vec::new();
             if !ui.saves.romsave.0.is_empty() {
                 compressed_romsave =
-                    compress_file(&postcard::to_stdvec(&ui.saves.romsave.0).unwrap());
+                    compress_file(&postcard::to_stdvec(&ui.saves.romsave.0).unwrap(), "save");
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -256,36 +256,36 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             let mut compressed_sd = Vec::new();
             netplay::receive_save(netplay.as_mut().unwrap(), "img", &mut compressed_sd);
             if !compressed_sd.is_empty() {
-                ui.saves.sdcard.0 = decompress_file(&compressed_sd);
+                ui.saves.sdcard.0 = decompress_file(&compressed_sd, "save");
             }
 
             let mut compressed_romsave = Vec::new();
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut compressed_romsave);
             if !compressed_romsave.is_empty() {
-                let romsave_bytes = decompress_file(&compressed_romsave);
+                let romsave_bytes = decompress_file(&compressed_romsave, "save");
                 ui.saves.romsave.0 = postcard::from_bytes(&romsave_bytes).unwrap();
             }
         }
     }
 }
 
-pub fn decompress_file(input: &[u8]) -> Vec<u8> {
+pub fn decompress_file(input: &[u8], name: &str) -> Vec<u8> {
     let mut decompressed_file = Vec::new();
     {
         let mut reader = zip::ZipArchive::new(std::io::Cursor::new(input)).unwrap();
-        let mut file = reader.by_index(0).unwrap();
+        let mut file = reader.by_name(name).unwrap();
         file.read_to_end(&mut decompressed_file).unwrap();
     }
     decompressed_file
 }
 
-pub fn compress_file(input: &[u8]) -> Vec<u8> {
+pub fn compress_file(input: &[u8], name: &str) -> Vec<u8> {
     let mut compressed_file = Vec::new();
     {
         let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut compressed_file));
         writer
             .start_file(
-                "save",
+                name,
                 zip::write::SimpleFileOptions::default()
                     .compression_method(zip::CompressionMethod::Zstd),
             )
