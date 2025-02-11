@@ -28,6 +28,10 @@ pub struct Vru {
     pub words: Vec<String>,
     pub talking: bool,
     pub word_mappings: HashMap<String, String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct VruWindow {
     #[serde(skip)]
     pub window_notifier: Option<tokio::sync::mpsc::Sender<Vec<String>>>,
     #[serde(skip)]
@@ -187,12 +191,12 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
-            let index = if device.vru.window_notifier.is_some() {
+            let index = if device.vru_window.window_notifier.is_some() {
                 ui::vru::prompt_for_match(
                     &device.vru.words,
-                    device.vru.window_notifier.as_ref().unwrap(),
-                    device.vru.word_receiver.as_mut().unwrap(),
-                    device.vru.gui_ctx.as_ref().unwrap(),
+                    device.vru_window.window_notifier.as_ref().unwrap(),
+                    device.vru_window.word_receiver.as_mut().unwrap(),
+                    device.vru_window.gui_ctx.as_ref().unwrap(),
                 )
             } else {
                 0x7FFF

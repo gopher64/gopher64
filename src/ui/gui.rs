@@ -344,9 +344,9 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         netplay::close(&mut device);
                     } else {
                         if emulate_vru {
-                            device.vru.window_notifier = Some(vru_window_notifier);
-                            device.vru.word_receiver = Some(vru_word_receiver);
-                            device.vru.gui_ctx = Some(gui_ctx);
+                            device.vru_window.window_notifier = Some(vru_window_notifier);
+                            device.vru_window.word_receiver = Some(vru_word_receiver);
+                            device.vru_window.gui_ctx = Some(gui_ctx);
                         }
 
                         let rom_contents = device::get_rom_contents(file.unwrap().path());

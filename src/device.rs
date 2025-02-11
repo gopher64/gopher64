@@ -176,6 +176,7 @@ pub struct Device {
     pub si: si::Si,
     pub ri: ri::Ri,
     pub vru: controller::vru::Vru,
+    pub vru_window: controller::vru::VruWindow,
 }
 
 pub fn zero_m128i() -> __m128i {
@@ -437,6 +438,11 @@ impl Device {
                 limiter: None,
                 vi_counter: 0,
             },
+            vru_window: controller::vru::VruWindow {
+                window_notifier: None,
+                word_receiver: None,
+                gui_ctx: None,
+            },
             vru: controller::vru::Vru {
                 status: 0,
                 voice_state: 0,
@@ -446,9 +452,6 @@ impl Device {
                 words: Vec::new(),
                 talking: false,
                 word_mappings: HashMap::new(),
-                window_notifier: None,
-                word_receiver: None,
-                gui_ctx: None,
             },
         }
     }

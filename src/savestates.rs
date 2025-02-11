@@ -100,16 +100,7 @@ pub fn load_savestate(device: &mut device::Device) {
         device.ai = state.ai;
         device.si = state.si;
         device.ri = state.ri;
-
-        // don't want to copy window_notifier, word_receiver, gui_ctx
-        device.vru.status = state.vru.status;
-        device.vru.voice_state = state.vru.voice_state;
-        device.vru.load_offset = state.vru.load_offset;
-        device.vru.voice_init = state.vru.voice_init;
-        device.vru.word_buffer = state.vru.word_buffer;
-        device.vru.words = state.vru.words;
-        device.vru.talking = state.vru.talking;
-        device.vru.word_mappings = state.vru.word_mappings;
+        device.vru = state.vru;
 
         device::memory::init(device);
         device::vi::set_expected_refresh_rate(device);
