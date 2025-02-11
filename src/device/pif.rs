@@ -220,6 +220,22 @@ pub fn process_ram(device: &mut device::Device) {
     device.pif.ram[0x3F] &= !clrmask
 }
 
+pub fn connect_pif_channels(device: &mut device::Device) {
+    for i in 0..4 {
+        if device.netplay.is_none() {
+            if device.ui.config.input.controller_enabled[i] {
+                device.pif.channels[i].process = Some(device::controller::process);
+            }
+        } else if device.netplay.as_ref().unwrap().player_data[i].reg_id != 0 {
+            device.pif.channels[i].process = Some(device::controller::process);
+        }
+    }
+    if device.ui.config.input.emulate_vru {
+        device.pif.channels[3].process = Some(device::controller::vru::process);
+    }
+    device.pif.channels[4].process = Some(device::cart::process)
+}
+
 pub fn init(device: &mut device::Device) {
     if device.cart.pal {
         device.pif.rom = rom::PAL_PIF_ROM;
@@ -235,22 +251,20 @@ pub fn init(device: &mut device::Device) {
         pak_type: device::controller::PakType::MemPak,
     };
 
+    connect_pif_channels(device);
+
     for i in 0..4 {
         if device.netplay.is_none() {
             if device.ui.config.input.controller_enabled[i] {
                 device.pif.channels[i].pak_handler = Some(mempak_handler);
-                device.pif.channels[i].process = Some(device::controller::process);
             }
         } else if device.netplay.as_ref().unwrap().player_data[i].reg_id != 0 {
             device.pif.channels[i].pak_handler = Some(mempak_handler);
-            device.pif.channels[i].process = Some(device::controller::process);
         }
     }
     if device.ui.config.input.emulate_vru {
         device.pif.channels[3].pak_handler = None;
-        device.pif.channels[3].process = Some(device::controller::vru::process);
     }
-    device.pif.channels[4].process = Some(device::cart::process)
 }
 
 fn process_cic_challenge(device: &mut device::Device) {

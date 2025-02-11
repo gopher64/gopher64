@@ -150,6 +150,7 @@ pub fn load_savestate(device: &mut device::Device) {
                 device::cpu::decode_opcode(device, device.memory.icache[line_index].words[7]);
         }
 
+        device::pif::connect_pif_channels(device);
         for i in 0..4 {
             if device.pif.channels[i].pak_handler.is_some() {
                 if device.pif.channels[i].pak_handler.unwrap().pak_type
