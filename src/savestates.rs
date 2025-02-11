@@ -89,7 +89,11 @@ pub fn load_savestate(device: &mut device::Device) {
 
         device.cpu = state.cpu;
         device.pif = state.pif;
+
+        let rom = device.cart.rom.clone();
         device.cart = state.cart;
+        device.cart.rom = rom;
+
         device.memory = state.memory;
         device.rsp = state.rsp;
         device.rdp = state.rdp;

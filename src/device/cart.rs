@@ -43,6 +43,7 @@ fn byte2bcd(mut n: u32) -> u8 {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cart {
+    #[serde(skip)]
     pub rom: Vec<u8>,
     #[serde(with = "serde_big_array::BigArray")]
     pub is_viewer_buffer: [u8; 0xFFFF],
