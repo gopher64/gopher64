@@ -99,6 +99,8 @@ fn main() {
         .allowlist_function("rdp_set_vi_register")
         .allowlist_function("rdp_update_screen")
         .allowlist_function("rdp_process_commands")
+        .allowlist_function("rdp_check_callback")
+        .allowlist_function("rdp_new_processor")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");
@@ -159,14 +161,6 @@ fn main() {
         simd_build.compile("simd");
     }
 
-    if os == "macos" {
-        // Add Homebrew lib path for Apple Silicon Macs
-        println!("cargo:rustc-link-search=native=/opt/homebrew/lib");
-        // Add Homebrew lib path for Intel Macs
-        println!("cargo:rustc-link-search=native=/usr/local/lib");
-        println!("cargo:rustc-link-lib=static=MoltenVK");
-    }
-
     let git_output = std::process::Command::new("git")
         .args(["rev-parse", "HEAD"])
         .output()
@@ -174,4 +168,6 @@ fn main() {
 
     let git_hash = String::from_utf8(git_output.stdout).unwrap();
     println!("cargo:rustc-env=GIT_HASH={}", git_hash);
+
+    println!("cargo:rustc-env=N64_STACK_SIZE={}", 8 * 1024 * 1024);
 }

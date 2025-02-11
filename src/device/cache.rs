@@ -1,15 +1,16 @@
-use crate::device;
+use crate::{device, savestates};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ICache {
     pub valid: bool,
     pub tag: u32,
     pub index: u16,
     pub words: [u32; 8],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instruction: [fn(&mut device::Device, u32); 8],
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DCache {
     pub valid: bool,
     pub dirty: bool,

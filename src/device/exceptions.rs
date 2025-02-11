@@ -35,9 +35,8 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
     } else {
         device::events::create_event(
             device,
-            device::events::EventType::Interrupt,
+            device::events::EVENT_TYPE_INT,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize],
-            interrupt_exception,
         );
     }
 }

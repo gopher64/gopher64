@@ -10,11 +10,8 @@ include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-use crate::netplay;
-use crate::ui;
-use std::collections::HashMap;
-use std::fs;
-use std::io::Read;
+use crate::{netplay, ui};
+use std::{collections::HashMap, fs, io::Read};
 
 pub mod ai;
 pub mod cache;
@@ -45,14 +42,14 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
+pub fn run_game(rom_contents: Vec<u8>, device: &mut Device) {
     cart::rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
     rdram::init(device);
 
-    ui::audio::init(&mut device.ui, 33600);
-    ui::video::init(device, fullscreen);
+    ui::audio::init(&mut device.ui, device.ai.freq);
+    ui::video::init(device);
     ui::input::init(&mut device.ui);
 
     mi::init(device);
@@ -61,6 +58,7 @@ pub fn run_game(rom_contents: Vec<u8>, device: &mut Device, fullscreen: bool) {
         controller::vru::init(device);
     }
     memory::init(device);
+    cache::init(device);
     rsp_interface::init(device);
     rdp::init(device);
     vi::init(device);
@@ -155,26 +153,34 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
     swap_rom(contents)
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Device {
+    #[serde(skip)]
     pub netplay: Option<netplay::Netplay>,
+    #[serde(skip, default = "ui::Ui::default")]
     pub ui: ui::Ui,
     byte_swap: usize,
+    pub save_state: bool,
+    pub load_state: bool,
     pub cpu: cpu::Cpu,
-    pif: pif::Pif,
-    cart: cart::rom::Cart,
-    memory: memory::Memory,
+    pub pif: pif::Pif,
+    pub cart: cart::Cart,
+    pub memory: memory::Memory,
     pub rsp: rsp_interface::Rsp,
     pub rdp: rdp::Rdp,
     pub rdram: rdram::Rdram,
-    mi: mi::Mi,
-    pi: pi::Pi,
-    sc64: cart::sc64::Sc64,
+    pub mi: mi::Mi,
+    pub pi: pi::Pi,
     pub vi: vi::Vi,
-    ai: ai::Ai,
-    si: si::Si,
-    ri: ri::Ri,
-    flashram: cart::sram::Flashram,
+    pub ai: ai::Ai,
+    pub si: si::Si,
+    pub ri: ri::Ri,
     pub vru: controller::vru::Vru,
+    pub vru_window: controller::vru::VruWindow,
+}
+
+pub fn zero_m128i() -> __m128i {
+    unsafe { _mm_setzero_si128() }
 }
 
 impl Device {
@@ -190,6 +196,8 @@ impl Device {
             netplay: None,
             ui: ui::Ui::new(),
             byte_swap,
+            save_state: false,
+            load_state: false,
             cpu: cpu::Cpu {
                 cop0: cop0::Cop0 {
                     regs: [0; cop0::COP0_REGS_COUNT as usize],
@@ -271,10 +279,9 @@ impl Device {
                 events: [events::Event {
                     enabled: false,
                     count: u64::MAX,
-                    handler: events::dummy_event,
-                }; events::EventType::Count as usize],
+                }; events::EVENT_TYPE_COUNT],
                 next_event_count: u64::MAX,
-                next_event: 0,
+                next_event: events::EVENT_TYPE_NONE,
             },
             pif: pif::Pif {
                 rom: [0; 1984],
@@ -289,15 +296,29 @@ impl Device {
                     change_pak: controller::PakType::None,
                 }; 5],
             },
-            cart: cart::rom::Cart {
+            cart: cart::Cart {
                 rom: Vec::new(),
                 is_viewer_buffer: [0; 0xFFFF],
                 pal: false,
                 latch: 0,
                 cic_seed: 0,
-                cic_type: cart::rom::CicType::CicNus6102,
+                cic_type: cart::CicType::CicNus6102,
                 rdram_size_offset: 0,
                 rtc: cart::AfRtc { control: 0x0200 },
+                sc64: cart::sc64::Sc64 {
+                    regs: [0; cart::sc64::SC64_REGS_COUNT as usize],
+                    regs_locked: true,
+                    cfg: [0; cart::sc64::SC64_CFG_COUNT as usize],
+                    sector: 0,
+                    buffer: [0; 8192],
+                },
+                flashram: cart::sram::Flashram {
+                    status: 0,
+                    erase_page: 0,
+                    page_buf: [0xff; 128],
+                    silicon_id: [cart::sram::FLASHRAM_TYPE_ID, cart::sram::MX29L1100_ID],
+                    mode: cart::sram::FlashramMode::ReadArray,
+                },
             },
             memory: memory::Memory {
                 fast_read: [unmapped::read_mem; 0x2000],
@@ -389,16 +410,10 @@ impl Device {
             pi: pi::Pi {
                 regs: [0; pi::PI_REGS_COUNT as usize],
             },
-            sc64: cart::sc64::Sc64 {
-                regs: [0; cart::sc64::SC64_REGS_COUNT as usize],
-                regs_locked: true,
-                cfg: [0; cart::sc64::SC64_CFG_COUNT as usize],
-                sector: 0,
-                buffer: [0; 8192],
-            },
             ai: ai::Ai {
                 regs: [0; ai::AI_REGS_COUNT as usize],
                 last_read: 0,
+                freq: 33600,
                 delayed_carry: false,
                 fifo: [ai::AiDma {
                     address: 0,
@@ -423,12 +438,10 @@ impl Device {
                 limiter: None,
                 vi_counter: 0,
             },
-            flashram: cart::sram::Flashram {
-                status: 0,
-                erase_page: 0,
-                page_buf: [0xff; 128],
-                silicon_id: [cart::sram::FLASHRAM_TYPE_ID, cart::sram::MX29L1100_ID],
-                mode: cart::sram::FlashramMode::ReadArray,
+            vru_window: controller::vru::VruWindow {
+                window_notifier: None,
+                word_receiver: None,
+                gui_ctx: None,
             },
             vru: controller::vru::Vru {
                 status: 0,
@@ -439,9 +452,6 @@ impl Device {
                 words: Vec::new(),
                 talking: false,
                 word_mappings: HashMap::new(),
-                window_notifier: None,
-                word_receiver: None,
-                gui_ctx: None,
             },
         }
     }

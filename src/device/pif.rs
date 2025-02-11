@@ -1,18 +1,22 @@
 mod rom;
 use crate::device;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Pif {
+    #[serde(with = "serde_big_array::BigArray")]
     pub rom: [u8; 1984],
+    #[serde(with = "serde_big_array::BigArray")]
     pub ram: [u8; 64],
     pub channels: [PifChannel; 5],
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PifChannel {
     pub tx: Option<usize>,
     pub tx_buf: Option<usize>,
     pub rx: Option<usize>,
     pub rx_buf: Option<usize>,
+    #[serde(skip)]
     pub process: Option<fn(&mut device::Device, usize)>,
     pub pak_handler: Option<device::controller::PakHandler>,
     pub change_pak: device::controller::PakType,
@@ -65,9 +69,8 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     device.si.dma_dir = device::si::DmaDir::Write;
     device::events::create_event(
         device,
-        device::events::EventType::SI,
+        device::events::EVENT_TYPE_SI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + 3200,
-        device::si::dma_event,
     ); //based on https://github.com/rasky/n64-systembench
     device.si.regs[device::si::SI_STATUS_REG as usize] |=
         device::si::SI_STATUS_DMA_BUSY | device::si::SI_STATUS_IO_BUSY
@@ -217,6 +220,22 @@ pub fn process_ram(device: &mut device::Device) {
     device.pif.ram[0x3F] &= !clrmask
 }
 
+pub fn connect_pif_channels(device: &mut device::Device) {
+    for i in 0..4 {
+        if device.netplay.is_none() {
+            if device.ui.config.input.controller_enabled[i] {
+                device.pif.channels[i].process = Some(device::controller::process);
+            }
+        } else if device.netplay.as_ref().unwrap().player_data[i].reg_id != 0 {
+            device.pif.channels[i].process = Some(device::controller::process);
+        }
+    }
+    if device.ui.config.input.emulate_vru {
+        device.pif.channels[3].process = Some(device::controller::vru::process);
+    }
+    device.pif.channels[4].process = Some(device::cart::process)
+}
+
 pub fn init(device: &mut device::Device) {
     if device.cart.pal {
         device.pif.rom = rom::PAL_PIF_ROM;
@@ -232,22 +251,20 @@ pub fn init(device: &mut device::Device) {
         pak_type: device::controller::PakType::MemPak,
     };
 
+    connect_pif_channels(device);
+
     for i in 0..4 {
         if device.netplay.is_none() {
             if device.ui.config.input.controller_enabled[i] {
                 device.pif.channels[i].pak_handler = Some(mempak_handler);
-                device.pif.channels[i].process = Some(device::controller::process);
             }
         } else if device.netplay.as_ref().unwrap().player_data[i].reg_id != 0 {
             device.pif.channels[i].pak_handler = Some(mempak_handler);
-            device.pif.channels[i].process = Some(device::controller::process);
         }
     }
     if device.ui.config.input.emulate_vru {
         device.pif.channels[3].pak_handler = None;
-        device.pif.channels[3].process = Some(device::controller::vru::process);
     }
-    device.pif.channels[4].process = Some(device::cart::process)
 }
 
 fn process_cic_challenge(device: &mut device::Device) {

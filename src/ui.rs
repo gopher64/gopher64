@@ -26,17 +26,20 @@ pub struct Ui {
     pub window: *mut sdl3_sys::video::SDL_Window,
     pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub pak_audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
-    pub audio_freq: f64,
     pub audio_device: u32,
     pub num_joysticks: i32,
+    pub fullscreen: bool,
     pub joysticks: *mut sdl3_sys::joystick::SDL_JoystickID,
+    pub with_sdl: bool,
 }
 
 impl Drop for Ui {
     fn drop(&mut self) {
-        unsafe {
-            sdl3_sys::stdinc::SDL_free(self.joysticks as *mut std::ffi::c_void);
-            sdl3_sys::init::SDL_Quit();
+        if self.with_sdl {
+            unsafe {
+                sdl3_sys::stdinc::SDL_free(self.joysticks as *mut std::ffi::c_void);
+                sdl3_sys::init::SDL_Quit();
+            }
         }
     }
 }
@@ -78,14 +81,7 @@ pub fn get_dirs() -> Dirs {
 }
 
 impl Ui {
-    pub fn new() -> Ui {
-        sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
-        let mut num_joysticks = 0;
-        let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
-        if joysticks.is_null() {
-            panic!("Could not get joystick list");
-        }
-
+    fn construct_ui(num_joysticks: i32, joysticks: *mut u32, with_sdl: bool) -> Ui {
         let dirs = get_dirs();
 
         Ui {
@@ -123,6 +119,7 @@ impl Ui {
                 pak_file_path: std::path::PathBuf::new(),
                 sdcard_file_path: std::path::PathBuf::new(),
                 romsave_file_path: std::path::PathBuf::new(),
+                savestate_file_path: std::path::PathBuf::new(),
             },
             saves: storage::Saves {
                 eeprom: (Vec::new(), false),
@@ -139,11 +136,26 @@ impl Ui {
             window: std::ptr::null_mut(),
             audio_stream: std::ptr::null_mut(),
             pak_audio_stream: std::ptr::null_mut(),
-            audio_freq: 0.0,
             audio_device: 0,
+            fullscreen: false,
             num_joysticks,
             joysticks,
             dirs,
+            with_sdl,
         }
+    }
+
+    pub fn default() -> Ui {
+        Self::construct_ui(0, std::ptr::null_mut(), false)
+    }
+
+    pub fn new() -> Ui {
+        sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+        let mut num_joysticks = 0;
+        let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
+        if joysticks.is_null() {
+            panic!("Could not get joystick list");
+        }
+        Self::construct_ui(num_joysticks, joysticks, true)
     }
 }

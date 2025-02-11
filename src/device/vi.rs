@@ -1,6 +1,4 @@
-use crate::device;
-use crate::netplay;
-use crate::ui;
+use crate::{device, netplay, ui};
 use governor::clock::Clock;
 
 const VI_STATUS_REG: u32 = 0;
@@ -19,11 +17,13 @@ const VI_H_SYNC_REG: u32 = 7;
 //const VI_Y_SCALE_REG: u32 = 13;
 pub const VI_REGS_COUNT: u32 = 14;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Vi {
     pub regs: [u32; VI_REGS_COUNT as usize],
     pub clock: u64,
     pub delay: u64,
     pub field: u32,
+    #[serde(skip)]
     pub limiter: Option<governor::DefaultDirectRateLimiter>,
     pub count_per_scanline: u64,
     pub vi_counter: u64,
@@ -33,7 +33,7 @@ pub struct Vi {
 
 const LIMIT_BUFFER: u64 = 3;
 
-fn set_expected_refresh_rate(device: &mut device::Device) {
+pub fn set_expected_refresh_rate(device: &mut device::Device) {
     let expected_refresh_rate = device.vi.clock as f64
         / (device.vi.regs[VI_V_SYNC_REG as usize] + 1) as f64
         / ((device.vi.regs[VI_H_SYNC_REG as usize] & 0xFFF) + 1) as f64
@@ -50,19 +50,18 @@ fn set_expected_refresh_rate(device: &mut device::Device) {
 }
 
 fn set_vertical_interrupt(device: &mut device::Device) {
-    if device::events::get_event(device, device::events::EventType::VI).is_none() {
+    if device::events::get_event(device, device::events::EVENT_TYPE_VI).is_none() {
         device::events::create_event(
             device,
-            device::events::EventType::VI,
+            device::events::EVENT_TYPE_VI,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + device.vi.delay,
-            vertical_interrupt_event,
         )
     }
 }
 
 fn set_current_line(device: &mut device::Device) {
     let delay = device.vi.delay;
-    let next_vi = device::events::get_event(device, device::events::EventType::VI);
+    let next_vi = device::events::get_event(device, device::events::EVENT_TYPE_VI);
     if next_vi.is_some() {
         device.vi.regs[VI_CURRENT_REG as usize] = ((delay
             - (next_vi.unwrap().count
@@ -117,8 +116,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
 }
 
-fn vertical_interrupt_event(device: &mut device::Device) {
-    device.cpu.running = ui::video::update_screen();
+pub fn vertical_interrupt_event(device: &mut device::Device) {
+    ui::video::update_screen();
+    ui::video::check_callback(device);
 
     /*
         unsafe {
@@ -144,9 +144,8 @@ fn vertical_interrupt_event(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::VI,
+        device::events::EVENT_TYPE_VI,
         device.cpu.next_event_count + device.vi.delay,
-        vertical_interrupt_event,
     )
 }
 

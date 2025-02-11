@@ -1,16 +1,15 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
-use crate::device;
-use crate::ui;
+use crate::{device, ui};
 
-pub fn init(device: &mut device::Device, fullscreen: bool) {
+pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
 
     let title = std::ffi::CString::new("gopher64").unwrap();
 
     let mut flags = sdl3_sys::video::SDL_WINDOW_VULKAN;
 
-    if fullscreen {
+    if device.ui.fullscreen {
         flags |= sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
     } else {
         flags |= sdl3_sys::video::SDL_WINDOW_RESIZABLE;
@@ -41,7 +40,7 @@ pub fn init(device: &mut device::Device, fullscreen: bool) {
             gfx_info,
             device.ui.config.video.upscale,
             device.ui.config.video.integer_scaling,
-            fullscreen,
+            device.ui.fullscreen,
         )
     }
 }
@@ -53,9 +52,36 @@ pub fn close(ui: &ui::Ui) {
     }
 }
 
-pub fn update_screen() -> bool {
+pub fn update_screen() {
     // when the window is closed, running is set to false
     unsafe { rdp_update_screen() }
+}
+
+pub fn load_state(device: &mut device::Device) {
+    let gfx_info = GFX_INFO {
+        RDRAM: device.rdram.mem.as_mut_ptr(),
+        DMEM: device.rsp.mem.as_mut_ptr(),
+        RDRAM_SIZE: device.rdram.size,
+        DPC_CURRENT_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
+        DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
+        DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
+        DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
+    };
+    unsafe {
+        rdp_new_processor(gfx_info, device.ui.config.video.upscale);
+    }
+}
+
+pub fn check_callback(device: &mut device::Device) {
+    let callback = unsafe { rdp_check_callback() };
+    device.cpu.running = callback.emu_running;
+    if device.netplay.is_none() {
+        if callback.save_state {
+            device.save_state = true;
+        } else if callback.load_state {
+            device.load_state = true;
+        }
+    }
 }
 
 pub fn set_register(reg: u32, value: u32) {

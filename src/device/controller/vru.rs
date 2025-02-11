@@ -17,17 +17,26 @@ const VOICE_STATUS_BUSY: u8 = 0x05;
 const JDT_VRU: u16 = 0x0100; /* VRU */
 const CONT_FLAVOR: u16 = JDT_VRU;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Vru {
     pub status: u8,
     pub voice_state: u8,
     pub load_offset: u8,
     pub voice_init: u8,
+    #[serde(with = "serde_big_array::BigArray")]
     pub word_buffer: [u16; 40],
     pub words: Vec<String>,
     pub talking: bool,
     pub word_mappings: HashMap<String, String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct VruWindow {
+    #[serde(skip)]
     pub window_notifier: Option<tokio::sync::mpsc::Sender<Vec<String>>>,
+    #[serde(skip)]
     pub word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+    #[serde(skip)]
     pub gui_ctx: Option<egui::Context>,
 }
 
@@ -160,14 +169,13 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 device.vru.voice_init = 2;
                 device::events::create_event(
                     device,
-                    device::events::EventType::Vru,
+                    device::events::EVENT_TYPE_VRU,
                     device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
                         + (device.cpu.clock_rate * 2), // 2 seconds
-                    vru_talking_event,
                 )
             } else if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0xEF {
                 device.vru.talking = false;
-                device::events::remove_event(device, device::events::EventType::Vru);
+                device::events::remove_event(device, device::events::EVENT_TYPE_VRU);
             } else if device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 3] == 0x2 {
                 device.vru.voice_init = 0;
                 device.vru.words.clear();
@@ -178,17 +186,17 @@ pub fn process(device: &mut device::Device, channel: usize) {
             let offset = device.pif.channels[channel].tx_buf.unwrap() + 1;
             if u16::from_ne_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap()) == 0 {
                 device.vru.talking = false;
-                device::events::remove_event(device, device::events::EventType::Vru);
+                device::events::remove_event(device, device::events::EVENT_TYPE_VRU);
             }
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
-            let index = if device.vru.window_notifier.is_some() {
+            let index = if device.vru_window.window_notifier.is_some() {
                 ui::vru::prompt_for_match(
                     &device.vru.words,
-                    device.vru.window_notifier.as_ref().unwrap(),
-                    device.vru.word_receiver.as_mut().unwrap(),
-                    device.vru.gui_ctx.as_ref().unwrap(),
+                    device.vru_window.window_notifier.as_ref().unwrap(),
+                    device.vru_window.word_receiver.as_mut().unwrap(),
+                    device.vru_window.gui_ctx.as_ref().unwrap(),
                 )
             } else {
                 0x7FFF
@@ -250,7 +258,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
     }
 }
 
-fn vru_talking_event(device: &mut device::Device) {
+pub fn vru_talking_event(device: &mut device::Device) {
     device.vru.talking = false
 }
 

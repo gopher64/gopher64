@@ -1,26 +1,7 @@
 use crate::device;
 use sha2::{Digest, Sha256};
 
-pub enum CicType {
-    CicNus6101,
-    CicNus6102,
-    CicNus6103,
-    CicNus6105,
-    CicNus6106,
-    CicNus5167,
-}
-
 const CART_MASK: usize = 0xFFFFFFF;
-pub struct Cart {
-    pub rom: Vec<u8>,
-    pub is_viewer_buffer: [u8; 0xFFFF],
-    pub pal: bool,
-    pub latch: u32,
-    pub cic_type: CicType,
-    pub cic_seed: u8,
-    pub rdram_size_offset: usize,
-    pub rtc: device::cart::AfRtc,
-}
 
 pub fn read_mem_fast(
     device: &mut device::Device,
@@ -57,7 +38,7 @@ pub fn read_mem(
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    if device.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
+    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
         let masked_address = address as usize & CART_MASK;
         let mut data = u32::from_be_bytes(
             device.cart.rom[masked_address..masked_address + 4]
@@ -82,9 +63,8 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     let cycles = device::pi::calculate_cycles(device, 1, 4);
     device::events::create_event(
         device,
-        device::events::EventType::PI,
+        device::events::EVENT_TYPE_PI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
-        device::pi::dma_event,
     );
 }
 
@@ -94,7 +74,7 @@ pub fn dma_read(
     mut dram_addr: u32,
     length: u32,
 ) -> u64 {
-    if device.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
+    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
         dram_addr &= device::rdram::RDRAM_MASK as u32;
         cart_addr &= CART_MASK as u32;
 
@@ -177,38 +157,38 @@ fn set_cic(device: &mut device::Device) {
     let hash = calculate_hash(&device.cart.rom[0x40..0x1000]);
     match hash.as_str() {
         "B99F06C4802C2377E31E388435955EF3E99C618A6D55D24699D828EB1075F1EB" => {
-            device.cart.cic_type = CicType::CicNus6101;
+            device.cart.cic_type = device::cart::CicType::CicNus6101;
             device.cart.cic_seed = 0x3F;
             device.cart.rdram_size_offset = 0x318;
         }
         "61E88238552C356C23D19409FE5570EE6910419586BC6FC740F638F761ADC46E" => {
-            device.cart.cic_type = CicType::CicNus6102;
+            device.cart.cic_type = device::cart::CicType::CicNus6102;
             device.cart.cic_seed = 0x3F;
             device.cart.rdram_size_offset = 0x318;
         }
         "BF3620D30817007091EBE9BDDD1B88C23B8A0052170B3309CDE5B6B4238E45E7" => {
-            device.cart.cic_type = CicType::CicNus6103;
+            device.cart.cic_type = device::cart::CicType::CicNus6103;
             device.cart.cic_seed = 0x78;
             device.cart.rdram_size_offset = 0x318;
         }
         "04B7BC6717A9F0EB724CF927E74AD3876C381CBB280D841736FC5E55580B756B" => {
-            device.cart.cic_type = CicType::CicNus6105;
+            device.cart.cic_type = device::cart::CicType::CicNus6105;
             device.cart.cic_seed = 0x91;
             device.cart.rdram_size_offset = 0x3F0;
         }
         "36ADC40148AF56F0D78CD505EB6A90117D1FD6F11C6309E52ED36BC4C6BA340E" => {
-            device.cart.cic_type = CicType::CicNus6106;
+            device.cart.cic_type = device::cart::CicType::CicNus6106;
             device.cart.cic_seed = 0x85;
             device.cart.rdram_size_offset = 0x318;
         }
         "53C0088FB777870D0AF32F0251E964030E2E8B72E830C26042FD191169508C05" => {
-            device.cart.cic_type = CicType::CicNus5167;
+            device.cart.cic_type = device::cart::CicType::CicNus5167;
             device.cart.cic_seed = 0xdd;
             device.cart.rdram_size_offset = 0x318;
-            device.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] = 1;
+            device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] = 1;
         }
         _ => {
-            device.cart.cic_type = CicType::CicNus6102;
+            device.cart.cic_type = device::cart::CicType::CicNus6102;
             device.cart.cic_seed = 0x3F;
             device.cart.rdram_size_offset = 0x318;
             println!("unknown IPL3 {}", hash)

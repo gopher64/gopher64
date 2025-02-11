@@ -60,14 +60,14 @@ const SP_SET_SIG7: u32 = 1 << 24;
 
 const RSP_MEM_MASK: usize = 0x1FFF;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub enum DmaDir {
     None,
     Write,
     Read,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct RspDma {
     pub dir: DmaDir,
     pub length: u32,
@@ -75,10 +75,12 @@ pub struct RspDma {
     pub dramaddr: u32,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Rsp {
     pub cpu: device::rsp_cpu::Cpu,
     pub regs: [u32; SP_REGS_COUNT as usize],
     pub regs2: [u32; SP_REGS2_COUNT as usize],
+    #[serde(with = "serde_big_array::BigArray")]
     pub mem: [u8; 0x2000],
     pub fifo: [RspDma; 2],
     pub last_status_value: u32,
@@ -201,11 +203,10 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
 
     device::events::create_event(
         device,
-        device::events::EventType::SPDma,
+        device::events::EVENT_TYPE_SPDMA,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
             + device::rdram::rdram_calculate_cycles((count * length) as u64)
             + 9,
-        device::rsp_interface::fifo_pop,
     );
 }
 
@@ -241,7 +242,7 @@ fn fifo_push(device: &mut device::Device, dir: DmaDir) {
     }
 }
 
-fn fifo_pop(device: &mut device::Device) {
+pub fn fifo_pop(device: &mut device::Device) {
     if device.rsp.regs[SP_DMA_FULL_REG as usize] != 0 {
         device.rsp.fifo[0].dir = device.rsp.fifo[1].dir;
         device.rsp.fifo[0].length = device.rsp.fifo[1].length;
@@ -350,7 +351,7 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
         device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_HALT
     }
     if w & SP_SET_HALT != 0 && w & SP_CLR_HALT == 0 {
-        device::events::remove_event(device, device::events::EventType::SP);
+        device::events::remove_event(device, device::events::EVENT_TYPE_SP);
         device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT
     }
 
@@ -465,14 +466,13 @@ fn do_task(device: &mut device::Device) {
 
         device::events::create_event(
             device,
-            device::events::EventType::SP,
+            device::events::EVENT_TYPE_SP,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
-            rsp_event,
         )
     }
 }
 
-fn rsp_event(device: &mut device::Device) {
+pub fn rsp_event(device: &mut device::Device) {
     if device.rsp.cpu.broken {
         device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT | SP_STATUS_BROKE;
 

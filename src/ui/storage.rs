@@ -1,5 +1,4 @@
-use crate::netplay;
-use crate::ui;
+use crate::{netplay, ui};
 use std::io::Read;
 use std::io::Write;
 
@@ -21,10 +20,12 @@ pub struct Paths {
     pub pak_file_path: std::path::PathBuf,
     pub sdcard_file_path: std::path::PathBuf,
     pub romsave_file_path: std::path::PathBuf,
+    pub savestate_file_path: std::path::PathBuf,
 }
 
 // the bool indicates whether the save has been written to
 // if that is the case, it will be flushed to the disk when the program closes
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Saves {
     pub eeprom: (Vec<u8>, bool),
     pub sram: (Vec<u8>, bool),
@@ -122,7 +123,9 @@ pub fn get_game_name(rom: &[u8]) -> String {
 pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
     ui.save_type = get_save_type(rom, &ui.game_id);
 
-    let base_path = ui.dirs.data_dir.join("saves");
+    let saves_path = ui.dirs.data_dir.join("saves");
+
+    let states_path = ui.dirs.data_dir.join("states");
 
     let game_name = get_game_name(rom);
 
@@ -132,35 +135,40 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
         &game_name
     };
 
-    ui.paths.eep_file_path.clone_from(&base_path);
+    ui.paths.eep_file_path.clone_from(&saves_path);
     ui.paths
         .eep_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".eep");
 
-    ui.paths.sra_file_path.clone_from(&base_path);
+    ui.paths.sra_file_path.clone_from(&saves_path);
     ui.paths
         .sra_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".sra");
 
-    ui.paths.fla_file_path.clone_from(&base_path);
+    ui.paths.fla_file_path.clone_from(&saves_path);
     ui.paths
         .fla_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".fla");
 
-    ui.paths.pak_file_path.clone_from(&base_path);
+    ui.paths.pak_file_path.clone_from(&saves_path);
     ui.paths
         .pak_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".mpk");
 
-    ui.paths.sdcard_file_path.clone_from(&base_path);
+    ui.paths.sdcard_file_path.clone_from(&saves_path);
     ui.paths
         .sdcard_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".img");
 
-    ui.paths.romsave_file_path.clone_from(&base_path);
+    ui.paths.romsave_file_path.clone_from(&saves_path);
     ui.paths
         .romsave_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".romsave");
+
+    ui.paths.savestate_file_path.clone_from(&states_path);
+    ui.paths
+        .savestate_file_path
+        .push(prefix.to_owned() + "-" + &ui.game_hash + ".state");
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
@@ -220,7 +228,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
 
             let mut compressed_sd = Vec::new();
             if !ui.saves.sdcard.0.is_empty() {
-                compressed_sd = compress_file(&ui.saves.sdcard.0);
+                compressed_sd = compress_file(&[(&ui.saves.sdcard.0, "save")]);
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -232,7 +240,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             let mut compressed_romsave = Vec::new();
             if !ui.saves.romsave.0.is_empty() {
                 compressed_romsave =
-                    compress_file(&postcard::to_stdvec(&ui.saves.romsave.0).unwrap());
+                    compress_file(&[(&postcard::to_stdvec(&ui.saves.romsave.0).unwrap(), "save")]);
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -249,41 +257,43 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             let mut compressed_sd = Vec::new();
             netplay::receive_save(netplay.as_mut().unwrap(), "img", &mut compressed_sd);
             if !compressed_sd.is_empty() {
-                ui.saves.sdcard.0 = decompress_file(&compressed_sd);
+                ui.saves.sdcard.0 = decompress_file(&compressed_sd, "save");
             }
 
             let mut compressed_romsave = Vec::new();
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut compressed_romsave);
             if !compressed_romsave.is_empty() {
-                let romsave_bytes = decompress_file(&compressed_romsave);
+                let romsave_bytes = decompress_file(&compressed_romsave, "save");
                 ui.saves.romsave.0 = postcard::from_bytes(&romsave_bytes).unwrap();
             }
         }
     }
 }
 
-fn decompress_file(input: &[u8]) -> Vec<u8> {
+pub fn decompress_file(input: &[u8], name: &str) -> Vec<u8> {
     let mut decompressed_file = Vec::new();
     {
         let mut reader = zip::ZipArchive::new(std::io::Cursor::new(input)).unwrap();
-        let mut file = reader.by_index(0).unwrap();
+        let mut file = reader.by_name(name).unwrap();
         file.read_to_end(&mut decompressed_file).unwrap();
     }
     decompressed_file
 }
 
-fn compress_file(input: &[u8]) -> Vec<u8> {
+pub fn compress_file(data: &[(&[u8], &str)]) -> Vec<u8> {
     let mut compressed_file = Vec::new();
     {
         let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut compressed_file));
-        writer
-            .start_file(
-                "save",
-                zip::write::SimpleFileOptions::default()
-                    .compression_method(zip::CompressionMethod::Deflated),
-            )
-            .unwrap();
-        writer.write_all(input).unwrap();
+        for item in data {
+            writer
+                .start_file(
+                    item.1,
+                    zip::write::SimpleFileOptions::default()
+                        .compression_method(zip::CompressionMethod::Zstd),
+                )
+                .unwrap();
+            writer.write_all(item.0).unwrap();
+        }
     }
     compressed_file
 }

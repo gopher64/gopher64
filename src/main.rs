@@ -5,6 +5,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 mod device;
 mod netplay;
+mod savestates;
 mod ui;
 use clap::Parser;
 use ui::gui;
@@ -78,7 +79,11 @@ async fn main() {
     }
     result = std::fs::create_dir_all(dirs.data_dir.join("saves"));
     if result.is_err() {
-        panic!("could not create data dir: {}", result.err().unwrap())
+        panic!("could not create save dir: {}", result.err().unwrap())
+    }
+    result = std::fs::create_dir_all(dirs.data_dir.join("states"));
+    if result.is_err() {
+        panic!("could not create state dir: {}", result.err().unwrap())
     }
     let running_file = dirs.cache_dir.join("game_running");
     if running_file.exists() {
@@ -91,11 +96,11 @@ async fn main() {
     let args = Args::parse();
     let args_as_strings: Vec<String> = std::env::args().collect();
     let args_count = args_as_strings.len();
-    if args_count > 1 {
-        let mut device = device::Device::new();
+    if args_count > 1 && args.game.is_none() {
+        let mut ui = ui::Ui::new();
 
         if args.clear_input_bindings {
-            ui::input::clear_bindings(&mut device.ui);
+            ui::input::clear_bindings(&mut ui);
             return;
         }
         if args.port.is_some() {
@@ -106,7 +111,7 @@ async fn main() {
             }
         }
         if args.list_controllers {
-            let controllers = gui::get_controller_names(&device.ui);
+            let controllers = gui::get_controller_names(&ui);
             for (i, controller) in controllers.iter().enumerate() {
                 println!("Controller {}: {}", i, controller);
             }
@@ -118,7 +123,7 @@ async fn main() {
                 return;
             }
             ui::input::assign_controller(
-                &mut device.ui,
+                &mut ui,
                 args.assign_controller.unwrap(),
                 args.port.unwrap(),
             );
@@ -130,7 +135,7 @@ async fn main() {
                 return;
             }
             ui::input::bind_input_profile(
-                &mut device.ui,
+                &mut ui,
                 args.bind_input_profile.unwrap(),
                 args.port.unwrap(),
             );
@@ -138,22 +143,30 @@ async fn main() {
         }
         if args.configure_input_profile.is_some() {
             ui::input::configure_input_profile(
-                &mut device.ui,
+                &mut ui,
                 args.configure_input_profile.unwrap(),
                 args.use_dinput,
             );
             return;
         }
-
-        if args.game.is_some() {
-            let file_path = std::path::Path::new(args.game.as_ref().unwrap());
-            let rom_contents = device::get_rom_contents(file_path);
-            if rom_contents.is_empty() {
-                println!("Could not read rom file");
-                return;
-            }
-            device::run_game(rom_contents, &mut device, args.fullscreen);
+    } else if args.game.is_some() {
+        let file_path = std::path::Path::new(args.game.as_ref().unwrap());
+        let rom_contents = device::get_rom_contents(file_path);
+        if rom_contents.is_empty() {
+            println!("Could not read rom file");
+            return;
         }
+        let handle = std::thread::Builder::new()
+            .name("n64".to_string())
+            .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
+            .spawn(move || {
+                let mut device = device::Device::new();
+                device.ui.fullscreen = args.fullscreen;
+                device::run_game(rom_contents, &mut device);
+            })
+            .unwrap();
+
+        handle.join().unwrap();
     } else {
         let options = eframe::NativeOptions {
             viewport: eframe::egui::ViewportBuilder::default()

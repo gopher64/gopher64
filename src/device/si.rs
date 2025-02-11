@@ -14,13 +14,14 @@ pub const SI_STATUS_IO_BUSY: u32 = 1 << 1;
 //const SI_STATUS_DMA_ERROR: u32 = 1 << 3;
 const SI_STATUS_INTERRUPT: u32 = 1 << 12;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum DmaDir {
     None,
     Write,
     Read,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Si {
     pub regs: [u32; SI_REGS_COUNT as usize],
     pub dma_dir: DmaDir,
@@ -44,9 +45,8 @@ fn dma_read(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::SI,
+        device::events::EVENT_TYPE_SI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + duration,
-        dma_event,
     )
 }
 
@@ -59,9 +59,8 @@ fn dma_write(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::SI,
+        device::events::EVENT_TYPE_SI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + 6000, //based on https://github.com/rasky/n64-systembench
-        dma_event,
     )
 }
 

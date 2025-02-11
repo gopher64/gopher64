@@ -1,5 +1,4 @@
-use crate::device;
-use crate::ui;
+use crate::{device, ui};
 
 const AI_DRAM_ADDR_REG: u32 = 0;
 const AI_LEN_REG: u32 = 1;
@@ -12,14 +11,16 @@ pub const AI_REGS_COUNT: u32 = 6;
 const AI_STATUS_BUSY: u32 = 0x40000000;
 const AI_STATUS_FULL: u32 = 0x80000000;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Ai {
     pub regs: [u32; AI_REGS_COUNT as usize],
     pub fifo: [AiDma; 2],
     pub last_read: u64,
     pub delayed_carry: bool,
+    pub freq: u64,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AiDma {
     pub address: u64,
     pub length: u64,
@@ -31,7 +32,7 @@ fn get_remaining_dma_length(device: &mut device::Device) -> u64 {
         return 0;
     }
 
-    let next_ai_event = device::events::get_event(device, device::events::EventType::AI);
+    let next_ai_event = device::events::get_event(device, device::events::EVENT_TYPE_AI);
     if next_ai_event.is_none() {
         return 0;
     }
@@ -64,9 +65,8 @@ fn do_dma(device: &mut device::Device) {
     /* schedule end of dma event */
     device::events::create_event(
         device,
-        device::events::EventType::AI,
+        device::events::EVENT_TYPE_AI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + device.ai.fifo[0].duration,
-        dma_event,
     );
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_AI);
 }
@@ -145,9 +145,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
         AI_STATUS_REG => device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_AI),
         AI_DACRATE_REG => {
             if device.ai.regs[reg as usize] != value & mask {
-                let frequency = device.vi.clock / (1 + (value & mask)) as u64;
+                device.ai.freq = device.vi.clock / (1 + (value & mask)) as u64;
                 ui::audio::close(&mut device.ui);
-                ui::audio::init(&mut device.ui, frequency)
+                ui::audio::init(&mut device.ui, device.ai.freq)
             }
             device::memory::masked_write_32(&mut device.ai.regs[reg as usize], value, mask)
         }
@@ -155,7 +155,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     }
 }
 
-fn dma_event(device: &mut device::Device) {
+pub fn dma_event(device: &mut device::Device) {
     if device.ai.last_read != 0 {
         let diff = device.ai.fifo[0].length - device.ai.last_read;
         ui::audio::play_audio(

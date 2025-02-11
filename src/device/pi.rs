@@ -26,6 +26,7 @@ const PI_STATUS_INTERRUPT: u32 = 1 << 3;
 const PI_STATUS_RESET: u32 = 1 << 0;
 const PI_STATUS_CLR_INTR: u32 = 1 << 1;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Pi {
     pub regs: [u32; PI_REGS_COUNT as usize],
 }
@@ -66,9 +67,8 @@ fn dma_read(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::PI,
+        device::events::EVENT_TYPE_PI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
-        dma_event,
     );
 
     /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */
@@ -99,9 +99,8 @@ fn dma_write(device: &mut device::Device) {
 
     device::events::create_event(
         device,
-        device::events::EventType::PI,
+        device::events::EVENT_TYPE_PI,
         device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
-        dma_event,
     );
 
     /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */

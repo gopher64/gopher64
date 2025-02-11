@@ -1,4 +1,4 @@
-use crate::device;
+use crate::{device, savestates};
 
 //const FCR31_FLAG_INEXACT_BIT: u32 = 1 << 2;
 //const FCR31_FLAG_UNDERFLOW_BIT: u32 = 1 << 3;
@@ -24,6 +24,7 @@ const FCR31_CAUSE_MASK: u32 = 0b00000000000000111111000000000000;
 const FCR31_ENABLE_MASK: u32 = 0b00000000000000000000111110000000;
 const FCR31_WRITE_MASK: u32 = 0b00000001100000111111111111111111;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cop1 {
     pub fcr0: u32,
     pub fcr31: u32,
@@ -31,11 +32,17 @@ pub struct Cop1 {
     //pub flush_mode: u32,
     pub fgr32: [[u8; 4]; 32],
     pub fgr64: [[u8; 8]; 32],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 32],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub b_instrs: [fn(&mut device::Device, u32); 4],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub s_instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub d_instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub w_instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub l_instrs: [fn(&mut device::Device, u32); 64],
 }
 
@@ -448,10 +455,7 @@ pub fn get_fpr_double(device: &device::Device, index: usize) -> f64 {
     }
 }
 
-pub fn init(device: &mut device::Device) {
-    set_fgr_registers(device, 0);
-    device.cpu.cop1.fcr0 = 0b101000000000;
-
+pub fn map_instructions(device: &mut device::Device) {
     device.cpu.cop1.b_instrs = [
         device::fpu_instructions::bc1f,  // 0
         device::fpu_instructions::bc1t,  // 1
@@ -761,6 +765,13 @@ pub fn init(device: &mut device::Device) {
         device::cop1::reserved,       // 30
         device::cop1::reserved,       // 31
     ]
+}
+
+pub fn init(device: &mut device::Device) {
+    set_fgr_registers(device, 0);
+    device.cpu.cop1.fcr0 = 0b101000000000;
+
+    map_instructions(device);
 }
 
 pub fn set_fgr_registers(device: &mut device::Device, status_reg: u64) {

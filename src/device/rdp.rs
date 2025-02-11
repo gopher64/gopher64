@@ -1,5 +1,4 @@
-use crate::device;
-use crate::ui;
+use crate::{device, savestates, ui};
 
 pub const DPC_START_REG: u32 = 0;
 pub const DPC_END_REG: u32 = 1;
@@ -41,6 +40,7 @@ const DPC_CLR_PIPE_CTR: u32 = 1 << 7;
 const DPC_CLR_CMD_CTR: u32 = 1 << 8;
 const DPC_CLR_CLOCK_CTR: u32 = 1 << 9;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Rdp {
     pub regs_dpc: [u32; DPC_REGS_COUNT as usize],
     pub regs_dps: [u32; DPS_REGS_COUNT as usize],
@@ -118,11 +118,19 @@ fn run_rdp(device: &mut device::Device) {
         DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY;
 
     if timer != 0 {
+        if device.save_state {
+            // Right after full sync, good time for save state
+            device.save_state = false;
+            savestates::create_savestate(device);
+        } else if device.load_state {
+            // Right after full sync, good time for save state
+            device.load_state = false;
+            savestates::load_savestate(device);
+        }
         device::events::create_event(
             device,
-            device::events::EventType::DP,
+            device::events::EVENT_TYPE_DP,
             device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
-            rdp_interrupt_event,
         )
     }
 }
@@ -197,7 +205,7 @@ pub fn init(device: &mut device::Device) {
         DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CBUF_READY;
 }
 
-fn rdp_interrupt_event(device: &mut device::Device) {
+pub fn rdp_interrupt_event(device: &mut device::Device) {
     device.rdp.regs_dpc[DPC_STATUS_REG as usize] &=
         !(DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY);
 

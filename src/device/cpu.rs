@@ -1,6 +1,6 @@
-use crate::device;
+use crate::{device, savestates};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum State {
     Step,
     Take,
@@ -11,10 +11,13 @@ pub enum State {
     Exception,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct BranchState {
     pub state: State,
     pub pc: u64,
 }
+
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cpu {
     pub cop0: device::cop0::Cop0,
     pub cop1: device::cop1::Cop1,
@@ -28,10 +31,13 @@ pub struct Cpu {
     pub running: bool,
     pub llbit: bool,
     pub clock_rate: u64,
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub special_instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub regimm_instrs: [fn(&mut device::Device, u32); 32],
-    pub events: [device::events::Event; device::events::EventType::Count as usize],
+    pub events: [device::events::Event; device::events::EVENT_TYPE_COUNT],
     pub next_event_count: u64,
     pub next_event: usize,
 }
@@ -47,9 +53,7 @@ pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::De
     }
 }
 
-pub fn init(device: &mut device::Device) {
-    device.cpu.clock_rate = 93750000;
-
+pub fn map_instructions(device: &mut device::Device) {
     device.cpu.instrs = [
         device::cop0::reserved,           // SPECIAL
         device::cop0::reserved,           // REGIMM
@@ -216,6 +220,13 @@ pub fn init(device: &mut device::Device) {
         device::cop0::reserved,            // 30
         device::cop0::reserved,            // 31
     ];
+}
+
+pub fn init(device: &mut device::Device) {
+    device.cpu.clock_rate = 93750000;
+
+    map_instructions(device);
+
     device::cop0::init(device);
     device::cop1::init(device);
     device::cop2::init(device);

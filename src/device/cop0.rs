@@ -1,4 +1,4 @@
-use crate::device;
+use crate::{device, savestates};
 
 pub const COP0_INDEX_REG: u32 = 0;
 const COP0_RANDOM_REG: u32 = 1;
@@ -88,11 +88,14 @@ const COP0_XCONTEXT_REG_MASK: u64 =
 const COP0_PARITYERR_REG_MASK: u64 = 0b00000000000000000000000011111111;
 const COP0_TAGLO_REG_MASK: u64 = 0b00001111111111111111111111000000;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cop0 {
     pub reg_latch: u64,
     pub regs: [u64; COP0_REGS_COUNT as usize],
     pub reg_write_masks: [u64; COP0_REGS_COUNT as usize],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 32],
+    #[serde(skip, default = "savestates::default_instructions")]
     pub instrs2: [fn(&mut device::Device, u32); 32],
     pub tlb_lut_r: Vec<device::tlb::TlbLut>,
     pub tlb_lut_w: Vec<device::tlb::TlbLut>,
@@ -211,9 +214,8 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
 
             device::events::create_event(
                 device,
-                device::events::EventType::Compare,
+                device::events::EVENT_TYPE_COMPARE,
                 device.cpu.cop0.regs[COP0_COUNT_REG as usize] + ((compare_event_diff as u64) << 1),
-                compare_event,
             );
             device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_IP7;
             device.cpu.cop0.pending_compare_interrupt = false;
@@ -233,13 +235,12 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
     device::exceptions::check_pending_interrupts(device);
 }
 
-fn compare_event(device: &mut device::Device) {
+pub fn compare_event(device: &mut device::Device) {
     device.cpu.cop0.pending_compare_interrupt = true;
     device::events::create_event(
         device,
-        device::events::EventType::Compare,
+        device::events::EVENT_TYPE_COMPARE,
         device.cpu.next_event_count + (u32::MAX as u64),
-        compare_event,
     );
     device::exceptions::check_pending_interrupts(device);
 }
@@ -258,42 +259,7 @@ pub fn add_cycles(device: &mut device::Device, cycles: u64) {
     device.cpu.cop0.regs[COP0_COUNT_REG as usize] += cycles // COUNT_REG is shifted right 1 bit when read by MFC0
 }
 
-pub fn init(device: &mut device::Device) {
-    device.cpu.cop0.reg_write_masks = [
-        COP0_INDEX_REG_MASK,
-        0, // Random, read only
-        COP0_ENTRYLO_REG_MASK,
-        COP0_ENTRYLO_REG_MASK,
-        COP0_CONTEXT_REG_MASK,
-        COP0_PAGEMASK_REG_MASK,
-        COP0_WIRED_REG_MASK,
-        0,               // 7
-        0,               // BadVAddr, read only
-        u32::MAX as u64, // count
-        COP0_ENTRYHI_REG_MASK,
-        u32::MAX as u64, // compare
-        COP0_STATUS_REG_MASK,
-        COP0_CAUSE_REG_MASK,
-        u64::MAX, // EPC
-        0,        // previd, read only
-        COP0_CONFIG_REG_MASK,
-        COP0_LLADDR_REG_MASK,
-        COP0_WATCHLO_REG_MASK,
-        COP0_WATCHHI_REG_MASK,
-        COP0_XCONTEXT_REG_MASK,
-        0, // 21
-        0, // 22
-        0, // 23
-        0, // 24
-        0, // 25
-        COP0_PARITYERR_REG_MASK,
-        0, // cache error
-        COP0_TAGLO_REG_MASK,
-        0,        // taghi
-        u64::MAX, // ErrorPC
-        0,        // 31
-    ];
-
+pub fn map_instructions(device: &mut device::Device) {
     device.cpu.cop0.instrs = [
         device::cop0::mfc0,        // 0
         device::cop0::dmfc0,       // 1
@@ -363,6 +329,46 @@ pub fn init(device: &mut device::Device) {
         device::cop0::reserved, // 30
         device::cop0::reserved, // 31
     ];
+}
+
+pub fn init(device: &mut device::Device) {
+    device.cpu.cop0.reg_write_masks = [
+        COP0_INDEX_REG_MASK,
+        0, // Random, read only
+        COP0_ENTRYLO_REG_MASK,
+        COP0_ENTRYLO_REG_MASK,
+        COP0_CONTEXT_REG_MASK,
+        COP0_PAGEMASK_REG_MASK,
+        COP0_WIRED_REG_MASK,
+        0,               // 7
+        0,               // BadVAddr, read only
+        u32::MAX as u64, // count
+        COP0_ENTRYHI_REG_MASK,
+        u32::MAX as u64, // compare
+        COP0_STATUS_REG_MASK,
+        COP0_CAUSE_REG_MASK,
+        u64::MAX, // EPC
+        0,        // previd, read only
+        COP0_CONFIG_REG_MASK,
+        COP0_LLADDR_REG_MASK,
+        COP0_WATCHLO_REG_MASK,
+        COP0_WATCHHI_REG_MASK,
+        COP0_XCONTEXT_REG_MASK,
+        0, // 21
+        0, // 22
+        0, // 23
+        0, // 24
+        0, // 25
+        COP0_PARITYERR_REG_MASK,
+        0, // cache error
+        COP0_TAGLO_REG_MASK,
+        0,        // taghi
+        u64::MAX, // ErrorPC
+        0,        // 31
+    ];
+
+    map_instructions(device);
+
     // taken from VR4300 manual
     device.cpu.cop0.regs[COP0_RANDOM_REG as usize] = 0b00000000000000000000000000011111;
     device.cpu.cop0.regs[COP0_CONFIG_REG as usize] = 0b01110000000001101110010001100000;
@@ -373,10 +379,5 @@ pub fn init(device: &mut device::Device) {
     device.cpu.cop0.regs[COP0_BADVADDR_REG as usize] = 0xFFFFFFFF;
     device.cpu.cop0.regs[COP0_CONTEXT_REG as usize] = 0x7FFFF0;
 
-    device::events::create_event(
-        device,
-        device::events::EventType::Compare,
-        u32::MAX as u64,
-        compare_event,
-    )
+    device::events::create_event(device, device::events::EVENT_TYPE_COMPARE, u32::MAX as u64)
 }
