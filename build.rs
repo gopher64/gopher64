@@ -160,14 +160,6 @@ fn main() {
         simd_build.compile("simd");
     }
 
-    if os == "macos" {
-        // Add Homebrew lib path for Apple Silicon Macs
-        println!("cargo:rustc-link-search=native=/opt/homebrew/lib");
-        // Add Homebrew lib path for Intel Macs
-        println!("cargo:rustc-link-search=native=/usr/local/lib");
-        println!("cargo:rustc-link-lib=static=MoltenVK");
-    }
-
     let git_output = std::process::Command::new("git")
         .args(["rev-parse", "HEAD"])
         .output()

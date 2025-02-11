@@ -96,11 +96,11 @@ async fn main() {
     let args = Args::parse();
     let args_as_strings: Vec<String> = std::env::args().collect();
     let args_count = args_as_strings.len();
-    if args_count > 1 {
-        let mut device = device::Device::new();
+    if args_count > 1 && args.game.is_none() {
+        let mut ui = ui::Ui::new();
 
         if args.clear_input_bindings {
-            ui::input::clear_bindings(&mut device.ui);
+            ui::input::clear_bindings(&mut ui);
             return;
         }
         if args.port.is_some() {
@@ -111,7 +111,7 @@ async fn main() {
             }
         }
         if args.list_controllers {
-            let controllers = gui::get_controller_names(&device.ui);
+            let controllers = gui::get_controller_names(&ui);
             for (i, controller) in controllers.iter().enumerate() {
                 println!("Controller {}: {}", i, controller);
             }
@@ -123,7 +123,7 @@ async fn main() {
                 return;
             }
             ui::input::assign_controller(
-                &mut device.ui,
+                &mut ui,
                 args.assign_controller.unwrap(),
                 args.port.unwrap(),
             );
@@ -135,7 +135,7 @@ async fn main() {
                 return;
             }
             ui::input::bind_input_profile(
-                &mut device.ui,
+                &mut ui,
                 args.bind_input_profile.unwrap(),
                 args.port.unwrap(),
             );
@@ -143,22 +143,29 @@ async fn main() {
         }
         if args.configure_input_profile.is_some() {
             ui::input::configure_input_profile(
-                &mut device.ui,
+                &mut ui,
                 args.configure_input_profile.unwrap(),
                 args.use_dinput,
             );
             return;
         }
-
-        if args.game.is_some() {
-            let file_path = std::path::Path::new(args.game.as_ref().unwrap());
-            let rom_contents = device::get_rom_contents(file_path);
-            if rom_contents.is_empty() {
-                println!("Could not read rom file");
-                return;
-            }
-            device::run_game(rom_contents, &mut device, args.fullscreen);
+    } else if args.game.is_some() {
+        let file_path = std::path::Path::new(args.game.as_ref().unwrap());
+        let rom_contents = device::get_rom_contents(file_path);
+        if rom_contents.is_empty() {
+            println!("Could not read rom file");
+            return;
         }
+        let handle = std::thread::Builder::new()
+            .name("n64".to_string())
+            .stack_size(16 * 1024 * 1024)
+            .spawn(move || {
+                let mut device = device::Device::new();
+                device::run_game(rom_contents, &mut device, args.fullscreen);
+            })
+            .unwrap();
+
+        handle.join().unwrap();
     } else {
         let options = eframe::NativeOptions {
             viewport: eframe::egui::ViewportBuilder::default()
