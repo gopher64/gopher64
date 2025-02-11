@@ -149,6 +149,30 @@ pub fn load_savestate(device: &mut device::Device) {
             device.memory.icache[line_index].instruction[7] =
                 device::cpu::decode_opcode(device, device.memory.icache[line_index].words[7]);
         }
+
+        for i in 0..4 {
+            if device.pif.channels[i].pak_handler.is_some() {
+                if device.pif.channels[i].pak_handler.unwrap().pak_type
+                    == device::controller::PakType::RumblePak
+                {
+                    let rumblepak_handler = device::controller::PakHandler {
+                        read: device::controller::rumble::read,
+                        write: device::controller::rumble::write,
+                        pak_type: device::controller::PakType::RumblePak,
+                    };
+                    device.pif.channels[i].pak_handler = Some(rumblepak_handler);
+                } else if device.pif.channels[i].pak_handler.unwrap().pak_type
+                    == device::controller::PakType::MemPak
+                {
+                    let mempak_handler = device::controller::PakHandler {
+                        read: device::controller::mempak::read,
+                        write: device::controller::mempak::write,
+                        pak_type: device::controller::PakType::MemPak,
+                    };
+                    device.pif.channels[i].pak_handler = Some(mempak_handler);
+                }
+            }
+        }
     }
 }
 
