@@ -66,7 +66,6 @@ pub fn run_game(rom_contents: Vec<u8>, device: &mut Device) {
 
     ui::storage::init(&mut device.ui, &device.cart.rom);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
-    cart::rom::load_rom_save(device);
 
     cpu::run(device);
 
