@@ -52,8 +52,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         let masked_address = address as usize & CART_MASK;
         let mut data = read_cart_word(device, masked_address);
         device::memory::masked_write_32(&mut data, value, mask);
-        let bytes = data.to_be_bytes();
-        for (i, item) in bytes.iter().enumerate() {
+        for (i, item) in data.to_be_bytes().iter().enumerate() {
             device
                 .ui
                 .saves
