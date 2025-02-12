@@ -59,6 +59,7 @@ fn create_limiter(device: &mut device::Device) {
     .unwrap();
     device.vi.limiter = Some(governor::RateLimiter::direct(quota));
     let _ = device.vi.limiter.as_ref().unwrap().check();
+    //println!("new limit freq: {}", device.vi.limit_freq);
 }
 
 fn set_vertical_interrupt(device: &mut device::Device) {
