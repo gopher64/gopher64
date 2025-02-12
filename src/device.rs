@@ -436,6 +436,8 @@ impl Device {
                 count_per_scanline: 0,
                 limiter: None,
                 vi_counter: 0,
+                last_origin: 0,
+                internal_frame_counter: 0,
             },
             vru_window: controller::vru::VruWindow {
                 window_notifier: None,
