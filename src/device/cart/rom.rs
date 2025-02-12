@@ -3,17 +3,29 @@ use sha2::{Digest, Sha256};
 
 const CART_MASK: usize = 0xFFFFFFF;
 
+fn read_cart_word(device: &mut device::Device, address: usize) -> u32 {
+    let mut data: [u8; 4] = device.cart.rom[address..address + 4].try_into().unwrap();
+    for i in 0..4 {
+        if device
+            .ui
+            .saves
+            .romsave
+            .0
+            .contains_key(&(address as u32 + i))
+        {
+            data[i as usize] = device.ui.saves.romsave.0[&(address as u32 + i)];
+        }
+    }
+    u32::from_be_bytes(data)
+}
+
 pub fn read_mem_fast(
     device: &mut device::Device,
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
     let masked_address = address as usize & CART_MASK;
-    u32::from_be_bytes(
-        device.cart.rom[masked_address..masked_address + 4]
-            .try_into()
-            .unwrap(),
-    )
+    read_cart_word(device, masked_address)
 }
 
 pub fn read_mem(
@@ -29,29 +41,22 @@ pub fn read_mem(
         device.cart.latch
     } else {
         let masked_address = address as usize & CART_MASK;
-        u32::from_be_bytes(
-            device.cart.rom[masked_address..masked_address + 4]
-                .try_into()
-                .unwrap(),
-        )
+        read_cart_word(device, masked_address)
     }
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
         let masked_address = address as usize & CART_MASK;
-        let mut data = u32::from_be_bytes(
-            device.cart.rom[masked_address..masked_address + 4]
-                .try_into()
-                .unwrap(),
-        );
+        let mut data = read_cart_word(device, masked_address);
         device::memory::masked_write_32(&mut data, value, mask);
-        device.cart.rom[masked_address..masked_address + 4].copy_from_slice(&data.to_be_bytes());
-        for i in 0..4 {
-            device.ui.saves.romsave.0.insert(
-                (masked_address + i) as u32,
-                device.cart.rom[masked_address + i],
-            );
+        for (i, item) in data.to_be_bytes().iter().enumerate() {
+            device
+                .ui
+                .saves
+                .romsave
+                .0
+                .insert((masked_address + i) as u32, *item);
         }
         device.ui.saves.romsave.1 = true;
     }
@@ -80,15 +85,10 @@ pub fn dma_read(
 
         for i in 0..length {
             if cart_addr + i < device.cart.rom.len() as u32 {
-                device.cart.rom[(cart_addr + i) as usize] =
-                    device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
-
-                device
-                    .ui
-                    .saves
-                    .romsave
-                    .0
-                    .insert(cart_addr + i, device.cart.rom[(cart_addr + i) as usize]);
+                device.ui.saves.romsave.0.insert(
+                    cart_addr + i,
+                    device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
+                );
 
                 device.ui.saves.romsave.1 = true;
             }
@@ -110,7 +110,11 @@ pub fn dma_write(
     let mut i = dram_addr;
     let mut j = cart_addr;
     while i < dram_addr + length && j < device.cart.rom.len() as u32 {
-        device.rdram.mem[i as usize ^ device.byte_swap] = device.cart.rom[j as usize];
+        if device.ui.saves.romsave.0.contains_key(&j) {
+            device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.saves.romsave.0[&j];
+        } else {
+            device.rdram.mem[i as usize ^ device.byte_swap] = device.cart.rom[j as usize];
+        }
         i += 1;
         j += 1;
     }
@@ -132,15 +136,6 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     device.ui.game_id = String::from_utf8(device.cart.rom[0x3B..0x3E].to_vec()).unwrap();
     if device.ui.game_id.contains('\0') {
         device.ui.game_id = String::from("UNK");
-    }
-}
-
-pub fn load_rom_save(device: &mut device::Device) {
-    if device.ui.saves.romsave.0.is_empty() {
-        return;
-    }
-    for (key, value) in device.ui.saves.romsave.0.iter() {
-        device.cart.rom[*key as usize] = *value
     }
 }
 
