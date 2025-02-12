@@ -31,13 +31,13 @@ pub struct Vi {
     pub internal_frame_counter: u64,
     pub min_wait_time: std::time::Duration,
     pub frame_time: f64,
-    pub limit_buffer: u64,
+    pub limit_freq: u64,
     #[serde(skip)]
     #[serde(default = "std::time::Instant::now")]
-    pub limit_buffer_check: std::time::Instant,
+    pub limit_freq_check: std::time::Instant,
 }
 
-const MAX_LIMIT_BUFFER: u64 = 3;
+const MAX_LIMIT_FREQ: u64 = 3;
 
 pub fn set_expected_refresh_rate(device: &mut device::Device) {
     let expected_refresh_rate = device.vi.clock as f64
@@ -54,7 +54,7 @@ pub fn set_expected_refresh_rate(device: &mut device::Device) {
 
 fn create_limiter(device: &mut device::Device) {
     let quota = governor::Quota::with_period(std::time::Duration::from_secs_f64(
-        device.vi.frame_time * device.vi.limit_buffer as f64,
+        device.vi.frame_time * device.vi.limit_freq as f64,
     ))
     .unwrap();
     device.vi.limiter = Some(governor::RateLimiter::direct(quota));
@@ -146,7 +146,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     }
 
     device.vi.vi_counter += 1;
-    if device.vi.vi_counter % device.vi.limit_buffer == 0 && enable_speed_limiter {
+    if device.vi.vi_counter % device.vi.limit_freq == 0 && enable_speed_limiter {
         speed_limiter(device);
     }
 
@@ -194,22 +194,21 @@ fn speed_limiter(device: &mut device::Device) {
     }
 
     if std::time::Instant::now()
-        .duration_since(device.vi.limit_buffer_check)
+        .duration_since(device.vi.limit_freq_check)
         .as_secs_f64()
         > 1.0
     {
-        if device.vi.min_wait_time.as_secs_f64() == 0.0 && device.vi.limit_buffer < MAX_LIMIT_BUFFER
-        {
-            device.vi.limit_buffer += 1;
+        if device.vi.min_wait_time.as_secs_f64() == 0.0 && device.vi.limit_freq < MAX_LIMIT_FREQ {
+            device.vi.limit_freq += 1;
             create_limiter(device);
         } else if device.vi.min_wait_time.as_secs_f64() > device.vi.frame_time
-            && device.vi.limit_buffer > 1
+            && device.vi.limit_freq > 1
         {
-            device.vi.limit_buffer -= 1;
+            device.vi.limit_freq -= 1;
             create_limiter(device);
         }
 
         device.vi.min_wait_time = std::time::Duration::from_secs(1);
-        device.vi.limit_buffer_check = std::time::Instant::now();
+        device.vi.limit_freq_check = std::time::Instant::now();
     }
 }
