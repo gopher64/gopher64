@@ -438,6 +438,10 @@ impl Device {
                 vi_counter: 0,
                 last_origin: 0,
                 internal_frame_counter: 0,
+                min_wait_time: std::time::Duration::from_secs(1),
+                frame_time: 0.0,
+                limit_freq: 2,
+                limit_freq_check: std::time::Instant::now(),
             },
             vru_window: controller::vru::VruWindow {
                 window_notifier: None,
