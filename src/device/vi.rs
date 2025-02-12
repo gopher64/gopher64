@@ -2,7 +2,7 @@ use crate::{device, netplay, ui};
 use governor::clock::Clock;
 
 const VI_STATUS_REG: u32 = 0;
-//const VI_ORIGIN_REG: u32 = 1;
+const VI_ORIGIN_REG: u32 = 1;
 //const VI_WIDTH_REG: u32 = 2;
 //const VI_V_INTR_REG: u32 = 3;
 const VI_CURRENT_REG: u32 = 4;
@@ -27,9 +27,9 @@ pub struct Vi {
     pub limiter: Option<governor::DefaultDirectRateLimiter>,
     pub count_per_scanline: u64,
     pub vi_counter: u64,
+    pub last_origin: u32,
+    pub internal_frame_counter: u64,
 }
-
-//static mut FRAME_COUNTER: u64 = 0;
 
 const LIMIT_BUFFER: u64 = 3;
 
@@ -109,6 +109,13 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                 set_expected_refresh_rate(device);
             }
         }
+        VI_ORIGIN_REG => {
+            device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
+            if device.vi.regs[reg as usize] != device.vi.last_origin {
+                device.vi.last_origin = device.vi.regs[reg as usize];
+                device.vi.internal_frame_counter += 1;
+            }
+        }
         _ => {
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
         }
@@ -120,12 +127,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     ui::video::update_screen();
     ui::video::check_callback(device);
 
-    /*
-        unsafe {
-            FRAME_COUNTER += 1;
-        }
-    */
-
     let mut enable_speed_limiter = true;
     if device.netplay.is_some() {
         netplay::send_sync_check(device);
@@ -136,6 +137,14 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     if device.vi.vi_counter % LIMIT_BUFFER == 0 && enable_speed_limiter {
         speed_limiter(device);
     }
+
+    /*
+        let vis = if device.cart.pal { 50 } else { 60 };
+        if device.vi.vi_counter % vis == 0 {
+            println!("FPS: {}", device.vi.internal_frame_counter);
+            device.vi.internal_frame_counter = 0;
+        }
+    */
 
     /* toggle vi field if in interlaced mode */
     device.vi.field ^= (device.vi.regs[VI_STATUS_REG as usize] >> 6) & 0x1;
@@ -155,18 +164,6 @@ pub fn init(device: &mut device::Device) {
     } else {
         device.vi.clock = 48681812
     }
-    /*
-    std::thread::spawn(move || {
-        let mut last_count = 0;
-        loop {
-            unsafe {
-                println!("{:?}", FRAME_COUNTER - last_count);
-                last_count = FRAME_COUNTER;
-            }
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        }
-    });
-    */
 }
 
 fn speed_limiter(device: &device::Device) {
