@@ -15,8 +15,15 @@ pub fn init(device: &mut device::Device) {
         flags |= sdl3_sys::video::SDL_WINDOW_RESIZABLE;
     }
 
-    device.ui.window =
-        unsafe { sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), 640, 480, flags) };
+    let mut window_width = 640;
+    let mut window_height = 480;
+    if device.cart.pal {
+        window_width = 720;
+        window_height = 576;
+    }
+    device.ui.window = unsafe {
+        sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), window_width, window_height, flags)
+    };
     if device.ui.window.is_null() {
         panic!("Could not create window");
     }
@@ -32,6 +39,7 @@ pub fn init(device: &mut device::Device) {
         DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
         DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
         DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
+        PAL: device.cart.pal,
     };
 
     unsafe {
@@ -66,6 +74,7 @@ pub fn load_state(device: &mut device::Device) {
         DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
         DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
         DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
+        PAL: device.cart.pal,
     };
     unsafe {
         rdp_new_processor(gfx_info, device.ui.config.video.upscale);
