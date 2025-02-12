@@ -208,6 +208,7 @@ fn speed_limiter(device: &mut device::Device) {
             create_limiter(device);
         }
 
+        //println!("limit freq: {}", device.vi.limit_freq);
         device.vi.min_wait_time = std::time::Duration::from_secs(1);
         device.vi.limit_freq_check = std::time::Instant::now();
     }
