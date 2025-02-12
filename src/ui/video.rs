@@ -18,7 +18,7 @@ pub fn init(device: &mut device::Device) {
     let mut window_width = 640;
     let mut window_height = 480;
     if device.cart.pal {
-        window_width = 720;
+        window_width = 768;
         window_height = 576;
     }
     device.ui.window = unsafe {
