@@ -52,13 +52,14 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         let masked_address = address as usize & CART_MASK;
         let mut data = read_cart_word(device, masked_address);
         device::memory::masked_write_32(&mut data, value, mask);
+        let bytes = data.to_be_bytes();
         for i in 0..4 {
             device
                 .ui
                 .saves
                 .romsave
                 .0
-                .insert((masked_address + i) as u32, data.to_be_bytes()[i]);
+                .insert((masked_address + i) as u32, bytes[i]);
         }
         device.ui.saves.romsave.1 = true;
     }
