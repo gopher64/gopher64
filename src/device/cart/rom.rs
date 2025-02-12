@@ -5,17 +5,15 @@ const CART_MASK: usize = 0xFFFFFFF;
 
 fn read_cart_word(device: &mut device::Device, address: usize) -> u32 {
     let mut data: [u8; 4] = device.cart.rom[address..address + 4].try_into().unwrap();
-    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
-        for i in 0..4 {
-            if device
-                .ui
-                .saves
-                .romsave
-                .0
-                .contains_key(&(address as u32 + i))
-            {
-                data[i as usize] = device.ui.saves.romsave.0[&(address as u32 + i)];
-            }
+    for i in 0..4 {
+        if device
+            .ui
+            .saves
+            .romsave
+            .0
+            .contains_key(&(address as u32 + i))
+        {
+            data[i as usize] = device.ui.saves.romsave.0[&(address as u32 + i)];
         }
     }
     u32::from_be_bytes(data)
