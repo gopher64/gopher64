@@ -1204,6 +1204,9 @@ pub fn stv(device: &mut device::Device, opcode: u32) {
     }
 }
 
-pub fn reserved(_device: &mut device::Device, _opcode: u32) {
-    panic!("rsp su reserved")
+pub fn special_reserved(device: &mut device::Device, opcode: u32) {
+    device.rsp.cpu.gpr[rd(opcode) as usize] =
+        device.rsp.cpu.gpr[rs(opcode) as usize] >> (device.rsp.cpu.gpr[rs(opcode) as usize] & 31)
 }
+
+pub fn reserved(_device: &mut device::Device, _opcode: u32) {}
