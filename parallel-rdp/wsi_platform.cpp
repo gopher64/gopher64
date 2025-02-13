@@ -61,7 +61,6 @@ void SDL_WSIPlatform::poll_input()
 
 void SDL_WSIPlatform::poll_input_async(Granite::InputTrackerHandler *handler)
 {
-	SDL_PumpEvents();
 }
 
 void SDL_WSIPlatform::set_window(SDL_Window *_window)
