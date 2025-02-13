@@ -137,7 +137,6 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
-    ui::video::update_screen();
     ui::video::check_callback(device);
 
     let mut enable_speed_limiter = true;
@@ -150,6 +149,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     if device.vi.vi_counter % device.vi.limit_freq == 0 && enable_speed_limiter {
         speed_limiter(device);
     }
+    ui::video::update_screen();
 
     /*
     let vis = if device.cart.pal { 50 } else { 60 };
