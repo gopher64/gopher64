@@ -705,7 +705,7 @@ pub fn init(ui: &mut ui::Ui) {
     let mut taken = [false; 4];
     for i in 0..4 {
         let controller_assignment = &ui.config.input.controller_assignment[i];
-        if controller_assignment.is_some() {
+        if controller_assignment.is_some() && ui.config.input.controller_enabled[i] {
             let mut joystick_id = 0;
             let assigned_path = controller_assignment.as_ref().unwrap();
 
