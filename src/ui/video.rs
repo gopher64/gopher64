@@ -14,6 +14,7 @@ pub fn init(device: &mut device::Device) {
     } else {
         flags |= sdl3_sys::video::SDL_WINDOW_RESIZABLE;
     }
+    flags |= sdl3_sys::video::SDL_WINDOW_INPUT_FOCUS;
 
     let mut window_width = 640;
     let mut window_height = 480;
@@ -30,6 +31,7 @@ pub fn init(device: &mut device::Device) {
     if !unsafe { sdl3_sys::video::SDL_ShowWindow(device.ui.window) } {
         panic!("Could not show window");
     }
+    unsafe { sdl3_sys::everything::SDL_HideCursor() };
 
     let gfx_info = GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
