@@ -339,11 +339,9 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> (u32, bool) {
         // ignore key presses if ALT is pressed
         *ui.keyboard_state
             .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_LALT) as isize)
-            == true
             || *ui
                 .keyboard_state
                 .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
-                == true
     };
 
     for i in 0..14 {
