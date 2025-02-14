@@ -357,6 +357,7 @@ impl Device {
                         pc: 0,
                     },
                     broken: false,
+                    running: false,
                     halted: false,
                     sync_point: false,
                     cycle_counter: 0,

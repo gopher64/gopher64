@@ -552,6 +552,7 @@ pub fn bgezal(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn mfc0(device: &mut device::Device, opcode: u32) {
+    device.rsp.cpu.cycle_counter += 2;
     if rd(opcode) < device::rsp_interface::SP_REGS_COUNT {
         device.rsp.cpu.gpr[rt(opcode) as usize] = device::rsp_interface::read_regs(
             device,
