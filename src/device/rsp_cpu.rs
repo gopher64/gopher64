@@ -34,6 +34,7 @@ pub struct Cpu {
     pub pipeline_full: bool,
     pub branch_state: BranchState,
     pub broken: bool,
+    pub running: bool,
     pub halted: bool,
     pub sync_point: bool,
     pub cycle_counter: u64,
@@ -125,6 +126,7 @@ pub fn in_delay_slot_taken(device: &device::Device) -> bool {
 pub fn run(device: &mut device::Device) -> u64 {
     device.rsp.cpu.broken = false;
     device.rsp.cpu.cycle_counter = 0;
+    device.rsp.cpu.running = true;
     while !device.rsp.cpu.sync_point {
         device.rsp.cpu.instruction_type = InstructionType::Su;
         device.rsp.cpu.gpr[0] = 0; // gpr 0 is read only
@@ -186,6 +188,7 @@ pub fn run(device: &mut device::Device) -> u64 {
             }
         }
     }
+    device.rsp.cpu.running = false;
     (device.rsp.cpu.cycle_counter as f64 * 1.5) as u64 // converting RCP clock to CPU clock
 }
 
