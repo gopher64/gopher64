@@ -334,10 +334,20 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> (u32, bool) {
     let mut keys = 0;
     let controller = ui.controllers[channel].game_controller;
     let joystick = ui.controllers[channel].joystick;
+
+    let alt_pressed = unsafe {
+        // ignore key presses if ALT is pressed
+        *ui.keyboard_state
+            .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_LALT) as isize)
+            || *ui
+                .keyboard_state
+                .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
+    };
+
     for i in 0..14 {
         if profile_name != "default" || channel == 0 {
             let profile_key = profile.keys[i];
-            if profile_key.0 {
+            if profile_key.0 && !alt_pressed {
                 keys |= (unsafe { *ui.keyboard_state.offset(profile_key.1 as isize) } as u32) << i;
             }
         }
@@ -513,9 +523,14 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
                 if event_type == u32::from(sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
                     close_controllers(open_joysticks, open_controllers);
                     return;
-                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_KEY_DOWN) {
-                    new_keys[*value] = (true, i32::from(unsafe { event.key.scancode }));
-                    key_set = true
+                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_KEY_UP) {
+                    if unsafe {
+                        event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_LALT
+                            && event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_RALT
+                    } {
+                        new_keys[*value] = (true, i32::from(unsafe { event.key.scancode }));
+                        key_set = true
+                    }
                 } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
                     if !open_controllers.is_empty() {
                         new_controller_buttons[*value] =

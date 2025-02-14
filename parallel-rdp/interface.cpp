@@ -141,10 +141,17 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 	{
 		wsi_platform->do_resize();
 	}
-	else if (event->type == SDL_EVENT_KEY_DOWN)
+	else if (event->type == SDL_EVENT_KEY_UP)
 	{
 		switch (event->key.scancode)
 		{
+		case SDL_SCANCODE_RETURN:
+			if (event->key.mod & SDL_KMOD_ALT)
+			{
+				fullscreen = !fullscreen;
+				SDL_SetWindowFullscreen(window, fullscreen);
+			}
+			break;
 		case SDL_SCANCODE_ESCAPE:
 			if (fullscreen)
 				callback.emu_running = false;
