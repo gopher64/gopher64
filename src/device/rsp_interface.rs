@@ -292,7 +292,6 @@ pub fn read_regs(
             let value = device.rsp.regs[reg as usize];
             if value == 1 {
                 device.rsp.cpu.sync_point = true;
-                device.rsp.cpu.cycle_counter += 4; // needed for DK64
             }
             device.rsp.regs[reg as usize] = 1;
             value
