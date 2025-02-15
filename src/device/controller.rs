@@ -170,14 +170,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
 
             let new_pak_type = match channel.change_pak {
                 PakType::MemPak => PakType::RumblePak,
-                PakType::RumblePak => {
-                    if device.ui.controllers[i].transferpak {
-                        PakType::TransferPak
-                    } else {
-                        PakType::MemPak
-                    }
-                }
-                PakType::TransferPak => PakType::MemPak,
+                PakType::RumblePak => PakType::MemPak,
                 _ => {
                     panic!("Invalid pak type");
                 }

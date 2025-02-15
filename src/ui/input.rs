@@ -30,7 +30,6 @@ const MAX_AXIS_VALUE: f64 = 85.0;
 
 pub struct Controllers {
     pub rumble: bool,
-    pub transferpak: bool,
     pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
     pub joystick: *mut sdl3_sys::joystick::SDL_Joystick,
 }
