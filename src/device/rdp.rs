@@ -67,7 +67,6 @@ pub fn read_regs_dpc(
             device.rdp.last_status_value = value;
             device.rdp.regs_dpc[reg as usize]
         }
-        DPC_CLOCK_REG => 0xFFFFFF, // needed for JFG
         DPC_CURRENT_REG => {
             if device.rdp.wait_frozen {
                 device.rsp.cpu.sync_point = true;
@@ -118,6 +117,8 @@ fn run_rdp(device: &mut device::Device) {
     let timer = ui::video::process_rdp_list();
     device.rdp.regs_dpc[DPC_STATUS_REG as usize] |=
         DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY;
+    device.rdp.regs_dpc[DPC_CLOCK_REG as usize] = 0xFFFFFF;
+    device.rdp.regs_dpc[DPC_PIPEBUSY_REG as usize] = 0xFFFFFF;
 
     if timer != 0 {
         if device.save_state {
@@ -205,6 +206,8 @@ fn update_dpc_status(device: &mut device::Device, w: u32) {
 pub fn init(device: &mut device::Device) {
     device.rdp.regs_dpc[DPC_STATUS_REG as usize] |=
         DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CBUF_READY;
+    device.rdp.regs_dpc[DPC_CLOCK_REG as usize] = 0xFFFFFF;
+    device.rdp.regs_dpc[DPC_PIPEBUSY_REG as usize] = 0xFFFFFF;
 }
 
 pub fn rdp_interrupt_event(device: &mut device::Device) {
