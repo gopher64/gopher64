@@ -2,6 +2,7 @@ use crate::{device, netplay, savestates, ui};
 
 pub mod mempak;
 pub mod rumble;
+pub mod transferpak;
 pub mod vru;
 
 pub const JCMD_STATUS: u8 = 0x00;
@@ -24,6 +25,7 @@ pub enum PakType {
     None = 0,
     MemPak = 1,
     RumblePak = 2,
+    TransferPak = 3,
 }
 
 #[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
@@ -159,29 +161,41 @@ fn data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 {
 pub fn pak_switch_event(device: &mut device::Device) {
     for (i, channel) in device.pif.channels.iter_mut().enumerate() {
         if channel.change_pak != PakType::None {
-            if channel.change_pak == PakType::RumblePak {
-                if device.netplay.is_none() {
-                    device::ui::input::set_rumble(&mut device.ui, i, 0);
-                } else if device.netplay.as_ref().unwrap().player_number as usize == i {
-                    device::ui::input::set_rumble(&mut device.ui, 0, 0);
-                }
+            //stop rumble if it is on
+            if device.netplay.is_none() {
+                device::ui::input::set_rumble(&mut device.ui, i, 0);
+            } else if device.netplay.as_ref().unwrap().player_number as usize == i {
+                device::ui::input::set_rumble(&mut device.ui, 0, 0);
+            }
 
-                let handler = device::controller::PakHandler {
+            let new_pak_type = match channel.change_pak {
+                PakType::MemPak => PakType::RumblePak,
+                PakType::RumblePak => PakType::MemPak,
+                _ => {
+                    panic!("Invalid pak type");
+                }
+            };
+
+            if new_pak_type == PakType::MemPak {
+                channel.pak_handler = Some(device::controller::PakHandler {
                     read: device::controller::mempak::read,
                     write: device::controller::mempak::write,
-                    pak_type: device::controller::PakType::MemPak,
-                };
-                channel.pak_handler = Some(handler);
-                ui::audio::play_pak_switch(&mut device.ui, PakType::MemPak);
-            } else if channel.change_pak == PakType::MemPak {
-                let handler = device::controller::PakHandler {
+                    pak_type: new_pak_type,
+                });
+            } else if new_pak_type == PakType::RumblePak {
+                channel.pak_handler = Some(device::controller::PakHandler {
                     read: device::controller::rumble::read,
                     write: device::controller::rumble::write,
-                    pak_type: device::controller::PakType::RumblePak,
-                };
-                channel.pak_handler = Some(handler);
-                ui::audio::play_pak_switch(&mut device.ui, PakType::RumblePak);
+                    pak_type: new_pak_type,
+                });
+            } else if new_pak_type == PakType::TransferPak {
+                channel.pak_handler = Some(device::controller::PakHandler {
+                    read: device::controller::transferpak::read,
+                    write: device::controller::transferpak::write,
+                    pak_type: new_pak_type,
+                });
             }
+            ui::audio::play_pak_switch(&mut device.ui, new_pak_type);
             channel.change_pak = PakType::None;
         }
     }

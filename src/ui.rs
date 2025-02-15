@@ -132,6 +132,7 @@ impl Ui {
             pak_audio: audio::PakAudio {
                 mempak: include_bytes!("../data/mempak.wav").to_vec(),
                 rumblepak: include_bytes!("../data/rumblepak.wav").to_vec(),
+                transferpak: include_bytes!("../data/transferpak.wav").to_vec(),
             },
             window: std::ptr::null_mut(),
             audio_stream: std::ptr::null_mut(),
