@@ -4,6 +4,7 @@ use crate::ui;
 pub struct PakAudio {
     pub mempak: Vec<u8>,
     pub rumblepak: Vec<u8>,
+    pub transferpak: Vec<u8>,
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
@@ -76,6 +77,8 @@ pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
         sound = &ui.pak_audio.rumblepak;
     } else if pak == device::controller::PakType::MemPak {
         sound = &ui.pak_audio.mempak;
+    } else if pak == device::controller::PakType::TransferPak {
+        sound = &ui.pak_audio.transferpak;
     } else {
         return;
     }

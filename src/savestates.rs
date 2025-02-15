@@ -164,6 +164,15 @@ pub fn load_savestate(device: &mut device::Device) {
                         pak_type: device::controller::PakType::MemPak,
                     };
                     device.pif.channels[i].pak_handler = Some(mempak_handler);
+                } else if device.pif.channels[i].pak_handler.unwrap().pak_type
+                    == device::controller::PakType::TransferPak
+                {
+                    let transferpak_handler = device::controller::PakHandler {
+                        read: device::controller::transferpak::read,
+                        write: device::controller::transferpak::write,
+                        pak_type: device::controller::PakType::TransferPak,
+                    };
+                    device.pif.channels[i].pak_handler = Some(transferpak_handler);
                 }
             }
         }
