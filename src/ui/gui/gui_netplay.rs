@@ -864,3 +864,12 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
         });
     });
 }
+
+pub fn netplay_error(app: &mut GopherEguiApp, ctx: &egui::Context, error: String) {
+    egui::Window::new("Netplay Error").show(ctx, |ui| {
+        ui.label(error);
+        if ui.button("Close").clicked() {
+            app.netplay.error = "".to_string();
+        };
+    });
+}

@@ -369,6 +369,10 @@ impl eframe::App for GopherEguiApp {
             gui_netplay::netplay_wait(self, ctx);
         }
 
+        if !self.netplay.error.is_empty() {
+            gui_netplay::netplay_error(self, ctx, self.netplay.error.clone());
+        }
+
         if self.configure_profile {
             configure_profile(self, ctx);
         }
