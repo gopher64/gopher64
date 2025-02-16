@@ -1,5 +1,4 @@
 use crate::{device, ui};
-use eframe::egui;
 use std::io::{Read, Write};
 //UDP packet formats
 const UDP_SEND_KEY_INFO: u8 = 0;
@@ -29,8 +28,6 @@ pub struct Netplay {
     status: u8,
     buffer_target: u8,
     pub fast_forward: bool,
-    pub error_notifier: tokio::sync::mpsc::Sender<String>,
-    pub gui_ctx: egui::Context,
 }
 
 pub struct PlayerData {
@@ -45,11 +42,13 @@ struct InputEvent {
     plugin: u8,
 }
 
-fn send_error(netplay: &mut Netplay, error: String) {
-    netplay.error_notifier.try_send(error).unwrap();
-
-    netplay.gui_ctx.request_repaint(); // this is so the window pops up right away
-}
+pub const NETPLAY_ERROR_DESYNC: u32 = 0;
+pub const NETPLAY_ERROR_LOST_CONNECTION: u32 = 1;
+pub const NETPLAY_ERROR_PLAYER_DISCONNECTED: u32 = 2;
+pub const NETPLAY_ERROR_PLAYER_1_DISCONNECTED: u32 = 3;
+pub const NETPLAY_ERROR_PLAYER_2_DISCONNECTED: u32 = 4;
+pub const NETPLAY_ERROR_PLAYER_3_DISCONNECTED: u32 = 5;
+pub const NETPLAY_ERROR_PLAYER_4_DISCONNECTED: u32 = 6;
 
 pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8], size: usize) {
     let mut request: Vec<u8> = [TCP_SEND_SAVE].to_vec();
@@ -109,7 +108,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> (u32, bool) {
     let timeout = std::time::Instant::now() + std::time::Duration::from_secs(10);
     let mut request_timer = std::time::Instant::now() - std::time::Duration::from_millis(5);
     while input.is_none() {
-        process_incoming(netplay); // we execute process_incoming before request_input so that we send an accurate buffer count
+        process_incoming(netplay, &mut device.ui); // we execute process_incoming before request_input so that we send an accurate buffer count
         if std::time::Instant::now() > request_timer {
             // sends a request packet every 5ms
             request_input(netplay, channel);
@@ -120,10 +119,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> (u32, bool) {
             .remove(&netplay.player_data[channel].count);
 
         if std::time::Instant::now() > timeout {
-            send_error(
-                netplay,
-                "Timed out waiting for input. Lost connection to server".to_string(),
-            );
+            ui::audio::play_netplay_audio(&mut device.ui, NETPLAY_ERROR_LOST_CONNECTION);
             input = Some(InputEvent {
                 input: 0,
                 plugin: 0,
@@ -154,7 +150,7 @@ fn request_input(netplay: &Netplay, channel: usize) {
     netplay.udp_socket.send(&request).unwrap();
 }
 
-fn process_incoming(netplay: &mut Netplay) {
+fn process_incoming(netplay: &mut Netplay, ui: &mut ui::Ui) {
     let mut buf: [u8; 1024] = [0; 1024];
     while let Ok(_incoming) = netplay.udp_socket.recv(&mut buf) {
         match buf[0] {
@@ -168,15 +164,15 @@ fn process_incoming(netplay: &mut Netplay) {
                 }
                 if current_status != netplay.status {
                     if ((current_status & 0x1) ^ (netplay.status & 0x1)) != 0 {
-                        send_error(
-                            netplay,
-                            format!("Players have desynced at VI {}", netplay.vi_counter),
-                        );
+                        ui::audio::play_netplay_audio(ui, NETPLAY_ERROR_DESYNC);
                     }
                     for dis in 1..5 {
                         if ((current_status & (0x1 << dis)) ^ (netplay.status & (0x1 << dis))) != 0
                         {
-                            send_error(netplay, format!("Player {} has disconnected", dis));
+                            ui::audio::play_netplay_audio(
+                                ui,
+                                NETPLAY_ERROR_PLAYER_DISCONNECTED + dis,
+                            );
                         }
                     }
                     netplay.status = current_status;
@@ -218,8 +214,6 @@ pub fn init(
     mut peer_addr: std::net::SocketAddr,
     session: ui::gui::gui_netplay::NetplayRoom,
     player_number: u8,
-    error_notifier: tokio::sync::mpsc::Sender<String>,
-    gui_ctx: egui::Context,
 ) -> Netplay {
     peer_addr.set_port(session.port.unwrap() as u16);
     let udp_socket;
@@ -283,8 +277,6 @@ pub fn init(
         status: 0,
         buffer_target,
         fast_forward: false,
-        error_notifier,
-        gui_ctx,
         player_data: [
             PlayerData {
                 lag: 0,

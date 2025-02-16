@@ -1,10 +1,14 @@
 use crate::device;
+use crate::netplay;
 use crate::ui;
 
-pub struct PakAudio {
+pub struct EventAudio {
     pub mempak: Vec<u8>,
     pub rumblepak: Vec<u8>,
     pub transferpak: Vec<u8>,
+    pub netplay_desync: Vec<u8>,
+    pub netplay_lost_connection: Vec<u8>,
+    pub netplay_disconnected: [Vec<u8>; 4],
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
@@ -46,8 +50,9 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         channels: 1,
     };
 
-    ui.pak_audio_stream = unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&wav_audio_spec, &dst) };
-    if !unsafe { sdl3_sys::audio::SDL_BindAudioStream(ui.audio_device, ui.pak_audio_stream) } {
+    ui.event_audio_stream =
+        unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&wav_audio_spec, &dst) };
+    if !unsafe { sdl3_sys::audio::SDL_BindAudioStream(ui.audio_device, ui.event_audio_stream) } {
         panic!("Could not bind audio stream");
     }
 }
@@ -58,33 +63,53 @@ pub fn close(ui: &mut ui::Ui) {
             sdl3_sys::audio::SDL_DestroyAudioStream(ui.audio_stream);
             ui.audio_stream = std::ptr::null_mut();
         }
-        if !ui.pak_audio_stream.is_null() {
-            sdl3_sys::audio::SDL_DestroyAudioStream(ui.pak_audio_stream);
-            ui.pak_audio_stream = std::ptr::null_mut();
+        if !ui.event_audio_stream.is_null() {
+            sdl3_sys::audio::SDL_DestroyAudioStream(ui.event_audio_stream);
+            ui.event_audio_stream = std::ptr::null_mut();
         }
         sdl3_sys::audio::SDL_CloseAudioDevice(ui.audio_device);
         ui.audio_device = 0;
     }
 }
 
+pub fn play_netplay_audio(ui: &mut ui::Ui, error: u32) {
+    if ui.event_audio_stream.is_null() {
+        return;
+    }
+    let sound = match error {
+        netplay::NETPLAY_ERROR_DESYNC => &ui.event_audio.netplay_desync,
+        netplay::NETPLAY_ERROR_LOST_CONNECTION => &ui.event_audio.netplay_lost_connection,
+        netplay::NETPLAY_ERROR_PLAYER_1_DISCONNECTED => &ui.event_audio.netplay_disconnected[0],
+        netplay::NETPLAY_ERROR_PLAYER_2_DISCONNECTED => &ui.event_audio.netplay_disconnected[1],
+        netplay::NETPLAY_ERROR_PLAYER_3_DISCONNECTED => &ui.event_audio.netplay_disconnected[2],
+        netplay::NETPLAY_ERROR_PLAYER_4_DISCONNECTED => &ui.event_audio.netplay_disconnected[3],
+        _ => panic!("Invalid netplay error"),
+    };
+    if !unsafe {
+        sdl3_sys::audio::SDL_PutAudioStreamData(
+            ui.event_audio_stream,
+            sound.as_ptr() as *const std::ffi::c_void,
+            sound.len() as i32,
+        )
+    } {
+        panic!("Could not play audio");
+    }
+}
+
 pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
-    if ui.pak_audio_stream.is_null() {
+    if ui.event_audio_stream.is_null() {
         return;
     }
 
-    let sound;
-    if pak == device::controller::PakType::RumblePak {
-        sound = &ui.pak_audio.rumblepak;
-    } else if pak == device::controller::PakType::MemPak {
-        sound = &ui.pak_audio.mempak;
-    } else if pak == device::controller::PakType::TransferPak {
-        sound = &ui.pak_audio.transferpak;
-    } else {
-        return;
-    }
+    let sound = match pak {
+        device::controller::PakType::RumblePak => &ui.event_audio.rumblepak,
+        device::controller::PakType::MemPak => &ui.event_audio.mempak,
+        device::controller::PakType::TransferPak => &ui.event_audio.transferpak,
+        _ => panic!("Invalid pak type"),
+    };
     if !unsafe {
         sdl3_sys::audio::SDL_PutAudioStreamData(
-            ui.pak_audio_stream,
+            ui.event_audio_stream,
             sound.as_ptr() as *const std::ffi::c_void,
             sound.len() as i32,
         )
