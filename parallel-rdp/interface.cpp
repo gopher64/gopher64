@@ -152,6 +152,12 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 				SDL_SetWindowFullscreen(window, fullscreen);
 			}
 			break;
+		case SDL_SCANCODE_F:
+			if (event->key.mod & SDL_KMOD_ALT)
+			{
+				callback.enable_speedlimiter = !callback.enable_speedlimiter;
+			}
+			break;
 		case SDL_SCANCODE_ESCAPE:
 			if (fullscreen)
 				callback.emu_running = false;
@@ -227,6 +233,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_sc
 	wsi->begin_frame();
 
 	callback.emu_running = true;
+	callback.enable_speedlimiter = true;
 }
 
 void rdp_close()

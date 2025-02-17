@@ -24,6 +24,7 @@ extern "C"
 		bool emu_running;
 		bool save_state;
 		bool load_state;
+		bool enable_speedlimiter;
 	} CALL_BACK;
 
 	void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen);
