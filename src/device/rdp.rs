@@ -1,4 +1,4 @@
-use crate::{device, savestates, ui};
+use crate::{device, ui};
 
 pub const DPC_START_REG: u32 = 0;
 pub const DPC_END_REG: u32 = 1;
@@ -121,15 +121,6 @@ fn run_rdp(device: &mut device::Device) {
     device.rdp.regs_dpc[DPC_PIPEBUSY_REG as usize] = 0xFFFFFF;
 
     if timer != 0 {
-        if device.save_state {
-            // Right after full sync, good time for save state
-            device.save_state = false;
-            savestates::create_savestate(device);
-        } else if device.load_state {
-            // Right after full sync, good time for save state
-            device.load_state = false;
-            savestates::load_savestate(device);
-        }
         device::events::create_event(
             device,
             device::events::EVENT_TYPE_DP,

@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 
 const SP_MEM_ADDR_REG: u32 = 0;
 const SP_DRAM_ADDR_REG: u32 = 1;
@@ -167,6 +168,7 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
             j += 1;
         }
     } else {
+        ui::video::check_framebuffers(dram_addr);
         let mut j = 0;
         while j < count {
             let mut i = 0;

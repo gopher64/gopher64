@@ -67,6 +67,14 @@ pub fn update_screen() {
     unsafe { rdp_update_screen() }
 }
 
+pub fn check_framebuffers(address: u32) {
+    unsafe { rdp_check_framebuffers(address) }
+}
+
+pub fn full_sync() {
+    unsafe { rdp_full_sync() }
+}
+
 pub fn load_state(device: &mut device::Device) {
     let gfx_info = GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
