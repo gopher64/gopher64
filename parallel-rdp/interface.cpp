@@ -64,6 +64,15 @@ static CALL_BACK callback;
 static GFX_INFO gfx_info;
 static uint32_t region;
 
+static uint32_t depthbuffer_address;
+static uint32_t framebuffer_address;
+static uint32_t framebuffer_pixel_size;
+static uint32_t framebuffer_width;
+static uint32_t framebuffer_height;
+static uint8_t depthbuffer_enabled;
+static uint8_t *rdram_dirty;
+static uint64_t sync_signal;
+
 static const unsigned cmd_len_lut[64] = {
 	1,
 	1,
@@ -234,10 +243,20 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_sc
 
 	callback.emu_running = true;
 	callback.enable_speedlimiter = true;
+
+	sync_signal = 0;
+	rdram_dirty = (uint8_t *)malloc(gfx_info.RDRAM_SIZE / 8);
+	memset(rdram_dirty, 0, gfx_info.RDRAM_SIZE / 8);
 }
 
 void rdp_close()
 {
+	if (rdram_dirty)
+	{
+		free(rdram_dirty);
+		rdram_dirty = nullptr;
+	}
+
 	wsi->end_frame();
 
 	if (processor)
@@ -369,6 +388,21 @@ CALL_BACK rdp_check_callback()
 	return return_value;
 }
 
+void rdp_check_framebuffers(uint32_t address)
+{
+	if (sync_signal && rdram_dirty[address >> 3])
+	{
+		processor->wait_for_timeline(sync_signal);
+		memset(rdram_dirty, 0, gfx_info.RDRAM_SIZE / 8);
+		sync_signal = 0;
+	}
+}
+
+void rdp_full_sync()
+{
+	processor->wait_for_timeline(processor->signal_timeline());
+}
+
 uint64_t rdp_process_commands()
 {
 	uint64_t interrupt_timer = 0;
@@ -430,18 +464,69 @@ uint64_t rdp_process_commands()
 		if (command >= 8)
 			processor->enqueue_command(cmd_length * 2, &cmd_data[2 * cmd_cur]);
 
-		if (RDP::Op(command) == RDP::Op::SetScissor)
+		if ((RDP::Op(command) >= RDP::Op::FillTriangle && RDP::Op(command) <= RDP::Op::ShadeTextureZBufferTriangle) ||
+			RDP::Op(command) == RDP::Op::TextureRectangle ||
+			RDP::Op(command) == RDP::Op::TextureRectangleFlip ||
+			RDP::Op(command) == RDP::Op::FillRectangle)
+		{
+			uint32_t size = 0;
+			switch (framebuffer_pixel_size)
+			{
+			case 0:
+				size = (framebuffer_width * framebuffer_height / 2) >> 3;
+				break;
+			case 1:
+				size = (framebuffer_width * framebuffer_height) >> 3;
+				break;
+			case 2:
+				size = (framebuffer_width * framebuffer_height * 2) >> 3;
+				break;
+			case 3:
+				size = (framebuffer_width * framebuffer_height * 4) >> 3;
+				break;
+			}
+
+			for (uint32_t i = framebuffer_address; i < framebuffer_address + size; ++i)
+			{
+				rdram_dirty[i] = 1;
+			}
+
+			if (depthbuffer_enabled)
+			{
+				size = (framebuffer_width * framebuffer_height * 2) >> 3;
+
+				for (uint32_t i = depthbuffer_address; i < depthbuffer_address + size; ++i)
+				{
+					rdram_dirty[i] = 1;
+				}
+			}
+		}
+		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
+		{
+			depthbuffer_enabled = (w2 >> 5) & 1;
+		}
+		else if (RDP::Op(command) == RDP::Op::SetColorImage)
+		{
+			framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
+			framebuffer_pixel_size = (w1 >> 19) & 0x3;
+			framebuffer_width = (w1 & 0x3FF) + 1;
+		}
+		else if (RDP::Op(command) == RDP::Op::SetMaskImage)
+		{
+			depthbuffer_address = (w2 & 0x00FFFFFF) >> 3;
+		}
+		else if (RDP::Op(command) == RDP::Op::SetScissor)
 		{
 			uint32_t upper_left_x = ((w1 >> 12) & 0xFFF) >> 2;
 			uint32_t upper_left_y = (w1 & 0xFFF) >> 2;
 			uint32_t lower_right_x = ((w2 >> 12) & 0xFFF) >> 2;
 			uint32_t lower_right_y = (w2 & 0xFFF) >> 2;
 			region = (lower_right_x - upper_left_x) * (lower_right_y - upper_left_y);
+			framebuffer_height = lower_right_y;
 		}
-		if (RDP::Op(command) == RDP::Op::SyncFull)
+		else if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
-			processor->wait_for_timeline(processor->signal_timeline());
-
+			sync_signal = processor->signal_timeline();
 			interrupt_timer = region;
 			if (interrupt_timer == 0)
 				interrupt_timer = 5000;

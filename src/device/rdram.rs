@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 use std::alloc::{alloc_zeroed, Layout};
 
 //const RDRAM_CONFIG_REG: u32 = 0;
@@ -46,6 +47,7 @@ pub fn read_mem(
     );
     let masked_address = address as usize & RDRAM_MASK;
     if address < device.rdram.size as u64 {
+        ui::video::check_framebuffers(masked_address as u32);
         u32::from_ne_bytes(
             device.rdram.mem[masked_address..masked_address + 4]
                 .try_into()
@@ -58,6 +60,7 @@ pub fn read_mem(
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     if address < device.rdram.size as u64 {
+        ui::video::check_framebuffers(address as u32);
         let mut data = u32::from_ne_bytes(
             device.rdram.mem[address as usize..(address + 4) as usize]
                 .try_into()

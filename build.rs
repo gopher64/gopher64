@@ -101,6 +101,8 @@ fn main() {
         .allowlist_function("rdp_process_commands")
         .allowlist_function("rdp_check_callback")
         .allowlist_function("rdp_new_processor")
+        .allowlist_function("rdp_check_framebuffers")
+        .allowlist_function("rdp_full_sync")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");

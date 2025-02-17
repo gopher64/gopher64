@@ -70,6 +70,8 @@ where
 }
 
 pub fn create_savestate(device: &device::Device) {
+    ui::video::full_sync();
+
     let data: &[(&[u8], &str)] = &[
         (&postcard::to_stdvec(device).unwrap(), "device"),
         (&postcard::to_stdvec(&device.ui.saves).unwrap(), "saves"),
