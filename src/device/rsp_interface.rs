@@ -147,6 +147,7 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
     let mut dram_addr = dma.dramaddr & 0xfffff8;
     let offset = dma.memaddr & 0x1000;
 
+    ui::video::check_framebuffers(dram_addr);
     if dma.dir == DmaDir::Read {
         let mut j = 0;
         while j < count {
@@ -168,7 +169,6 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
             j += 1;
         }
     } else {
-        ui::video::check_framebuffers(dram_addr);
         let mut j = 0;
         while j < count {
             let mut i = 0;

@@ -60,6 +60,7 @@ pub fn read_mem(
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     if address < device.rdram.size as u64 {
+        ui::video::check_framebuffers(address as u32);
         let mut data = u32::from_ne_bytes(
             device.rdram.mem[address as usize..(address + 4) as usize]
                 .try_into()
