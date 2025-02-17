@@ -501,21 +501,21 @@ uint64_t rdp_process_commands()
 				}
 			}
 		}
-		if (RDP::Op(command) == RDP::Op::SetOtherModes)
+		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
 		{
 			depthbuffer_enabled = (w2 >> 5) & 1;
 		}
-		if (RDP::Op(command) == RDP::Op::SetColorImage)
+		else if (RDP::Op(command) == RDP::Op::SetColorImage)
 		{
 			framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
 			framebuffer_pixel_size = (w1 >> 19) & 0x3;
 			framebuffer_width = (w1 & 0x3FF) + 1;
 		}
-		if (RDP::Op(command) == RDP::Op::SetMaskImage)
+		else if (RDP::Op(command) == RDP::Op::SetMaskImage)
 		{
 			depthbuffer_address = (w2 & 0x00FFFFFF) >> 3;
 		}
-		if (RDP::Op(command) == RDP::Op::SetScissor)
+		else if (RDP::Op(command) == RDP::Op::SetScissor)
 		{
 			uint32_t upper_left_x = ((w1 >> 12) & 0xFFF) >> 2;
 			uint32_t upper_left_y = (w1 & 0xFFF) >> 2;
@@ -524,7 +524,7 @@ uint64_t rdp_process_commands()
 			region = (lower_right_x - upper_left_x) * (lower_right_y - upper_left_y);
 			framebuffer_height = lower_right_y;
 		}
-		if (RDP::Op(command) == RDP::Op::SyncFull)
+		else if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
 			sync_signal = processor->signal_timeline();
 			interrupt_timer = region;
