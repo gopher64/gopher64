@@ -26,6 +26,7 @@ pub struct Vi {
     #[serde(skip)]
     pub limiter: Option<governor::DefaultDirectRateLimiter>,
     pub count_per_scanline: u64,
+    pub enable_speed_limiter: bool,
     pub vi_counter: u64,
     pub last_origin: u32,
     pub internal_frame_counter: u64,
@@ -139,14 +140,13 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 pub fn vertical_interrupt_event(device: &mut device::Device) {
     ui::video::check_callback(device);
 
-    let mut enable_speed_limiter = true;
     if device.netplay.is_some() {
         netplay::send_sync_check(device);
-        enable_speed_limiter = !device.netplay.as_ref().unwrap().fast_forward;
+        device.vi.enable_speed_limiter = !device.netplay.as_ref().unwrap().fast_forward;
     }
 
     device.vi.vi_counter += 1;
-    if device.vi.vi_counter % device.vi.limit_freq == 0 && enable_speed_limiter {
+    if device.vi.vi_counter % device.vi.limit_freq == 0 && device.vi.enable_speed_limiter {
         speed_limiter(device);
     }
     ui::video::update_screen();
