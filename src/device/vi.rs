@@ -1,4 +1,4 @@
-use crate::{device, netplay, savestates, ui};
+use crate::{device, netplay, ui};
 use governor::clock::Clock;
 
 const VI_STATUS_REG: u32 = 0;
@@ -168,15 +168,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         device,
         device::events::EVENT_TYPE_VI,
         device.cpu.next_event_count + device.vi.delay,
-    );
-
-    if device.save_state {
-        device.save_state = false;
-        savestates::create_savestate(device);
-    } else if device.load_state {
-        device.load_state = false;
-        savestates::load_savestate(device);
-    }
+    )
 }
 
 pub fn init(device: &mut device::Device) {
