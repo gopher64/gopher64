@@ -1,13 +1,33 @@
 use crate::ui;
 
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
+pub struct InputKeyButton {
+    pub enabled: bool,
+    pub id: i32,
+}
+
+#[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
+pub struct InputControllerAxis {
+    pub enabled: bool,
+    pub id: i32,
+    pub axis: i16,
+}
+
+#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
+pub struct InputJoystickHat {
+    pub enabled: bool,
+    pub id: i32,
+    pub direction: u8,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct InputProfile {
-    pub keys: [(bool, i32); ui::input::PROFILE_SIZE],
-    pub controller_buttons: [(bool, i32); ui::input::PROFILE_SIZE],
-    pub controller_axis: [(bool, i32, i16); ui::input::PROFILE_SIZE],
-    pub joystick_buttons: [(bool, i32); ui::input::PROFILE_SIZE],
-    pub joystick_hat: [(bool, i32, u8); ui::input::PROFILE_SIZE],
-    pub joystick_axis: [(bool, i32, i16); ui::input::PROFILE_SIZE],
+    pub keys: [InputKeyButton; ui::input::PROFILE_SIZE],
+    pub controller_buttons: [InputKeyButton; ui::input::PROFILE_SIZE],
+    pub controller_axis: [InputControllerAxis; ui::input::PROFILE_SIZE],
+    pub joystick_buttons: [InputKeyButton; ui::input::PROFILE_SIZE],
+    pub joystick_hat: [InputJoystickHat; ui::input::PROFILE_SIZE],
+    pub joystick_axis: [InputControllerAxis; ui::input::PROFILE_SIZE],
     pub dinput: bool,
 }
 

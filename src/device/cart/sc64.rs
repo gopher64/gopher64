@@ -27,9 +27,9 @@ pub struct Sc64 {
 }
 
 fn format_sdcard(device: &mut device::Device) {
-    if device.ui.saves.sdcard.0.is_empty() {
-        device.ui.saves.sdcard.0.resize(SDCARD_SIZE, 0);
-        let buf = std::io::Cursor::new(&mut device.ui.saves.sdcard.0);
+    if device.ui.saves.sdcard.data.is_empty() {
+        device.ui.saves.sdcard.data.resize(SDCARD_SIZE, 0);
+        let buf = std::io::Cursor::new(&mut device.ui.saves.sdcard.data);
         fatfs::format_volume(buf, fatfs::FormatVolumeOptions::new()).unwrap();
     }
 }
@@ -117,9 +117,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let mut i = 0;
 
                         while i < length {
-                            if offset + i < device.ui.saves.sdcard.0.len() {
+                            if offset + i < device.ui.saves.sdcard.data.len() {
                                 let data = u32::from_be_bytes(
-                                    device.ui.saves.sdcard.0[(offset + i)..(offset + i + 4)]
+                                    device.ui.saves.sdcard.data[(offset + i)..(offset + i + 4)]
                                         .try_into()
                                         .unwrap(),
                                 );
@@ -148,7 +148,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let mut i = 0;
 
                         while i < length {
-                            if offset + i < device.ui.saves.sdcard.0.len() {
+                            if offset + i < device.ui.saves.sdcard.data.len() {
                                 let data = device::memory::data_read(
                                     device,
                                     address + i as u64,
@@ -156,14 +156,14 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                     false,
                                 )
                                 .to_be_bytes();
-                                device.ui.saves.sdcard.0[(offset + i)..(offset + i + 4)]
+                                device.ui.saves.sdcard.data[(offset + i)..(offset + i + 4)]
                                     .copy_from_slice(&data);
                             } else {
                                 panic!("sd card write out of bounds")
                             }
                             i += 4;
                         }
-                        device.ui.saves.sdcard.1 = true;
+                        device.ui.saves.sdcard.written = true;
                     }
                     'U' => {} // USB_WRITE_STATUS, ignored
                     'M' => {} // USB_WRITE, ignored

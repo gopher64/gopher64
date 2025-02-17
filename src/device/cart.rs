@@ -126,8 +126,8 @@ pub fn process(device: &mut device::Device, channel: usize) {
 }
 
 fn format_eeprom(device: &mut device::Device) {
-    if device.ui.saves.eeprom.0.len() < EEPROM_MAX_SIZE {
-        device.ui.saves.eeprom.0.resize(EEPROM_MAX_SIZE, 0xFF)
+    if device.ui.saves.eeprom.data.len() < EEPROM_MAX_SIZE {
+        device.ui.saves.eeprom.data.resize(EEPROM_MAX_SIZE, 0xFF)
     }
 }
 
@@ -137,7 +137,7 @@ fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usize) {
     format_eeprom(device);
 
     device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]
-        .copy_from_slice(&device.ui.saves.eeprom.0[address..address + EEPROM_BLOCK_SIZE]);
+        .copy_from_slice(&device.ui.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE]);
 }
 
 fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
@@ -145,12 +145,12 @@ fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, 
 
     format_eeprom(device);
 
-    device.ui.saves.eeprom.0[address..address + EEPROM_BLOCK_SIZE]
+    device.ui.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE]
         .copy_from_slice(&device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]);
 
     device.pif.ram[status] = 0x00;
 
-    device.ui.saves.eeprom.1 = true
+    device.ui.saves.eeprom.written = true
 }
 
 fn time2data(device: &mut device::Device, offset: usize) {

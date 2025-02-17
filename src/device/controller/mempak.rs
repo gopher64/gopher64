@@ -4,8 +4,8 @@ pub const MEMPAK_SIZE: usize = 0x8000;
 const MPK_PAGE_SIZE: usize = 256;
 
 fn format_mempak(device: &mut device::Device) {
-    if device.ui.saves.mempak.0.len() < MEMPAK_SIZE * 4 {
-        device.ui.saves.mempak.0.resize(MEMPAK_SIZE * 4, 0);
+    if device.ui.saves.mempak.data.len() < MEMPAK_SIZE * 4 {
+        device.ui.saves.mempak.data.resize(MEMPAK_SIZE * 4, 0);
 
         let page_0: [u8; MPK_PAGE_SIZE] = [
             /* Label area */
@@ -38,28 +38,28 @@ fn format_mempak(device: &mut device::Device) {
             let offset = i * MEMPAK_SIZE;
 
             /* Fill Page 0 with pre-initialized content */
-            device.ui.saves.mempak.0[offset..offset + MPK_PAGE_SIZE].copy_from_slice(&page_0);
+            device.ui.saves.mempak.data[offset..offset + MPK_PAGE_SIZE].copy_from_slice(&page_0);
 
             /* Fill INODE page 1 and update it's checkum */
             let start_page = 5;
             for i in MPK_PAGE_SIZE..2 * start_page {
-                device.ui.saves.mempak.0[offset + i] = 0;
+                device.ui.saves.mempak.data[offset + i] = 0;
             }
             for i in (MPK_PAGE_SIZE + 2 * start_page..2 * MPK_PAGE_SIZE).step_by(2) {
-                device.ui.saves.mempak.0[offset + i] = 0x00;
-                device.ui.saves.mempak.0[offset + i + 1] = 0x03;
+                device.ui.saves.mempak.data[offset + i] = 0x00;
+                device.ui.saves.mempak.data[offset + i + 1] = 0x03;
             }
-            device.ui.saves.mempak.0[offset + (MPK_PAGE_SIZE + 1)] = 0x71;
+            device.ui.saves.mempak.data[offset + (MPK_PAGE_SIZE + 1)] = 0x71;
 
             /* Page 2 is identical to page 1 */
             let page1 = offset + MPK_PAGE_SIZE;
             let page2 = offset + 2 * MPK_PAGE_SIZE;
-            let page1data = device.ui.saves.mempak.0[page1..page1 + MPK_PAGE_SIZE].to_vec();
-            device.ui.saves.mempak.0[page2..page2 + MPK_PAGE_SIZE].copy_from_slice(&page1data);
+            let page1data = device.ui.saves.mempak.data[page1..page1 + MPK_PAGE_SIZE].to_vec();
+            device.ui.saves.mempak.data[page2..page2 + MPK_PAGE_SIZE].copy_from_slice(&page1data);
 
             /* Remaining pages DIR+DATA (3...) are initialized with 0x00 */
             for i in 3 * MPK_PAGE_SIZE..MEMPAK_SIZE - 3 * MPK_PAGE_SIZE {
-                device.ui.saves.mempak.0[offset + i] = 0;
+                device.ui.saves.mempak.data[offset + i] = 0;
             }
         }
     }
@@ -71,7 +71,7 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
 
         let offset = (channel * MEMPAK_SIZE) + address as usize;
         device.pif.ram[data..data + size]
-            .copy_from_slice(&device.ui.saves.mempak.0[offset..offset + size])
+            .copy_from_slice(&device.ui.saves.mempak.data[offset..offset + size])
     } else {
         for i in 0..size {
             device.pif.ram[data + i] = 0;
@@ -84,9 +84,9 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
         format_mempak(device);
 
         let offset = (channel * MEMPAK_SIZE) + address as usize;
-        device.ui.saves.mempak.0[offset..offset + size]
+        device.ui.saves.mempak.data[offset..offset + size]
             .copy_from_slice(&device.pif.ram[data..data + size]);
 
-        device.ui.saves.mempak.1 = true
+        device.ui.saves.mempak.written = true
     }
 }
