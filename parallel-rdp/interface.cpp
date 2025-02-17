@@ -250,7 +250,12 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_sc
 
 void rdp_close()
 {
-	free(rdram_dirty);
+	if (rdram_dirty)
+	{
+		free(rdram_dirty);
+		rdram_dirty = nullptr;
+	}
+
 	wsi->end_frame();
 
 	if (processor)
