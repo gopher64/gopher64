@@ -69,6 +69,7 @@ static uint32_t framebuffer_address;
 static uint32_t framebuffer_pixel_size;
 static uint32_t framebuffer_width;
 static uint32_t framebuffer_height;
+static uint8_t depthbuffer_enabled;
 static uint8_t *rdram_dirty;
 static uint64_t sync_signal;
 
@@ -489,18 +490,20 @@ uint64_t rdp_process_commands()
 			{
 				rdram_dirty[i] = 1;
 			}
-		}
-		if (RDP::Op(command) == RDP::Op::FillZBufferTriangle ||
-			RDP::Op(command) == RDP::Op::TextureZBufferTriangle ||
-			RDP::Op(command) == RDP::Op::ShadeZBufferTriangle ||
-			RDP::Op(command) == RDP::Op::ShadeTextureZBufferTriangle)
-		{
-			uint32_t size = (framebuffer_width * framebuffer_height * 2) >> 3;
 
-			for (uint32_t i = depthbuffer_address; i < depthbuffer_address + size; ++i)
+			if (depthbuffer_enabled)
 			{
-				rdram_dirty[i] = 1;
+				size = (framebuffer_width * framebuffer_height * 2) >> 3;
+
+				for (uint32_t i = depthbuffer_address; i < depthbuffer_address + size; ++i)
+				{
+					rdram_dirty[i] = 1;
+				}
 			}
+		}
+		if (RDP::Op(command) == RDP::Op::SetOtherModes)
+		{
+			depthbuffer_enabled = (w2 >> 5) & 1;
 		}
 		if (RDP::Op(command) == RDP::Op::SetColorImage)
 		{
