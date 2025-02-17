@@ -90,18 +90,18 @@ pub fn send_sync_check(device: &mut device::Device) {
     netplay.vi_counter = netplay.vi_counter.wrapping_add(1);
 }
 
-pub fn send_input(netplay: &Netplay, input: (u32, bool)) {
+pub fn send_input(netplay: &Netplay, input: ui::input::InputData) {
     let mut request: Vec<u8> = [UDP_SEND_KEY_INFO].to_vec();
     request.push(netplay.player_number);
     request.extend_from_slice(
         &(netplay.player_data[netplay.player_number as usize].count).to_be_bytes(),
     );
-    request.extend_from_slice(&(input.0).to_be_bytes());
-    request.push(input.1 as u8);
+    request.extend_from_slice(&(input.data).to_be_bytes());
+    request.push(input.pak_change_pressed as u8);
     netplay.udp_socket.send(&request).unwrap();
 }
 
-pub fn get_input(device: &mut device::Device, channel: usize) -> (u32, bool) {
+pub fn get_input(device: &mut device::Device, channel: usize) -> ui::input::InputData {
     let netplay = device.netplay.as_mut().unwrap();
     let mut input = None;
 
@@ -132,10 +132,10 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> (u32, bool) {
         && netplay.player_data[channel].input_events.len() as u8 > netplay.buffer_target;
 
     netplay.player_data[channel].count = netplay.player_data[channel].count.wrapping_add(1);
-    (
-        input.as_ref().unwrap().input,
-        input.as_ref().unwrap().plugin != 0,
-    )
+    ui::input::InputData {
+        data: input.as_ref().unwrap().input,
+        pak_change_pressed: input.as_ref().unwrap().plugin != 0,
+    }
 }
 
 fn request_input(netplay: &Netplay, channel: usize) {

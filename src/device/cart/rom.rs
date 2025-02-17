@@ -10,10 +10,10 @@ fn read_cart_word(device: &mut device::Device, address: usize) -> u32 {
             .ui
             .saves
             .romsave
-            .0
+            .data
             .contains_key(&(address as u32 + i))
         {
-            data[i as usize] = device.ui.saves.romsave.0[&(address as u32 + i)];
+            data[i as usize] = device.ui.saves.romsave.data[&(address as u32 + i)];
         }
     }
     u32::from_be_bytes(data)
@@ -55,10 +55,10 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
                 .ui
                 .saves
                 .romsave
-                .0
+                .data
                 .insert((masked_address + i) as u32, *item);
         }
-        device.ui.saves.romsave.1 = true;
+        device.ui.saves.romsave.written = true;
     }
 
     device.cart.latch = value & mask;
@@ -85,12 +85,12 @@ pub fn dma_read(
 
         for i in 0..length {
             if cart_addr + i < device.cart.rom.len() as u32 {
-                device.ui.saves.romsave.0.insert(
+                device.ui.saves.romsave.data.insert(
                     cart_addr + i,
                     device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
                 );
 
-                device.ui.saves.romsave.1 = true;
+                device.ui.saves.romsave.written = true;
             }
         }
     }
@@ -110,8 +110,8 @@ pub fn dma_write(
     let mut i = dram_addr;
     let mut j = cart_addr;
     while i < dram_addr + length && j < device.cart.rom.len() as u32 {
-        if device.ui.saves.romsave.0.contains_key(&j) {
-            device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.saves.romsave.0[&j];
+        if device.ui.saves.romsave.data.contains_key(&j) {
+            device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.saves.romsave.data[&j];
         } else {
             device.rdram.mem[i as usize ^ device.byte_swap] = device.cart.rom[j as usize];
         }

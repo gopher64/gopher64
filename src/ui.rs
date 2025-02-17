@@ -122,12 +122,30 @@ impl Ui {
                 savestate_file_path: std::path::PathBuf::new(),
             },
             saves: storage::Saves {
-                eeprom: (Vec::new(), false),
-                sram: (Vec::new(), false),
-                flash: (Vec::new(), false),
-                mempak: (Vec::new(), false),
-                sdcard: (Vec::new(), false),
-                romsave: (std::collections::HashMap::new(), false),
+                eeprom: storage::Save {
+                    data: Vec::new(),
+                    written: false,
+                },
+                sram: storage::Save {
+                    data: Vec::new(),
+                    written: false,
+                },
+                flash: storage::Save {
+                    data: Vec::new(),
+                    written: false,
+                },
+                mempak: storage::Save {
+                    data: Vec::new(),
+                    written: false,
+                },
+                sdcard: storage::Save {
+                    data: Vec::new(),
+                    written: false,
+                },
+                romsave: storage::RomSave {
+                    data: std::collections::HashMap::new(),
+                    written: false,
+                },
             },
             event_audio: audio::EventAudio {
                 mempak: include_bytes!("../data/mempak.wav").to_vec(),

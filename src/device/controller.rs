@@ -66,8 +66,8 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 netplay::get_input(device, channel)
             };
 
-            device.pif.ram[offset..offset + 4].copy_from_slice(&input.0.to_ne_bytes());
-            if input.1 {
+            device.pif.ram[offset..offset + 4].copy_from_slice(&input.data.to_ne_bytes());
+            if input.pak_change_pressed {
                 // pak change button pressed
                 if device::events::get_event(device, device::events::EVENT_TYPE_PAK).is_none() {
                     device.pif.channels[channel].change_pak =
