@@ -832,17 +832,17 @@ pub fn get_default_profile() -> ui::config::InputProfile {
         joystick_buttons: [ui::config::InputKeyButton {
             enabled: false,
             id: 0,
-        }; 19],
+        }; PROFILE_SIZE],
         joystick_hat: [ui::config::InputJoystickHat {
             enabled: false,
             id: 0,
             direction: 0,
-        }; 19],
+        }; PROFILE_SIZE],
         joystick_axis: [ui::config::InputControllerAxis {
             enabled: false,
             id: 0,
             axis: 0,
-        }; 19],
+        }; PROFILE_SIZE],
         dinput: false,
     }
 }
