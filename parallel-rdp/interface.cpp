@@ -64,14 +64,21 @@ static CALL_BACK callback;
 static GFX_INFO gfx_info;
 static uint32_t region;
 
-static uint32_t depthbuffer_address;
-static uint32_t framebuffer_address;
-static uint32_t framebuffer_pixel_size;
-static uint32_t framebuffer_width;
-static uint32_t framebuffer_height;
-static uint8_t depthbuffer_enabled;
+typedef struct
+{
+	uint32_t depthbuffer_address;
+	uint32_t framebuffer_address;
+	uint32_t framebuffer_pixel_size;
+	uint32_t framebuffer_width;
+	uint32_t framebuffer_height;
+	uint32_t framebuffer_size;
+	uint32_t depthbuffer_size;
+	uint8_t depthbuffer_enabled;
+} FrameBufferInfo;
+
 static uint8_t *rdram_dirty;
 static uint64_t sync_signal;
+static FrameBufferInfo frame_buffer_info;
 
 static const unsigned cmd_len_lut[64] = {
 	1,
@@ -187,6 +194,10 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 
 void rdp_new_processor(GFX_INFO _gfx_info, bool _upscale)
 {
+	memset(&frame_buffer_info, 0, sizeof(FrameBufferInfo));
+	sync_signal = 0;
+	memset(rdram_dirty, 0, gfx_info.RDRAM_SIZE / 8);
+
 	gfx_info = _gfx_info;
 	if (processor)
 	{
@@ -230,6 +241,8 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_sc
 	{
 		rdp_close();
 	}
+
+	rdram_dirty = (uint8_t *)malloc(gfx_info.RDRAM_SIZE / 8);
 	rdp_new_processor(gfx_info, _upscale);
 
 	if (!processor->device_is_supported())
@@ -243,10 +256,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_sc
 
 	callback.emu_running = true;
 	callback.enable_speedlimiter = true;
-
-	sync_signal = 0;
-	rdram_dirty = (uint8_t *)malloc(gfx_info.RDRAM_SIZE / 8);
-	memset(rdram_dirty, 0, gfx_info.RDRAM_SIZE / 8);
 }
 
 void rdp_close()
@@ -403,6 +412,26 @@ void rdp_full_sync()
 	processor->wait_for_timeline(processor->signal_timeline());
 }
 
+void calculate_buffer_size()
+{
+	switch (frame_buffer_info.framebuffer_pixel_size)
+	{
+	case 0:
+		frame_buffer_info.framebuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height / 2) >> 3;
+		break;
+	case 1:
+		frame_buffer_info.framebuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height) >> 3;
+		break;
+	case 2:
+		frame_buffer_info.framebuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height * 2) >> 3;
+		break;
+	case 3:
+		frame_buffer_info.framebuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height * 4) >> 3;
+		break;
+	}
+	frame_buffer_info.depthbuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height * 2) >> 3;
+}
+
 uint64_t rdp_process_commands()
 {
 	uint64_t interrupt_timer = 0;
@@ -469,33 +498,17 @@ uint64_t rdp_process_commands()
 			RDP::Op(command) == RDP::Op::TextureRectangleFlip ||
 			RDP::Op(command) == RDP::Op::FillRectangle)
 		{
-			uint32_t size = 0;
-			switch (framebuffer_pixel_size)
+			if (!rdram_dirty[frame_buffer_info.framebuffer_address])
 			{
-			case 0:
-				size = (framebuffer_width * framebuffer_height / 2) >> 3;
-				break;
-			case 1:
-				size = (framebuffer_width * framebuffer_height) >> 3;
-				break;
-			case 2:
-				size = (framebuffer_width * framebuffer_height * 2) >> 3;
-				break;
-			case 3:
-				size = (framebuffer_width * framebuffer_height * 4) >> 3;
-				break;
+				for (uint32_t i = frame_buffer_info.framebuffer_address; i < frame_buffer_info.framebuffer_address + frame_buffer_info.framebuffer_size; ++i)
+				{
+					rdram_dirty[i] = 1;
+				}
 			}
 
-			for (uint32_t i = framebuffer_address; i < framebuffer_address + size; ++i)
+			if (frame_buffer_info.depthbuffer_enabled && !rdram_dirty[frame_buffer_info.depthbuffer_address])
 			{
-				rdram_dirty[i] = 1;
-			}
-
-			if (depthbuffer_enabled)
-			{
-				size = (framebuffer_width * framebuffer_height * 2) >> 3;
-
-				for (uint32_t i = depthbuffer_address; i < depthbuffer_address + size; ++i)
+				for (uint32_t i = frame_buffer_info.depthbuffer_address; i < frame_buffer_info.depthbuffer_address + frame_buffer_info.depthbuffer_size; ++i)
 				{
 					rdram_dirty[i] = 1;
 				}
@@ -503,17 +516,18 @@ uint64_t rdp_process_commands()
 		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
 		{
-			depthbuffer_enabled = (w2 >> 5) & 1;
+			frame_buffer_info.depthbuffer_enabled = (w2 >> 5) & 1;
 		}
 		else if (RDP::Op(command) == RDP::Op::SetColorImage)
 		{
-			framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
-			framebuffer_pixel_size = (w1 >> 19) & 0x3;
-			framebuffer_width = (w1 & 0x3FF) + 1;
+			frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
+			frame_buffer_info.framebuffer_pixel_size = (w1 >> 19) & 0x3;
+			frame_buffer_info.framebuffer_width = (w1 & 0x3FF) + 1;
+			calculate_buffer_size();
 		}
 		else if (RDP::Op(command) == RDP::Op::SetMaskImage)
 		{
-			depthbuffer_address = (w2 & 0x00FFFFFF) >> 3;
+			frame_buffer_info.depthbuffer_address = (w2 & 0x00FFFFFF) >> 3;
 		}
 		else if (RDP::Op(command) == RDP::Op::SetScissor)
 		{
@@ -522,7 +536,8 @@ uint64_t rdp_process_commands()
 			uint32_t lower_right_x = ((w2 >> 12) & 0xFFF) >> 2;
 			uint32_t lower_right_y = (w2 & 0xFFF) >> 2;
 			region = (lower_right_x - upper_left_x) * (lower_right_y - upper_left_y);
-			framebuffer_height = lower_right_y;
+			frame_buffer_info.framebuffer_height = lower_right_y;
+			calculate_buffer_size();
 		}
 		else if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
