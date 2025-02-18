@@ -554,9 +554,10 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
                 if event_type == u32::from(sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
                     close_controllers(open_joysticks, open_controllers);
                     return;
-                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_KEY_UP) {
+                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_KEY_DOWN) {
                     if unsafe {
-                        event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_LALT
+                        !event.key.repeat
+                            && event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_LALT
                             && event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_RALT
                     } {
                         new_keys[*value] = ui::config::InputKeyButton {
