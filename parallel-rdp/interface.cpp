@@ -157,8 +157,10 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 	{
 		wsi_platform->do_resize();
 	}
-	else if (event->type == SDL_EVENT_KEY_UP)
+	else if (event->type == SDL_EVENT_KEY_DOWN)
 	{
+		if (event->key.repeat)
+			return 0;
 		switch (event->key.scancode)
 		{
 		case SDL_SCANCODE_RETURN:
