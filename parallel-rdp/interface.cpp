@@ -498,12 +498,15 @@ uint64_t rdp_process_commands()
 			RDP::Op(command) == RDP::Op::TextureRectangleFlip ||
 			RDP::Op(command) == RDP::Op::FillRectangle)
 		{
-			for (uint32_t i = frame_buffer_info.framebuffer_address; i < frame_buffer_info.framebuffer_address + frame_buffer_info.framebuffer_size; ++i)
+			if (!rdram_dirty[frame_buffer_info.framebuffer_address])
 			{
-				rdram_dirty[i] = 1;
+				for (uint32_t i = frame_buffer_info.framebuffer_address; i < frame_buffer_info.framebuffer_address + frame_buffer_info.framebuffer_size; ++i)
+				{
+					rdram_dirty[i] = 1;
+				}
 			}
 
-			if (frame_buffer_info.depthbuffer_enabled)
+			if (frame_buffer_info.depthbuffer_enabled && !rdram_dirty[frame_buffer_info.depthbuffer_address])
 			{
 				for (uint32_t i = frame_buffer_info.depthbuffer_address; i < frame_buffer_info.depthbuffer_address + frame_buffer_info.depthbuffer_size; ++i)
 				{

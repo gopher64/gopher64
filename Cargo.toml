@@ -39,3 +39,4 @@ cc = { version = "1.2", features = ["parallel"] }
 
 [profile.release]
 codegen-units = 1
+debug = 1
