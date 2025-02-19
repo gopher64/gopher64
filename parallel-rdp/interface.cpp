@@ -192,7 +192,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 	return 0;
 }
 
-void rdp_new_processor(GFX_INFO _gfx_info, bool _upscale)
+void rdp_new_processor(GFX_INFO _gfx_info, uint32_t upscale)
 {
 	memset(&frame_buffer_info, 0, sizeof(FrameBufferInfo));
 	sync_signal = 0;
@@ -204,15 +204,22 @@ void rdp_new_processor(GFX_INFO _gfx_info, bool _upscale)
 		delete processor;
 	}
 	RDP::CommandProcessorFlags flags = 0;
-	if (_upscale)
+
+	if (upscale == 2)
 	{
-		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_2X_BIT;
 		flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
+		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_2X_BIT;
 	}
+	else if (upscale == 4)
+	{
+		flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
+		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_4X_BIT;
+	}
+
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 }
 
-void rdp_init(void *_window, GFX_INFO _gfx_info, bool _upscale, bool _integer_scaling, bool _fullscreen)
+void rdp_init(void *_window, GFX_INFO _gfx_info, uint32_t _upscale, bool _integer_scaling, bool _fullscreen)
 {
 	window = (SDL_Window *)_window;
 	bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
