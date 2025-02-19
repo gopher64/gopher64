@@ -15,6 +15,12 @@ pub struct GameInfo {
     pub rom_contents: Vec<u8>,
 }
 
+#[derive(PartialEq, Default)]
+pub struct NetplayServer {
+    pub name: String,
+    pub ip: String,
+}
+
 #[derive(Default)]
 pub struct GuiNetplay {
     pub create: bool,
@@ -27,7 +33,7 @@ pub struct GuiNetplay {
     pub create_rom_label: String,
     pub join_rom_label: String,
     pub send_chat: bool,
-    pub have_sessions: Option<(String, String)>,
+    pub have_sessions: Option<NetplayServer>,
     pub begin_game: bool,
     pub chat_log: String,
     pub chat_message: String,
@@ -39,7 +45,7 @@ pub struct GuiNetplay {
     pub rom_contents: Vec<u8>,
     pub player_number: u8,
     pub player_names: [String; 4],
-    pub server: (String, String),
+    pub server: NetplayServer,
     pub socket_waiting: bool,
     pub game_info: GameInfo,
     pub servers: std::collections::HashMap<String, String>,
@@ -140,7 +146,10 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 app.netplay
                     .servers
                     .insert(server_name.to_string(), server_ip.to_string());
-                app.netplay.server = (server.0.clone(), server.1.clone());
+                app.netplay.server = NetplayServer {
+                    name: server.0.clone(),
+                    ip: server.1.clone(),
+                };
             }
             app.netplay.broadcast_socket = None;
         }
@@ -151,9 +160,12 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
         if result.is_ok() {
             app.netplay.servers.extend(result.unwrap());
             app.netplay.server_receiver = None;
-            if app.netplay.server.0.is_empty() {
+            if app.netplay.server.name.is_empty() {
                 let first_server = app.netplay.servers.iter().next().unwrap();
-                app.netplay.server = (first_server.0.clone(), first_server.1.clone());
+                app.netplay.server = NetplayServer {
+                    name: first_server.0.clone(),
+                    ip: first_server.1.clone(),
+                };
             }
         }
         ctx.request_repaint();
@@ -239,12 +251,15 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
             }
 
             egui::ComboBox::from_id_salt("server-combobox")
-                .selected_text(app.netplay.server.0.to_string())
+                .selected_text(app.netplay.server.name.to_string())
                 .show_ui(ui, |ui| {
                     for server in app.netplay.servers.iter() {
                         ui.selectable_value(
                             &mut app.netplay.server,
-                            (server.0.clone(), server.1.clone()),
+                            NetplayServer {
+                                name: server.0.clone(),
+                                ip: server.1.clone(),
+                            },
                             server.0,
                         );
                     }
@@ -309,7 +324,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         }),
                     };
                     let (mut socket, _response) =
-                        tungstenite::connect(&app.netplay.server.1).expect("Can't connect");
+                        tungstenite::connect(&app.netplay.server.ip).expect("Can't connect");
                     socket
                         .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
                             serde_json::to_vec(&netplay_message).unwrap(),
@@ -356,7 +371,7 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
     if app.netplay.socket.is_none() {
         let (mut sock, _response) =
-            tungstenite::connect(&app.netplay.server.1).expect("Can't connect");
+            tungstenite::connect(&app.netplay.server.ip).expect("Can't connect");
         match sock.get_mut() {
             tungstenite::stream::MaybeTlsStream::Plain(stream) => {
                 app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
@@ -391,7 +406,10 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 serde_json::to_vec(&request_rooms).unwrap(),
             )))
             .unwrap();
-        app.netplay.have_sessions = Some(app.netplay.server.clone());
+        app.netplay.have_sessions = Some(NetplayServer {
+            name: app.netplay.server.name.clone(),
+            ip: app.netplay.server.ip.clone(),
+        });
         app.netplay.socket_waiting = true;
         ctx.request_repaint();
     }
@@ -512,19 +530,22 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     ctx.request_repaint();
                 }
                 egui::ComboBox::from_id_salt("server-combobox")
-                    .selected_text(app.netplay.server.0.to_string())
+                    .selected_text(app.netplay.server.name.to_string())
                     .show_ui(ui, |ui| {
                         for server in app.netplay.servers.iter() {
                             ui.selectable_value(
                                 &mut app.netplay.server,
-                                (server.0.clone(), server.1.clone()),
+                                NetplayServer {
+                                    name: server.0.clone(),
+                                    ip: server.1.clone(),
+                                },
                                 server.0,
                             );
                         }
                     });
             });
         });
-        if !app.netplay.server.0.is_empty() {
+        if !app.netplay.server.name.is_empty() {
             get_sessions(app, ctx);
         }
         ui.add_space(16.0);
