@@ -1,41 +1,17 @@
 # gopher64
-(gopher64 also has a GUI that can be launched by just running the executable)
+Gopher64 can be used via its GUI or the command line.
 
-```
-Usage: gopher64 [OPTIONS] [GAME]
+## wiki
 
-Arguments:
-  [GAME]  
+https://github.com/gopher64/gopher64/wiki
 
-Options:
-  -f, --fullscreen
-          
-  -c, --configure-input-profile <PROFILE_NAME>
-          Create a new input profile (keyboard/gamepad mappings).
-  -u, --use-dinput
-          Use DirectInput when configuring a new input profile.
-  -b, --bind-input-profile <PROFILE_NAME>
-          Must also specify --port. Used to bind a previously created profile to a port
-  -l, --list-controllers
-          Lists connected controllers which can be used in --assign-controller
-  -a, --assign-controller <CONTROLLER_NUMBER>
-          Must also specify --port. Used to assign a controller listed in --list-controllers to a port
-  -p, --port <PORT>
-          Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller
-  -z, --clear-input-bindings
-          Clear all input profile bindings and controller assignments
-  -h, --help
-          Print help
-  -V, --version
-          Print version
-```
 ## discord
 
 https://discord.gg/9RGXq8W8JQ
 
 ## controls
 
-Keys are mapped according to mupen64plus defaults: https://mupen64plus.org/wiki/index.php/KeyboardSetup#2._Default_Key_Mappings_for_SDL-Input_Plugin. Xbox-style controllers also have a default mapping applied.
+Keys are mapped according to [these defaults](https://github.com/gopher64/gopher64/wiki/Default-Keyboard-Setup). Xbox-style controllers also have a [default mapping applied](https://github.com/gopher64/gopher64/wiki/Default-Gamepad-Setup).
 
 You can create you own mappings by running `./gopher64 --configure-input-profile my_profile`. You then bind that profile to a port: `./gopher64 --bind-input-profile my_profile --port 1`
 
