@@ -128,7 +128,7 @@ pub fn dma_write(
 
 pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     device.cart.rom = rom_file;
-    set_system_region(device, device.cart.rom[0x3E]);
+    device.cart.pal = is_system_pal(device.cart.rom[0x3E]);
     set_cic(device);
 
     device.ui.game_hash = calculate_hash(&device.cart.rom);
@@ -139,13 +139,14 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
     }
 }
 
-fn set_system_region(device: &mut device::Device, country: u8) {
+fn is_system_pal(country: u8) -> bool {
     let pal_codes: [u8; 8] = [b'D', b'F', b'I', b'P', b'S', b'U', b'X', b'Y'];
     for i in pal_codes {
         if country == i {
-            device.cart.pal = true
+            return true;
         }
     }
+    false
 }
 
 fn set_cic(device: &mut device::Device) {
