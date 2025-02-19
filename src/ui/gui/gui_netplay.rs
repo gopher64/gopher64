@@ -7,7 +7,19 @@ use sha2::{Digest, Sha256};
 const NETPLAY_VERSION: i32 = 17;
 const EMU_NAME: &str = "gopher64";
 
-type GameInfo = (String, String, String, Vec<u8>);
+#[derive(Default)]
+pub struct GameInfo {
+    pub md5: String,
+    pub game_name: String,
+    pub rom_label: String,
+    pub rom_contents: Vec<u8>,
+}
+
+#[derive(PartialEq, Default)]
+pub struct NetplayServer {
+    pub name: String,
+    pub ip: String,
+}
 
 #[derive(Default)]
 pub struct GuiNetplay {
@@ -21,7 +33,7 @@ pub struct GuiNetplay {
     pub create_rom_label: String,
     pub join_rom_label: String,
     pub send_chat: bool,
-    pub have_sessions: Option<(String, String)>,
+    pub have_sessions: Option<NetplayServer>,
     pub begin_game: bool,
     pub chat_log: String,
     pub chat_message: String,
@@ -33,7 +45,7 @@ pub struct GuiNetplay {
     pub rom_contents: Vec<u8>,
     pub player_number: u8,
     pub player_names: [String; 4],
-    pub server: (String, String),
+    pub server: NetplayServer,
     pub socket_waiting: bool,
     pub game_info: GameInfo,
     pub servers: std::collections::HashMap<String, String>,
@@ -134,7 +146,10 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 app.netplay
                     .servers
                     .insert(server_name.to_string(), server_ip.to_string());
-                app.netplay.server = (server.0.clone(), server.1.clone());
+                app.netplay.server = NetplayServer {
+                    name: server.0.clone(),
+                    ip: server.1.clone(),
+                };
             }
             app.netplay.broadcast_socket = None;
         }
@@ -145,9 +160,12 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
         if result.is_ok() {
             app.netplay.servers.extend(result.unwrap());
             app.netplay.server_receiver = None;
-            if app.netplay.server.0.is_empty() {
+            if app.netplay.server.name.is_empty() {
                 let first_server = app.netplay.servers.iter().next().unwrap();
-                app.netplay.server = (first_server.0.clone(), first_server.1.clone());
+                app.netplay.server = NetplayServer {
+                    name: first_server.0.clone(),
+                    ip: first_server.1.clone(),
+                };
             }
         }
         ctx.request_repaint();
@@ -190,12 +208,12 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     if let Some(file) = file {
                         parse_rom_file(file, tx).await;
                     } else {
-                        tx.send((
-                            "".to_string(),
-                            "".to_string(),
-                            "Open ROM".to_string(),
-                            vec![],
-                        ))
+                        tx.send(GameInfo {
+                            md5: "".to_string(),
+                            game_name: "".to_string(),
+                            rom_label: "Open ROM".to_string(),
+                            rom_contents: vec![],
+                        })
                         .await
                         .unwrap();
                     }
@@ -221,24 +239,27 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if result.is_ok() {
                     app.netplay.game_info_receiver = None;
                     let data = result.unwrap();
-                    if !data.0.is_empty() {
+                    if !data.md5.is_empty() {
                         app.netplay.game_info = data;
-                        app.netplay.rom_contents = app.netplay.game_info.3.clone();
-                        app.netplay.create_rom_label = app.netplay.game_info.2.clone();
+                        app.netplay.rom_contents = app.netplay.game_info.rom_contents.clone();
+                        app.netplay.create_rom_label = app.netplay.game_info.rom_label.clone();
                     } else {
-                        app.netplay.create_rom_label = data.2;
+                        app.netplay.create_rom_label = data.rom_label;
                     }
                 }
                 ctx.request_repaint();
             }
 
             egui::ComboBox::from_id_salt("server-combobox")
-                .selected_text(app.netplay.server.0.to_string())
+                .selected_text(app.netplay.server.name.to_string())
                 .show_ui(ui, |ui| {
                     for server in app.netplay.servers.iter() {
                         ui.selectable_value(
                             &mut app.netplay.server,
-                            (server.0.clone(), server.1.clone()),
+                            NetplayServer {
+                                name: server.0.clone(),
+                                ip: server.1.clone(),
+                            },
                             server.0,
                         );
                     }
@@ -271,12 +292,12 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     app.netplay.error = "Player Name cannot be empty".to_string();
                 } else if app.netplay.session_name.is_empty() {
                     app.netplay.error = "Session Name cannot be empty".to_string();
-                } else if app.netplay.game_info.0.is_empty() {
+                } else if app.netplay.game_info.md5.is_empty() {
                     app.netplay.error = "ROM not loaded".to_string();
                 } else {
                     let now_utc = chrono::Utc::now().timestamp_millis().to_string();
                     let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
-                    let mut game_name = app.netplay.game_info.1.to_string();
+                    let mut game_name = app.netplay.game_info.game_name.to_string();
                     if game_name.is_empty() {
                         // If the ROM doesn't report a name, use the filename
                         game_name = app.netplay.create_rom_label.clone();
@@ -297,13 +318,13 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             room_name: Some(app.netplay.session_name.clone()),
                             password: Some(app.netplay.password.clone()),
                             game_name: Some(game_name),
-                            md5: Some(app.netplay.game_info.0.clone()),
+                            md5: Some(app.netplay.game_info.md5.clone()),
                             protected: None,
                             port: None,
                         }),
                     };
                     let (mut socket, _response) =
-                        tungstenite::connect(&app.netplay.server.1).expect("Can't connect");
+                        tungstenite::connect(&app.netplay.server.ip).expect("Can't connect");
                     socket
                         .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
                             serde_json::to_vec(&netplay_message).unwrap(),
@@ -350,7 +371,7 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
     if app.netplay.socket.is_none() {
         let (mut sock, _response) =
-            tungstenite::connect(&app.netplay.server.1).expect("Can't connect");
+            tungstenite::connect(&app.netplay.server.ip).expect("Can't connect");
         match sock.get_mut() {
             tungstenite::stream::MaybeTlsStream::Plain(stream) => {
                 app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
@@ -385,7 +406,10 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 serde_json::to_vec(&request_rooms).unwrap(),
             )))
             .unwrap();
-        app.netplay.have_sessions = Some(app.netplay.server.clone());
+        app.netplay.have_sessions = Some(NetplayServer {
+            name: app.netplay.server.name.clone(),
+            ip: app.netplay.server.ip.clone(),
+        });
         app.netplay.socket_waiting = true;
         ctx.request_repaint();
     }
@@ -397,16 +421,21 @@ async fn parse_rom_file(file: rfd::FileHandle, tx: tokio::sync::mpsc::Sender<Gam
         let hash = device::cart::rom::calculate_hash(&rom_contents);
         let game_name = ui::storage::get_game_name(&rom_contents);
 
-        tx.send((hash, game_name, file.file_name(), rom_contents))
-            .await
-            .unwrap();
+        tx.send(GameInfo {
+            md5: hash,
+            game_name,
+            rom_label: file.file_name(),
+            rom_contents,
+        })
+        .await
+        .unwrap();
     } else {
-        tx.send((
-            "".to_string(),
-            "".to_string(),
-            "Invalid ROM".to_string(),
-            vec![],
-        ))
+        tx.send(GameInfo {
+            md5: "".to_string(),
+            game_name: "".to_string(),
+            rom_label: "Invalid ROM".to_string(),
+            rom_contents: vec![],
+        })
         .await
         .unwrap();
     }
@@ -442,9 +471,9 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
         if result.is_ok() {
             app.netplay.game_info_receiver = None;
             let data = result.unwrap();
-            if !data.0.is_empty() {
+            if !data.md5.is_empty() {
                 app.netplay.game_info = data;
-                app.netplay.rom_contents = app.netplay.game_info.3.clone();
+                app.netplay.rom_contents = app.netplay.game_info.rom_contents.clone();
 
                 let netplay_message = NetplayMessage {
                     message_type: "request_join_room".to_string(),
@@ -462,7 +491,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         room_name: None,
                         password: Some(app.netplay.password.clone()),
                         game_name: None,
-                        md5: Some(app.netplay.game_info.0.clone()),
+                        md5: Some(app.netplay.game_info.md5.clone()),
                         protected: None,
                         port: app.netplay.selected_session.as_ref().unwrap().port,
                     }),
@@ -476,7 +505,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
 
                 app.netplay.socket_waiting = true;
             } else {
-                app.netplay.error = data.2;
+                app.netplay.error = data.rom_label;
                 app.netplay.join_rom_label = "Join Session (Open ROM)".to_string();
             }
         }
@@ -501,19 +530,22 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     ctx.request_repaint();
                 }
                 egui::ComboBox::from_id_salt("server-combobox")
-                    .selected_text(app.netplay.server.0.to_string())
+                    .selected_text(app.netplay.server.name.to_string())
                     .show_ui(ui, |ui| {
                         for server in app.netplay.servers.iter() {
                             ui.selectable_value(
                                 &mut app.netplay.server,
-                                (server.0.clone(), server.1.clone()),
+                                NetplayServer {
+                                    name: server.0.clone(),
+                                    ip: server.1.clone(),
+                                },
                                 server.0,
                             );
                         }
                     });
             });
         });
-        if !app.netplay.server.0.is_empty() {
+        if !app.netplay.server.name.is_empty() {
             get_sessions(app, ctx);
         }
         ui.add_space(16.0);
@@ -590,12 +622,12 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             if let Some(file) = file {
                                 parse_rom_file(file, tx).await;
                             } else {
-                                tx.send((
-                                    "".to_string(),
-                                    "".to_string(),
-                                    "No ROM selected".to_string(),
-                                    vec![],
-                                ))
+                                tx.send(GameInfo {
+                                    md5: "".to_string(),
+                                    game_name: "".to_string(),
+                                    rom_label: "No ROM selected".to_string(),
+                                    rom_contents: vec![],
+                                })
                                 .await
                                 .unwrap();
                             }
