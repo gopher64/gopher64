@@ -464,7 +464,7 @@ impl eframe::App for GopherEguiApp {
                 4 => 2,
                 _ => 0,
             };
-            let display_text = format!("{}x Resolution", upscale_values[slider_value as usize]);
+            let display_text = format!("{}x Resolution", upscale_values[slider_value]);
             if ui
                 .add(
                     egui::Slider::new(&mut slider_value, 0..=2)
