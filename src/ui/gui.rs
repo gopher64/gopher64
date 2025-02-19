@@ -13,7 +13,7 @@ pub struct GopherEguiApp {
     input_profiles: Vec<String>,
     controller_enabled: [bool; 4],
     controller_paths: Vec<String>,
-    upscale: bool,
+    upscale: u32,
     integer_scaling: bool,
     fullscreen: bool,
     emulate_vru: bool,
@@ -29,7 +29,7 @@ struct SaveConfig {
     selected_controller: [i32; 4],
     selected_profile: [String; 4],
     controller_enabled: [bool; 4],
-    upscale: bool,
+    upscale: u32,
     integer_scaling: bool,
     fullscreen: bool,
     emulate_vru: bool,
@@ -457,7 +457,24 @@ impl eframe::App for GopherEguiApp {
                 }
             });
             ui.add_space(32.0);
-            ui.checkbox(&mut self.upscale, "High-Res Graphics");
+            let upscale_values = [1, 2, 4];
+            let mut slider_value = match self.upscale {
+                1 => 0,
+                2 => 1,
+                4 => 2,
+                _ => 0,
+            };
+            let display_text = format!("{}x Resolution", upscale_values[slider_value]);
+            if ui
+                .add(
+                    egui::Slider::new(&mut slider_value, 0..=2)
+                        .show_value(false)
+                        .text(display_text),
+                )
+                .changed()
+            {
+                self.upscale = upscale_values[slider_value];
+            };
             ui.checkbox(&mut self.integer_scaling, "Integer Scaling");
             ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
             ui.add_space(32.0);
