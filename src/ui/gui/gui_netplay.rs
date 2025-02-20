@@ -167,7 +167,7 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
             }
             app.netplay.server_receiver = None;
             if app.netplay.server.name.is_empty() {
-                let first_server = app.netplay.servers.iter().next().unwrap();
+                let first_server = app.netplay.servers.first().unwrap();
                 app.netplay.server = NetplayServer {
                     name: first_server.name.clone(),
                     ip: first_server.ip.clone(),
