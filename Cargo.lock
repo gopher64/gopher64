@@ -1482,7 +1482,7 @@ dependencies = [
 
 [[package]]
 name = "gopher64"
-version = "1.0.8"
+version = "1.0.9"
 dependencies = [
  "bindgen",
  "cc",
