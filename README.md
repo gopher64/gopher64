@@ -25,6 +25,14 @@ Gopher64 supports netplay (online play with others). It has a few public netplay
 
 If you would like to keep all the game data in the same folder as executable, you just need to create a file called "portable.txt" in the same directory as the executable.
 
+## flatpak
+
+If you want to run the flatpak from the command line, you need to add the `--filesystem=host:ro` option, for example:
+
+```
+flatpak run --filesystem=host:ro io.github.gopher64.gopher64 /path/to/rom.z64
+```
+
 ## goals
 
 1. Performance. I want to be able to use this emulator on my laptop.
