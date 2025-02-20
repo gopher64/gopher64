@@ -33,11 +33,12 @@ If you would like to keep all the game data in the same folder as executable, yo
 
 ## building and usage
 
-1. Install rust: https://www.rust-lang.org/tools/install
-2. `git clone --recursive https://github.com/gopher64/gopher64.git`
-3. `cd gopher64`
-4. `cargo build --release`
-5. `./target/release/gopher64 /path/to/rom.z64`
+1. Linux only: install the SDL3 dependencies: https://wiki.libsdl.org/SDL3/README/linux
+2. Install rust: https://www.rust-lang.org/tools/install
+3. `git clone --recursive https://github.com/gopher64/gopher64.git`
+4. `cd gopher64`
+5. `cargo build --release`
+6. `./target/release/gopher64 /path/to/rom.z64`
 
 ## contributing
 
