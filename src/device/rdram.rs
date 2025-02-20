@@ -1,6 +1,6 @@
 use crate::device;
 use crate::ui;
-use std::alloc::{alloc_zeroed, Layout};
+use std::alloc::{Layout, alloc_zeroed};
 
 //const RDRAM_CONFIG_REG: u32 = 0;
 //const RDRAM_DEVICE_ID_REG: u32 = 1;
