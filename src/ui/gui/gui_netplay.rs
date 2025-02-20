@@ -48,7 +48,7 @@ pub struct GuiNetplay {
     pub server: NetplayServer,
     pub socket_waiting: bool,
     pub game_info: GameInfo,
-    pub servers: std::collections::HashMap<String, String>,
+    pub servers: Vec<NetplayServer>,
     pub waiting_session: Option<NetplayRoom>,
     pub socket:
         Option<tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>>,
@@ -143,9 +143,10 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 serde_json::from_slice(&buffer[..amt]).unwrap();
             for server in data.iter() {
                 let (server_name, server_ip) = server;
-                app.netplay
-                    .servers
-                    .insert(server_name.to_string(), server_ip.to_string());
+                app.netplay.servers.push(NetplayServer {
+                    name: server_name.to_string(),
+                    ip: server_ip.to_string(),
+                });
                 app.netplay.server = NetplayServer {
                     name: server.0.clone(),
                     ip: server.1.clone(),
@@ -158,13 +159,18 @@ fn get_servers(app: &mut GopherEguiApp, ctx: &egui::Context) {
     if app.netplay.server_receiver.is_some() {
         let result = app.netplay.server_receiver.as_mut().unwrap().try_recv();
         if result.is_ok() {
-            app.netplay.servers.extend(result.unwrap());
+            for server in result.unwrap().iter() {
+                app.netplay.servers.push(NetplayServer {
+                    name: server.0.clone(),
+                    ip: server.1.clone(),
+                });
+            }
             app.netplay.server_receiver = None;
             if app.netplay.server.name.is_empty() {
                 let first_server = app.netplay.servers.iter().next().unwrap();
                 app.netplay.server = NetplayServer {
-                    name: first_server.0.clone(),
-                    ip: first_server.1.clone(),
+                    name: first_server.name.clone(),
+                    ip: first_server.ip.clone(),
                 };
             }
         }
@@ -257,10 +263,10 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         ui.selectable_value(
                             &mut app.netplay.server,
                             NetplayServer {
-                                name: server.0.clone(),
-                                ip: server.1.clone(),
+                                name: server.name.clone(),
+                                ip: server.ip.clone(),
                             },
-                            server.0,
+                            server.name.clone(),
                         );
                     }
                 });
@@ -536,10 +542,10 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             ui.selectable_value(
                                 &mut app.netplay.server,
                                 NetplayServer {
-                                    name: server.0.clone(),
-                                    ip: server.1.clone(),
+                                    name: server.name.clone(),
+                                    ip: server.ip.clone(),
                                 },
-                                server.0,
+                                server.name.clone(),
                             );
                         }
                     });
