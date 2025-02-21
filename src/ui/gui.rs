@@ -22,7 +22,14 @@ pub struct GopherEguiApp {
     vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
     vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
+    latest_version: Option<semver::Version>,
+    update_receiver: Option<tokio::sync::mpsc::Receiver<GithubData>>,
     pub netplay: gui_netplay::GuiNetplay,
+}
+
+#[derive(serde::Deserialize)]
+struct GithubData {
+    tag_name: String,
 }
 
 struct SaveConfig {
@@ -112,6 +119,8 @@ impl GopherEguiApp {
             controller_paths,
             vru_window_receiver: None,
             vru_word_notifier: None,
+            latest_version: None,
+            update_receiver: None,
             vru_word_list: Vec::new(),
             netplay: Default::default(),
             dirs: ui::get_dirs(),
@@ -235,6 +244,45 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
             }
         },
     );
+}
+
+fn get_latest_version(app: &mut GopherEguiApp, ctx: &egui::Context) {
+    if app.update_receiver.is_none() {
+        let (tx, rx) = tokio::sync::mpsc::channel(1);
+        app.update_receiver = Some(rx);
+        let gui_ctx = ctx.clone();
+        let client = reqwest::Client::builder()
+            .user_agent(env!("CARGO_PKG_NAME"))
+            .build()
+            .unwrap();
+        let task = client
+            .get("https://api.github.com/repos/gopher64/gopher64/releases/latest")
+            .send();
+        tokio::spawn(async move {
+            let response = task.await;
+            if let Ok(response) = response {
+                let data: Result<GithubData, reqwest::Error> = response.json().await;
+                if data.is_ok() {
+                    tx.send(data.unwrap()).await.unwrap();
+                } else {
+                    tx.send(GithubData {
+                        tag_name: format!("v{}", env!("CARGO_PKG_VERSION")),
+                    })
+                    .await
+                    .unwrap();
+                }
+                gui_ctx.request_repaint();
+            }
+        });
+    } else if app.latest_version.is_none() {
+        let result = app.update_receiver.as_mut().unwrap().try_recv();
+        if result.is_ok() {
+            let tag = &result.unwrap().tag_name[1..];
+            app.latest_version = Some(semver::Version::parse(tag).unwrap());
+        } else {
+            ctx.request_repaint();
+        }
+    }
 }
 
 pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
@@ -486,6 +534,15 @@ impl eframe::App for GopherEguiApp {
 
             ui.add_space(32.0);
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
+            if self.latest_version.is_some() {
+                let current_version = semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
+                if current_version < *self.latest_version.as_ref().unwrap() {
+                    ui.hyperlink_to(
+                        "New version available!",
+                        "https://github.com/gopher64/gopher64/releases/latest",
+                    );
+                }
+            }
         });
 
         if self.emulate_vru && self.vru_window_receiver.is_some() {
@@ -499,6 +556,8 @@ impl eframe::App for GopherEguiApp {
         if self.show_vru_dialog {
             show_vru_dialog(self, ctx);
         }
+
+        get_latest_version(self, ctx);
     }
 }
 
