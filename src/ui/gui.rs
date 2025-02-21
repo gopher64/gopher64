@@ -261,7 +261,16 @@ fn get_latest_version(app: &mut GopherEguiApp, ctx: &egui::Context) {
         tokio::spawn(async move {
             let response = task.await;
             if let Ok(response) = response {
-                tx.send(response.json().await.unwrap()).await.unwrap();
+                let data: Result<GithubData, reqwest::Error> = response.json().await;
+                if data.is_ok() {
+                    tx.send(data.unwrap()).await.unwrap();
+                } else {
+                    tx.send(GithubData {
+                        tag_name: format!("v{}", env!("CARGO_PKG_VERSION")),
+                    })
+                    .await
+                    .unwrap();
+                }
                 gui_ctx.request_repaint();
             }
         });
