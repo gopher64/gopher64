@@ -108,6 +108,15 @@ pub fn load_savestate(device: &mut device::Device) {
         device.ri = state.ri;
         device.vru = state.vru;
 
+        let mut tpak_rom = [vec![], vec![], vec![], vec![]];
+        for (i, item) in tpak_rom.iter_mut().enumerate() {
+            *item = device.transferpaks[i].rom.clone();
+        }
+        device.transferpaks = state.transferpaks;
+        for (i, item) in tpak_rom.iter().enumerate() {
+            device.transferpaks[i].rom = item.clone();
+        }
+
         device::memory::init(device);
         device::vi::set_expected_refresh_rate(device);
         device::cpu::map_instructions(device);

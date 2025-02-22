@@ -176,6 +176,7 @@ pub struct Device {
     pub ri: ri::Ri,
     pub vru: controller::vru::Vru,
     pub vru_window: controller::vru::VruWindow,
+    pub transferpaks: [controller::transferpak::TransferPak; 4],
 }
 
 pub fn zero_m128i() -> __m128i {
@@ -460,6 +461,12 @@ impl Device {
                 talking: false,
                 word_mappings: HashMap::new(),
             },
+            transferpaks: [
+                controller::transferpak::TransferPak::default(),
+                controller::transferpak::TransferPak::default(),
+                controller::transferpak::TransferPak::default(),
+                controller::transferpak::TransferPak::default(),
+            ],
         }
     }
 }
