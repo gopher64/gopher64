@@ -204,7 +204,7 @@ fn process_incoming(netplay: &mut Netplay, ui: &mut ui::Ui) {
                 }
             }
             _ => {
-                panic! {"unknown UDP packet"}
+                panic!("unknown UDP packet")
             }
         }
     }

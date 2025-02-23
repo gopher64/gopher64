@@ -55,7 +55,7 @@ pub fn read_mem(
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let mut masked_address = address as usize & PIF_MASK;
     if masked_address < PIF_RAM_OFFSET {
-        panic! {"write to pif rom"}
+        panic!("write to pif rom")
     }
     masked_address -= PIF_RAM_OFFSET;
     let mut data = u32::from_be_bytes(
