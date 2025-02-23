@@ -3,15 +3,9 @@ use crate::device;
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct TransferPak {
     pub enabled: bool,
-    pub cart_enabled: bool,
     pub reset_state: u8,
     pub bank: u16,
-    #[serde(skip)]
-    pub rom: Vec<u8>,
-    pub ram: Vec<u8>,
-    pub cart_type: device::controller::gbcart::CartType,
-    pub ram_enabled: bool,
-    pub ram_bank: u16,
+    pub cart: device::controller::gbcart::GbCart,
 }
 
 pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usize, size: usize) {
@@ -38,7 +32,7 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
     match address >> 12 {
         0xB => {
             let mut value = 0;
-            if pak.cart_enabled {
+            if pak.cart.enabled {
                 value |= 1 << 0;
             }
             value |= (pak.reset_state & 3) << 2;
@@ -46,11 +40,11 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
                 value |= 1 << 7;
             }
 
-            if pak.cart_enabled && pak.reset_state == 3 {
+            if pak.cart.enabled && pak.reset_state == 3 {
                 pak.reset_state = 2
-            } else if !pak.cart_enabled && pak.reset_state == 2 {
+            } else if !pak.cart.enabled && pak.reset_state == 2 {
                 pak.reset_state = 1
-            } else if !pak.cart_enabled && pak.reset_state == 1 {
+            } else if !pak.cart.enabled && pak.reset_state == 1 {
                 pak.reset_state = 0
             }
             for i in 0..size {
@@ -60,7 +54,7 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
         0xC..=0xF => {
             device::controller::gbcart::read(
                 &mut device.pif.ram,
-                pak,
+                &mut pak.cart,
                 (address & 0x3fff) | ((pak.bank & 0x3) * 0x4000),
                 data,
                 size,
@@ -84,8 +78,8 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
                 }
                 0x84 => {
                     if !pak.enabled {
-                        pak.bank = 0;
-                        pak.cart_enabled = false;
+                        pak.bank = 3;
+                        pak.cart.enabled = false;
                         pak.reset_state = 0;
                     }
                     pak.enabled = true;
@@ -110,19 +104,23 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
         }
         0xB => {
             if value & 1 != 0 {
-                if !pak.cart_enabled {
+                if !pak.cart.enabled {
                     pak.reset_state = 3;
-                    pak.cart_type = device::controller::gbcart::get_cart_type(pak.rom[0x147]);
+                    pak.cart.rom_bank = 1;
+                    pak.cart.ram_bank = 0;
+                    pak.cart.ram_enabled = false;
+                    pak.cart.cart_type =
+                        device::controller::gbcart::get_cart_type(pak.cart.rom[0x147]);
                 }
-                pak.cart_enabled = true;
+                pak.cart.enabled = true;
             } else {
-                pak.cart_enabled = false;
+                pak.cart.enabled = false;
             }
         }
         0xC..=0xF => {
             device::controller::gbcart::write(
                 &mut device.pif.ram,
-                pak,
+                &mut pak.cart,
                 (address & 0x3fff) | ((pak.bank & 0x3) * 0x4000),
                 data,
                 size,

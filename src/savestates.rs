@@ -110,11 +110,11 @@ pub fn load_savestate(device: &mut device::Device) {
 
         let mut tpak_rom = [vec![], vec![], vec![], vec![]];
         for (i, item) in tpak_rom.iter_mut().enumerate() {
-            *item = device.transferpaks[i].rom.clone();
+            *item = device.transferpaks[i].cart.rom.clone();
         }
         device.transferpaks = state.transferpaks;
         for (i, item) in tpak_rom.iter().enumerate() {
-            device.transferpaks[i].rom = item.clone();
+            device.transferpaks[i].cart.rom = item.clone();
         }
 
         device::memory::init(device);
