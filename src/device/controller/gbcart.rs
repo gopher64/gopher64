@@ -93,6 +93,8 @@ fn write_mbc5(
     let value = pif_ram[data + size - 1];
     if address < 0x2000 {
         pak.ram_enabled = value & 0xf == 0xa;
+    } else if address < 0x4000 {
+        println!("Unknown MBC5 write address {:x}", address);
     } else if address < 0x6000 {
         pak.ram_bank = (value & 0xf) as u16;
     } else if address < 0xa000 {
@@ -127,7 +129,7 @@ fn read_mbc5(
         for i in 0..size {
             pif_ram[data + i] = pak.rom[banked_address as usize + i];
         }
-    } else if address < 0xc000 {
+    } else if (0xa000..0xc000).contains(&address) {
         if !pak.ram_enabled {
             for i in 0..size {
                 pif_ram[data + i] = 0xff;
@@ -151,6 +153,12 @@ pub fn read(
     data: usize,
     size: usize,
 ) {
+    if !pak.cart_enabled {
+        for i in 0..size {
+            pif_ram[data + i] = 0x00;
+        }
+        return;
+    }
     match pak.cart_type {
         CartType::MBC3RamBatt => read_mbc3(pif_ram, pak, address, data, size),
         CartType::MBC3RamBattRtc => read_mbc3(pif_ram, pak, address, data, size),
@@ -166,6 +174,9 @@ pub fn write(
     data: usize,
     size: usize,
 ) {
+    if !pak.cart_enabled {
+        return;
+    }
     match pak.cart_type {
         CartType::MBC3RamBatt => write_mbc3(pif_ram, pak, address, data, size),
         CartType::MBC3RamBattRtc => write_mbc3(pif_ram, pak, address, data, size),
