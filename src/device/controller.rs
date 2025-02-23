@@ -1,5 +1,6 @@
 use crate::{device, netplay, savestates, ui};
 
+pub mod gbcart;
 pub mod mempak;
 pub mod rumble;
 pub mod transferpak;

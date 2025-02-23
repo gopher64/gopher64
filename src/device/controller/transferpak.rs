@@ -5,10 +5,13 @@ pub struct TransferPak {
     pub enabled: bool,
     pub cart_enabled: bool,
     pub reset_state: u8,
-    pub bank: u8,
+    pub bank: u16,
     #[serde(skip)]
     pub rom: Vec<u8>,
     pub ram: Vec<u8>,
+    pub cart_type: device::controller::gbcart::CartType,
+    pub ram_enabled: bool,
+    pub ram_bank: u16,
 }
 
 pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usize, size: usize) {
@@ -54,6 +57,15 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
                 device.pif.ram[data + i] = value;
             }
         }
+        0xC..=0xF => {
+            device::controller::gbcart::read(
+                &mut device.pif.ram,
+                pak,
+                (address & 0x3fff) | ((pak.bank & 0x3) * 0x4000),
+                data,
+                size,
+            );
+        }
         _ => {
             panic!("unknown transfer pak read {:x}", address >> 12);
         }
@@ -91,7 +103,7 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
 
     match address >> 12 {
         0xA => {
-            pak.bank = value;
+            pak.bank = value as u16;
             if pak.bank > 3 {
                 pak.bank = 0;
             }
@@ -100,11 +112,21 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
             if value & 1 != 0 {
                 if !pak.cart_enabled {
                     pak.reset_state = 3;
+                    pak.cart_type = device::controller::gbcart::get_cart_type(pak.rom[0x147]);
                 }
                 pak.cart_enabled = true;
             } else {
                 pak.cart_enabled = false;
             }
+        }
+        0xC..=0xF => {
+            device::controller::gbcart::write(
+                &mut device.pif.ram,
+                pak,
+                (address & 0x3fff) | ((pak.bank & 0x3) * 0x4000),
+                data,
+                size,
+            );
         }
         _ => {
             panic!("unknown transfer pak write {:x}", address >> 12);
