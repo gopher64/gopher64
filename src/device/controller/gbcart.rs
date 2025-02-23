@@ -95,7 +95,7 @@ fn write_mbc5(
         pak.ram_enabled = value & 0xf == 0xa;
     } else if address < 0x6000 {
         pak.ram_bank = (value & 0xf) as u16;
-    } else if address >= 0x6000 && address < 0xa000 {
+    } else if address < 0xa000 {
         println!("Unknown MBC5 write address {:x}", address);
     } else if (0xa000..0xc000).contains(&address) {
         if !pak.ram_enabled {
