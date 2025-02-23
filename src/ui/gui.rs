@@ -461,13 +461,30 @@ impl eframe::App for GopherEguiApp {
             egui::Grid::new("controller_config").show(ui, |ui| {
                 ui.label("Port");
                 ui.label("Enabled");
+                ui.label("Emulate VRU");
+                //ui.label("Transfer Pak");
                 ui.label("Profile");
                 ui.label("Controller");
                 ui.end_row();
                 for i in 0..4 {
                     ui.label(format!("{}", i + 1));
-                    ui.checkbox(&mut self.controller_enabled[i], "");
-
+                    ui.centered_and_justified(|ui| {
+                        ui.checkbox(&mut self.controller_enabled[i], "");
+                    });
+                    let mut vru = false;
+                    ui.centered_and_justified(|ui| {
+                        if i < 3 {
+                            ui.add_enabled(false, egui::Checkbox::new(&mut vru, ""));
+                        } else {
+                            ui.add_enabled(true, egui::Checkbox::new(&mut self.emulate_vru, ""));
+                        }
+                    });
+                    /*
+                    let mut tpak: bool = false;
+                    ui.centered_and_justified(|ui| {
+                        ui.checkbox(&mut tpak, "");
+                    });
+                    */
                     egui::ComboBox::from_id_salt(format!("profile-combo-{}", i))
                         .selected_text(self.selected_profile[i].clone())
                         .show_ui(ui, |ui| {
@@ -525,12 +542,6 @@ impl eframe::App for GopherEguiApp {
             };
             ui.checkbox(&mut self.integer_scaling, "Integer Scaling");
             ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
-            ui.add_space(32.0);
-
-            ui.checkbox(
-                &mut self.emulate_vru,
-                "Emulate VRU (connects VRU to controller port 4)",
-            );
 
             ui.add_space(32.0);
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
