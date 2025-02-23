@@ -246,14 +246,11 @@ pub fn init(device: &mut device::Device) {
     device.pif.ram[0x27] = device.cart.cic_seed;
 
     let default_handler = device::controller::PakHandler {
-        read: device::controller::transferpak::read,
-        write: device::controller::transferpak::write,
-        pak_type: device::controller::PakType::TransferPak,
+        read: device::controller::mempak::read,
+        write: device::controller::mempak::write,
+        pak_type: device::controller::PakType::MemPak,
     };
-    device.transferpaks[0].cart.rom =
-        include_bytes!("/var/home/loganmc10/Downloads/test/red.gb").to_vec();
-    device.transferpaks[0].cart.ram =
-        include_bytes!("/var/home/loganmc10/Downloads/test/red.sav").to_vec();
+
     connect_pif_channels(device);
 
     for i in 0..4 {
