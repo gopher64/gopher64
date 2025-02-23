@@ -33,13 +33,12 @@ fn write_mbc3(
         cart.ram_enabled = value & 0xf == 0xa;
     } else if address < 0x4000 {
         let bank = value & 0x7f;
-        if bank == 0 {
+        cart.rom_bank = bank as u16;
+        if cart.rom_bank == 0 {
             cart.rom_bank = 1;
-        } else {
-            cart.rom_bank = bank as u16;
         }
     } else if address < 0x6000 {
-        cart.ram_bank = value as u16;
+        cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0x8000 {
         println!("MBC3 RTC latch")
     } else if (0xa000..0xc000).contains(&address) {
@@ -48,9 +47,8 @@ fn write_mbc3(
         }
         if cart.ram_bank < 0x8 {
             let banked_address = (cart.ram_bank << 13) | (address & 0x1FFF);
-            for i in 0..size {
-                cart.ram[banked_address as usize + i] = pif_ram[data + i];
-            }
+            cart.ram[banked_address as usize..banked_address as usize + size]
+                .copy_from_slice(&pif_ram[data..data + size]);
         } else {
             panic!("Unsupported ram bank {:x}", cart.ram_bank);
         }
@@ -67,15 +65,14 @@ fn read_mbc3(
     size: usize,
 ) {
     if address < 0x4000 {
-        for i in 0..size {
-            pif_ram[data + i] = cart.rom[address as usize + i];
-        }
+        let banked_address = address & 0x3FFF;
+        pif_ram[data..data + size]
+            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
     } else if address < 0x8000 {
         let banked_address = (cart.rom_bank << 14) | (address & 0x3FFF);
-        for i in 0..size {
-            pif_ram[data + i] = cart.rom[banked_address as usize + i];
-        }
-    } else if address < 0xc000 {
+        pif_ram[data..data + size]
+            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
+    } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
             for i in 0..size {
                 pif_ram[data + i] = 0xff;
@@ -84,9 +81,9 @@ fn read_mbc3(
         }
         if cart.ram_bank < 0x8 {
             let banked_address = (cart.ram_bank << 13) | (address & 0x1FFF);
-            for i in 0..size {
-                pif_ram[data + i] = cart.ram[banked_address as usize + i];
-            }
+            pif_ram[data..data + size].copy_from_slice(
+                &cart.ram[banked_address as usize..banked_address as usize + size],
+            );
         } else {
             panic!("Unsupported ram bank {:x}", cart.ram_bank);
         }
@@ -117,9 +114,8 @@ fn write_mbc5(
         }
 
         let banked_address = (cart.ram_bank << 13) | (address & 0x1FFF);
-        for i in 0..size {
-            cart.ram[banked_address as usize + i] = pif_ram[data + i];
-        }
+        cart.ram[banked_address as usize..banked_address as usize + size]
+            .copy_from_slice(&pif_ram[data..data + size]);
     } else {
         panic!("Unsupported write address {:x}", address);
     }
@@ -133,14 +129,13 @@ fn read_mbc5(
     size: usize,
 ) {
     if address < 0x4000 {
-        for i in 0..size {
-            pif_ram[data + i] = cart.rom[address as usize + i];
-        }
+        let banked_address = address & 0x3FFF;
+        pif_ram[data..data + size]
+            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
     } else if address < 0x8000 {
         let banked_address = (cart.rom_bank << 14) | (address & 0x3FFF);
-        for i in 0..size {
-            pif_ram[data + i] = cart.rom[banked_address as usize + i];
-        }
+        pif_ram[data..data + size]
+            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
             for i in 0..size {
@@ -150,9 +145,8 @@ fn read_mbc5(
         }
 
         let banked_address = (cart.ram_bank << 13) | (address & 0x1FFF);
-        for i in 0..size {
-            pif_ram[data + i] = cart.ram[banked_address as usize + i];
-        }
+        pif_ram[data..data + size]
+            .copy_from_slice(&cart.ram[banked_address as usize..banked_address as usize + size]);
     } else {
         panic!("Unsupported read address {:x}", address);
     }
