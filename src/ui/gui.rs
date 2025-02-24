@@ -373,10 +373,12 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
         };
         let mut gb_rom_path = [None, None, None, None];
         let mut gb_ram_path = [None, None, None, None];
-        for i in 0..4 {
-            if transfer_pak[i] {
-                gb_rom_path[i] = select_gb_rom[i].as_mut().unwrap().await;
-                gb_ram_path[i] = select_gb_ram[i].as_mut().unwrap().await;
+        if !netplay {
+            for i in 0..4 {
+                if transfer_pak[i] {
+                    gb_rom_path[i] = select_gb_rom[i].as_mut().unwrap().await;
+                    gb_ram_path[i] = select_gb_ram[i].as_mut().unwrap().await;
+                }
             }
         }
 
@@ -420,9 +422,11 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         netplay::close(&mut device);
                     } else {
                         for i in 0..4 {
-                            if transfer_pak[i] {
+                            if gb_rom_path[i].is_some() {
                                 device.transferpaks[i].cart.rom =
                                     std::fs::read(gb_rom_path[i].as_ref().unwrap().path()).unwrap();
+                            }
+                            if gb_ram_path[i].is_some() {
                                 device.transferpaks[i].cart.ram =
                                     std::fs::read(gb_ram_path[i].as_ref().unwrap().path()).unwrap();
                             }
