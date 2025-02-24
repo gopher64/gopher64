@@ -341,6 +341,8 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let gui_ctx = ctx.clone();
 
     let mut select_rom = None;
+    let mut select_gb_rom = [None, None, None, None];
+    let mut select_gb_ram = [None, None, None, None];
 
     if !netplay {
         select_rom = Some(
@@ -348,6 +350,20 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 .set_title("Select ROM")
                 .pick_file(),
         );
+        for i in 0..4 {
+            if transfer_pak[i] {
+                select_gb_rom[i] = Some(
+                    rfd::AsyncFileDialog::new()
+                        .set_title(format!("GB ROM P{}", i + 1))
+                        .pick_file(),
+                );
+                select_gb_ram[i] = Some(
+                    rfd::AsyncFileDialog::new()
+                        .set_title(format!("GB RAM P{}", i + 1))
+                        .pick_file(),
+                );
+            }
+        }
     }
     tokio::spawn(async move {
         let file = if !netplay {
@@ -355,6 +371,14 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
         } else {
             None
         };
+        let mut gb_rom_path = [None, None, None, None];
+        let mut gb_ram_path = [None, None, None, None];
+        for i in 0..4 {
+            if transfer_pak[i] {
+                gb_rom_path[i] = select_gb_rom[i].as_mut().unwrap().await;
+                gb_ram_path[i] = select_gb_ram[i].as_mut().unwrap().await;
+            }
+        }
 
         std::thread::Builder::new()
             .name("n64".to_string())
@@ -395,6 +419,15 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         device::run_game(rom_contents, &mut device);
                         netplay::close(&mut device);
                     } else {
+                        for i in 0..4 {
+                            if transfer_pak[i] {
+                                device.transferpaks[i].cart.rom =
+                                    std::fs::read(gb_rom_path[i].as_ref().unwrap().path()).unwrap();
+                                device.transferpaks[i].cart.ram =
+                                    std::fs::read(gb_ram_path[i].as_ref().unwrap().path()).unwrap();
+                            }
+                        }
+
                         if emulate_vru {
                             device.vru_window.window_notifier = Some(vru_window_notifier);
                             device.vru_window.word_receiver = Some(vru_word_receiver);
