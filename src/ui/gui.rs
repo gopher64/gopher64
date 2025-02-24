@@ -422,11 +422,10 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         netplay::close(&mut device);
                     } else {
                         for i in 0..4 {
-                            if gb_rom_path[i].is_some() {
+                            if gb_rom_path[i].is_some() && gb_ram_path[i].is_some() {
                                 device.transferpaks[i].cart.rom =
                                     std::fs::read(gb_rom_path[i].as_ref().unwrap().path()).unwrap();
-                            }
-                            if gb_ram_path[i].is_some() {
+
                                 device.transferpaks[i].cart.ram =
                                     std::fs::read(gb_ram_path[i].as_ref().unwrap().path()).unwrap();
                             }
