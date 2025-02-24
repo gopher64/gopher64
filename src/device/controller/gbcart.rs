@@ -9,7 +9,7 @@ pub struct GbCart {
     pub cart_type: device::controller::gbcart::CartType,
     pub ram_enabled: bool,
     pub ram_bank: u16,
-    pub rom_bank: u16,
+    pub rom_bank: u32,
 }
 
 #[derive(Default, Copy, Clone, serde::Serialize, serde::Deserialize)]
@@ -33,7 +33,7 @@ fn write_mbc3(
         cart.ram_enabled = value & 0xf == 0xa;
     } else if address < 0x4000 {
         let bank = value & 0x7f;
-        cart.rom_bank = bank as u16;
+        cart.rom_bank = bank as u32;
         if cart.rom_bank == 0 {
             cart.rom_bank = 1;
         }
@@ -46,7 +46,7 @@ fn write_mbc3(
             return;
         }
         if cart.ram_bank < 0x8 {
-            let banked_address = (cart.ram_bank << 13) | (address & 0x1FFF);
+            let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
             cart.ram[banked_address as usize..banked_address as usize + size]
                 .copy_from_slice(&pif_ram[data..data + size]);
         } else {
@@ -69,7 +69,7 @@ fn read_mbc3(
         pif_ram[data..data + size]
             .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
     } else if address < 0x8000 {
-        let banked_address = (cart.rom_bank << 14) | (address & 0x3FFF);
+        let banked_address = address as u32 - 0x4000 + (cart.rom_bank * 0x4000);
         pif_ram[data..data + size]
             .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
     } else if (0xa000..0xc000).contains(&address) {
@@ -80,7 +80,7 @@ fn read_mbc3(
             return;
         }
         if cart.ram_bank < 0x8 {
-            let banked_address = (cart.ram_bank << 13) | (address & 0x1FFF);
+            let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
             pif_ram[data..data + size].copy_from_slice(
                 &cart.ram[banked_address as usize..banked_address as usize + size],
             );
@@ -104,10 +104,10 @@ fn write_mbc5(
         cart.ram_enabled = value & 0xf == 0xa;
     } else if address < 0x3000 {
         cart.rom_bank &= 0xff00;
-        cart.rom_bank |= value as u16;
+        cart.rom_bank |= value as u32;
     } else if address < 0x4000 {
         cart.rom_bank &= 0x00ff;
-        cart.rom_bank |= ((value & 0x1) as u16) << 8;
+        cart.rom_bank |= ((value & 0x1) as u32) << 8;
     } else if address < 0x6000 {
         cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0xa000 {
@@ -117,7 +117,7 @@ fn write_mbc5(
             return;
         }
 
-        let banked_address = (cart.ram_bank << 13) | (address & 0x1FFF);
+        let banked_address = address - 0xA000 + (cart.ram_bank << 13);
         cart.ram[banked_address as usize..banked_address as usize + size]
             .copy_from_slice(&pif_ram[data..data + size]);
     } else {
@@ -137,7 +137,7 @@ fn read_mbc5(
         pif_ram[data..data + size]
             .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
     } else if address < 0x8000 {
-        let banked_address = (cart.rom_bank << 14) | (address & 0x3FFF);
+        let banked_address = address as u32 - 0x4000 + (cart.rom_bank << 14);
         pif_ram[data..data + size]
             .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
     } else if (0xa000..0xc000).contains(&address) {
@@ -148,7 +148,7 @@ fn read_mbc5(
             return;
         }
 
-        let banked_address = (cart.ram_bank << 13) | (address & 0x1FFF);
+        let banked_address = address - 0xA000 + (cart.ram_bank << 13);
         pif_ram[data..data + size]
             .copy_from_slice(&cart.ram[banked_address as usize..banked_address as usize + size]);
     } else {
