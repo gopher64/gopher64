@@ -40,7 +40,7 @@ fn write_mbc3(
     } else if address < 0x6000 {
         cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0x8000 {
-        println!("MBC3 RTC latch")
+        // RTC not implemented
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
             return;
@@ -50,7 +50,7 @@ fn write_mbc3(
             cart.ram[banked_address as usize..banked_address as usize + size]
                 .copy_from_slice(&pif_ram[data..data + size]);
         } else {
-            panic!("Unsupported ram bank {:x}", cart.ram_bank);
+            // RTC not implemented
         }
     } else {
         panic!("Unsupported write address {:x}", address);
@@ -80,12 +80,21 @@ fn read_mbc3(
             return;
         }
         if cart.ram_bank < 0x8 {
-            let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
-            pif_ram[data..data + size].copy_from_slice(
-                &cart.ram[banked_address as usize..banked_address as usize + size],
-            );
+            if cart.ram_bank > 3 {
+                for i in 0..size {
+                    pif_ram[data + i] = 0;
+                }
+            } else {
+                let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
+                pif_ram[data..data + size].copy_from_slice(
+                    &cart.ram[banked_address as usize..banked_address as usize + size],
+                );
+            }
         } else {
-            panic!("Unsupported ram bank {:x}", cart.ram_bank);
+            // RTC not implemented
+            for i in 0..size {
+                pif_ram[data + i] = 0;
+            }
         }
     } else {
         panic!("Unsupported read address {:x}", address);
