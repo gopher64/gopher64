@@ -207,7 +207,9 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 app.netplay.game_info_receiver = Some(rx);
                 let gui_ctx = ctx.clone();
                 app.netplay.create_rom_label = "Inspecting ROM".to_string();
-                let task = rfd::AsyncFileDialog::new().pick_file();
+                let task = rfd::AsyncFileDialog::new()
+                    .set_title("Select ROM")
+                    .pick_file();
                 tokio::spawn(async move {
                     let file = task.await;
 
@@ -621,7 +623,9 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         app.netplay.game_info_receiver = Some(rx);
                         let gui_ctx = ctx.clone();
                         app.netplay.join_rom_label = "Inspecting ROM".to_string();
-                        let task = rfd::AsyncFileDialog::new().pick_file();
+                        let task = rfd::AsyncFileDialog::new()
+                            .set_title("Select ROM")
+                            .pick_file();
                         tokio::spawn(async move {
                             let file = task.await;
 

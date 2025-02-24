@@ -12,6 +12,7 @@ pub struct GopherEguiApp {
     selected_profile: [String; 4],
     input_profiles: Vec<String>,
     controller_enabled: [bool; 4],
+    transfer_pak: [bool; 4],
     controller_paths: Vec<String>,
     upscale: u32,
     integer_scaling: bool,
@@ -36,6 +37,7 @@ struct SaveConfig {
     selected_controller: [i32; 4],
     selected_profile: [String; 4],
     controller_enabled: [bool; 4],
+    transfer_pak: [bool; 4],
     upscale: u32,
     integer_scaling: bool,
     fullscreen: bool,
@@ -110,6 +112,7 @@ impl GopherEguiApp {
             controller_names,
             input_profiles: get_input_profiles(&config),
             controller_enabled: config.input.controller_enabled,
+            transfer_pak: config.input.transfer_pak,
             upscale: config.video.upscale,
             integer_scaling: config.video.integer_scaling,
             fullscreen: config.video.fullscreen,
@@ -144,6 +147,7 @@ fn save_config(
 
     config.input.input_profile_binding = save_config_items.selected_profile;
     config.input.controller_enabled = save_config_items.controller_enabled;
+    config.input.transfer_pak = save_config_items.transfer_pak;
 
     config.video.upscale = save_config_items.upscale;
     config.video.integer_scaling = save_config_items.integer_scaling;
@@ -157,6 +161,7 @@ impl Drop for GopherEguiApp {
             selected_controller: self.selected_controller,
             selected_profile: self.selected_profile.clone(),
             controller_enabled: self.controller_enabled,
+            transfer_pak: self.transfer_pak,
             upscale: self.upscale,
             integer_scaling: self.integer_scaling,
             fullscreen: self.fullscreen,
@@ -291,6 +296,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let selected_controller = app.selected_controller;
     let selected_profile = app.selected_profile.clone();
     let controller_enabled = app.controller_enabled;
+    let transfer_pak = app.transfer_pak;
     let upscale = app.upscale;
     let integer_scaling = app.integer_scaling;
     let fullscreen = app.fullscreen;
@@ -334,12 +340,47 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let rom_contents = app.netplay.rom_contents.clone();
     let gui_ctx = ctx.clone();
 
-    let mut task = None;
+    let mut select_rom = None;
+    let mut select_gb_rom = [None, None, None, None];
+    let mut select_gb_ram = [None, None, None, None];
+
     if !netplay {
-        task = Some(rfd::AsyncFileDialog::new().pick_file());
+        select_rom = Some(
+            rfd::AsyncFileDialog::new()
+                .set_title("Select ROM")
+                .pick_file(),
+        );
+        for i in 0..4 {
+            if transfer_pak[i] {
+                select_gb_rom[i] = Some(
+                    rfd::AsyncFileDialog::new()
+                        .set_title(format!("GB ROM P{}", i + 1))
+                        .pick_file(),
+                );
+                select_gb_ram[i] = Some(
+                    rfd::AsyncFileDialog::new()
+                        .set_title(format!("GB RAM P{}", i + 1))
+                        .pick_file(),
+                );
+            }
+        }
     }
     tokio::spawn(async move {
-        let file = if !netplay { task.unwrap().await } else { None };
+        let file = if !netplay {
+            select_rom.unwrap().await
+        } else {
+            None
+        };
+        let mut gb_rom_path = [None, None, None, None];
+        let mut gb_ram_path = [None, None, None, None];
+        if !netplay {
+            for i in 0..4 {
+                if transfer_pak[i] {
+                    gb_rom_path[i] = select_gb_rom[i].as_mut().unwrap().await;
+                    gb_ram_path[i] = select_gb_ram[i].as_mut().unwrap().await;
+                }
+            }
+        }
 
         std::thread::Builder::new()
             .name("n64".to_string())
@@ -349,6 +390,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     selected_controller,
                     selected_profile,
                     controller_enabled,
+                    transfer_pak,
                     upscale,
                     integer_scaling,
                     fullscreen,
@@ -379,6 +421,16 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         device::run_game(rom_contents, &mut device);
                         netplay::close(&mut device);
                     } else {
+                        for i in 0..4 {
+                            if gb_rom_path[i].is_some() && gb_ram_path[i].is_some() {
+                                device.transferpaks[i].cart.rom =
+                                    std::fs::read(gb_rom_path[i].as_ref().unwrap().path()).unwrap();
+
+                                device.transferpaks[i].cart.ram =
+                                    std::fs::read(gb_ram_path[i].as_ref().unwrap().path()).unwrap();
+                            }
+                        }
+
                         if emulate_vru {
                             device.vru_window.window_notifier = Some(vru_window_notifier);
                             device.vru_window.word_receiver = Some(vru_word_receiver);
@@ -462,7 +514,7 @@ impl eframe::App for GopherEguiApp {
                 ui.label("Port");
                 ui.label("Enabled");
                 ui.label("Emulate VRU");
-                //ui.label("Transfer Pak");
+                ui.label("Transfer Pak");
                 ui.label("Profile");
                 ui.label("Controller");
                 ui.end_row();
@@ -479,12 +531,11 @@ impl eframe::App for GopherEguiApp {
                             ui.add_enabled(true, egui::Checkbox::new(&mut self.emulate_vru, ""));
                         }
                     });
-                    /*
-                    let mut tpak: bool = false;
+
                     ui.centered_and_justified(|ui| {
-                        ui.checkbox(&mut tpak, "");
+                        ui.checkbox(&mut self.transfer_pak[i], "");
                     });
-                    */
+
                     egui::ComboBox::from_id_salt(format!("profile-combo-{}", i))
                         .selected_text(self.selected_profile[i].clone())
                         .show_ui(ui, |ui| {

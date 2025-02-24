@@ -171,7 +171,14 @@ pub fn pak_switch_event(device: &mut device::Device) {
 
             let new_pak_type = match channel.change_pak {
                 PakType::MemPak => PakType::RumblePak,
-                PakType::RumblePak => PakType::MemPak,
+                PakType::RumblePak => {
+                    if device.transferpaks[i].cart.rom.is_empty() {
+                        PakType::MemPak
+                    } else {
+                        PakType::TransferPak
+                    }
+                }
+                PakType::TransferPak => PakType::MemPak,
                 _ => {
                     panic!("Invalid pak type");
                 }
