@@ -245,10 +245,15 @@ pub fn init(device: &mut device::Device) {
     device.pif.ram[0x26] = device.cart.cic_seed;
     device.pif.ram[0x27] = device.cart.cic_seed;
 
-    let default_handler = device::controller::PakHandler {
+    let mempak_handler = device::controller::PakHandler {
         read: device::controller::mempak::read,
         write: device::controller::mempak::write,
         pak_type: device::controller::PakType::MemPak,
+    };
+    let tpak_handler = device::controller::PakHandler {
+        read: device::controller::transferpak::read,
+        write: device::controller::transferpak::write,
+        pak_type: device::controller::PakType::TransferPak,
     };
 
     connect_pif_channels(device);
@@ -256,10 +261,14 @@ pub fn init(device: &mut device::Device) {
     for i in 0..4 {
         if device.netplay.is_none() {
             if device.ui.config.input.controller_enabled[i] {
-                device.pif.channels[i].pak_handler = Some(default_handler);
+                if device.transferpaks[i].cart.rom.is_empty() {
+                    device.pif.channels[i].pak_handler = Some(mempak_handler);
+                } else {
+                    device.pif.channels[i].pak_handler = Some(tpak_handler);
+                }
             }
         } else if device.netplay.as_ref().unwrap().player_data[i].reg_id != 0 {
-            device.pif.channels[i].pak_handler = Some(default_handler);
+            device.pif.channels[i].pak_handler = Some(mempak_handler);
         }
     }
     if device.ui.config.input.emulate_vru {
