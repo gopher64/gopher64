@@ -102,8 +102,12 @@ fn write_mbc5(
     let value = pif_ram[data + size - 1];
     if address < 0x2000 {
         cart.ram_enabled = value & 0xf == 0xa;
+    } else if address < 0x3000 {
+        cart.rom_bank &= 0xff00;
+        cart.rom_bank |= value as u16;
     } else if address < 0x4000 {
-        println!("Unknown MBC5 write address {:x}", address);
+        cart.rom_bank &= 0x00ff;
+        cart.rom_bank |= ((value & 0x1) as u16) << 8;
     } else if address < 0x6000 {
         cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0xa000 {
