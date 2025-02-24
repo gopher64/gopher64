@@ -594,7 +594,11 @@ impl eframe::App for GopherEguiApp {
             ui.checkbox(&mut self.integer_scaling, "Integer Scaling");
             ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
 
-            ui.add_space(32.0);
+            ui.add_space(16.0);
+            ui.hyperlink_to("Wiki", "https://github.com/gopher64/gopher64/wiki");
+            ui.hyperlink_to("Discord Server", "https://discord.gg/9RGXq8W8JQ");
+            ui.add_space(16.0);
+
             ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
             if self.latest_version.is_some() {
                 let current_version = semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
