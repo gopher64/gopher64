@@ -203,7 +203,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     'M' | 'm' => {} // USB read/write, ignored
                     'w' => {}       // SD card writeback pending, ignored
                     'W' => {
-                        // if the save writeback is being enabled, we are probably booting a game using the flash cart menu
+                        // if save writeback is being enabled, we are probably booting a game using the flash cart menu
                         // we shouldn't write saves to disk in this case
                         let writeback_sectors_address =
                             device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64;
