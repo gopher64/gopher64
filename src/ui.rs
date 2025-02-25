@@ -145,6 +145,7 @@ impl Ui {
                 romsave: storage::RomSave {
                     data: std::collections::HashMap::new(),
                     written: false,
+                    write_to_disk: true,
                 },
             },
             event_audio: audio::EventAudio {

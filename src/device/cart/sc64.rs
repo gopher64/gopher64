@@ -12,6 +12,7 @@ const SC64_KEY_REG: u32 = 4;
 pub const SC64_REGS_COUNT: u32 = 7;
 
 pub const SC64_ROM_WRITE_ENABLE: u32 = 1;
+pub const SC64_CIC_SEED: u32 = 7;
 pub const SC64_CFG_COUNT: u32 = 15;
 
 const SC64_BUFFER_MASK: usize = 0x1FFF;
@@ -85,12 +86,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                             [device.cart.sc64.regs[SC64_DATA0_REG as usize] as usize]
                     }
                     'C' => {
-                        // set config
-                        println!(
-                            "sc64 set config {} {}",
-                            device.cart.sc64.regs[SC64_DATA0_REG as usize],
-                            device.cart.sc64.regs[SC64_DATA1_REG as usize]
-                        );
+                        if device.cart.sc64.regs[SC64_DATA0_REG as usize] == SC64_CIC_SEED {
+                            // if the CIC seed is being set, we are probably booting a game using the flash cart menu
+                            // we shouldn't save modifications to the ROM in this case
+                            device.ui.saves.romsave.write_to_disk = false;
+                        }
                         std::mem::swap(
                             &mut device.cart.sc64.cfg
                                 [device.cart.sc64.regs[SC64_DATA0_REG as usize] as usize],

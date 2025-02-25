@@ -35,6 +35,7 @@ pub struct Save {
 pub struct RomSave {
     pub data: std::collections::HashMap<u32, u8>,
     pub written: bool,
+    pub write_to_disk: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -313,8 +314,10 @@ pub fn compress_file(data: &[(&[u8], &str)]) -> Vec<u8> {
 }
 
 fn write_rom_save(ui: &ui::Ui) {
-    let data = postcard::to_stdvec(&ui.saves.romsave.data).unwrap();
-    std::fs::write(ui.paths.romsave_file_path.clone(), data).unwrap();
+    if ui.saves.romsave.write_to_disk {
+        let data = postcard::to_stdvec(&ui.saves.romsave.data).unwrap();
+        std::fs::write(ui.paths.romsave_file_path.clone(), data).unwrap();
+    }
 }
 
 pub fn write_saves(ui: &ui::Ui, netplay: &Option<netplay::Netplay>) {
