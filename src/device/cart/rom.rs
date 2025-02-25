@@ -6,16 +6,16 @@ const CART_MASK: usize = 0xFFFFFFF;
 fn read_cart_word(device: &mut device::Device, address: usize) -> u32 {
     let mut data: [u8; 4] = [0; 4];
     for i in 0..4 {
-        if device
-            .ui
-            .saves
-            .romsave
-            .data
-            .contains_key(&(address as u32 + i))
-        {
-            data[i as usize] = device.ui.saves.romsave.data[&(address as u32 + i)];
+        if let Some(value) = device.cart.rom.get(address + i as usize) {
+            data[i as usize] = *value;
         } else {
-            data[i as usize] = *device.cart.rom.get(address + i as usize).unwrap_or(&0);
+            data[i as usize] = *device
+                .ui
+                .saves
+                .romsave
+                .data
+                .get(&(address as u32 + i))
+                .unwrap_or(&0);
         }
     }
     u32::from_be_bytes(data)
