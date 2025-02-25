@@ -88,9 +88,6 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     }
                     'C' => {
                         if device.cart.sc64.regs[SC64_DATA0_REG as usize] == SC64_SAVE_TYPE {
-                            // if the save type is being set, we are probably booting a game using the flash cart menu
-                            // we shouldn't save modifications to the ROM in this case
-                            device.ui.saves.romsave.write_to_disk = false;
                             device.ui.save_type =
                                 match device.cart.sc64.regs[SC64_DATA1_REG as usize] {
                                     0 => {
@@ -202,7 +199,12 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     }
                     'U' | 'u' => {} // USB status, ignored
                     'M' | 'm' => {} // USB read/write, ignored
-                    'w' | 'W' => {} // SD card writeback, ignored
+                    'w' => {}       // SD card writeback pending, ignored
+                    'W' => {
+                        // if the save writeback is being enabled, we are probably booting a game using the flash cart menu
+                        // we shouldn't write saves to disk in this case
+                        device.ui.saves.write_to_disk = false;
+                    }
                     _ => {
                         panic!(
                             "unknown sc64 command: {}",
