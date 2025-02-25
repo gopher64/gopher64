@@ -86,6 +86,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     }
                     'C' => {
                         // set config
+                        println!(
+                            "sc64 set config {} {}",
+                            device.cart.sc64.regs[SC64_DATA0_REG as usize],
+                            device.cart.sc64.regs[SC64_DATA1_REG as usize]
+                        );
                         std::mem::swap(
                             &mut device.cart.sc64.cfg
                                 [device.cart.sc64.regs[SC64_DATA0_REG as usize] as usize],
