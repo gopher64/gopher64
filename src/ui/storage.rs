@@ -1,4 +1,4 @@
-use crate::{netplay, ui};
+use crate::{device, netplay, ui};
 use std::io::Read;
 use std::io::Write;
 
@@ -318,27 +318,51 @@ fn write_rom_save(ui: &ui::Ui) {
     std::fs::write(ui.paths.romsave_file_path.clone(), data).unwrap();
 }
 
-pub fn write_saves(ui: &ui::Ui, netplay: &Option<netplay::Netplay>) {
-    if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
-        if ui.saves.write_to_disk {
-            if ui.saves.eeprom.written {
-                write_save(ui, SaveTypes::Eeprom16k)
+fn writeback_sdcard(device: &mut device::Device) {
+    let mut length = 0;
+    let mut save_data: &[u8] = &[];
+    if device.ui.saves.eeprom.written {
+        length = device.ui.saves.eeprom.data.len() / 512;
+        save_data = device.ui.saves.eeprom.data.as_ref();
+    } else if device.ui.saves.sram.written {
+        length = device.ui.saves.sram.data.len() / 512;
+        save_data = device.ui.saves.sram.data.as_ref();
+    } else if device.ui.saves.flash.written {
+        length = device.ui.saves.flash.data.len() / 512;
+        save_data = device.ui.saves.flash.data.as_ref();
+    }
+
+    for i in 0..length {
+        let offset = device.cart.sc64.writeback_sector[i] as usize * 512;
+        device.ui.saves.sdcard.data[offset..offset + 512]
+            .copy_from_slice(&save_data[i * 512..(i + 1) * 512]);
+    }
+    device.ui.saves.sdcard.written = true;
+}
+
+pub fn write_saves(device: &mut device::Device) {
+    if device.netplay.is_none() || device.netplay.as_ref().unwrap().player_number == 0 {
+        if device.ui.saves.write_to_disk {
+            if device.ui.saves.eeprom.written {
+                write_save(&device.ui, SaveTypes::Eeprom16k)
             }
-            if ui.saves.sram.written {
-                write_save(ui, SaveTypes::Sram)
+            if device.ui.saves.sram.written {
+                write_save(&device.ui, SaveTypes::Sram)
             }
-            if ui.saves.flash.written {
-                write_save(ui, SaveTypes::Flash)
+            if device.ui.saves.flash.written {
+                write_save(&device.ui, SaveTypes::Flash)
             }
-            if ui.saves.romsave.written {
-                write_save(ui, SaveTypes::Romsave)
+            if device.ui.saves.romsave.written {
+                write_save(&device.ui, SaveTypes::Romsave)
             }
+        } else {
+            writeback_sdcard(device)
         }
-        if ui.saves.mempak.written {
-            write_save(ui, SaveTypes::Mempak)
+        if device.ui.saves.mempak.written {
+            write_save(&device.ui, SaveTypes::Mempak)
         }
-        if ui.saves.sdcard.written {
-            write_save(ui, SaveTypes::Sdcard)
+        if device.ui.saves.sdcard.written {
+            write_save(&device.ui, SaveTypes::Sdcard)
         }
     }
 }

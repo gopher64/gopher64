@@ -72,7 +72,7 @@ pub fn run_game(rom_contents: Vec<u8>, device: &mut Device) {
     ui::input::close(&mut device.ui);
     ui::video::close(&device.ui);
     ui::audio::close(&mut device.ui);
-    ui::storage::write_saves(&device.ui, &device.netplay);
+    ui::storage::write_saves(device);
 }
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
