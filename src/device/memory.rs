@@ -153,13 +153,13 @@ pub fn init(device: &mut device::Device) {
         } else if (MM_DOM2_ADDR2 >> 16..=(MM_DOM2_ADDR2 + 0x1FFFF) >> 16).contains(&i) {
             device.memory.memory_map_read[i] = device::cart::sram::read_mem;
             device.memory.memory_map_write[i] = device::cart::sram::write_mem;
+        } else if i >= MM_IS_VIEWER >> 16 && i <= (MM_IS_VIEWER + 0xFFFF) >> 16 {
+            device.memory.memory_map_read[i] = device::is_viewer::read_mem;
+            device.memory.memory_map_write[i] = device::is_viewer::write_mem;
         } else if (MM_CART_ROM >> 16..=(MM_CART_ROM + 0x0FBFFFFF) >> 16).contains(&i) {
             device.memory.fast_read[i] = device::cart::rom::read_mem_fast;
             device.memory.memory_map_read[i] = device::cart::rom::read_mem;
             device.memory.memory_map_write[i] = device::cart::rom::write_mem;
-        } else if i >= MM_IS_VIEWER >> 16 && i <= (MM_IS_VIEWER + 0xFFFF) >> 16 {
-            device.memory.memory_map_read[i] = device::is_viewer::read_mem;
-            device.memory.memory_map_write[i] = device::is_viewer::write_mem;
         } else if i >= MM_PIF_MEM >> 16 && i <= (MM_PIF_MEM + 0xFFFF) >> 16 {
             device.memory.memory_map_read[i] = device::pif::read_mem;
             device.memory.memory_map_write[i] = device::pif::write_mem;
