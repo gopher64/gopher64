@@ -311,6 +311,7 @@ impl Device {
                     cfg: [0; cart::sc64::SC64_CFG_COUNT as usize],
                     sector: 0,
                     buffer: [0; 8192],
+                    writeback_sector: [0; 256],
                 },
                 flashram: cart::sram::Flashram {
                     status: 0,

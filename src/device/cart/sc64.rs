@@ -26,6 +26,8 @@ pub struct Sc64 {
     pub regs_locked: bool,
     pub cfg: [u32; SC64_CFG_COUNT as usize],
     pub sector: u32,
+    #[serde(with = "serde_big_array::BigArray")]
+    pub writeback_sector: [u32; 256],
 }
 
 fn format_sdcard(device: &mut device::Device) {
@@ -203,6 +205,17 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     'W' => {
                         // if the save writeback is being enabled, we are probably booting a game using the flash cart menu
                         // we shouldn't write saves to disk in this case
+                        let writeback_sectors_address =
+                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64;
+                        for i in 0..256 {
+                            let data = device::memory::data_read(
+                                device,
+                                writeback_sectors_address + (i * 4) as u64,
+                                device::memory::AccessSize::Word,
+                                false,
+                            );
+                            device.cart.sc64.writeback_sector[i] = data;
+                        }
                         device.ui.saves.write_to_disk = false;
                     }
                     _ => {
