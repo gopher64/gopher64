@@ -319,25 +319,26 @@ fn write_rom_save(ui: &ui::Ui) {
 }
 
 pub fn write_saves(ui: &ui::Ui, netplay: &Option<netplay::Netplay>) {
-    if ui.saves.write_to_disk && (netplay.is_none() || netplay.as_ref().unwrap().player_number == 0)
-    {
-        if ui.saves.eeprom.written {
-            write_save(ui, SaveTypes::Eeprom16k)
-        }
-        if ui.saves.sram.written {
-            write_save(ui, SaveTypes::Sram)
-        }
-        if ui.saves.flash.written {
-            write_save(ui, SaveTypes::Flash)
+    if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
+        if ui.saves.write_to_disk {
+            if ui.saves.eeprom.written {
+                write_save(ui, SaveTypes::Eeprom16k)
+            }
+            if ui.saves.sram.written {
+                write_save(ui, SaveTypes::Sram)
+            }
+            if ui.saves.flash.written {
+                write_save(ui, SaveTypes::Flash)
+            }
+            if ui.saves.romsave.written {
+                write_save(ui, SaveTypes::Romsave)
+            }
         }
         if ui.saves.mempak.written {
             write_save(ui, SaveTypes::Mempak)
         }
         if ui.saves.sdcard.written {
             write_save(ui, SaveTypes::Sdcard)
-        }
-        if ui.saves.romsave.written {
-            write_save(ui, SaveTypes::Romsave)
         }
     }
 }
