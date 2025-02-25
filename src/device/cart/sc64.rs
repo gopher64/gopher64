@@ -208,13 +208,12 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let writeback_sectors_address =
                             device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64;
                         for i in 0..256 {
-                            let data = device::memory::data_read(
+                            device.cart.sc64.writeback_sector[i] = device::memory::data_read(
                                 device,
                                 writeback_sectors_address + (i * 4) as u64,
                                 device::memory::AccessSize::Word,
                                 false,
                             );
-                            device.cart.sc64.writeback_sector[i] = data;
                         }
                         device.ui.saves.write_to_disk = false;
                     }
