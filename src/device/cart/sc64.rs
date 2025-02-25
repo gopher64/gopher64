@@ -12,6 +12,7 @@ const SC64_KEY_REG: u32 = 4;
 //const SC64_AUX_REG: u32 = 6;
 pub const SC64_REGS_COUNT: u32 = 7;
 
+pub const SC64_BOOTLOADER_SWITCH: u32 = 0;
 pub const SC64_ROM_WRITE_ENABLE: u32 = 1;
 pub const SC64_SAVE_TYPE: u32 = 6;
 pub const SC64_CFG_COUNT: u32 = 15;

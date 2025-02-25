@@ -42,7 +42,9 @@ pub fn read_mem(
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
+    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0
+        && device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] == 0
+    {
         let masked_address = address as usize & CART_MASK;
         let mut data = read_cart_word(device, masked_address);
         device::memory::masked_write_32(&mut data, value, mask);
@@ -75,7 +77,9 @@ pub fn dma_read(
     mut dram_addr: u32,
     length: u32,
 ) -> u64 {
-    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
+    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0
+        && device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] == 0
+    {
         dram_addr &= device::rdram::RDRAM_MASK as u32;
         cart_addr &= CART_MASK as u32;
 
@@ -84,9 +88,8 @@ pub fn dma_read(
                 cart_addr + i,
                 device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
             );
-
-            device.ui.saves.romsave.written = true;
         }
+        device.ui.saves.romsave.written = true;
     }
 
     device::pi::calculate_cycles(device, 1, length)
@@ -118,6 +121,8 @@ pub fn dma_write(
 }
 
 pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
+    device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 1;
+
     device.cart.rom = rom_file;
     device.cart.pal = is_system_pal(device.cart.rom[0x3E]);
     set_cic(device);
@@ -173,6 +178,7 @@ fn set_cic(device: &mut device::Device) {
             device.cart.cic_seed = 0xdd;
             device.cart.rdram_size_offset = 0x318;
             device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] = 1;
+            device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 0;
         }
         _ => {
             device.cart.cic_type = device::cart::CicType::CicNus6102;
