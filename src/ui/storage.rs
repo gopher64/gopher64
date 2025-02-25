@@ -319,8 +319,8 @@ fn write_rom_save(ui: &ui::Ui) {
 }
 
 fn writeback_sdcard(device: &mut device::Device) {
-    let mut length = 0;
-    let mut save_data: &[u8] = &[];
+    let length;
+    let save_data: &[u8];
     if device.ui.saves.eeprom.written {
         length = device.ui.saves.eeprom.data.len() / 512;
         save_data = device.ui.saves.eeprom.data.as_ref();
@@ -330,6 +330,8 @@ fn writeback_sdcard(device: &mut device::Device) {
     } else if device.ui.saves.flash.written {
         length = device.ui.saves.flash.data.len() / 512;
         save_data = device.ui.saves.flash.data.as_ref();
+    } else {
+        return;
     }
 
     for i in 0..length {
