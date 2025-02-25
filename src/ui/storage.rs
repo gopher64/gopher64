@@ -322,7 +322,15 @@ fn writeback_sdcard(device: &mut device::Device) {
     let length;
     let save_data: &[u8];
     if device.ui.saves.eeprom.written {
-        length = device.ui.saves.eeprom.data.len() / 512;
+        if device
+            .ui
+            .save_type
+            .contains(&ui::storage::SaveTypes::Eeprom4k)
+        {
+            length = 1;
+        } else {
+            length = 4;
+        }
         save_data = device.ui.saves.eeprom.data.as_ref();
     } else if device.ui.saves.sram.written {
         length = device.ui.saves.sram.data.len() / 512;
