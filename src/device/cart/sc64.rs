@@ -74,6 +74,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
         SC64_SCR_REG => {
             if !device.cart.sc64.regs_locked {
                 match char::from_u32(value & mask).unwrap() {
+                    'V' => {
+                        // get version
+                        device.cart.sc64.regs[SC64_DATA0_REG as usize] = (2 << 16) | 20;
+                        device.cart.sc64.regs[SC64_DATA1_REG as usize] = 2;
+                    }
                     'c' => {
                         // get config
                         device.cart.sc64.regs[SC64_DATA1_REG as usize] = device.cart.sc64.cfg
@@ -165,8 +170,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         }
                         device.ui.saves.sdcard.written = true;
                     }
-                    'U' => {} // USB_WRITE_STATUS, ignored
-                    'M' => {} // USB_WRITE, ignored
+                    'U' | 'u' => {} // USB status, ignored
+                    'M' | 'm' => {} // USB read/write, ignored
+                    'w' | 'W' => {} // SD card writeback, ignored
                     _ => {
                         panic!(
                             "unknown sc64 command: {}",

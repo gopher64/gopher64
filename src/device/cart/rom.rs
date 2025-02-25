@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 const CART_MASK: usize = 0xFFFFFFF;
 
 fn read_cart_word(device: &mut device::Device, address: usize) -> u32 {
-    let mut data: [u8; 4] = device.cart.rom[address..address + 4].try_into().unwrap();
+    let mut data: [u8; 4] = [0; 4];
     for i in 0..4 {
         if device
             .ui
@@ -14,6 +14,8 @@ fn read_cart_word(device: &mut device::Device, address: usize) -> u32 {
             .contains_key(&(address as u32 + i))
         {
             data[i as usize] = device.ui.saves.romsave.data[&(address as u32 + i)];
+        } else {
+            data[i as usize] = *device.cart.rom.get(address + i as usize).unwrap_or(&0);
         }
     }
     u32::from_be_bytes(data)
@@ -84,14 +86,12 @@ pub fn dma_read(
         cart_addr &= CART_MASK as u32;
 
         for i in 0..length {
-            if cart_addr + i < device.cart.rom.len() as u32 {
-                device.ui.saves.romsave.data.insert(
-                    cart_addr + i,
-                    device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
-                );
+            device.ui.saves.romsave.data.insert(
+                cart_addr + i,
+                device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
+            );
 
-                device.ui.saves.romsave.written = true;
-            }
+            device.ui.saves.romsave.written = true;
         }
     }
 
@@ -109,20 +109,17 @@ pub fn dma_write(
     cart_addr &= CART_MASK as u32;
     let mut i = dram_addr;
     let mut j = cart_addr;
-    while i < dram_addr + length && j < device.cart.rom.len() as u32 {
+    while i < dram_addr + length {
         if device.ui.saves.romsave.data.contains_key(&j) {
             device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.saves.romsave.data[&j];
         } else {
-            device.rdram.mem[i as usize ^ device.byte_swap] = device.cart.rom[j as usize];
+            device.rdram.mem[i as usize ^ device.byte_swap] =
+                *device.cart.rom.get(j as usize).unwrap_or(&0);
         }
         i += 1;
         j += 1;
     }
-    while i < dram_addr + length {
-        // DMAs that extend past the end of the ROM return 0's for the portion that extends past the ROM length
-        device.rdram.mem[i as usize ^ device.byte_swap] = 0;
-        i += 1;
-    }
+
     device::pi::calculate_cycles(device, 1, length)
 }
 
