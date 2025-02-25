@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 
 pub const SDCARD_SIZE: usize = 0x4000000;
 
@@ -12,7 +13,7 @@ const SC64_KEY_REG: u32 = 4;
 pub const SC64_REGS_COUNT: u32 = 7;
 
 pub const SC64_ROM_WRITE_ENABLE: u32 = 1;
-pub const SC64_CIC_SEED: u32 = 7;
+pub const SC64_SAVE_TYPE: u32 = 6;
 pub const SC64_CFG_COUNT: u32 = 15;
 
 const SC64_BUFFER_MASK: usize = 0x1FFF;
@@ -86,10 +87,34 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                             [device.cart.sc64.regs[SC64_DATA0_REG as usize] as usize]
                     }
                     'C' => {
-                        if device.cart.sc64.regs[SC64_DATA0_REG as usize] == SC64_CIC_SEED {
-                            // if the CIC seed is being set, we are probably booting a game using the flash cart menu
+                        if device.cart.sc64.regs[SC64_DATA0_REG as usize] == SC64_SAVE_TYPE {
+                            // if the save type is being set, we are probably booting a game using the flash cart menu
                             // we shouldn't save modifications to the ROM in this case
                             device.ui.saves.romsave.write_to_disk = false;
+                            device.ui.save_type =
+                                match device.cart.sc64.regs[SC64_DATA1_REG as usize] {
+                                    0 => {
+                                        vec![]
+                                    }
+                                    1 => {
+                                        vec![ui::storage::SaveTypes::Eeprom4k]
+                                    }
+                                    2 => {
+                                        vec![ui::storage::SaveTypes::Eeprom16k]
+                                    }
+                                    3 => {
+                                        vec![ui::storage::SaveTypes::Sram]
+                                    }
+                                    4 => {
+                                        vec![ui::storage::SaveTypes::Flash]
+                                    }
+                                    _ => {
+                                        panic!(
+                                            "unknown sc64 save type: {}",
+                                            device.cart.sc64.regs[SC64_DATA1_REG as usize]
+                                        )
+                                    }
+                                }
                         }
                         std::mem::swap(
                             &mut device.cart.sc64.cfg
