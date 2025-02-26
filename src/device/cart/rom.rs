@@ -149,41 +149,27 @@ fn set_cic(device: &mut device::Device) {
     let hash = calculate_hash(&device.cart.rom[0x40..0x1000]);
     match hash.as_str() {
         "B99F06C4802C2377E31E388435955EF3E99C618A6D55D24699D828EB1075F1EB" => {
-            device.cart.cic_type = device::cart::CicType::CicNus6101;
-            device.cart.cic_seed = 0x3F;
-            device.cart.rdram_size_offset = 0x318;
+            device.cart.cic_seed = 0x3F; // CicNus6101
         }
         "61E88238552C356C23D19409FE5570EE6910419586BC6FC740F638F761ADC46E" => {
-            device.cart.cic_type = device::cart::CicType::CicNus6102;
-            device.cart.cic_seed = 0x3F;
-            device.cart.rdram_size_offset = 0x318;
+            device.cart.cic_seed = 0x3F; // CicNus6102
         }
         "BF3620D30817007091EBE9BDDD1B88C23B8A0052170B3309CDE5B6B4238E45E7" => {
-            device.cart.cic_type = device::cart::CicType::CicNus6103;
-            device.cart.cic_seed = 0x78;
-            device.cart.rdram_size_offset = 0x318;
+            device.cart.cic_seed = 0x78; // CicNus6103
         }
         "04B7BC6717A9F0EB724CF927E74AD3876C381CBB280D841736FC5E55580B756B" => {
-            device.cart.cic_type = device::cart::CicType::CicNus6105;
-            device.cart.cic_seed = 0x91;
-            device.cart.rdram_size_offset = 0x3F0;
+            device.cart.cic_seed = 0x91; // CicNus6105
         }
         "36ADC40148AF56F0D78CD505EB6A90117D1FD6F11C6309E52ED36BC4C6BA340E" => {
-            device.cart.cic_type = device::cart::CicType::CicNus6106;
-            device.cart.cic_seed = 0x85;
-            device.cart.rdram_size_offset = 0x318;
+            device.cart.cic_seed = 0x85; // CicNus6106
         }
         "53C0088FB777870D0AF32F0251E964030E2E8B72E830C26042FD191169508C05" => {
-            device.cart.cic_type = device::cart::CicType::CicNus5167;
-            device.cart.cic_seed = 0xdd;
-            device.cart.rdram_size_offset = 0x318;
+            device.cart.cic_seed = 0xdd; // CicNus5167
             device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] = 1;
             device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 0;
         }
         _ => {
-            device.cart.cic_type = device::cart::CicType::CicNus6102;
-            device.cart.cic_seed = 0x3F;
-            device.cart.rdram_size_offset = 0x318;
+            device.cart.cic_seed = 0x3F; // CicNus6102
             println!("unknown IPL3 {}", hash)
         }
     }

@@ -106,13 +106,12 @@ pub fn init(device: &mut device::Device) {
         unsafe { Vec::from_raw_parts(ptr, device.rdram.size as usize, device.rdram.size as usize) };
 
     // hack, skip RDRAM initialization
-    device.rdram.mem[device.cart.rdram_size_offset..device.cart.rdram_size_offset + 4]
-        .copy_from_slice(&device.rdram.size.to_ne_bytes());
+    device.rdram.mem[0x318..0x318 + 4].copy_from_slice(&device.rdram.size.to_ne_bytes());
+    // hack, skip RDRAM initialization
+    device.rdram.mem[0x3f0..0x3f0 + 4].copy_from_slice(&device.rdram.size.to_ne_bytes());
 
     device.ri.regs[device::ri::RI_MODE_REG as usize] = 0x0e;
     device.ri.regs[device::ri::RI_CONFIG_REG as usize] = 0x40;
-    device.ri.regs[device::ri::RI_SELECT_REG as usize] = 0x14;
-    device.ri.regs[device::ri::RI_REFRESH_REG as usize] = 0x00063634;
 }
 
 pub fn rdram_calculate_cycles(length: u64) -> u64 {

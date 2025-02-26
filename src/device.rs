@@ -302,8 +302,6 @@ impl Device {
                 pal: false,
                 latch: 0,
                 cic_seed: 0,
-                cic_type: cart::CicType::CicNus6102,
-                rdram_size_offset: 0,
                 rtc: cart::AfRtc { control: 0x0200 },
                 sc64: cart::sc64::Sc64 {
                     regs: [0; cart::sc64::SC64_REGS_COUNT as usize],
