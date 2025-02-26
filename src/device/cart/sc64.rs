@@ -274,6 +274,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         device::memory::masked_write_32(&mut data, value, mask);
         device.ui.saves.eeprom.data[masked_address..masked_address + 4]
             .copy_from_slice(&data.to_be_bytes());
+        device.ui.saves.eeprom.written = true
     } else {
         let masked_address = address as usize & SC64_BUFFER_MASK;
         let mut data = u32::from_be_bytes(
@@ -297,6 +298,7 @@ pub fn dma_read(
     let buffer = if cart_addr & 0x2000 != 0 {
         device::cart::format_eeprom(device);
         cart_addr &= SC64_EEPROM_MASK as u32;
+        device.ui.saves.eeprom.written = true;
         &mut device.ui.saves.eeprom.data
     } else {
         cart_addr &= SC64_BUFFER_MASK as u32;
