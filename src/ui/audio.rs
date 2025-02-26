@@ -14,15 +14,20 @@ pub struct EventAudio {
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_AUDIO);
 
-    let audio_spec = sdl3_sys::audio::SDL_AudioSpec {
+    let game_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
         format: sdl3_sys::audio::SDL_AUDIO_S16LE,
         freq: frequency as i32,
+        channels: 2,
+    };
+    let device_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
+        format: sdl3_sys::audio::SDL_AUDIO_S16LE,
+        freq: 48000,
         channels: 2,
     };
     ui.audio_device = unsafe {
         sdl3_sys::audio::SDL_OpenAudioDevice(
             sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-            &audio_spec,
+            &device_audio_spec,
         )
     };
     if ui.audio_device == 0 {
@@ -36,7 +41,7 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         panic!("Could not get audio device format");
     }
 
-    ui.audio_stream = unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&audio_spec, &dst) };
+    ui.audio_stream = unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&game_audio_spec, &dst) };
     if ui.audio_stream.is_null() {
         return;
     }

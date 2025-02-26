@@ -22,17 +22,24 @@ pub fn read_regs(
     _access_size: device::memory::AccessSize,
 ) -> u32 {
     device::cop0::add_cycles(device, 20);
-    if ((address & 0xFFFF) >> 2) as u32 == RI_SELECT_REG && !device.ri.ram_init {
-        device::cop0::add_cycles(device, device.cpu.clock_rate / 2); // hack, simulate RDRAM initialization
-        device.ri.ram_init = true;
+    let reg = (address & 0xFFFF) >> 2;
+    match reg as u32 {
+        RI_SELECT_REG => {
+            if !device.ri.ram_init {
+                device::cop0::add_cycles(device, device.cpu.clock_rate / 2); // hack, simulate RDRAM initialization
+                device.ri.ram_init = true;
+            }
+            0x14 // hack, skip RDRAM initialization
+        }
+        RI_REFRESH_REG => 0x00063634, // hack, skip RDRAM initialization
+        _ => device.ri.regs[reg as usize],
     }
-    device.ri.regs[((address & 0xFFFF) >> 2) as usize]
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    device::memory::masked_write_32(
-        &mut device.ri.regs[((address & 0xFFFF) >> 2) as usize],
-        value,
-        mask,
-    );
+    let reg = (address & 0xFFFF) >> 2;
+    if reg as u32 == RI_SELECT_REG {
+        device.ri.ram_init = false;
+    }
+    device::memory::masked_write_32(&mut device.ri.regs[reg as usize], value, mask);
 }

@@ -122,6 +122,7 @@ impl Ui {
                 savestate_file_path: std::path::PathBuf::new(),
             },
             saves: storage::Saves {
+                write_to_disk: true,
                 eeprom: storage::Save {
                     data: Vec::new(),
                     written: false,

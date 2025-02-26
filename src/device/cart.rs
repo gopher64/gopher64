@@ -45,13 +45,10 @@ fn byte2bcd(mut n: u32) -> u8 {
 pub struct Cart {
     #[serde(skip)]
     pub rom: Vec<u8>,
-    #[serde(with = "serde_big_array::BigArray")]
-    pub is_viewer_buffer: [u8; 0xFFFF],
+    pub is_viewer_buffer: Vec<u8>,
     pub pal: bool,
     pub latch: u32,
-    pub cic_type: CicType,
     pub cic_seed: u8,
-    pub rdram_size_offset: usize,
     pub rtc: AfRtc,
     pub sc64: sc64::Sc64,
     pub flashram: sram::Flashram,
@@ -125,7 +122,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
     }
 }
 
-fn format_eeprom(device: &mut device::Device) {
+pub fn format_eeprom(device: &mut device::Device) {
     if device.ui.saves.eeprom.data.len() < EEPROM_MAX_SIZE {
         device.ui.saves.eeprom.data.resize(EEPROM_MAX_SIZE, 0xFF)
     }

@@ -72,7 +72,7 @@ pub fn run_game(rom_contents: Vec<u8>, device: &mut Device) {
     ui::input::close(&mut device.ui);
     ui::video::close(&device.ui);
     ui::audio::close(&mut device.ui);
-    ui::storage::write_saves(&device.ui, &device.netplay);
+    ui::storage::write_saves(device);
 }
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
@@ -298,19 +298,18 @@ impl Device {
             },
             cart: cart::Cart {
                 rom: Vec::new(),
-                is_viewer_buffer: [0; 0xFFFF],
+                is_viewer_buffer: vec![0; 0xFFFF],
                 pal: false,
                 latch: 0,
                 cic_seed: 0,
-                cic_type: cart::CicType::CicNus6102,
-                rdram_size_offset: 0,
                 rtc: cart::AfRtc { control: 0x0200 },
                 sc64: cart::sc64::Sc64 {
                     regs: [0; cart::sc64::SC64_REGS_COUNT as usize],
                     regs_locked: true,
                     cfg: [0; cart::sc64::SC64_CFG_COUNT as usize],
                     sector: 0,
-                    buffer: [0; 8192],
+                    buffer: vec![0; 8192],
+                    writeback_sector: vec![0; 256],
                 },
                 flashram: cart::sram::Flashram {
                     status: 0,
