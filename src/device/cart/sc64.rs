@@ -294,15 +294,14 @@ pub fn dma_read(
     length: u32,
 ) -> u64 {
     dram_addr &= device::rdram::RDRAM_MASK as u32;
-    let buffer;
-    if cart_addr & 0x2000 != 0 {
+    let buffer = if cart_addr & 0x2000 != 0 {
         device::cart::format_eeprom(device);
         cart_addr &= SC64_EEPROM_MASK as u32;
-        buffer = &mut device.ui.saves.eeprom.data;
+        &mut device.ui.saves.eeprom.data
     } else {
         cart_addr &= SC64_BUFFER_MASK as u32;
-        buffer = &mut device.cart.sc64.buffer;
-    }
+        &mut device.cart.sc64.buffer
+    };
     let mut i = dram_addr;
     let mut j = cart_addr;
 
@@ -322,15 +321,14 @@ pub fn dma_write(
     length: u32,
 ) -> u64 {
     dram_addr &= device::rdram::RDRAM_MASK as u32;
-    let buffer;
-    if cart_addr & 0x2000 != 0 {
+    let buffer = if cart_addr & 0x2000 != 0 {
         device::cart::format_eeprom(device);
         cart_addr &= SC64_EEPROM_MASK as u32;
-        buffer = &device.ui.saves.eeprom.data;
+        &device.ui.saves.eeprom.data
     } else {
         cart_addr &= SC64_BUFFER_MASK as u32;
-        buffer = &device.cart.sc64.buffer;
-    }
+        &device.cart.sc64.buffer
+    };
     let mut i = dram_addr;
     let mut j = cart_addr;
 
