@@ -10,6 +10,11 @@ pub struct GbCart {
     pub ram_enabled: bool,
     pub ram_bank: u16,
     pub rom_bank: u32,
+    pub set_latch: bool,
+    pub latch_second: u8,
+    pub latch_minute: u8,
+    pub latch_hour: u8,
+    pub latch_day: u16,
 }
 
 #[derive(Default, Copy, Clone, serde::Serialize, serde::Deserialize)]
@@ -40,7 +45,10 @@ fn write_mbc3(
     } else if address < 0x6000 {
         cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0x8000 {
-        // RTC not implemented
+        if !cart.set_latch && value != 0 {
+            // not implemented
+        }
+        cart.set_latch = value != 0;
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
             return;
@@ -50,7 +58,28 @@ fn write_mbc3(
             cart.ram[banked_address as usize..banked_address as usize + size]
                 .copy_from_slice(&pif_ram[data..data + size]);
         } else {
-            // RTC not implemented
+            match cart.ram_bank {
+                0x8 => {
+                    cart.latch_second = value;
+                }
+                0x9 => {
+                    cart.latch_minute = value;
+                }
+                0xA => {
+                    cart.latch_hour = value;
+                }
+                0xB => {
+                    cart.latch_day &= 0xFF00;
+                    cart.latch_day |= value as u16;
+                }
+                0xC => {
+                    cart.latch_day &= 0x00FF;
+                    cart.latch_day |= (value as u16) << 8;
+                }
+                _ => {
+                    panic!("Unsupported ram bank {:x}", cart.ram_bank);
+                }
+            }
         }
     } else {
         panic!("Unsupported write address {:x}", address);
@@ -91,9 +120,18 @@ fn read_mbc3(
                 );
             }
         } else {
-            // RTC not implemented
+            let latch = match cart.ram_bank {
+                0x8 => cart.latch_second,
+                0x9 => cart.latch_minute,
+                0xA => cart.latch_hour,
+                0xB => cart.latch_day as u8,
+                0xC => (cart.latch_day >> 8) as u8,
+                _ => {
+                    panic!("Unsupported ram bank {:x}", cart.ram_bank);
+                }
+            };
             for i in 0..size {
-                pif_ram[data + i] = 0;
+                pif_ram[data + i] = latch;
             }
         }
     } else {
