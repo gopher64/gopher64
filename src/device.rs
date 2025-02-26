@@ -298,7 +298,7 @@ impl Device {
             },
             cart: cart::Cart {
                 rom: Vec::new(),
-                is_viewer_buffer: [0; 0xFFFF],
+                is_viewer_buffer: vec![0; 0xFFFF],
                 pal: false,
                 latch: 0,
                 cic_seed: 0,
@@ -308,8 +308,8 @@ impl Device {
                     regs_locked: true,
                     cfg: [0; cart::sc64::SC64_CFG_COUNT as usize],
                     sector: 0,
-                    buffer: [0; 8192],
-                    writeback_sector: [0; 256],
+                    buffer: vec![0; 8192],
+                    writeback_sector: vec![0; 256],
                 },
                 flashram: cart::sram::Flashram {
                     status: 0,
