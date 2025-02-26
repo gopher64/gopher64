@@ -37,9 +37,9 @@ pub fn read_regs(
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    device::memory::masked_write_32(
-        &mut device.ri.regs[((address & 0xFFFF) >> 2) as usize],
-        value,
-        mask,
-    );
+    let reg = (address & 0xFFFF) >> 2;
+    if reg as u32 == RI_SELECT_REG {
+        device.ri.ram_init = false;
+    }
+    device::memory::masked_write_32(&mut device.ri.regs[reg as usize], value, mask);
 }
