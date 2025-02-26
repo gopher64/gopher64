@@ -44,9 +44,9 @@ jobs:
           version: ${{ matrix.target }}-1.0
       - name: Build
         run: |
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo build -v --target=${{ matrix.target }}
           mkdir output
-          cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
+          cp target/${{ matrix.target }}/debug/gopher64 output/gopher64-${{ matrix.arch }}
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
@@ -71,9 +71,9 @@ jobs:
           rustflags: ""
       - name: Build
         run: |
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo build -v --target=${{ matrix.target }}
           mkdir output
-          cp target/${{ matrix.target }}/release/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
+          cp target/${{ matrix.target }}/debug/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
@@ -100,9 +100,9 @@ jobs:
           rustflags: ""
       - name: Build
         run: |
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo build -v --target=${{ matrix.target }}
           mkdir output
-          cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
+          cp target/${{ matrix.target }}/debug/gopher64 output/gopher64-${{ matrix.arch }}
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
