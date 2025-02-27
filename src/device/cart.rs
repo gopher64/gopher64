@@ -52,6 +52,7 @@ pub struct Cart {
     pub rtc: AfRtc,
     pub sc64: sc64::Sc64,
     pub flashram: sram::Flashram,
+    pub rtc_timestamp: i64,
 }
 
 pub fn process(device: &mut device::Device, channel: usize) {
@@ -151,7 +152,9 @@ fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, 
 }
 
 fn time2data(device: &mut device::Device, offset: usize) {
-    let now: chrono::DateTime<chrono::Local> = chrono::Local::now();
+    let timestamp =
+        device.cart.rtc_timestamp + (device.vi.frame_time * device.vi.vi_counter as f64) as i64;
+    let now = chrono::DateTime::from_timestamp(timestamp, 0).unwrap();
 
     device.pif.ram[offset] = byte2bcd(now.second());
     device.pif.ram[offset + 1] = byte2bcd(now.minute());

@@ -121,6 +121,8 @@ pub fn dma_write(
 }
 
 pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
+    let now: chrono::DateTime<chrono::Local> = chrono::Local::now();
+    device.cart.rtc_timestamp = now.naive_local().and_utc().timestamp();
     device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 1;
 
     device.cart.rom = rom_file;
