@@ -16,6 +16,8 @@ const TCP_REGISTER_PLAYER: u8 = 5;
 const TCP_GET_REGISTRATION: u8 = 6;
 const TCP_DISCONNECT_NOTICE: u8 = 7;
 const TCP_RECEIVE_SAVE_WITH_SIZE: u8 = 8;
+const TCP_SEND_RTC: u8 = 64;
+const TCP_RECEIVE_RTC: u8 = 128;
 
 const CS4: u32 = 32;
 
@@ -49,6 +51,22 @@ pub const NETPLAY_ERROR_PLAYER_1_DISCONNECTED: u32 = 3;
 pub const NETPLAY_ERROR_PLAYER_2_DISCONNECTED: u32 = 4;
 pub const NETPLAY_ERROR_PLAYER_3_DISCONNECTED: u32 = 5;
 pub const NETPLAY_ERROR_PLAYER_4_DISCONNECTED: u32 = 6;
+
+pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
+    let mut request: Vec<u8> = [TCP_SEND_RTC].to_vec();
+    let size: u32 = 8;
+    request.extend_from_slice(&size.to_be_bytes());
+    request.extend_from_slice(&rtc.to_be_bytes());
+    netplay.tcp_stream.write_all(&request).unwrap();
+}
+
+pub fn receive_rtc(netplay: &mut Netplay) -> i64 {
+    let request: Vec<u8> = [TCP_RECEIVE_RTC].to_vec();
+    netplay.tcp_stream.write_all(&request).unwrap();
+    let mut rtc: [u8; 8] = [0; 8];
+    netplay.tcp_stream.read_exact(&mut rtc).unwrap();
+    i64::from_be_bytes(rtc)
+}
 
 pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8], size: usize) {
     let mut request: Vec<u8> = [TCP_SEND_SAVE].to_vec();
