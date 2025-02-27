@@ -1,5 +1,7 @@
 # gopher64
-Gopher64 can be used via its GUI or the command line.
+## download
+
+https://github.com/gopher64/gopher64/releases
 
 ## wiki
 
@@ -55,7 +57,3 @@ I am very open to contributions! Please reach out to me via a GitHub issue, or v
 ## license
 
 Gopher64 is licensed under the GPLv3 license. Many portions of gopher64 have been adapted from mupen64plus and/or ares. The license for mupen64plus can be found here: https://github.com/mupen64plus/mupen64plus-core/blob/master/LICENSES. The license for ares can be found here: https://github.com/ares-emulator/ares/blob/master/LICENSE.
-
-## where to download
-
-https://github.com/gopher64/gopher64/releases
