@@ -294,7 +294,7 @@ void rdp_close()
 
 static void calculate_viewport(float *x, float *y, float *width, float *height)
 {
-	const int32_t display_width = gfx_info.PAL ? 384 : 320;
+	const int32_t display_width = gfx_info.widescreen ? (gfx_info.PAL ? 512 : 426) : (gfx_info.PAL ? 384 : 320);
 	const int32_t display_height = gfx_info.PAL ? 288 : 240;
 
 	int w, h;

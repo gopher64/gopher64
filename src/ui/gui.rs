@@ -17,6 +17,7 @@ pub struct GopherEguiApp {
     upscale: u32,
     integer_scaling: bool,
     fullscreen: bool,
+    widescreen: bool,
     emulate_vru: bool,
     dinput: bool,
     show_vru_dialog: bool,
@@ -41,6 +42,7 @@ struct SaveConfig {
     upscale: u32,
     integer_scaling: bool,
     fullscreen: bool,
+    widescreen: bool,
     emulate_vru: bool,
 }
 
@@ -116,6 +118,7 @@ impl GopherEguiApp {
             upscale: config.video.upscale,
             integer_scaling: config.video.integer_scaling,
             fullscreen: config.video.fullscreen,
+            widescreen: config.video.widescreen,
             emulate_vru: config.input.emulate_vru,
             show_vru_dialog: false,
             dinput: false,
@@ -152,6 +155,7 @@ fn save_config(
     config.video.upscale = save_config_items.upscale;
     config.video.integer_scaling = save_config_items.integer_scaling;
     config.video.fullscreen = save_config_items.fullscreen;
+    config.video.widescreen = save_config_items.widescreen;
     config.input.emulate_vru = save_config_items.emulate_vru;
 }
 
@@ -165,6 +169,7 @@ impl Drop for GopherEguiApp {
             upscale: self.upscale,
             integer_scaling: self.integer_scaling,
             fullscreen: self.fullscreen,
+            widescreen: self.widescreen,
             emulate_vru: self.emulate_vru,
         };
         let mut config = ui::config::Config::new();
@@ -300,6 +305,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let upscale = app.upscale;
     let integer_scaling = app.integer_scaling;
     let fullscreen = app.fullscreen;
+    let widescreen = app.widescreen;
     let emulate_vru = app.emulate_vru;
     let peer_addr;
     let session;
@@ -394,6 +400,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     upscale,
                     integer_scaling,
                     fullscreen,
+                    widescreen,
                     emulate_vru,
                 };
 
@@ -606,6 +613,7 @@ impl eframe::App for GopherEguiApp {
             };
             ui.checkbox(&mut self.integer_scaling, "Integer Scaling");
             ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
+            ui.checkbox(&mut self.widescreen, "Widescreen (stretch)");
 
             ui.add_space(16.0);
             ui.hyperlink_to("Wiki", "https://github.com/gopher64/gopher64/wiki");
