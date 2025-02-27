@@ -16,11 +16,22 @@ pub fn init(device: &mut device::Device) {
     }
     flags |= sdl3_sys::video::SDL_WINDOW_INPUT_FOCUS;
 
-    let mut window_width = 640;
-    let mut window_height = 480;
+    let window_width;
+    let window_height;
     if device.cart.pal {
-        window_width = 768;
+        window_width = if device.ui.config.video.widescreen {
+            1024
+        } else {
+            768
+        };
         window_height = 576;
+    } else {
+        window_width = if device.ui.config.video.widescreen {
+            852
+        } else {
+            640
+        };
+        window_height = 480;
     }
     device.ui.window = unsafe {
         sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), window_width, window_height, flags)
@@ -42,6 +53,7 @@ pub fn init(device: &mut device::Device) {
         DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
         DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
         PAL: device.cart.pal,
+        widescreen: device.ui.config.video.widescreen,
     };
 
     unsafe {
@@ -85,6 +97,7 @@ pub fn load_state(device: &mut device::Device) {
         DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
         DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
         PAL: device.cart.pal,
+        widescreen: device.ui.config.video.widescreen,
     };
     unsafe {
         rdp_new_processor(gfx_info, device.ui.config.video.upscale);

@@ -17,6 +17,7 @@ extern "C"
 		uint32_t *DPC_END_REG;
 		uint32_t *DPC_STATUS_REG;
 		bool PAL;
+		bool widescreen;
 	} GFX_INFO;
 
 	typedef struct
