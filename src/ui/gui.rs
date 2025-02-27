@@ -493,6 +493,19 @@ impl eframe::App for GopherEguiApp {
                         self.netplay.create = true;
                     }
 
+                    if ui.button("Open Saves Folder").clicked() {
+                        let command = if cfg!(target_os = "windows") {
+                            "explorer"
+                        } else if cfg!(target_os = "linux") {
+                            "xdg-open"
+                        } else {
+                            panic!("Unsupported platform");
+                        };
+                        let _ = std::process::Command::new(command)
+                            .arg(self.dirs.data_dir.join("saves"))
+                            .spawn();
+                    }
+
                     ui.end_row();
 
                     if ui.button("Configure Input Profile").clicked()
