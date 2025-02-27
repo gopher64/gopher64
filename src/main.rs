@@ -169,6 +169,18 @@ async fn main() {
         handle.join().unwrap();
     } else {
         let options = eframe::NativeOptions {
+            wgpu_options: eframe::egui_wgpu::WgpuConfiguration {
+                wgpu_setup: eframe::egui_wgpu::WgpuSetup::CreateNew(
+                    eframe::egui_wgpu::WgpuSetupCreateNew {
+                        instance_descriptor: eframe::egui_wgpu::wgpu::InstanceDescriptor {
+                            backends: eframe::wgpu::Backends::GL,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                ),
+                ..Default::default()
+            },
             viewport: eframe::egui::ViewportBuilder::default()
                 .with_inner_size([854.0, 480.0])
                 .with_icon(
