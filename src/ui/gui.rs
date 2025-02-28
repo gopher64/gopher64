@@ -627,7 +627,7 @@ impl eframe::App for GopherEguiApp {
             ui.checkbox(&mut self.widescreen, "Widescreen (stretch)");
 
             ui.add_space(16.0);
-            ui.checkbox(&mut self.overclock, "Overclock N64 CPU");
+            ui.checkbox(&mut self.overclock, "Overclock N64 CPU (may cause bugs)");
             ui.add_space(16.0);
 
             ui.hyperlink_to("Wiki", "https://github.com/gopher64/gopher64/wiki");
