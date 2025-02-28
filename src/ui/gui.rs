@@ -433,6 +433,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                             player_number.unwrap(),
                         ));
                         device.ui.fullscreen = fullscreen;
+                        device.cpu.overclock = enable_overclock;
                         device::run_game(rom_contents, &mut device);
                         netplay::close(&mut device);
                     } else {
