@@ -270,6 +270,7 @@ impl Device {
                 pc: 0xBFC00000,
                 pc_phys: 0,
                 llbit: false,
+                overclock: false,
                 lo: 0,
                 hi: 0,
                 running: false,

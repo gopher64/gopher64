@@ -301,7 +301,7 @@ fn get_latest_version(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
 }
 
-pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
+pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: bool) {
     let netplay;
 
     let selected_controller = app.selected_controller;
@@ -457,6 +457,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             println!("Could not read rom file");
                         } else {
                             device.ui.fullscreen = fullscreen;
+                            device.cpu.overclock = enable_overclock;
                             device::run_game(rom_contents, &mut device);
                         }
                     }
@@ -500,7 +501,7 @@ impl eframe::App for GopherEguiApp {
                 .min_col_width(200.0)
                 .show(ui, |ui| {
                     if ui.button("Open ROM").clicked() {
-                        open_rom(self, ctx);
+                        open_rom(self, ctx, self.overclock);
                     }
                     if ui.button("Netplay: Create Session").clicked()
                         && !self.dirs.cache_dir.join("game_running").exists()
