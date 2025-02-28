@@ -162,8 +162,7 @@ async fn main() {
             .spawn(move || {
                 let mut device = device::Device::new();
                 let overclock = device.ui.config.emulation.overclock;
-                device::setup(&mut device, args.fullscreen, overclock);
-                device::run_game(rom_contents, &mut device);
+                device::run_game(&mut device, rom_contents, args.fullscreen, overclock);
             })
             .unwrap();
 
