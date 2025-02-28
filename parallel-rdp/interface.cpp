@@ -63,6 +63,7 @@ static int cmd_ptr;
 static CALL_BACK callback;
 static GFX_INFO gfx_info;
 static uint32_t region;
+static bool crop_letterbox;
 
 typedef struct
 {
@@ -178,6 +179,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 			if (fullscreen)
 				callback.emu_running = false;
 			break;
+		case SDL_SCANCODE_F4:
+			crop_letterbox = !crop_letterbox;
+			break;
 		case SDL_SCANCODE_F5:
 			callback.save_state = true;
 			break;
@@ -263,6 +267,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, uint32_t _upscale, bool _intege
 
 	callback.emu_running = true;
 	callback.enable_speedlimiter = true;
+	crop_letterbox = false;
 }
 
 void rdp_close()
@@ -338,6 +343,22 @@ static void render_frame(Vulkan::Device &device)
 	options.persist_frame_on_invalid_input = true;
 	options.blend_previous_frame = true;
 	options.upscale_deinterlacing = false;
+
+	if (crop_letterbox && gfx_info.widescreen)
+	{
+		options.crop_rect.enable = true;
+		if (gfx_info.PAL)
+		{
+			options.crop_rect.top = 36;
+			options.crop_rect.bottom = 36;
+		}
+		else
+		{
+			options.crop_rect.top = 30;
+			options.crop_rect.bottom = 30;
+		}
+	}
+
 	Vulkan::ImageHandle image = processor->scanout(options);
 
 	// Normally reflection is automated.
