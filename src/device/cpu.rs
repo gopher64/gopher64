@@ -227,7 +227,7 @@ pub fn init(device: &mut device::Device) {
     device.cpu.clock_rate = if !device.cpu.overclock {
         93750000
     } else {
-        140625000
+        125000000
     };
 
     map_instructions(device);
