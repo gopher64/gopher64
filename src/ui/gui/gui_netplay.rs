@@ -68,6 +68,7 @@ pub struct NetplayRoom {
     md5: Option<String>,
     game_name: Option<String>,
     pub port: Option<i32>,
+    features: Option<std::collections::HashMap<String, String>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -310,6 +311,8 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         // If the ROM doesn't report a name, use the filename
                         game_name = app.netplay.create_rom_label.clone();
                     }
+                    let mut features = std::collections::HashMap::new();
+                    features.insert("overclock".to_string(), app.overclock.to_string());
                     let netplay_message = NetplayMessage {
                         message_type: "request_create_room".to_string(),
                         player_name: Some(app.netplay.player_name.clone()),
@@ -329,6 +332,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             md5: Some(app.netplay.game_info.md5.clone()),
                             protected: None,
                             port: None,
+                            features: Some(features),
                         }),
                     };
                     let (mut socket, _response) =
@@ -502,6 +506,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         md5: Some(app.netplay.game_info.md5.clone()),
                         protected: None,
                         port: app.netplay.selected_session.as_ref().unwrap().port,
+                        features: None,
                     }),
                 };
                 let socket = app.netplay.socket.as_mut().unwrap();
@@ -651,6 +656,17 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
 }
 
 pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
+    let overclock = app
+        .netplay
+        .waiting_session
+        .as_ref()
+        .unwrap()
+        .features
+        .as_ref()
+        .unwrap()
+        .get("overclock")
+        .unwrap();
+
     let motd_message = NetplayMessage {
         message_type: "request_motd".to_string(),
         player_name: None,
@@ -684,6 +700,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
             md5: None,
             protected: None,
             port: app.netplay.waiting_session.as_ref().unwrap().port,
+            features: None,
         }),
     };
 
@@ -722,6 +739,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 md5: None,
                 protected: None,
                 port: app.netplay.waiting_session.as_ref().unwrap().port,
+                features: None,
             }),
         };
         let socket = app.netplay.socket.as_mut().unwrap();
@@ -753,6 +771,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 md5: None,
                 protected: None,
                 port: app.netplay.waiting_session.as_ref().unwrap().port,
+                features: None,
             }),
         };
         app.netplay.chat_message.clear();
@@ -801,7 +820,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             };
                         }
 
-                        gui::open_rom(app, ctx);
+                        gui::open_rom(app, ctx, *overclock == "true");
                         app.netplay = Default::default();
                         return;
                     } else {

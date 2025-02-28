@@ -161,8 +161,8 @@ async fn main() {
             .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
             .spawn(move || {
                 let mut device = device::Device::new();
-                device.ui.fullscreen = args.fullscreen;
-                device::run_game(rom_contents, &mut device);
+                let overclock = device.ui.config.emulation.overclock;
+                device::run_game(&mut device, rom_contents, args.fullscreen, overclock);
             })
             .unwrap();
 

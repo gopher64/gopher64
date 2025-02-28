@@ -30,6 +30,7 @@ pub struct Cpu {
     pub hi: u64,
     pub running: bool,
     pub llbit: bool,
+    pub overclock: bool,
     pub clock_rate: u64,
     #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 64],
@@ -223,7 +224,11 @@ pub fn map_instructions(device: &mut device::Device) {
 }
 
 pub fn init(device: &mut device::Device) {
-    device.cpu.clock_rate = 93750000;
+    device.cpu.clock_rate = if !device.cpu.overclock {
+        93750000
+    } else {
+        125000000
+    };
 
     map_instructions(device);
 

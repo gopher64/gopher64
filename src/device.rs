@@ -42,7 +42,10 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub fn run_game(rom_contents: Vec<u8>, device: &mut Device) {
+pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, fullscreen: bool, overclock: bool) {
+    device.ui.fullscreen = fullscreen;
+    device.cpu.overclock = overclock;
+
     cart::rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
@@ -270,6 +273,7 @@ impl Device {
                 pc: 0xBFC00000,
                 pc_phys: 0,
                 llbit: false,
+                overclock: false,
                 lo: 0,
                 hi: 0,
                 running: false,

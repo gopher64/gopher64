@@ -18,6 +18,7 @@ pub struct GopherEguiApp {
     integer_scaling: bool,
     fullscreen: bool,
     widescreen: bool,
+    overclock: bool,
     emulate_vru: bool,
     dinput: bool,
     show_vru_dialog: bool,
@@ -44,6 +45,7 @@ struct SaveConfig {
     fullscreen: bool,
     widescreen: bool,
     emulate_vru: bool,
+    overclock: bool,
 }
 
 fn get_input_profiles(config: &ui::config::Config) -> Vec<String> {
@@ -120,6 +122,7 @@ impl GopherEguiApp {
             fullscreen: config.video.fullscreen,
             widescreen: config.video.widescreen,
             emulate_vru: config.input.emulate_vru,
+            overclock: config.emulation.overclock,
             show_vru_dialog: false,
             dinput: false,
             controller_paths,
@@ -157,6 +160,8 @@ fn save_config(
     config.video.fullscreen = save_config_items.fullscreen;
     config.video.widescreen = save_config_items.widescreen;
     config.input.emulate_vru = save_config_items.emulate_vru;
+
+    config.emulation.overclock = save_config_items.overclock;
 }
 
 impl Drop for GopherEguiApp {
@@ -171,6 +176,7 @@ impl Drop for GopherEguiApp {
             fullscreen: self.fullscreen,
             widescreen: self.widescreen,
             emulate_vru: self.emulate_vru,
+            overclock: self.overclock,
         };
         let mut config = ui::config::Config::new();
         save_config(
@@ -295,7 +301,7 @@ fn get_latest_version(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
 }
 
-pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
+pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: bool) {
     let netplay;
 
     let selected_controller = app.selected_controller;
@@ -307,6 +313,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
     let fullscreen = app.fullscreen;
     let widescreen = app.widescreen;
     let emulate_vru = app.emulate_vru;
+    let overclock = app.overclock;
     let peer_addr;
     let session;
     let player_number;
@@ -402,6 +409,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                     fullscreen,
                     widescreen,
                     emulate_vru,
+                    overclock,
                 };
 
                 if file.is_some() || netplay {
@@ -424,8 +432,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             session.unwrap(),
                             player_number.unwrap(),
                         ));
-                        device.ui.fullscreen = fullscreen;
-                        device::run_game(rom_contents, &mut device);
+                        device::run_game(&mut device, rom_contents, fullscreen, enable_overclock);
                         netplay::close(&mut device);
                     } else {
                         for i in 0..4 {
@@ -448,8 +455,12 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         if rom_contents.is_empty() {
                             println!("Could not read rom file");
                         } else {
-                            device.ui.fullscreen = fullscreen;
-                            device::run_game(rom_contents, &mut device);
+                            device::run_game(
+                                &mut device,
+                                rom_contents,
+                                fullscreen,
+                                enable_overclock,
+                            );
                         }
                     }
                     let result = std::fs::remove_file(running_file);
@@ -492,7 +503,7 @@ impl eframe::App for GopherEguiApp {
                 .min_col_width(200.0)
                 .show(ui, |ui| {
                     if ui.button("Open ROM").clicked() {
-                        open_rom(self, ctx);
+                        open_rom(self, ctx, self.overclock);
                     }
                     if ui.button("Netplay: Create Session").clicked()
                         && !self.dirs.cache_dir.join("game_running").exists()
@@ -616,6 +627,9 @@ impl eframe::App for GopherEguiApp {
             ui.checkbox(&mut self.widescreen, "Widescreen (stretch)");
 
             ui.add_space(16.0);
+            ui.checkbox(&mut self.overclock, "Overclock N64 CPU (may cause bugs)");
+            ui.add_space(16.0);
+
             ui.hyperlink_to("Wiki", "https://github.com/gopher64/gopher64/wiki");
             ui.hyperlink_to("Discord Server", "https://discord.gg/9RGXq8W8JQ");
             ui.add_space(16.0);
