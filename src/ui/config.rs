@@ -40,6 +40,7 @@ pub struct Input {
     pub transfer_pak: [bool; 4],
     pub emulate_vru: bool,
 }
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Video {
     pub upscale: u32,
@@ -47,10 +48,17 @@ pub struct Video {
     pub fullscreen: bool,
     pub widescreen: bool,
 }
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Emulation {
+    pub overclock: bool,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub input: Input,
     pub video: Video,
+    pub emulation: Emulation,
 }
 
 impl Drop for Config {
@@ -99,6 +107,7 @@ impl Config {
                 fullscreen: false,
                 widescreen: false,
             },
+            emulation: Emulation { overclock: false },
         }
     }
 }

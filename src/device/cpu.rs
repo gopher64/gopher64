@@ -223,7 +223,11 @@ pub fn map_instructions(device: &mut device::Device) {
 }
 
 pub fn init(device: &mut device::Device) {
-    device.cpu.clock_rate = 93750000;
+    device.cpu.clock_rate = if !device.ui.config.emulation.overclock {
+        93750000
+    } else {
+        140625000
+    };
 
     map_instructions(device);
 
