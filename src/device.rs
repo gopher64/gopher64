@@ -42,6 +42,11 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
+pub fn setup(device: &mut Device, fullscreen: bool, overclock: bool) {
+    device.ui.fullscreen = fullscreen;
+    device.cpu.overclock = overclock;
+}
+
 pub fn run_game(rom_contents: Vec<u8>, device: &mut Device) {
     cart::rom::init(device, rom_contents); // cart needs to come before rdram
 

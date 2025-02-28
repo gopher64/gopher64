@@ -432,8 +432,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                             session.unwrap(),
                             player_number.unwrap(),
                         ));
-                        device.ui.fullscreen = fullscreen;
-                        device.cpu.overclock = enable_overclock;
+                        device::setup(&mut device, fullscreen, enable_overclock);
                         device::run_game(rom_contents, &mut device);
                         netplay::close(&mut device);
                     } else {
@@ -457,8 +456,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                         if rom_contents.is_empty() {
                             println!("Could not read rom file");
                         } else {
-                            device.ui.fullscreen = fullscreen;
-                            device.cpu.overclock = enable_overclock;
+                            device::setup(&mut device, fullscreen, enable_overclock);
                             device::run_game(rom_contents, &mut device);
                         }
                     }
