@@ -1,6 +1,7 @@
 use crate::{device, netplay, ui};
 use eframe::egui;
 
+pub mod gui_cheats;
 pub mod gui_netplay;
 
 pub struct GopherEguiApp {
@@ -23,12 +24,14 @@ pub struct GopherEguiApp {
     emulate_vru: bool,
     dinput: bool,
     show_vru_dialog: bool,
+    show_cheats: bool,
     vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
     vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
     vru_word_list: Vec<String>,
     latest_version: Option<semver::Version>,
     update_receiver: Option<tokio::sync::mpsc::Receiver<GithubData>>,
     netplay: gui_netplay::GuiNetplay,
+    cheats: gui_cheats::GuiCheats,
 }
 
 #[derive(serde::Deserialize)]
@@ -127,6 +130,7 @@ impl GopherEguiApp {
             emulate_vru: config.input.emulate_vru,
             overclock: config.emulation.overclock,
             show_vru_dialog: false,
+            show_cheats: false,
             dinput: false,
             controller_paths,
             vru_window_receiver: None,
@@ -135,6 +139,11 @@ impl GopherEguiApp {
             update_receiver: None,
             vru_word_list: Vec::new(),
             netplay: Default::default(),
+            cheats: gui_cheats::GuiCheats {
+                cheats_db: serde_json::from_slice(include_bytes!("../../data/cheats.json"))
+                    .unwrap(),
+                cheats_receiver: None,
+            },
             dirs: ui::get_dirs(),
         }
     }
@@ -498,6 +507,10 @@ impl eframe::App for GopherEguiApp {
             configure_profile(self, ctx);
         }
 
+        if self.show_cheats {
+            gui_cheats::dialog(self, ctx);
+        }
+
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.configure_profile {
                 ui.disable()
@@ -539,6 +552,12 @@ impl eframe::App for GopherEguiApp {
                         && !self.dirs.cache_dir.join("game_running").exists()
                     {
                         self.netplay.join = true;
+                    }
+
+                    if ui.button("Manage Cheats").clicked()
+                        && !self.dirs.cache_dir.join("game_running").exists()
+                    {
+                        self.show_cheats = true;
                     }
                 });
 
