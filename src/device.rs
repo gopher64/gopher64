@@ -44,16 +44,9 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub fn run_game(
-    device: &mut Device,
-    rom_contents: Vec<u8>,
-    fullscreen: bool,
-    overclock: bool,
-    enable_is_viewer: bool,
-) {
+pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, fullscreen: bool, overclock: bool) {
     device.ui.fullscreen = fullscreen;
     device.cpu.overclock = overclock;
-    device.enable_is_viewer = enable_is_viewer;
 
     init_rng(device);
 
@@ -190,7 +183,6 @@ pub struct Device {
     #[serde(skip, default = "ui::Ui::default")]
     pub ui: ui::Ui,
     byte_swap: usize,
-    enable_is_viewer: bool,
     pub save_state: bool,
     pub load_state: bool,
     pub cpu: cpu::Cpu,
@@ -230,7 +222,6 @@ impl Device {
             netplay: None,
             ui: ui::Ui::new(),
             byte_swap,
-            enable_is_viewer: false,
             save_state: false,
             load_state: false,
             cpu: cpu::Cpu {

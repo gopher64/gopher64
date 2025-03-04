@@ -18,7 +18,6 @@ pub struct GopherEguiApp {
     integer_scaling: bool,
     fullscreen: bool,
     widescreen: bool,
-    enable_is_viewer: bool,
     overclock: bool,
     emulate_vru: bool,
     dinput: bool,
@@ -94,7 +93,6 @@ impl GopherEguiApp {
         cc: &eframe::CreationContext<'_>,
         controller_paths: Vec<String>,
         controller_names: Vec<String>,
-        enable_is_viewer: bool,
     ) -> GopherEguiApp {
         add_fonts(&cc.egui_ctx);
         let config = ui::config::Config::new();
@@ -112,7 +110,6 @@ impl GopherEguiApp {
         }
         GopherEguiApp {
             configure_profile: false,
-            enable_is_viewer,
             profile_name: "".to_string(),
             selected_profile: config.input.input_profile_binding.clone(),
             selected_controller,
@@ -315,7 +312,6 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
     let integer_scaling = app.integer_scaling;
     let fullscreen = app.fullscreen;
     let widescreen = app.widescreen;
-    let enable_is_viewer = app.enable_is_viewer;
     let emulate_vru = app.emulate_vru;
     let overclock = app.overclock;
     let peer_addr;
@@ -436,13 +432,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                             session.unwrap(),
                             player_number.unwrap(),
                         ));
-                        device::run_game(
-                            &mut device,
-                            rom_contents,
-                            fullscreen,
-                            enable_overclock,
-                            enable_is_viewer,
-                        );
+                        device::run_game(&mut device, rom_contents, fullscreen, enable_overclock);
                         netplay::close(&mut device);
                     } else {
                         for i in 0..4 {
@@ -470,7 +460,6 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                                 rom_contents,
                                 fullscreen,
                                 enable_overclock,
-                                enable_is_viewer,
                             );
                         }
                     }
