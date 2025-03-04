@@ -49,9 +49,7 @@ fn dma_read(device: &mut device::Device) {
 
     device.si.regs[SI_STATUS_REG as usize] |= SI_STATUS_DMA_BUSY;
 
-    let length = device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
-        + duration
-        + randomize_interrupt_time(&mut device.rng);
+    let length = duration + randomize_interrupt_time(&mut device.rng);
 
     device::events::create_event(device, device::events::EVENT_TYPE_SI, length)
 }
@@ -63,9 +61,7 @@ fn dma_write(device: &mut device::Device) {
 
     device.si.regs[SI_STATUS_REG as usize] |= SI_STATUS_DMA_BUSY;
 
-    let length = device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
-        + 6000
-        + randomize_interrupt_time(&mut device.rng); //based on https://github.com/rasky/n64-systembench
+    let length = 6000 + randomize_interrupt_time(&mut device.rng); //based on https://github.com/rasky/n64-systembench
 
     device::events::create_event(device, device::events::EVENT_TYPE_SI, length)
 }

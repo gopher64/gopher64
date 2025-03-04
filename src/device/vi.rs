@@ -65,11 +65,7 @@ fn create_limiter(device: &mut device::Device) {
 
 fn set_vertical_interrupt(device: &mut device::Device) {
     if device::events::get_event(device, device::events::EVENT_TYPE_VI).is_none() {
-        device::events::create_event(
-            device,
-            device::events::EVENT_TYPE_VI,
-            device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + device.vi.delay,
-        )
+        device::events::create_event(device, device::events::EVENT_TYPE_VI, device.vi.delay)
     }
 }
 
@@ -164,7 +160,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_VI);
 
-    device::events::create_event(
+    device::events::create_event_at(
         device,
         device::events::EVENT_TYPE_VI,
         device.cpu.next_event_count + device.vi.delay,
