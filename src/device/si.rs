@@ -1,3 +1,5 @@
+use rand_chacha::rand_core::RngCore;
+
 use crate::device;
 
 const SI_DRAM_ADDR_REG: u32 = 0;
@@ -36,6 +38,10 @@ pub fn read_regs(
     device.si.regs[((address & 0xFFFF) >> 2) as usize]
 }
 
+fn randomize_interrupt_time(rng: &mut rand_chacha::ChaCha8Rng) -> u64 {
+    rng.next_u64() % 0x100
+}
+
 fn dma_read(device: &mut device::Device) {
     device.si.dma_dir = DmaDir::Read;
 
@@ -43,11 +49,11 @@ fn dma_read(device: &mut device::Device) {
 
     device.si.regs[SI_STATUS_REG as usize] |= SI_STATUS_DMA_BUSY;
 
-    device::events::create_event(
-        device,
-        device::events::EVENT_TYPE_SI,
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + duration,
-    )
+    let length = device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
+        + duration
+        + randomize_interrupt_time(&mut device.rng);
+
+    device::events::create_event(device, device::events::EVENT_TYPE_SI, length)
 }
 
 fn dma_write(device: &mut device::Device) {
@@ -57,11 +63,11 @@ fn dma_write(device: &mut device::Device) {
 
     device.si.regs[SI_STATUS_REG as usize] |= SI_STATUS_DMA_BUSY;
 
-    device::events::create_event(
-        device,
-        device::events::EVENT_TYPE_SI,
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + 6000, //based on https://github.com/rasky/n64-systembench
-    )
+    let length = device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
+        + 6000
+        + randomize_interrupt_time(&mut device.rng); //based on https://github.com/rasky/n64-systembench
+
+    device::events::create_event(device, device::events::EVENT_TYPE_SI, length)
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
