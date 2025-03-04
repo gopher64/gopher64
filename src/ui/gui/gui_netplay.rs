@@ -69,6 +69,7 @@ pub struct NetplayRoom {
     game_name: Option<String>,
     pub port: Option<i32>,
     features: Option<std::collections::HashMap<String, String>>,
+    buffer_target: Option<i32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -333,6 +334,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             protected: None,
                             port: None,
                             features: Some(features),
+                            buffer_target: Some(2),
                         }),
                     };
                     let (mut socket, _response) =
@@ -507,6 +509,7 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                         protected: None,
                         port: app.netplay.selected_session.as_ref().unwrap().port,
                         features: None,
+                        buffer_target: None,
                     }),
                 };
                 let socket = app.netplay.socket.as_mut().unwrap();
@@ -701,6 +704,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
             protected: None,
             port: app.netplay.waiting_session.as_ref().unwrap().port,
             features: None,
+            buffer_target: None,
         }),
     };
 
@@ -740,6 +744,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 protected: None,
                 port: app.netplay.waiting_session.as_ref().unwrap().port,
                 features: None,
+                buffer_target: None,
             }),
         };
         let socket = app.netplay.socket.as_mut().unwrap();
@@ -772,6 +777,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 protected: None,
                 port: app.netplay.waiting_session.as_ref().unwrap().port,
                 features: None,
+                buffer_target: None,
             }),
         };
         app.netplay.chat_message.clear();
