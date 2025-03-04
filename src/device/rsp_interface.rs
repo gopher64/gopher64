@@ -206,9 +206,7 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
     device::events::create_event(
         device,
         device::events::EVENT_TYPE_SPDMA,
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
-            + device::rdram::rdram_calculate_cycles((count * length) as u64)
-            + 9,
+        device::rdram::rdram_calculate_cycles((count * length) as u64) + 9,
     );
 }
 
@@ -467,11 +465,7 @@ fn do_task(device: &mut device::Device) {
     } else {
         let timer = device::rsp_cpu::run(device);
 
-        device::events::create_event(
-            device,
-            device::events::EVENT_TYPE_SP,
-            device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + timer,
-        )
+        device::events::create_event(device, device::events::EVENT_TYPE_SP, timer)
     }
 }
 

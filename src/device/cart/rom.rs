@@ -65,11 +65,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     device.pi.regs[device::pi::PI_STATUS_REG as usize] |= device::pi::PI_STATUS_IO_BUSY;
 
     let cycles = device::pi::calculate_cycles(device, 1, 4);
-    device::events::create_event(
-        device,
-        device::events::EVENT_TYPE_PI,
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
-    );
+    device::events::create_event(device, device::events::EVENT_TYPE_PI, cycles);
 }
 
 pub fn dma_read(

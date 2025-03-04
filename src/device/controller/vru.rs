@@ -170,8 +170,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 device::events::create_event(
                     device,
                     device::events::EVENT_TYPE_VRU,
-                    device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]
-                        + (device.cpu.clock_rate * 2), // 2 seconds
+                    device.cpu.clock_rate * 2, // 2 seconds
                 )
             } else if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0xEF {
                 device.vru.talking = false;

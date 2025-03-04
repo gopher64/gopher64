@@ -66,11 +66,7 @@ fn dma_read(device: &mut device::Device) {
 
     let cycles = (handler.read)(device, cart_addr, dram_addr, length);
 
-    device::events::create_event(
-        device,
-        device::events::EVENT_TYPE_PI,
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
-    );
+    device::events::create_event(device, device::events::EVENT_TYPE_PI, cycles);
 
     /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */
     device.pi.regs[PI_DRAM_ADDR_REG as usize] =
@@ -99,11 +95,7 @@ fn dma_write(device: &mut device::Device) {
 
     let cycles = (handler.write)(device, cart_addr, dram_addr, length);
 
-    device::events::create_event(
-        device,
-        device::events::EVENT_TYPE_PI,
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + cycles,
-    );
+    device::events::create_event(device, device::events::EVENT_TYPE_PI, cycles);
 
     /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */
     device.pi.regs[PI_DRAM_ADDR_REG as usize] =
