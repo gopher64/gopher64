@@ -27,7 +27,7 @@ pub struct GopherEguiApp {
     vru_word_list: Vec<String>,
     latest_version: Option<semver::Version>,
     update_receiver: Option<tokio::sync::mpsc::Receiver<GithubData>>,
-    pub netplay: gui_netplay::GuiNetplay,
+    netplay: gui_netplay::GuiNetplay,
 }
 
 #[derive(serde::Deserialize)]
