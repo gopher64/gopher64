@@ -63,6 +63,8 @@ struct Args {
         help = "Clear all input profile bindings and controller assignments"
     )]
     clear_input_bindings: bool,
+    #[arg(short = 'i', long, help = "Enable IS Viewer interface")]
+    enable_is_viewer: bool,
 }
 
 #[tokio::main]
@@ -162,7 +164,13 @@ async fn main() {
             .spawn(move || {
                 let mut device = device::Device::new();
                 let overclock = device.ui.config.emulation.overclock;
-                device::run_game(&mut device, rom_contents, args.fullscreen, overclock);
+                device::run_game(
+                    &mut device,
+                    rom_contents,
+                    args.fullscreen,
+                    overclock,
+                    args.enable_is_viewer,
+                );
             })
             .unwrap();
 
@@ -205,6 +213,7 @@ async fn main() {
                     cc,
                     controllers_paths,
                     controller_names,
+                    args.enable_is_viewer,
                 )))
             }),
         )
