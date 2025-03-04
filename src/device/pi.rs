@@ -1,4 +1,5 @@
 use crate::{device, ui};
+use rand_chacha::rand_core::RngCore;
 
 const PI_DRAM_ADDR_REG: u32 = 0;
 const PI_CART_ADDR_REG: u32 = 1;
@@ -173,7 +174,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     }
 }
 
-pub fn calculate_cycles(device: &device::Device, domain: i32, length: u32) -> u64 {
+fn randomize_interrupt_time(rng: &mut rand_chacha::ChaCha8Rng) -> u64 {
+    rng.next_u64() % 0x10
+}
+
+pub fn calculate_cycles(device: &mut device::Device, domain: i32, length: u32) -> u64 {
     let mut cycles: f64 = 0.0;
     let (page_size, latency, pulse_width, release, pages);
     let page_size_base: f64 = 2.0;
@@ -196,6 +201,7 @@ pub fn calculate_cycles(device: &device::Device, domain: i32, length: u32) -> u6
     cycles += (14.0 + latency) * pages;
     cycles += (pulse_width + release) * (length as f64 / 2.0);
     cycles += 5.0 * pages;
+    cycles += randomize_interrupt_time(&mut device.rng) as f64;
     (cycles * 1.5) as u64 // Converting RCP clock speed to CPU clock speed
 }
 

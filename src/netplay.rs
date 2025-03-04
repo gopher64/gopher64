@@ -18,6 +18,8 @@ const TCP_DISCONNECT_NOTICE: u8 = 7;
 const TCP_RECEIVE_SAVE_WITH_SIZE: u8 = 8;
 const TCP_SEND_RTC: u8 = 64;
 const TCP_RECEIVE_RTC: u8 = 128;
+const TCP_SEND_RNG: u8 = 65;
+const TCP_RECEIVE_RNG: u8 = 129;
 
 const CS4: u32 = 32;
 
@@ -66,6 +68,22 @@ pub fn receive_rtc(netplay: &mut Netplay) -> i64 {
     let mut rtc: [u8; 8] = [0; 8];
     netplay.tcp_stream.read_exact(&mut rtc).unwrap();
     i64::from_be_bytes(rtc)
+}
+
+pub fn send_rng(netplay: &mut Netplay, seed: u64) {
+    let mut request: Vec<u8> = [TCP_SEND_RNG].to_vec();
+    let size: u32 = 8;
+    request.extend_from_slice(&size.to_be_bytes());
+    request.extend_from_slice(&seed.to_be_bytes());
+    netplay.tcp_stream.write_all(&request).unwrap();
+}
+
+pub fn receive_rng(netplay: &mut Netplay) -> u64 {
+    let request: Vec<u8> = [TCP_RECEIVE_RNG].to_vec();
+    netplay.tcp_stream.write_all(&request).unwrap();
+    let mut seed: [u8; 8] = [0; 8];
+    netplay.tcp_stream.read_exact(&mut seed).unwrap();
+    u64::from_be_bytes(seed)
 }
 
 pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8], size: usize) {

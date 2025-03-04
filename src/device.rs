@@ -10,6 +10,8 @@ include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
+use rand_chacha::rand_core::{RngCore, SeedableRng};
+
 use crate::{netplay, ui};
 use std::{collections::HashMap, fs, io::Read};
 
@@ -46,6 +48,8 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, fullscreen: bool, ov
     device.ui.fullscreen = fullscreen;
     device.cpu.overclock = overclock;
 
+    init_rng(device);
+
     cart::rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp
@@ -76,6 +80,23 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, fullscreen: bool, ov
     ui::video::close(&device.ui);
     ui::audio::close(&mut device.ui);
     ui::storage::write_saves(device);
+}
+
+fn set_rng() -> rand_chacha::ChaCha8Rng {
+    rand_chacha::ChaCha8Rng::from_os_rng()
+}
+
+fn init_rng(device: &mut Device) {
+    let mut rng_seed = set_rng().next_u64();
+    if device.netplay.is_some() {
+        let netplay = device.netplay.as_mut().unwrap();
+        if netplay.player_number == 0 {
+            netplay::send_rng(netplay, rng_seed);
+        } else {
+            rng_seed = netplay::receive_rng(netplay);
+        }
+    }
+    device.rng = rand_chacha::ChaCha8Rng::seed_from_u64(rng_seed);
 }
 
 fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
@@ -177,6 +198,8 @@ pub struct Device {
     pub ai: ai::Ai,
     pub si: si::Si,
     pub ri: ri::Ri,
+    #[serde(skip, default = "set_rng")]
+    pub rng: rand_chacha::ChaCha8Rng,
     pub vru: controller::vru::Vru,
     pub vru_window: controller::vru::VruWindow,
     pub transferpaks: [controller::transferpak::TransferPak; 4],
@@ -465,6 +488,7 @@ impl Device {
                 talking: false,
                 word_mappings: HashMap::new(),
             },
+            rng: set_rng(),
             transferpaks: [
                 controller::transferpak::TransferPak::default(),
                 controller::transferpak::TransferPak::default(),
