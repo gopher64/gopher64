@@ -104,8 +104,8 @@ pub fn dma_write(
     let mut i = dram_addr;
     let mut j = cart_addr;
     while i < dram_addr + length {
-        if device.ui.saves.romsave.data.contains_key(&j) {
-            device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.saves.romsave.data[&j];
+        if let Some(value) = device.ui.saves.romsave.data.get(&j) {
+            device.rdram.mem[i as usize ^ device.byte_swap] = *value;
         } else {
             device.rdram.mem[i as usize ^ device.byte_swap] =
                 *device.cart.rom.get(j as usize).unwrap_or(&0);
