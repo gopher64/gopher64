@@ -7,14 +7,13 @@ pub fn init(device: &mut device::Device) {
 
     let title = std::ffi::CString::new("gopher64").unwrap();
 
-    let mut flags = sdl3_sys::video::SDL_WINDOW_VULKAN;
+    let mut flags = sdl3_sys::video::SDL_WINDOW_VULKAN
+        | sdl3_sys::video::SDL_WINDOW_RESIZABLE
+        | sdl3_sys::video::SDL_WINDOW_INPUT_FOCUS;
 
     if device.ui.fullscreen {
         flags |= sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
-    } else {
-        flags |= sdl3_sys::video::SDL_WINDOW_RESIZABLE;
     }
-    flags |= sdl3_sys::video::SDL_WINDOW_INPUT_FOCUS;
 
     let window_width;
     let window_height;
