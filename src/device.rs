@@ -204,7 +204,6 @@ pub struct Device {
     #[serde(skip, default = "set_rng")]
     pub rng: rand_chacha::ChaCha8Rng,
     pub vru: controller::vru::Vru,
-    pub vru_window: controller::vru::VruWindow,
     pub transferpaks: [controller::transferpak::TransferPak; 4],
 }
 
@@ -476,11 +475,6 @@ impl Device {
                 limit_freq: 2,
                 limit_freq_check: std::time::Instant::now(),
             },
-            vru_window: controller::vru::VruWindow {
-                window_notifier: None,
-                word_receiver: None,
-                gui_ctx: None,
-            },
             vru: controller::vru::Vru {
                 status: 0,
                 voice_state: 0,
@@ -488,7 +482,6 @@ impl Device {
                 voice_init: 0,
                 word_buffer: [0; 40],
                 words: Vec::new(),
-                talking: false,
                 word_mappings: HashMap::new(),
             },
             rng: set_rng(),
