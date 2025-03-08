@@ -21,10 +21,6 @@ pub struct GopherEguiApp {
     overclock: bool,
     emulate_vru: bool,
     dinput: bool,
-    show_vru_dialog: bool,
-    vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
-    vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
-    vru_word_list: Vec<String>,
     latest_version: Option<semver::Version>,
     update_receiver: Option<tokio::sync::mpsc::Receiver<GithubData>>,
     netplay: gui_netplay::GuiNetplay,
@@ -123,14 +119,10 @@ impl GopherEguiApp {
             widescreen: config.video.widescreen,
             emulate_vru: config.input.emulate_vru,
             overclock: config.emulation.overclock,
-            show_vru_dialog: false,
             dinput: false,
             controller_paths,
-            vru_window_receiver: None,
-            vru_word_notifier: None,
             latest_version: None,
             update_receiver: None,
-            vru_word_list: Vec::new(),
             netplay: Default::default(),
             dirs: ui::get_dirs(),
         }
@@ -221,47 +213,6 @@ fn configure_profile(app: &mut GopherEguiApp, ctx: &egui::Context) {
         });
 }
 
-fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
-    ctx.show_viewport_immediate(
-        egui::ViewportId::from_hash_of("vru_dialog"),
-        egui::ViewportBuilder::default()
-            .with_title("What would you like to say?")
-            .with_always_on_top(),
-        |ctx, class| {
-            assert!(
-                class == egui::ViewportClass::Immediate,
-                "This egui backend doesn't support multiple viewports"
-            );
-            egui::CentralPanel::default().show(ctx, |ui| {
-                egui::Grid::new("vru_words").show(ui, |ui| {
-                    for (i, v) in app.vru_word_list.iter().enumerate() {
-                        if i % 5 == 0 {
-                            ui.end_row();
-                        }
-                        if ui.button((*v).to_string()).clicked() {
-                            app.vru_word_notifier
-                                .as_ref()
-                                .unwrap()
-                                .try_send(v.clone())
-                                .unwrap();
-                            app.show_vru_dialog = false;
-                        }
-                    }
-                });
-            });
-
-            if ctx.input(|i| i.viewport().close_requested()) {
-                app.vru_word_notifier
-                    .as_ref()
-                    .unwrap()
-                    .try_send(String::from(""))
-                    .unwrap();
-                app.show_vru_dialog = false;
-            }
-        },
-    );
-}
-
 fn get_latest_version(app: &mut GopherEguiApp, ctx: &egui::Context) {
     if app.update_receiver.is_none() {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
@@ -301,7 +252,7 @@ fn get_latest_version(app: &mut GopherEguiApp, ctx: &egui::Context) {
     }
 }
 
-pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: bool) {
+pub fn open_rom(app: &mut GopherEguiApp, enable_overclock: bool) {
     let netplay;
 
     let selected_controller = app.selected_controller;
@@ -332,26 +283,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
         player_number = Some(app.netplay.player_number);
     }
 
-    let (vru_window_notifier, vru_window_receiver): (
-        tokio::sync::mpsc::Sender<Vec<String>>,
-        tokio::sync::mpsc::Receiver<Vec<String>>,
-    ) = tokio::sync::mpsc::channel(1);
-
-    let (vru_word_notifier, vru_word_receiver): (
-        tokio::sync::mpsc::Sender<String>,
-        tokio::sync::mpsc::Receiver<String>,
-    ) = tokio::sync::mpsc::channel(1);
-
-    if emulate_vru && !netplay {
-        app.vru_window_receiver = Some(vru_window_receiver);
-        app.vru_word_notifier = Some(vru_word_notifier);
-    } else {
-        app.vru_window_receiver = None;
-        app.vru_word_notifier = None;
-    }
-
     let rom_contents = app.netplay.rom_contents.clone();
-    let gui_ctx = ctx.clone();
 
     let mut select_rom = None;
     let mut select_gb_rom = [None, None, None, None];
@@ -445,12 +377,6 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                             }
                         }
 
-                        if emulate_vru {
-                            device.vru_window.window_notifier = Some(vru_window_notifier);
-                            device.vru_window.word_receiver = Some(vru_word_receiver);
-                            device.vru_window.gui_ctx = Some(gui_ctx);
-                        }
-
                         let rom_contents = device::get_rom_contents(file.unwrap().path());
                         if rom_contents.is_empty() {
                             println!("Could not read rom file");
@@ -503,7 +429,7 @@ impl eframe::App for GopherEguiApp {
                 .min_col_width(200.0)
                 .show(ui, |ui| {
                     if ui.button("Open ROM").clicked() {
-                        open_rom(self, ctx, self.overclock);
+                        open_rom(self, self.overclock);
                     }
                     if ui.button("Netplay: Create Session").clicked()
                         && !self.dirs.cache_dir.join("game_running").exists()
@@ -645,18 +571,6 @@ impl eframe::App for GopherEguiApp {
                 }
             }
         });
-
-        if self.emulate_vru && self.vru_window_receiver.is_some() {
-            let result = self.vru_window_receiver.as_mut().unwrap().try_recv();
-            if result.is_ok() {
-                self.show_vru_dialog = true;
-                self.vru_word_list = result.unwrap();
-            }
-        }
-
-        if self.show_vru_dialog {
-            show_vru_dialog(self, ctx);
-        }
 
         get_latest_version(self, ctx);
     }
