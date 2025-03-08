@@ -825,7 +825,7 @@ pub fn netplay_wait(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             };
                         }
 
-                        gui::open_rom(app, ctx, *overclock == "true");
+                        gui::open_rom(app, *overclock == "true");
                         app.netplay = Default::default();
                         return;
                     } else {
