@@ -7,7 +7,14 @@ const CART_MASK: usize = 0xFFFFFFF;
 fn read_cart_word(device: &mut device::Device, address: usize) -> u32 {
     let mut data: [u8; 4] = [0; 4];
     for i in 0..4 {
-        if let Some(value) = device.ui.saves.romsave.data.get(&(address as u32 + i)) {
+        if let Some(value) = device
+            .ui
+            .storage
+            .saves
+            .romsave
+            .data
+            .get(&(address as u32 + i))
+        {
             data[i as usize] = *value;
         } else {
             data[i as usize] = *device.cart.rom.get(address + i as usize).unwrap_or(&0);
@@ -52,12 +59,13 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         for (i, item) in data.to_be_bytes().iter().enumerate() {
             device
                 .ui
+                .storage
                 .saves
                 .romsave
                 .data
                 .insert((masked_address + i) as u32, *item);
         }
-        device.ui.saves.romsave.written = true;
+        device.ui.storage.saves.romsave.written = true;
     }
 
     device.cart.latch = value & mask;
@@ -81,12 +89,12 @@ pub fn dma_read(
         cart_addr &= CART_MASK as u32;
 
         for i in 0..length {
-            device.ui.saves.romsave.data.insert(
+            device.ui.storage.saves.romsave.data.insert(
                 cart_addr + i,
                 device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
             );
         }
-        device.ui.saves.romsave.written = true;
+        device.ui.storage.saves.romsave.written = true;
     }
 
     device::pi::calculate_cycles(device, 1, length)
@@ -104,7 +112,7 @@ pub fn dma_write(
     let mut i = dram_addr;
     let mut j = cart_addr;
     while i < dram_addr + length {
-        if let Some(value) = device.ui.saves.romsave.data.get(&j) {
+        if let Some(value) = device.ui.storage.saves.romsave.data.get(&j) {
             device.rdram.mem[i as usize ^ device.byte_swap] = *value;
         } else {
             device.rdram.mem[i as usize ^ device.byte_swap] =

@@ -134,7 +134,7 @@ pub fn get_game_name(rom: &[u8]) -> String {
 }
 
 pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
-    ui.save_type = get_save_type(rom, &ui.game_id);
+    ui.storage.save_type = get_save_type(rom, &ui.game_id);
 
     let saves_path = ui.dirs.data_dir.join("saves");
 
@@ -148,67 +148,78 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
         &game_name
     };
 
-    ui.paths.eep_file_path.clone_from(&saves_path);
-    ui.paths
+    ui.storage.paths.eep_file_path.clone_from(&saves_path);
+    ui.storage
+        .paths
         .eep_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".eep");
 
-    ui.paths.sra_file_path.clone_from(&saves_path);
-    ui.paths
+    ui.storage.paths.sra_file_path.clone_from(&saves_path);
+    ui.storage
+        .paths
         .sra_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".sra");
 
-    ui.paths.fla_file_path.clone_from(&saves_path);
-    ui.paths
+    ui.storage.paths.fla_file_path.clone_from(&saves_path);
+    ui.storage
+        .paths
         .fla_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".fla");
 
-    ui.paths.pak_file_path.clone_from(&saves_path);
-    ui.paths
+    ui.storage.paths.pak_file_path.clone_from(&saves_path);
+    ui.storage
+        .paths
         .pak_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".mpk");
 
-    ui.paths.sdcard_file_path.clone_from(&saves_path);
-    ui.paths
+    ui.storage.paths.sdcard_file_path.clone_from(&saves_path);
+    ui.storage
+        .paths
         .sdcard_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".img");
 
-    ui.paths.romsave_file_path.clone_from(&saves_path);
-    ui.paths
+    ui.storage.paths.romsave_file_path.clone_from(&saves_path);
+    ui.storage
+        .paths
         .romsave_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".romsave");
 
-    ui.paths.savestate_file_path.clone_from(&states_path);
-    ui.paths
+    ui.storage
+        .paths
+        .savestate_file_path
+        .clone_from(&states_path);
+    ui.storage
+        .paths
         .savestate_file_path
         .push(prefix.to_owned() + "-" + &ui.game_hash + ".state");
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
     if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
-        let eep = std::fs::read(&mut ui.paths.eep_file_path);
+        let eep = std::fs::read(&mut ui.storage.paths.eep_file_path);
         if eep.is_ok() {
-            ui.saves.eeprom.data = eep.unwrap();
+            ui.storage.saves.eeprom.data = eep.unwrap();
         }
-        let sra = std::fs::read(&mut ui.paths.sra_file_path);
+        let sra = std::fs::read(&mut ui.storage.paths.sra_file_path);
         if sra.is_ok() {
-            ui.saves.sram.data = sra.unwrap();
+            ui.storage.saves.sram.data = sra.unwrap();
         }
-        let fla = std::fs::read(&mut ui.paths.fla_file_path);
+        let fla = std::fs::read(&mut ui.storage.paths.fla_file_path);
         if fla.is_ok() {
-            ui.saves.flash.data = fla.unwrap();
+            ui.storage.saves.flash.data = fla.unwrap();
         }
-        let mempak = std::fs::read(&mut ui.paths.pak_file_path);
+        let mempak = std::fs::read(&mut ui.storage.paths.pak_file_path);
         if mempak.is_ok() {
-            ui.saves.mempak.data = mempak.unwrap();
+            ui.storage.saves.mempak.data = mempak.unwrap();
         }
-        let sdcard = std::fs::read(&mut ui.paths.sdcard_file_path);
+        let sdcard = std::fs::read(&mut ui.storage.paths.sdcard_file_path);
         if sdcard.is_ok() {
-            ui.saves.sdcard.data = sdcard.unwrap();
+            ui.storage.saves.sdcard.data = sdcard.unwrap();
         }
-        let romsave = std::fs::read(&mut ui.paths.romsave_file_path);
+        let romsave = std::fs::read(&mut ui.storage.paths.romsave_file_path);
         if romsave.is_ok() {
-            ui.saves.romsave.data = postcard::from_bytes(romsave.unwrap().as_ref()).unwrap();
+            ui.storage.saves.romsave.data =
+                postcard::from_bytes(romsave.unwrap().as_ref()).unwrap();
         }
     }
 
@@ -217,31 +228,31 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "eep",
-                &ui.saves.eeprom.data,
-                ui.saves.eeprom.data.len(),
+                &ui.storage.saves.eeprom.data,
+                ui.storage.saves.eeprom.data.len(),
             );
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "sra",
-                &ui.saves.sram.data,
-                ui.saves.sram.data.len(),
+                &ui.storage.saves.sram.data,
+                ui.storage.saves.sram.data.len(),
             );
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "fla",
-                &ui.saves.flash.data,
-                ui.saves.flash.data.len(),
+                &ui.storage.saves.flash.data,
+                ui.storage.saves.flash.data.len(),
             );
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "mpk",
-                &ui.saves.mempak.data,
-                ui.saves.mempak.data.len(),
+                &ui.storage.saves.mempak.data,
+                ui.storage.saves.mempak.data.len(),
             );
 
             let mut compressed_sd = Vec::new();
-            if !ui.saves.sdcard.data.is_empty() {
-                compressed_sd = compress_file(&[(&ui.saves.sdcard.data, "save")]);
+            if !ui.storage.saves.sdcard.data.is_empty() {
+                compressed_sd = compress_file(&[(&ui.storage.saves.sdcard.data, "save")]);
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -251,9 +262,9 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             );
 
             let mut compressed_romsave = Vec::new();
-            if !ui.saves.romsave.data.is_empty() {
+            if !ui.storage.saves.romsave.data.is_empty() {
                 compressed_romsave = compress_file(&[(
-                    &postcard::to_stdvec(&ui.saves.romsave.data).unwrap(),
+                    &postcard::to_stdvec(&ui.storage.saves.romsave.data).unwrap(),
                     "save",
                 )]);
             }
@@ -264,22 +275,38 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
                 compressed_romsave.len(),
             );
         } else {
-            netplay::receive_save(netplay.as_mut().unwrap(), "eep", &mut ui.saves.eeprom.data);
-            netplay::receive_save(netplay.as_mut().unwrap(), "sra", &mut ui.saves.sram.data);
-            netplay::receive_save(netplay.as_mut().unwrap(), "fla", &mut ui.saves.flash.data);
-            netplay::receive_save(netplay.as_mut().unwrap(), "mpk", &mut ui.saves.mempak.data);
+            netplay::receive_save(
+                netplay.as_mut().unwrap(),
+                "eep",
+                &mut ui.storage.saves.eeprom.data,
+            );
+            netplay::receive_save(
+                netplay.as_mut().unwrap(),
+                "sra",
+                &mut ui.storage.saves.sram.data,
+            );
+            netplay::receive_save(
+                netplay.as_mut().unwrap(),
+                "fla",
+                &mut ui.storage.saves.flash.data,
+            );
+            netplay::receive_save(
+                netplay.as_mut().unwrap(),
+                "mpk",
+                &mut ui.storage.saves.mempak.data,
+            );
 
             let mut compressed_sd = Vec::new();
             netplay::receive_save(netplay.as_mut().unwrap(), "img", &mut compressed_sd);
             if !compressed_sd.is_empty() {
-                ui.saves.sdcard.data = decompress_file(&compressed_sd, "save");
+                ui.storage.saves.sdcard.data = decompress_file(&compressed_sd, "save");
             }
 
             let mut compressed_romsave = Vec::new();
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut compressed_romsave);
             if !compressed_romsave.is_empty() {
                 let romsave_bytes = decompress_file(&compressed_romsave, "save");
-                ui.saves.romsave.data = postcard::from_bytes(&romsave_bytes).unwrap();
+                ui.storage.saves.romsave.data = postcard::from_bytes(&romsave_bytes).unwrap();
             }
         }
     }
@@ -314,16 +341,17 @@ pub fn compress_file(data: &[(&[u8], &str)]) -> Vec<u8> {
 }
 
 fn write_rom_save(ui: &ui::Ui) {
-    let data = postcard::to_stdvec(&ui.saves.romsave.data).unwrap();
-    std::fs::write(ui.paths.romsave_file_path.clone(), data).unwrap();
+    let data = postcard::to_stdvec(&ui.storage.saves.romsave.data).unwrap();
+    std::fs::write(ui.storage.paths.romsave_file_path.clone(), data).unwrap();
 }
 
 fn writeback_sdcard(device: &mut device::Device) {
     let length;
     let save_data: &[u8];
-    if device.ui.saves.eeprom.written {
+    if device.ui.storage.saves.eeprom.written {
         if device
             .ui
+            .storage
             .save_type
             .contains(&ui::storage::SaveTypes::Eeprom4k)
         {
@@ -331,47 +359,47 @@ fn writeback_sdcard(device: &mut device::Device) {
         } else {
             length = 4;
         }
-        save_data = device.ui.saves.eeprom.data.as_ref();
-    } else if device.ui.saves.sram.written {
-        length = device.ui.saves.sram.data.len() / 512;
-        save_data = device.ui.saves.sram.data.as_ref();
-    } else if device.ui.saves.flash.written {
-        length = device.ui.saves.flash.data.len() / 512;
-        save_data = device.ui.saves.flash.data.as_ref();
+        save_data = device.ui.storage.saves.eeprom.data.as_ref();
+    } else if device.ui.storage.saves.sram.written {
+        length = device.ui.storage.saves.sram.data.len() / 512;
+        save_data = device.ui.storage.saves.sram.data.as_ref();
+    } else if device.ui.storage.saves.flash.written {
+        length = device.ui.storage.saves.flash.data.len() / 512;
+        save_data = device.ui.storage.saves.flash.data.as_ref();
     } else {
         return;
     }
 
     for i in 0..length {
         let offset = device.cart.sc64.writeback_sector[i] as usize * 512;
-        device.ui.saves.sdcard.data[offset..offset + 512]
+        device.ui.storage.saves.sdcard.data[offset..offset + 512]
             .copy_from_slice(&save_data[i * 512..(i + 1) * 512]);
     }
-    device.ui.saves.sdcard.written = true;
+    device.ui.storage.saves.sdcard.written = true;
 }
 
 pub fn write_saves(device: &mut device::Device) {
     if device.netplay.is_none() || device.netplay.as_ref().unwrap().player_number == 0 {
-        if device.ui.saves.write_to_disk {
-            if device.ui.saves.eeprom.written {
+        if device.ui.storage.saves.write_to_disk {
+            if device.ui.storage.saves.eeprom.written {
                 write_save(&device.ui, SaveTypes::Eeprom16k)
             }
-            if device.ui.saves.sram.written {
+            if device.ui.storage.saves.sram.written {
                 write_save(&device.ui, SaveTypes::Sram)
             }
-            if device.ui.saves.flash.written {
+            if device.ui.storage.saves.flash.written {
                 write_save(&device.ui, SaveTypes::Flash)
             }
-            if device.ui.saves.romsave.written {
+            if device.ui.storage.saves.romsave.written {
                 write_save(&device.ui, SaveTypes::Romsave)
             }
         } else {
             writeback_sdcard(device)
         }
-        if device.ui.saves.mempak.written {
+        if device.ui.storage.saves.mempak.written {
             write_save(&device.ui, SaveTypes::Mempak)
         }
-        if device.ui.saves.sdcard.written {
+        if device.ui.storage.saves.sdcard.written {
             write_save(&device.ui, SaveTypes::Sdcard)
         }
     }
@@ -382,24 +410,24 @@ fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
     let data: &Vec<u8>;
     match save_type {
         SaveTypes::Eeprom4k | SaveTypes::Eeprom16k => {
-            path = ui.paths.eep_file_path.as_ref();
-            data = ui.saves.eeprom.data.as_ref();
+            path = ui.storage.paths.eep_file_path.as_ref();
+            data = ui.storage.saves.eeprom.data.as_ref();
         }
         SaveTypes::Sram => {
-            path = ui.paths.sra_file_path.as_ref();
-            data = ui.saves.sram.data.as_ref();
+            path = ui.storage.paths.sra_file_path.as_ref();
+            data = ui.storage.saves.sram.data.as_ref();
         }
         SaveTypes::Flash => {
-            path = ui.paths.fla_file_path.as_ref();
-            data = ui.saves.flash.data.as_ref();
+            path = ui.storage.paths.fla_file_path.as_ref();
+            data = ui.storage.saves.flash.data.as_ref();
         }
         SaveTypes::Mempak => {
-            path = ui.paths.pak_file_path.as_ref();
-            data = ui.saves.mempak.data.as_ref();
+            path = ui.storage.paths.pak_file_path.as_ref();
+            data = ui.storage.saves.mempak.data.as_ref();
         }
         SaveTypes::Sdcard => {
-            path = ui.paths.sdcard_file_path.as_ref();
-            data = ui.saves.sdcard.data.as_ref();
+            path = ui.storage.paths.sdcard_file_path.as_ref();
+            data = ui.storage.saves.sdcard.data.as_ref();
         }
         SaveTypes::Romsave => {
             write_rom_save(ui);
