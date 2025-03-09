@@ -5,7 +5,13 @@ const MPK_PAGE_SIZE: usize = 256;
 
 fn format_mempak(device: &mut device::Device) {
     if device.ui.storage.saves.mempak.data.len() < MEMPAK_SIZE * 4 {
-        device.ui.storage.saves.mempak.data.resize(MEMPAK_SIZE * 4, 0);
+        device
+            .ui
+            .storage
+            .saves
+            .mempak
+            .data
+            .resize(MEMPAK_SIZE * 4, 0);
 
         let page_0: [u8; MPK_PAGE_SIZE] = [
             /* Label area */
@@ -38,7 +44,8 @@ fn format_mempak(device: &mut device::Device) {
             let offset = i * MEMPAK_SIZE;
 
             /* Fill Page 0 with pre-initialized content */
-            device.ui.storage.saves.mempak.data[offset..offset + MPK_PAGE_SIZE].copy_from_slice(&page_0);
+            device.ui.storage.saves.mempak.data[offset..offset + MPK_PAGE_SIZE]
+                .copy_from_slice(&page_0);
 
             /* Fill INODE page 1 and update it's checkum */
             let start_page = 5;
@@ -54,8 +61,10 @@ fn format_mempak(device: &mut device::Device) {
             /* Page 2 is identical to page 1 */
             let page1 = offset + MPK_PAGE_SIZE;
             let page2 = offset + 2 * MPK_PAGE_SIZE;
-            let page1data = device.ui.storage.saves.mempak.data[page1..page1 + MPK_PAGE_SIZE].to_vec();
-            device.ui.storage.saves.mempak.data[page2..page2 + MPK_PAGE_SIZE].copy_from_slice(&page1data);
+            let page1data =
+                device.ui.storage.saves.mempak.data[page1..page1 + MPK_PAGE_SIZE].to_vec();
+            device.ui.storage.saves.mempak.data[page2..page2 + MPK_PAGE_SIZE]
+                .copy_from_slice(&page1data);
 
             /* Remaining pages DIR+DATA (3...) are initialized with 0x00 */
             for i in 3 * MPK_PAGE_SIZE..MEMPAK_SIZE - 3 * MPK_PAGE_SIZE {

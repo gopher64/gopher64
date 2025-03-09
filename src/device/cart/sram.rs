@@ -36,7 +36,13 @@ fn format_sram(device: &mut device::Device) {
 
 fn format_flash(device: &mut device::Device) {
     if device.ui.storage.saves.flash.data.len() < FLASHRAM_SIZE {
-        device.ui.storage.saves.flash.data.resize(FLASHRAM_SIZE, 0xFF)
+        device
+            .ui
+            .storage
+            .saves
+            .flash
+            .data
+            .resize(FLASHRAM_SIZE, 0xFF)
     }
 }
 
@@ -145,7 +151,8 @@ fn dma_read_sram(device: &mut device::Device, mut cart_addr: u32, mut dram_addr:
     format_sram(device);
 
     while i < dram_addr + length && i < device.rdram.size {
-        device.ui.storage.saves.sram.data[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
+        device.ui.storage.saves.sram.data[j as usize] =
+            device.rdram.mem[i as usize ^ device.byte_swap];
         i += 1;
         j += 1;
     }
@@ -200,7 +207,8 @@ fn dma_write_sram(
     format_sram(device);
 
     while i < dram_addr + length && i < device.rdram.size {
-        device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.storage.saves.sram.data[j as usize];
+        device.rdram.mem[i as usize ^ device.byte_swap] =
+            device.ui.storage.saves.sram.data[j as usize];
         i += 1;
         j += 1;
     }

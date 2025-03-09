@@ -157,7 +157,8 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         while i < length {
                             if offset + i < device.ui.storage.saves.sdcard.data.len() {
                                 let data = u32::from_be_bytes(
-                                    device.ui.storage.saves.sdcard.data[(offset + i)..(offset + i + 4)]
+                                    device.ui.storage.saves.sdcard.data
+                                        [(offset + i)..(offset + i + 4)]
                                         .try_into()
                                         .unwrap(),
                                 );
