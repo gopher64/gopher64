@@ -222,44 +222,35 @@ fn configure_profile(app: &mut GopherEguiApp, ctx: &egui::Context) {
 }
 
 fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
-    ctx.show_viewport_immediate(
-        egui::ViewportId::from_hash_of("vru_dialog"),
-        egui::ViewportBuilder::default()
-            .with_title("What would you like to say?")
-            .with_always_on_top(),
-        |ctx, class| {
-            assert!(
-                class == egui::ViewportClass::Immediate,
-                "This egui backend doesn't support multiple viewports"
-            );
-            egui::CentralPanel::default().show(ctx, |ui| {
-                egui::Grid::new("vru_words").show(ui, |ui| {
-                    for (i, v) in app.vru_word_list.iter().enumerate() {
-                        if i % 5 == 0 {
-                            ui.end_row();
-                        }
-                        if ui.button((*v).to_string()).clicked() {
-                            app.vru_word_notifier
-                                .as_ref()
-                                .unwrap()
-                                .try_send(v.clone())
-                                .unwrap();
-                            app.show_vru_dialog = false;
-                        }
-                    }
-                });
-            });
-
-            if ctx.input(|i| i.viewport().close_requested()) {
-                app.vru_word_notifier
-                    .as_ref()
-                    .unwrap()
-                    .try_send(String::from(""))
-                    .unwrap();
-                app.show_vru_dialog = false;
+    egui::CentralPanel::default().show(ctx, |ui| {
+        ui.label("What would you like to say?");
+        egui::Grid::new("vru_words").show(ui, |ui| {
+            for (i, v) in app.vru_word_list.iter().enumerate() {
+                if i % 5 == 0 {
+                    ui.end_row();
+                }
+                if ui.button((*v).to_string()).clicked() {
+                    app.vru_word_notifier
+                        .as_ref()
+                        .unwrap()
+                        .try_send(v.clone())
+                        .unwrap();
+                    app.show_vru_dialog = false;
+                }
             }
-        },
-    );
+        });
+
+        ui.add_space(32.0);
+
+        if ui.button("Close without saying anything").clicked() {
+            app.vru_word_notifier
+                .as_ref()
+                .unwrap()
+                .try_send(String::from(""))
+                .unwrap();
+            app.show_vru_dialog = false;
+        };
+    });
 }
 
 fn get_latest_version(app: &mut GopherEguiApp, ctx: &egui::Context) {
@@ -475,6 +466,11 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
 
 impl eframe::App for GopherEguiApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if self.show_vru_dialog {
+            show_vru_dialog(self, ctx);
+            return;
+        }
+
         if self.netplay.create {
             gui_netplay::netplay_create(self, ctx);
         }
@@ -652,10 +648,6 @@ impl eframe::App for GopherEguiApp {
                 self.show_vru_dialog = true;
                 self.vru_word_list = result.unwrap();
             }
-        }
-
-        if self.show_vru_dialog {
-            show_vru_dialog(self, ctx);
         }
 
         get_latest_version(self, ctx);
