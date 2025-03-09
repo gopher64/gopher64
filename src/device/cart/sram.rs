@@ -29,14 +29,14 @@ pub struct Flashram {
 }
 
 fn format_sram(device: &mut device::Device) {
-    if device.ui.saves.sram.data.len() < SRAM_SIZE {
-        device.ui.saves.sram.data.resize(SRAM_SIZE, 0xFF)
+    if device.ui.storage.saves.sram.data.len() < SRAM_SIZE {
+        device.ui.storage.saves.sram.data.resize(SRAM_SIZE, 0xFF)
     }
 }
 
 fn format_flash(device: &mut device::Device) {
-    if device.ui.saves.flash.data.len() < FLASHRAM_SIZE {
-        device.ui.saves.flash.data.resize(FLASHRAM_SIZE, 0xFF)
+    if device.ui.storage.saves.flash.data.len() < FLASHRAM_SIZE {
+        device.ui.storage.saves.flash.data.resize(FLASHRAM_SIZE, 0xFF)
     }
 }
 
@@ -46,7 +46,7 @@ fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
     format_sram(device);
 
     u32::from_be_bytes(
-        device.ui.saves.sram.data[masked_address..masked_address + 4]
+        device.ui.storage.saves.sram.data[masked_address..masked_address + 4]
             .try_into()
             .unwrap(),
     )
@@ -75,7 +75,12 @@ pub fn read_mem(
     let cycles = device::pi::calculate_cycles(device, 2, 4);
     device::cop0::add_cycles(device, cycles);
 
-    if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
+    if device
+        .ui
+        .storage
+        .save_type
+        .contains(&ui::storage::SaveTypes::Sram)
+    {
         read_mem_sram(device, address)
     } else {
         read_mem_flash(device, address)
@@ -88,15 +93,15 @@ fn write_mem_sram(device: &mut device::Device, address: u64, value: u32, mask: u
     format_sram(device);
 
     let mut data = u32::from_be_bytes(
-        device.ui.saves.sram.data[masked_address..masked_address + 4]
+        device.ui.storage.saves.sram.data[masked_address..masked_address + 4]
             .try_into()
             .unwrap(),
     );
     device::memory::masked_write_32(&mut data, value, mask);
-    device.ui.saves.sram.data[masked_address..masked_address + 4]
+    device.ui.storage.saves.sram.data[masked_address..masked_address + 4]
         .copy_from_slice(&data.to_be_bytes());
 
-    device.ui.saves.sram.written = true
+    device.ui.storage.saves.sram.written = true
 }
 
 fn write_mem_flash(device: &mut device::Device, address: u64, value: u32, mask: u32) {
@@ -114,7 +119,12 @@ fn write_mem_flash(device: &mut device::Device, address: u64, value: u32, mask: 
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
+    if device
+        .ui
+        .storage
+        .save_type
+        .contains(&ui::storage::SaveTypes::Sram)
+    {
         write_mem_sram(device, address, value, mask)
     } else {
         write_mem_flash(device, address, value, mask)
@@ -135,12 +145,12 @@ fn dma_read_sram(device: &mut device::Device, mut cart_addr: u32, mut dram_addr:
     format_sram(device);
 
     while i < dram_addr + length && i < device.rdram.size {
-        device.ui.saves.sram.data[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
+        device.ui.storage.saves.sram.data[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
         i += 1;
         j += 1;
     }
 
-    device.ui.saves.sram.written = true
+    device.ui.storage.saves.sram.written = true
 }
 
 fn dma_read_flash(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) {
@@ -163,7 +173,12 @@ fn dma_read_flash(device: &mut device::Device, cart_addr: u32, dram_addr: u32, l
 
 // cart is big endian, rdram is native endian
 pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) -> u64 {
-    if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
+    if device
+        .ui
+        .storage
+        .save_type
+        .contains(&ui::storage::SaveTypes::Sram)
+    {
         dma_read_sram(device, cart_addr, dram_addr, length)
     } else {
         dma_read_flash(device, cart_addr, dram_addr, length)
@@ -185,7 +200,7 @@ fn dma_write_sram(
     format_sram(device);
 
     while i < dram_addr + length && i < device.rdram.size {
-        device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.saves.sram.data[j as usize];
+        device.rdram.mem[i as usize ^ device.byte_swap] = device.ui.storage.saves.sram.data[j as usize];
         i += 1;
         j += 1;
     }
@@ -228,7 +243,7 @@ fn dma_write_flash(
         /* do actual DMA */
         for i in 0..length {
             device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap] =
-                device.ui.saves.flash.data[(cart_addr + i) as usize];
+                device.ui.storage.saves.flash.data[(cart_addr + i) as usize];
         }
     } else {
         /* other accesses are not implemented */
@@ -238,7 +253,12 @@ fn dma_write_flash(
 
 // cart is big endian, rdram is native endian
 pub fn dma_write(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) -> u64 {
-    if device.ui.save_type.contains(&ui::storage::SaveTypes::Sram) {
+    if device
+        .ui
+        .storage
+        .save_type
+        .contains(&ui::storage::SaveTypes::Sram)
+    {
         dma_write_sram(device, cart_addr, dram_addr, length)
     } else {
         dma_write_flash(device, cart_addr, dram_addr, length)
@@ -267,14 +287,14 @@ fn flashram_command(device: &mut device::Device, command: u32) {
             if device.cart.flashram.mode == FlashramMode::SectorErase {
                 let offset: usize = (device.cart.flashram.erase_page & 0xff80) as usize * 128;
                 for i in 0..128 * 128 {
-                    device.ui.saves.flash.data[offset + i] = 0xFF;
+                    device.ui.storage.saves.flash.data[offset + i] = 0xFF;
                 }
-                device.ui.saves.flash.written = true
+                device.ui.storage.saves.flash.written = true
             } else if device.cart.flashram.mode == FlashramMode::ChipErase {
                 for i in 0..FLASHRAM_SIZE {
-                    device.ui.saves.flash.data[i] = 0xFF;
+                    device.ui.storage.saves.flash.data[i] = 0xFF;
                 }
-                device.ui.saves.flash.written = true
+                device.ui.storage.saves.flash.written = true
             } else {
                 panic!("Unexpected flash erase command")
             }
@@ -292,9 +312,9 @@ fn flashram_command(device: &mut device::Device, command: u32) {
             /* program selected page */
             let offset: usize = (command & 0xffff) as usize * 128;
             for i in 0..128 {
-                device.ui.saves.flash.data[offset + i] = device.cart.flashram.page_buf[i];
+                device.ui.storage.saves.flash.data[offset + i] = device.cart.flashram.page_buf[i];
             }
-            device.ui.saves.flash.written = true;
+            device.ui.storage.saves.flash.written = true;
 
             /* clear program busy flag, set program success flag, transition to status mode */
             device.cart.flashram.status &= !0x01;

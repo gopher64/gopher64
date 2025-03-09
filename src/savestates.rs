@@ -74,20 +74,27 @@ pub fn create_savestate(device: &device::Device) {
 
     let data: &[(&[u8], &str)] = &[
         (&postcard::to_stdvec(device).unwrap(), "device"),
-        (&postcard::to_stdvec(&device.ui.saves).unwrap(), "saves"),
+        (
+            &postcard::to_stdvec(&device.ui.storage.saves).unwrap(),
+            "saves",
+        ),
     ];
     let compressed_file = ui::storage::compress_file(data);
-    std::fs::write(device.ui.paths.savestate_file_path.clone(), compressed_file).unwrap();
+    std::fs::write(
+        device.ui.storage.paths.savestate_file_path.clone(),
+        compressed_file,
+    )
+    .unwrap();
 }
 
 pub fn load_savestate(device: &mut device::Device) {
-    let savestate = std::fs::read(&mut device.ui.paths.savestate_file_path);
+    let savestate = std::fs::read(&mut device.ui.storage.paths.savestate_file_path);
     if savestate.is_ok() {
         let device_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "device");
         let save_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "saves");
         let state: device::Device = postcard::from_bytes(&device_bytes).unwrap();
 
-        device.ui.saves = postcard::from_bytes(&save_bytes).unwrap();
+        device.ui.storage.saves = postcard::from_bytes(&save_bytes).unwrap();
 
         device.cpu = state.cpu;
         device.pif = state.pif;

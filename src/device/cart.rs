@@ -63,12 +63,14 @@ pub fn process(device: &mut device::Device, channel: usize) {
             let eeprom_type;
             if device
                 .ui
+                .storage
                 .save_type
                 .contains(&ui::storage::SaveTypes::Eeprom16k)
             {
                 eeprom_type = JDT_EEPROM_16K;
             } else if device
                 .ui
+                .storage
                 .save_type
                 .contains(&ui::storage::SaveTypes::Eeprom4k)
             {
@@ -124,8 +126,14 @@ pub fn process(device: &mut device::Device, channel: usize) {
 }
 
 pub fn format_eeprom(device: &mut device::Device) {
-    if device.ui.saves.eeprom.data.len() < EEPROM_MAX_SIZE {
-        device.ui.saves.eeprom.data.resize(EEPROM_MAX_SIZE, 0xFF)
+    if device.ui.storage.saves.eeprom.data.len() < EEPROM_MAX_SIZE {
+        device
+            .ui
+            .storage
+            .saves
+            .eeprom
+            .data
+            .resize(EEPROM_MAX_SIZE, 0xFF)
     }
 }
 
@@ -134,8 +142,9 @@ fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usize) {
 
     format_eeprom(device);
 
-    device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]
-        .copy_from_slice(&device.ui.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE]);
+    device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE].copy_from_slice(
+        &device.ui.storage.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE],
+    );
 }
 
 fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
@@ -143,12 +152,12 @@ fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, 
 
     format_eeprom(device);
 
-    device.ui.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE]
+    device.ui.storage.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE]
         .copy_from_slice(&device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]);
 
     device.pif.ram[status] = 0x00;
 
-    device.ui.saves.eeprom.written = true
+    device.ui.storage.saves.eeprom.written = true
 }
 
 fn time2data(device: &mut device::Device, offset: usize) {

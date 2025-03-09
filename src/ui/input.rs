@@ -277,11 +277,11 @@ fn set_buttons_from_controller(
 }
 
 pub fn set_rumble(ui: &mut ui::Ui, channel: usize, rumble: u8) {
-    if !ui.controllers[channel].rumble {
+    if !ui.input.controllers[channel].rumble {
         return;
     }
-    let controller = ui.controllers[channel].game_controller;
-    let joystick = ui.controllers[channel].joystick;
+    let controller = ui.input.controllers[channel].game_controller;
+    let joystick = ui.input.controllers[channel].joystick;
     if !controller.is_null() {
         unsafe {
             sdl3_sys::gamepad::SDL_RumbleGamepad(
@@ -338,14 +338,16 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     let profile_name = ui.config.input.input_profile_binding[channel].clone();
     let profile = ui.config.input.input_profiles.get(&profile_name).unwrap();
     let mut keys = 0;
-    let controller = ui.controllers[channel].game_controller;
-    let joystick = ui.controllers[channel].joystick;
+    let controller = ui.input.controllers[channel].game_controller;
+    let joystick = ui.input.controllers[channel].joystick;
 
     let alt_pressed = unsafe {
         // ignore key presses if ALT is pressed
-        *ui.keyboard_state
+        *ui.input
+            .keyboard_state
             .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_LALT) as isize)
             || *ui
+                .input
                 .keyboard_state
                 .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
     };
@@ -354,7 +356,9 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
         if profile_name != "default" || channel == 0 {
             let profile_key = profile.keys[i];
             if profile_key.enabled && !alt_pressed {
-                keys |= (unsafe { *ui.keyboard_state.offset(profile_key.id as isize) } as u32) << i;
+                keys |= (unsafe { *ui.input.keyboard_state.offset(profile_key.id as isize) }
+                    as u32)
+                    << i;
             }
         }
 
@@ -369,7 +373,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     let mut y: f64 = 0.0;
 
     if profile_name != "default" || channel == 0 {
-        (x, y) = set_axis_from_keys(profile, ui.keyboard_state);
+        (x, y) = set_axis_from_keys(profile, ui.input.keyboard_state);
     }
 
     if !controller.is_null() {
@@ -384,15 +388,15 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 
     InputData {
         data: keys,
-        pak_change_pressed: change_paks(profile, joystick, controller, ui.keyboard_state),
+        pak_change_pressed: change_paks(profile, joystick, controller, ui.input.keyboard_state),
     }
 }
 
 pub fn assign_controller(ui: &mut ui::Ui, controller: i32, port: usize) {
-    if controller < ui.num_joysticks {
+    if controller < ui.input.num_joysticks {
         let path = unsafe {
             std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
-                *(ui.joysticks.offset(controller as isize)),
+                *(ui.input.joysticks.offset(controller as isize)),
             ))
             .to_string_lossy()
             .to_string()
@@ -444,16 +448,16 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     let mut open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick> = Vec::new();
     let mut open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad> = Vec::new();
 
-    for offset in 0..ui.num_joysticks as isize {
+    for offset in 0..ui.input.num_joysticks as isize {
         if !dinput {
             let controller =
-                unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(*ui.joysticks.offset(offset)) };
+                unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(*ui.input.joysticks.offset(offset)) };
             if !controller.is_null() {
                 open_controllers.push(controller);
             }
         } else {
             let joystick =
-                unsafe { sdl3_sys::joystick::SDL_OpenJoystick(*ui.joysticks.offset(offset)) };
+                unsafe { sdl3_sys::joystick::SDL_OpenJoystick(*ui.input.joysticks.offset(offset)) };
             if !joystick.is_null() {
                 open_joysticks.push(joystick);
             }
@@ -849,8 +853,9 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 }
 
 pub fn init(ui: &mut ui::Ui) {
-    ui.keyboard_state = unsafe { sdl3_sys::keyboard::SDL_GetKeyboardState(std::ptr::null_mut()) };
-    if ui.keyboard_state.is_null() {
+    ui.input.keyboard_state =
+        unsafe { sdl3_sys::keyboard::SDL_GetKeyboardState(std::ptr::null_mut()) };
+    if ui.input.keyboard_state.is_null() {
         panic!("Could not get keyboard state");
     }
 
@@ -861,16 +866,16 @@ pub fn init(ui: &mut ui::Ui) {
             let mut joystick_id = 0;
             let assigned_path = controller_assignment.as_ref().unwrap();
 
-            for offset in 0..ui.num_joysticks as isize {
+            for offset in 0..ui.input.num_joysticks as isize {
                 let path = unsafe {
                     std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
-                        *(ui.joysticks.offset(offset)),
+                        *(ui.input.joysticks.offset(offset)),
                     ))
                     .to_string_lossy()
                     .to_string()
                 };
                 if path == *assigned_path && !taken[offset as usize] {
-                    joystick_id = unsafe { *(ui.joysticks.offset(offset)) };
+                    joystick_id = unsafe { *(ui.input.joysticks.offset(offset)) };
                     taken[offset as usize] = true;
                     break;
                 }
@@ -885,13 +890,13 @@ pub fn init(ui: &mut ui::Ui) {
                     if gamepad.is_null() {
                         println!("could not connect gamepad: {}", joystick_id)
                     } else {
-                        ui.controllers[i].game_controller = gamepad;
+                        ui.input.controllers[i].game_controller = gamepad;
                         let properties =
                             unsafe { sdl3_sys::gamepad::SDL_GetGamepadProperties(gamepad) };
                         if properties == 0 {
                             println!("could not get gamepad properties");
                         }
-                        ui.controllers[i].rumble = unsafe {
+                        ui.input.controllers[i].rumble = unsafe {
                             sdl3_sys::properties::SDL_GetBooleanProperty(
                                 properties,
                                 sdl3_sys::gamepad::SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN,
@@ -904,13 +909,13 @@ pub fn init(ui: &mut ui::Ui) {
                     if joystick.is_null() {
                         println!("could not connect joystick: {}", joystick_id)
                     } else {
-                        ui.controllers[i].joystick = joystick;
+                        ui.input.controllers[i].joystick = joystick;
                         let properties =
                             unsafe { sdl3_sys::joystick::SDL_GetJoystickProperties(joystick) };
                         if properties == 0 {
                             println!("could not get joystick properties");
                         }
-                        ui.controllers[i].rumble = unsafe {
+                        ui.input.controllers[i].rumble = unsafe {
                             sdl3_sys::properties::SDL_GetBooleanProperty(
                                 properties,
                                 sdl3_sys::joystick::SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN,
@@ -927,7 +932,7 @@ pub fn init(ui: &mut ui::Ui) {
 }
 
 pub fn close(ui: &mut ui::Ui) {
-    for controller in ui.controllers.iter_mut() {
+    for controller in ui.input.controllers.iter_mut() {
         if !controller.joystick.is_null() {
             unsafe { sdl3_sys::joystick::SDL_CloseJoystick(controller.joystick) }
             controller.joystick = std::ptr::null_mut();

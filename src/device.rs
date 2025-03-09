@@ -45,7 +45,7 @@ pub mod unmapped;
 pub mod vi;
 
 pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, fullscreen: bool, overclock: bool) {
-    device.ui.fullscreen = fullscreen;
+    device.ui.video.fullscreen = fullscreen;
     device.cpu.overclock = overclock;
 
     init_rng(device);

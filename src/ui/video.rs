@@ -11,7 +11,7 @@ pub fn init(device: &mut device::Device) {
         | sdl3_sys::video::SDL_WINDOW_RESIZABLE
         | sdl3_sys::video::SDL_WINDOW_INPUT_FOCUS;
 
-    if device.ui.fullscreen {
+    if device.ui.video.fullscreen {
         flags |= sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
     }
 
@@ -32,13 +32,13 @@ pub fn init(device: &mut device::Device) {
         };
         window_height = 480;
     }
-    device.ui.window = unsafe {
+    device.ui.video.window = unsafe {
         sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), window_width, window_height, flags)
     };
-    if device.ui.window.is_null() {
+    if device.ui.video.window.is_null() {
         panic!("Could not create window");
     }
-    if !unsafe { sdl3_sys::video::SDL_ShowWindow(device.ui.window) } {
+    if !unsafe { sdl3_sys::video::SDL_ShowWindow(device.ui.video.window) } {
         panic!("Could not show window");
     }
     unsafe { sdl3_sys::everything::SDL_HideCursor() };
@@ -57,11 +57,11 @@ pub fn init(device: &mut device::Device) {
 
     unsafe {
         rdp_init(
-            device.ui.window as *mut std::ffi::c_void,
+            device.ui.video.window as *mut std::ffi::c_void,
             gfx_info,
             device.ui.config.video.upscale,
             device.ui.config.video.integer_scaling,
-            device.ui.fullscreen,
+            device.ui.video.fullscreen,
         )
     }
 }
@@ -69,7 +69,7 @@ pub fn init(device: &mut device::Device) {
 pub fn close(ui: &ui::Ui) {
     unsafe {
         rdp_close();
-        sdl3_sys::video::SDL_DestroyWindow(ui.window);
+        sdl3_sys::video::SDL_DestroyWindow(ui.video.window);
     }
 }
 
