@@ -3,6 +3,7 @@
 #include "rdp_device.hpp"
 #include "interface.hpp"
 #include "spirv.hpp"
+#include "spirv_crt.hpp"
 #include <SDL3/SDL_vulkan.h>
 
 using namespace Vulkan;
@@ -76,6 +77,29 @@ typedef struct
 	uint32_t depthbuffer_size;
 	uint8_t depthbuffer_enabled;
 } FrameBufferInfo;
+
+typedef struct
+{
+	float SourceSize[4];
+	float OutputSize[4];
+	uint FrameCount;
+	float SHARPNESS_IMAGE;
+	float SHARPNESS_EDGES;
+	float GLOW_WIDTH;
+	float GLOW_HEIGHT;
+	float GLOW_HALATION;
+	float GLOW_DIFFUSION;
+	float MASK_COLORS;
+	float MASK_STRENGTH;
+	float MASK_SIZE;
+	float SCANLINE_SIZE_MIN;
+	float SCANLINE_SIZE_MAX;
+	float SCANLINE_SHAPE;
+	float SCANLINE_OFFSET;
+	float GAMMA_INPUT;
+	float GAMMA_OUTPUT;
+	float BRIGHTNESS;
+} Push;
 
 static uint8_t *rdram_dirty;
 static uint64_t sync_signal;
@@ -361,15 +385,15 @@ static void render_frame(Vulkan::Device &device)
 
 	Vulkan::ImageHandle image = processor->scanout(options);
 
-	// Normally reflection is automated.
 	Vulkan::ResourceLayout vertex_layout = {};
 	Vulkan::ResourceLayout fragment_layout = {};
 	fragment_layout.output_mask = 1 << 0;
 	fragment_layout.sets[0].sampled_image_mask = 1 << 0;
+	fragment_layout.push_constant_size = sizeof(Push);
 
 	// This request is cached.
 	auto *program = device.request_program(vertex_spirv, sizeof(vertex_spirv),
-										   fragment_spirv, sizeof(fragment_spirv),
+										   crt_fragment_spirv, sizeof(crt_fragment_spirv),
 										   &vertex_layout,
 										   &fragment_layout);
 
@@ -392,6 +416,30 @@ static void render_frame(Vulkan::Device &device)
 		// If we don't have an image, we just get a cleared screen in the render pass.
 		if (image)
 		{
+			// Set shader parameters
+			Push push = {
+				{float(image->get_width()), float(image->get_height()), 1.0f / float(image->get_width()), 1.0f / float(image->get_height())},
+				{vp.width, vp.height, 1.0f / vp.width, 1.0f / vp.height},
+				0,	   // FrameCount
+				1.0f,  // SHARPNESS_IMAGE
+				3.0f,  // SHARPNESS_EDGES
+				0.5f,  //  GLOW_WIDTH
+				0.5f,  //  GLOW_HEIGHT
+				0.1f,  //  GLOW_HALATION
+				0.05f, //  GLOW_DIFFUSION
+				2.0f,  //  MASK_COLORS
+				0.3f,  //  MASK_STRENGTH
+				1.0f,  //  MASK_SIZE
+				0.5f,  //  SCANLINE_SIZE_MIN
+				1.5f,  //  SCANLINE_SIZE_MAX
+				2.5f,  //  SCANLINE_SHAPE
+				1.0f,  //  SCANLINE_OFFSET
+				2.4f,  //  GAMMA_INPUT
+				2.4f,  //  GAMMA_OUTPUT
+				1.5f   //  BRIGHTNESS
+			};
+			cmd->push_constants(&push, 0, sizeof(push));
+
 			cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
 			cmd->set_viewport(vp);
 			// The vertices are constants in the shader.
