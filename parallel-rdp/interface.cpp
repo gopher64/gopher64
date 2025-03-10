@@ -414,7 +414,7 @@ static void render_frame(Vulkan::Device &device)
 		if (image)
 		{
 			VkViewport vp = cmd->get_viewport();
-			calculate_viewport(&vp.x, &vp.y, &vp.width, &vp.height, image->get_height());
+			calculate_viewport(&vp.x, &vp.y, &vp.width, &vp.height, image->get_height() / gfx_info.upscale);
 
 			if (gfx_info.crt)
 			{
