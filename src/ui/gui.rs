@@ -245,7 +245,7 @@ fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
             }
         });
 
-        ui.add_space(32.0);
+        ui.add_space(16.0);
 
         if ui.button("Close without saying anything").clicked() {
             app.vru_word_notifier
@@ -542,7 +542,7 @@ impl eframe::App for GopherEguiApp {
                     }
                 });
 
-            ui.add_space(32.0);
+            ui.add_space(16.0);
             ui.label("Controller Config:");
             egui::Grid::new("controller_config").show(ui, |ui| {
                 ui.label("Port");
@@ -606,7 +606,7 @@ impl eframe::App for GopherEguiApp {
                     ui.end_row();
                 }
             });
-            ui.add_space(32.0);
+            ui.add_space(16.0);
             let upscale_values = [1, 2, 4];
             let mut slider_value = match self.upscale {
                 1 => 0,
