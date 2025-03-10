@@ -82,23 +82,6 @@ typedef struct
 {
 	float SourceSize[4];
 	float OutputSize[4];
-	uint32_t FrameCount;
-	float SHARPNESS_IMAGE;
-	float SHARPNESS_EDGES;
-	float GLOW_WIDTH;
-	float GLOW_HEIGHT;
-	float GLOW_HALATION;
-	float GLOW_DIFFUSION;
-	float MASK_COLORS;
-	float MASK_STRENGTH;
-	float MASK_SIZE;
-	float SCANLINE_SIZE_MIN;
-	float SCANLINE_SIZE_MAX;
-	float SCANLINE_SHAPE;
-	float SCANLINE_OFFSET;
-	float GAMMA_INPUT;
-	float GAMMA_OUTPUT;
-	float BRIGHTNESS;
 } Push;
 
 static uint8_t *rdram_dirty;
@@ -433,23 +416,6 @@ static void render_frame(Vulkan::Device &device)
 				Push push = {
 					{float(image->get_width()), float(image->get_height()), 1.0f / float(image->get_width()), 1.0f / float(image->get_height())},
 					{vp.width, vp.height, 1.0f / vp.width, 1.0f / vp.height},
-					0,	   // FrameCount
-					1.0f,  // SHARPNESS_IMAGE
-					3.0f,  // SHARPNESS_EDGES
-					0.5f,  //  GLOW_WIDTH
-					0.5f,  //  GLOW_HEIGHT
-					0.1f,  //  GLOW_HALATION
-					0.05f, //  GLOW_DIFFUSION
-					2.0f,  //  MASK_COLORS
-					0.3f,  //  MASK_STRENGTH
-					1.0f,  //  MASK_SIZE
-					0.5f,  //  SCANLINE_SIZE_MIN
-					1.5f,  //  SCANLINE_SIZE_MAX
-					2.5f,  //  SCANLINE_SHAPE
-					1.0f,  //  SCANLINE_OFFSET
-					2.4f,  //  GAMMA_INPUT
-					2.4f,  //  GAMMA_OUTPUT
-					1.5f   //  BRIGHTNESS
 				};
 				cmd->push_constants(&push, 0, sizeof(push));
 			}
