@@ -314,10 +314,9 @@ void rdp_close()
 	}
 }
 
-static void calculate_viewport(float *x, float *y, float *width, float *height)
+static void calculate_viewport(float *x, float *y, float *width, float *height, uint32_t display_height)
 {
-	const int32_t display_width = gfx_info.widescreen ? (gfx_info.PAL ? 512 : 426) : (gfx_info.PAL ? 384 : 320);
-	const int32_t display_height = gfx_info.PAL ? 288 : 240;
+	uint32_t display_width = gfx_info.widescreen ? display_height * 16 / 9 : display_height * 4 / 3;
 
 	int w, h;
 	SDL_GetWindowSize(window, &w, &h);
@@ -397,9 +396,6 @@ static void render_frame(Vulkan::Device &device)
 		auto rp = device.get_swapchain_render_pass(Vulkan::SwapchainRenderPass::ColorOnly);
 		cmd->begin_render_pass(rp);
 
-		VkViewport vp = cmd->get_viewport();
-		calculate_viewport(&vp.x, &vp.y, &vp.width, &vp.height);
-
 		cmd->set_program(program);
 
 		// Basic default render state.
@@ -410,6 +406,9 @@ static void render_frame(Vulkan::Device &device)
 		// If we don't have an image, we just get a cleared screen in the render pass.
 		if (image)
 		{
+			VkViewport vp = cmd->get_viewport();
+			calculate_viewport(&vp.x, &vp.y, &vp.width, &vp.height, image->get_height());
+
 			if (gfx_info.crt)
 			{
 				// Set shader parameters
