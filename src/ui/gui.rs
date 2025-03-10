@@ -18,6 +18,7 @@ pub struct GopherEguiApp {
     integer_scaling: bool,
     fullscreen: bool,
     widescreen: bool,
+    crt: bool,
     overclock: bool,
     emulate_vru: bool,
     dinput: bool,
@@ -44,6 +45,7 @@ struct SaveConfig {
     integer_scaling: bool,
     fullscreen: bool,
     widescreen: bool,
+    crt: bool,
     emulate_vru: bool,
     overclock: bool,
 }
@@ -121,6 +123,7 @@ impl GopherEguiApp {
             integer_scaling: config.video.integer_scaling,
             fullscreen: config.video.fullscreen,
             widescreen: config.video.widescreen,
+            crt: config.video.crt,
             emulate_vru: config.input.emulate_vru,
             overclock: config.emulation.overclock,
             show_vru_dialog: false,
@@ -159,6 +162,7 @@ fn save_config(
     config.video.integer_scaling = save_config_items.integer_scaling;
     config.video.fullscreen = save_config_items.fullscreen;
     config.video.widescreen = save_config_items.widescreen;
+    config.video.crt = save_config_items.crt;
     config.input.emulate_vru = save_config_items.emulate_vru;
 
     config.emulation.overclock = save_config_items.overclock;
@@ -175,6 +179,7 @@ impl Drop for GopherEguiApp {
             integer_scaling: self.integer_scaling,
             fullscreen: self.fullscreen,
             widescreen: self.widescreen,
+            crt: self.crt,
             emulate_vru: self.emulate_vru,
             overclock: self.overclock,
         };
@@ -303,6 +308,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
     let integer_scaling = app.integer_scaling;
     let fullscreen = app.fullscreen;
     let widescreen = app.widescreen;
+    let crt = app.crt;
     let emulate_vru = app.emulate_vru;
     let overclock = app.overclock;
     let peer_addr;
@@ -399,6 +405,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                     integer_scaling,
                     fullscreen,
                     widescreen,
+                    crt,
                     emulate_vru,
                     overclock,
                 };
@@ -621,6 +628,7 @@ impl eframe::App for GopherEguiApp {
             ui.checkbox(&mut self.integer_scaling, "Integer Scaling");
             ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
             ui.checkbox(&mut self.widescreen, "Widescreen (stretch)");
+            ui.checkbox(&mut self.crt, "Apply CRT shader");
 
             ui.add_space(16.0);
             ui.checkbox(&mut self.overclock, "Overclock N64 CPU (may cause bugs)");

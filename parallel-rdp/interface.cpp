@@ -52,8 +52,6 @@ enum vi_registers
 	VI_REGS_COUNT
 };
 
-static bool fullscreen;
-static bool integer_scaling;
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
 static SDL_WSIPlatform *wsi_platform;
@@ -65,6 +63,8 @@ static CALL_BACK callback;
 static GFX_INFO gfx_info;
 static uint32_t region;
 static bool crop_letterbox;
+static const uint32_t *fragment_spirv;
+static size_t fragment_size;
 
 typedef struct
 {
@@ -189,8 +189,8 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 		case SDL_SCANCODE_RETURN:
 			if (event->key.mod & SDL_KMOD_ALT)
 			{
-				fullscreen = !fullscreen;
-				SDL_SetWindowFullscreen(window, fullscreen);
+				gfx_info.fullscreen = !gfx_info.fullscreen;
+				SDL_SetWindowFullscreen(window, gfx_info.fullscreen);
 			}
 			break;
 		case SDL_SCANCODE_F:
@@ -200,7 +200,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 			}
 			break;
 		case SDL_SCANCODE_ESCAPE:
-			if (fullscreen)
+			if (gfx_info.fullscreen)
 				callback.emu_running = false;
 			break;
 		case SDL_SCANCODE_F4:
@@ -220,7 +220,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 	return 0;
 }
 
-void rdp_new_processor(GFX_INFO _gfx_info, uint32_t upscale)
+void rdp_new_processor(GFX_INFO _gfx_info)
 {
 	memset(&frame_buffer_info, 0, sizeof(FrameBufferInfo));
 	sync_signal = 0;
@@ -233,12 +233,12 @@ void rdp_new_processor(GFX_INFO _gfx_info, uint32_t upscale)
 	}
 	RDP::CommandProcessorFlags flags = 0;
 
-	if (upscale == 2)
+	if (gfx_info.upscale == 2)
 	{
 		flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
 		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_2X_BIT;
 	}
-	else if (upscale == 4)
+	else if (gfx_info.upscale == 4)
 	{
 		flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
 		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_4X_BIT;
@@ -247,7 +247,7 @@ void rdp_new_processor(GFX_INFO _gfx_info, uint32_t upscale)
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 }
 
-void rdp_init(void *_window, GFX_INFO _gfx_info, uint32_t _upscale, bool _integer_scaling, bool _fullscreen)
+void rdp_init(void *_window, GFX_INFO _gfx_info)
 {
 	window = (SDL_Window *)_window;
 	bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
@@ -258,8 +258,18 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, uint32_t _upscale, bool _intege
 	}
 
 	gfx_info = _gfx_info;
-	fullscreen = _fullscreen;
-	integer_scaling = _integer_scaling;
+
+	if (gfx_info.crt)
+	{
+		fragment_spirv = crt_fragment_spirv;
+		fragment_size = sizeof(crt_fragment_spirv);
+	}
+	else
+	{
+		fragment_spirv = plain_fragment_spirv;
+		fragment_size = sizeof(plain_fragment_spirv);
+	}
+
 	bool window_vsync = 0;
 	wsi = new WSI;
 	wsi_platform = new SDL_WSIPlatform;
@@ -278,7 +288,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, uint32_t _upscale, bool _intege
 	}
 
 	rdram_dirty = (uint8_t *)malloc(gfx_info.RDRAM_SIZE / 8);
-	rdp_new_processor(gfx_info, _upscale);
+	rdp_new_processor(gfx_info);
 
 	if (!processor->device_is_supported())
 	{
@@ -329,7 +339,7 @@ static void calculate_viewport(float *x, float *y, float *width, float *height)
 	int w, h;
 	SDL_GetWindowSize(window, &w, &h);
 
-	if (integer_scaling)
+	if (gfx_info.integer_scaling)
 	{
 		// Integer scaling path
 		int scale_x = w / display_width;
@@ -389,11 +399,12 @@ static void render_frame(Vulkan::Device &device)
 	Vulkan::ResourceLayout fragment_layout = {};
 	fragment_layout.output_mask = 1 << 0;
 	fragment_layout.sets[0].sampled_image_mask = 1 << 0;
-	fragment_layout.push_constant_size = sizeof(Push);
+	if (gfx_info.crt)
+		fragment_layout.push_constant_size = sizeof(Push);
 
 	// This request is cached.
 	auto *program = device.request_program(vertex_spirv, sizeof(vertex_spirv),
-										   crt_fragment_spirv, sizeof(crt_fragment_spirv),
+										   fragment_spirv, fragment_size,
 										   &vertex_layout,
 										   &fragment_layout);
 
@@ -416,29 +427,32 @@ static void render_frame(Vulkan::Device &device)
 		// If we don't have an image, we just get a cleared screen in the render pass.
 		if (image)
 		{
-			// Set shader parameters
-			Push push = {
-				{float(image->get_width()), float(image->get_height()), 1.0f / float(image->get_width()), 1.0f / float(image->get_height())},
-				{vp.width, vp.height, 1.0f / vp.width, 1.0f / vp.height},
-				0,	   // FrameCount
-				1.0f,  // SHARPNESS_IMAGE
-				3.0f,  // SHARPNESS_EDGES
-				0.5f,  //  GLOW_WIDTH
-				0.5f,  //  GLOW_HEIGHT
-				0.1f,  //  GLOW_HALATION
-				0.05f, //  GLOW_DIFFUSION
-				2.0f,  //  MASK_COLORS
-				0.3f,  //  MASK_STRENGTH
-				1.0f,  //  MASK_SIZE
-				0.5f,  //  SCANLINE_SIZE_MIN
-				1.5f,  //  SCANLINE_SIZE_MAX
-				2.5f,  //  SCANLINE_SHAPE
-				1.0f,  //  SCANLINE_OFFSET
-				2.4f,  //  GAMMA_INPUT
-				2.4f,  //  GAMMA_OUTPUT
-				1.5f   //  BRIGHTNESS
-			};
-			cmd->push_constants(&push, 0, sizeof(push));
+			if (gfx_info.crt)
+			{
+				// Set shader parameters
+				Push push = {
+					{float(image->get_width()), float(image->get_height()), 1.0f / float(image->get_width()), 1.0f / float(image->get_height())},
+					{vp.width, vp.height, 1.0f / vp.width, 1.0f / vp.height},
+					0,	   // FrameCount
+					1.0f,  // SHARPNESS_IMAGE
+					3.0f,  // SHARPNESS_EDGES
+					0.5f,  //  GLOW_WIDTH
+					0.5f,  //  GLOW_HEIGHT
+					0.1f,  //  GLOW_HALATION
+					0.05f, //  GLOW_DIFFUSION
+					2.0f,  //  MASK_COLORS
+					0.3f,  //  MASK_STRENGTH
+					1.0f,  //  MASK_SIZE
+					0.5f,  //  SCANLINE_SIZE_MIN
+					1.5f,  //  SCANLINE_SIZE_MAX
+					2.5f,  //  SCANLINE_SHAPE
+					1.0f,  //  SCANLINE_OFFSET
+					2.4f,  //  GAMMA_INPUT
+					2.4f,  //  GAMMA_OUTPUT
+					1.5f   //  BRIGHTNESS
+				};
+				cmd->push_constants(&push, 0, sizeof(push));
+			}
 
 			cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
 			cmd->set_viewport(vp);

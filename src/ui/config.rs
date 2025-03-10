@@ -47,6 +47,7 @@ pub struct Video {
     pub integer_scaling: bool,
     pub fullscreen: bool,
     pub widescreen: bool,
+    pub crt: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -106,6 +107,7 @@ impl Config {
                 integer_scaling: false,
                 fullscreen: false,
                 widescreen: false,
+                crt: false,
             },
             emulation: Emulation { overclock: false },
         }
