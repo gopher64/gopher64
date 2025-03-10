@@ -18,6 +18,10 @@ extern "C"
 		uint32_t *DPC_STATUS_REG;
 		bool PAL;
 		bool widescreen;
+		bool fullscreen;
+		bool integer_scaling;
+		uint32_t upscale;
+		bool crt;
 	} GFX_INFO;
 
 	typedef struct
@@ -28,13 +32,13 @@ extern "C"
 		bool enable_speedlimiter;
 	} CALL_BACK;
 
-	void rdp_init(void *_window, GFX_INFO _gfx_info, uint32_t _upscale, bool _integer_scaling, bool _fullscreen);
+	void rdp_init(void *_window, GFX_INFO _gfx_info);
 	void rdp_close();
 	void rdp_set_vi_register(uint32_t reg, uint32_t value);
 	void rdp_update_screen();
 	CALL_BACK rdp_check_callback();
 	uint64_t rdp_process_commands();
-	void rdp_new_processor(GFX_INFO _gfx_info, uint32_t _upscale);
+	void rdp_new_processor(GFX_INFO _gfx_info);
 	void rdp_check_framebuffers(uint32_t address);
 	void rdp_full_sync();
 
