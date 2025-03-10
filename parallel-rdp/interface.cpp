@@ -336,6 +336,13 @@ static void calculate_viewport(float *x, float *y, float *width, float *height, 
 
 		*width = scaled_width;
 		*height = scaled_height;
+
+		// Center the viewport
+		int integer_x = (w - *width) / 2.0f;
+		int integer_y = (h - *height) / 2.0f;
+
+		*x = integer_x;
+		*y = integer_y;
 	}
 	else
 	{
@@ -346,11 +353,11 @@ static void calculate_viewport(float *x, float *y, float *width, float *height, 
 
 		*width = display_width * scale;
 		*height = display_height * scale;
-	}
 
-	// Center the viewport
-	*x = (w - *width) / 2.0f;
-	*y = (h - *height) / 2.0f;
+		// Center the viewport
+		*x = (w - *width) / 2.0f;
+		*y = (h - *height) / 2.0f;
+	}
 }
 
 static void render_frame(Vulkan::Device &device)
