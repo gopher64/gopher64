@@ -82,7 +82,7 @@ typedef struct
 {
 	float SourceSize[4];
 	float OutputSize[4];
-	uint FrameCount;
+	uint32_t FrameCount;
 	float SHARPNESS_IMAGE;
 	float SHARPNESS_EDGES;
 	float GLOW_WIDTH;
