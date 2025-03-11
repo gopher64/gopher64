@@ -84,7 +84,7 @@ typedef struct
 	float OutputSize[4];
 } Push;
 
-static uint8_t *rdram_dirty;
+static std::vector<bool> rdram_dirty;
 static uint64_t sync_signal;
 static FrameBufferInfo frame_buffer_info;
 
@@ -207,7 +207,7 @@ void rdp_new_processor(GFX_INFO _gfx_info)
 {
 	memset(&frame_buffer_info, 0, sizeof(FrameBufferInfo));
 	sync_signal = 0;
-	memset(rdram_dirty, 0, gfx_info.RDRAM_SIZE / 8);
+	rdram_dirty.assign(rdram_dirty.size(), false);
 
 	gfx_info = _gfx_info;
 	if (processor)
@@ -270,7 +270,8 @@ void rdp_init(void *_window, GFX_INFO _gfx_info)
 		rdp_close();
 	}
 
-	rdram_dirty = (uint8_t *)malloc(gfx_info.RDRAM_SIZE / 8);
+	rdram_dirty.resize(gfx_info.RDRAM_SIZE / 8);
+
 	rdp_new_processor(gfx_info);
 
 	if (!processor->device_is_supported())
@@ -289,12 +290,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info)
 
 void rdp_close()
 {
-	if (rdram_dirty)
-	{
-		free(rdram_dirty);
-		rdram_dirty = nullptr;
-	}
-
 	wsi->end_frame();
 
 	if (processor)
@@ -464,7 +459,7 @@ void rdp_check_framebuffers(uint32_t address)
 	if (sync_signal && rdram_dirty[address >> 3])
 	{
 		processor->wait_for_timeline(sync_signal);
-		memset(rdram_dirty, 0, gfx_info.RDRAM_SIZE / 8);
+		rdram_dirty.assign(rdram_dirty.size(), false);
 		sync_signal = 0;
 	}
 }
@@ -564,7 +559,7 @@ uint64_t rdp_process_commands()
 			{
 				for (uint32_t i = frame_buffer_info.framebuffer_address; i < frame_buffer_info.framebuffer_address + frame_buffer_info.framebuffer_size; ++i)
 				{
-					rdram_dirty[i] = 1;
+					rdram_dirty[i] = true;
 				}
 			}
 
@@ -572,7 +567,7 @@ uint64_t rdp_process_commands()
 			{
 				for (uint32_t i = frame_buffer_info.depthbuffer_address; i < frame_buffer_info.depthbuffer_address + frame_buffer_info.depthbuffer_size; ++i)
 				{
-					rdram_dirty[i] = 1;
+					rdram_dirty[i] = true;
 				}
 			}
 		}
