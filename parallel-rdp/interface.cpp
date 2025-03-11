@@ -207,7 +207,7 @@ void rdp_new_processor(GFX_INFO _gfx_info)
 {
 	memset(&frame_buffer_info, 0, sizeof(FrameBufferInfo));
 	sync_signal = 0;
-	rdram_dirty.assign(rdram_dirty.size(), false);
+	rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
 
 	gfx_info = _gfx_info;
 	if (processor)
@@ -269,8 +269,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info)
 	{
 		rdp_close();
 	}
-
-	rdram_dirty.resize(gfx_info.RDRAM_SIZE / 8);
 
 	rdp_new_processor(gfx_info);
 
@@ -459,7 +457,7 @@ void rdp_check_framebuffers(uint32_t address)
 	if (sync_signal && rdram_dirty[address >> 3])
 	{
 		processor->wait_for_timeline(sync_signal);
-		rdram_dirty.assign(rdram_dirty.size(), false);
+		rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
 		sync_signal = 0;
 	}
 }
@@ -557,18 +555,12 @@ uint64_t rdp_process_commands()
 		{
 			if (!rdram_dirty[frame_buffer_info.framebuffer_address])
 			{
-				for (uint32_t i = frame_buffer_info.framebuffer_address; i < frame_buffer_info.framebuffer_address + frame_buffer_info.framebuffer_size; ++i)
-				{
-					rdram_dirty[i] = true;
-				}
+				std::fill_n(rdram_dirty.begin() + frame_buffer_info.framebuffer_address, frame_buffer_info.framebuffer_size, true);
 			}
 
 			if (frame_buffer_info.depthbuffer_enabled && !rdram_dirty[frame_buffer_info.depthbuffer_address])
 			{
-				for (uint32_t i = frame_buffer_info.depthbuffer_address; i < frame_buffer_info.depthbuffer_address + frame_buffer_info.depthbuffer_size; ++i)
-				{
-					rdram_dirty[i] = true;
-				}
+				std::fill_n(rdram_dirty.begin() + frame_buffer_info.depthbuffer_address, frame_buffer_info.depthbuffer_size, true);
 			}
 		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
