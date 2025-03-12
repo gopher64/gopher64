@@ -54,7 +54,7 @@ pub fn init(device: &mut device::Device) {
         PAL: device.cart.pal,
         widescreen: device.ui.config.video.widescreen,
         fullscreen: device.ui.video.fullscreen,
-        integer_scaling: device.ui.config.video.integer_scaling | device.ui.config.video.crt,
+        integer_scaling: device.ui.config.video.integer_scaling || device.ui.config.video.crt,
         upscale: device.ui.config.video.upscale,
         crt: device.ui.config.video.crt,
     };
@@ -94,7 +94,7 @@ pub fn load_state(device: &mut device::Device) {
         PAL: device.cart.pal,
         widescreen: device.ui.config.video.widescreen,
         fullscreen: device.ui.video.fullscreen,
-        integer_scaling: device.ui.config.video.integer_scaling | device.ui.config.video.crt,
+        integer_scaling: device.ui.config.video.integer_scaling || device.ui.config.video.crt,
         upscale: device.ui.config.video.upscale,
         crt: device.ui.config.video.crt,
     };
