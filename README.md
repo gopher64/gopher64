@@ -21,7 +21,7 @@ In order to use a controller (for example, an Xbox controller), run `./gopher64 
 
 ## netplay
 
-Gopher64 supports netplay (online play with others). It has a few public netplay servers. If you are interested in running a public netplay server, please let me know (open an issue or discussion, or contact me on Discord). You can also run the server (https://github.com/simple64/simple64-netplay-server) yourself on a LAN.
+Gopher64 supports netplay (online play with others). It has a few public netplay servers. If you are interested in running a public netplay server, please let me know (open an issue or discussion, or contact me on Discord). You can also run the server (https://github.com/gopher64/gopher64-netplay-server) yourself on a LAN.
 
 ## portable mode
 
