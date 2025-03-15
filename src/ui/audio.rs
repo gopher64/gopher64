@@ -100,8 +100,8 @@ pub fn lower_audio_volume(ui: &ui::Ui) {
 pub fn raise_audio_volume(ui: &ui::Ui) {
     unsafe {
         let mut gain = sdl3_sys::audio::SDL_GetAudioStreamGain(ui.audio.audio_stream) + 0.05;
-        if gain > 1.0 {
-            gain = 1.0;
+        if gain > 2.0 {
+            gain = 2.0;
         }
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, gain);
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, gain);
