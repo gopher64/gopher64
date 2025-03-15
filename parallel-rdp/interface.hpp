@@ -30,6 +30,8 @@ extern "C"
 		bool save_state;
 		bool load_state;
 		bool enable_speedlimiter;
+		bool lower_volume;
+		bool raise_volume;
 	} CALL_BACK;
 
 	void rdp_init(void *_window, GFX_INFO _gfx_info);

@@ -86,6 +86,28 @@ pub fn close(ui: &mut ui::Ui) {
     }
 }
 
+pub fn lower_audio_volume(ui: &ui::Ui) {
+    unsafe {
+        let mut gain = sdl3_sys::audio::SDL_GetAudioStreamGain(ui.audio.audio_stream) - 0.05;
+        if gain < 0.0 {
+            gain = 0.0;
+        }
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, gain);
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, gain);
+    }
+}
+
+pub fn raise_audio_volume(ui: &ui::Ui) {
+    unsafe {
+        let mut gain = sdl3_sys::audio::SDL_GetAudioStreamGain(ui.audio.audio_stream) + 0.05;
+        if gain > 1.0 {
+            gain = 1.0;
+        }
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, gain);
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, gain);
+    }
+}
+
 pub fn play_netplay_audio(ui: &mut ui::Ui, error: u32) {
     if ui.audio.event_audio_stream.is_null() {
         return;
