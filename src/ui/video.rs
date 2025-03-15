@@ -112,6 +112,11 @@ pub fn check_callback(device: &mut device::Device) {
         } else if callback.load_state {
             device.load_state = true;
         }
+        if callback.lower_volume {
+            ui::audio::lower_audio_volume(&device.ui);
+        } else if callback.raise_volume {
+            ui::audio::raise_audio_volume(&device.ui);
+        }
         device.vi.enable_speed_limiter = callback.enable_speedlimiter;
     }
 }

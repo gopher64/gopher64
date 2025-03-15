@@ -195,6 +195,12 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 		case SDL_SCANCODE_F7:
 			callback.load_state = true;
 			break;
+		case SDL_SCANCODE_LEFTBRACKET:
+			callback.lower_volume = true;
+			break;
+		case SDL_SCANCODE_RIGHTBRACKET:
+			callback.raise_volume = true;
+			break;
 		default:
 			break;
 		}
@@ -449,6 +455,8 @@ CALL_BACK rdp_check_callback()
 	CALL_BACK return_value = callback;
 	callback.save_state = false;
 	callback.load_state = false;
+	callback.lower_volume = false;
+	callback.raise_volume = false;
 	return return_value;
 }
 
