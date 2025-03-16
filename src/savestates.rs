@@ -218,14 +218,14 @@ where
 
 pub fn default_memory_read_fast()
 -> [fn(&device::Device, u64, device::memory::AccessSize) -> u32; 0x2000] {
-    [device::rdram::read_mem_fast; 0x2000]
+    [device::unmapped::read_mem_fast; 0x2000]
 }
 
 pub fn default_memory_read()
 -> [fn(&mut device::Device, u64, device::memory::AccessSize) -> u32; 0x2000] {
-    [device::rdram::read_mem; 0x2000]
+    [device::unmapped::read_mem; 0x2000]
 }
 
 pub fn default_memory_write() -> [fn(&mut device::Device, u64, u32, u32); 0x2000] {
-    [device::rdram::write_mem; 0x2000]
+    [device::unmapped::write_mem; 0x2000]
 }
