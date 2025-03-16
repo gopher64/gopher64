@@ -193,37 +193,33 @@ impl Drop for GopherEguiApp {
 }
 
 fn configure_profile(app: &mut GopherEguiApp, ctx: &egui::Context) {
-    egui::Window::new("Configure Input Profile")
-        // .open(& self.configure_profile)
-        .show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                let name_label = ui.label("Profile Name:");
-                ui.text_edit_singleline(&mut app.profile_name)
-                    .labelled_by(name_label.id);
-            });
-            ui.checkbox(&mut app.dinput, "Use DirectInput");
-            ui.horizontal(|ui| {
-                if ui.button("Configure Profile").clicked() {
-                    let profile_name = app.profile_name.clone();
-                    let dinput = app.dinput;
-                    std::thread::spawn(move || {
-                        let mut game_ui = ui::Ui::new();
-                        ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
-                    });
-                    app.configure_profile = false;
-                    if !app.profile_name.is_empty()
-                        && !app.input_profiles.contains(&app.profile_name)
-                    {
-                        app.input_profiles.push(app.profile_name.clone())
-                    }
-                };
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("Close").clicked() {
-                        app.configure_profile = false
-                    };
-                })
-            });
+    egui::Window::new("Configure Input Profile").show(ctx, |ui| {
+        ui.horizontal(|ui| {
+            let name_label = ui.label("Profile Name:");
+            ui.text_edit_singleline(&mut app.profile_name)
+                .labelled_by(name_label.id);
         });
+        ui.checkbox(&mut app.dinput, "Use DirectInput");
+        ui.horizontal(|ui| {
+            if ui.button("Configure Profile").clicked() {
+                let profile_name = app.profile_name.clone();
+                let dinput = app.dinput;
+                std::thread::spawn(move || {
+                    let mut game_ui = ui::Ui::new();
+                    ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
+                });
+                app.configure_profile = false;
+                if !app.profile_name.is_empty() && !app.input_profiles.contains(&app.profile_name) {
+                    app.input_profiles.push(app.profile_name.clone())
+                }
+            };
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.button("Close").clicked() {
+                    app.configure_profile = false
+                };
+            })
+        });
+    });
 }
 
 fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
