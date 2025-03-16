@@ -29,7 +29,7 @@ pub enum CartType {
 }
 
 fn write_mbc1(
-    pif_ram: &mut [u8],
+    pif_ram: &[u8],
     cart: &mut device::controller::gbcart::GbCart,
     address: u16,
     data: usize,
@@ -66,7 +66,7 @@ fn write_mbc1(
 
 fn read_mbc1(
     pif_ram: &mut [u8],
-    cart: &mut device::controller::gbcart::GbCart,
+    cart: &device::controller::gbcart::GbCart,
     address: u16,
     data: usize,
     size: usize,
@@ -100,7 +100,7 @@ fn read_mbc1(
 }
 
 fn write_mbc3(
-    pif_ram: &mut [u8],
+    pif_ram: &[u8],
     cart: &mut device::controller::gbcart::GbCart,
     address: u16,
     data: usize,
@@ -161,7 +161,7 @@ fn write_mbc3(
 
 fn read_mbc3(
     pif_ram: &mut [u8],
-    cart: &mut device::controller::gbcart::GbCart,
+    cart: &device::controller::gbcart::GbCart,
     address: u16,
     data: usize,
     size: usize,
@@ -213,7 +213,7 @@ fn read_mbc3(
 }
 
 fn write_mbc5(
-    pif_ram: &mut [u8],
+    pif_ram: &[u8],
     cart: &mut device::controller::gbcart::GbCart,
     address: u16,
     data: usize,
@@ -247,7 +247,7 @@ fn write_mbc5(
 
 fn read_mbc5(
     pif_ram: &mut [u8],
-    cart: &mut device::controller::gbcart::GbCart,
+    cart: &device::controller::gbcart::GbCart,
     address: u16,
     data: usize,
     size: usize,
@@ -278,7 +278,7 @@ fn read_mbc5(
 
 pub fn read(
     pif_ram: &mut [u8],
-    cart: &mut device::controller::gbcart::GbCart,
+    cart: &device::controller::gbcart::GbCart,
     address: u16,
     data: usize,
     size: usize,
@@ -299,7 +299,7 @@ pub fn read(
 }
 
 pub fn write(
-    pif_ram: &mut [u8],
+    pif_ram: &[u8],
     cart: &mut device::controller::gbcart::GbCart,
     address: u16,
     data: usize,

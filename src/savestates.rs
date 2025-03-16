@@ -88,7 +88,7 @@ pub fn create_savestate(device: &device::Device) {
 }
 
 pub fn load_savestate(device: &mut device::Device) {
-    let savestate = std::fs::read(&mut device.ui.storage.paths.savestate_file_path);
+    let savestate = std::fs::read(&device.ui.storage.paths.savestate_file_path);
     if savestate.is_ok() {
         let device_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "device");
         let save_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "saves");
@@ -211,7 +211,7 @@ pub fn default_instruction() -> fn(&mut device::Device, u32) {
 
 pub fn default_instructions<const N: usize>() -> [fn(&mut device::Device, u32); N]
 where
-    [fn(&mut device::Device, u32); N]: Sized,
+    [fn(&device::Device, u32); N]: Sized,
 {
     [device::cop0::reserved; N]
 }

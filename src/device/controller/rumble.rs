@@ -16,9 +16,9 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
     if address == 0xc000 {
         let rumble = device.pif.ram[data + size - 1];
         if device.netplay.is_none() {
-            device::ui::input::set_rumble(&mut device.ui, channel, rumble);
+            device::ui::input::set_rumble(&device.ui, channel, rumble);
         } else if device.netplay.as_ref().unwrap().player_number as usize == channel {
-            device::ui::input::set_rumble(&mut device.ui, 0, rumble);
+            device::ui::input::set_rumble(&device.ui, 0, rumble);
         }
     }
 }

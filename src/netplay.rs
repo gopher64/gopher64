@@ -144,7 +144,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> ui::input::Inpu
     let timeout = std::time::Instant::now() + std::time::Duration::from_secs(10);
     let mut request_timer = std::time::Instant::now() - std::time::Duration::from_millis(5);
     while input.is_none() {
-        process_incoming(netplay, &mut device.ui); // we execute process_incoming before request_input so that we send an accurate buffer count
+        process_incoming(netplay, &device.ui); // we execute process_incoming before request_input so that we send an accurate buffer count
         if std::time::Instant::now() > request_timer {
             // sends a request packet every 5ms
             request_input(netplay, channel);
@@ -155,7 +155,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> ui::input::Inpu
             .remove(&netplay.player_data[channel].count);
 
         if std::time::Instant::now() > timeout {
-            ui::audio::play_netplay_audio(&mut device.ui, NETPLAY_ERROR_LOST_CONNECTION);
+            ui::audio::play_netplay_audio(&device.ui, NETPLAY_ERROR_LOST_CONNECTION);
             input = Some(InputEvent {
                 input: 0,
                 plugin: 0,
@@ -186,7 +186,7 @@ fn request_input(netplay: &Netplay, channel: usize) {
     netplay.udp_socket.send(&request).unwrap();
 }
 
-fn process_incoming(netplay: &mut Netplay, ui: &mut ui::Ui) {
+fn process_incoming(netplay: &mut Netplay, ui: &ui::Ui) {
     let mut buf: [u8; 1024] = [0; 1024];
     while let Ok(_incoming) = netplay.udp_socket.recv(&mut buf) {
         match buf[0] {

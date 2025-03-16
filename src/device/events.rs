@@ -36,9 +36,9 @@ pub fn create_event_at(device: &mut device::Device, name: usize, when: u64) {
     set_next_event(device);
 }
 
-pub fn get_event(device: &mut device::Device, name: usize) -> Option<&mut Event> {
+pub fn get_event(device: &device::Device, name: usize) -> Option<&Event> {
     if device.cpu.events[name].enabled {
-        return Some(&mut device.cpu.events[name]);
+        return Some(&device.cpu.events[name]);
     }
     None
 }

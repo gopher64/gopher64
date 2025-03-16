@@ -194,7 +194,7 @@ impl Drop for GopherEguiApp {
 
 fn configure_profile(app: &mut GopherEguiApp, ctx: &egui::Context) {
     egui::Window::new("Configure Input Profile")
-        // .open(&mut self.configure_profile)
+        // .open(& self.configure_profile)
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 let name_label = ui.label("Profile Name:");
