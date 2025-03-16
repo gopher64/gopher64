@@ -211,7 +211,7 @@ pub fn default_instruction() -> fn(&mut device::Device, u32) {
 
 pub fn default_instructions<const N: usize>() -> [fn(&mut device::Device, u32); N]
 where
-    [fn(&device::Device, u32); N]: Sized,
+    [fn(&mut device::Device, u32); N]: Sized,
 {
     [device::cop0::reserved; N]
 }
