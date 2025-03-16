@@ -15,17 +15,17 @@ https://discord.gg/9RGXq8W8JQ
 
 Keys are mapped according to [these defaults](https://github.com/gopher64/gopher64/wiki/Default-Keyboard-Setup). Xbox-style controllers also have a [default mapping applied](https://github.com/gopher64/gopher64/wiki/Default-Gamepad-Setup).
 
-You can create you own mappings by running `./gopher64 --configure-input-profile my_profile`. You then bind that profile to a port: `./gopher64 --bind-input-profile my_profile --port 1`
+You can create your mappings by running `./gopher64 --configure-input-profile my_profile`. You then bind that profile to a port: `./gopher64 --bind-input-profile my_profile --port 1`
 
-In order to use a controller (for example, an Xbox controller), run `./gopher64 --list-controllers` to get a list of attached controllers, and then assign it by doing `./gopher64 --assign-controller <controller_number> --port 1`
+To use a controller (for example, an Xbox controller), run `./gopher64 --list-controllers` to get a list of attached controllers, and then assign it by doing `./gopher64 --assign-controller <controller_number> --port 1`
 
 ## netplay
 
-Gopher64 supports netplay (online play with others). It has a few public netplay servers. If you are interested in running a public netplay server, please let me know (open an issue or discussion, or contact me on Discord). You can also run the server (https://github.com/gopher64/gopher64-netplay-server) yourself on a LAN.
+Gopher64 supports netplay (online play with others). It has a few public netplay servers. If you are interested in running a public netplay server, please let me know (open an issue or discussion or contact me on Discord). You can also run the server (https://github.com/gopher64/gopher64-netplay-server) yourself on a LAN.
 
 ## portable mode
 
-If you would like to keep all the game data in the same folder as executable, you just need to create a file called "portable.txt" in the same directory as the executable.
+If you would like to keep all the game data in the same folder as the executable, you just need to create a file called "portable.txt" in the same directory as the executable.
 
 ## flatpak
 
@@ -39,7 +39,7 @@ flatpak run --filesystem=host:ro io.github.gopher64.gopher64 /path/to/rom.z64
 
 1. Performance. I want to be able to use this emulator on my laptop.
 2. Easy to use.
-3. Easy to work on. Dynamic recompilers perform well, but they are very hard to read and understand. This emulator will only have interpreters for the CPU and RSP. Additionally, it is completely written in Rust (besides Parallel-RDP), a modern programming language with a growing user base. I've tried to avoid the use of macros, which can reduce some repetitiveness in the code, but also reduce readability.
+3. Easy to work on. Dynamic recompilers perform well, but they are very hard to read and understand. This emulator will only have interpreters for the CPU and RSP. Additionally, it is completely written in Rust (besides Parallel-RDP), a modern programming language with a growing user base. I've tried to avoid the use of macros, which can reduce some repetitiveness in the code but also reduce readability.
 
 ## building and usage
 
@@ -52,7 +52,7 @@ flatpak run --filesystem=host:ro io.github.gopher64.gopher64 /path/to/rom.z64
 
 ## contributing
 
-I am very open to contributions! Please reach out to me via a GitHub issue, or via discord (loganmc10) before doing substantial work on a PR.
+I am very open to contributions! Please contact me via a GitHub issue or Discord (loganmc10) before doing substantial work on a PR.
 
 ## license
 
