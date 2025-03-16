@@ -92,112 +92,114 @@ pub fn load_savestate(device: &mut device::Device) {
     if savestate.is_ok() {
         let device_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "device");
         let save_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "saves");
-        let state: device::Device = postcard::from_bytes(&device_bytes).unwrap();
+        if let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes) {
+            device.ui.storage.saves = postcard::from_bytes(&save_bytes).unwrap();
 
-        device.ui.storage.saves = postcard::from_bytes(&save_bytes).unwrap();
+            device.cpu = state.cpu;
+            device.pif = state.pif;
 
-        device.cpu = state.cpu;
-        device.pif = state.pif;
+            let rom = device.cart.rom.clone();
+            device.cart = state.cart;
+            device.cart.rom = rom;
 
-        let rom = device.cart.rom.clone();
-        device.cart = state.cart;
-        device.cart.rom = rom;
+            device.memory = state.memory;
+            device.rsp = state.rsp;
+            device.rdp = state.rdp;
+            device.rdram = state.rdram;
+            device.mi = state.mi;
+            device.pi = state.pi;
+            device.vi = state.vi;
+            device.ai = state.ai;
+            device.si = state.si;
+            device.ri = state.ri;
+            device.vru = state.vru;
 
-        device.memory = state.memory;
-        device.rsp = state.rsp;
-        device.rdp = state.rdp;
-        device.rdram = state.rdram;
-        device.mi = state.mi;
-        device.pi = state.pi;
-        device.vi = state.vi;
-        device.ai = state.ai;
-        device.si = state.si;
-        device.ri = state.ri;
-        device.vru = state.vru;
+            let mut tpak_rom = [vec![], vec![], vec![], vec![]];
+            for (i, item) in tpak_rom.iter_mut().enumerate() {
+                *item = device.transferpaks[i].cart.rom.clone();
+            }
+            device.transferpaks = state.transferpaks;
+            for (i, item) in tpak_rom.iter().enumerate() {
+                device.transferpaks[i].cart.rom = item.clone();
+            }
 
-        let mut tpak_rom = [vec![], vec![], vec![], vec![]];
-        for (i, item) in tpak_rom.iter_mut().enumerate() {
-            *item = device.transferpaks[i].cart.rom.clone();
-        }
-        device.transferpaks = state.transferpaks;
-        for (i, item) in tpak_rom.iter().enumerate() {
-            device.transferpaks[i].cart.rom = item.clone();
-        }
+            device::memory::init(device);
+            device::vi::set_expected_refresh_rate(device);
+            device::cpu::map_instructions(device);
+            device::cop0::map_instructions(device);
+            device::cop1::map_instructions(device);
+            device::cop2::map_instructions(device);
+            device::rsp_cpu::map_instructions(device);
 
-        device::memory::init(device);
-        device::vi::set_expected_refresh_rate(device);
-        device::cpu::map_instructions(device);
-        device::cop0::map_instructions(device);
-        device::cop1::map_instructions(device);
-        device::cop2::map_instructions(device);
-        device::rsp_cpu::map_instructions(device);
+            let mut mem_addr = 0x1000;
+            while mem_addr < 0x2000 {
+                let data =
+                    u32::from_be_bytes(device.rsp.mem[mem_addr..mem_addr + 4].try_into().unwrap());
+                device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].func =
+                    device::rsp_cpu::decode_opcode(device, data);
+                device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].opcode = data;
+                mem_addr += 4;
+            }
 
-        let mut mem_addr = 0x1000;
-        while mem_addr < 0x2000 {
-            let data =
-                u32::from_be_bytes(device.rsp.mem[mem_addr..mem_addr + 4].try_into().unwrap());
-            device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].func =
-                device::rsp_cpu::decode_opcode(device, data);
-            device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].opcode = data;
-            mem_addr += 4;
-        }
+            for line_index in 0..512 {
+                device.memory.icache[line_index].instruction[0] =
+                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[0]);
+                device.memory.icache[line_index].instruction[1] =
+                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[1]);
+                device.memory.icache[line_index].instruction[2] =
+                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[2]);
+                device.memory.icache[line_index].instruction[3] =
+                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[3]);
+                device.memory.icache[line_index].instruction[4] =
+                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[4]);
+                device.memory.icache[line_index].instruction[5] =
+                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[5]);
+                device.memory.icache[line_index].instruction[6] =
+                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[6]);
+                device.memory.icache[line_index].instruction[7] =
+                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[7]);
+            }
 
-        for line_index in 0..512 {
-            device.memory.icache[line_index].instruction[0] =
-                device::cpu::decode_opcode(device, device.memory.icache[line_index].words[0]);
-            device.memory.icache[line_index].instruction[1] =
-                device::cpu::decode_opcode(device, device.memory.icache[line_index].words[1]);
-            device.memory.icache[line_index].instruction[2] =
-                device::cpu::decode_opcode(device, device.memory.icache[line_index].words[2]);
-            device.memory.icache[line_index].instruction[3] =
-                device::cpu::decode_opcode(device, device.memory.icache[line_index].words[3]);
-            device.memory.icache[line_index].instruction[4] =
-                device::cpu::decode_opcode(device, device.memory.icache[line_index].words[4]);
-            device.memory.icache[line_index].instruction[5] =
-                device::cpu::decode_opcode(device, device.memory.icache[line_index].words[5]);
-            device.memory.icache[line_index].instruction[6] =
-                device::cpu::decode_opcode(device, device.memory.icache[line_index].words[6]);
-            device.memory.icache[line_index].instruction[7] =
-                device::cpu::decode_opcode(device, device.memory.icache[line_index].words[7]);
-        }
-
-        device::pif::connect_pif_channels(device);
-        for i in 0..4 {
-            if device.pif.channels[i].pak_handler.is_some() {
-                if device.pif.channels[i].pak_handler.unwrap().pak_type
-                    == device::controller::PakType::RumblePak
-                {
-                    let rumblepak_handler = device::controller::PakHandler {
-                        read: device::controller::rumble::read,
-                        write: device::controller::rumble::write,
-                        pak_type: device::controller::PakType::RumblePak,
-                    };
-                    device.pif.channels[i].pak_handler = Some(rumblepak_handler);
-                } else if device.pif.channels[i].pak_handler.unwrap().pak_type
-                    == device::controller::PakType::MemPak
-                {
-                    let mempak_handler = device::controller::PakHandler {
-                        read: device::controller::mempak::read,
-                        write: device::controller::mempak::write,
-                        pak_type: device::controller::PakType::MemPak,
-                    };
-                    device.pif.channels[i].pak_handler = Some(mempak_handler);
-                } else if device.pif.channels[i].pak_handler.unwrap().pak_type
-                    == device::controller::PakType::TransferPak
-                {
-                    let tpak_handler = device::controller::PakHandler {
-                        read: device::controller::transferpak::read,
-                        write: device::controller::transferpak::write,
-                        pak_type: device::controller::PakType::TransferPak,
-                    };
-                    device.pif.channels[i].pak_handler = Some(tpak_handler);
+            device::pif::connect_pif_channels(device);
+            for i in 0..4 {
+                if device.pif.channels[i].pak_handler.is_some() {
+                    if device.pif.channels[i].pak_handler.unwrap().pak_type
+                        == device::controller::PakType::RumblePak
+                    {
+                        let rumblepak_handler = device::controller::PakHandler {
+                            read: device::controller::rumble::read,
+                            write: device::controller::rumble::write,
+                            pak_type: device::controller::PakType::RumblePak,
+                        };
+                        device.pif.channels[i].pak_handler = Some(rumblepak_handler);
+                    } else if device.pif.channels[i].pak_handler.unwrap().pak_type
+                        == device::controller::PakType::MemPak
+                    {
+                        let mempak_handler = device::controller::PakHandler {
+                            read: device::controller::mempak::read,
+                            write: device::controller::mempak::write,
+                            pak_type: device::controller::PakType::MemPak,
+                        };
+                        device.pif.channels[i].pak_handler = Some(mempak_handler);
+                    } else if device.pif.channels[i].pak_handler.unwrap().pak_type
+                        == device::controller::PakType::TransferPak
+                    {
+                        let tpak_handler = device::controller::PakHandler {
+                            read: device::controller::transferpak::read,
+                            write: device::controller::transferpak::write,
+                            pak_type: device::controller::PakType::TransferPak,
+                        };
+                        device.pif.channels[i].pak_handler = Some(tpak_handler);
+                    }
                 }
             }
-        }
 
-        ui::audio::close(&mut device.ui);
-        ui::audio::init(&mut device.ui, device.ai.freq);
-        ui::video::load_state(device);
+            ui::audio::close(&mut device.ui);
+            ui::audio::init(&mut device.ui, device.ai.freq);
+            ui::video::load_state(device);
+        } else {
+            println!("Failed to load savestate");
+        }
     }
 }
 
