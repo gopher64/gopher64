@@ -66,6 +66,7 @@ fn main() {
                 build.flag("/arch:AVX2");
             } else if env == "gnu" {
                 build.flag("-march=x86-64-v3");
+                println!("cargo:rustc-link-lib=static=stdc++");
             } else {
                 panic!("unknown env")
             }
