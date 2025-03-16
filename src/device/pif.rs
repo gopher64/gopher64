@@ -232,6 +232,23 @@ pub fn connect_pif_channels(device: &mut device::Device) {
     device.pif.channels[4].process = Some(device::cart::process)
 }
 
+pub fn get_default_handler(device: &device::Device) -> device::controller::PakHandler {
+    if device.ui.game_id == "NCT" {
+        // Chameleon Twist does not support the mempak
+        device::controller::PakHandler {
+            read: device::controller::rumble::read,
+            write: device::controller::rumble::write,
+            pak_type: device::controller::PakType::RumblePak,
+        }
+    } else {
+        device::controller::PakHandler {
+            read: device::controller::mempak::read,
+            write: device::controller::mempak::write,
+            pak_type: device::controller::PakType::MemPak,
+        }
+    }
+}
+
 pub fn init(device: &mut device::Device) {
     if device.cart.pal {
         device.pif.rom = rom::PAL_PIF_ROM;
@@ -241,11 +258,7 @@ pub fn init(device: &mut device::Device) {
     device.pif.ram[0x26] = device.cart.cic_seed;
     device.pif.ram[0x27] = device.cart.cic_seed;
 
-    let mempak_handler = device::controller::PakHandler {
-        read: device::controller::mempak::read,
-        write: device::controller::mempak::write,
-        pak_type: device::controller::PakType::MemPak,
-    };
+    let default_handler = get_default_handler(device);
     let tpak_handler = device::controller::PakHandler {
         read: device::controller::transferpak::read,
         write: device::controller::transferpak::write,
@@ -258,13 +271,13 @@ pub fn init(device: &mut device::Device) {
         if device.netplay.is_none() {
             if device.ui.config.input.controller_enabled[i] {
                 if device.transferpaks[i].cart.rom.is_empty() {
-                    device.pif.channels[i].pak_handler = Some(mempak_handler);
+                    device.pif.channels[i].pak_handler = Some(default_handler);
                 } else {
                     device.pif.channels[i].pak_handler = Some(tpak_handler);
                 }
             }
         } else if device.netplay.as_ref().unwrap().player_data[i].reg_id != 0 {
-            device.pif.channels[i].pak_handler = Some(mempak_handler);
+            device.pif.channels[i].pak_handler = Some(default_handler);
         }
     }
     if device.ui.config.input.emulate_vru {
