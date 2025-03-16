@@ -348,7 +348,7 @@ impl Device {
                 },
             },
             memory: memory::Memory {
-                fast_read: [unmapped::read_mem; 0x2000],
+                fast_read: [unmapped::read_mem_fast; 0x2000],
                 memory_map_read: [unmapped::read_mem; 0x2000],
                 memory_map_write: [unmapped::write_mem; 0x2000],
                 icache: [cache::ICache {

@@ -89,7 +89,7 @@ pub struct Rsp {
 }
 
 pub fn read_mem_fast(
-    device: &mut device::Device,
+    device: &device::Device,
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
