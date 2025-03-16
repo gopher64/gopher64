@@ -40,8 +40,8 @@ pub enum AccessSize {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Memory {
-    #[serde(skip, default = "savestates::default_memory_read")]
-    pub fast_read: [fn(&mut device::Device, u64, AccessSize) -> u32; 0x2000], // fast_read is used for lookups that try to detect idle loops
+    #[serde(skip, default = "savestates::default_memory_read_fast")]
+    pub fast_read: [fn(&device::Device, u64, AccessSize) -> u32; 0x2000], // fast_read is used for lookups that try to detect idle loops
     #[serde(skip, default = "savestates::default_memory_read")]
     pub memory_map_read: [fn(&mut device::Device, u64, AccessSize) -> u32; 0x2000],
     #[serde(skip, default = "savestates::default_memory_write")]
