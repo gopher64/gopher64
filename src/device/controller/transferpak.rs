@@ -54,7 +54,7 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
         0xC..=0xF => {
             device::controller::gbcart::read(
                 &mut device.pif.ram,
-                &mut pak.cart,
+                &pak.cart,
                 0x4000 * pak.bank + (address & 0x7fff) - 0x4000,
                 data,
                 size,
@@ -119,7 +119,7 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
         }
         0xC..=0xF => {
             device::controller::gbcart::write(
-                &mut device.pif.ram,
+                &device.pif.ram,
                 &mut pak.cart,
                 0x4000 * pak.bank + (address & 0x7fff) - 0x4000,
                 data,

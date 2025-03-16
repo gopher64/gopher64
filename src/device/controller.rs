@@ -57,10 +57,10 @@ pub fn process(device: &mut device::Device, channel: usize) {
         JCMD_CONTROLLER_READ => {
             let offset = device.pif.channels[channel].rx_buf.unwrap();
             let input = if device.netplay.is_none() {
-                ui::input::get(&mut device.ui, channel)
+                ui::input::get(&device.ui, channel)
             } else {
                 if device.netplay.as_ref().unwrap().player_number as usize == channel {
-                    let local_input = ui::input::get(&mut device.ui, 0);
+                    let local_input = ui::input::get(&device.ui, 0);
                     netplay::send_input(device.netplay.as_ref().unwrap(), local_input);
                 }
 
@@ -163,9 +163,9 @@ pub fn pak_switch_event(device: &mut device::Device) {
         if channel.change_pak != PakType::None {
             //stop rumble if it is on
             if device.netplay.is_none() {
-                device::ui::input::set_rumble(&mut device.ui, i, 0);
+                device::ui::input::set_rumble(&device.ui, i, 0);
             } else if device.netplay.as_ref().unwrap().player_number as usize == i {
-                device::ui::input::set_rumble(&mut device.ui, 0, 0);
+                device::ui::input::set_rumble(&device.ui, 0, 0);
             }
 
             let new_pak_type = match channel.change_pak {
@@ -202,7 +202,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
                     pak_type: new_pak_type,
                 });
             }
-            ui::audio::play_pak_switch(&mut device.ui, new_pak_type);
+            ui::audio::play_pak_switch(&device.ui, new_pak_type);
             channel.change_pak = PakType::None;
         }
     }

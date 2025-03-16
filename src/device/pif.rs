@@ -232,7 +232,7 @@ pub fn connect_pif_channels(device: &mut device::Device) {
     device.pif.channels[4].process = Some(device::cart::process)
 }
 
-pub fn get_default_handler(device: &device::Device) -> device::controller::PakHandler {
+fn get_default_handler(device: &device::Device) -> device::controller::PakHandler {
     if device.ui.game_id == "NCT" {
         // Chameleon Twist does not support the mempak
         device::controller::PakHandler {

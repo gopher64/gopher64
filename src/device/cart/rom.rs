@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 
 const CART_MASK: usize = 0xFFFFFFF;
 
-fn read_cart_word(device: &mut device::Device, address: usize) -> u32 {
+fn read_cart_word(device: &device::Device, address: usize) -> u32 {
     let mut data: [u8; 4] = [0; 4];
     for i in 0..4 {
         if let Some(value) = device

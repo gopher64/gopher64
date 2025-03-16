@@ -113,7 +113,7 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
     }
 }
 
-pub fn play_netplay_audio(ui: &mut ui::Ui, error: u32) {
+pub fn play_netplay_audio(ui: &ui::Ui, error: u32) {
     if ui.audio.event_audio_stream.is_null() {
         return;
     }
@@ -145,7 +145,7 @@ pub fn play_netplay_audio(ui: &mut ui::Ui, error: u32) {
     }
 }
 
-pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
+pub fn play_pak_switch(ui: &ui::Ui, pak: device::controller::PakType) {
     if ui.audio.event_audio_stream.is_null() {
         return;
     }
@@ -167,7 +167,7 @@ pub fn play_pak_switch(ui: &mut ui::Ui, pak: device::controller::PakType) {
     }
 }
 
-pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
+pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
     if device.ui.audio.audio_stream.is_null() {
         return;
     }

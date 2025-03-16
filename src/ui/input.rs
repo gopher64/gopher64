@@ -276,7 +276,7 @@ fn set_buttons_from_controller(
     }
 }
 
-pub fn set_rumble(ui: &mut ui::Ui, channel: usize, rumble: u8) {
+pub fn set_rumble(ui: &ui::Ui, channel: usize, rumble: u8) {
     if !ui.input.controllers[channel].rumble {
         return;
     }
@@ -334,7 +334,7 @@ fn change_paks(
     pressed
 }
 
-pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
+pub fn get(ui: &ui::Ui, channel: usize) -> InputData {
     let profile_name = ui.config.input.input_profile_binding[channel].clone();
     let profile = ui.config.input.input_profiles.get(&profile_name).unwrap();
     let mut keys = 0;

@@ -606,19 +606,19 @@ pub fn mfc2(device: &mut device::Device, opcode: u32) {
 pub fn cfc2(device: &mut device::Device, opcode: u32) {
     let hi;
     let lo;
-    let mut zero = unsafe { _mm_setzero_si128() };
+    let zero = unsafe { _mm_setzero_si128() };
     match rd(opcode) & 3 {
         0x00 => {
-            hi = &mut device.rsp.cpu.vcoh;
-            lo = &mut device.rsp.cpu.vcol;
+            hi = &device.rsp.cpu.vcoh;
+            lo = &device.rsp.cpu.vcol;
         }
         0x01 => {
-            hi = &mut device.rsp.cpu.vcch;
-            lo = &mut device.rsp.cpu.vccl;
+            hi = &device.rsp.cpu.vcch;
+            lo = &device.rsp.cpu.vccl;
         }
         0x02 | 0x03 => {
-            hi = &mut zero;
-            lo = &mut device.rsp.cpu.vce;
+            hi = &zero;
+            lo = &device.rsp.cpu.vce;
         }
         _ => {
             panic!("unknown cfc2")

@@ -27,7 +27,7 @@ pub struct AiDma {
     pub duration: u64,
 }
 
-fn get_remaining_dma_length(device: &mut device::Device) -> u64 {
+fn get_remaining_dma_length(device: &device::Device) -> u64 {
     if device.ai.fifo[0].duration == 0 {
         return 0;
     }

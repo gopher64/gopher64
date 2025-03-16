@@ -196,27 +196,27 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
     if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
-        let eep = std::fs::read(&mut ui.storage.paths.eep_file_path);
+        let eep = std::fs::read(&ui.storage.paths.eep_file_path);
         if eep.is_ok() {
             ui.storage.saves.eeprom.data = eep.unwrap();
         }
-        let sra = std::fs::read(&mut ui.storage.paths.sra_file_path);
+        let sra = std::fs::read(&ui.storage.paths.sra_file_path);
         if sra.is_ok() {
             ui.storage.saves.sram.data = sra.unwrap();
         }
-        let fla = std::fs::read(&mut ui.storage.paths.fla_file_path);
+        let fla = std::fs::read(&ui.storage.paths.fla_file_path);
         if fla.is_ok() {
             ui.storage.saves.flash.data = fla.unwrap();
         }
-        let mempak = std::fs::read(&mut ui.storage.paths.pak_file_path);
+        let mempak = std::fs::read(&ui.storage.paths.pak_file_path);
         if mempak.is_ok() {
             ui.storage.saves.mempak.data = mempak.unwrap();
         }
-        let sdcard = std::fs::read(&mut ui.storage.paths.sdcard_file_path);
+        let sdcard = std::fs::read(&ui.storage.paths.sdcard_file_path);
         if sdcard.is_ok() {
             ui.storage.saves.sdcard.data = sdcard.unwrap();
         }
-        let romsave = std::fs::read(&mut ui.storage.paths.romsave_file_path);
+        let romsave = std::fs::read(&ui.storage.paths.romsave_file_path);
         if romsave.is_ok() {
             ui.storage.saves.romsave.data =
                 postcard::from_bytes(romsave.unwrap().as_ref()).unwrap();
