@@ -43,7 +43,7 @@ pub struct Cpu {
     pub next_event: usize,
 }
 
-pub fn decode_opcode(device: &mut device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
+pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
     match opcode >> 26 {
         0 => device.cpu.special_instrs[(opcode & 0x3F) as usize], // SPECIAL
         1 => device.cpu.regimm_instrs[((opcode >> 16) & 0x1F) as usize], // REGIMM

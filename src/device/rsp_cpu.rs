@@ -192,7 +192,7 @@ pub fn run(device: &mut device::Device) -> u64 {
     (device.rsp.cpu.cycle_counter as f64 * 1.5) as u64 // converting RCP clock to CPU clock
 }
 
-pub fn decode_opcode(device: &mut device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
+pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
     match opcode >> 26 {
         0 => {
             // SPECIAL
