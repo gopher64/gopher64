@@ -59,9 +59,16 @@ fn main() {
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    let env = std::env::var("CARGO_CFG_TARGET_ENV").unwrap();
     if os == "windows" {
         if arch == "x86_64" {
-            build.flag("/arch:AVX2");
+            if env == "msvc" {
+                build.flag("/arch:AVX2");
+            } else if env == "gnu" {
+                build.flag("-march=x86-64-v3");
+            } else {
+                panic!("unknown env")
+            }
         } else if arch == "aarch64" {
             panic!("unsupported platform")
         } else {
@@ -69,7 +76,7 @@ fn main() {
         }
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
 
-        winres::WindowsResource::new()
+        winresource::WindowsResource::new()
             .set_icon("data/icon.ico")
             .compile()
             .unwrap();
