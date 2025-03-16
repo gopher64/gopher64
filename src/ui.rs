@@ -17,6 +17,7 @@ pub struct Audio {
     pub event_audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub audio_device: u32,
     pub event_audio: audio::EventAudio,
+    pub gain: f32,
 }
 
 pub struct Input {
@@ -188,6 +189,7 @@ impl Ui {
                 audio_stream: std::ptr::null_mut(),
                 event_audio_stream: std::ptr::null_mut(),
                 audio_device: 0,
+                gain: 1.0,
             },
             video: Video {
                 window: std::ptr::null_mut(),

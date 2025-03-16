@@ -116,9 +116,9 @@ pub fn check_callback(device: &mut device::Device) {
     }
 
     if callback.lower_volume {
-        ui::audio::lower_audio_volume(&device.ui);
+        ui::audio::lower_audio_volume(&mut device.ui);
     } else if callback.raise_volume {
-        ui::audio::raise_audio_volume(&device.ui);
+        ui::audio::raise_audio_volume(&mut device.ui);
     }
 }
 

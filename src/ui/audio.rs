@@ -51,7 +51,8 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         return;
     }
     if !unsafe {
-        sdl3_sys::audio::SDL_BindAudioStream(ui.audio.audio_device, ui.audio.audio_stream)
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain)
+            && sdl3_sys::audio::SDL_BindAudioStream(ui.audio.audio_device, ui.audio.audio_stream)
     } {
         panic!("Could not bind audio stream");
     }
@@ -65,7 +66,11 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
     ui.audio.event_audio_stream =
         unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&wav_audio_spec, &dst) };
     if !unsafe {
-        sdl3_sys::audio::SDL_BindAudioStream(ui.audio.audio_device, ui.audio.event_audio_stream)
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, ui.audio.gain)
+            && sdl3_sys::audio::SDL_BindAudioStream(
+                ui.audio.audio_device,
+                ui.audio.event_audio_stream,
+            )
     } {
         panic!("Could not bind audio stream");
     }
@@ -86,25 +91,25 @@ pub fn close(ui: &mut ui::Ui) {
     }
 }
 
-pub fn lower_audio_volume(ui: &ui::Ui) {
+pub fn lower_audio_volume(ui: &mut ui::Ui) {
     unsafe {
-        let mut gain = sdl3_sys::audio::SDL_GetAudioStreamGain(ui.audio.audio_stream) - 0.05;
-        if gain < 0.0 {
-            gain = 0.0;
+        ui.audio.gain = sdl3_sys::audio::SDL_GetAudioStreamGain(ui.audio.audio_stream) - 0.05;
+        if ui.audio.gain < 0.0 {
+            ui.audio.gain = 0.0;
         }
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, gain);
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, gain);
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, ui.audio.gain);
     }
 }
 
-pub fn raise_audio_volume(ui: &ui::Ui) {
+pub fn raise_audio_volume(ui: &mut ui::Ui) {
     unsafe {
-        let mut gain = sdl3_sys::audio::SDL_GetAudioStreamGain(ui.audio.audio_stream) + 0.05;
-        if gain > 2.0 {
-            gain = 2.0;
+        ui.audio.gain = sdl3_sys::audio::SDL_GetAudioStreamGain(ui.audio.audio_stream) + 0.05;
+        if ui.audio.gain > 2.0 {
+            ui.audio.gain = 2.0;
         }
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, gain);
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, gain);
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, ui.audio.gain);
     }
 }
 
