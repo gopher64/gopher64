@@ -61,7 +61,7 @@ static int cmd_cur;
 static int cmd_ptr;
 static CALL_BACK callback;
 static GFX_INFO gfx_info;
-static uint32_t region;
+static int32_t region;
 static bool crop_letterbox;
 static const uint32_t *fragment_spirv;
 static size_t fragment_size;
@@ -593,6 +593,9 @@ uint64_t rdp_process_commands()
 			uint32_t lower_right_x = ((w2 >> 12) & 0xFFF) >> 2;
 			uint32_t lower_right_y = (w2 & 0xFFF) >> 2;
 			region = (lower_right_x - upper_left_x) * (lower_right_y - upper_left_y);
+			if (region < 0)
+				region = 0;
+
 			frame_buffer_info.framebuffer_height = lower_right_y;
 			calculate_buffer_size();
 		}
