@@ -99,11 +99,11 @@ fn init_rng(device: &mut Device) {
     device.rng = rand_chacha::ChaCha8Rng::seed_from_u64(rng_seed);
 }
 
-fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
+fn swap_rom(contents: Vec<u8>) -> Option<Vec<u8>> {
     let test = u32::from_be_bytes(contents[0..4].try_into().unwrap());
     if test == 0x80371240 {
         // z64
-        contents
+        Some(contents)
     } else if test == 0x37804012 {
         // v64
         let mut data: Vec<u8> = vec![0; contents.len()];
@@ -111,7 +111,7 @@ fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
             let temp = u16::from_ne_bytes(contents[i..i + 2].try_into().unwrap());
             data[i..i + 2].copy_from_slice(&temp.to_be_bytes());
         }
-        return data;
+        Some(data)
     } else if test == 0x40123780 {
         // n64
         let mut data: Vec<u8> = vec![0; contents.len()];
@@ -119,14 +119,13 @@ fn swap_rom(contents: Vec<u8>) -> Vec<u8> {
             let temp = u32::from_ne_bytes(contents[i..i + 4].try_into().unwrap());
             data[i..i + 4].copy_from_slice(&temp.to_be_bytes());
         }
-        return data;
+        Some(data)
     } else {
-        let data: Vec<u8> = vec![];
-        data
+        None
     }
 }
 
-pub fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
+pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
     let mut contents = vec![];
     if file_path.extension().unwrap().eq_ignore_ascii_case("zip") {
         let zip_file = fs::File::open(file_path).unwrap();
@@ -174,7 +173,7 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
     }
 
     if contents.is_empty() {
-        contents
+        None
     } else {
         swap_rom(contents)
     }

@@ -430,8 +430,7 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
 }
 
 async fn parse_rom_file(file: rfd::FileHandle, tx: tokio::sync::mpsc::Sender<GameInfo>) {
-    let rom_contents = device::get_rom_contents(file.path());
-    if !rom_contents.is_empty() {
+    if let Some(rom_contents) = device::get_rom_contents(file.path()) {
         let hash = device::cart::rom::calculate_hash(&rom_contents);
         let game_name = ui::storage::get_game_name(&rom_contents);
 

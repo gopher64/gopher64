@@ -151,22 +151,22 @@ async fn main() {
         }
     } else if args.game.is_some() {
         let file_path = std::path::Path::new(args.game.as_ref().unwrap());
-        let rom_contents = device::get_rom_contents(file_path);
-        if rom_contents.is_empty() {
+        if let Some(rom_contents) = device::get_rom_contents(file_path) {
+            let handle = std::thread::Builder::new()
+                .name("n64".to_string())
+                .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
+                .spawn(move || {
+                    let mut device = device::Device::new();
+                    let overclock = device.ui.config.emulation.overclock;
+                    device::run_game(&mut device, rom_contents, args.fullscreen, overclock);
+                })
+                .unwrap();
+
+            handle.join().unwrap();
+        } else {
             println!("Could not read rom file");
             return;
         }
-        let handle = std::thread::Builder::new()
-            .name("n64".to_string())
-            .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
-            .spawn(move || {
-                let mut device = device::Device::new();
-                let overclock = device.ui.config.emulation.overclock;
-                device::run_game(&mut device, rom_contents, args.fullscreen, overclock);
-            })
-            .unwrap();
-
-        handle.join().unwrap();
     } else {
         let options = eframe::NativeOptions {
             viewport: eframe::egui::ViewportBuilder::default()
