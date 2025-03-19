@@ -173,7 +173,11 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Vec<u8> {
         contents = fs::read(file_path).expect("Should have been able to read the file");
     }
 
-    swap_rom(contents)
+    if contents.is_empty() {
+        contents
+    } else {
+        swap_rom(contents)
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
