@@ -445,16 +445,15 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                             device.vru_window.gui_ctx = Some(gui_ctx);
                         }
 
-                        let rom_contents = device::get_rom_contents(file.unwrap().path());
-                        if rom_contents.is_empty() {
-                            println!("Could not read rom file");
-                        } else {
+                        if let Some(rom_contents) = device::get_rom_contents(file.unwrap().path()) {
                             device::run_game(
                                 &mut device,
                                 rom_contents,
                                 fullscreen,
                                 enable_overclock,
                             );
+                        } else {
+                            println!("Could not read rom file");
                         }
                     }
                     let result = std::fs::remove_file(running_file);
