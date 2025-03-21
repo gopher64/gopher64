@@ -30,54 +30,14 @@ pub fn icache_writeback(device: &mut device::Device, line_index: usize) {
     let cache_address = ((device.memory.icache[line_index].tag
         | (device.memory.icache[line_index].index) as u32)
         & 0x1ffffffc) as u64;
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address,
-        device.memory.icache[line_index].words[0],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x4,
-        device.memory.icache[line_index].words[1],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x8,
-        device.memory.icache[line_index].words[2],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0xC,
-        device.memory.icache[line_index].words[3],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x10,
-        device.memory.icache[line_index].words[4],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x14,
-        device.memory.icache[line_index].words[5],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x18,
-        device.memory.icache[line_index].words[6],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x1C,
-        device.memory.icache[line_index].words[7],
-        0xFFFFFFFF,
-    );
+    for i in 0..8 {
+        device.memory.memory_map_write[(cache_address >> 16) as usize](
+            device,
+            cache_address | (i * 4),
+            device.memory.icache[line_index].words[i as usize],
+            0xFFFFFFFF,
+        );
+    }
 }
 
 pub fn icache_fill(device: &mut device::Device, line_index: usize, phys_address: u64) {
@@ -88,71 +48,17 @@ pub fn icache_fill(device: &mut device::Device, line_index: usize, phys_address:
     let cache_address = ((device.memory.icache[line_index].tag
         | (device.memory.icache[line_index].index) as u32)
         & 0x1ffffffc) as u64;
-    device.memory.icache[line_index].words[0] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address,
-        device::memory::AccessSize::Icache,
-    );
-    device.memory.icache[line_index].words[1] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x4,
-        device::memory::AccessSize::Icache,
-    );
-    device.memory.icache[line_index].words[2] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x8,
-        device::memory::AccessSize::Icache,
-    );
-    device.memory.icache[line_index].words[3] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0xC,
-        device::memory::AccessSize::Icache,
-    );
-    device.memory.icache[line_index].words[4] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x10,
-        device::memory::AccessSize::Icache,
-    );
-    device.memory.icache[line_index].words[5] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x14,
-        device::memory::AccessSize::Icache,
-    );
-    device.memory.icache[line_index].words[6] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x18,
-        device::memory::AccessSize::Icache,
-    );
-    device.memory.icache[line_index].words[7] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x1C,
-        device::memory::AccessSize::Icache,
-    );
+    for i in 0..8 {
+        device.memory.icache[line_index].words[i as usize] = device.memory.memory_map_read
+            [(cache_address >> 16) as usize](
+            device,
+            cache_address | (i * 4),
+            device::memory::AccessSize::Icache,
+        );
 
-    device.memory.icache[line_index].instruction[0] =
-        device::cpu::decode_opcode(device, device.memory.icache[line_index].words[0]);
-    device.memory.icache[line_index].instruction[1] =
-        device::cpu::decode_opcode(device, device.memory.icache[line_index].words[1]);
-    device.memory.icache[line_index].instruction[2] =
-        device::cpu::decode_opcode(device, device.memory.icache[line_index].words[2]);
-    device.memory.icache[line_index].instruction[3] =
-        device::cpu::decode_opcode(device, device.memory.icache[line_index].words[3]);
-    device.memory.icache[line_index].instruction[4] =
-        device::cpu::decode_opcode(device, device.memory.icache[line_index].words[4]);
-    device.memory.icache[line_index].instruction[5] =
-        device::cpu::decode_opcode(device, device.memory.icache[line_index].words[5]);
-    device.memory.icache[line_index].instruction[6] =
-        device::cpu::decode_opcode(device, device.memory.icache[line_index].words[6]);
-    device.memory.icache[line_index].instruction[7] =
-        device::cpu::decode_opcode(device, device.memory.icache[line_index].words[7]);
+        device.memory.icache[line_index].instruction[i as usize] =
+            device::cpu::decode_opcode(device, device.memory.icache[line_index].words[i as usize]);
+    }
 }
 
 pub fn icache_fetch(device: &mut device::Device, phys_address: u64) {
@@ -180,30 +86,15 @@ pub fn dcache_writeback(device: &mut device::Device, line_index: usize) {
     let cache_address = ((device.memory.dcache[line_index].tag
         | (device.memory.dcache[line_index].index) as u32)
         & 0x1ffffffc) as u64;
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address,
-        device.memory.dcache[line_index].words[0],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x4,
-        device.memory.dcache[line_index].words[1],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x8,
-        device.memory.dcache[line_index].words[2],
-        0xFFFFFFFF,
-    );
-    device.memory.memory_map_write[(cache_address >> 16) as usize](
-        device,
-        cache_address | 0xC,
-        device.memory.dcache[line_index].words[3],
-        0xFFFFFFFF,
-    );
+
+    for i in 0..4 {
+        device.memory.memory_map_write[(cache_address >> 16) as usize](
+            device,
+            cache_address | (i * 4),
+            device.memory.dcache[line_index].words[i as usize],
+            0xFFFFFFFF,
+        );
+    }
 }
 
 fn dcache_fill(device: &mut device::Device, line_index: usize, phys_address: u64) {
@@ -216,30 +107,15 @@ fn dcache_fill(device: &mut device::Device, line_index: usize, phys_address: u64
     let cache_address = ((device.memory.dcache[line_index].tag
         | (device.memory.dcache[line_index].index) as u32)
         & 0x1ffffffc) as u64;
-    device.memory.dcache[line_index].words[0] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address,
-        device::memory::AccessSize::Dcache,
-    );
-    device.memory.dcache[line_index].words[1] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x4,
-        device::memory::AccessSize::Dcache,
-    );
-    device.memory.dcache[line_index].words[2] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0x8,
-        device::memory::AccessSize::Dcache,
-    );
-    device.memory.dcache[line_index].words[3] = device.memory.memory_map_read
-        [(cache_address >> 16) as usize](
-        device,
-        cache_address | 0xC,
-        device::memory::AccessSize::Dcache,
-    );
+
+    for i in 0..4 {
+        device.memory.dcache[line_index].words[i as usize] = device.memory.memory_map_read
+            [(cache_address >> 16) as usize](
+            device,
+            cache_address | (i * 4),
+            device::memory::AccessSize::Dcache,
+        );
+    }
 }
 
 pub fn dcache_read(device: &mut device::Device, phys_address: u64) -> u32 {

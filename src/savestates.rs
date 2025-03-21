@@ -142,22 +142,12 @@ pub fn load_savestate(device: &mut device::Device) {
             }
 
             for line_index in 0..512 {
-                device.memory.icache[line_index].instruction[0] =
-                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[0]);
-                device.memory.icache[line_index].instruction[1] =
-                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[1]);
-                device.memory.icache[line_index].instruction[2] =
-                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[2]);
-                device.memory.icache[line_index].instruction[3] =
-                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[3]);
-                device.memory.icache[line_index].instruction[4] =
-                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[4]);
-                device.memory.icache[line_index].instruction[5] =
-                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[5]);
-                device.memory.icache[line_index].instruction[6] =
-                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[6]);
-                device.memory.icache[line_index].instruction[7] =
-                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[7]);
+                for i in 0..8 {
+                    device.memory.icache[line_index].instruction[i] = device::cpu::decode_opcode(
+                        device,
+                        device.memory.icache[line_index].words[i],
+                    );
+                }
             }
 
             device::pif::connect_pif_channels(device);
