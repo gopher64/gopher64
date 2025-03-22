@@ -70,8 +70,6 @@ typedef struct
 	int cmd_cur;
 	int cmd_ptr;
 	uint32_t region;
-	std::vector<bool> rdram_dirty;
-	uint64_t sync_signal;
 	FrameBufferInfo frame_buffer_info;
 } RDP_DEVICE;
 
@@ -86,6 +84,9 @@ static CALL_BACK callback;
 static GFX_INFO gfx_info;
 static const uint32_t *fragment_spirv;
 static size_t fragment_size;
+
+std::vector<bool> rdram_dirty;
+uint64_t sync_signal;
 
 typedef struct
 {
@@ -217,8 +218,8 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 void rdp_new_processor(GFX_INFO _gfx_info)
 {
 	memset(&rdp_device.frame_buffer_info, 0, sizeof(FrameBufferInfo));
-	rdp_device.sync_signal = 0;
-	rdp_device.rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
+	sync_signal = 0;
+	rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
 
 	gfx_info = _gfx_info;
 	if (processor)
@@ -467,11 +468,11 @@ CALL_BACK rdp_check_callback()
 
 void rdp_check_framebuffers(uint32_t address)
 {
-	if (rdp_device.sync_signal && rdp_device.rdram_dirty[address >> 3])
+	if (sync_signal && rdram_dirty[address >> 3])
 	{
-		processor->wait_for_timeline(rdp_device.sync_signal);
-		rdp_device.rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
-		rdp_device.sync_signal = 0;
+		processor->wait_for_timeline(sync_signal);
+		rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
+		sync_signal = 0;
 	}
 }
 
@@ -566,14 +567,14 @@ uint64_t rdp_process_commands()
 			RDP::Op(command) == RDP::Op::TextureRectangleFlip ||
 			RDP::Op(command) == RDP::Op::FillRectangle)
 		{
-			if (!rdp_device.rdram_dirty[rdp_device.frame_buffer_info.framebuffer_address])
+			if (!rdram_dirty[rdp_device.frame_buffer_info.framebuffer_address])
 			{
-				std::fill_n(rdp_device.rdram_dirty.begin() + rdp_device.frame_buffer_info.framebuffer_address, rdp_device.frame_buffer_info.framebuffer_size, true);
+				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.framebuffer_address, rdp_device.frame_buffer_info.framebuffer_size, true);
 			}
 
-			if (rdp_device.frame_buffer_info.depthbuffer_enabled && !rdp_device.rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
+			if (rdp_device.frame_buffer_info.depthbuffer_enabled && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
 			{
-				std::fill_n(rdp_device.rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
+				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
 			}
 		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
@@ -611,7 +612,7 @@ uint64_t rdp_process_commands()
 		}
 		else if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
-			rdp_device.sync_signal = processor->signal_timeline();
+			sync_signal = processor->signal_timeline();
 			interrupt_timer = rdp_device.region;
 			if (interrupt_timer == 0)
 				interrupt_timer = 5000;
