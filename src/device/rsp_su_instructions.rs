@@ -317,10 +317,9 @@ pub fn lw(device: &mut device::Device, opcode: u32) {
         device.rsp.cpu.gpr[rs(opcode) as usize].wrapping_add(imm(opcode) as i16 as i32 as u32);
 
     let mut w = [0; 4];
-    w[0] = device.rsp.mem[address as usize & 0xFFF];
-    w[1] = device.rsp.mem[(address as usize + 1) & 0xFFF];
-    w[2] = device.rsp.mem[(address as usize + 2) & 0xFFF];
-    w[3] = device.rsp.mem[(address as usize + 3) & 0xFFF];
+    for (i, item) in w.iter_mut().enumerate() {
+        *item = device.rsp.mem[(address as usize + i) & 0xFFF];
+    }
 
     device.rsp.cpu.gpr[rt(opcode) as usize] =
         ((w[0] as u32) << 24) | ((w[1] as u32) << 16) | ((w[2] as u32) << 8) | (w[3] as u32)
@@ -349,10 +348,9 @@ pub fn lwu(device: &mut device::Device, opcode: u32) {
         device.rsp.cpu.gpr[rs(opcode) as usize].wrapping_add(imm(opcode) as i16 as i32 as u32);
 
     let mut w = [0; 4];
-    w[0] = device.rsp.mem[address as usize & 0xFFF];
-    w[1] = device.rsp.mem[(address as usize + 1) & 0xFFF];
-    w[2] = device.rsp.mem[(address as usize + 2) & 0xFFF];
-    w[3] = device.rsp.mem[(address as usize + 3) & 0xFFF];
+    for (i, item) in w.iter_mut().enumerate() {
+        *item = device.rsp.mem[(address as usize + i) & 0xFFF];
+    }
 
     device.rsp.cpu.gpr[rt(opcode) as usize] =
         ((w[0] as u32) << 24) | ((w[1] as u32) << 16) | ((w[2] as u32) << 8) | (w[3] as u32)
@@ -378,14 +376,10 @@ pub fn sw(device: &mut device::Device, opcode: u32) {
     let address =
         device.rsp.cpu.gpr[rs(opcode) as usize].wrapping_add(imm(opcode) as i16 as i32 as u32);
 
-    device.rsp.mem[address as usize & 0xFFF] =
-        (device.rsp.cpu.gpr[rt(opcode) as usize] >> 24) as u8;
-    device.rsp.mem[(address as usize + 1) & 0xFFF] =
-        (device.rsp.cpu.gpr[rt(opcode) as usize] >> 16) as u8;
-    device.rsp.mem[(address as usize + 2) & 0xFFF] =
-        (device.rsp.cpu.gpr[rt(opcode) as usize] >> 8) as u8;
-    device.rsp.mem[(address as usize + 3) & 0xFFF] =
-        (device.rsp.cpu.gpr[rt(opcode) as usize]) as u8;
+    for i in 0..4 {
+        device.rsp.mem[(address as usize + i) & 0xFFF] =
+            (device.rsp.cpu.gpr[rt(opcode) as usize] >> (24 - (i * 8))) as u8;
+    }
 }
 
 pub fn sll(device: &mut device::Device, opcode: u32) {
