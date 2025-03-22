@@ -476,7 +476,7 @@ void rdp_check_framebuffers(uint32_t address)
 	}
 }
 
-uint64_t rdp_state_size()
+size_t rdp_state_size()
 {
 	return sizeof(RDP_DEVICE);
 }
