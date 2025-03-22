@@ -378,7 +378,7 @@ pub fn sw(device: &mut device::Device, opcode: u32) {
 
     for i in 0..4 {
         device.rsp.mem[(address as usize + i) & 0xFFF] =
-            (device.rsp.cpu.gpr[rt(opcode) as usize] >> (24 - (i * 8))) as u8;
+            (device.rsp.cpu.gpr[rt(opcode) as usize] >> ((3 - i) * 8)) as u8;
     }
 }
 
