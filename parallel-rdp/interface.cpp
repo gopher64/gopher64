@@ -217,10 +217,11 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 
 void rdp_new_processor(GFX_INFO _gfx_info)
 {
+	gfx_info = _gfx_info;
+
 	sync_signal = 0;
 	rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
 
-	gfx_info = _gfx_info;
 	if (processor)
 	{
 		delete processor;
