@@ -42,7 +42,7 @@ extern "C"
 	uint64_t rdp_process_commands();
 	void rdp_new_processor(GFX_INFO _gfx_info);
 	void rdp_check_framebuffers(uint32_t address);
-	void rdp_full_sync();
+	void rdp_save_state();
 
 #ifdef __cplusplus
 }

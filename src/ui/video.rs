@@ -78,8 +78,8 @@ pub fn check_framebuffers(address: u32) {
     unsafe { rdp_check_framebuffers(address) }
 }
 
-pub fn full_sync() {
-    unsafe { rdp_full_sync() }
+pub fn save_state() {
+    unsafe { rdp_save_state() }
 }
 
 pub fn load_state(device: &mut device::Device) {

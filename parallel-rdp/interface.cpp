@@ -52,20 +52,6 @@ enum vi_registers
 	VI_REGS_COUNT
 };
 
-static SDL_Window *window;
-static RDP::CommandProcessor *processor;
-static SDL_WSIPlatform *wsi_platform;
-static WSI *wsi;
-static uint32_t cmd_data[0x00040000 >> 2];
-static int cmd_cur;
-static int cmd_ptr;
-static CALL_BACK callback;
-static GFX_INFO gfx_info;
-static uint32_t region;
-static bool crop_letterbox;
-static const uint32_t *fragment_spirv;
-static size_t fragment_size;
-
 typedef struct
 {
 	uint32_t depthbuffer_address;
@@ -80,13 +66,32 @@ typedef struct
 
 typedef struct
 {
+	uint32_t cmd_data[0x00040000 >> 2];
+	int cmd_cur;
+	int cmd_ptr;
+	uint32_t region;
+	std::vector<bool> rdram_dirty;
+	uint64_t sync_signal;
+	FrameBufferInfo frame_buffer_info;
+} RDP_DEVICE;
+
+static SDL_Window *window;
+static RDP::CommandProcessor *processor;
+static SDL_WSIPlatform *wsi_platform;
+static WSI *wsi;
+
+static RDP_DEVICE rdp_device;
+static bool crop_letterbox;
+static CALL_BACK callback;
+static GFX_INFO gfx_info;
+static const uint32_t *fragment_spirv;
+static size_t fragment_size;
+
+typedef struct
+{
 	float SourceSize[4];
 	float OutputSize[4];
 } Push;
-
-static std::vector<bool> rdram_dirty;
-static uint64_t sync_signal;
-static FrameBufferInfo frame_buffer_info;
 
 static const unsigned cmd_len_lut[64] = {
 	1,
@@ -211,9 +216,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 
 void rdp_new_processor(GFX_INFO _gfx_info)
 {
-	memset(&frame_buffer_info, 0, sizeof(FrameBufferInfo));
-	sync_signal = 0;
-	rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
+	memset(&rdp_device.frame_buffer_info, 0, sizeof(FrameBufferInfo));
+	rdp_device.sync_signal = 0;
+	rdp_device.rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
 
 	gfx_info = _gfx_info;
 	if (processor)
@@ -462,37 +467,37 @@ CALL_BACK rdp_check_callback()
 
 void rdp_check_framebuffers(uint32_t address)
 {
-	if (sync_signal && rdram_dirty[address >> 3])
+	if (rdp_device.sync_signal && rdp_device.rdram_dirty[address >> 3])
 	{
-		processor->wait_for_timeline(sync_signal);
-		rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
-		sync_signal = 0;
+		processor->wait_for_timeline(rdp_device.sync_signal);
+		rdp_device.rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
+		rdp_device.sync_signal = 0;
 	}
 }
 
-void rdp_full_sync()
+void rdp_save_state()
 {
 	processor->wait_for_timeline(processor->signal_timeline());
 }
 
 void calculate_buffer_size()
 {
-	switch (frame_buffer_info.framebuffer_pixel_size)
+	switch (rdp_device.frame_buffer_info.framebuffer_pixel_size)
 	{
 	case 0:
-		frame_buffer_info.framebuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height / 2) >> 3;
+		rdp_device.frame_buffer_info.framebuffer_size = (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height / 2) >> 3;
 		break;
 	case 1:
-		frame_buffer_info.framebuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height) >> 3;
+		rdp_device.frame_buffer_info.framebuffer_size = (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) >> 3;
 		break;
 	case 2:
-		frame_buffer_info.framebuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height * 2) >> 3;
+		rdp_device.frame_buffer_info.framebuffer_size = (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 2) >> 3;
 		break;
 	case 3:
-		frame_buffer_info.framebuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height * 4) >> 3;
+		rdp_device.frame_buffer_info.framebuffer_size = (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 4) >> 3;
 		break;
 	}
-	frame_buffer_info.depthbuffer_size = (frame_buffer_info.framebuffer_width * frame_buffer_info.framebuffer_height * 2) >> 3;
+	rdp_device.frame_buffer_info.depthbuffer_size = (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 2) >> 3;
 }
 
 uint64_t rdp_process_commands()
@@ -506,7 +511,7 @@ uint64_t rdp_process_commands()
 		return interrupt_timer;
 
 	length = unsigned(length) >> 3;
-	if ((cmd_ptr + length) & ~(0x0003FFFF >> 3))
+	if ((rdp_device.cmd_ptr + length) & ~(0x0003FFFF >> 3))
 		return interrupt_timer;
 
 	uint32_t offset = DP_CURRENT;
@@ -515,10 +520,10 @@ uint64_t rdp_process_commands()
 		do
 		{
 			offset &= 0xFF8;
-			cmd_data[2 * cmd_ptr + 0] = SDL_Swap32BE(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset));
-			cmd_data[2 * cmd_ptr + 1] = SDL_Swap32BE(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset + 4));
+			rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 0] = SDL_Swap32BE(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset));
+			rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 1] = SDL_Swap32BE(*reinterpret_cast<const uint32_t *>(gfx_info.DMEM + offset + 4));
 			offset += sizeof(uint64_t);
-			cmd_ptr++;
+			rdp_device.cmd_ptr++;
 		} while (--length > 0);
 	}
 	else
@@ -532,59 +537,59 @@ uint64_t rdp_process_commands()
 			do
 			{
 				offset &= 0xFFFFF8;
-				cmd_data[2 * cmd_ptr + 0] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset);
-				cmd_data[2 * cmd_ptr + 1] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset + 4);
+				rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 0] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset);
+				rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 1] = *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset + 4);
 				offset += sizeof(uint64_t);
-				cmd_ptr++;
+				rdp_device.cmd_ptr++;
 			} while (--length > 0);
 		}
 	}
 
-	while (cmd_cur - cmd_ptr < 0)
+	while (rdp_device.cmd_cur - rdp_device.cmd_ptr < 0)
 	{
-		uint32_t w1 = cmd_data[2 * cmd_cur];
-		uint32_t w2 = cmd_data[2 * cmd_cur + 1];
+		uint32_t w1 = rdp_device.cmd_data[2 * rdp_device.cmd_cur];
+		uint32_t w2 = rdp_device.cmd_data[2 * rdp_device.cmd_cur + 1];
 		uint32_t command = (w1 >> 24) & 63;
 		int cmd_length = cmd_len_lut[command];
 
-		if (cmd_ptr - cmd_cur - cmd_length < 0)
+		if (rdp_device.cmd_ptr - rdp_device.cmd_cur - cmd_length < 0)
 		{
 			*gfx_info.DPC_START_REG = *gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
 			return interrupt_timer;
 		}
 
 		if (command >= 8)
-			processor->enqueue_command(cmd_length * 2, &cmd_data[2 * cmd_cur]);
+			processor->enqueue_command(cmd_length * 2, &rdp_device.cmd_data[2 * rdp_device.cmd_cur]);
 
 		if ((RDP::Op(command) >= RDP::Op::FillTriangle && RDP::Op(command) <= RDP::Op::ShadeTextureZBufferTriangle) ||
 			RDP::Op(command) == RDP::Op::TextureRectangle ||
 			RDP::Op(command) == RDP::Op::TextureRectangleFlip ||
 			RDP::Op(command) == RDP::Op::FillRectangle)
 		{
-			if (!rdram_dirty[frame_buffer_info.framebuffer_address])
+			if (!rdp_device.rdram_dirty[rdp_device.frame_buffer_info.framebuffer_address])
 			{
-				std::fill_n(rdram_dirty.begin() + frame_buffer_info.framebuffer_address, frame_buffer_info.framebuffer_size, true);
+				std::fill_n(rdp_device.rdram_dirty.begin() + rdp_device.frame_buffer_info.framebuffer_address, rdp_device.frame_buffer_info.framebuffer_size, true);
 			}
 
-			if (frame_buffer_info.depthbuffer_enabled && !rdram_dirty[frame_buffer_info.depthbuffer_address])
+			if (rdp_device.frame_buffer_info.depthbuffer_enabled && !rdp_device.rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
 			{
-				std::fill_n(rdram_dirty.begin() + frame_buffer_info.depthbuffer_address, frame_buffer_info.depthbuffer_size, true);
+				std::fill_n(rdp_device.rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
 			}
 		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
 		{
-			frame_buffer_info.depthbuffer_enabled = (w2 >> 5) & 1;
+			rdp_device.frame_buffer_info.depthbuffer_enabled = (w2 >> 5) & 1;
 		}
 		else if (RDP::Op(command) == RDP::Op::SetColorImage)
 		{
-			frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
-			frame_buffer_info.framebuffer_pixel_size = (w1 >> 19) & 0x3;
-			frame_buffer_info.framebuffer_width = (w1 & 0x3FF) + 1;
+			rdp_device.frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
+			rdp_device.frame_buffer_info.framebuffer_pixel_size = (w1 >> 19) & 0x3;
+			rdp_device.frame_buffer_info.framebuffer_width = (w1 & 0x3FF) + 1;
 			calculate_buffer_size();
 		}
 		else if (RDP::Op(command) == RDP::Op::SetMaskImage)
 		{
-			frame_buffer_info.depthbuffer_address = (w2 & 0x00FFFFFF) >> 3;
+			rdp_device.frame_buffer_info.depthbuffer_address = (w2 & 0x00FFFFFF) >> 3;
 		}
 		else if (RDP::Op(command) == RDP::Op::SetScissor)
 		{
@@ -594,29 +599,29 @@ uint64_t rdp_process_commands()
 			uint32_t lower_right_y = (w2 & 0xFFF) >> 2;
 			if (lower_right_x > upper_left_x && lower_right_y > upper_left_y)
 			{
-				region = (lower_right_x - upper_left_x) * (lower_right_y - upper_left_y);
+				rdp_device.region = (lower_right_x - upper_left_x) * (lower_right_y - upper_left_y);
 			}
 			else
 			{
-				region = 0;
+				rdp_device.region = 0;
 			}
 
-			frame_buffer_info.framebuffer_height = lower_right_y;
+			rdp_device.frame_buffer_info.framebuffer_height = lower_right_y;
 			calculate_buffer_size();
 		}
 		else if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
-			sync_signal = processor->signal_timeline();
-			interrupt_timer = region;
+			rdp_device.sync_signal = processor->signal_timeline();
+			interrupt_timer = rdp_device.region;
 			if (interrupt_timer == 0)
 				interrupt_timer = 5000;
 		}
 
-		cmd_cur += cmd_length;
+		rdp_device.cmd_cur += cmd_length;
 	}
 
-	cmd_ptr = 0;
-	cmd_cur = 0;
+	rdp_device.cmd_ptr = 0;
+	rdp_device.cmd_cur = 0;
 	*gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
 
 	return interrupt_timer;
