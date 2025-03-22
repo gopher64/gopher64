@@ -81,7 +81,7 @@ pub fn create_savestate(device: &device::Device) {
             &postcard::to_stdvec(&device.ui.storage.saves).unwrap(),
             "saves",
         ),
-        (&postcard::to_stdvec(&rdp_state).unwrap(), "rdp_state"),
+        (&rdp_state, "rdp_state"),
     ];
     let compressed_file = ui::storage::compress_file(data);
     std::fs::write(
@@ -96,7 +96,7 @@ pub fn load_savestate(device: &mut device::Device) {
     if savestate.is_ok() {
         let device_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "device");
         let save_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "saves");
-        let rdp_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "rdp_state");
+        let rdp_state = ui::storage::decompress_file(savestate.as_ref().unwrap(), "rdp_state");
         if let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes) {
             device.ui.storage.saves = postcard::from_bytes(&save_bytes).unwrap();
 
@@ -191,7 +191,6 @@ pub fn load_savestate(device: &mut device::Device) {
 
             ui::audio::close(&mut device.ui);
             ui::audio::init(&mut device.ui, device.ai.freq);
-            let rdp_state: Vec<u8> = postcard::from_bytes(&rdp_bytes).unwrap();
             ui::video::load_state(device, rdp_state.as_ptr());
         } else {
             println!("Failed to load savestate");
