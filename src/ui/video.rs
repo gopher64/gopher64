@@ -78,11 +78,15 @@ pub fn check_framebuffers(address: u32) {
     unsafe { rdp_check_framebuffers(address) }
 }
 
-pub fn save_state() {
-    unsafe { rdp_save_state() }
+pub fn state_size() -> u64 {
+    unsafe { rdp_state_size() }
 }
 
-pub fn load_state(device: &mut device::Device) {
+pub fn save_state(rdp_state: *mut u8) {
+    unsafe { rdp_save_state(rdp_state) }
+}
+
+pub fn load_state(device: &mut device::Device, rdp_state: *mut u8) {
     let gfx_info = GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
         DMEM: device.rsp.mem.as_mut_ptr(),
@@ -99,6 +103,7 @@ pub fn load_state(device: &mut device::Device) {
         crt: device.ui.config.video.crt,
     };
     unsafe {
+        rdp_load_state(rdp_state);
         rdp_new_processor(gfx_info);
     }
 }

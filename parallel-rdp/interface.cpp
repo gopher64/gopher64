@@ -217,7 +217,6 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 
 void rdp_new_processor(GFX_INFO _gfx_info)
 {
-	memset(&rdp_device.frame_buffer_info, 0, sizeof(FrameBufferInfo));
 	sync_signal = 0;
 	rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
 
@@ -476,9 +475,20 @@ void rdp_check_framebuffers(uint32_t address)
 	}
 }
 
-void rdp_save_state()
+uint64_t rdp_state_size()
+{
+	return sizeof(RDP_DEVICE);
+}
+
+void rdp_save_state(uint8_t *state)
 {
 	processor->wait_for_timeline(processor->signal_timeline());
+	memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
+}
+
+void rdp_load_state(uint8_t *state)
+{
+	memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 
 void calculate_buffer_size()
