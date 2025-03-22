@@ -70,9 +70,7 @@ where
 }
 
 pub fn create_savestate(device: &device::Device) {
-    let rdp_state_size = ui::video::state_size();
-
-    let mut rdp_state: Vec<u8> = vec![0; rdp_state_size as usize];
+    let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
     ui::video::save_state(rdp_state.as_mut_ptr());
 
     let data: &[(&[u8], &str)] = &[

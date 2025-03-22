@@ -78,7 +78,7 @@ pub fn check_framebuffers(address: u32) {
     unsafe { rdp_check_framebuffers(address) }
 }
 
-pub fn state_size() -> u64 {
+pub fn state_size() -> usize {
     unsafe { rdp_state_size() }
 }
 
