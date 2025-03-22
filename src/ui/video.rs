@@ -105,6 +105,9 @@ pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
     unsafe {
         rdp_load_state(rdp_state);
         rdp_new_processor(gfx_info);
+        for reg in 0..device::vi::VI_REGS_COUNT {
+            rdp_set_vi_register(reg, device.vi.regs[reg as usize])
+        }
     }
 }
 
