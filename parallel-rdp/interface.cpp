@@ -486,7 +486,7 @@ void rdp_save_state(uint8_t *state)
 	memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
 
-void rdp_load_state(uint8_t *state)
+void rdp_load_state(const uint8_t *state)
 {
 	memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }

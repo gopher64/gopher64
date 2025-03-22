@@ -71,8 +71,9 @@ where
 
 pub fn create_savestate(device: &device::Device) {
     let rdp_state_size = ui::video::state_size();
-    let rdp_state: Vec<u8> = vec![0; rdp_state_size as usize];
-    ui::video::save_state(rdp_state.as_ptr() as *mut u8);
+
+    let mut rdp_state: Vec<u8> = vec![0; rdp_state_size as usize];
+    ui::video::save_state(rdp_state.as_mut_ptr());
 
     let data: &[(&[u8], &str)] = &[
         (&postcard::to_stdvec(device).unwrap(), "device"),
@@ -190,7 +191,8 @@ pub fn load_savestate(device: &mut device::Device) {
 
             ui::audio::close(&mut device.ui);
             ui::audio::init(&mut device.ui, device.ai.freq);
-            ui::video::load_state(device, rdp_bytes.as_ptr() as *mut u8);
+            let rdp_state: Vec<u8> = postcard::from_bytes(&rdp_bytes).unwrap();
+            ui::video::load_state(device, rdp_state.as_ptr());
         } else {
             println!("Failed to load savestate");
         }

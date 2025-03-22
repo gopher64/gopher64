@@ -86,7 +86,7 @@ pub fn save_state(rdp_state: *mut u8) {
     unsafe { rdp_save_state(rdp_state) }
 }
 
-pub fn load_state(device: &mut device::Device, rdp_state: *mut u8) {
+pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
     let gfx_info = GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
         DMEM: device.rsp.mem.as_mut_ptr(),

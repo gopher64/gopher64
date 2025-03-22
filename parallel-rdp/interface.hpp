@@ -44,7 +44,7 @@ extern "C"
 	void rdp_check_framebuffers(uint32_t address);
 	uint64_t rdp_state_size();
 	void rdp_save_state(uint8_t *state);
-	void rdp_load_state(uint8_t *state);
+	void rdp_load_state(const uint8_t *state);
 
 #ifdef __cplusplus
 }
