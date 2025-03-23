@@ -140,7 +140,10 @@ pub fn process_rdp_list() -> u64 {
     unsafe { rdp_process_commands() }
 }
 
-pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer, font: &rusttype::Font) {
+pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer) {
+    let font =
+        rusttype::Font::try_from_bytes(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
+
     let text_size = 32;
     let scale = rusttype::Scale::uniform(text_size as f32);
     let v_metrics = font.v_metrics(scale);

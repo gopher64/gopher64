@@ -482,8 +482,6 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     if !unsafe { sdl3_sys::video::SDL_ShowWindow(window) } {
         panic!("Could not show window")
     }
-    let font =
-        rusttype::Font::try_from_bytes(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
 
     let key_labels: [(&str, usize); PROFILE_SIZE] = [
         ("A", A_BUTTON),
@@ -544,11 +542,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         let mut event: sdl3_sys::events::SDL_Event = Default::default();
         while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {} // clear events
 
-        ui::video::draw_text(
-            format!("Select binding for: {key}").as_str(),
-            renderer,
-            &font,
-        );
+        ui::video::draw_text(format!("Select binding for: {key}").as_str(), renderer);
 
         let mut key_set = false;
         while !key_set {
