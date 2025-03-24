@@ -334,7 +334,7 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             protected: None,
                             port: None,
                             features: Some(features),
-                            buffer_target: Some(2),
+                            buffer_target: None,
                         }),
                     };
                     let (mut socket, _response) =
