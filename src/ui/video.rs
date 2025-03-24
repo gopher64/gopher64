@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::{device, ui};
+use ab_glyph::{Font, ScaleFont};
 
 pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
@@ -140,15 +141,11 @@ pub fn process_rdp_list() -> u64 {
     unsafe { rdp_process_commands() }
 }
 
-pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer) {
-    let font =
-        rusttype::Font::try_from_bytes(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
-
-    let text_size = 32;
-    let scale = rusttype::Scale::uniform(text_size as f32);
-    let v_metrics = font.v_metrics(scale);
-    let offset = rusttype::point(10.0, 10.0 + v_metrics.ascent);
-
+pub fn draw_text(
+    text: &str,
+    renderer: *mut sdl3_sys::render::SDL_Renderer,
+    font: &ab_glyph::FontRef,
+) {
     // Clear the canvas
     unsafe {
         sdl3_sys::render::SDL_SetRenderDrawColor(
@@ -161,12 +158,20 @@ pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer) {
         sdl3_sys::render::SDL_RenderClear(renderer);
     };
 
-    for glyph in font.layout(text, scale, offset) {
-        if let Some(bb) = glyph.pixel_bounding_box() {
-            glyph.draw(|x, y, v| {
-                let x = x as i32 + bb.min.x;
-                let y = y as i32 + bb.min.y + (240 - text_size);
-                if v > 0.5 {
+    let text_size = 40.0;
+    let (mut w, mut h) = (0, 0);
+    unsafe { sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h) };
+    let x_start = 20.0;
+    let y_start = (h / 2) as f32;
+
+    let mut x_offset = 0.0;
+    for c in text.chars() {
+        let q_glyph_id = font.glyph_id(c);
+        let q_glyph = q_glyph_id.with_scale(text_size);
+
+        if let Some(q) = font.outline_glyph(q_glyph) {
+            q.draw(|x, y, c| {
+                if c > 0.5 {
                     unsafe {
                         sdl3_sys::render::SDL_SetRenderDrawColor(
                             renderer,
@@ -175,11 +180,17 @@ pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer) {
                             255,
                             sdl3_sys::pixels::SDL_ALPHA_OPAQUE,
                         );
-                        sdl3_sys::render::SDL_RenderPoint(renderer, x as f32, y as f32);
+                        sdl3_sys::render::SDL_RenderPoint(
+                            renderer,
+                            x_start + x_offset + x as f32 - q.px_bounds().width()
+                                + q.px_bounds().max.x,
+                            y_start + y as f32 - q.px_bounds().height() + q.px_bounds().max.y,
+                        );
                     };
                 }
             });
         }
+        x_offset += font.as_scaled(text_size).h_advance(q_glyph_id);
     }
 
     // Present the canvas

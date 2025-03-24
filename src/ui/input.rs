@@ -538,11 +538,19 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         id: 0,
         axis: 0,
     };
+
+    let font =
+        ab_glyph::FontRef::try_from_slice(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
+
     for (key, value) in key_labels.iter() {
         let mut event: sdl3_sys::events::SDL_Event = Default::default();
         while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {} // clear events
 
-        ui::video::draw_text(format!("Select binding for: {key}").as_str(), renderer);
+        ui::video::draw_text(
+            format!("Select binding for: {key}").as_str(),
+            renderer,
+            &font,
+        );
 
         let mut key_set = false;
         while !key_set {
