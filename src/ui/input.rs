@@ -539,8 +539,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         axis: 0,
     };
 
-    let roboto_regular = include_bytes!("../../data/Roboto-Regular.ttf") as &[u8];
-    let font = fontdue::Font::from_bytes(roboto_regular, fontdue::FontSettings::default()).unwrap();
+    let font =
+        ab_glyph::FontRef::try_from_slice(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
 
     for (key, value) in key_labels.iter() {
         let mut event: sdl3_sys::events::SDL_Event = Default::default();

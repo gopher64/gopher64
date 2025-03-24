@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::{device, ui};
+use ab_glyph::{Font, ScaleFont};
 
 pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
@@ -140,7 +141,11 @@ pub fn process_rdp_list() -> u64 {
     unsafe { rdp_process_commands() }
 }
 
-pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer, font: &fontdue::Font) {
+pub fn draw_text(
+    text: &str,
+    renderer: *mut sdl3_sys::render::SDL_Renderer,
+    font: &ab_glyph::FontRef,
+) {
     // Clear the canvas
     unsafe {
         sdl3_sys::render::SDL_SetRenderDrawColor(
@@ -153,20 +158,20 @@ pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer, font
         sdl3_sys::render::SDL_RenderClear(renderer);
     };
 
-    let text_size = 32.0;
+    let text_size = 40.0;
     let (mut w, mut h) = (0, 0);
     unsafe { sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h) };
-    let x_start = 120.0;
+    let x_start = 20.0;
     let y_start = (h / 2) as f32;
 
     let mut x_offset = 0.0;
-
     for c in text.chars() {
-        let (metrics, bitmap) = font.rasterize(c, text_size);
-        for y in 0..metrics.height {
-            for x in 0..metrics.width {
-                let char_s = bitmap[x + y * metrics.width];
-                if char_s > 128 {
+        let q_glyph_id = font.glyph_id(c);
+        let q_glyph = q_glyph_id.with_scale(text_size);
+
+        if let Some(q) = font.outline_glyph(q_glyph) {
+            q.draw(|x, y, c| {
+                if c > 0.5 {
                     unsafe {
                         sdl3_sys::render::SDL_SetRenderDrawColor(
                             renderer,
@@ -177,14 +182,15 @@ pub fn draw_text(text: &str, renderer: *mut sdl3_sys::render::SDL_Renderer, font
                         );
                         sdl3_sys::render::SDL_RenderPoint(
                             renderer,
-                            x_start + x as f32 + x_offset + metrics.xmin as f32,
-                            y_start + y as f32 - metrics.height as f32 - metrics.ymin as f32,
+                            x_start + x_offset + x as f32 - q.px_bounds().width()
+                                + q.px_bounds().max.x,
+                            y_start + y as f32 - q.px_bounds().height() + q.px_bounds().max.y,
                         );
                     };
                 }
-            }
+            });
         }
-        x_offset += metrics.advance_width as f32;
+        x_offset += font.as_scaled(text_size).h_advance(q_glyph_id);
     }
 
     // Present the canvas
