@@ -184,12 +184,9 @@ fn set_cic(device: &mut device::Device) {
             device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] = 1;
             device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 0;
         }
-        "093581BF974DE53755A97C65AD366A5BAB48E9F02B80320BA5BA99B785C3D8B7" => {
-            device.cart.cic_seed = 0x3F; // Libdragon
-        }
         _ => {
             device.cart.cic_seed = 0x3F; // CicNus6102
-            println!("unknown IPL3 {}", hash)
+            //println!("unknown IPL3 {}", hash)
         }
     }
 }
