@@ -537,6 +537,22 @@ void calculate_buffer_size()
 	rdp_device.frame_buffer_info.depthbuffer_size = (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 2) >> 3;
 }
 
+bool uses_texture(RDP::Op command)
+{
+	switch (command)
+	{
+	case RDP::Op::TextureTriangle:
+	case RDP::Op::TextureZBufferTriangle:
+	case RDP::Op::ShadeTextureTriangle:
+	case RDP::Op::ShadeTextureZBufferTriangle:
+	case RDP::Op::TextureRectangle:
+	case RDP::Op::TextureRectangleFlip:
+		return true;
+	default:
+		return false;
+	}
+}
+
 uint64_t rdp_process_commands()
 {
 	uint64_t interrupt_timer = 0;
@@ -608,7 +624,7 @@ uint64_t rdp_process_commands()
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.framebuffer_address, rdp_device.frame_buffer_info.framebuffer_size, true);
 			}
 
-			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
+			if (uses_texture(RDP::Op(command)) && !rdram_dirty[rdp_device.frame_buffer_info.texture_address])
 			{
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, rdp_device.frame_buffer_info.texture_size, true);
 			}
