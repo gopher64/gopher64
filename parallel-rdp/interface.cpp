@@ -657,6 +657,7 @@ uint64_t rdp_process_commands()
 
 			rdp_device.frame_buffer_info.framebuffer_height = lower_right_y;
 			calculate_buffer_size();
+			calculate_texture_size();
 		}
 		else if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
