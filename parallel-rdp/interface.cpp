@@ -612,13 +612,20 @@ uint64_t rdp_process_commands()
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
 			}
 		}
-		else if (RDP::Op(command) == RDP::Op::LoadTLut || RDP::Op(command) == RDP::Op::LoadBlock || RDP::Op(command) == RDP::Op::LoadTile)
+		else if (RDP::Op(command) == RDP::Op::LoadTLut || RDP::Op(command) == RDP::Op::LoadTile)
 		{
 			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
 			{
 				uint32_t lower_right_t = (w2 & 0xFFF) >> 2;
 				calculate_texture_size(lower_right_t);
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, rdp_device.frame_buffer_info.texture_size, true);
+			}
+		}
+		else if (RDP::Op(command) == RDP::Op::LoadBlock)
+		{
+			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
+			{
+				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, 2048, true);
 			}
 		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
