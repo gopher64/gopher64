@@ -553,6 +553,20 @@ bool uses_texture(RDP::Op command)
 	}
 }
 
+bool uses_zbuffer(RDP::Op command)
+{
+	switch (command)
+	{
+	case RDP::Op::FillZBufferTriangle:
+	case RDP::Op::TextureZBufferTriangle:
+	case RDP::Op::ShadeZBufferTriangle:
+	case RDP::Op::ShadeTextureZBufferTriangle:
+		return true;
+	default:
+		return false;
+	}
+}
+
 uint64_t rdp_process_commands()
 {
 	uint64_t interrupt_timer = 0;
@@ -629,7 +643,7 @@ uint64_t rdp_process_commands()
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, rdp_device.frame_buffer_info.texture_size, true);
 			}
 
-			if (rdp_device.frame_buffer_info.depthbuffer_enabled && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
+			if (uses_zbuffer(RDP::Op(command)) && rdp_device.frame_buffer_info.depthbuffer_enabled && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
 			{
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
 			}
