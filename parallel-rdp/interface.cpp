@@ -496,22 +496,21 @@ void rdp_load_state(const uint8_t *state)
 	memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 
-void calculate_texture_size()
+void calculate_texture_size(uint32_t height)
 {
-	// Using the framebuffer height for this is not very precise, but it accounts for the "worst case" scenario.
 	switch (rdp_device.frame_buffer_info.texture_pixel_size)
 	{
 	case 0:
-		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * rdp_device.frame_buffer_info.framebuffer_height / 2) >> 3;
+		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * height / 2) >> 3;
 		break;
 	case 1:
-		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * rdp_device.frame_buffer_info.framebuffer_height) >> 3;
+		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * height) >> 3;
 		break;
 	case 2:
-		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * rdp_device.frame_buffer_info.framebuffer_height * 2) >> 3;
+		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * height * 2) >> 3;
 		break;
 	case 3:
-		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * rdp_device.frame_buffer_info.framebuffer_height * 4) >> 3;
+		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * height * 4) >> 3;
 		break;
 	}
 }
@@ -535,36 +534,6 @@ void calculate_buffer_size()
 	}
 
 	rdp_device.frame_buffer_info.depthbuffer_size = (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 2) >> 3;
-}
-
-bool uses_texture(RDP::Op command)
-{
-	switch (command)
-	{
-	case RDP::Op::TextureTriangle:
-	case RDP::Op::TextureZBufferTriangle:
-	case RDP::Op::ShadeTextureTriangle:
-	case RDP::Op::ShadeTextureZBufferTriangle:
-	case RDP::Op::TextureRectangle:
-	case RDP::Op::TextureRectangleFlip:
-		return true;
-	default:
-		return false;
-	}
-}
-
-bool uses_zbuffer(RDP::Op command)
-{
-	switch (command)
-	{
-	case RDP::Op::FillZBufferTriangle:
-	case RDP::Op::TextureZBufferTriangle:
-	case RDP::Op::ShadeZBufferTriangle:
-	case RDP::Op::ShadeTextureZBufferTriangle:
-		return true;
-	default:
-		return false;
-	}
 }
 
 uint64_t rdp_process_commands()
@@ -638,14 +607,18 @@ uint64_t rdp_process_commands()
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.framebuffer_address, rdp_device.frame_buffer_info.framebuffer_size, true);
 			}
 
-			if (uses_texture(RDP::Op(command)) && !rdram_dirty[rdp_device.frame_buffer_info.texture_address])
-			{
-				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, rdp_device.frame_buffer_info.texture_size, true);
-			}
-
-			if (uses_zbuffer(RDP::Op(command)) && rdp_device.frame_buffer_info.depthbuffer_enabled && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
+			if (rdp_device.frame_buffer_info.depthbuffer_enabled && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
 			{
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
+			}
+		}
+		else if (RDP::Op(command) == RDP::Op::LoadTLut || RDP::Op(command) == RDP::Op::LoadBlock || RDP::Op(command) == RDP::Op::LoadTile)
+		{
+			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
+			{
+				uint32_t lower_right_t = (w2 & 0xFFF) >> 2;
+				calculate_texture_size(lower_right_t);
+				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, rdp_device.frame_buffer_info.texture_size, true);
 			}
 		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
@@ -668,7 +641,6 @@ uint64_t rdp_process_commands()
 			rdp_device.frame_buffer_info.texture_address = (w2 & 0x00FFFFFF) >> 3;
 			rdp_device.frame_buffer_info.texture_pixel_size = (w1 >> 19) & 0x3;
 			rdp_device.frame_buffer_info.texture_width = (w1 & 0x3FF) + 1;
-			calculate_texture_size();
 		}
 		else if (RDP::Op(command) == RDP::Op::SetScissor)
 		{
@@ -687,7 +659,6 @@ uint64_t rdp_process_commands()
 
 			rdp_device.frame_buffer_info.framebuffer_height = lower_right_y;
 			calculate_buffer_size();
-			calculate_texture_size();
 		}
 		else if (RDP::Op(command) == RDP::Op::SyncFull)
 		{
