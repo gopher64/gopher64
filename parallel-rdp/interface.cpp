@@ -629,7 +629,7 @@ uint64_t rdp_process_commands()
 		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
 		{
-			rdp_device.frame_buffer_info.depthbuffer_enabled = (w2 >> 5) & 1;
+			rdp_device.frame_buffer_info.depthbuffer_enabled = (w2 >> 4) & 3;
 		}
 		else if (RDP::Op(command) == RDP::Op::SetColorImage)
 		{
