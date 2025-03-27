@@ -56,10 +56,14 @@ typedef struct
 {
 	uint32_t depthbuffer_address;
 	uint32_t framebuffer_address;
+	uint32_t texture_address;
 	uint32_t framebuffer_pixel_size;
 	uint32_t framebuffer_width;
+	uint32_t texture_pixel_size;
+	uint32_t texture_width;
 	uint32_t framebuffer_height;
 	uint32_t framebuffer_size;
+	uint32_t texture_size;
 	uint32_t depthbuffer_size;
 	uint8_t depthbuffer_enabled;
 } FrameBufferInfo;
@@ -492,6 +496,26 @@ void rdp_load_state(const uint8_t *state)
 	memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 
+void calculate_texture_size()
+{
+	// Using the framebuffer height for this is not very precise, but it accounts for the "worst case" scenario.
+	switch (rdp_device.frame_buffer_info.texture_pixel_size)
+	{
+	case 0:
+		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * rdp_device.frame_buffer_info.framebuffer_height / 2) >> 3;
+		break;
+	case 1:
+		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * rdp_device.frame_buffer_info.framebuffer_height) >> 3;
+		break;
+	case 2:
+		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * rdp_device.frame_buffer_info.framebuffer_height * 2) >> 3;
+		break;
+	case 3:
+		rdp_device.frame_buffer_info.texture_size = (rdp_device.frame_buffer_info.texture_width * rdp_device.frame_buffer_info.framebuffer_height * 4) >> 3;
+		break;
+	}
+}
+
 void calculate_buffer_size()
 {
 	switch (rdp_device.frame_buffer_info.framebuffer_pixel_size)
@@ -509,6 +533,7 @@ void calculate_buffer_size()
 		rdp_device.frame_buffer_info.framebuffer_size = (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 4) >> 3;
 		break;
 	}
+
 	rdp_device.frame_buffer_info.depthbuffer_size = (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 2) >> 3;
 }
 
@@ -583,6 +608,11 @@ uint64_t rdp_process_commands()
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.framebuffer_address, rdp_device.frame_buffer_info.framebuffer_size, true);
 			}
 
+			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
+			{
+				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, rdp_device.frame_buffer_info.texture_size, true);
+			}
+
 			if (rdp_device.frame_buffer_info.depthbuffer_enabled && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
 			{
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
@@ -602,6 +632,13 @@ uint64_t rdp_process_commands()
 		else if (RDP::Op(command) == RDP::Op::SetMaskImage)
 		{
 			rdp_device.frame_buffer_info.depthbuffer_address = (w2 & 0x00FFFFFF) >> 3;
+		}
+		else if (RDP::Op(command) == RDP::Op::SetTextureImage)
+		{
+			rdp_device.frame_buffer_info.texture_address = (w2 & 0x00FFFFFF) >> 3;
+			rdp_device.frame_buffer_info.texture_pixel_size = (w1 >> 19) & 0x3;
+			rdp_device.frame_buffer_info.texture_width = (w1 & 0x3FF) + 1;
+			calculate_texture_size();
 		}
 		else if (RDP::Op(command) == RDP::Op::SetScissor)
 		{
