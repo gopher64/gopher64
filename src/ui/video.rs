@@ -42,7 +42,13 @@ pub fn init(device: &mut device::Device) {
     if !unsafe { sdl3_sys::video::SDL_ShowWindow(device.ui.video.window) } {
         panic!("Could not show window");
     }
-    unsafe { sdl3_sys::everything::SDL_HideCursor() };
+    unsafe {
+        sdl3_sys::everything::SDL_HideCursor();
+        sdl3_sys::everything::SDL_SetHint(
+            sdl3_sys::everything::SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,
+            std::ffi::CString::new("1").unwrap().as_ptr(),
+        );
+    }
 
     let gfx_info = GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
