@@ -617,6 +617,15 @@ uint64_t rdp_process_commands()
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, texture_size(rdp_device.frame_buffer_info.texture_width * lower_right_t), true);
 			}
 		}
+		else if (RDP::Op(command) == RDP::Op::LoadBlock)
+		{
+			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
+			{
+				uint32_t lower_right_s = ((w2 >> 12) & 0xFFF) >> 2;
+				uint32_t upper_left_s = ((w1 >> 12) & 0xFFF) >> 2;
+				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address + texture_size(upper_left_s), texture_size(lower_right_s - upper_left_s), true);
+			}
+		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
 		{
 			rdp_device.frame_buffer_info.depthbuffer_enabled = (w2 >> 5) & 1;
