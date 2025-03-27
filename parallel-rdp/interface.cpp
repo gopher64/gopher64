@@ -63,7 +63,6 @@ typedef struct
 	uint32_t texture_width;
 	uint32_t framebuffer_height;
 	uint32_t framebuffer_size;
-	uint32_t texture_size;
 	uint32_t depthbuffer_size;
 	uint8_t depthbuffer_enabled;
 } FrameBufferInfo;
@@ -496,22 +495,20 @@ void rdp_load_state(const uint8_t *state)
 	memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 
-void calculate_texture_size(uint32_t area)
+uint32_t texture_size(uint32_t area)
 {
 	switch (rdp_device.frame_buffer_info.texture_pixel_size)
 	{
 	case 0:
-		rdp_device.frame_buffer_info.texture_size = (area / 2) >> 3;
-		break;
+		return (area / 2) >> 3;
 	case 1:
-		rdp_device.frame_buffer_info.texture_size = (area) >> 3;
-		break;
+		return (area) >> 3;
 	case 2:
-		rdp_device.frame_buffer_info.texture_size = (area * 2) >> 3;
-		break;
+		return (area * 2) >> 3;
 	case 3:
-		rdp_device.frame_buffer_info.texture_size = (area * 4) >> 3;
-		break;
+		return (area * 4) >> 3;
+	default:
+		return 0;
 	}
 }
 
@@ -617,8 +614,7 @@ uint64_t rdp_process_commands()
 			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
 			{
 				uint32_t lower_right_t = (w2 & 0xFFF) >> 2;
-				calculate_texture_size(rdp_device.frame_buffer_info.texture_width * lower_right_t);
-				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, rdp_device.frame_buffer_info.texture_size, true);
+				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, texture_size(rdp_device.frame_buffer_info.texture_width * lower_right_t), true);
 			}
 		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
