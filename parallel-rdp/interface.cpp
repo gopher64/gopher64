@@ -57,6 +57,7 @@ typedef struct
 	uint32_t depthbuffer_address;
 	uint32_t framebuffer_address;
 	uint32_t texture_address;
+	uint32_t texture_offset;
 	uint32_t framebuffer_pixel_size;
 	uint32_t framebuffer_width;
 	uint32_t texture_pixel_size;
@@ -496,21 +497,25 @@ void rdp_load_state(const uint8_t *state)
 	memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 
-void calculate_texture_size(uint32_t area)
+void calculate_texture_size(uint32_t area, uint32_t offset)
 {
 	switch (rdp_device.frame_buffer_info.texture_pixel_size)
 	{
 	case 0:
 		rdp_device.frame_buffer_info.texture_size = (area / 2) >> 3;
+		rdp_device.frame_buffer_info.texture_offset = offset / 2;
 		break;
 	case 1:
 		rdp_device.frame_buffer_info.texture_size = (area) >> 3;
+		rdp_device.frame_buffer_info.texture_offset = offset;
 		break;
 	case 2:
 		rdp_device.frame_buffer_info.texture_size = (area * 2) >> 3;
+		rdp_device.frame_buffer_info.texture_offset = offset * 2;
 		break;
 	case 3:
 		rdp_device.frame_buffer_info.texture_size = (area * 4) >> 3;
+		rdp_device.frame_buffer_info.texture_offset = offset * 4;
 		break;
 	}
 }
@@ -617,7 +622,7 @@ uint64_t rdp_process_commands()
 			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
 			{
 				uint32_t lower_right_t = (w2 & 0xFFF) >> 2;
-				calculate_texture_size(rdp_device.frame_buffer_info.texture_width * lower_right_t);
+				calculate_texture_size(rdp_device.frame_buffer_info.texture_width * lower_right_t, 0);
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, rdp_device.frame_buffer_info.texture_size, true);
 			}
 		}
@@ -625,8 +630,10 @@ uint64_t rdp_process_commands()
 		{
 			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
 			{
-				calculate_texture_size(2048);
-				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, rdp_device.frame_buffer_info.texture_size, true);
+				uint32_t upper_left_s = ((w1 >> 12) & 0xFFF) >> 2;
+				uint32_t upper_left_t = (w1 & 0xFFF) >> 2;
+				calculate_texture_size(2048, upper_left_s * upper_left_t);
+				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address + rdp_device.frame_buffer_info.texture_offset, rdp_device.frame_buffer_info.texture_size, true);
 			}
 		}
 		else if (RDP::Op(command) == RDP::Op::SetOtherModes)
