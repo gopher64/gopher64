@@ -603,7 +603,7 @@ uint64_t rdp_process_commands()
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.framebuffer_address, rdp_device.frame_buffer_info.framebuffer_size, true);
 			}
 
-			if ((command & 1) && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
+			if ((command & 0x9 /* zbuffer triangle */) == 0x9 && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
 			{
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
 			}
