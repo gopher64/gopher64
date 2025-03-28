@@ -593,31 +593,37 @@ uint64_t rdp_process_commands()
 		if (command >= 8)
 			processor->enqueue_command(cmd_length * 2, &rdp_device.cmd_data[2 * rdp_device.cmd_cur]);
 
-		if ((RDP::Op(command) >= RDP::Op::FillTriangle && RDP::Op(command) <= RDP::Op::ShadeTextureZBufferTriangle) ||
-			RDP::Op(command) == RDP::Op::TextureRectangle ||
-			RDP::Op(command) == RDP::Op::TextureRectangleFlip ||
-			RDP::Op(command) == RDP::Op::FillRectangle)
+		switch (RDP::Op(command))
 		{
+		case RDP::Op::FillZBufferTriangle:
+		case RDP::Op::TextureZBufferTriangle:
+		case RDP::Op::ShadeZBufferTriangle:
+		case RDP::Op::ShadeTextureZBufferTriangle:
+			if (!rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
+			{
+				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
+			}
+		case RDP::Op::FillTriangle:
+		case RDP::Op::TextureTriangle:
+		case RDP::Op::ShadeTriangle:
+		case RDP::Op::ShadeTextureTriangle:
+		case RDP::Op::TextureRectangle:
+		case RDP::Op::TextureRectangleFlip:
+		case RDP::Op::FillRectangle:
 			if (!rdram_dirty[rdp_device.frame_buffer_info.framebuffer_address])
 			{
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.framebuffer_address, rdp_device.frame_buffer_info.framebuffer_size, true);
 			}
-
-			if ((command & 0x9 /* zbuffer triangle */) == 0x9 && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
-			{
-				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, rdp_device.frame_buffer_info.depthbuffer_size, true);
-			}
-		}
-		else if (RDP::Op(command) == RDP::Op::LoadTLut || RDP::Op(command) == RDP::Op::LoadTile)
-		{
+			break;
+		case RDP::Op::LoadTLut:
+		case RDP::Op::LoadTile:
 			if (!rdram_dirty[rdp_device.frame_buffer_info.texture_address])
 			{
 				uint32_t lower_right_t = (w2 & 0xFFF) >> 2;
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.texture_address, texture_size(rdp_device.frame_buffer_info.texture_width * lower_right_t), true);
 			}
-		}
-		else if (RDP::Op(command) == RDP::Op::LoadBlock)
-		{
+			break;
+		case RDP::Op::LoadBlock:
 			uint32_t upper_left_s = ((w1 >> 12) & 0xFFF) >> 2;
 			uint32_t offset_address = rdp_device.frame_buffer_info.texture_address + texture_size(upper_left_s);
 			if (!rdram_dirty[offset_address])
@@ -625,26 +631,22 @@ uint64_t rdp_process_commands()
 				uint32_t lower_right_s = ((w2 >> 12) & 0xFFF) >> 2;
 				std::fill_n(rdram_dirty.begin() + offset_address, texture_size(lower_right_s - upper_left_s), true);
 			}
-		}
-		else if (RDP::Op(command) == RDP::Op::SetColorImage)
-		{
+			break;
+		case RDP::Op::SetColorImage:
 			rdp_device.frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
 			rdp_device.frame_buffer_info.framebuffer_pixel_size = (w1 >> 19) & 0x3;
 			rdp_device.frame_buffer_info.framebuffer_width = (w1 & 0x3FF) + 1;
 			calculate_buffer_size();
-		}
-		else if (RDP::Op(command) == RDP::Op::SetMaskImage)
-		{
+			break;
+		case RDP::Op::SetMaskImage:
 			rdp_device.frame_buffer_info.depthbuffer_address = (w2 & 0x00FFFFFF) >> 3;
-		}
-		else if (RDP::Op(command) == RDP::Op::SetTextureImage)
-		{
+			break;
+		case RDP::Op::SetTextureImage:
 			rdp_device.frame_buffer_info.texture_address = (w2 & 0x00FFFFFF) >> 3;
 			rdp_device.frame_buffer_info.texture_pixel_size = (w1 >> 19) & 0x3;
 			rdp_device.frame_buffer_info.texture_width = (w1 & 0x3FF) + 1;
-		}
-		else if (RDP::Op(command) == RDP::Op::SetScissor)
-		{
+			break;
+		case RDP::Op::SetScissor:
 			uint32_t upper_left_x = ((w1 >> 12) & 0xFFF) >> 2;
 			uint32_t upper_left_y = (w1 & 0xFFF) >> 2;
 			uint32_t lower_right_x = ((w2 >> 12) & 0xFFF) >> 2;
@@ -660,13 +662,13 @@ uint64_t rdp_process_commands()
 
 			rdp_device.frame_buffer_info.framebuffer_height = lower_right_y;
 			calculate_buffer_size();
-		}
-		else if (RDP::Op(command) == RDP::Op::SyncFull)
-		{
+			break;
+		case RDP::Op::SyncFull:
 			sync_signal = processor->signal_timeline();
 			interrupt_timer = rdp_device.region;
 			if (interrupt_timer == 0)
 				interrupt_timer = 5000;
+			break;
 		}
 
 		rdp_device.cmd_cur += cmd_length;
