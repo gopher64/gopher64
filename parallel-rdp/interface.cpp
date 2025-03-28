@@ -624,6 +624,7 @@ uint64_t rdp_process_commands()
 			}
 			break;
 		case RDP::Op::LoadBlock:
+		{
 			uint32_t upper_left_s = ((w1 >> 12) & 0xFFF) >> 2;
 			uint32_t offset_address = rdp_device.frame_buffer_info.texture_address + texture_size(upper_left_s);
 			if (!rdram_dirty[offset_address])
@@ -632,6 +633,7 @@ uint64_t rdp_process_commands()
 				std::fill_n(rdram_dirty.begin() + offset_address, texture_size(lower_right_s - upper_left_s), true);
 			}
 			break;
+		}
 		case RDP::Op::SetColorImage:
 			rdp_device.frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
 			rdp_device.frame_buffer_info.framebuffer_pixel_size = (w1 >> 19) & 0x3;
@@ -647,6 +649,7 @@ uint64_t rdp_process_commands()
 			rdp_device.frame_buffer_info.texture_width = (w1 & 0x3FF) + 1;
 			break;
 		case RDP::Op::SetScissor:
+		{
 			uint32_t upper_left_x = ((w1 >> 12) & 0xFFF) >> 2;
 			uint32_t upper_left_y = (w1 & 0xFFF) >> 2;
 			uint32_t lower_right_x = ((w2 >> 12) & 0xFFF) >> 2;
@@ -663,6 +666,7 @@ uint64_t rdp_process_commands()
 			rdp_device.frame_buffer_info.framebuffer_height = lower_right_y;
 			calculate_buffer_size();
 			break;
+		}
 		case RDP::Op::SyncFull:
 			sync_signal = processor->signal_timeline();
 			interrupt_timer = rdp_device.region;
