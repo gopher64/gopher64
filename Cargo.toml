@@ -9,7 +9,7 @@ rust-version = "1.85"
 [dependencies]
 dirs = "6.0"
 zip = "2.5"
-governor = "0.9"
+governor = "0.10"
 sevenz-rust = "0.6"
 chrono = "0.4"
 serde = { version = "1.0", features = ["derive"] }
