@@ -110,8 +110,8 @@ pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
         crt: device.ui.config.video.crt,
     };
     unsafe {
-        rdp_load_state(rdp_state);
         rdp_new_processor(gfx_info);
+        rdp_load_state(rdp_state);
         for reg in 0..device::vi::VI_REGS_COUNT {
             rdp_set_vi_register(reg, device.vi.regs[reg as usize])
         }

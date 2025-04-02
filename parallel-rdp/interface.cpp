@@ -221,6 +221,9 @@ void rdp_new_processor(GFX_INFO _gfx_info)
 
 	sync_signal = 0;
 	rdram_dirty.assign(gfx_info.RDRAM_SIZE / 8, false);
+	rdp_device.frame_buffer_info.framebuffer_address = rdram_dirty.size();
+	rdp_device.frame_buffer_info.depthbuffer_address = rdram_dirty.size();
+	rdp_device.frame_buffer_info.texture_address = rdram_dirty.size();
 
 	if (processor)
 	{
