@@ -63,7 +63,6 @@ typedef struct
 	uint32_t texture_width;
 	uint32_t framebuffer_height;
 	uint8_t depthbuffer_enabled;
-	uint32_t inclusive_range;
 } FrameBufferInfo;
 
 typedef struct
@@ -514,18 +513,16 @@ uint32_t texture_size(uint32_t area)
 
 uint32_t framebuffer_size()
 {
-	uint32_t width = rdp_device.frame_buffer_info.framebuffer_width + rdp_device.frame_buffer_info.inclusive_range;
-	uint32_t height = rdp_device.frame_buffer_info.framebuffer_height + rdp_device.frame_buffer_info.inclusive_range;
 	switch (rdp_device.frame_buffer_info.framebuffer_pixel_size)
 	{
 	case 0:
-		return (width * height / 2) >> 3;
+		return (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height / 2) >> 3;
 	case 1:
-		return (width * height) >> 3;
+		return (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) >> 3;
 	case 2:
-		return (width * height * 2) >> 3;
+		return (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 2) >> 3;
 	case 3:
-		return (width * height * 4) >> 3;
+		return (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 4) >> 3;
 	default:
 		printf("Invalid framebuffer pixel size: %u\n", rdp_device.frame_buffer_info.framebuffer_pixel_size);
 		return 0;
@@ -534,10 +531,7 @@ uint32_t framebuffer_size()
 
 uint32_t depthbuffer_size()
 {
-	uint32_t width = rdp_device.frame_buffer_info.framebuffer_width + rdp_device.frame_buffer_info.inclusive_range;
-	uint32_t height = rdp_device.frame_buffer_info.framebuffer_height + rdp_device.frame_buffer_info.inclusive_range;
-
-	return (width * height * 2) >> 3;
+	return (rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height * 2) >> 3;
 }
 
 uint64_t rdp_process_commands()
@@ -647,7 +641,6 @@ uint64_t rdp_process_commands()
 		}
 		case RDP::Op::SetOtherModes:
 			rdp_device.frame_buffer_info.depthbuffer_enabled = (w2 >> 4) & 0x3;
-			rdp_device.frame_buffer_info.inclusive_range = (w1 >> 21) & 0x1;
 			break;
 		case RDP::Op::SetColorImage:
 			rdp_device.frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
