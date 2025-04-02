@@ -62,7 +62,6 @@ typedef struct
 	uint32_t texture_pixel_size;
 	uint32_t texture_width;
 	uint32_t framebuffer_height;
-	uint8_t depthbuffer_enabled;
 } FrameBufferInfo;
 
 typedef struct
@@ -613,7 +612,7 @@ uint64_t rdp_process_commands()
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.framebuffer_address, framebuffer_size(), true);
 			}
 
-			if (rdp_device.frame_buffer_info.depthbuffer_enabled && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
+			if (rdp_device.frame_buffer_info.depthbuffer_address < rdram_dirty.size() && !rdram_dirty[rdp_device.frame_buffer_info.depthbuffer_address])
 			{
 				std::fill_n(rdram_dirty.begin() + rdp_device.frame_buffer_info.depthbuffer_address, depthbuffer_size(), true);
 			}
@@ -639,9 +638,6 @@ uint64_t rdp_process_commands()
 			}
 			break;
 		}
-		case RDP::Op::SetOtherModes:
-			rdp_device.frame_buffer_info.depthbuffer_enabled = (w2 >> 4) & 0x3;
-			break;
 		case RDP::Op::SetColorImage:
 			rdp_device.frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
 			rdp_device.frame_buffer_info.framebuffer_pixel_size = (w1 >> 19) & 0x3;
