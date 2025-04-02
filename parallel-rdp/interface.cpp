@@ -648,6 +648,7 @@ uint64_t rdp_process_commands()
 		case RDP::Op::SetOtherModes:
 			rdp_device.frame_buffer_info.depthbuffer_enabled = (w2 >> 4) & 0x3;
 			rdp_device.frame_buffer_info.inclusive_range = (w1 >> 21) & 0x1;
+			calculate_buffer_size();
 			break;
 		case RDP::Op::SetColorImage:
 			rdp_device.frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF) >> 3;
