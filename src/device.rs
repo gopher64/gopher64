@@ -146,12 +146,12 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
         }
     } else if file_path.extension().unwrap().eq_ignore_ascii_case("7z") {
         let mut archive =
-            sevenz_rust::SevenZReader::open(file_path, sevenz_rust::Password::empty()).unwrap();
+            sevenz_rust2::SevenZReader::open(file_path, sevenz_rust2::Password::empty()).unwrap();
 
         let mut found = false;
         archive
             .for_each_entries(
-                &mut |entry: &sevenz_rust::SevenZArchiveEntry, reader: &mut dyn std::io::Read| {
+                &mut |entry: &sevenz_rust2::SevenZArchiveEntry, reader: &mut dyn std::io::Read| {
                     let name = entry.name().to_ascii_lowercase();
                     if !found
                         && (name.ends_with("z64") || name.ends_with("n64") || name.ends_with("v64"))
