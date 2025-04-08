@@ -32,6 +32,7 @@ pub struct Controllers {
     pub rumble: bool,
     pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
     pub joystick: *mut sdl3_sys::joystick::SDL_Joystick,
+    pub disconnected: bool,
 }
 
 pub struct InputData {
@@ -931,6 +932,76 @@ pub fn init(ui: &mut ui::Ui) {
             }
         }
     }
+
+    unsafe {
+        if !sdl3_sys::everything::SDL_AddEventWatch(
+            Some(event_watch),
+            ui as *mut _ as *mut std::os::raw::c_void,
+        ) {
+            panic!("Could not add event watch");
+        }
+    }
+}
+
+unsafe extern "C" fn event_watch(
+    userdata: *mut std::os::raw::c_void,
+    event: *mut sdl3_sys::everything::SDL_Event,
+) -> bool {
+    let ui = unsafe { &mut *(userdata as *mut ui::Ui) };
+    let event_type = unsafe { (*event).r#type };
+    if event_type == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_REMOVED) {
+        println!("Gamepad removed");
+        let event_data = unsafe { (*event).gdevice };
+        for (i, controller) in ui.input.controllers.iter_mut().enumerate() {
+            if unsafe { sdl3_sys::everything::SDL_GetGamepadID(controller.game_controller) }
+                == event_data.which
+            {
+                println!("player {} disconnected", i);
+                controller.disconnected = true;
+                controller.game_controller = std::ptr::null_mut();
+            }
+        }
+    } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_REMOVED) {
+        println!("Joystick removed");
+        let event_data = unsafe { (*event).jdevice };
+        for (i, controller) in ui.input.controllers.iter_mut().enumerate() {
+            if unsafe { sdl3_sys::everything::SDL_GetJoystickID(controller.joystick) }
+                == event_data.which
+            {
+                println!("player {} disconnected", i);
+                controller.disconnected = true;
+                controller.joystick = std::ptr::null_mut();
+            }
+        }
+    } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_ADDED) {
+        println!("Gamepad added");
+        let event_data = unsafe { (*event).gdevice };
+        for (i, controller) in ui.input.controllers.iter_mut().enumerate() {
+            if controller.disconnected {
+                controller.game_controller =
+                    unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(event_data.which) };
+                if !controller.game_controller.is_null() {
+                    controller.disconnected = false;
+                    println!("player {} connected", i);
+                }
+            }
+        }
+    } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_ADDED) {
+        println!("Joystick added");
+        let event_data = unsafe { (*event).jdevice };
+        for (i, controller) in ui.input.controllers.iter_mut().enumerate() {
+            if controller.disconnected {
+                controller.joystick =
+                    unsafe { sdl3_sys::everything::SDL_OpenJoystick(event_data.which) };
+                if !controller.joystick.is_null() {
+                    controller.disconnected = false;
+                    println!("player {} connected", i);
+                }
+            }
+        }
+    }
+
+    true
 }
 
 pub fn close(ui: &mut ui::Ui) {
