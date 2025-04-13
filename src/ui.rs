@@ -21,8 +21,7 @@ pub struct Audio {
 }
 
 pub struct Input {
-    pub num_joysticks: i32,
-    pub joysticks: *mut sdl3_sys::joystick::SDL_JoystickID,
+    pub joysticks: Vec<sdl3_sys::joystick::SDL_JoystickID>,
     pub keyboard_state: *const bool,
     pub controllers: [input::Controllers; 4],
 }
@@ -54,7 +53,6 @@ impl Drop for Ui {
     fn drop(&mut self) {
         if self.with_sdl {
             unsafe {
-                sdl3_sys::stdinc::SDL_free(self.input.joysticks as *mut std::ffi::c_void);
                 sdl3_sys::init::SDL_Quit();
             }
         }
@@ -98,7 +96,7 @@ pub fn get_dirs() -> Dirs {
 }
 
 impl Ui {
-    fn construct_ui(num_joysticks: i32, joysticks: *mut u32, with_sdl: bool) -> Ui {
+    fn construct_ui(joysticks: Vec<u32>, with_sdl: bool) -> Ui {
         let dirs = get_dirs();
 
         Ui {
@@ -126,7 +124,6 @@ impl Ui {
                     },
                 ],
                 keyboard_state: std::ptr::null_mut(),
-                num_joysticks,
                 joysticks,
             },
             storage: Storage {
@@ -201,7 +198,7 @@ impl Ui {
     }
 
     pub fn default() -> Ui {
-        Self::construct_ui(0, std::ptr::null_mut(), false)
+        Self::construct_ui(vec![], false)
     }
 
     pub fn new() -> Ui {
@@ -211,6 +208,11 @@ impl Ui {
         if joysticks.is_null() {
             panic!("Could not get joystick list");
         }
-        Self::construct_ui(num_joysticks, joysticks, true)
+        let mut joystick_vec = vec![];
+        for i in 0..num_joysticks {
+            joystick_vec.push(unsafe { *joysticks.add(i as usize) });
+        }
+        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) }
+        Self::construct_ui(joystick_vec, true)
     }
 }
