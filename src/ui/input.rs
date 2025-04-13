@@ -859,14 +859,13 @@ pub fn init(ui: &mut ui::Ui) {
         panic!("Could not get keyboard state");
     }
 
-    let mut taken = [false; 4];
     for i in 0..4 {
         let controller_assignment = &ui.config.input.controller_assignment[i];
         if controller_assignment.is_some() && ui.config.input.controller_enabled[i] {
             let mut joystick_id = 0;
             let assigned_path = controller_assignment.as_ref().unwrap();
 
-            for (offset, joystick) in ui.input.joysticks.iter().enumerate() {
+            for joystick in ui.input.joysticks.iter() {
                 let path = unsafe {
                     std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
                         *joystick,
@@ -874,9 +873,11 @@ pub fn init(ui: &mut ui::Ui) {
                     .to_string_lossy()
                     .to_string()
                 };
-                if path == *assigned_path && !taken[offset] {
+                if path == *assigned_path
+                    && unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(*joystick) }.is_null()
+                    && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(*joystick) }.is_null()
+                {
                     joystick_id = *joystick;
-                    taken[offset] = true;
                     break;
                 }
             }
