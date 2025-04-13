@@ -61,11 +61,9 @@ fn get_input_profiles(config: &ui::config::Config) -> Vec<String> {
 pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
     let mut controllers: Vec<String> = vec![];
 
-    for offset in 0..game_ui.input.num_joysticks as isize {
+    for joystick in game_ui.input.joysticks.iter() {
         let name = unsafe {
-            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(
-                *(game_ui.input.joysticks.offset(offset)),
-            ))
+            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick))
         };
         controllers.push(name.to_string_lossy().to_string());
     }
@@ -76,13 +74,11 @@ pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
 pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
     let mut controller_paths: Vec<String> = vec![];
 
-    for offset in 0..game_ui.input.num_joysticks as isize {
+    for joystick in game_ui.input.joysticks.iter() {
         let path = unsafe {
-            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
-                *(game_ui.input.joysticks.offset(offset)),
-            ))
-            .to_string_lossy()
-            .to_string()
+            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick))
+                .to_string_lossy()
+                .to_string()
         };
         controller_paths.push(path);
     }
