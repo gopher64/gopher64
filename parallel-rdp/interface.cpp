@@ -454,7 +454,6 @@ size_t rdp_state_size()
 
 void rdp_save_state(uint8_t *state)
 {
-	processor->wait_for_timeline(processor->signal_timeline());
 	memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
 
