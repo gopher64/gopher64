@@ -86,7 +86,11 @@ fn set_current_line(device: &mut device::Device) {
     }
     /* update current field */
     device.vi.regs[VI_CURRENT_REG as usize] =
-        (device.vi.regs[VI_CURRENT_REG as usize] & !1) | device.vi.field
+        (device.vi.regs[VI_CURRENT_REG as usize] & !1) | device.vi.field;
+    ui::video::set_register(
+        VI_CURRENT_REG as u32,
+        device.vi.regs[VI_CURRENT_REG as usize],
+    )
 }
 
 pub fn read_regs(
