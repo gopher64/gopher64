@@ -1,4 +1,4 @@
-use crate::{device, ui};
+use crate::device;
 use rand_chacha::rand_core::RngCore;
 
 const PI_DRAM_ADDR_REG: u32 = 0;
@@ -83,7 +83,6 @@ fn dma_write(device: &mut device::Device) {
     let cart_addr = device.pi.regs[PI_CART_ADDR_REG as usize] & !1;
     let dram_addr = device.pi.regs[PI_DRAM_ADDR_REG as usize] & 0xFFFFFE;
     let mut length = (device.pi.regs[PI_WR_LEN_REG as usize] & 0xFFFFFF) + 1;
-    ui::video::check_framebuffers(dram_addr);
 
     /* PI seems to treat the first 128 bytes differently, see https://n64brew.dev/wiki/Peripheral_Interface#Unaligned_DMA_transfer */
     if length >= 0x7f && (length & 1) != 0 {
