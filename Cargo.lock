@@ -1469,7 +1469,7 @@ dependencies = [
 
 [[package]]
 name = "gopher64"
-version = "1.0.16"
+version = "1.0.17"
 dependencies = [
  "ab_glyph",
  "bindgen",
