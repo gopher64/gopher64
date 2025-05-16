@@ -43,7 +43,7 @@ flatpak run --filesystem=host:ro io.github.gopher64.gopher64 /path/to/rom.z64
 
 ## building and usage
 
-1. Linux only: install the SDL3 dependencies: https://wiki.libsdl.org/SDL3/README/linux
+1. Linux only: install the SDL3 dependencies: https://wiki.libsdl.org/SDL3/README-linux#build-dependencies
 2. Install rust: https://www.rust-lang.org/tools/install
 3. `git clone --recursive https://github.com/gopher64/gopher64.git`
 4. `cd gopher64`
