@@ -1,4 +1,6 @@
 name: Rust
+permissions:
+  contents: read
 
 on:
   push:
