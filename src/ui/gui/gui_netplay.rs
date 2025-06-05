@@ -337,23 +337,25 @@ pub fn netplay_create(app: &mut GopherEguiApp, ctx: &egui::Context) {
                             buffer_target: None,
                         }),
                     };
-                    let (mut socket, _response) =
-                        tungstenite::connect(&app.netplay.server.ip).expect("Can't connect");
-                    socket
-                        .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
-                            serde_json::to_vec(&netplay_message).unwrap(),
-                        )))
-                        .unwrap();
-                    match socket.get_mut() {
-                        tungstenite::stream::MaybeTlsStream::Plain(stream) => {
-                            app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
-                            stream.set_nonblocking(true)
+                    if let Ok((mut socket, _response)) =
+                        tungstenite::connect(&app.netplay.server.ip)
+                    {
+                        socket
+                            .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
+                                serde_json::to_vec(&netplay_message).unwrap(),
+                            )))
+                            .unwrap();
+                        match socket.get_mut() {
+                            tungstenite::stream::MaybeTlsStream::Plain(stream) => {
+                                app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
+                                stream.set_nonblocking(true)
+                            }
+                            _ => unimplemented!(),
                         }
-                        _ => unimplemented!(),
+                        .expect("could not set socket to non-blocking");
+                        app.netplay.socket_waiting = true;
+                        app.netplay.socket = Some(socket);
                     }
-                    .expect("could not set socket to non-blocking");
-                    app.netplay.socket_waiting = true;
-                    app.netplay.socket = Some(socket);
                 }
             }
 
@@ -384,48 +386,50 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
         app.netplay.socket = None;
     }
     if app.netplay.socket.is_none() {
-        let (mut sock, _response) =
-            tungstenite::connect(&app.netplay.server.ip).expect("Can't connect");
-        match sock.get_mut() {
-            tungstenite::stream::MaybeTlsStream::Plain(stream) => {
-                app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
-                stream.set_nonblocking(true)
+        if let Ok((mut sock, _response)) = tungstenite::connect(&app.netplay.server.ip) {
+            match sock.get_mut() {
+                tungstenite::stream::MaybeTlsStream::Plain(stream) => {
+                    app.netplay.peer_addr = Some(stream.peer_addr().unwrap());
+                    stream.set_nonblocking(true)
+                }
+                _ => unimplemented!(),
             }
-            _ => unimplemented!(),
+            .expect("could not set socket to non-blocking");
+            app.netplay.socket = Some(sock);
         }
-        .expect("could not set socket to non-blocking");
-        app.netplay.socket = Some(sock);
     }
-    let socket = app.netplay.socket.as_mut().unwrap();
-    if app.netplay.have_sessions.is_none() {
-        let now_utc = chrono::Utc::now().timestamp_millis().to_string();
-        let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
-        let request_rooms = NetplayMessage {
-            message_type: "request_get_rooms".to_string(),
-            player_name: None,
-            client_sha: None,
-            netplay_version: Some(NETPLAY_VERSION),
-            player_names: None,
-            emulator: Some(EMU_NAME.to_string()),
-            accept: None,
-            rooms: None,
-            message: None,
-            auth_time: Some(now_utc),
-            auth: Some(format!("{:x}", hasher.finalize())),
-            room: None,
-        };
+    if app.netplay.socket.is_some() {
+        let socket = app.netplay.socket.as_mut().unwrap();
+        if app.netplay.have_sessions.is_none() {
+            let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+            let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
+            let request_rooms = NetplayMessage {
+                message_type: "request_get_rooms".to_string(),
+                player_name: None,
+                client_sha: None,
+                netplay_version: Some(NETPLAY_VERSION),
+                player_names: None,
+                emulator: Some(EMU_NAME.to_string()),
+                accept: None,
+                rooms: None,
+                message: None,
+                auth_time: Some(now_utc),
+                auth: Some(format!("{:x}", hasher.finalize())),
+                room: None,
+            };
 
-        socket
-            .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
-                serde_json::to_vec(&request_rooms).unwrap(),
-            )))
-            .unwrap();
-        app.netplay.have_sessions = Some(NetplayServer {
-            name: app.netplay.server.name.clone(),
-            ip: app.netplay.server.ip.clone(),
-        });
-        app.netplay.socket_waiting = true;
-        ctx.request_repaint();
+            socket
+                .send(tungstenite::Message::Binary(tungstenite::Bytes::from(
+                    serde_json::to_vec(&request_rooms).unwrap(),
+                )))
+                .unwrap();
+            app.netplay.have_sessions = Some(NetplayServer {
+                name: app.netplay.server.name.clone(),
+                ip: app.netplay.server.ip.clone(),
+            });
+            app.netplay.socket_waiting = true;
+            ctx.request_repaint();
+        }
     }
 }
 
@@ -465,6 +469,8 @@ pub fn netplay_join(app: &mut GopherEguiApp, ctx: &egui::Context) {
                 if message.message_type == "reply_get_rooms" {
                     if message.rooms.is_some() {
                         app.netplay.sessions = message.rooms.unwrap();
+                    } else {
+                        app.netplay.sessions = vec![];
                     }
                 } else if message.message_type == "reply_join_room" {
                     app.netplay.join = false;
