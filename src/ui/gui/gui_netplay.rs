@@ -401,7 +401,6 @@ fn get_sessions(app: &mut GopherEguiApp, ctx: &egui::Context) {
     if app.netplay.socket.is_some() {
         let socket = app.netplay.socket.as_mut().unwrap();
         if app.netplay.have_sessions.is_none() {
-            println!("get_sessions called");
             let now_utc = chrono::Utc::now().timestamp_millis().to_string();
             let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
             let request_rooms = NetplayMessage {
