@@ -36,7 +36,7 @@ reqwest = { version = "0.12", default-features = false, features = ["http2","rus
 
 [build-dependencies]
 winresource = "0.1"
-bindgen = "0.71"
+bindgen = "0.72"
 cc = { version = "1.2", features = ["parallel"] }
 
 [profile.release]
