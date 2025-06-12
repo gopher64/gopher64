@@ -290,8 +290,7 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
     let crt = app.crt;
     let emulate_vru = app.emulate_vru;
     let overclock = app.overclock;
-    let peer_addr;
-    let session;
+    let mut peer_addr;
     let player_number;
     let cache_dir = app.dirs.cache_dir.clone();
     let controller_paths = app.controller_paths.clone();
@@ -299,12 +298,11 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
     if app.netplay.player_name.is_empty() {
         netplay = false;
         peer_addr = None;
-        session = None;
         player_number = None;
     } else {
         netplay = true;
         peer_addr = app.netplay.peer_addr;
-        session = app.netplay.waiting_session.clone();
+        peer_addr.as_mut().unwrap().set_port(app.netplay.waiting_session.as_ref().unwrap().port.unwrap() as u16);
         player_number = Some(app.netplay.player_number);
     }
 
@@ -406,7 +404,6 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                     if netplay {
                         device.netplay = Some(netplay::init(
                             peer_addr.unwrap(),
-                            session.unwrap(),
                             player_number.unwrap(),
                         ));
                         device::run_game(&mut device, rom_contents, fullscreen, enable_overclock);
