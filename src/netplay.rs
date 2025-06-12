@@ -246,10 +246,7 @@ fn process_incoming(netplay: &mut Netplay, ui: &ui::Ui) {
     }
 }
 
-pub fn init(
-    peer_addr: std::net::SocketAddr,
-    player_number: u8,
-) -> Netplay {
+pub fn init(peer_addr: std::net::SocketAddr, player_number: u8) -> Netplay {
     let udp_socket;
     if peer_addr.is_ipv4() {
         udp_socket = std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))

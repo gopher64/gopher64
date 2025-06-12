@@ -302,7 +302,10 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
     } else {
         netplay = true;
         peer_addr = app.netplay.peer_addr;
-        peer_addr.as_mut().unwrap().set_port(app.netplay.waiting_session.as_ref().unwrap().port.unwrap() as u16);
+        peer_addr
+            .as_mut()
+            .unwrap()
+            .set_port(app.netplay.waiting_session.as_ref().unwrap().port.unwrap() as u16);
         player_number = Some(app.netplay.player_number);
     }
 
@@ -402,10 +405,8 @@ pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: 
                     save_config(&mut device.ui.config, controller_paths, save_config_items);
 
                     if netplay {
-                        device.netplay = Some(netplay::init(
-                            peer_addr.unwrap(),
-                            player_number.unwrap(),
-                        ));
+                        device.netplay =
+                            Some(netplay::init(peer_addr.unwrap(), player_number.unwrap()));
                         device::run_game(&mut device, rom_contents, fullscreen, enable_overclock);
                         netplay::close(&mut device);
                     } else {
