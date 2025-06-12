@@ -111,7 +111,7 @@ async fn main() {
             }
         }
         if args.list_controllers {
-            let controllers = gui::get_controller_names(&ui);
+            let controllers = ui::input::get_controller_names(&ui);
             for (i, controller) in controllers.iter().enumerate() {
                 println!("Controller {}: {}", i, controller);
             }
@@ -183,7 +183,7 @@ async fn main() {
         {
             let game_ui = ui::Ui::new();
             controllers_paths = gui::get_controller_paths(&game_ui);
-            controller_names = gui::get_controller_names(&game_ui);
+            controller_names = ui::input::get_controller_names(&game_ui);
         }
         eframe::run_native(
             "gopher64",

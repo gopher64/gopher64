@@ -334,6 +334,19 @@ fn change_paks(
     pressed
 }
 
+pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
+    let mut controllers: Vec<String> = vec![];
+
+    for joystick in game_ui.input.joysticks.iter() {
+        let name = unsafe {
+            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick))
+        };
+        controllers.push(name.to_string_lossy().to_string());
+    }
+
+    controllers
+}
+
 pub fn get(ui: &ui::Ui, channel: usize) -> InputData {
     let profile_name = ui.config.input.input_profile_binding[channel].clone();
     let profile = ui.config.input.input_profiles.get(&profile_name).unwrap();
