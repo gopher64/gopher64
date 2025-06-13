@@ -9,6 +9,8 @@ mod savestates;
 mod ui;
 use clap::Parser;
 
+slint::include_modules!();
+
 /// N64 emulator
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -166,6 +168,6 @@ fn main() {
             return;
         }
     } else {
-  
+        AppWindow::new().unwrap().run().unwrap();
     }
 }

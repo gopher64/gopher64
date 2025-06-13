@@ -2,6 +2,8 @@ fn main() {
     println!("cargo::rerun-if-changed=parallel-rdp");
     println!("cargo::rerun-if-changed=src/compat");
 
+    slint_build::compile("src/ui/gui/appwindow.slint").expect("Slint build failed");
+
     let mut simd_build = cc::Build::new();
     let mut build = cc::Build::new();
     build
