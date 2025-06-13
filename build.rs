@@ -72,7 +72,7 @@ fn main() {
         } else if arch == "aarch64" {
             if env == "msvc" {
                 build.flag("/arch:armv8.2");
-                simd_build.flag("/arch:armv8.2");
+                simd_build.flag("/arch:armv8.2").cpp(true);
             } else if env == "gnu" {
                 build.flag("-march=armv8.2-a");
                 simd_build.flag("-march=armv8.2-a");
