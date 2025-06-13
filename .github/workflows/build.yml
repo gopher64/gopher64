@@ -75,6 +75,10 @@ jobs:
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+      - name: Install LLVM
+        if: ${{ matrix.arch == 'windows-aarch64' }}
+        run: |
+          winget install LLVM.LLVM
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
