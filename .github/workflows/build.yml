@@ -56,13 +56,17 @@ jobs:
           path: output/gopher64-${{ matrix.arch }}
 
   build-windows:
-    runs-on: windows-2025
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-pc-windows-msvc
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
             arch: windows-x86_64
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            arch: windows-aarch64
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,7 +87,7 @@ jobs:
           path: output/gopher64-${{ matrix.arch }}.exe
 
   build-macos:
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
