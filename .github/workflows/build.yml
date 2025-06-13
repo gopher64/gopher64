@@ -74,7 +74,7 @@ jobs:
       - name: Install LLVM
         if: ${{ matrix.arch == 'windows-aarch64' }}
         run: |
-          choco install llvm --force
+          choco upgrade llvm
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ matrix.target }}
