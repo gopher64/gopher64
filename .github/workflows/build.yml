@@ -74,8 +74,7 @@ jobs:
       - name: Install LLVM
         if: ${{ matrix.arch == 'windows-aarch64' }}
         run: |
-          Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
-          winget install LLVM.LLVM
+          choco install llvm
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ matrix.target }}
