@@ -72,7 +72,7 @@ fn main() {
         } else if arch == "aarch64" {
             if env == "msvc" {
                 build.flag("/arch:armv8.2");
-                simd_build.flag("/arch:armv8.2").cpp(true);
+                simd_build.flag("/arch:armv8.2");
             } else if env == "gnu" {
                 build.flag("-march=armv8.2-a");
                 simd_build.flag("-march=armv8.2-a");
@@ -80,7 +80,7 @@ fn main() {
                 panic!("unknown env")
             }
             simd_build.flag("-DSSE2NEON_SUPPRESS_WARNINGS");
-            simd_build.file("src/compat/aarch64.c");
+            simd_build.file("src/compat/aarch64.cpp").cpp(true);
         } else {
             panic!("unknown arch")
         }
@@ -97,7 +97,7 @@ fn main() {
             build.flag("-march=armv8.2-a");
             simd_build.flag("-march=armv8.2-a");
             simd_build.flag("-DSSE2NEON_SUPPRESS_WARNINGS");
-            simd_build.file("src/compat/aarch64.c");
+            simd_build.file("src/compat/aarch64.cpp").cpp(true);
         } else {
             panic!("unknown arch")
         }
