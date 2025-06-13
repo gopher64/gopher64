@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 import { CheckBox, StandardListView } from "std-widgets.slint";
-import { SideBar } from "side_bar.slint";
 import { LocalGame, ControllerConfig,Netplay,Settings,About } from "pages.slint";
+import { SideBar } from "side_bar.slint";
 
 export component AppWindow inherits Window {
     preferred-width: 700px;
@@ -13,7 +13,6 @@ export component AppWindow inherits Window {
 
     HorizontalLayout {
         side-bar := SideBar {
-         //   title: @tr("Options");
             model: [
                 @tr("Menu" => "Local Game"),
                 @tr("Menu" => "Controller Config"),
