@@ -5,9 +5,6 @@ import { Switch, GridBox, ListView, ScrollView, HorizontalBox, VerticalBox, Pale
 
 export component Page inherits VerticalBox {
     in property <string> title: "title";
-    in property <string> description: "description";
-    in property <bool> show-enable-switch: true;
-    in property <bool> show-enable-read-only: false;
 
     accessible-role: tab-panel;
     accessible-label: root.title;
@@ -20,15 +17,6 @@ export component Page inherits VerticalBox {
 
         // Spacer
         Rectangle { }
-
-        Switch {
-            horizontal-stretch: 0;
-            text: @tr("Dark Mode");
-            checked: Palette.color-scheme == ColorScheme.dark;
-            toggled => {
-                Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
-            }
-        }
     }
 
     @children
