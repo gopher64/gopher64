@@ -1,0 +1,55 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
+import { Page } from "page.slint";
+
+export component About inherits Page {
+    callback wiki_button_clicked;
+    callback discord_button_clicked;
+    callback newversion_button_clicked;
+    in property <string> version;
+    in property <bool> has_update;
+    title: @tr("About");
+
+    VerticalBox {
+        alignment: start;
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Wiki");
+                clicked => {
+                    wiki_button_clicked();
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Discord Server");
+                clicked => {
+                    discord_button_clicked();
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: center;
+            Text {
+                text: version;
+            }
+        }
+
+        if has_update:HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("New version available! Click to download");
+                primary: true;
+                clicked => {
+                    newversion_button_clicked();
+                }
+            }
+        }
+    }
+}

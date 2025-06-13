@@ -1,0 +1,48 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+import { LocalGame, ControllerConfig,Netplay,Settings,About } from "pages.slint";
+import { SideBar } from "side_bar.slint";
+
+export component AppWindow inherits Window {
+    callback wiki_button_clicked;
+    callback discord_button_clicked;
+    callback newversion_button_clicked;
+    in property <string> version;
+    in property <bool> has_update;
+    preferred-width: 700px;
+    preferred-height: 500px;
+    title: @tr("Gopher64");
+    icon: @image-url("../../../data/gopher64.png");
+
+    HorizontalLayout {
+        side-bar := SideBar {
+            title: @tr("Gopher64");
+            model: [
+                @tr("Menu" => "Local Game"),
+                @tr("Menu" => "Controller Config"),
+                @tr("Menu" => "Netplay"),
+                @tr("Menu" => "Settings"),
+                @tr("Menu" => "About")
+            ];
+        }
+
+        if(side-bar.current-item == 0): LocalGame { }
+        if(side-bar.current-item == 1): ControllerConfig { }
+        if(side-bar.current-item == 2): Netplay { }
+        if(side-bar.current-item == 3): Settings { }
+        if(side-bar.current-item == 4): About {
+            version: version;
+            has_update: has_update;
+            wiki_button_clicked => {
+                wiki_button_clicked();
+            }
+            discord_button_clicked => {
+                discord_button_clicked();
+            }
+            newversion_button_clicked => {
+                newversion_button_clicked();
+            }
+        }
+    }
+}

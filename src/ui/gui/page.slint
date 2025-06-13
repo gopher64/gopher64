@@ -1,0 +1,23 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+import { Switch, GridBox, ListView, ScrollView, HorizontalBox, VerticalBox, Palette } from "std-widgets.slint";
+
+export component Page inherits VerticalBox {
+    in property <string> title: "title";
+
+    accessible-role: tab-panel;
+    accessible-label: root.title;
+
+    HorizontalBox {
+        Text {
+            font-size: 20px;
+            text <=> root.title;
+        }
+
+        // Spacer
+        Rectangle { }
+    }
+
+    @children
+}
