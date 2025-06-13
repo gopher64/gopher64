@@ -479,7 +479,6 @@ impl Device {
             vru_window: controller::vru::VruWindow {
                 window_notifier: None,
                 word_receiver: None,
-                gui_ctx: None,
             },
             vru: controller::vru::Vru {
                 status: 0,
