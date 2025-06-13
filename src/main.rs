@@ -64,8 +64,7 @@ struct Args {
     clear_input_bindings: bool,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let dirs = ui::get_dirs();
 
     let mut result = std::fs::create_dir_all(dirs.config_dir);
