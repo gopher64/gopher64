@@ -1,10 +1,10 @@
 pub mod audio;
 pub mod config;
+pub mod gui;
 pub mod input;
 pub mod storage;
 pub mod video;
 pub mod vru;
-pub mod gui;
 
 pub struct Dirs {
     pub config_dir: std::path::PathBuf,
