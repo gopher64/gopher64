@@ -168,34 +168,6 @@ async fn main() {
             return;
         }
     } else {
-        let options = eframe::NativeOptions {
-            viewport: eframe::egui::ViewportBuilder::default()
-                .with_inner_size([854.0, 480.0])
-                .with_icon(
-                    eframe::icon_data::from_png_bytes(include_bytes!("../data/gopher64.png"))
-                        .unwrap(),
-                ),
-            ..Default::default()
-        };
-
-        let controllers_paths;
-        let controller_names;
-        {
-            let game_ui = ui::Ui::new();
-            controllers_paths = gui::get_controller_paths(&game_ui);
-            controller_names = ui::input::get_controller_names(&game_ui);
-        }
-        eframe::run_native(
-            "gopher64",
-            options,
-            Box::new(|cc| {
-                Ok(Box::new(ui::gui::GopherEguiApp::new(
-                    cc,
-                    controllers_paths,
-                    controller_names,
-                )))
-            }),
-        )
-        .unwrap();
+        gui::app_window();
     }
 }
