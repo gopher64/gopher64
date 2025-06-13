@@ -1,7 +1,6 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { CheckBox, StandardListView } from "std-widgets.slint";
 import { LocalGame, ControllerConfig,Netplay,Settings,About } from "pages.slint";
 import { SideBar } from "side_bar.slint";
 
@@ -13,6 +12,7 @@ export component AppWindow inherits Window {
 
     HorizontalLayout {
         side-bar := SideBar {
+            title: @tr("Gopher64");
             model: [
                 @tr("Menu" => "Local Game"),
                 @tr("Menu" => "Controller Config"),
