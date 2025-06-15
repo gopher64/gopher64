@@ -5,6 +5,8 @@ import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export component About inherits Page {
+    callback wiki_button_clicked;
+    callback discord_button_clicked;
     title: @tr("About");
 
     VerticalBox {
@@ -13,6 +15,9 @@ export component About inherits Page {
             alignment: center;
             Button {
                 text: @tr("Wiki");
+                clicked => {
+                    wiki_button_clicked();
+                }
             }
         }
 
@@ -20,6 +25,9 @@ export component About inherits Page {
             alignment: center;
             Button {
                 text: @tr("Discord Server");
+                clicked => {
+                    discord_button_clicked();
+                }
             }
         }
 

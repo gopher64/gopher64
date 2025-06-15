@@ -5,6 +5,8 @@ import { LocalGame, ControllerConfig,Netplay,Settings,About } from "pages.slint"
 import { SideBar } from "side_bar.slint";
 
 export component AppWindow inherits Window {
+    callback wiki_button_clicked;
+    callback discord_button_clicked;
     preferred-width: 700px;
     preferred-height: 500px;
     title: @tr("Gopher64");
@@ -26,6 +28,13 @@ export component AppWindow inherits Window {
         if(side-bar.current-item == 1): ControllerConfig { }
         if(side-bar.current-item == 2): Netplay { }
         if(side-bar.current-item == 3): Settings { }
-        if(side-bar.current-item == 4): About { }
+        if(side-bar.current-item == 4): About {
+            wiki_button_clicked => {
+                wiki_button_clicked();
+            }
+            discord_button_clicked => {
+                discord_button_clicked();
+            }
+        }
     }
 }

@@ -8,8 +8,7 @@ mod netplay;
 mod savestates;
 mod ui;
 use clap::Parser;
-
-slint::include_modules!();
+use ui::gui;
 
 /// N64 emulator
 #[derive(Parser, Debug)]
@@ -168,6 +167,6 @@ fn main() {
             return;
         }
     } else {
-        AppWindow::new().unwrap().run().unwrap();
+        gui::app_window();
     }
 }
