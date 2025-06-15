@@ -7,6 +7,9 @@ import { SideBar } from "side_bar.slint";
 export component AppWindow inherits Window {
     callback wiki_button_clicked;
     callback discord_button_clicked;
+    callback newversion_button_clicked;
+    in property <string> version;
+    in property <bool> has_update;
     preferred-width: 700px;
     preferred-height: 500px;
     title: @tr("Gopher64");
@@ -29,11 +32,16 @@ export component AppWindow inherits Window {
         if(side-bar.current-item == 2): Netplay { }
         if(side-bar.current-item == 3): Settings { }
         if(side-bar.current-item == 4): About {
+            version: version;
+            has_update: has_update;
             wiki_button_clicked => {
                 wiki_button_clicked();
             }
             discord_button_clicked => {
                 discord_button_clicked();
+            }
+            newversion_button_clicked => {
+                newversion_button_clicked();
             }
         }
     }

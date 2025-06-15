@@ -32,9 +32,9 @@ pub struct Vru {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct VruWindow {
     #[serde(skip)]
-    pub window_notifier: Option<std::sync::mpsc::Sender<Vec<String>>>,
+    pub window_notifier: Option<tokio::sync::mpsc::Sender<Vec<String>>>,
     #[serde(skip)]
-    pub word_receiver: Option<std::sync::mpsc::Receiver<String>>,
+    pub word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
 }
 
 pub fn init(device: &mut device::Device) {

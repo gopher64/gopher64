@@ -7,6 +7,9 @@ import { Page } from "page.slint";
 export component About inherits Page {
     callback wiki_button_clicked;
     callback discord_button_clicked;
+    callback newversion_button_clicked;
+    in property <string> version;
+    in property <bool> has_update;
     title: @tr("About");
 
     VerticalBox {
@@ -34,15 +37,18 @@ export component About inherits Page {
         HorizontalBox {
             alignment: center;
             Text {
-                text: @tr("Version: 0.1.0");
+                text: version;
             }
         }
 
-        property <bool> has_update: true;
         if has_update:HorizontalBox {
             alignment: center;
             Button {
-                text: @tr("Download new version");
+                text: @tr("New version available! Click to download");
+                primary: true;
+                clicked => {
+                    newversion_button_clicked();
+                }
             }
         }
     }
