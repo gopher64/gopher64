@@ -1,4 +1,5 @@
 use crate::ui;
+use slint::Model;
 
 slint::include_modules!();
 
@@ -53,6 +54,16 @@ fn settings_window(app: &AppWindow) {
     app.set_apply_crt_shader(config.video.crt);
     app.set_overclock_n64_cpu(config.emulation.overclock);
     app.set_resolution(format!("{}x", config.video.upscale).into());
+
+    app.set_emulate_vru(config.input.emulate_vru);
+
+    let controller_enabled_model: std::rc::Rc<slint::VecModel<bool>> = std::rc::Rc::new(
+        slint::VecModel::from(config.input.controller_enabled.to_vec()),
+    );
+    app.set_controller_enabled(slint::ModelRc::from(controller_enabled_model));
+    let transferpak_enabled_model: std::rc::Rc<slint::VecModel<bool>> =
+        std::rc::Rc::new(slint::VecModel::from(config.input.transfer_pak.to_vec()));
+    app.set_transferpak(slint::ModelRc::from(transferpak_enabled_model));
 }
 
 fn save_settings(app: &AppWindow) {
@@ -63,6 +74,14 @@ fn save_settings(app: &AppWindow) {
     config.video.crt = app.get_apply_crt_shader();
     config.emulation.overclock = app.get_overclock_n64_cpu();
     config.video.upscale = app.get_resolution().trim_end_matches('x').parse().unwrap();
+
+    config.input.emulate_vru = app.get_emulate_vru();
+    for (i, controller_enabled) in app.get_controller_enabled().iter().enumerate() {
+        config.input.controller_enabled[i] = controller_enabled;
+    }
+    for (i, transferpak_enabled) in app.get_transferpak().iter().enumerate() {
+        config.input.transfer_pak[i] = transferpak_enabled;
+    }
 }
 
 fn about_window(app: &AppWindow) {
