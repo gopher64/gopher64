@@ -63,6 +63,20 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_resolution(format!("{}x", config.video.upscale).into());
 }
 
+fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
+    let profiles = get_input_profiles(&config);
+    weak.upgrade_in_event_loop(move |handle| {
+        let input_profiles = slint::VecModel::default();
+        for profile in profiles {
+            input_profiles.push(profile.into());
+        }
+        let input_profiles_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+            std::rc::Rc::new(input_profiles);
+        handle.set_input_profiles(slint::ModelRc::from(input_profiles_model));
+    })
+    .unwrap();
+}
+
 fn controller_window(
     app: &AppWindow,
     config: &ui::config::Config,
@@ -89,13 +103,7 @@ fn controller_window(
         std::rc::Rc::new(profile_bindings);
     app.set_input_profile_binding(slint::ModelRc::from(input_profile_binding_model));
 
-    let input_profiles = slint::VecModel::default();
-    for profile in get_input_profiles(&config) {
-        input_profiles.push(profile.into());
-    }
-    let input_profiles_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-        std::rc::Rc::new(input_profiles);
-    app.set_input_profiles(slint::ModelRc::from(input_profiles_model));
+    update_input_profiles(&app.as_weak(), config);
 
     let controllers = slint::VecModel::default();
     for controller in controller_names {
@@ -124,6 +132,7 @@ fn controller_window(
     app.set_selected_controller(slint::ModelRc::from(selected_controllers_model));
 
     let game_running = dirs.cache_dir.join("game_running");
+    let weak_app = app.as_weak();
     app.on_input_profile_button_clicked(move || {
         if game_running.exists() {
             return;
@@ -131,15 +140,19 @@ fn controller_window(
 
         let dialog = InputProfileDialog::new().unwrap();
         let weak_dialog = dialog.as_weak();
+        let weak_app2 = weak_app.clone();
         dialog.on_profile_creation_button_clicked(move || {
+            let weak_app3 = weak_app2.clone();
             weak_dialog
                 .upgrade_in_event_loop(move |handle| {
                     handle.hide().unwrap();
                     let profile_name = handle.get_profile_name().into();
                     let dinput = handle.get_dinput();
+
                     tokio::spawn(async move {
                         let mut game_ui = ui::Ui::new();
                         ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
+                        update_input_profiles(&weak_app3, &game_ui.config);
                     });
                 })
                 .unwrap();
