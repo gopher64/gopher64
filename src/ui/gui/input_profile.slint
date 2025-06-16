@@ -1,0 +1,45 @@
+import { StandardButton, HorizontalBox, VerticalBox, Button, LineEdit, CheckBox } from "std-widgets.slint";
+
+export global InputProfileData {
+    in-out property <bool> dinput;
+    in-out property <string> profile_name;
+}
+
+export component InputProfileDialog inherits Window {
+    title: "Create Input Profile";
+    callback profile_creation_button_clicked;
+    in-out property dinput <=> InputProfileData.dinput;
+    in-out property profile_name <=> InputProfileData.profile_name;
+    VerticalBox {
+        HorizontalBox {
+            LineEdit {
+                placeholder-text: @tr("Enter profile name");
+                preferred-width: 300px;
+                edited(text) => {
+                    InputProfileData.profile_name = text;
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: center;
+            CheckBox {
+                text: @tr("Use DirectInput");
+                checked: InputProfileData.dinput;
+                toggled => {
+                    InputProfileData.dinput = self.checked;
+                }
+            }
+        }
+
+        HorizontalBox {
+            Button {
+                text: @tr("Start Profile Creation Wizard");
+                enabled: InputProfileData.profile_name != "" && InputProfileData.profile_name != "default";
+                clicked => {
+                    profile_creation_button_clicked();
+                }
+            }
+        }
+    }
+}
