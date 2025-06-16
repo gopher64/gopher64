@@ -80,31 +80,22 @@ export component ControllerConfig inherits Page {
                     vertical-alignment: center;
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Enabled
+                CheckBox { // Enabled
                         checked: ControllerData.controller_enabled[number];
-                        toggled => {
-                            ControllerData.controller_enabled[number] = self.checked;
-                        }
+                    toggled => {
+                        ControllerData.controller_enabled[number] = self.checked;
                     }
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Emulate VRU
+                CheckBox { // Emulate VRU
                         checked: false;
-                        enabled: rows[number].vru-enabled;
-                    }
+                    enabled: rows[number].vru-enabled;
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Transfer Pak
+                CheckBox { // Transfer Pak
                         checked: ControllerData.transferpak[number];
-                        toggled => {
-                            ControllerData.transferpak[number] = self.checked;
-                        }
+                    toggled => {
+                        ControllerData.transferpak[number] = self.checked;
                     }
                 }
 
@@ -133,31 +124,22 @@ export component ControllerConfig inherits Page {
                     vertical-alignment: center;
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Enabled
+                CheckBox { // Enabled
                         checked: ControllerData.controller_enabled[number];
-                        toggled => {
-                            ControllerData.controller_enabled[number] = self.checked;
-                        }
+                    toggled => {
+                        ControllerData.controller_enabled[number] = self.checked;
                     }
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Emulate VRU
+                CheckBox { // Emulate VRU
                         checked: false;
-                        enabled: rows[number].vru-enabled;
-                    }
+                    enabled: rows[number].vru-enabled;
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Transfer Pak
+                CheckBox { // Transfer Pak
                         checked: ControllerData.transferpak[number];
-                        toggled => {
-                            ControllerData.transferpak[number] = self.checked;
-                        }
+                    toggled => {
+                        ControllerData.transferpak[number] = self.checked;
                     }
                 }
 
@@ -186,31 +168,22 @@ export component ControllerConfig inherits Page {
                     vertical-alignment: center;
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Enabled
+                CheckBox { // Enabled
                         checked: ControllerData.controller_enabled[number];
-                        toggled => {
-                            ControllerData.controller_enabled[number] = self.checked;
-                        }
+                    toggled => {
+                        ControllerData.controller_enabled[number] = self.checked;
                     }
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Emulate VRU
+                CheckBox { // Emulate VRU
                         checked: false;
-                        enabled: rows[number].vru-enabled;
-                    }
+                    enabled: rows[number].vru-enabled;
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Transfer Pak
+                CheckBox { // Transfer Pak
                         checked: ControllerData.transferpak[number];
-                        toggled => {
-                            ControllerData.transferpak[number] = self.checked;
-                        }
+                    toggled => {
+                        ControllerData.transferpak[number] = self.checked;
                     }
                 }
 
@@ -239,34 +212,25 @@ export component ControllerConfig inherits Page {
                     vertical-alignment: center;
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Enabled
+                CheckBox { // Enabled
                         checked: ControllerData.controller_enabled[number];
-                        toggled => {
-                            ControllerData.controller_enabled[number] = self.checked;
-                        }
+                    toggled => {
+                        ControllerData.controller_enabled[number] = self.checked;
                     }
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Emulate VRU
+                CheckBox { // Emulate VRU
                         enabled: rows[number].vru-enabled;
-                        checked: ControllerData.emulate_vru;
-                        toggled => {
-                            ControllerData.emulate_vru = self.checked;
-                        }
+                    checked: ControllerData.emulate_vru;
+                    toggled => {
+                        ControllerData.emulate_vru = self.checked;
                     }
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    CheckBox { // Transfer Pak
+                CheckBox { // Transfer Pak
                        checked: ControllerData.transferpak[number];
-                        toggled => {
-                            ControllerData.transferpak[number] = self.checked;
-                        }
+                    toggled => {
+                        ControllerData.transferpak[number] = self.checked;
                     }
                 }
 
