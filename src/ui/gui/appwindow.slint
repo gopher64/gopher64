@@ -5,6 +5,7 @@ import { LocalGame, ControllerConfig,Netplay,Settings,About } from "pages.slint"
 import { SideBar } from "side_bar.slint";
 import { SettingsData } from "settings_page.slint";
 import { AboutData } from "about_page.slint";
+import { ControllerData } from "controller_page.slint";
 
 export component AppWindow inherits Window {
     callback wiki_button_clicked;
@@ -23,6 +24,9 @@ export component AppWindow inherits Window {
     in-out property apply_crt_shader <=> SettingsData.apply_crt_shader;
     in-out property overclock_n64_cpu <=> SettingsData.overclock_n64_cpu;
     in-out property resolution <=> SettingsData.resolution;
+    in-out property emulate_vru <=> ControllerData.emulate_vru;
+    in-out property controller_enabled <=> ControllerData.controller_enabled;
+    in-out property transferpak <=> ControllerData.transferpak;
     preferred-width: 700px;
     preferred-height: 500px;
     title: @tr("Gopher64");

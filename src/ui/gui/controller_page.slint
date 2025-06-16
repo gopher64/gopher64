@@ -4,12 +4,18 @@
 import { CheckBox, ComboBox, Button, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 
+export global ControllerData {
+    in-out property <bool> emulate_vru;
+    in-out property <[bool]> controller_enabled;
+    in-out property <[bool]> transferpak;
+}
+
 export component ControllerConfig inherits Page {
-    property <[{name: string, first-checked: bool}]> rows: [
-        { name: "1", first-checked: true },
-        { name: "2", first-checked: false },
-        { name: "3", first-checked: false },
-        { name: "4", first-checked: false }
+    property <[{name: string, vru-enabled: bool}]> rows: [
+        { name: "1", vru-enabled: false },
+        { name: "2", vru-enabled: false },
+        { name: "3", vru-enabled: false },
+        { name: "4", vru-enabled: true }
     ];
 
     callback input_profile_button_clicked;
@@ -61,156 +67,188 @@ export component ControllerConfig inherits Page {
                 }
             }
 
-            Row {
-                Text {
-                    text: rows[0].name;
+            Row { // 0
+                property <int> number: 0;
+                Text { // Port
+                    text: rows[number].name;
                     vertical-alignment: center;
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
-                        checked: rows[0].first-checked;
+                    CheckBox { // Enabled
+                        checked: ControllerData.controller_enabled[number];
+                        toggled => {
+                            ControllerData.controller_enabled[number] = self.checked;
+                        }
                     }
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
+                    CheckBox { // Emulate VRU
                         checked: false;
-                        enabled: false;
+                        enabled: rows[number].vru-enabled;
                     }
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
-                        checked: false;
+                    CheckBox { // Transfer Pak
+                        checked: ControllerData.transferpak[number];
+                        toggled => {
+                            ControllerData.transferpak[number] = self.checked;
+                        }
                     }
                 }
 
-                ComboBox {
+                ComboBox { // Profile
                     model: ["Default", "Profile 1", "Profile 2"];
                     current-value: "Default";
                 }
 
-                ComboBox {
+                ComboBox { // Controller
                     model: ["Controller 1", "Controller 2", "Controller 3"];
                     current-value: "Controller 1";
                 }
             }
 
-            Row {
-                Text {
-                    text: rows[1].name;
+            Row { // 1
+                property <int> number: 1;
+                Text { // Port
+                    text: rows[number].name;
                     vertical-alignment: center;
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
-                        checked: rows[1].first-checked;
+                    CheckBox { // Enabled
+                        checked: ControllerData.controller_enabled[number];
+                        toggled => {
+                            ControllerData.controller_enabled[number] = self.checked;
+                        }
                     }
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
+                    CheckBox { // Emulate VRU
                         checked: false;
-                        enabled: false;
+                        enabled: rows[number].vru-enabled;
                     }
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
-                        checked: false;
+                    CheckBox { // Transfer Pak
+                        checked: ControllerData.transferpak[number];
+                        toggled => {
+                            ControllerData.transferpak[number] = self.checked;
+                        }
                     }
                 }
 
-                ComboBox {
+                ComboBox { // Profile
                     model: ["Default", "Profile 1", "Profile 2"];
                     current-value: "Default";
                 }
 
-                ComboBox {
+                ComboBox { // Controller
                     model: ["Controller 1", "Controller 2", "Controller 3"];
                     current-value: "Controller 1";
                 }
             }
 
-            Row {
-                Text {
-                    text: rows[2].name;
+            Row { // 2
+                property <int> number: 2;
+                Text { // Port
+                    text: rows[number].name;
                     vertical-alignment: center;
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
-                        checked: rows[2].first-checked;
+                    CheckBox { // Enabled
+                        checked: ControllerData.controller_enabled[number];
+                        toggled => {
+                            ControllerData.controller_enabled[number] = self.checked;
+                        }
                     }
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
+                    CheckBox { // Emulate VRU
                         checked: false;
-                        enabled: false;
+                        enabled: rows[number].vru-enabled;
                     }
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
-                        checked: false;
+                    CheckBox { // Transfer Pak
+                        checked: ControllerData.transferpak[number];
+                        toggled => {
+                            ControllerData.transferpak[number] = self.checked;
+                        }
                     }
                 }
 
-                ComboBox {
+                ComboBox { // Profile
                     model: ["Default", "Profile 1", "Profile 2"];
                     current-value: "Default";
                 }
 
-                ComboBox {
+                ComboBox { // Controller
                     model: ["Controller 1", "Controller 2", "Controller 3"];
                     current-value: "Controller 1";
                 }
             }
 
-            Row {
-                Text {
-                    text: rows[3].name;
+            Row { // 3
+                property <int> number: 3;
+                Text { // Port
+                    text: rows[number].name;
                     vertical-alignment: center;
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
-                        checked: rows[3].first-checked;
+                    CheckBox { // Enabled
+                        checked: ControllerData.controller_enabled[number];
+                        toggled => {
+                            ControllerData.controller_enabled[number] = self.checked;
+                        }
                     }
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
-                        checked: false;
+                    CheckBox { // Emulate VRU
+                        enabled: rows[number].vru-enabled;
+                        checked: ControllerData.emulate_vru;
+                        toggled => {
+                            ControllerData.emulate_vru = self.checked;
+                        }
                     }
                 }
 
                 HorizontalBox {
                     alignment: center;
-                    CheckBox {
-                        checked: false;
+                    CheckBox { // Transfer Pak
+                       checked: ControllerData.transferpak[number];
+                        toggled => {
+                            ControllerData.transferpak[number] = self.checked;
+                        }
                     }
                 }
 
-                ComboBox {
+                ComboBox { // Profile
                     model: ["Default", "Profile 1", "Profile 2"];
                     current-value: "Default";
                 }
 
-                ComboBox {
+                ComboBox { // Controller
                     model: ["Controller 1", "Controller 2", "Controller 3"];
                     current-value: "Controller 1";
                 }
