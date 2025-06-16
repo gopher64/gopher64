@@ -1,14 +1,62 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { AboutSlint } from "std-widgets.slint";
+import { ComboBox, HorizontalBox, VerticalBox, CheckBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export component Settings inherits Page {
     title: @tr("Settings");
 
-    AboutSlint { }
+    VerticalBox {
+        alignment: start;
+        HorizontalBox {
+            alignment: start;
+            Text {
+                text: @tr("Resolution:");
+                vertical-alignment: center;
+            }
 
-    // Spacer
-    Rectangle { }
+            ComboBox {
+                model: ["1x", "2x", "4x"];
+                current-value: "1x";
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Integer Scaling");
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Fullscreen (Esc closes game)");
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Widescreen (strech)");
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Apply CRT shader");
+            }
+        }
+
+        Rectangle { }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Overclock N64 CPU (may cause bugs)");
+            }
+        }
+    }
 }
