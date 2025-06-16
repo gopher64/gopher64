@@ -3,6 +3,8 @@
 
 import { LocalGame, ControllerConfig,Netplay,Settings,About } from "pages.slint";
 import { SideBar } from "side_bar.slint";
+import { SettingsData } from "settings_page.slint";
+import { AboutData } from "about_page.slint";
 
 export component AppWindow inherits Window {
     callback wiki_button_clicked;
@@ -13,14 +15,14 @@ export component AppWindow inherits Window {
     callback input_profile_button_clicked;
     callback create_session_button_clicked;
     callback join_session_button_clicked;
-    in property <string> version;
-    in property <bool> has_update;
-    in-out property <bool> integer_scaling;
-    in-out property <bool> fullscreen;
-    in-out property <bool> widescreen;
-    in-out property <bool> apply_crt_shader;
-    in-out property <bool> overclock_n64_cpu;
-    in-out property <string> resolution;
+    in property version <=> AboutData.version;
+    in property has_update <=> AboutData.has_update;
+    in-out property integer_scaling <=> SettingsData.integer_scaling;
+    in-out property fullscreen <=> SettingsData.fullscreen;
+    in-out property widescreen <=> SettingsData.widescreen;
+    in-out property apply_crt_shader <=> SettingsData.apply_crt_shader;
+    in-out property overclock_n64_cpu <=> SettingsData.overclock_n64_cpu;
+    in-out property resolution <=> SettingsData.resolution;
     preferred-width: 700px;
     preferred-height: 500px;
     title: @tr("Gopher64");
@@ -52,17 +54,8 @@ export component AppWindow inherits Window {
             }
         }
         if(side-bar.current-item == 2): Netplay { }
-        if(side-bar.current-item == 3): Settings {
-            integer_scaling: integer_scaling;
-            fullscreen: fullscreen;
-            widescreen: widescreen;
-            apply_crt_shader: apply_crt_shader;
-            overclock_n64_cpu: overclock_n64_cpu;
-            resolution: resolution;
-        }
+        if(side-bar.current-item == 3): Settings { }
         if(side-bar.current-item == 4): About {
-            version: version;
-            has_update: has_update;
             wiki_button_clicked => {
                 wiki_button_clicked();
             }

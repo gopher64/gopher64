@@ -4,13 +4,16 @@
 import { ComboBox, HorizontalBox, VerticalBox, CheckBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 
-export component Settings inherits Page {
+export global SettingsData {
     in-out property <bool> integer_scaling;
     in-out property <bool> fullscreen;
     in-out property <bool> widescreen;
     in-out property <bool> apply_crt_shader;
     in-out property <bool> overclock_n64_cpu;
     in-out property <string> resolution;
+}
+
+export component Settings inherits Page {
     title: @tr("Settings");
 
     VerticalBox {
@@ -24,7 +27,10 @@ export component Settings inherits Page {
 
             ComboBox {
                 model: ["1x", "2x", "4x"];
-                current-value: resolution;
+                current-value: SettingsData.resolution;
+                selected => {
+                    SettingsData.resolution = self.current-value;
+                }
             }
         }
 
@@ -32,7 +38,10 @@ export component Settings inherits Page {
             alignment: start;
             CheckBox {
                 text: @tr("Integer Scaling");
-                checked: integer_scaling;
+                checked: SettingsData.integer_scaling;
+                toggled => {
+                    SettingsData.integer_scaling = self.checked;
+                }
             }
         }
 
@@ -40,7 +49,10 @@ export component Settings inherits Page {
             alignment: start;
             CheckBox {
                 text: @tr("Fullscreen (Esc closes game)");
-                checked: fullscreen;
+                checked: SettingsData.fullscreen;
+                toggled => {
+                    SettingsData.fullscreen = self.checked;
+                }
             }
         }
 
@@ -48,7 +60,10 @@ export component Settings inherits Page {
             alignment: start;
             CheckBox {
                 text: @tr("Widescreen (strech)");
-                checked: widescreen;
+                checked: SettingsData.widescreen;
+                toggled => {
+                    SettingsData.widescreen = self.checked;
+                }
             }
         }
 
@@ -56,7 +71,10 @@ export component Settings inherits Page {
             alignment: start;
             CheckBox {
                 text: @tr("Apply CRT shader");
-                checked: apply_crt_shader;
+                checked: SettingsData.apply_crt_shader;
+                toggled => {
+                    SettingsData.apply_crt_shader = self.checked;
+                }
             }
         }
 
@@ -66,7 +84,10 @@ export component Settings inherits Page {
             alignment: start;
             CheckBox {
                 text: @tr("Overclock N64 CPU (may cause bugs)");
-                checked: overclock_n64_cpu;
+                checked: SettingsData.overclock_n64_cpu;
+                toggled => {
+                    SettingsData.overclock_n64_cpu = self.checked;
+                }
             }
         }
     }
