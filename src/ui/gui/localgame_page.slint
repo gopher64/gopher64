@@ -1,14 +1,34 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { AboutSlint } from "std-widgets.slint";
+import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export component LocalGame inherits Page {
+    callback open_rom_button_clicked;
+    callback saves_folder_button_clicked;
     title: @tr("Local Game");
 
-    AboutSlint { }
+    VerticalBox {
+        alignment: start;
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Open ROM");
+                clicked => {
+                    open_rom_button_clicked();
+                }
+            }
+        }
 
-    // Spacer
-    Rectangle { }
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Open Saves Folder");
+                clicked => {
+                    saves_folder_button_clicked();
+                }
+            }
+        }
+    }
 }

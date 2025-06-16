@@ -1,3 +1,5 @@
+use crate::ui;
+
 slint::include_modules!();
 
 #[derive(serde::Deserialize)]
@@ -32,6 +34,26 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
+fn local_game(app: &AppWindow, dirs: &ui::Dirs) {
+    app.on_open_rom_button_clicked(move || {
+        //open rom
+    });
+
+    let saves_path = dirs.data_dir.join("saves");
+    app.on_saves_folder_button_clicked(move || {
+        let command = if cfg!(target_os = "windows") {
+            "explorer"
+        } else if cfg!(target_os = "linux") {
+            "xdg-open"
+        } else {
+            panic!("Unsupported platform");
+        };
+        let _ = std::process::Command::new(command)
+            .arg(saves_path.clone())
+            .spawn();
+    });
+}
+
 fn about_window(app: &AppWindow) {
     app.on_wiki_button_clicked(move || {
         open::that_detached("https://github.com/gopher64/gopher64/wiki").unwrap();
@@ -47,7 +69,9 @@ fn about_window(app: &AppWindow) {
 }
 
 pub fn app_window() {
+    let dirs = ui::get_dirs();
     let app = AppWindow::new().unwrap();
+    local_game(&app, &dirs);
     about_window(&app);
     app.run().unwrap();
 }
