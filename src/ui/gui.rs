@@ -36,10 +36,10 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn local_game(app: &AppWindow, dirs: &ui::Dirs, controller_paths: &Vec<Option<String>>) {
+fn local_game(app: &AppWindow, dirs: &ui::Dirs, controller_paths: &[Option<String>]) {
     let weak = app.as_weak();
     let running_file = dirs.cache_dir.join("game_running");
-    let controller_paths2 = controller_paths.clone();
+    let controller_paths2 = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
         let running_file2 = running_file.clone();
         let controller_paths3 = controller_paths2.clone();
@@ -73,7 +73,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
 }
 
 fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
-    let profiles = get_input_profiles(&config);
+    let profiles = get_input_profiles(config);
     weak.upgrade_in_event_loop(move |handle| {
         let input_profiles = slint::VecModel::default();
         for profile in profiles {
@@ -90,7 +90,7 @@ fn controller_window(
     app: &AppWindow,
     config: &ui::config::Config,
     controller_names: &Vec<String>,
-    controller_paths: &Vec<Option<String>>,
+    controller_paths: &[Option<String>],
     dirs: &ui::Dirs,
 ) {
     let controller_enabled_model: std::rc::Rc<slint::VecModel<bool>> = std::rc::Rc::new(
@@ -170,7 +170,7 @@ fn controller_window(
     });
 }
 
-fn save_settings(app: &AppWindow, controller_paths: &Vec<Option<String>>) {
+fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     let mut config = ui::config::Config::new();
     config.video.integer_scaling = app.get_integer_scaling();
     config.video.fullscreen = app.get_fullscreen();
@@ -240,11 +240,9 @@ fn open_rom(
     controller_paths: Vec<Option<String>>,
     running_file: std::path::PathBuf,
 ) {
-    let select_rom = Some(
-        rfd::AsyncFileDialog::new()
-            .set_title("Select ROM")
-            .pick_file(),
-    );
+    let select_rom = rfd::AsyncFileDialog::new()
+        .set_title("Select ROM")
+        .pick_file();
     let mut select_gb_rom = [None, None, None, None];
     let mut select_gb_ram = [None, None, None, None];
 
@@ -268,7 +266,7 @@ fn open_rom(
     save_settings(app, &controller_paths);
 
     tokio::spawn(async move {
-        let file = select_rom.unwrap().await;
+        let file = select_rom.await;
         let mut gb_rom_path = [None, None, None, None];
         let mut gb_ram_path = [None, None, None, None];
 
