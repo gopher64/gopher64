@@ -35,8 +35,7 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn local_game(app: &AppWindow) {
-    let dirs = ui::get_dirs();
+fn local_game(app: &AppWindow, dirs: &ui::Dirs) {
     app.on_open_rom_button_clicked(move || {
         //open rom
     });
@@ -69,6 +68,7 @@ fn controller_window(
     config: &ui::config::Config,
     controller_names: &Vec<String>,
     controller_paths: &Vec<Option<String>>,
+    dirs: &ui::Dirs,
 ) {
     let controller_enabled_model: std::rc::Rc<slint::VecModel<bool>> = std::rc::Rc::new(
         slint::VecModel::from(config.input.controller_enabled.to_vec()),
@@ -122,6 +122,30 @@ fn controller_window(
     let selected_controllers_model: std::rc::Rc<slint::VecModel<i32>> =
         std::rc::Rc::new(selected_controllers);
     app.set_selected_controller(slint::ModelRc::from(selected_controllers_model));
+
+    let game_running = dirs.cache_dir.join("game_running");
+    app.on_input_profile_button_clicked(move || {
+        if game_running.exists() {
+            return;
+        }
+
+        let dialog = InputProfileDialog::new().unwrap();
+        let weak_dialog = dialog.as_weak();
+        dialog.on_profile_creation_button_clicked(move || {
+            weak_dialog
+                .upgrade_in_event_loop(move |handle| {
+                    handle.hide().unwrap();
+                    let profile_name = handle.get_profile_name().into();
+                    let dinput = handle.get_dinput();
+                    tokio::spawn(async move {
+                        let mut game_ui = ui::Ui::new();
+                        ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
+                    });
+                })
+                .unwrap();
+        });
+        dialog.show().unwrap();
+    });
 }
 
 fn save_settings(app: &AppWindow, controller_paths: &Vec<Option<String>>) {
@@ -165,8 +189,9 @@ fn about_window(app: &AppWindow) {
 }
 
 pub fn app_window() {
+    let dirs = ui::get_dirs();
     let app = AppWindow::new().unwrap();
-    local_game(&app);
+    local_game(&app, &dirs);
     about_window(&app);
     let mut controller_paths;
     {
@@ -176,7 +201,13 @@ pub fn app_window() {
         controller_paths = ui::input::get_controller_paths(&game_ui);
         controller_paths.insert(0, None);
         settings_window(&app, &game_ui.config);
-        controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
+        controller_window(
+            &app,
+            &game_ui.config,
+            &controller_names,
+            &controller_paths,
+            &dirs,
+        );
     }
     app.run().unwrap();
     save_settings(&app, &controller_paths);
