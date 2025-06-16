@@ -10,6 +10,7 @@ export global ControllerData {
     in-out property <[bool]> transferpak;
     in-out property <[string]> input_profile_binding;
     in-out property <[string]> input_profiles;
+    in-out property <[string]> controller_names;
 }
 
 export component ControllerConfig inherits Page {
@@ -113,7 +114,7 @@ export component ControllerConfig inherits Page {
                 }
 
                 ComboBox { // Controller
-                    model: ["Controller 1", "Controller 2", "Controller 3"];
+                    model: ControllerData.controller_names;
                     current-value: "Controller 1";
                 }
             }
@@ -162,7 +163,7 @@ export component ControllerConfig inherits Page {
                 }
 
                 ComboBox { // Controller
-                    model: ["Controller 1", "Controller 2", "Controller 3"];
+                    model: ControllerData.controller_names;
                     current-value: "Controller 1";
                 }
             }
@@ -211,7 +212,7 @@ export component ControllerConfig inherits Page {
                 }
 
                 ComboBox { // Controller
-                    model: ["Controller 1", "Controller 2", "Controller 3"];
+                    model: ControllerData.controller_names;
                     current-value: "Controller 1";
                 }
             }
@@ -263,7 +264,7 @@ export component ControllerConfig inherits Page {
                 }
 
                 ComboBox { // Controller
-                    model: ["Controller 1", "Controller 2", "Controller 3"];
+                    model: ControllerData.controller_names;
                     current-value: "Controller 1";
                 }
             }

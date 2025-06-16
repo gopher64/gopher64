@@ -64,7 +64,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_resolution(format!("{}x", config.video.upscale).into());
 }
 
-fn controller_window(app: &AppWindow, config: &ui::config::Config) {
+fn controller_window(app: &AppWindow, config: &ui::config::Config, controller_names: Vec<String>) {
     let controller_enabled_model: std::rc::Rc<slint::VecModel<bool>> = std::rc::Rc::new(
         slint::VecModel::from(config.input.controller_enabled.to_vec()),
     );
@@ -91,6 +91,14 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
     let input_profiles_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
         std::rc::Rc::new(input_profiles);
     app.set_input_profiles(slint::ModelRc::from(input_profiles_model));
+
+    let controllers = slint::VecModel::default();
+    for controller in controller_names {
+        controllers.push(controller.into());
+    }
+    let controller_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+        std::rc::Rc::new(controllers);
+    app.set_controller_names(slint::ModelRc::from(controller_names_model));
 }
 
 fn save_settings(app: &AppWindow) {
@@ -133,9 +141,10 @@ pub fn app_window() {
     local_game(&app);
     about_window(&app);
     {
-        let config = ui::config::Config::new();
-        settings_window(&app, &config);
-        controller_window(&app, &config);
+        let game_ui = ui::Ui::new();
+        let controller_names = ui::input::get_controller_names(&game_ui);
+        settings_window(&app, &game_ui.config);
+        controller_window(&app, &game_ui.config, controller_names);
     }
     app.run().unwrap();
     save_settings(&app);
