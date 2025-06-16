@@ -55,20 +55,21 @@ fn get_input_profiles(config: &ui::config::Config) -> Vec<String> {
     profiles
 }
 
-fn settings_window(app: &AppWindow) {
-    let config = ui::config::Config::new();
+fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_integer_scaling(config.video.integer_scaling);
     app.set_fullscreen(config.video.fullscreen);
     app.set_widescreen(config.video.widescreen);
     app.set_apply_crt_shader(config.video.crt);
     app.set_overclock_n64_cpu(config.emulation.overclock);
     app.set_resolution(format!("{}x", config.video.upscale).into());
+}
 
-    app.set_emulate_vru(config.input.emulate_vru);
-
+fn controller_window(app: &AppWindow, config: &ui::config::Config) {
     let controller_enabled_model: std::rc::Rc<slint::VecModel<bool>> = std::rc::Rc::new(
         slint::VecModel::from(config.input.controller_enabled.to_vec()),
     );
+    app.set_emulate_vru(config.input.emulate_vru);
+
     app.set_controller_enabled(slint::ModelRc::from(controller_enabled_model));
 
     let transferpak_enabled_model: std::rc::Rc<slint::VecModel<bool>> =
@@ -131,7 +132,11 @@ pub fn app_window() {
     let app = AppWindow::new().unwrap();
     local_game(&app);
     about_window(&app);
-    settings_window(&app);
+    {
+        let config = ui::config::Config::new();
+        settings_window(&app, &config);
+        controller_window(&app, &config);
+    }
     app.run().unwrap();
     save_settings(&app);
 }
