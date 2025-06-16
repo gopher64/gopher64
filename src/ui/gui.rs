@@ -35,7 +35,8 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn local_game(app: &AppWindow, dirs: &ui::Dirs) {
+fn local_game(app: &AppWindow) {
+    let dirs = ui::get_dirs();
     app.on_open_rom_button_clicked(move || {
         //open rom
     });
@@ -44,6 +45,14 @@ fn local_game(app: &AppWindow, dirs: &ui::Dirs) {
     app.on_saves_folder_button_clicked(move || {
         open::that_detached(saves_path.clone()).unwrap();
     });
+}
+
+fn get_input_profiles(config: &ui::config::Config) -> Vec<String> {
+    let mut profiles = vec![];
+    for key in config.input.input_profiles.keys() {
+        profiles.push(key.clone())
+    }
+    profiles
 }
 
 fn settings_window(app: &AppWindow) {
@@ -61,9 +70,26 @@ fn settings_window(app: &AppWindow) {
         slint::VecModel::from(config.input.controller_enabled.to_vec()),
     );
     app.set_controller_enabled(slint::ModelRc::from(controller_enabled_model));
+
     let transferpak_enabled_model: std::rc::Rc<slint::VecModel<bool>> =
         std::rc::Rc::new(slint::VecModel::from(config.input.transfer_pak.to_vec()));
     app.set_transferpak(slint::ModelRc::from(transferpak_enabled_model));
+
+    let profile_bindings = slint::VecModel::default();
+    for binding in config.input.input_profile_binding.iter() {
+        profile_bindings.push(binding.into());
+    }
+    let input_profile_binding_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+        std::rc::Rc::new(profile_bindings);
+    app.set_input_profile_binding(slint::ModelRc::from(input_profile_binding_model));
+
+    let input_profiles = slint::VecModel::default();
+    for profile in get_input_profiles(&config) {
+        input_profiles.push(profile.into());
+    }
+    let input_profiles_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+        std::rc::Rc::new(input_profiles);
+    app.set_input_profiles(slint::ModelRc::from(input_profiles_model));
 }
 
 fn save_settings(app: &AppWindow) {
@@ -82,6 +108,9 @@ fn save_settings(app: &AppWindow) {
     for (i, transferpak_enabled) in app.get_transferpak().iter().enumerate() {
         config.input.transfer_pak[i] = transferpak_enabled;
     }
+    for (i, input_profile_binding) in app.get_input_profile_binding().iter().enumerate() {
+        config.input.input_profile_binding[i] = input_profile_binding.into();
+    }
 }
 
 fn about_window(app: &AppWindow) {
@@ -99,9 +128,8 @@ fn about_window(app: &AppWindow) {
 }
 
 pub fn app_window() {
-    let dirs = ui::get_dirs();
     let app = AppWindow::new().unwrap();
-    local_game(&app, &dirs);
+    local_game(&app);
     about_window(&app);
     settings_window(&app);
     app.run().unwrap();
