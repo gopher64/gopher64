@@ -1,3 +1,4 @@
+use crate::device;
 use crate::ui;
 use slint::Model;
 
@@ -35,9 +36,17 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn local_game(app: &AppWindow, dirs: &ui::Dirs) {
+fn local_game(app: &AppWindow, dirs: &ui::Dirs, controller_paths: &Vec<Option<String>>) {
+    let weak = app.as_weak();
+    let running_file = dirs.cache_dir.join("game_running");
+    let controller_paths2 = controller_paths.clone();
     app.on_open_rom_button_clicked(move || {
-        //open rom
+        let running_file2 = running_file.clone();
+        let controller_paths3 = controller_paths2.clone();
+        weak.upgrade_in_event_loop(move |handle| {
+            open_rom(&handle, controller_paths3.clone(), running_file2.clone())
+        })
+        .unwrap();
     });
 
     let saves_path = dirs.data_dir.join("saves");
@@ -204,7 +213,6 @@ fn about_window(app: &AppWindow) {
 pub fn app_window() {
     let dirs = ui::get_dirs();
     let app = AppWindow::new().unwrap();
-    local_game(&app, &dirs);
     about_window(&app);
     let mut controller_paths;
     {
@@ -222,6 +230,95 @@ pub fn app_window() {
             &dirs,
         );
     }
+    local_game(&app, &dirs, &controller_paths);
     app.run().unwrap();
     save_settings(&app, &controller_paths);
+}
+
+fn open_rom(
+    app: &AppWindow,
+    controller_paths: Vec<Option<String>>,
+    running_file: std::path::PathBuf,
+) {
+    let select_rom = Some(
+        rfd::AsyncFileDialog::new()
+            .set_title("Select ROM")
+            .pick_file(),
+    );
+    let mut select_gb_rom = [None, None, None, None];
+    let mut select_gb_ram = [None, None, None, None];
+
+    for (i, transfer_pak_enabled) in app.get_transferpak().iter().enumerate() {
+        if transfer_pak_enabled {
+            select_gb_rom[i] = Some(
+                rfd::AsyncFileDialog::new()
+                    .set_title(format!("GB ROM P{}", i + 1))
+                    .pick_file(),
+            );
+            select_gb_ram[i] = Some(
+                rfd::AsyncFileDialog::new()
+                    .set_title(format!("GB RAM P{}", i + 1))
+                    .pick_file(),
+            );
+        }
+    }
+    let fullscreen = app.get_fullscreen();
+    let overclock = app.get_overclock_n64_cpu();
+
+    save_settings(app, &controller_paths);
+
+    tokio::spawn(async move {
+        let file = select_rom.unwrap().await;
+        let mut gb_rom_path = [None, None, None, None];
+        let mut gb_ram_path = [None, None, None, None];
+
+        for i in 0..4 {
+            if select_gb_rom[i].is_some() {
+                gb_rom_path[i] = select_gb_rom[i].as_mut().unwrap().await;
+            }
+            if select_gb_ram[i].is_some() {
+                gb_ram_path[i] = select_gb_ram[i].as_mut().unwrap().await;
+            }
+        }
+
+        std::thread::Builder::new()
+            .name("n64".to_string())
+            .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
+            .spawn(move || {
+                if file.is_some() {
+                    if running_file.exists() {
+                        println!("Game already running");
+                        return;
+                    }
+                    let result = std::fs::File::create(running_file.clone());
+                    if result.is_err() {
+                        panic!("could not create running file: {}", result.err().unwrap())
+                    }
+
+                    let mut device = device::Device::new();
+
+                    for i in 0..4 {
+                        if gb_rom_path[i].is_some() && gb_ram_path[i].is_some() {
+                            device.transferpaks[i].cart.rom =
+                                std::fs::read(gb_rom_path[i].as_ref().unwrap().path()).unwrap();
+
+                            device.transferpaks[i].cart.ram =
+                                std::fs::read(gb_ram_path[i].as_ref().unwrap().path()).unwrap();
+                        }
+                    }
+
+                    if let Some(rom_contents) = device::get_rom_contents(file.unwrap().path()) {
+                        device::run_game(&mut device, rom_contents, fullscreen, overclock);
+                    } else {
+                        println!("Could not read rom file");
+                    }
+
+                    let result = std::fs::remove_file(running_file);
+                    if result.is_err() {
+                        panic!("could not remove running file: {}", result.err().unwrap())
+                    }
+                }
+            })
+            .unwrap();
+    });
 }
