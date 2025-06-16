@@ -45,6 +45,26 @@ fn local_game(app: &AppWindow, dirs: &ui::Dirs) {
     });
 }
 
+fn settings_window(app: &AppWindow) {
+    let config = ui::config::Config::new();
+    app.set_integer_scaling(config.video.integer_scaling);
+    app.set_fullscreen(config.video.fullscreen);
+    app.set_widescreen(config.video.widescreen);
+    app.set_apply_crt_shader(config.video.crt);
+    app.set_overclock_n64_cpu(config.emulation.overclock);
+    app.set_resolution(format!("{}x", config.video.upscale).into());
+}
+
+fn save_settings(app: &AppWindow) {
+    let mut config = ui::config::Config::new();
+    config.video.integer_scaling = app.get_integer_scaling();
+    config.video.fullscreen = app.get_fullscreen();
+    config.video.widescreen = app.get_widescreen();
+    config.video.crt = app.get_apply_crt_shader();
+    config.emulation.overclock = app.get_overclock_n64_cpu();
+    config.video.upscale = app.get_resolution().trim_end_matches('x').parse().unwrap();
+}
+
 fn about_window(app: &AppWindow) {
     app.on_wiki_button_clicked(move || {
         open::that_detached("https://github.com/gopher64/gopher64/wiki").unwrap();
@@ -64,5 +84,7 @@ pub fn app_window() {
     let app = AppWindow::new().unwrap();
     local_game(&app, &dirs);
     about_window(&app);
+    settings_window(&app);
     app.run().unwrap();
+    save_settings(&app);
 }

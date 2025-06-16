@@ -15,6 +15,12 @@ export component AppWindow inherits Window {
     callback join_session_button_clicked;
     in property <string> version;
     in property <bool> has_update;
+    in-out property <bool> integer_scaling;
+    in-out property <bool> fullscreen;
+    in-out property <bool> widescreen;
+    in-out property <bool> apply_crt_shader;
+    in-out property <bool> overclock_n64_cpu;
+    in-out property <string> resolution;
     preferred-width: 700px;
     preferred-height: 500px;
     title: @tr("Gopher64");
@@ -46,7 +52,14 @@ export component AppWindow inherits Window {
             }
         }
         if(side-bar.current-item == 2): Netplay { }
-        if(side-bar.current-item == 3): Settings { }
+        if(side-bar.current-item == 3): Settings {
+            integer_scaling: integer_scaling;
+            fullscreen: fullscreen;
+            widescreen: widescreen;
+            apply_crt_shader: apply_crt_shader;
+            overclock_n64_cpu: overclock_n64_cpu;
+            resolution: resolution;
+        }
         if(side-bar.current-item == 4): About {
             version: version;
             has_update: has_update;
