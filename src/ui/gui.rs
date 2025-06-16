@@ -64,7 +64,12 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_resolution(format!("{}x", config.video.upscale).into());
 }
 
-fn controller_window(app: &AppWindow, config: &ui::config::Config, controller_names: Vec<String>) {
+fn controller_window(
+    app: &AppWindow,
+    config: &ui::config::Config,
+    controller_names: &Vec<String>,
+    controller_paths: &Vec<Option<String>>,
+) {
     let controller_enabled_model: std::rc::Rc<slint::VecModel<bool>> = std::rc::Rc::new(
         slint::VecModel::from(config.input.controller_enabled.to_vec()),
     );
@@ -99,9 +104,27 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config, controller_na
     let controller_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
         std::rc::Rc::new(controllers);
     app.set_controller_names(slint::ModelRc::from(controller_names_model));
+
+    let selected_controllers = slint::VecModel::default();
+    for selected in config.input.controller_assignment.iter() {
+        let mut found = false;
+        for (i, path) in controller_paths.iter().enumerate() {
+            if selected == path {
+                selected_controllers.push(i as i32);
+                found = true;
+                continue;
+            }
+        }
+        if !found {
+            selected_controllers.push(0);
+        }
+    }
+    let selected_controllers_model: std::rc::Rc<slint::VecModel<i32>> =
+        std::rc::Rc::new(selected_controllers);
+    app.set_selected_controller(slint::ModelRc::from(selected_controllers_model));
 }
 
-fn save_settings(app: &AppWindow) {
+fn save_settings(app: &AppWindow, controller_paths: &Vec<Option<String>>) {
     let mut config = ui::config::Config::new();
     config.video.integer_scaling = app.get_integer_scaling();
     config.video.fullscreen = app.get_fullscreen();
@@ -119,6 +142,11 @@ fn save_settings(app: &AppWindow) {
     }
     for (i, input_profile_binding) in app.get_input_profile_binding().iter().enumerate() {
         config.input.input_profile_binding[i] = input_profile_binding.into();
+    }
+
+    for (i, selected_controller) in app.get_selected_controller().iter().enumerate() {
+        config.input.controller_assignment[i] =
+            controller_paths[selected_controller as usize].clone();
     }
 }
 
@@ -140,12 +168,16 @@ pub fn app_window() {
     let app = AppWindow::new().unwrap();
     local_game(&app);
     about_window(&app);
+    let mut controller_paths;
     {
         let game_ui = ui::Ui::new();
-        let controller_names = ui::input::get_controller_names(&game_ui);
+        let mut controller_names = ui::input::get_controller_names(&game_ui);
+        controller_names.insert(0, "None".into());
+        controller_paths = ui::input::get_controller_paths(&game_ui);
+        controller_paths.insert(0, None);
         settings_window(&app, &game_ui.config);
-        controller_window(&app, &game_ui.config, controller_names);
+        controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
     }
     app.run().unwrap();
-    save_settings(&app);
+    save_settings(&app, &controller_paths);
 }
