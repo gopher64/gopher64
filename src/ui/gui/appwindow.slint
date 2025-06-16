@@ -6,6 +6,7 @@ import { SideBar } from "side_bar.slint";
 import { SettingsData } from "settings_page.slint";
 import { AboutData } from "about_page.slint";
 import { ControllerData } from "controller_page.slint";
+import { State } from "localgame_page.slint";
 export { InputProfileDialog } from "input_profile.slint";
 
 export component AppWindow inherits Window {
@@ -32,6 +33,7 @@ export component AppWindow inherits Window {
     in-out property input_profiles <=> ControllerData.input_profiles;
     in-out property controller_names <=> ControllerData.controller_names;
     in-out property selected_controller <=> ControllerData.selected_controller;
+    in-out property game_running <=> State.game_running;
     preferred-width: 700px;
     preferred-height: 500px;
     title: @tr("Gopher64");

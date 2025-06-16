@@ -73,10 +73,6 @@ async fn main() {
     if result.is_err() {
         panic!("could not create config dir: {}", result.err().unwrap())
     }
-    result = std::fs::create_dir_all(dirs.cache_dir.clone());
-    if result.is_err() {
-        panic!("could not create cache dir: {}", result.err().unwrap())
-    }
     result = std::fs::create_dir_all(dirs.data_dir.join("saves"));
     if result.is_err() {
         panic!("could not create save dir: {}", result.err().unwrap())
@@ -84,13 +80,6 @@ async fn main() {
     result = std::fs::create_dir_all(dirs.data_dir.join("states"));
     if result.is_err() {
         panic!("could not create state dir: {}", result.err().unwrap())
-    }
-    let running_file = dirs.cache_dir.join("game_running");
-    if running_file.exists() {
-        result = std::fs::remove_file(running_file);
-        if result.is_err() {
-            panic!("could not remove running file: {}", result.err().unwrap())
-        }
     }
 
     let args = Args::parse();

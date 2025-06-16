@@ -4,6 +4,10 @@
 import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 
+export global State {
+    in-out property <bool> game_running;
+}
+
 export component LocalGame inherits Page {
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
@@ -15,6 +19,7 @@ export component LocalGame inherits Page {
             alignment: center;
             Button {
                 text: @tr("Open ROM");
+                enabled: !State.game_running;
                 clicked => {
                     open_rom_button_clicked();
                 }

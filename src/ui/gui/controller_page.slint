@@ -3,6 +3,7 @@
 
 import { CheckBox, ComboBox, Button, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
 import { Page } from "page.slint";
+import { State } from "localgame_page.slint";
 
 export global ControllerData {
     in-out property <bool> emulate_vru;
@@ -31,6 +32,7 @@ export component ControllerConfig inherits Page {
             alignment: start;
             Button {
                 text: @tr("Configure Input Profile");
+                enabled: !State.game_running;
                 clicked => {
                     input_profile_button_clicked();
                 }

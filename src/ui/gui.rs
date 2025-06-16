@@ -36,17 +36,14 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn local_game(app: &AppWindow, dirs: &ui::Dirs, controller_paths: &[Option<String>]) {
+fn local_game(app: &AppWindow, controller_paths: &[Option<String>]) {
+    let dirs = ui::get_dirs();
     let weak = app.as_weak();
-    let running_file = dirs.cache_dir.join("game_running");
     let controller_paths2 = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
-        let running_file2 = running_file.clone();
         let controller_paths3 = controller_paths2.clone();
-        weak.upgrade_in_event_loop(move |handle| {
-            open_rom(&handle, controller_paths3.clone(), running_file2.clone())
-        })
-        .unwrap();
+        weak.upgrade_in_event_loop(move |handle| open_rom(&handle, controller_paths3.clone()))
+            .unwrap();
     });
 
     let saves_path = dirs.data_dir.join("saves");
@@ -91,7 +88,6 @@ fn controller_window(
     config: &ui::config::Config,
     controller_names: &Vec<String>,
     controller_paths: &[Option<String>],
-    dirs: &ui::Dirs,
 ) {
     let controller_enabled_model: std::rc::Rc<slint::VecModel<bool>> = std::rc::Rc::new(
         slint::VecModel::from(config.input.controller_enabled.to_vec()),
@@ -140,13 +136,8 @@ fn controller_window(
         std::rc::Rc::new(selected_controllers);
     app.set_selected_controller(slint::ModelRc::from(selected_controllers_model));
 
-    let game_running = dirs.cache_dir.join("game_running");
     let weak_app = app.as_weak();
     app.on_input_profile_button_clicked(move || {
-        if game_running.exists() {
-            return;
-        }
-
         let dialog = InputProfileDialog::new().unwrap();
         let weak_dialog = dialog.as_weak();
         let weak_app2 = weak_app.clone();
@@ -211,7 +202,6 @@ fn about_window(app: &AppWindow) {
 }
 
 pub fn app_window() {
-    let dirs = ui::get_dirs();
     let app = AppWindow::new().unwrap();
     about_window(&app);
     let mut controller_paths;
@@ -222,24 +212,14 @@ pub fn app_window() {
         controller_paths = ui::input::get_controller_paths(&game_ui);
         controller_paths.insert(0, None);
         settings_window(&app, &game_ui.config);
-        controller_window(
-            &app,
-            &game_ui.config,
-            &controller_names,
-            &controller_paths,
-            &dirs,
-        );
+        controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
     }
-    local_game(&app, &dirs, &controller_paths);
+    local_game(&app, &controller_paths);
     app.run().unwrap();
     save_settings(&app, &controller_paths);
 }
 
-fn open_rom(
-    app: &AppWindow,
-    controller_paths: Vec<Option<String>>,
-    running_file: std::path::PathBuf,
-) {
+fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
     let select_rom = rfd::AsyncFileDialog::new()
         .set_title("Select ROM")
         .pick_file();
@@ -264,6 +244,8 @@ fn open_rom(
     let overclock = app.get_overclock_n64_cpu();
 
     save_settings(app, &controller_paths);
+    app.set_game_running(true);
+    let weak = app.as_weak();
 
     tokio::spawn(async move {
         let file = select_rom.await;
@@ -284,15 +266,6 @@ fn open_rom(
             .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
             .spawn(move || {
                 if file.is_some() {
-                    if running_file.exists() {
-                        println!("Game already running");
-                        return;
-                    }
-                    let result = std::fs::File::create(running_file.clone());
-                    if result.is_err() {
-                        panic!("could not create running file: {}", result.err().unwrap())
-                    }
-
                     let mut device = device::Device::new();
 
                     for i in 0..4 {
@@ -310,12 +283,9 @@ fn open_rom(
                     } else {
                         println!("Could not read rom file");
                     }
-
-                    let result = std::fs::remove_file(running_file);
-                    if result.is_err() {
-                        panic!("could not remove running file: {}", result.err().unwrap())
-                    }
                 }
+                weak.upgrade_in_event_loop(move |handle| handle.set_game_running(false))
+                    .unwrap();
             })
             .unwrap();
     });
