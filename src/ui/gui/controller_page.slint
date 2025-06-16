@@ -1,14 +1,220 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { AboutSlint } from "std-widgets.slint";
+import { CheckBox, ComboBox, Button, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export component ControllerConfig inherits Page {
+    property <[{name: string, first-checked: bool}]> rows: [
+        { name: "1", first-checked: true },
+        { name: "2", first-checked: false },
+        { name: "3", first-checked: false },
+        { name: "4", first-checked: false }
+    ];
+
+    callback input_profile_button_clicked;
     title: @tr("Controller Configuration");
 
-    AboutSlint { }
+    VerticalBox {
+        alignment: start;
+        HorizontalBox {
+            alignment: start;
+            Button {
+                text: @tr("Configure Input Profile");
+                clicked => {
+                    input_profile_button_clicked();
+                }
+            }
+        }
 
-    // Spacer
-    Rectangle { }
+        Rectangle { }
+
+        Text {
+            text: @tr("Controller Settings:");
+            font-weight: 600;
+        }
+
+        GridBox {
+            Row {
+                Text {
+                    text: @tr("Port");
+                }
+
+                Text {
+                    text: @tr("Enabled");
+                }
+
+                Text {
+                    text: @tr("Emulate VRU");
+                }
+
+                Text {
+                    text: @tr("Transfer Pak");
+                }
+
+                Text {
+                    text: @tr("Profile");
+                }
+
+                Text {
+                    text: @tr("Controller");
+                }
+            }
+
+            Row {
+                Text {
+                    text: rows[0].name;
+                    vertical-alignment: center;
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: rows[0].first-checked;
+                    }
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: false;
+                        enabled: false;
+                    }
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: false;
+                    }
+                }
+
+                ComboBox {
+                    model: ["Default", "Profile 1", "Profile 2"];
+                    current-value: "Default";
+                }
+
+                ComboBox {
+                    model: ["Controller 1", "Controller 2", "Controller 3"];
+                    current-value: "Controller 1";
+                }
+            }
+
+            Row {
+                Text {
+                    text: rows[1].name;
+                    vertical-alignment: center;
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: rows[1].first-checked;
+                    }
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: false;
+                        enabled: false;
+                    }
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: false;
+                    }
+                }
+
+                ComboBox {
+                    model: ["Default", "Profile 1", "Profile 2"];
+                    current-value: "Default";
+                }
+
+                ComboBox {
+                    model: ["Controller 1", "Controller 2", "Controller 3"];
+                    current-value: "Controller 1";
+                }
+            }
+
+            Row {
+                Text {
+                    text: rows[2].name;
+                    vertical-alignment: center;
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: rows[2].first-checked;
+                    }
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: false;
+                        enabled: false;
+                    }
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: false;
+                    }
+                }
+
+                ComboBox {
+                    model: ["Default", "Profile 1", "Profile 2"];
+                    current-value: "Default";
+                }
+
+                ComboBox {
+                    model: ["Controller 1", "Controller 2", "Controller 3"];
+                    current-value: "Controller 1";
+                }
+            }
+
+            Row {
+                Text {
+                    text: rows[3].name;
+                    vertical-alignment: center;
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: rows[3].first-checked;
+                    }
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: false;
+                    }
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    CheckBox {
+                        checked: false;
+                    }
+                }
+
+                ComboBox {
+                    model: ["Default", "Profile 1", "Profile 2"];
+                    current-value: "Default";
+                }
+
+                ComboBox {
+                    model: ["Controller 1", "Controller 2", "Controller 3"];
+                    current-value: "Controller 1";
+                }
+            }
+        }
+    }
 }

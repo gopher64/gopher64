@@ -10,6 +10,7 @@ export component AppWindow inherits Window {
     callback newversion_button_clicked;
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
+    callback input_profile_button_clicked;
     in property <string> version;
     in property <bool> has_update;
     preferred-width: 700px;
@@ -37,7 +38,11 @@ export component AppWindow inherits Window {
                 saves_folder_button_clicked();
             }
         }
-        if(side-bar.current-item == 1): ControllerConfig { }
+        if(side-bar.current-item == 1): ControllerConfig {
+            input_profile_button_clicked => {
+                input_profile_button_clicked();
+            }
+        }
         if(side-bar.current-item == 2): Netplay { }
         if(side-bar.current-item == 3): Settings { }
         if(side-bar.current-item == 4): About {
