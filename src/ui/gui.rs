@@ -41,16 +41,7 @@ fn local_game(app: &AppWindow, dirs: &ui::Dirs) {
 
     let saves_path = dirs.data_dir.join("saves");
     app.on_saves_folder_button_clicked(move || {
-        let command = if cfg!(target_os = "windows") {
-            "explorer"
-        } else if cfg!(target_os = "linux") {
-            "xdg-open"
-        } else {
-            panic!("Unsupported platform");
-        };
-        let _ = std::process::Command::new(command)
-            .arg(saves_path.clone())
-            .spawn();
+        open::that_detached(saves_path.clone()).unwrap();
     });
 }
 
