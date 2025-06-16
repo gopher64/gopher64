@@ -8,6 +8,8 @@ export global ControllerData {
     in-out property <bool> emulate_vru;
     in-out property <[bool]> controller_enabled;
     in-out property <[bool]> transferpak;
+    in-out property <[string]> input_profile_binding;
+    in-out property <[string]> input_profiles;
 }
 
 export component ControllerConfig inherits Page {
@@ -103,8 +105,11 @@ export component ControllerConfig inherits Page {
                 }
 
                 ComboBox { // Profile
-                    model: ["Default", "Profile 1", "Profile 2"];
-                    current-value: "Default";
+                    model: ControllerData.input_profiles;
+                    current-value: ControllerData.input_profile_binding[number];
+                    selected => {
+                        ControllerData.input_profile_binding[number] = self.current-value;
+                    }
                 }
 
                 ComboBox { // Controller
@@ -149,8 +154,11 @@ export component ControllerConfig inherits Page {
                 }
 
                 ComboBox { // Profile
-                    model: ["Default", "Profile 1", "Profile 2"];
-                    current-value: "Default";
+                    model: ControllerData.input_profiles;
+                    current-value: ControllerData.input_profile_binding[number];
+                    selected => {
+                        ControllerData.input_profile_binding[number] = self.current-value;
+                    }
                 }
 
                 ComboBox { // Controller
@@ -195,8 +203,11 @@ export component ControllerConfig inherits Page {
                 }
 
                 ComboBox { // Profile
-                    model: ["Default", "Profile 1", "Profile 2"];
-                    current-value: "Default";
+                    model: ControllerData.input_profiles;
+                    current-value: ControllerData.input_profile_binding[number];
+                    selected => {
+                        ControllerData.input_profile_binding[number] = self.current-value;
+                    }
                 }
 
                 ComboBox { // Controller
@@ -244,8 +255,11 @@ export component ControllerConfig inherits Page {
                 }
 
                 ComboBox { // Profile
-                    model: ["Default", "Profile 1", "Profile 2"];
-                    current-value: "Default";
+                    model: ControllerData.input_profiles;
+                    current-value: ControllerData.input_profile_binding[number];
+                    selected => {
+                        ControllerData.input_profile_binding[number] = self.current-value;
+                    }
                 }
 
                 ComboBox { // Controller
