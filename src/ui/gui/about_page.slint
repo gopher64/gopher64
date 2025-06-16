@@ -4,12 +4,15 @@
 import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 
+export global AboutData {
+    in property <string> version;
+    in property <bool> has_update;
+}
+
 export component About inherits Page {
     callback wiki_button_clicked;
     callback discord_button_clicked;
     callback newversion_button_clicked;
-    in property <string> version;
-    in property <bool> has_update;
     title: @tr("About");
 
     VerticalBox {
@@ -37,11 +40,11 @@ export component About inherits Page {
         HorizontalBox {
             alignment: center;
             Text {
-                text: version;
+                text: AboutData.version;
             }
         }
 
-        if has_update:HorizontalBox {
+        if AboutData.has_update:HorizontalBox {
             alignment: center;
             Button {
                 text: @tr("New version available! Click to download");
