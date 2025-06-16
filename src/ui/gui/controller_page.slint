@@ -11,6 +11,7 @@ export global ControllerData {
     in-out property <[string]> input_profile_binding;
     in-out property <[string]> input_profiles;
     in-out property <[string]> controller_names;
+    in-out property <[int]> selected_controller;
 }
 
 export component ControllerConfig inherits Page {
@@ -116,7 +117,10 @@ export component ControllerConfig inherits Page {
                 ComboBox { // Controller
                     model: ControllerData.controller_names;
                     width: self.preferred-width;
-                    current-value: "Controller 1";
+                    current-value: ControllerData.controller_names[ControllerData.selected_controller[number]];
+                    selected => {
+                        ControllerData.selected_controller[number] = self.current-index;
+                    }
                 }
             }
 
@@ -166,7 +170,10 @@ export component ControllerConfig inherits Page {
                 ComboBox { // Controller
                     model: ControllerData.controller_names;
                     width: self.preferred-width;
-                    current-value: "Controller 1";
+                    current-value: ControllerData.controller_names[ControllerData.selected_controller[number]];
+                    selected => {
+                        ControllerData.selected_controller[number] = self.current-index;
+                    }
                 }
             }
 
@@ -216,7 +223,10 @@ export component ControllerConfig inherits Page {
                 ComboBox { // Controller
                     model: ControllerData.controller_names;
                     width: self.preferred-width;
-                    current-value: "Controller 1";
+                    current-value: ControllerData.controller_names[ControllerData.selected_controller[number]];
+                    selected => {
+                        ControllerData.selected_controller[number] = self.current-index;
+                    }
                 }
             }
 
@@ -269,7 +279,10 @@ export component ControllerConfig inherits Page {
                 ComboBox { // Controller
                     model: ControllerData.controller_names;
                     width: self.preferred-width;
-                    current-value: "Controller 1";
+                    current-value: ControllerData.controller_names[ControllerData.selected_controller[number]];
+                    selected => {
+                        ControllerData.selected_controller[number] = self.current-index;
+                    }
                 }
             }
         }

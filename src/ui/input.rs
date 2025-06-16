@@ -347,6 +347,21 @@ pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
     controllers
 }
 
+pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<Option<String>> {
+    let mut controller_paths: Vec<Option<String>> = vec![];
+
+    for joystick in game_ui.input.joysticks.iter() {
+        let path = unsafe {
+            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick))
+                .to_string_lossy()
+                .to_string()
+        };
+        controller_paths.push(Some(path));
+    }
+
+    controller_paths
+}
+
 pub fn get(ui: &ui::Ui, channel: usize) -> InputData {
     let profile_name = ui.config.input.input_profile_binding[channel].clone();
     let profile = ui.config.input.input_profiles.get(&profile_name).unwrap();
