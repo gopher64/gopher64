@@ -547,6 +547,8 @@ uint64_t rdp_process_commands()
 			if (interrupt_timer == 0)
 				interrupt_timer = 5000;
 			break;
+		default:
+			break;
 		}
 
 		rdp_device.cmd_cur += cmd_length;
