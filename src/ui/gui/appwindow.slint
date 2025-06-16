@@ -8,6 +8,8 @@ export component AppWindow inherits Window {
     callback wiki_button_clicked;
     callback discord_button_clicked;
     callback newversion_button_clicked;
+    callback open_rom_button_clicked;
+    callback saves_folder_button_clicked;
     in property <string> version;
     in property <bool> has_update;
     preferred-width: 700px;
@@ -27,7 +29,14 @@ export component AppWindow inherits Window {
             ];
         }
 
-        if(side-bar.current-item == 0): LocalGame { }
+        if(side-bar.current-item == 0): LocalGame {
+            open_rom_button_clicked => {
+                open_rom_button_clicked();
+            }
+            saves_folder_button_clicked => {
+                saves_folder_button_clicked();
+            }
+        }
         if(side-bar.current-item == 1): ControllerConfig { }
         if(side-bar.current-item == 2): Netplay { }
         if(side-bar.current-item == 3): Settings { }
