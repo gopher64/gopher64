@@ -1,5 +1,10 @@
 import { LineEdit, HorizontalBox, VerticalBox, Button, ComboBox } from "std-widgets.slint";
 
+export global NetplayCreateData {
+    in-out property <string> session_name;
+    in-out property <string> player_name;
+}
+
 export component NetplayCreate inherits Window {
     title: @tr("Netplay: Create Session");
 
@@ -12,6 +17,9 @@ export component NetplayCreate inherits Window {
 
                 LineEdit {
                     placeholder_text: @tr("Enter session name");
+                    edited(text) => {
+                        NetplayCreateData.session_name = text;
+                    }
                 }
             }
 
@@ -33,6 +41,9 @@ export component NetplayCreate inherits Window {
 
             LineEdit {
                 placeholder_text: @tr("Enter player name");
+                edited(text) => {
+                    NetplayCreateData.player_name = text;
+                }
             }
         }
 
@@ -63,6 +74,7 @@ export component NetplayCreate inherits Window {
 
         Button {
             text: @tr("Create Session");
+            enabled: NetplayCreateData.session_name != "" && NetplayCreateData.player_name != "";
         }
     }
 }

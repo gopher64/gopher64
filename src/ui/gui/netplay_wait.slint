@@ -1,5 +1,9 @@
 import { VerticalBox, HorizontalBox, TextEdit, ScrollView, LineEdit, Button, GridBox } from "std-widgets.slint";
 
+export global NetplayWaitData {
+    in-out property <string> chat_message;
+}
+
 export component NetplayWait inherits Window {
     title: @tr("Netplay: Waiting Room");
     preferred-width: 400px;
@@ -48,10 +52,14 @@ export component NetplayWait inherits Window {
         HorizontalBox {
             LineEdit {
                 placeholder_text: @tr("Enter chat message");
+                edited(text) => {
+                    NetplayWaitData.chat_message = text;
+                }
             }
 
             Button {
                 text: @tr("Send Message");
+                enabled: NetplayWaitData.chat_message != "";
             }
         }
 
