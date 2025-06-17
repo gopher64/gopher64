@@ -1,0 +1,68 @@
+import { LineEdit, HorizontalBox, VerticalBox, Button, ComboBox } from "std-widgets.slint";
+
+export component NetplayCreate inherits Window {
+    title: @tr("Netplay: Create Session");
+
+    VerticalBox {
+        HorizontalBox {
+            VerticalBox {
+                Text {
+                    text: @tr("Session Name:");
+                }
+
+                LineEdit {
+                    placeholder_text: @tr("Enter session name");
+                }
+            }
+
+            VerticalBox {
+                Text {
+                    text: @tr("Password (Optional):");
+                }
+
+                LineEdit {
+                    placeholder_text: @tr("Enter session password");
+                }
+            }
+        }
+
+        VerticalBox {
+            Text {
+                text: @tr("Player Name:");
+            }
+
+            LineEdit {
+                placeholder_text: @tr("Enter player name");
+            }
+        }
+
+        VerticalBox {
+            Text {
+                text: @tr("Server:");
+            }
+
+            HorizontalBox {
+                ComboBox {
+                    model: [@tr("Localhost"), @tr("Remote Server 1"), @tr("Remote Server 2")];
+                }
+
+                Text {
+                    vertical-alignment: center;
+                    text: @tr("Ping: 100ms");
+                }
+            }
+        }
+
+        Button {
+            text: @tr("Select ROM");
+        }
+
+        Rectangle { }
+
+        Rectangle { }
+
+        Button {
+            text: @tr("Create Session");
+        }
+    }
+}

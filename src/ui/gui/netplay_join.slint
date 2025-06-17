@@ -1,0 +1,81 @@
+import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Button } from "std-widgets.slint";
+
+export component NetplayJoin inherits Window {
+    title: @tr("Netplay: Join Session");
+    property <bool> has_sessions: false;
+
+    VerticalBox {
+        HorizontalBox {
+            VerticalBox {
+                Text {
+                    text: @tr("Player Name:");
+                }
+
+                LineEdit {
+                    placeholder_text: @tr("Enter player name");
+                }
+            }
+
+            VerticalBox {
+                Text {
+                    text: @tr("Server:");
+                }
+
+                HorizontalBox {
+                    ComboBox {
+                        model: [@tr("Localhost"), @tr("Remote Server 1"), @tr("Remote Server 2")];
+                    }
+
+                    Text {
+                        vertical-alignment: center;
+                        text: @tr("Ping: 100ms");
+                    }
+                }
+            }
+        }
+
+        if has_sessions:StandardTableView {
+            columns: [
+                { title: "Header 1" },
+                { title: "Header 2" },
+            ];
+            rows: [
+                [
+                    { text: "Item 1" },
+                    { text: "Item 2" },
+                ],
+                [
+                    { text: "Item 1" },
+                    { text: "Item 2" },
+                ],
+                [
+                    { text: "Item 1" },
+                    { text: "Item 2" },
+                ]
+            ];
+        }
+        if !has_sessions: Text {
+            text: @tr("No sessions available. Please refresh or try a different server.");
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+
+        HorizontalBox {
+            Rectangle { }
+
+            Button {
+                text: @tr("Refresh Session List");
+            }
+        }
+
+        HorizontalBox {
+            LineEdit {
+                placeholder-text: @tr("Password (if required)");
+            }
+
+            Button {
+                text: @tr("Join Session (Open ROM)");
+            }
+        }
+    }
+}
