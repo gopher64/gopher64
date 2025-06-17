@@ -263,17 +263,37 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
     if emulate_vru {
         tokio::spawn(async move {
             loop {
+                let notifier = vru_word_notifier.clone();
+                let notifier_closed = vru_word_notifier.clone();
                 let result = vru_window_receiver.recv().await;
                 if let Some(words) = result {
                     if words.is_some() {
                         weak_vru
                             .upgrade_in_event_loop(move |_handle| {
                                 let vru_dialog = VruDialog::new().unwrap();
+                                let vru_dialog_weak = vru_dialog.as_weak();
+
+                                vru_dialog.on_vru_button_clicked(move |chosen_word| {
+                                    notifier.try_send(chosen_word.to_string()).unwrap();
+                                    vru_dialog_weak.unwrap().window().hide().unwrap();
+                                });
+
+                                vru_dialog.window().on_close_requested(move || {
+                                    notifier_closed.try_send("".to_string()).unwrap();
+                                    slint::CloseRequestResponse::HideWindow
+                                });
+
+                                let words_vec = slint::VecModel::default();
+                                for word in words.unwrap() {
+                                    words_vec.push(word.into());
+                                }
+                                let words_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                                    std::rc::Rc::new(words_vec);
+                                vru_dialog.set_words(slint::ModelRc::from(words_model));
+
                                 vru_dialog.show().unwrap();
                             })
                             .unwrap();
-                        println!("Got words");
-                        vru_word_notifier.send("hello".to_string()).await.unwrap();
                     } else {
                         return;
                     }

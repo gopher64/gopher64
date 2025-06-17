@@ -1,3 +1,24 @@
+import { Button, VerticalBox, ScrollView } from "std-widgets.slint";
+export global VruData {
+    in-out property <[string]> words;
+}
+
 export component VruDialog inherits Window {
     title: "What Would You Like To Say?";
+    width: 400px;
+    height: 400px;
+    callback vru_button_clicked(string);
+    in-out property words <=> VruData.words;
+
+    ScrollView {
+        VerticalBox {
+            padding-bottom: 40px;
+            for word[i] in words: Button {
+                text: word;
+                clicked => {
+                    vru_button_clicked(self.text);
+                }
+            }
+        }
+    }
 }
