@@ -1,5 +1,9 @@
 import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Button } from "std-widgets.slint";
 
+export global NetplayJoinData {
+    in-out property <string> player_name;
+}
+
 export component NetplayJoin inherits Window {
     title: @tr("Netplay: Join Session");
     property <bool> has_sessions: false;
@@ -13,6 +17,9 @@ export component NetplayJoin inherits Window {
 
                 LineEdit {
                     placeholder_text: @tr("Enter player name");
+                    edited(text) => {
+                        NetplayJoinData.player_name = text;
+                    }
                 }
             }
 
@@ -75,6 +82,7 @@ export component NetplayJoin inherits Window {
 
             Button {
                 text: @tr("Join Session (Open ROM)");
+                enabled: NetplayJoinData.player_name != "";
             }
         }
     }
