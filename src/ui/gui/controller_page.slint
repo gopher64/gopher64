@@ -81,19 +81,19 @@ export component ControllerConfig inherits Page {
                 }
 
                 CheckBox { // Enabled
-                        checked: ControllerData.controller_enabled[number];
+                    checked: ControllerData.controller_enabled[number];
                     toggled => {
                         ControllerData.controller_enabled[number] = self.checked;
                     }
                 }
 
                 CheckBox { // Emulate VRU
-                        checked: false;
                     enabled: rows[number].vru-enabled;
+                    checked: false;
                 }
 
                 CheckBox { // Transfer Pak
-                        checked: ControllerData.transferpak[number];
+                    checked: ControllerData.transferpak[number];
                     toggled => {
                         ControllerData.transferpak[number] = self.checked;
                     }
@@ -125,19 +125,19 @@ export component ControllerConfig inherits Page {
                 }
 
                 CheckBox { // Enabled
-                        checked: ControllerData.controller_enabled[number];
+                    checked: ControllerData.controller_enabled[number];
                     toggled => {
                         ControllerData.controller_enabled[number] = self.checked;
                     }
                 }
 
                 CheckBox { // Emulate VRU
-                        checked: false;
                     enabled: rows[number].vru-enabled;
+                    checked: false;
                 }
 
                 CheckBox { // Transfer Pak
-                        checked: ControllerData.transferpak[number];
+                    checked: ControllerData.transferpak[number];
                     toggled => {
                         ControllerData.transferpak[number] = self.checked;
                     }
@@ -169,19 +169,19 @@ export component ControllerConfig inherits Page {
                 }
 
                 CheckBox { // Enabled
-                        checked: ControllerData.controller_enabled[number];
+                    checked: ControllerData.controller_enabled[number];
                     toggled => {
                         ControllerData.controller_enabled[number] = self.checked;
                     }
                 }
 
                 CheckBox { // Emulate VRU
-                        checked: false;
                     enabled: rows[number].vru-enabled;
+                    checked: false;
                 }
 
                 CheckBox { // Transfer Pak
-                        checked: ControllerData.transferpak[number];
+                    checked: ControllerData.transferpak[number];
                     toggled => {
                         ControllerData.transferpak[number] = self.checked;
                     }
@@ -213,14 +213,14 @@ export component ControllerConfig inherits Page {
                 }
 
                 CheckBox { // Enabled
-                        checked: ControllerData.controller_enabled[number];
+                    checked: ControllerData.controller_enabled[number];
                     toggled => {
                         ControllerData.controller_enabled[number] = self.checked;
                     }
                 }
 
                 CheckBox { // Emulate VRU
-                        enabled: rows[number].vru-enabled;
+                    enabled: rows[number].vru-enabled;
                     checked: ControllerData.emulate_vru;
                     toggled => {
                         ControllerData.emulate_vru = self.checked;
@@ -228,7 +228,7 @@ export component ControllerConfig inherits Page {
                 }
 
                 CheckBox { // Transfer Pak
-                       checked: ControllerData.transferpak[number];
+                    checked: ControllerData.transferpak[number];
                     toggled => {
                         ControllerData.transferpak[number] = self.checked;
                     }
