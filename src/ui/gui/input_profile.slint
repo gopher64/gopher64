@@ -6,7 +6,7 @@ export global InputProfileData {
 }
 
 export component InputProfileDialog inherits Window {
-    title: "Create Input Profile";
+    title: @tr("Create Input Profile");
     callback profile_creation_button_clicked;
     in-out property dinput <=> InputProfileData.dinput;
     in-out property profile_name <=> InputProfileData.profile_name;
