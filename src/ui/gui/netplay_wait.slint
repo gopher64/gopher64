@@ -1,0 +1,66 @@
+import { VerticalBox, HorizontalBox, TextEdit, ScrollView, LineEdit, Button, GridBox } from "std-widgets.slint";
+
+export component NetplayWait inherits Window {
+    title: @tr("Netplay: Waiting Room");
+    preferred-width: 400px;
+    preferred-height: 400px;
+    property <[string]> players: ["one", "two", "three", "four"];
+    VerticalBox {
+        Text {
+            text: @tr("Session Name: Something");
+            font-size: 15px;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: @tr("Game Name: Something");
+            font-size: 15px;
+            horizontal-alignment: center;
+        }
+
+        GridBox {
+            Row {
+                Text {
+                    text: "Player 1: " + players[0];
+                }
+
+                Text {
+                    text: "Player 2: " + players[1];
+                }
+            }
+
+            Row {
+                Text {
+                    text: "Player 3: " + players[2];
+                }
+
+                Text {
+                    text: "Player 4: " + players[3];
+                }
+            }
+        }
+
+        TextEdit {
+            read-only: true;
+            text: @tr("Waiting for players to join...\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nend");
+        }
+
+        HorizontalBox {
+            LineEdit {
+                placeholder_text: @tr("Enter chat message");
+            }
+
+            Button {
+                text: @tr("Send Message");
+            }
+        }
+
+        Text {
+            text: @tr("You can close this window at any time, but you will not be able to rejoin the session.");
+        }
+
+        Button {
+            text: @tr("Start Game");
+        }
+    }
+}
