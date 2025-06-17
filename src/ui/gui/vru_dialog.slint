@@ -5,8 +5,8 @@ export global VruData {
 
 export component VruDialog inherits Window {
     title: @tr("What Would You Like To Say?");
-    width: 400px;
-    height: 400px;
+    preferred-width: 400px;
+    preferred-height: 400px;
     callback vru_button_clicked(string);
     in-out property words <=> VruData.words;
 
