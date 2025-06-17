@@ -2,13 +2,13 @@ use crate::ui;
 
 pub fn prompt_for_match(
     words: &[String],
-    window_notifier: &tokio::sync::mpsc::Sender<Vec<String>>,
+    window_notifier: &tokio::sync::mpsc::Sender<Option<Vec<String>>>,
     word_index_receiver: &mut tokio::sync::mpsc::Receiver<String>,
 ) -> u16 {
     let mut dedup_words = words.to_owned();
     dedup_words.sort();
     dedup_words.dedup();
-    window_notifier.try_send(dedup_words).unwrap();
+    window_notifier.try_send(Some(dedup_words)).unwrap();
     let mut result = word_index_receiver.try_recv();
     while result.is_err() {
         result = word_index_receiver.try_recv();

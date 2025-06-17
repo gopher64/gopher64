@@ -240,13 +240,43 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
             );
         }
     }
+
+    #[allow(clippy::type_complexity)]
+    let (vru_window_notifier, mut vru_window_receiver): (
+        tokio::sync::mpsc::Sender<Option<Vec<String>>>,
+        tokio::sync::mpsc::Receiver<Option<Vec<String>>>,
+    ) = tokio::sync::mpsc::channel(1);
+
+    let (vru_word_notifier, vru_word_receiver): (
+        tokio::sync::mpsc::Sender<String>,
+        tokio::sync::mpsc::Receiver<String>,
+    ) = tokio::sync::mpsc::channel(1);
+
     let fullscreen = app.get_fullscreen();
     let overclock = app.get_overclock_n64_cpu();
+    let emulate_vru = app.get_emulate_vru();
 
     save_settings(app, &controller_paths);
     app.set_game_running(true);
     let weak = app.as_weak();
 
+    if emulate_vru {
+        tokio::spawn(async move {
+            loop {
+                let result = vru_window_receiver.recv().await;
+                if let Some(words) = result {
+                    if words.is_some() {
+                        println!("Got words");
+                        vru_word_notifier.send("hello".to_string()).await.unwrap();
+                    } else {
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            }
+        });
+    }
     tokio::spawn(async move {
         let file = select_rom.await;
         let mut gb_rom_path = [None, None, None, None];
@@ -278,10 +308,23 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
                         }
                     }
 
+                    if emulate_vru {
+                        device.vru_window.window_notifier = Some(vru_window_notifier);
+                        device.vru_window.word_receiver = Some(vru_word_receiver);
+                    }
+
                     if let Some(rom_contents) = device::get_rom_contents(file.unwrap().path()) {
                         device::run_game(&mut device, rom_contents, fullscreen, overclock);
                     } else {
                         println!("Could not read rom file");
+                    }
+                    if emulate_vru {
+                        device
+                            .vru_window
+                            .window_notifier
+                            .unwrap()
+                            .try_send(None)
+                            .unwrap();
                     }
                 }
                 weak.upgrade_in_event_loop(move |handle| handle.set_game_running(false))
