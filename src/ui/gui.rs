@@ -258,14 +258,20 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
 
     save_settings(app, &controller_paths);
     app.set_game_running(true);
-    let weak = app.as_weak();
 
+    let weak_vru = app.as_weak();
     if emulate_vru {
         tokio::spawn(async move {
             loop {
                 let result = vru_window_receiver.recv().await;
                 if let Some(words) = result {
                     if words.is_some() {
+                        weak_vru
+                            .upgrade_in_event_loop(move |_handle| {
+                                let vru_dialog = VruDialog::new().unwrap();
+                                vru_dialog.show().unwrap();
+                            })
+                            .unwrap();
                         println!("Got words");
                         vru_word_notifier.send("hello".to_string()).await.unwrap();
                     } else {
@@ -277,6 +283,7 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
             }
         });
     }
+    let weak = app.as_weak();
     tokio::spawn(async move {
         let file = select_rom.await;
         let mut gb_rom_path = [None, None, None, None];
