@@ -2,9 +2,26 @@ use slint::ComponentHandle;
 
 use crate::ui::gui::{NetplayCreate, NetplayJoin};
 
-pub fn setup_create_window(create_window: &NetplayCreate) {
+pub trait ServerNamesSetter {
+    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>);
+}
+
+impl ServerNamesSetter for NetplayCreate {
+    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>) {
+        self.set_server_names(names);
+    }
+}
+
+impl ServerNamesSetter for NetplayJoin {
+    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>) {
+        self.set_server_names(names);
+    }
+}
+
+pub fn populate_server_names<T: ComponentHandle + ServerNamesSetter + 'static>(
+    weak: slint::Weak<T>,
+) {
     let task = reqwest::get("https://m64p.s3.amazonaws.com/servers.json");
-    let weak = create_window.as_weak();
     tokio::spawn(async move {
         let response = task.await;
         if let Ok(response) = response {
@@ -27,10 +44,17 @@ pub fn setup_create_window(create_window: &NetplayCreate) {
             .unwrap();
         }
     });
+}
+
+pub fn setup_create_window(create_window: &NetplayCreate) {
+    let weak = create_window.as_weak();
+    populate_server_names(weak);
 
     create_window.show().unwrap();
 }
 
 pub fn setup_join_window(join_window: &NetplayJoin) {
+    let weak = join_window.as_weak();
+    populate_server_names(weak);
     join_window.show().unwrap();
 }
