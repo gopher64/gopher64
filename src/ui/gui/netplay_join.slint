@@ -1,4 +1,5 @@
 import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Button } from "std-widgets.slint";
+import { NetplayData } from "netplay_page.slint";
 
 export global NetplayJoinData {
     in-out property <string> player_name;
@@ -7,6 +8,7 @@ export global NetplayJoinData {
 export component NetplayJoin inherits Window {
     title: @tr("Netplay: Join Session");
     property <bool> has_sessions: false;
+    in-out property server_names <=> NetplayData.server_names;
 
     VerticalBox {
         HorizontalBox {
@@ -30,7 +32,7 @@ export component NetplayJoin inherits Window {
 
                 HorizontalBox {
                     ComboBox {
-                        model: [@tr("Localhost"), @tr("Remote Server 1"), @tr("Remote Server 2")];
+                        model: NetplayData.server_names;
                     }
 
                     Text {
