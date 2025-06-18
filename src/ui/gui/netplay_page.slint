@@ -4,6 +4,11 @@
 import { VerticalBox, HorizontalBox, Button } from "std-widgets.slint";
 import { Page } from "page.slint";
 
+export global NetplayData {
+    in-out property <[string]> server_names;
+    in-out property <[string]> server_urls;
+}
+
 export component Netplay inherits Page {
     callback create_session_button_clicked;
     callback join_session_button_clicked;

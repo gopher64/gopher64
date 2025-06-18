@@ -3,6 +3,31 @@ use slint::ComponentHandle;
 use crate::ui::gui::{NetplayCreate, NetplayJoin};
 
 pub fn setup_create_window(create_window: &NetplayCreate) {
+    let task = reqwest::get("https://m64p.s3.amazonaws.com/servers.json");
+    let weak = create_window.as_weak();
+    tokio::spawn(async move {
+        let response = task.await;
+        if let Ok(response) = response {
+            let servers: std::collections::HashMap<String, String> = response.json().await.unwrap();
+
+            weak.upgrade_in_event_loop(move |handle| {
+                let server_names: slint::VecModel<slint::SharedString> = slint::VecModel::default();
+                let server_urls: slint::VecModel<slint::SharedString> = slint::VecModel::default();
+                for server in servers {
+                    server_names.push(server.0.into());
+                    server_urls.push(server.1.into());
+                }
+
+                let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                    std::rc::Rc::new(server_names);
+                let _server_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                    std::rc::Rc::new(server_urls);
+                handle.set_server_names(slint::ModelRc::from(server_names_model));
+            })
+            .unwrap();
+        }
+    });
+
     create_window.show().unwrap();
 }
 
