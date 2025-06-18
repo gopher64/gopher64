@@ -36,7 +36,29 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn local_game(app: &AppWindow, controller_paths: &[Option<String>]) {
+fn netplay_window(app: &AppWindow) {
+    let weak_create = app.as_weak();
+    app.on_create_session_button_clicked(move || {
+        weak_create
+            .upgrade_in_event_loop(move |_handle| {
+                let create_window = NetplayCreate::new().unwrap();
+                ui::netplay::setup_create_window(&create_window);
+            })
+            .unwrap();
+    });
+
+    let weak_join = app.as_weak();
+    app.on_join_session_button_clicked(move || {
+        weak_join
+            .upgrade_in_event_loop(move |_handle| {
+                let join_window = NetplayJoin::new().unwrap();
+                ui::netplay::setup_join_window(&join_window);
+            })
+            .unwrap();
+    });
+}
+
+fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     let dirs = ui::get_dirs();
     let weak = app.as_weak();
     let controller_paths2 = controller_paths.to_owned();
@@ -214,7 +236,8 @@ pub fn app_window() {
         settings_window(&app, &game_ui.config);
         controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
     }
-    local_game(&app, &controller_paths);
+    local_game_window(&app, &controller_paths);
+    netplay_window(&app);
     app.run().unwrap();
     save_settings(&app, &controller_paths);
 }
