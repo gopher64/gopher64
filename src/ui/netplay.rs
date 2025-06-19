@@ -66,8 +66,17 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
     weak: slint::Weak<T>,
     server_url: String,
 ) {
+    weak.upgrade_in_event_loop(move |handle| {
+        handle.set_ping("Ping: Unknown".into());
+    })
+    .unwrap();
     tokio::spawn(async move {
-        if let Ok((mut sock, _response)) = tokio_tungstenite::connect_async(server_url).await {
+        if let Ok(Ok((mut sock, _response))) = tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            tokio_tungstenite::connect_async(server_url),
+        )
+        .await
+        {
             sock.send(Message::Ping(Vec::new().into())).await.unwrap();
             let start = std::time::Instant::now();
 
