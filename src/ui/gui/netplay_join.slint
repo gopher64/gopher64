@@ -10,6 +10,7 @@ export component NetplayJoin inherits Window {
     property <bool> has_sessions: false;
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
+    in-out property ping <=> NetplayData.ping;
     callback get_ping(string);
     VerticalBox {
         HorizontalBox {
@@ -43,7 +44,7 @@ export component NetplayJoin inherits Window {
 
                     Text {
                         vertical-alignment: center;
-                        text: @tr("Ping: 100ms");
+                        text: NetplayData.ping;
                     }
                 }
             }

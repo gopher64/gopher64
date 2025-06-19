@@ -10,6 +10,7 @@ export component NetplayCreate inherits Window {
     title: @tr("Netplay: Create Session");
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
+    in-out property ping <=> NetplayData.ping;
     callback get_ping(string);
     VerticalBox {
         HorizontalBox {
@@ -67,7 +68,7 @@ export component NetplayCreate inherits Window {
 
                 Text {
                     vertical-alignment: center;
-                    text: @tr("Ping: 100ms");
+                    text: NetplayData.ping;
                 }
             }
         }
