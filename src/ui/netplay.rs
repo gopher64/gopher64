@@ -72,8 +72,9 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
             let start = std::time::Instant::now();
 
             if let Some(Ok(_response)) = sock.next().await {
+                let elapsed = start.elapsed();
                 weak.upgrade_in_event_loop(move |handle| {
-                    handle.set_ping(format!("Ping: {:.0} ms", start.elapsed().as_millis()).into());
+                    handle.set_ping(format!("Ping: {:.0} ms", elapsed.as_millis()).into());
                 })
                 .unwrap();
             }
