@@ -2135,6 +2135,7 @@ dependencies = [
  "dirs",
  "encoding_rs",
  "fatfs",
+ "futures",
  "governor",
  "mimalloc",
  "open",
@@ -2155,7 +2156,7 @@ dependencies = [
  "socket2",
  "spin_sleep",
  "tokio",
- "tungstenite",
+ "tokio-tungstenite",
  "winresource",
  "zip",
 ]
@@ -5834,6 +5835,18 @@ checksum = "8e727b36a1a0e8b74c376ac2211e40c2c8af09fb4013c60d910495810f008e9b"
 dependencies = [
  "rustls",
  "tokio",
+]
+
+[[package]]
+name = "tokio-tungstenite"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "489a59b6730eda1b0171fcfda8b121f4bee2b35cba8645ca35c5f7ba3eb736c1"
+dependencies = [
+ "futures-util",
+ "log",
+ "tokio",
+ "tungstenite",
 ]
 
 [[package]]
