@@ -37,6 +37,31 @@ impl NetplayPages for NetplayJoin {
 fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
     let task = reqwest::get("https://m64p.s3.amazonaws.com/servers.json");
     tokio::spawn(async move {
+        let mut local_servers: Vec<(String, String)> = vec![];
+
+        let broadcast_sock = tokio::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
+            .await
+            .unwrap();
+        broadcast_sock.set_broadcast(true).unwrap();
+        let data: [u8; 1] = [1];
+        broadcast_sock
+            .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
+            .await
+            .unwrap();
+        let mut buffer = [0; 1024];
+        if let Ok(Ok(result)) = tokio::time::timeout(
+            std::time::Duration::from_millis(200),
+            broadcast_sock.recv(&mut buffer),
+        )
+        .await
+        {
+            let data: std::collections::HashMap<String, String> =
+                serde_json::from_slice(&buffer[..result]).unwrap();
+            for server in data.iter() {
+                local_servers.push((server.0.into(), server.1.into()));
+            }
+        }
+
         let response = task.await;
         if let Ok(response) = response {
             let servers: std::collections::HashMap<String, String> = response.json().await.unwrap();
@@ -45,6 +70,10 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
             weak.upgrade_in_event_loop(move |handle| {
                 let server_names: slint::VecModel<slint::SharedString> = slint::VecModel::default();
                 let server_urls: slint::VecModel<slint::SharedString> = slint::VecModel::default();
+                for local_server in local_servers {
+                    server_names.push(local_server.0.into());
+                    server_urls.push(local_server.1.into());
+                }
                 for server in servers {
                     server_names.push(server.0.into());
                     server_urls.push(server.1.into());
