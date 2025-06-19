@@ -9,7 +9,8 @@ export component NetplayJoin inherits Window {
     title: @tr("Netplay: Join Session");
     property <bool> has_sessions: false;
     in-out property server_names <=> NetplayData.server_names;
-
+    in-out property server_urls <=> NetplayData.server_urls;
+    callback get_ping(string);
     VerticalBox {
         HorizontalBox {
             VerticalBox {
@@ -33,6 +34,11 @@ export component NetplayJoin inherits Window {
                 HorizontalBox {
                     ComboBox {
                         model: NetplayData.server_names;
+                        selected(current-value) => {
+                            if (self.current-index >= 0) {
+                                get_ping(NetplayData.server_urls[self.current-index]);
+                            }
+                        }
                     }
 
                     Text {
