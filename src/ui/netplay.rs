@@ -77,6 +77,7 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
                 })
                 .unwrap();
             }
+            sock.close(None).await.unwrap();
         }
     });
 }
