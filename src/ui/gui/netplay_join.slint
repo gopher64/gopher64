@@ -3,11 +3,11 @@ import { NetplayData } from "netplay_page.slint";
 
 export global NetplayJoinData {
     in-out property <string> player_name;
+    in-out property <[string]> sessions;
 }
 
 export component NetplayJoin inherits Window {
     title: @tr("Netplay: Join Session");
-    property <bool> has_sessions: false;
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
     in-out property ping <=> NetplayData.ping;
@@ -50,7 +50,7 @@ export component NetplayJoin inherits Window {
             }
         }
 
-        if has_sessions:StandardTableView {
+        if NetplayJoinData.sessions.length > 0:StandardTableView {
             columns: [
                 { title: "Header 1" },
                 { title: "Header 2" },
@@ -70,7 +70,7 @@ export component NetplayJoin inherits Window {
                 ]
             ];
         }
-        if !has_sessions: Text {
+        if NetplayJoinData.sessions.length == 0: Text {
             text: @tr("No sessions available. Please refresh or try a different server.");
             horizontal-alignment: center;
             vertical-alignment: center;
