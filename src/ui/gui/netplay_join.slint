@@ -3,7 +3,7 @@ import { NetplayData } from "netplay_page.slint";
 
 export global NetplayJoinData {
     in-out property <string> player_name;
-    in-out property <[string]> sessions;
+    in-out property <[[StandardListViewItem]]> sessions;
 }
 
 export component NetplayJoin inherits Window {
@@ -52,23 +52,11 @@ export component NetplayJoin inherits Window {
 
         if NetplayJoinData.sessions.length > 0:StandardTableView {
             columns: [
-                { title: "Header 1" },
-                { title: "Header 2" },
+                { title: "Session Name" },
+                { title: "Game Name" },
+                { title: "Password Protected" },
             ];
-            rows: [
-                [
-                    { text: "Item 1" },
-                    { text: "Item 2" },
-                ],
-                [
-                    { text: "Item 1" },
-                    { text: "Item 2" },
-                ],
-                [
-                    { text: "Item 1" },
-                    { text: "Item 2" },
-                ]
-            ];
+            rows: NetplayJoinData.sessions;
         }
         if NetplayJoinData.sessions.length == 0: Text {
             text: @tr("No sessions available. Please refresh or try a different server.");
