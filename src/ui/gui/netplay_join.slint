@@ -12,6 +12,7 @@ export component NetplayJoin inherits Window {
     in-out property server_urls <=> NetplayData.server_urls;
     in-out property ping <=> NetplayData.ping;
     callback get_ping(string);
+    callback refresh_session(string);
     VerticalBox {
         HorizontalBox {
             VerticalBox {
@@ -33,7 +34,7 @@ export component NetplayJoin inherits Window {
                 }
 
                 HorizontalBox {
-                    ComboBox {
+                    server := ComboBox {
                         model: NetplayData.server_names;
                         selected(current-value) => {
                             if (self.current-index >= 0) {
@@ -69,6 +70,9 @@ export component NetplayJoin inherits Window {
 
             Button {
                 text: @tr("Refresh Session List");
+                clicked => {
+                    refresh_session(NetplayData.server_urls[server.current-index]);
+                }
             }
         }
 
