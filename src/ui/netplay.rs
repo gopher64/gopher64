@@ -9,7 +9,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 const NETPLAY_VERSION: i32 = 17;
 const EMU_NAME: &str = "gopher64";
 
-#[derive(serde::Serialize, serde::Deserialize, PartialEq, Default, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Default, Clone, Debug)]
 pub struct NetplayRoom {
     room_name: Option<String>,
     password: Option<String>,
@@ -22,7 +22,7 @@ pub struct NetplayRoom {
     buffer_target: Option<i32>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct NetplayMessage {
     #[serde(rename = "type")]
     message_type: String,
@@ -170,8 +170,8 @@ pub fn setup_create_window(create_window: &NetplayCreate) {
 
 fn manage_websocket(
     server_url: String,
-    netplay_read_sender: tokio::sync::mpsc::Sender<NetplayMessage>,
-    mut netplay_write_receiver: tokio::sync::mpsc::Receiver<NetplayMessage>,
+    netplay_read_sender: tokio::sync::broadcast::Sender<NetplayMessage>,
+    mut netplay_write_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
 ) {
     tokio::spawn(async move {
         if let Ok(Ok((socket, _response))) = tokio::time::timeout(
@@ -185,11 +185,11 @@ fn manage_websocket(
                 while let Some(Ok(response)) = read.next().await {
                     let message: NetplayMessage =
                         serde_json::from_slice(&response.into_data()).unwrap();
-                    netplay_read_sender.send(message).await.unwrap();
+                    netplay_read_sender.send(message).unwrap();
                 }
             });
             tokio::spawn(async move {
-                while let Some(response) = netplay_write_receiver.recv().await {
+                while let Ok(response) = netplay_write_receiver.recv().await {
                     write
                         .send(Message::Binary(Bytes::from(
                             serde_json::to_vec(&response).unwrap(),
@@ -210,24 +210,24 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
     join_window.on_get_ping(move |server_url| {
         update_ping(weak2.clone(), server_url.to_string());
     });
+    let (netplay_read_sender, netplay_read_receiver): (
+        tokio::sync::broadcast::Sender<NetplayMessage>,
+        tokio::sync::broadcast::Receiver<NetplayMessage>,
+    ) = tokio::sync::broadcast::channel(1);
+
+    let (netplay_write_sender, netplay_write_receiver): (
+        tokio::sync::broadcast::Sender<NetplayMessage>,
+        tokio::sync::broadcast::Receiver<NetplayMessage>,
+    ) = tokio::sync::broadcast::channel(1);
 
     join_window.on_refresh_session(move |server_url| {
-        let (netplay_read_sender, mut netplay_read_receiver): (
-            tokio::sync::mpsc::Sender<NetplayMessage>,
-            tokio::sync::mpsc::Receiver<NetplayMessage>,
-        ) = tokio::sync::mpsc::channel(1);
-
-        let (netplay_write_sender, netplay_write_receiver): (
-            tokio::sync::mpsc::Sender<NetplayMessage>,
-            tokio::sync::mpsc::Receiver<NetplayMessage>,
-        ) = tokio::sync::mpsc::channel(1);
-
         manage_websocket(
             server_url.to_string(),
             netplay_read_sender.clone(),
-            netplay_write_receiver,
+            netplay_write_receiver.resubscribe(),
         );
-
+        let mut receiver = netplay_read_receiver.resubscribe();
+        let writer = netplay_write_sender.clone();
         tokio::spawn(async move {
             let now_utc = chrono::Utc::now().timestamp_millis().to_string();
             let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
@@ -246,9 +246,9 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
                 room: None,
             };
 
-            netplay_write_sender.send(request_rooms).await.unwrap();
+            writer.send(request_rooms).unwrap();
 
-            if let Some(message) = netplay_read_receiver.recv().await {
+            if let Ok(message) = receiver.recv().await {
                 if message.accept.unwrap() == 0 {
                     //populate the rooms
                 } else {
