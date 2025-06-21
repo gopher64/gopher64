@@ -44,6 +44,9 @@ trait NetplayPages {
     fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>);
     fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>);
     fn set_ping(&self, ping: slint::SharedString);
+    fn refresh_sessions(&self, _server: slint::SharedString) {
+        // Default implementation does nothing
+    }
 }
 
 impl NetplayPages for NetplayCreate {
@@ -67,6 +70,9 @@ impl NetplayPages for NetplayJoin {
     }
     fn set_ping(&self, ping: slint::SharedString) {
         self.set_ping(ping);
+    }
+    fn refresh_sessions(&self, server: slint::SharedString) {
+        self.invoke_refresh_session(server);
     }
 }
 
@@ -115,6 +121,7 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                     server_urls.push(server.1.into());
                 }
                 update_ping(weak2, server_urls.row_data(0).unwrap().into());
+                handle.refresh_sessions(server_urls.row_data(0).unwrap().into());
                 let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
                     std::rc::Rc::new(server_names);
                 let server_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
