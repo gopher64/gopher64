@@ -168,6 +168,41 @@ pub fn setup_create_window(create_window: &NetplayCreate) {
     create_window.show().unwrap();
 }
 
+fn manage_websocket(
+    server_url: String,
+    netplay_read_sender: tokio::sync::mpsc::Sender<NetplayMessage>,
+    mut netplay_write_receiver: tokio::sync::mpsc::Receiver<NetplayMessage>,
+) {
+    tokio::spawn(async move {
+        if let Ok(Ok((socket, _response))) = tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            tokio_tungstenite::connect_async(server_url),
+        )
+        .await
+        {
+            let (mut write, mut read) = socket.split();
+            tokio::spawn(async move {
+                while let Some(Ok(response)) = read.next().await {
+                    let message: NetplayMessage =
+                        serde_json::from_slice(&response.into_data()).unwrap();
+                    netplay_read_sender.send(message).await.unwrap();
+                }
+            });
+            tokio::spawn(async move {
+                while let Some(response) = netplay_write_receiver.recv().await {
+                    write
+                        .send(Message::Binary(Bytes::from(
+                            serde_json::to_vec(&response).unwrap(),
+                        )))
+                        .await
+                        .unwrap();
+                }
+                write.close().await.unwrap();
+            });
+        }
+    });
+}
+
 pub fn setup_join_window(join_window: &NetplayJoin) {
     let weak = join_window.as_weak();
     populate_server_names(weak);
@@ -177,45 +212,47 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
     });
 
     join_window.on_refresh_session(move |server_url| {
+        let (netplay_read_sender, mut netplay_read_receiver): (
+            tokio::sync::mpsc::Sender<NetplayMessage>,
+            tokio::sync::mpsc::Receiver<NetplayMessage>,
+        ) = tokio::sync::mpsc::channel(1);
+
+        let (netplay_write_sender, netplay_write_receiver): (
+            tokio::sync::mpsc::Sender<NetplayMessage>,
+            tokio::sync::mpsc::Receiver<NetplayMessage>,
+        ) = tokio::sync::mpsc::channel(1);
+
+        manage_websocket(
+            server_url.to_string(),
+            netplay_read_sender.clone(),
+            netplay_write_receiver,
+        );
+
         tokio::spawn(async move {
-            if let Ok(Ok((mut socket, _response))) = tokio::time::timeout(
-                std::time::Duration::from_secs(1),
-                tokio_tungstenite::connect_async(server_url.to_string()),
-            )
-            .await
-            {
-                let now_utc = chrono::Utc::now().timestamp_millis().to_string();
-                let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
-                let request_rooms = NetplayMessage {
-                    message_type: "request_get_rooms".to_string(),
-                    player_name: None,
-                    client_sha: None,
-                    netplay_version: Some(NETPLAY_VERSION),
-                    player_names: None,
-                    emulator: Some(EMU_NAME.to_string()),
-                    accept: None,
-                    rooms: None,
-                    message: None,
-                    auth_time: Some(now_utc),
-                    auth: Some(format!("{:x}", hasher.finalize())),
-                    room: None,
-                };
+            let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+            let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
+            let request_rooms = NetplayMessage {
+                message_type: "request_get_rooms".to_string(),
+                player_name: None,
+                client_sha: None,
+                netplay_version: Some(NETPLAY_VERSION),
+                player_names: None,
+                emulator: Some(EMU_NAME.to_string()),
+                accept: None,
+                rooms: None,
+                message: None,
+                auth_time: Some(now_utc),
+                auth: Some(format!("{:x}", hasher.finalize())),
+                room: None,
+            };
 
-                socket
-                    .send(Message::Binary(Bytes::from(
-                        serde_json::to_vec(&request_rooms).unwrap(),
-                    )))
-                    .await
-                    .unwrap();
+            netplay_write_sender.send(request_rooms).await.unwrap();
 
-                if let Some(Ok(response)) = socket.next().await {
-                    let message: NetplayMessage =
-                        serde_json::from_slice(&response.into_data()).unwrap();
-                    if message.accept.unwrap() == 0 {
-                        //populate the rooms
-                    } else {
-                        //pop up error
-                    }
+            if let Some(message) = netplay_read_receiver.recv().await {
+                if message.accept.unwrap() == 0 {
+                    //populate the rooms
+                } else {
+                    //pop up error
                 }
             }
         });
