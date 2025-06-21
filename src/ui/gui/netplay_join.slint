@@ -11,6 +11,7 @@ export component NetplayJoin inherits Window {
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
     in-out property ping <=> NetplayData.ping;
+    in-out property sessions <=> NetplayJoinData.sessions;
     callback get_ping(string);
     callback refresh_session(string);
     VerticalBox {
@@ -51,6 +52,11 @@ export component NetplayJoin inherits Window {
             }
         }
 
+        if NetplayJoinData.sessions.length > 0: Text {
+            text: @tr("Click on a session below to select it");
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
         if NetplayJoinData.sessions.length > 0:StandardTableView {
             columns: [
                 { title: "Session Name" },

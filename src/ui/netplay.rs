@@ -259,7 +259,45 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
 
             if let Ok(message) = receiver.recv().await {
                 if message.accept.unwrap() == 0 {
-                    //populate the rooms
+                    if let Some(rooms) = message.rooms {
+                        weak4
+                            .upgrade_in_event_loop(move |handle| {
+                                let sessions_vec = slint::VecModel::default();
+                                for room in rooms {
+                                    let session_vec = slint::VecModel::default();
+                                    let mut room_name = slint::StandardListViewItem::default();
+                                    room_name.text = room.room_name.unwrap().into();
+                                    session_vec.push(room_name);
+                                    let mut game_name = slint::StandardListViewItem::default();
+                                    game_name.text = room.game_name.unwrap().into();
+                                    session_vec.push(game_name);
+                                    let mut password_protected =
+                                        slint::StandardListViewItem::default();
+                                    password_protected.text = if room.protected.unwrap() {
+                                        "True".into()
+                                    } else {
+                                        "False".into()
+                                    };
+                                    session_vec.push(password_protected);
+                                    let session_model: std::rc::Rc<
+                                        slint::VecModel<slint::StandardListViewItem>,
+                                    > = std::rc::Rc::new(session_vec);
+                                    sessions_vec.push(slint::ModelRc::from(session_model));
+                                }
+                                let rooms_model: std::rc::Rc<
+                                    slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
+                                > = std::rc::Rc::new(sessions_vec);
+                                handle.set_sessions(slint::ModelRc::from(rooms_model));
+                            })
+                            .unwrap();
+                    } else {
+                        weak4
+                            .upgrade_in_event_loop(move |handle| {
+                                handle
+                                    .set_sessions(slint::ModelRc::from(slint::ModelRc::default()));
+                            })
+                            .unwrap();
+                    }
                 } else {
                     weak4
                         .upgrade_in_event_loop(move |_handle| {
