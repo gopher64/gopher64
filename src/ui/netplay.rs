@@ -1,6 +1,6 @@
 use slint::{ComponentHandle, Model};
 
-use crate::ui::gui::{NetplayCreate, NetplayJoin};
+use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin};
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
 use tokio_tungstenite::tungstenite::Bytes;
@@ -226,6 +226,7 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
         slint::CloseRequestResponse::HideWindow
     });
 
+    let weak3 = join_window.as_weak();
     join_window.on_refresh_session(move |server_url| {
         netplay_write_sender.send(None).unwrap(); // close current websocket if any
         manage_websocket(
@@ -235,6 +236,7 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
         );
         let mut receiver = netplay_read_receiver.resubscribe();
         let writer = netplay_write_sender.clone();
+        let weak4 = weak3.clone();
         tokio::spawn(async move {
             let now_utc = chrono::Utc::now().timestamp_millis().to_string();
             let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
@@ -259,7 +261,17 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
                 if message.accept.unwrap() == 0 {
                     //populate the rooms
                 } else {
-                    //pop up error
+                    weak4
+                        .upgrade_in_event_loop(move |_handle| {
+                            let message_dialog = NetplayDialog::new().unwrap();
+                            let weak_dialog = message_dialog.as_weak();
+                            message_dialog.on_close_clicked(move || {
+                                weak_dialog.unwrap().window().hide().unwrap();
+                            });
+                            message_dialog.set_text(message.message.unwrap().into());
+                            message_dialog.show().unwrap();
+                        })
+                        .unwrap();
                 }
             }
         });
