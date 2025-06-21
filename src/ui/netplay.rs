@@ -9,7 +9,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 const NETPLAY_VERSION: i32 = 17;
 const EMU_NAME: &str = "gopher64";
 
-#[derive(serde::Serialize, serde::Deserialize, PartialEq, Default, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct NetplayRoom {
     room_name: Option<String>,
     password: Option<String>,
