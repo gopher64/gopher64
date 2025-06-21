@@ -220,6 +220,12 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(1);
 
+    let writer2 = netplay_write_sender.clone();
+    join_window.window().on_close_requested(move || {
+        writer2.send(None).unwrap(); // close current websocket if any
+        slint::CloseRequestResponse::HideWindow
+    });
+
     join_window.on_refresh_session(move |server_url| {
         netplay_write_sender.send(None).unwrap(); // close current websocket if any
         manage_websocket(
