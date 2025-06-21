@@ -171,25 +171,25 @@ pub fn setup_create_window(create_window: &NetplayCreate) {
 fn manage_websocket(
     server_url: String,
     netplay_read_sender: tokio::sync::broadcast::Sender<NetplayMessage>,
-    mut netplay_write_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
 ) {
     tokio::spawn(async move {
         if let Ok(Ok((socket, _response))) = tokio::time::timeout(
             std::time::Duration::from_secs(1),
-            tokio_tungstenite::connect_async(server_url),
+            tokio_tungstenite::connect_async(server_url.clone()),
         )
         .await
         {
             let (mut write, mut read) = socket.split();
             tokio::spawn(async move {
                 while let Some(Ok(response)) = read.next().await {
-                    let message: NetplayMessage =
-                        serde_json::from_slice(&response.into_data()).unwrap();
-                    netplay_read_sender.send(message).unwrap();
+                    if let Ok(message) = serde_json::from_slice(&response.into_data()) {
+                        netplay_read_sender.send(message).unwrap();
+                    }
                 }
             });
             tokio::spawn(async move {
-                while let Ok(response) = netplay_write_receiver.recv().await {
+                while let Ok(Some(response)) = netplay_write_receiver.recv().await {
                     write
                         .send(Message::Binary(Bytes::from(
                             serde_json::to_vec(&response).unwrap(),
@@ -216,11 +216,12 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
     ) = tokio::sync::broadcast::channel(1);
 
     let (netplay_write_sender, netplay_write_receiver): (
-        tokio::sync::broadcast::Sender<NetplayMessage>,
-        tokio::sync::broadcast::Receiver<NetplayMessage>,
+        tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+        tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(1);
 
     join_window.on_refresh_session(move |server_url| {
+        netplay_write_sender.send(None).unwrap(); // close current websocket if any
         manage_websocket(
             server_url.to_string(),
             netplay_read_sender.clone(),
@@ -246,7 +247,7 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
                 room: None,
             };
 
-            writer.send(request_rooms).unwrap();
+            writer.send(Some(request_rooms)).unwrap();
 
             if let Ok(message) = receiver.recv().await {
                 if message.accept.unwrap() == 0 {
