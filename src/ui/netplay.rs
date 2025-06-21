@@ -203,6 +203,96 @@ fn manage_websocket(
     });
 }
 
+fn update_sessions(
+    server_url: String,
+    netplay_write_sender: &tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    netplay_read_sender: &tokio::sync::broadcast::Sender<NetplayMessage>,
+    netplay_write_receiver: &tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    netplay_read_receiver: &tokio::sync::broadcast::Receiver<NetplayMessage>,
+    weak: slint::Weak<NetplayJoin>,
+) {
+    netplay_write_sender.send(None).unwrap(); // close current websocket if any
+    manage_websocket(
+        server_url,
+        netplay_read_sender.clone(),
+        netplay_write_receiver.resubscribe(),
+    );
+
+    let mut receiver = netplay_read_receiver.resubscribe();
+    let writer = netplay_write_sender.clone();
+    tokio::spawn(async move {
+        let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+        let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
+        let request_rooms = NetplayMessage {
+            message_type: "request_get_rooms".to_string(),
+            player_name: None,
+            client_sha: None,
+            netplay_version: Some(NETPLAY_VERSION),
+            player_names: None,
+            emulator: Some(EMU_NAME.to_string()),
+            accept: None,
+            rooms: None,
+            message: None,
+            auth_time: Some(now_utc),
+            auth: Some(format!("{:x}", hasher.finalize())),
+            room: None,
+        };
+
+        writer.send(Some(request_rooms)).unwrap();
+
+        if let Ok(message) = receiver.recv().await {
+            if message.accept.unwrap() == 0 {
+                if let Some(rooms) = message.rooms {
+                    weak.upgrade_in_event_loop(move |handle| {
+                        let sessions_vec = slint::VecModel::default();
+                        for room in rooms {
+                            let session_vec = slint::VecModel::default();
+                            let mut room_name = slint::StandardListViewItem::default();
+                            room_name.text = room.room_name.unwrap().into();
+                            session_vec.push(room_name);
+                            let mut game_name = slint::StandardListViewItem::default();
+                            game_name.text = room.game_name.unwrap().into();
+                            session_vec.push(game_name);
+                            let mut password_protected = slint::StandardListViewItem::default();
+                            password_protected.text = if room.protected.unwrap() {
+                                "True".into()
+                            } else {
+                                "False".into()
+                            };
+                            session_vec.push(password_protected);
+                            let session_model: std::rc::Rc<
+                                slint::VecModel<slint::StandardListViewItem>,
+                            > = std::rc::Rc::new(session_vec);
+                            sessions_vec.push(slint::ModelRc::from(session_model));
+                        }
+                        let rooms_model: std::rc::Rc<
+                            slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
+                        > = std::rc::Rc::new(sessions_vec);
+                        handle.set_sessions(slint::ModelRc::from(rooms_model));
+                    })
+                    .unwrap();
+                } else {
+                    weak.upgrade_in_event_loop(move |handle| {
+                        handle.set_sessions(slint::ModelRc::from(slint::ModelRc::default()));
+                    })
+                    .unwrap();
+                }
+            } else {
+                weak.upgrade_in_event_loop(move |_handle| {
+                    let message_dialog = NetplayDialog::new().unwrap();
+                    let weak_dialog = message_dialog.as_weak();
+                    message_dialog.on_close_clicked(move || {
+                        weak_dialog.unwrap().window().hide().unwrap();
+                    });
+                    message_dialog.set_text(message.message.unwrap().into());
+                    message_dialog.show().unwrap();
+                })
+                .unwrap();
+            }
+        }
+    });
+}
+
 pub fn setup_join_window(join_window: &NetplayJoin) {
     let weak = join_window.as_weak();
     populate_server_names(weak);
@@ -228,91 +318,14 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
 
     let weak3 = join_window.as_weak();
     join_window.on_refresh_session(move |server_url| {
-        netplay_write_sender.send(None).unwrap(); // close current websocket if any
-        manage_websocket(
+        update_sessions(
             server_url.to_string(),
-            netplay_read_sender.clone(),
-            netplay_write_receiver.resubscribe(),
+            &netplay_write_sender,
+            &netplay_read_sender,
+            &netplay_write_receiver,
+            &netplay_read_receiver,
+            weak3.clone(),
         );
-        let mut receiver = netplay_read_receiver.resubscribe();
-        let writer = netplay_write_sender.clone();
-        let weak4 = weak3.clone();
-        tokio::spawn(async move {
-            let now_utc = chrono::Utc::now().timestamp_millis().to_string();
-            let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
-            let request_rooms = NetplayMessage {
-                message_type: "request_get_rooms".to_string(),
-                player_name: None,
-                client_sha: None,
-                netplay_version: Some(NETPLAY_VERSION),
-                player_names: None,
-                emulator: Some(EMU_NAME.to_string()),
-                accept: None,
-                rooms: None,
-                message: None,
-                auth_time: Some(now_utc),
-                auth: Some(format!("{:x}", hasher.finalize())),
-                room: None,
-            };
-
-            writer.send(Some(request_rooms)).unwrap();
-
-            if let Ok(message) = receiver.recv().await {
-                if message.accept.unwrap() == 0 {
-                    if let Some(rooms) = message.rooms {
-                        weak4
-                            .upgrade_in_event_loop(move |handle| {
-                                let sessions_vec = slint::VecModel::default();
-                                for room in rooms {
-                                    let session_vec = slint::VecModel::default();
-                                    let mut room_name = slint::StandardListViewItem::default();
-                                    room_name.text = room.room_name.unwrap().into();
-                                    session_vec.push(room_name);
-                                    let mut game_name = slint::StandardListViewItem::default();
-                                    game_name.text = room.game_name.unwrap().into();
-                                    session_vec.push(game_name);
-                                    let mut password_protected =
-                                        slint::StandardListViewItem::default();
-                                    password_protected.text = if room.protected.unwrap() {
-                                        "True".into()
-                                    } else {
-                                        "False".into()
-                                    };
-                                    session_vec.push(password_protected);
-                                    let session_model: std::rc::Rc<
-                                        slint::VecModel<slint::StandardListViewItem>,
-                                    > = std::rc::Rc::new(session_vec);
-                                    sessions_vec.push(slint::ModelRc::from(session_model));
-                                }
-                                let rooms_model: std::rc::Rc<
-                                    slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
-                                > = std::rc::Rc::new(sessions_vec);
-                                handle.set_sessions(slint::ModelRc::from(rooms_model));
-                            })
-                            .unwrap();
-                    } else {
-                        weak4
-                            .upgrade_in_event_loop(move |handle| {
-                                handle
-                                    .set_sessions(slint::ModelRc::from(slint::ModelRc::default()));
-                            })
-                            .unwrap();
-                    }
-                } else {
-                    weak4
-                        .upgrade_in_event_loop(move |_handle| {
-                            let message_dialog = NetplayDialog::new().unwrap();
-                            let weak_dialog = message_dialog.as_weak();
-                            message_dialog.on_close_clicked(move || {
-                                weak_dialog.unwrap().window().hide().unwrap();
-                            });
-                            message_dialog.set_text(message.message.unwrap().into());
-                            message_dialog.show().unwrap();
-                        })
-                        .unwrap();
-                }
-            }
-        });
     });
 
     join_window.show().unwrap();
