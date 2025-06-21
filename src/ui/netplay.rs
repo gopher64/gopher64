@@ -294,12 +294,6 @@ fn update_sessions(
 }
 
 pub fn setup_join_window(join_window: &NetplayJoin) {
-    let weak = join_window.as_weak();
-    populate_server_names(weak);
-    let weak2 = join_window.as_weak();
-    join_window.on_get_ping(move |server_url| {
-        update_ping(weak2.clone(), server_url.to_string());
-    });
     let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<NetplayMessage>,
         tokio::sync::broadcast::Receiver<NetplayMessage>,
@@ -310,24 +304,44 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(1);
 
-    let writer2 = netplay_write_sender.clone();
-    join_window.window().on_close_requested(move || {
-        writer2.send(None).unwrap(); // close current websocket if any
-        slint::CloseRequestResponse::HideWindow
-    });
-
-    let weak3 = join_window.as_weak();
+    let weak = join_window.as_weak();
+    populate_server_names(weak);
+    let weak2 = join_window.as_weak();
     let netplay_write_sender2 = netplay_write_sender.clone();
     let netplay_read_sender2 = netplay_read_sender.clone();
     let netplay_write_receiver2 = netplay_write_receiver.resubscribe();
     let netplay_read_receiver2 = netplay_read_receiver.resubscribe();
-    join_window.on_refresh_session(move |server_url| {
+    join_window.on_get_ping(move |server_url| {
+        update_ping(weak2.clone(), server_url.to_string());
+
         update_sessions(
             server_url.to_string(),
             netplay_write_sender2.clone(),
             netplay_read_sender2.clone(),
             netplay_write_receiver2.resubscribe(),
             netplay_read_receiver2.resubscribe(),
+            weak2.clone(),
+        );
+    });
+
+    let netplay_write_sender_closed = netplay_write_sender.clone();
+    join_window.window().on_close_requested(move || {
+        netplay_write_sender_closed.send(None).unwrap(); // close current websocket if any
+        slint::CloseRequestResponse::HideWindow
+    });
+
+    let weak3 = join_window.as_weak();
+    let netplay_write_sender3 = netplay_write_sender.clone();
+    let netplay_read_sender3 = netplay_read_sender.clone();
+    let netplay_write_receiver3 = netplay_write_receiver.resubscribe();
+    let netplay_read_receiver3 = netplay_read_receiver.resubscribe();
+    join_window.on_refresh_session(move |server_url| {
+        update_sessions(
+            server_url.to_string(),
+            netplay_write_sender3.clone(),
+            netplay_read_sender3.clone(),
+            netplay_write_receiver3.resubscribe(),
+            netplay_read_receiver3.resubscribe(),
             weak3.clone(),
         );
     });
