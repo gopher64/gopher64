@@ -121,7 +121,7 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                     server_urls.push(server.1.into());
                 }
                 update_ping(weak2, server_urls.row_data(0).unwrap().into());
-                handle.refresh_sessions(server_urls.row_data(0).unwrap().into());
+                handle.refresh_sessions(server_urls.row_data(0).unwrap());
                 let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
                     std::rc::Rc::new(server_names);
                 let server_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
@@ -280,7 +280,7 @@ fn update_sessions(
                     .unwrap();
                 } else {
                     weak.upgrade_in_event_loop(move |handle| {
-                        handle.set_sessions(slint::ModelRc::from(slint::ModelRc::default()));
+                        handle.set_sessions(slint::ModelRc::default());
                     })
                     .unwrap();
                 }
@@ -318,7 +318,7 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
         update_ping(weak2.clone(), server_url.to_string());
         weak2
             .upgrade_in_event_loop(move |handle| {
-                handle.refresh_sessions(server_url);
+                handle.invoke_refresh_session(server_url);
             })
             .unwrap();
     });
