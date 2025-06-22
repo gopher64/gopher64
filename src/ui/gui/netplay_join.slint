@@ -4,6 +4,7 @@ import { NetplayData } from "netplay_page.slint";
 export global NetplayJoinData {
     in-out property <string> player_name;
     in-out property <[[StandardListViewItem]]> sessions;
+    in-out property <int> current_session: -1;
 }
 
 export component NetplayJoin inherits Window {
@@ -12,8 +13,10 @@ export component NetplayJoin inherits Window {
     in-out property server_urls <=> NetplayData.server_urls;
     in-out property ping <=> NetplayData.ping;
     in-out property sessions <=> NetplayJoinData.sessions;
+    in-out property current_session <=> NetplayJoinData.current_session;
     callback get_ping(string);
     callback refresh_session(string);
+
     VerticalBox {
         HorizontalBox {
             VerticalBox {
@@ -62,13 +65,17 @@ export component NetplayJoin inherits Window {
             horizontal-alignment: center;
             vertical-alignment: center;
         }
-        session := StandardTableView {
+        StandardTableView {
             columns: [
                 { title: "Session Name" },
                 { title: "Game Name" },
                 { title: "Password Protected" },
             ];
             rows: NetplayJoinData.sessions;
+            current-row: NetplayJoinData.current_session;
+            current-row-changed(current-row) => {
+                NetplayJoinData.current_session = current-row;
+            }
         }
 
         HorizontalBox {
@@ -93,7 +100,7 @@ export component NetplayJoin inherits Window {
 
             Button {
                 text: @tr("Join Session");
-                enabled: NetplayJoinData.player_name != "" && session.current-row >= 0;
+                enabled: NetplayJoinData.player_name != "" && NetplayJoinData.current_session >= 0;
             }
         }
     }
