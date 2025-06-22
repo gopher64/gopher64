@@ -247,7 +247,9 @@ fn update_sessions(
 
         writer.send(Some(request_rooms)).unwrap();
 
-        if let Ok(message) = receiver.recv().await {
+        if let Ok(Ok(message)) =
+            tokio::time::timeout(std::time::Duration::from_secs(1), receiver.recv()).await
+        {
             if message.accept.unwrap() == 0 {
                 if let Some(rooms) = message.rooms {
                     weak.upgrade_in_event_loop(move |handle| {
@@ -285,7 +287,8 @@ fn update_sessions(
                     .unwrap();
                 }
             } else {
-                weak.upgrade_in_event_loop(move |_handle| {
+                weak.upgrade_in_event_loop(move |handle| {
+                    handle.set_sessions(slint::ModelRc::default());
                     let message_dialog = NetplayDialog::new().unwrap();
                     let weak_dialog = message_dialog.as_weak();
                     message_dialog.on_close_clicked(move || {
@@ -296,6 +299,18 @@ fn update_sessions(
                 })
                 .unwrap();
             }
+        } else {
+            weak.upgrade_in_event_loop(move |handle| {
+                handle.set_sessions(slint::ModelRc::default());
+                let message_dialog = NetplayDialog::new().unwrap();
+                let weak_dialog = message_dialog.as_weak();
+                message_dialog.on_close_clicked(move || {
+                    weak_dialog.unwrap().window().hide().unwrap();
+                });
+                message_dialog.set_text("Server did not respond".into());
+                message_dialog.show().unwrap();
+            })
+            .unwrap();
         }
     });
 }
