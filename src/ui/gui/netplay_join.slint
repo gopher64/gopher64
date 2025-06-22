@@ -57,18 +57,18 @@ export component NetplayJoin inherits Window {
             horizontal-alignment: center;
             vertical-alignment: center;
         }
-        if NetplayJoinData.sessions.length > 0:StandardTableView {
+        if NetplayJoinData.sessions.length == 0: Text {
+            text: @tr("No sessions available. Please refresh or try a different server.");
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+        session := StandardTableView {
             columns: [
                 { title: "Session Name" },
                 { title: "Game Name" },
                 { title: "Password Protected" },
             ];
             rows: NetplayJoinData.sessions;
-        }
-        if NetplayJoinData.sessions.length == 0: Text {
-            text: @tr("No sessions available. Please refresh or try a different server.");
-            horizontal-alignment: center;
-            vertical-alignment: center;
         }
 
         HorizontalBox {
@@ -88,8 +88,12 @@ export component NetplayJoin inherits Window {
             }
 
             Button {
-                text: @tr("Join Session (Open ROM)");
-                enabled: NetplayJoinData.player_name != "";
+                text: @tr("Select ROM");
+            }
+
+            Button {
+                text: @tr("Join Session");
+                enabled: NetplayJoinData.player_name != "" && session.current-row >= 0;
             }
         }
     }
