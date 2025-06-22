@@ -11,7 +11,11 @@ export component NetplayCreate inherits Window {
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
     in-out property ping <=> NetplayData.ping;
+    in-out property game_name <=> NetplayData.game_name;
+    in-out property game_hash <=> NetplayData.game_hash;
     callback get_ping(string);
+    callback select_rom;
+
     VerticalBox {
         HorizontalBox {
             VerticalBox {
@@ -75,6 +79,9 @@ export component NetplayCreate inherits Window {
 
         Button {
             text: @tr("Select ROM");
+            clicked => {
+                select_rom();
+            }
         }
 
         Rectangle { }

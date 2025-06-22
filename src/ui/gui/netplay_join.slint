@@ -14,8 +14,11 @@ export component NetplayJoin inherits Window {
     in-out property ping <=> NetplayData.ping;
     in-out property sessions <=> NetplayJoinData.sessions;
     in-out property current_session <=> NetplayJoinData.current_session;
+    in-out property game_name <=> NetplayData.game_name;
+    in-out property game_hash <=> NetplayData.game_hash;
     callback get_ping(string);
     callback refresh_session(string);
+    callback select_rom;
 
     VerticalBox {
         HorizontalBox {
@@ -96,6 +99,9 @@ export component NetplayJoin inherits Window {
 
             Button {
                 text: @tr("Select ROM");
+                clicked => {
+                    select_rom();
+                }
             }
 
             Button {

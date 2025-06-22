@@ -1,8 +1,9 @@
-use slint::{ComponentHandle, Model};
-
+use crate::device;
+use crate::ui;
 use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin};
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
+use slint::{ComponentHandle, Model};
 use tokio_tungstenite::tungstenite::Bytes;
 use tokio_tungstenite::tungstenite::protocol::Message;
 
@@ -44,6 +45,8 @@ trait NetplayPages {
     fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>);
     fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>);
     fn set_ping(&self, ping: slint::SharedString);
+    fn set_game_name(&self, ping: slint::SharedString);
+    fn set_game_hash(&self, ping: slint::SharedString);
     fn refresh_sessions(&self, _server: slint::SharedString) {
         // Default implementation does nothing
     }
@@ -59,6 +62,12 @@ impl NetplayPages for NetplayCreate {
     fn set_ping(&self, ping: slint::SharedString) {
         self.set_ping(ping);
     }
+    fn set_game_name(&self, game_name: slint::SharedString) {
+        self.set_game_name(game_name);
+    }
+    fn set_game_hash(&self, game_hash: slint::SharedString) {
+        self.set_game_hash(game_hash);
+    }
 }
 
 impl NetplayPages for NetplayJoin {
@@ -73,6 +82,12 @@ impl NetplayPages for NetplayJoin {
     }
     fn refresh_sessions(&self, server: slint::SharedString) {
         self.invoke_refresh_session(server);
+    }
+    fn set_game_name(&self, game_name: slint::SharedString) {
+        self.set_game_name(game_name);
+    }
+    fn set_game_hash(&self, game_hash: slint::SharedString) {
+        self.set_game_hash(game_hash);
     }
 }
 
@@ -134,6 +149,32 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
     });
 }
 
+fn select_rom<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
+    let select_rom = rfd::AsyncFileDialog::new()
+        .set_title("Select ROM")
+        .pick_file();
+    tokio::spawn(async move {
+        let file = select_rom.await;
+        if let Some(rom_contents) = device::get_rom_contents(file.unwrap().path()) {
+            let hash = device::cart::rom::calculate_hash(&rom_contents);
+            let game_name = ui::storage::get_game_name(&rom_contents);
+            weak.upgrade_in_event_loop(move |handle| {
+                handle.set_game_name(game_name.into());
+                handle.set_game_hash(hash.into());
+            })
+            .unwrap();
+        } else {
+            let message_dialog = NetplayDialog::new().unwrap();
+            let weak_dialog = message_dialog.as_weak();
+            message_dialog.on_close_clicked(move || {
+                weak_dialog.unwrap().window().hide().unwrap();
+            });
+            message_dialog.set_text("Could not read ROM".into());
+            message_dialog.show().unwrap();
+        }
+    });
+}
+
 fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
     weak: slint::Weak<T>,
     server_url: String,
@@ -167,9 +208,13 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
 pub fn setup_create_window(create_window: &NetplayCreate) {
     let weak = create_window.as_weak();
     populate_server_names(weak);
-    let weak2 = create_window.as_weak();
+    let weak = create_window.as_weak();
     create_window.on_get_ping(move |server_url| {
-        update_ping(weak2.clone(), server_url.to_string());
+        update_ping(weak.clone(), server_url.to_string());
+    });
+    let weak = create_window.as_weak();
+    create_window.on_select_rom(move || {
+        select_rom(weak.clone());
     });
 
     create_window.show().unwrap();
@@ -329,14 +374,17 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
 
     let weak = join_window.as_weak();
     populate_server_names(weak);
-    let weak2 = join_window.as_weak();
+    let weak = join_window.as_weak();
     join_window.on_get_ping(move |server_url| {
-        update_ping(weak2.clone(), server_url.to_string());
-        weak2
-            .upgrade_in_event_loop(move |handle| {
-                handle.invoke_refresh_session(server_url);
-            })
-            .unwrap();
+        update_ping(weak.clone(), server_url.to_string());
+        weak.upgrade_in_event_loop(move |handle| {
+            handle.invoke_refresh_session(server_url);
+        })
+        .unwrap();
+    });
+    let weak = join_window.as_weak();
+    join_window.on_select_rom(move || {
+        select_rom(weak.clone());
     });
 
     let netplay_write_sender_closed = netplay_write_sender.clone();
@@ -345,7 +393,7 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
         slint::CloseRequestResponse::HideWindow
     });
 
-    let weak3 = join_window.as_weak();
+    let weak = join_window.as_weak();
     join_window.on_refresh_session(move |server_url| {
         update_sessions(
             server_url.to_string(),
@@ -353,7 +401,7 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
             &netplay_read_sender,
             &netplay_write_receiver,
             &netplay_read_receiver,
-            weak3.clone(),
+            weak.clone(),
         );
     });
 
