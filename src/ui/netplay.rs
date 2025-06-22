@@ -210,6 +210,20 @@ fn manage_websocket(
     });
 }
 
+fn clear_sessions(handle: &NetplayJoin, message: Option<String>) {
+    handle.set_sessions(slint::ModelRc::default());
+    handle.set_current_session(-1);
+    if let Some(message) = message {
+        let message_dialog = NetplayDialog::new().unwrap();
+        let weak_dialog = message_dialog.as_weak();
+        message_dialog.on_close_clicked(move || {
+            weak_dialog.unwrap().window().hide().unwrap();
+        });
+        message_dialog.set_text(message.into());
+        message_dialog.show().unwrap();
+    }
+}
+
 fn update_sessions(
     server_url: String,
     netplay_write_sender: &tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
@@ -283,36 +297,19 @@ fn update_sessions(
                     .unwrap();
                 } else {
                     weak.upgrade_in_event_loop(move |handle| {
-                        handle.set_sessions(slint::ModelRc::default());
-                        handle.set_current_session(-1);
+                        clear_sessions(&handle, None);
                     })
                     .unwrap();
                 }
             } else {
                 weak.upgrade_in_event_loop(move |handle| {
-                    handle.set_sessions(slint::ModelRc::default());
-                    handle.set_current_session(-1);
-                    let message_dialog = NetplayDialog::new().unwrap();
-                    let weak_dialog = message_dialog.as_weak();
-                    message_dialog.on_close_clicked(move || {
-                        weak_dialog.unwrap().window().hide().unwrap();
-                    });
-                    message_dialog.set_text(message.message.unwrap().into());
-                    message_dialog.show().unwrap();
+                    clear_sessions(&handle, message.message);
                 })
                 .unwrap();
             }
         } else {
             weak.upgrade_in_event_loop(move |handle| {
-                handle.set_sessions(slint::ModelRc::default());
-                handle.set_current_session(-1);
-                let message_dialog = NetplayDialog::new().unwrap();
-                let weak_dialog = message_dialog.as_weak();
-                message_dialog.on_close_clicked(move || {
-                    weak_dialog.unwrap().window().hide().unwrap();
-                });
-                message_dialog.set_text("Server did not respond".into());
-                message_dialog.show().unwrap();
+                clear_sessions(&handle, Some("Server did not respond".to_string()));
             })
             .unwrap();
         }
