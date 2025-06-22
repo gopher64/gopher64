@@ -97,8 +97,14 @@ export component NetplayJoin inherits Window {
                 placeholder-text: @tr("Password (if required)");
             }
 
-            Button {
+            if NetplayData.game_name == "": Button {
                 text: @tr("Select ROM");
+                clicked => {
+                    select_rom();
+                }
+            }
+            if NetplayData.game_name != "": Button {
+                text: NetplayData.game_name;
                 clicked => {
                     select_rom();
                 }
@@ -106,7 +112,7 @@ export component NetplayJoin inherits Window {
 
             Button {
                 text: @tr("Join Session");
-                enabled: NetplayJoinData.player_name != "" && NetplayJoinData.current_session >= 0;
+                enabled: NetplayJoinData.player_name != "" && NetplayJoinData.current_session >= 0 && NetplayData.game_name != "";
             }
         }
     }

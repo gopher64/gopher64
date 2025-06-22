@@ -77,8 +77,14 @@ export component NetplayCreate inherits Window {
             }
         }
 
-        Button {
+        if NetplayData.game_name == "": Button {
             text: @tr("Select ROM");
+            clicked => {
+                select_rom();
+            }
+        }
+        if NetplayData.game_name != "": Button {
+            text: NetplayData.game_name;
             clicked => {
                 select_rom();
             }
@@ -90,7 +96,7 @@ export component NetplayCreate inherits Window {
 
         Button {
             text: @tr("Create Session");
-            enabled: NetplayCreateData.session_name != "" && NetplayCreateData.player_name != "";
+            enabled: NetplayCreateData.session_name != "" && NetplayCreateData.player_name != "" && NetplayData.game_name != "";
         }
     }
 }

@@ -154,23 +154,30 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>)
         .set_title("Select ROM")
         .pick_file();
     tokio::spawn(async move {
-        let file = select_rom.await;
-        if let Some(rom_contents) = device::get_rom_contents(file.unwrap().path()) {
-            let hash = device::cart::rom::calculate_hash(&rom_contents);
-            let game_name = ui::storage::get_game_name(&rom_contents);
-            weak.upgrade_in_event_loop(move |handle| {
-                handle.set_game_name(game_name.into());
-                handle.set_game_hash(hash.into());
-            })
-            .unwrap();
-        } else {
-            let message_dialog = NetplayDialog::new().unwrap();
-            let weak_dialog = message_dialog.as_weak();
-            message_dialog.on_close_clicked(move || {
-                weak_dialog.unwrap().window().hide().unwrap();
-            });
-            message_dialog.set_text("Could not read ROM".into());
-            message_dialog.show().unwrap();
+        if let Some(file) = select_rom.await {
+            if let Some(rom_contents) = device::get_rom_contents(file.path()) {
+                let hash = device::cart::rom::calculate_hash(&rom_contents);
+                let game_name = ui::storage::get_game_name(&rom_contents);
+                weak.upgrade_in_event_loop(move |handle| {
+                    handle.set_game_name(game_name.into());
+                    handle.set_game_hash(hash.into());
+                })
+                .unwrap();
+            } else {
+                weak.upgrade_in_event_loop(move |handle| {
+                    let message_dialog = NetplayDialog::new().unwrap();
+                    let weak_dialog = message_dialog.as_weak();
+                    message_dialog.on_close_clicked(move || {
+                        weak_dialog.unwrap().window().hide().unwrap();
+                    });
+                    message_dialog.set_text("Could not read ROM".into());
+                    message_dialog.show().unwrap();
+
+                    handle.set_game_name("".into());
+                    handle.set_game_hash("".into());
+                })
+                .unwrap();
+            }
         }
     });
 }

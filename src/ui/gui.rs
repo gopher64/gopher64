@@ -331,24 +331,23 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
     }
     let weak = app.as_weak();
     tokio::spawn(async move {
-        let file = select_rom.await;
-        let mut gb_rom_path = [None, None, None, None];
-        let mut gb_ram_path = [None, None, None, None];
+        if let Some(file) = select_rom.await {
+            let mut gb_rom_path = [None, None, None, None];
+            let mut gb_ram_path = [None, None, None, None];
 
-        for i in 0..4 {
-            if select_gb_rom[i].is_some() {
-                gb_rom_path[i] = select_gb_rom[i].as_mut().unwrap().await;
+            for i in 0..4 {
+                if select_gb_rom[i].is_some() {
+                    gb_rom_path[i] = select_gb_rom[i].as_mut().unwrap().await;
+                }
+                if select_gb_ram[i].is_some() {
+                    gb_ram_path[i] = select_gb_ram[i].as_mut().unwrap().await;
+                }
             }
-            if select_gb_ram[i].is_some() {
-                gb_ram_path[i] = select_gb_ram[i].as_mut().unwrap().await;
-            }
-        }
 
-        std::thread::Builder::new()
-            .name("n64".to_string())
-            .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
-            .spawn(move || {
-                if file.is_some() {
+            std::thread::Builder::new()
+                .name("n64".to_string())
+                .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
+                .spawn(move || {
                     let mut device = device::Device::new();
 
                     for i in 0..4 {
@@ -366,7 +365,7 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
                         device.vru_window.word_receiver = Some(vru_word_receiver);
                     }
 
-                    if let Some(rom_contents) = device::get_rom_contents(file.unwrap().path()) {
+                    if let Some(rom_contents) = device::get_rom_contents(file.path()) {
                         device::run_game(&mut device, rom_contents, fullscreen, overclock);
                     } else {
                         println!("Could not read rom file");
@@ -379,10 +378,11 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
                             .try_send(None)
                             .unwrap();
                     }
-                }
-                weak.upgrade_in_event_loop(move |handle| handle.set_game_running(false))
-                    .unwrap();
-            })
-            .unwrap();
+
+                    weak.upgrade_in_event_loop(move |handle| handle.set_game_running(false))
+                        .unwrap();
+                })
+                .unwrap();
+        }
     });
 }
