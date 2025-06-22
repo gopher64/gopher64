@@ -278,20 +278,20 @@ fn update_sessions(
                             slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
                         > = std::rc::Rc::new(sessions_vec);
                         handle.set_sessions(slint::ModelRc::from(rooms_model));
-                        handle.current_session(-1);
+                        handle.set_current_session(-1);
                     })
                     .unwrap();
                 } else {
                     weak.upgrade_in_event_loop(move |handle| {
                         handle.set_sessions(slint::ModelRc::default());
-                        handle.current_session(-1);
+                        handle.set_current_session(-1);
                     })
                     .unwrap();
                 }
             } else {
                 weak.upgrade_in_event_loop(move |handle| {
                     handle.set_sessions(slint::ModelRc::default());
-                    handle.current_session(-1);
+                    handle.set_current_session(-1);
                     let message_dialog = NetplayDialog::new().unwrap();
                     let weak_dialog = message_dialog.as_weak();
                     message_dialog.on_close_clicked(move || {
@@ -305,7 +305,7 @@ fn update_sessions(
         } else {
             weak.upgrade_in_event_loop(move |handle| {
                 handle.set_sessions(slint::ModelRc::default());
-                handle.current_session(-1);
+                handle.set_current_session(-1);
                 let message_dialog = NetplayDialog::new().unwrap();
                 let weak_dialog = message_dialog.as_weak();
                 message_dialog.on_close_clicked(move || {
