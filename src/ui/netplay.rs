@@ -223,6 +223,8 @@ pub fn setup_create_window(create_window: &NetplayCreate) {
         select_rom(weak.clone());
     });
 
+    create_window.on_create_session(move || {});
+
     create_window.show().unwrap();
 }
 
@@ -409,6 +411,8 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
             weak.clone(),
         );
     });
+
+    join_window.on_join_session(move || {});
 
     join_window.show().unwrap();
 }

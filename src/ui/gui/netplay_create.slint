@@ -15,6 +15,7 @@ export component NetplayCreate inherits Window {
     in-out property game_hash <=> NetplayData.game_hash;
     callback get_ping(string);
     callback select_rom;
+    callback create_session;
 
     VerticalBox {
         HorizontalBox {
@@ -97,6 +98,9 @@ export component NetplayCreate inherits Window {
         Button {
             text: @tr("Create Session");
             enabled: NetplayCreateData.session_name != "" && NetplayCreateData.player_name != "" && NetplayData.game_name != "";
+            clicked => {
+                create_session();
+            }
         }
     }
 }
