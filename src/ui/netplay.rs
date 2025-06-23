@@ -213,8 +213,7 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
 }
 
 pub fn setup_create_window(create_window: &NetplayCreate) {
-    let weak = create_window.as_weak();
-    populate_server_names(weak);
+    populate_server_names(create_window.as_weak());
     let weak = create_window.as_weak();
     create_window.on_get_ping(move |server_url| {
         update_ping(weak.clone(), server_url.to_string());
@@ -379,8 +378,7 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(1);
 
-    let weak = join_window.as_weak();
-    populate_server_names(weak);
+    populate_server_names(join_window.as_weak());
     let weak = join_window.as_weak();
     join_window.on_get_ping(move |server_url| {
         update_ping(weak.clone(), server_url.to_string());
