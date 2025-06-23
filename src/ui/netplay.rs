@@ -321,19 +321,19 @@ fn update_sessions(
                         let sessions_vec = slint::VecModel::default();
                         for room in rooms {
                             let session_vec = slint::VecModel::default();
-                            let mut room_name = slint::StandardListViewItem::default();
-                            room_name.text = room.room_name.unwrap().into();
-                            session_vec.push(room_name);
-                            let mut game_name = slint::StandardListViewItem::default();
-                            game_name.text = room.game_name.unwrap().into();
-                            session_vec.push(game_name);
-                            let mut password_protected = slint::StandardListViewItem::default();
-                            password_protected.text = if room.protected.unwrap() {
-                                "True".into()
-                            } else {
-                                "False".into()
-                            };
-                            session_vec.push(password_protected);
+                            session_vec.push(slint::StandardListViewItem::from(
+                                slint::SharedString::from(room.room_name.unwrap()),
+                            ));
+                            session_vec.push(slint::StandardListViewItem::from(
+                                slint::SharedString::from(room.game_name.unwrap()),
+                            ));
+                            session_vec.push(slint::StandardListViewItem::from(
+                                slint::SharedString::from(if room.protected.unwrap() {
+                                    "True"
+                                } else {
+                                    "False"
+                                }),
+                            ));
                             let session_model: std::rc::Rc<
                                 slint::VecModel<slint::StandardListViewItem>,
                             > = std::rc::Rc::new(session_vec);
