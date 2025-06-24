@@ -15,7 +15,7 @@ export component NetplayCreate inherits Window {
     in-out property game_hash <=> NetplayData.game_hash;
     callback get_ping(string);
     callback select_rom;
-    callback create_session(string);
+    callback create_session(string, string, string, string, string, string);
 
     VerticalBox {
         HorizontalBox {
@@ -39,6 +39,9 @@ export component NetplayCreate inherits Window {
 
                 LineEdit {
                     placeholder_text: @tr("Enter session password");
+                    edited(text) => {
+                        NetplayData.password = text;
+                    }
                 }
             }
         }
@@ -99,7 +102,13 @@ export component NetplayCreate inherits Window {
             text: @tr("Create Session");
             enabled: NetplayCreateData.session_name != "" && NetplayCreateData.player_name != "" && NetplayData.game_name != "";
             clicked => {
-                create_session(NetplayData.server_urls[server.current-index]);
+                create_session(
+                    NetplayData.server_urls[server.current-index],
+                    NetplayCreateData.session_name,
+                    NetplayCreateData.player_name,
+                    NetplayData.game_name,
+                    NetplayData.game_hash,
+                    NetplayData.password);
             }
         }
     }

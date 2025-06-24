@@ -96,6 +96,9 @@ export component NetplayJoin inherits Window {
         HorizontalBox {
             LineEdit {
                 placeholder-text: @tr("Password (if required)");
+                edited(text) => {
+                    NetplayData.password = text;
+                }
             }
 
             if NetplayData.game_name == "": Button {

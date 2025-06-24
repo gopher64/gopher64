@@ -40,9 +40,9 @@ fn netplay_window(app: &AppWindow) {
     let weak_create = app.as_weak();
     app.on_create_session_button_clicked(move || {
         weak_create
-            .upgrade_in_event_loop(move |_handle| {
+            .upgrade_in_event_loop(move |handle| {
                 let create_window = NetplayCreate::new().unwrap();
-                ui::netplay::setup_create_window(&create_window);
+                ui::netplay::setup_create_window(&create_window, handle.get_overclock_n64_cpu());
             })
             .unwrap();
     });

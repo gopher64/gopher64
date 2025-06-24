@@ -212,7 +212,7 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
     });
 }
 
-pub fn setup_create_window(create_window: &NetplayCreate) {
+pub fn setup_create_window(create_window: &NetplayCreate, overclock_setting: bool) {
     let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<NetplayMessage>,
         tokio::sync::broadcast::Receiver<NetplayMessage>,
@@ -235,20 +235,29 @@ pub fn setup_create_window(create_window: &NetplayCreate) {
 
     let netplay_write_sender_on_create_session = netplay_write_sender.clone();
     let netplay_read_receiver_on_create_session = netplay_read_receiver.resubscribe();
+    let weak = create_window.as_weak();
+    create_window.on_create_session(
+        move |server_url, session_name, player_name, game_name, game_hash, password| {
+            netplay_write_sender_on_create_session.send(None).unwrap(); // close current websocket if any
+            manage_websocket(
+                server_url.to_string(),
+                netplay_read_sender.clone(),
+                netplay_write_receiver.resubscribe(),
+            );
 
-    create_window.on_create_session(move |server_url| {
-        netplay_write_sender_on_create_session.send(None).unwrap(); // close current websocket if any
-        manage_websocket(
-            server_url.to_string(),
-            netplay_read_sender.clone(),
-            netplay_write_receiver.resubscribe(),
-        );
-
-        create_session(
-            netplay_write_sender_on_create_session.clone(),
-            netplay_read_receiver_on_create_session.resubscribe(),
-        );
-    });
+            create_session(
+                netplay_write_sender_on_create_session.clone(),
+                netplay_read_receiver_on_create_session.resubscribe(),
+                session_name.to_string(),
+                player_name.to_string(),
+                game_name.to_string(),
+                game_hash.to_string(),
+                password.to_string(),
+                overclock_setting,
+                weak.clone(),
+            );
+        },
+    );
 
     create_window.show().unwrap();
 }
@@ -288,17 +297,21 @@ fn manage_websocket(
     });
 }
 
+fn show_netplay_error(message: String) {
+    let message_dialog = NetplayDialog::new().unwrap();
+    let weak_dialog = message_dialog.as_weak();
+    message_dialog.on_close_clicked(move || {
+        weak_dialog.unwrap().window().hide().unwrap();
+    });
+    message_dialog.set_text(message.into());
+    message_dialog.show().unwrap();
+}
+
 fn clear_sessions(handle: &NetplayJoin, message: Option<String>) {
     handle.set_sessions(slint::ModelRc::default());
     handle.set_current_session(-1);
     if let Some(message) = message {
-        let message_dialog = NetplayDialog::new().unwrap();
-        let weak_dialog = message_dialog.as_weak();
-        message_dialog.on_close_clicked(move || {
-            weak_dialog.unwrap().window().hide().unwrap();
-        });
-        message_dialog.set_text(message.into());
-        message_dialog.show().unwrap();
+        show_netplay_error(message);
     }
 }
 
@@ -386,9 +399,71 @@ fn update_sessions(
 }
 
 fn create_session(
-    _netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    _netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    session_name: String,
+    player_name: String,
+    game_name: String,
+    game_hash: String,
+    password: String,
+    overclock: bool,
+    weak: slint::Weak<NetplayCreate>,
 ) {
+    tokio::spawn(async move {
+        let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+        let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
+        let mut features = std::collections::HashMap::new();
+        features.insert("overclock".to_string(), overclock.to_string());
+
+        let create_room = NetplayMessage {
+            message_type: "request_create_room".to_string(),
+            player_name: Some(player_name),
+            client_sha: Some(env!("GIT_HASH").to_string()),
+            netplay_version: Some(NETPLAY_VERSION),
+            emulator: Some(EMU_NAME.to_string()),
+            accept: None,
+            message: None,
+            rooms: None,
+            auth_time: Some(now_utc),
+            player_names: None,
+            auth: Some(format!("{:x}", hasher.finalize())),
+            room: Some(NetplayRoom {
+                room_name: Some(session_name),
+                password: Some(password),
+                game_name: Some(game_name),
+                md5: Some(game_hash),
+                protected: None,
+                port: None,
+                features: Some(features),
+                buffer_target: None,
+            }),
+        };
+
+        netplay_write_sender.send(Some(create_room)).unwrap();
+
+        if let Ok(Ok(message)) = tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            netplay_read_receiver.recv(),
+        )
+        .await
+        {
+            if message.accept.unwrap() == 0 {
+                // move to waiting room
+            } else {
+                weak.upgrade_in_event_loop(move |_handle| {
+                    if let Some(message) = message.message {
+                        show_netplay_error(message);
+                    }
+                })
+                .unwrap();
+            }
+        } else {
+            weak.upgrade_in_event_loop(move |_handle| {
+                show_netplay_error("Server did not respond".to_string());
+            })
+            .unwrap();
+        }
+    });
 }
 
 fn join_session(
