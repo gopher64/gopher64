@@ -2,7 +2,6 @@ import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Butt
 import { NetplayData } from "netplay_page.slint";
 
 export global NetplayJoinData {
-    in-out property <string> player_name;
     in-out property <[[StandardListViewItem]]> sessions;
     in-out property <[int]> ports;
     in-out property <int> current_session: -1;
@@ -33,7 +32,7 @@ export component NetplayJoin inherits Window {
                 LineEdit {
                     placeholder_text: @tr("Enter player name");
                     edited(text) => {
-                        NetplayJoinData.player_name = text;
+                        NetplayData.player_name = text;
                     }
                 }
             }
@@ -118,10 +117,10 @@ export component NetplayJoin inherits Window {
 
             Button {
                 text: @tr("Join Session");
-                enabled: NetplayJoinData.player_name != "" && NetplayJoinData.current_session >= 0 && NetplayData.game_name != "";
+                enabled: NetplayData.player_name != "" && NetplayJoinData.current_session >= 0 && NetplayData.game_name != "";
                 clicked => {
                     join_session(
-                    NetplayJoinData.player_name,
+                    NetplayData.player_name,
                     NetplayData.game_hash,
                     NetplayData.password,
                     NetplayJoinData.ports[NetplayJoinData.current_session]);

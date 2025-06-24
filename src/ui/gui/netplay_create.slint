@@ -3,7 +3,6 @@ import { NetplayData } from "netplay_page.slint";
 
 export global NetplayCreateData {
     in-out property <string> session_name;
-    in-out property <string> player_name;
 }
 
 export component NetplayCreate inherits Window {
@@ -54,7 +53,7 @@ export component NetplayCreate inherits Window {
             LineEdit {
                 placeholder_text: @tr("Enter player name");
                 edited(text) => {
-                    NetplayCreateData.player_name = text;
+                    NetplayData.player_name = text;
                 }
             }
         }
@@ -100,12 +99,12 @@ export component NetplayCreate inherits Window {
 
         Button {
             text: @tr("Create Session");
-            enabled: NetplayCreateData.session_name != "" && NetplayCreateData.player_name != "" && NetplayData.game_name != "";
+            enabled: NetplayCreateData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "";
             clicked => {
                 create_session(
                     NetplayData.server_urls[server.current-index],
                     NetplayCreateData.session_name,
-                    NetplayCreateData.player_name,
+                    NetplayData.player_name,
                     NetplayData.game_name,
                     NetplayData.game_hash,
                     NetplayData.password);
