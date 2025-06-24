@@ -455,7 +455,7 @@ fn create_session(
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
                     setup_wait_window(
-                        netplay_write_sender.clone(),
+                        netplay_write_sender,
                         netplay_read_receiver,
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
@@ -531,7 +531,7 @@ fn join_session(
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
                     setup_wait_window(
-                        netplay_write_sender.clone(),
+                        netplay_write_sender,
                         netplay_read_receiver,
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
@@ -778,10 +778,9 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
         update_sessions(sender.clone(), receiver.resubscribe(), weak.clone());
     });
     let weak = join_window.as_weak();
-    let sender = netplay_write_sender.clone();
     join_window.on_join_session(move |player_name, game_hash, password, port| {
         join_session(
-            sender.clone(),
+            netplay_write_sender.clone(),
             netplay_read_receiver.resubscribe(),
             player_name.to_string(),
             game_hash.to_string(),
