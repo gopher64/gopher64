@@ -458,6 +458,7 @@ fn create_session(
                     let session = message.room.as_ref().unwrap();
                     handle.window().hide().unwrap();
                     setup_wait_window(
+                        netplay_read_receiver.resubscribe(),
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
@@ -530,6 +531,7 @@ fn join_session(
                     let session = message.room.as_ref().unwrap();
                     handle.window().hide().unwrap();
                     setup_wait_window(
+                        netplay_read_receiver.resubscribe(),
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
@@ -555,11 +557,51 @@ fn join_session(
     });
 }
 
-fn setup_wait_window(session_name: slint::SharedString, game_name: slint::SharedString, port: i32) {
+fn setup_wait_window(
+    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    session_name: slint::SharedString,
+    game_name: slint::SharedString,
+    port: i32,
+) {
     let wait = NetplayWait::new().unwrap();
     wait.set_session_name(session_name);
     wait.set_game_name(game_name);
     wait.set_port(port);
+
+    let weak = wait.as_weak();
+    tokio::spawn(async move {
+        while let Ok(response) = netplay_read_receiver.recv().await {
+            match response.message_type.as_str() {
+                "reply_motd" => {
+                    weak.upgrade_in_event_loop(move |handle| {
+                        handle.set_motd(response.message.unwrap().into());
+                    })
+                    .unwrap();
+                }
+                "reply_players" => {
+                    weak.upgrade_in_event_loop(move |handle| {
+                        if let Some(player_names) = response.player_names {
+                            let players_vec: slint::VecModel<slint::SharedString> =
+                                slint::VecModel::default();
+                            for player in player_names {
+                                players_vec.push(player.into());
+                            }
+                            let players_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                                std::rc::Rc::new(players_vec);
+                            handle.set_players(slint::ModelRc::from(players_model));
+                        }
+                    })
+                    .unwrap();
+                }
+                "reply_chat_message" => {}
+                "reply_begin_game" => {
+                    return;
+                }
+                _ => {}
+            }
+            // process incoming messages
+        }
+    });
 
     wait.show().unwrap();
 }
