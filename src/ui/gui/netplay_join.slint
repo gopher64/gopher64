@@ -4,6 +4,7 @@ import { NetplayData } from "netplay_page.slint";
 export global NetplayJoinData {
     in-out property <string> player_name;
     in-out property <[[StandardListViewItem]]> sessions;
+    in-out property <[int]> ports;
     in-out property <int> current_session: -1;
 }
 
@@ -14,12 +15,13 @@ export component NetplayJoin inherits Window {
     in-out property ping <=> NetplayData.ping;
     in-out property sessions <=> NetplayJoinData.sessions;
     in-out property current_session <=> NetplayJoinData.current_session;
+    in-out property ports <=> NetplayJoinData.ports;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
     callback get_ping(string);
     callback refresh_session(string);
     callback select_rom;
-    callback join_session;
+    callback join_session(string, string, string, int);
 
     VerticalBox {
         HorizontalBox {
@@ -118,7 +120,11 @@ export component NetplayJoin inherits Window {
                 text: @tr("Join Session");
                 enabled: NetplayJoinData.player_name != "" && NetplayJoinData.current_session >= 0 && NetplayData.game_name != "";
                 clicked => {
-                    join_session();
+                    join_session(
+                    NetplayJoinData.player_name,
+                    NetplayData.game_hash,
+                    NetplayData.password,
+                    NetplayJoinData.ports[NetplayJoinData.current_session]);
                 }
             }
         }

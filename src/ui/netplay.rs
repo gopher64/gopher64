@@ -269,7 +269,7 @@ fn manage_websocket(
 ) {
     tokio::spawn(async move {
         if let Ok(Ok((socket, _response))) = tokio::time::timeout(
-            std::time::Duration::from_secs(1),
+            std::time::Duration::from_secs(2),
             tokio_tungstenite::connect_async(server_url.clone()),
         )
         .await
@@ -309,6 +309,7 @@ fn show_netplay_error(message: String) {
 
 fn clear_sessions(handle: &NetplayJoin, message: Option<String>) {
     handle.set_sessions(slint::ModelRc::default());
+    handle.set_ports(slint::ModelRc::default());
     handle.set_current_session(-1);
     if let Some(message) = message {
         show_netplay_error(message);
@@ -341,7 +342,7 @@ fn update_sessions(
         netplay_write_sender.send(Some(request_rooms)).unwrap();
 
         if let Ok(Ok(message)) = tokio::time::timeout(
-            std::time::Duration::from_secs(1),
+            std::time::Duration::from_secs(2),
             netplay_read_receiver.recv(),
         )
         .await
@@ -350,6 +351,7 @@ fn update_sessions(
                 if let Some(rooms) = message.rooms {
                     weak.upgrade_in_event_loop(move |handle| {
                         let sessions_vec = slint::VecModel::default();
+                        let ports_vec = slint::VecModel::default();
                         for room in rooms {
                             let session_vec = slint::VecModel::default();
                             session_vec.push(slint::StandardListViewItem::from(
@@ -369,11 +371,15 @@ fn update_sessions(
                                 slint::VecModel<slint::StandardListViewItem>,
                             > = std::rc::Rc::new(session_vec);
                             sessions_vec.push(slint::ModelRc::from(session_model));
+                            ports_vec.push(room.port.unwrap());
                         }
                         let rooms_model: std::rc::Rc<
                             slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
                         > = std::rc::Rc::new(sessions_vec);
+                        let ports_model: std::rc::Rc<slint::VecModel<i32>> =
+                            std::rc::Rc::new(ports_vec);
                         handle.set_sessions(slint::ModelRc::from(rooms_model));
+                        handle.set_ports(slint::ModelRc::from(ports_model));
                         handle.set_current_session(-1);
                     })
                     .unwrap();
@@ -442,7 +448,7 @@ fn create_session(
         netplay_write_sender.send(Some(create_room)).unwrap();
 
         if let Ok(Ok(message)) = tokio::time::timeout(
-            std::time::Duration::from_secs(1),
+            std::time::Duration::from_secs(2),
             netplay_read_receiver.recv(),
         )
         .await
@@ -467,9 +473,64 @@ fn create_session(
 }
 
 fn join_session(
-    _netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    _netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    player_name: String,
+    game_hash: String,
+    password: String,
+    port: i32,
+    weak: slint::Weak<NetplayJoin>,
 ) {
+    tokio::spawn(async move {
+        let join_room = NetplayMessage {
+            message_type: "request_join_room".to_string(),
+            player_name: Some(player_name),
+            client_sha: Some(env!("GIT_HASH").to_string()),
+            netplay_version: None,
+            emulator: None,
+            accept: None,
+            message: None,
+            rooms: None,
+            auth_time: None,
+            player_names: None,
+            auth: None,
+            room: Some(NetplayRoom {
+                room_name: None,
+                password: Some(password),
+                game_name: None,
+                md5: Some(game_hash),
+                protected: None,
+                port: Some(port),
+                features: None,
+                buffer_target: None,
+            }),
+        };
+
+        netplay_write_sender.send(Some(join_room)).unwrap();
+
+        if let Ok(Ok(message)) = tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            netplay_read_receiver.recv(),
+        )
+        .await
+        {
+            if message.accept.unwrap() == 0 {
+                // move to waiting room
+            } else {
+                weak.upgrade_in_event_loop(move |_handle| {
+                    if let Some(message) = message.message {
+                        show_netplay_error(message);
+                    }
+                })
+                .unwrap();
+            }
+        } else {
+            weak.upgrade_in_event_loop(move |_handle| {
+                show_netplay_error("Server did not respond".to_string());
+            })
+            .unwrap();
+        }
+    });
 }
 
 pub fn setup_join_window(join_window: &NetplayJoin) {
@@ -518,12 +579,18 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
             weak.clone(),
         );
     });
+    let weak = join_window.as_weak();
     let netplay_write_sender_on_join_session = netplay_write_sender.clone();
     let netplay_read_receiver_on_join_session = netplay_read_receiver.resubscribe();
-    join_window.on_join_session(move || {
+    join_window.on_join_session(move |player_name, game_hash, password, port| {
         join_session(
             netplay_write_sender_on_join_session.clone(),
             netplay_read_receiver_on_join_session.resubscribe(),
+            player_name.to_string(),
+            game_hash.to_string(),
+            password.to_string(),
+            port,
+            weak.clone(),
         );
     });
 
