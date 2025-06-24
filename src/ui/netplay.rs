@@ -585,38 +585,39 @@ fn setup_wait_window(
         auth: None,
         room: None,
     };
-    let request_players = NetplayMessage {
-        message_type: "request_players".to_string(),
-        player_name: None,
-        client_sha: None,
-        netplay_version: None,
-        player_names: None,
-        emulator: None,
-        rooms: None,
-        accept: None,
-        message: None,
-        auth_time: None,
-        auth: None,
-        room: Some(NetplayRoom {
-            room_name: None,
-            password: None,
-            game_name: None,
-            md5: None,
-            protected: None,
-            port: Some(port),
-            features: None,
-            buffer_target: None,
-        }),
-    };
 
     netplay_write_sender.send(Some(motd_message)).unwrap();
-    netplay_write_sender.send(Some(request_players)).unwrap();
 
     let weak = wait.as_weak();
     tokio::spawn(async move {
         while let Ok(response) = netplay_read_receiver.recv().await {
             match response.message_type.as_str() {
                 "reply_motd" => {
+                    let request_players = NetplayMessage {
+                        message_type: "request_players".to_string(),
+                        player_name: None,
+                        client_sha: None,
+                        netplay_version: None,
+                        player_names: None,
+                        emulator: None,
+                        rooms: None,
+                        accept: None,
+                        message: None,
+                        auth_time: None,
+                        auth: None,
+                        room: Some(NetplayRoom {
+                            room_name: None,
+                            password: None,
+                            game_name: None,
+                            md5: None,
+                            protected: None,
+                            port: Some(port),
+                            features: None,
+                            buffer_target: None,
+                        }),
+                    };
+                    netplay_write_sender.send(Some(request_players)).unwrap();
+
                     weak.upgrade_in_event_loop(move |handle| {
                         handle.set_motd(response.message.unwrap().into());
                     })
