@@ -643,7 +643,6 @@ fn setup_wait_window(
                 }
                 _ => {}
             }
-            // process incoming messages
         }
     });
 
