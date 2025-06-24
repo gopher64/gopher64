@@ -213,6 +213,16 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
 }
 
 pub fn setup_create_window(create_window: &NetplayCreate) {
+    let (netplay_read_sender, netplay_read_receiver): (
+        tokio::sync::broadcast::Sender<NetplayMessage>,
+        tokio::sync::broadcast::Receiver<NetplayMessage>,
+    ) = tokio::sync::broadcast::channel(1);
+
+    let (netplay_write_sender, netplay_write_receiver): (
+        tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+        tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    ) = tokio::sync::broadcast::channel(1);
+
     populate_server_names(create_window.as_weak());
     let weak = create_window.as_weak();
     create_window.on_get_ping(move |server_url| {
@@ -223,7 +233,22 @@ pub fn setup_create_window(create_window: &NetplayCreate) {
         select_rom(weak.clone());
     });
 
-    create_window.on_create_session(move || {});
+    let netplay_write_sender_on_create_session = netplay_write_sender.clone();
+    let netplay_read_receiver_on_create_session = netplay_read_receiver.resubscribe();
+
+    create_window.on_create_session(move |server_url| {
+        netplay_write_sender_on_create_session.send(None).unwrap(); // close current websocket if any
+        manage_websocket(
+            server_url.to_string(),
+            netplay_read_sender.clone(),
+            netplay_write_receiver.resubscribe(),
+        );
+
+        create_session(
+            netplay_write_sender_on_create_session.clone(),
+            netplay_read_receiver_on_create_session.resubscribe(),
+        );
+    });
 
     create_window.show().unwrap();
 }
@@ -358,6 +383,12 @@ fn update_sessions(
             .unwrap();
         }
     });
+}
+
+fn create_session(
+    _netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    _netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+) {
 }
 
 fn join_session(

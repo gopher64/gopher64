@@ -15,7 +15,7 @@ export component NetplayCreate inherits Window {
     in-out property game_hash <=> NetplayData.game_hash;
     callback get_ping(string);
     callback select_rom;
-    callback create_session;
+    callback create_session(string);
 
     VerticalBox {
         HorizontalBox {
@@ -62,7 +62,7 @@ export component NetplayCreate inherits Window {
             }
 
             HorizontalBox {
-                ComboBox {
+                server := ComboBox {
                     model: NetplayData.server_names;
                     selected(current-value) => {
                         if (self.current-index >= 0) {
@@ -99,7 +99,7 @@ export component NetplayCreate inherits Window {
             text: @tr("Create Session");
             enabled: NetplayCreateData.session_name != "" && NetplayCreateData.player_name != "" && NetplayData.game_name != "";
             clicked => {
-                create_session();
+                create_session(NetplayData.server_urls[server.current-index]);
             }
         }
     }
