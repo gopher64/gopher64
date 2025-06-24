@@ -21,6 +21,7 @@ export component NetplayWait inherits Window {
     in-out property can_start <=> NetplayWaitData.can_start;
     in-out property chat_text <=> NetplayWaitData.chat_text;
     callback send_chat_message(string);
+    callback begin_game;
 
     VerticalBox {
         Text {
@@ -92,6 +93,9 @@ export component NetplayWait inherits Window {
         Button {
             text: @tr("Start Game");
             enabled: NetplayWaitData.can_start;
+            clicked => {
+                begin_game();
+            }
         }
     }
 }

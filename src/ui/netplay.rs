@@ -608,6 +608,36 @@ fn setup_wait_window(
             .unwrap();
     });
 
+    let netplay_write_sender_begin_game = netplay_write_sender.clone();
+    wait.on_begin_game(move || {
+        let begin_game = NetplayMessage {
+            message_type: "request_begin_game".to_string(),
+            player_name: None,
+            client_sha: None,
+            netplay_version: None,
+            player_names: None,
+            rooms: None,
+            emulator: None,
+            accept: None,
+            message: None,
+            auth_time: None,
+            auth: None,
+            room: Some(NetplayRoom {
+                room_name: None,
+                password: None,
+                game_name: None,
+                md5: None,
+                protected: None,
+                port: Some(port),
+                features: None,
+                buffer_target: None,
+            }),
+        };
+        netplay_write_sender_begin_game
+            .send(Some(begin_game))
+            .unwrap();
+    });
+
     let motd_message = NetplayMessage {
         message_type: "request_motd".to_string(),
         player_name: None,
