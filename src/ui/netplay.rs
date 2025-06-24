@@ -456,13 +456,14 @@ fn create_session(
             if message.accept.unwrap() == 0 {
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
-                    handle.window().hide().unwrap();
                     setup_wait_window(
+                        netplay_write_sender.clone(),
                         netplay_read_receiver.resubscribe(),
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
                     );
+                    handle.window().hide().unwrap();
                 })
                 .unwrap();
             } else {
@@ -529,13 +530,14 @@ fn join_session(
             if message.accept.unwrap() == 0 {
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
-                    handle.window().hide().unwrap();
                     setup_wait_window(
+                        netplay_write_sender.clone(),
                         netplay_read_receiver.resubscribe(),
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
                     );
+                    handle.window().hide().unwrap();
                 })
                 .unwrap();
             } else {
@@ -558,6 +560,7 @@ fn join_session(
 }
 
 fn setup_wait_window(
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
     session_name: slint::SharedString,
     game_name: slint::SharedString,
@@ -567,6 +570,47 @@ fn setup_wait_window(
     wait.set_session_name(session_name);
     wait.set_game_name(game_name);
     wait.set_port(port);
+
+    let motd_message = NetplayMessage {
+        message_type: "request_motd".to_string(),
+        player_name: None,
+        client_sha: None,
+        netplay_version: None,
+        emulator: None,
+        accept: None,
+        rooms: None,
+        player_names: None,
+        message: None,
+        auth_time: None,
+        auth: None,
+        room: None,
+    };
+    let request_players = NetplayMessage {
+        message_type: "request_players".to_string(),
+        player_name: None,
+        client_sha: None,
+        netplay_version: None,
+        player_names: None,
+        emulator: None,
+        rooms: None,
+        accept: None,
+        message: None,
+        auth_time: None,
+        auth: None,
+        room: Some(NetplayRoom {
+            room_name: None,
+            password: None,
+            game_name: None,
+            md5: None,
+            protected: None,
+            port: Some(port),
+            features: None,
+            buffer_target: None,
+        }),
+    };
+
+    netplay_write_sender.send(Some(motd_message)).unwrap();
+    netplay_write_sender.send(Some(request_players)).unwrap();
 
     let weak = wait.as_weak();
     tokio::spawn(async move {
