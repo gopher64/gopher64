@@ -233,12 +233,10 @@ pub fn setup_create_window(create_window: &NetplayCreate, overclock_setting: boo
         select_rom(weak.clone());
     });
 
-    let netplay_write_sender_on_create_session = netplay_write_sender.clone();
-    let netplay_read_receiver_on_create_session = netplay_read_receiver.resubscribe();
     let weak = create_window.as_weak();
     create_window.on_create_session(
         move |server_url, session_name, player_name, game_name, game_hash, password| {
-            netplay_write_sender_on_create_session.send(None).unwrap(); // close current websocket if any
+            netplay_write_sender.send(None).unwrap(); // close current websocket if any
             manage_websocket(
                 server_url.to_string(),
                 netplay_read_sender.clone(),
@@ -246,8 +244,8 @@ pub fn setup_create_window(create_window: &NetplayCreate, overclock_setting: boo
             );
 
             create_session(
-                netplay_write_sender_on_create_session.clone(),
-                netplay_read_receiver_on_create_session.resubscribe(),
+                netplay_write_sender.clone(),
+                netplay_read_receiver.resubscribe(),
                 session_name.to_string(),
                 player_name.to_string(),
                 game_name.to_string(),
@@ -458,7 +456,7 @@ fn create_session(
                     let session = message.room.as_ref().unwrap();
                     setup_wait_window(
                         netplay_write_sender.clone(),
-                        netplay_read_receiver.resubscribe(),
+                        netplay_read_receiver,
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
                         message.player_name.as_ref().unwrap().into(),
@@ -534,7 +532,7 @@ fn join_session(
                     let session = message.room.as_ref().unwrap();
                     setup_wait_window(
                         netplay_write_sender.clone(),
-                        netplay_read_receiver.resubscribe(),
+                        netplay_read_receiver,
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
                         message.player_name.as_ref().unwrap().into(),
@@ -578,7 +576,7 @@ fn setup_wait_window(
     wait.set_port(port);
     wait.set_can_start(can_start);
 
-    let netplay_write_sender_send_chat = netplay_write_sender.clone();
+    let sender = netplay_write_sender.clone();
     wait.on_send_chat_message(move |message| {
         let send_chat = NetplayMessage {
             message_type: "request_chat_message".to_string(),
@@ -603,12 +601,10 @@ fn setup_wait_window(
                 buffer_target: None,
             }),
         };
-        netplay_write_sender_send_chat
-            .send(Some(send_chat))
-            .unwrap();
+        sender.send(Some(send_chat)).unwrap();
     });
 
-    let netplay_write_sender_begin_game = netplay_write_sender.clone();
+    let sender = netplay_write_sender.clone();
     wait.on_begin_game(move || {
         let begin_game = NetplayMessage {
             message_type: "request_begin_game".to_string(),
@@ -633,9 +629,7 @@ fn setup_wait_window(
                 buffer_target: None,
             }),
         };
-        netplay_write_sender_begin_game
-            .send(Some(begin_game))
-            .unwrap();
+        sender.send(Some(begin_game)).unwrap();
     });
 
     let motd_message = NetplayMessage {
@@ -764,35 +758,32 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
     join_window.on_select_rom(move || {
         select_rom(weak.clone());
     });
-    let netplay_write_sender_on_close_requested = netplay_write_sender.clone();
+
+    let sender = netplay_write_sender.clone();
     join_window.window().on_close_requested(move || {
-        netplay_write_sender_on_close_requested.send(None).unwrap(); // close current websocket if any
+        sender.send(None).unwrap(); // close current websocket if any
         slint::CloseRequestResponse::HideWindow
     });
 
     let weak = join_window.as_weak();
-    let netplay_write_sender_on_refresh_session = netplay_write_sender.clone();
-    let netplay_read_receiver_on_refresh_session = netplay_read_receiver.resubscribe();
+    let sender = netplay_write_sender.clone();
+    let receiver = netplay_read_receiver.resubscribe();
     join_window.on_refresh_session(move |server_url| {
-        netplay_write_sender_on_refresh_session.send(None).unwrap(); // close current websocket if any
+        sender.send(None).unwrap(); // close current websocket if any
         manage_websocket(
             server_url.to_string(),
             netplay_read_sender.clone(),
             netplay_write_receiver.resubscribe(),
         );
-        update_sessions(
-            netplay_write_sender_on_refresh_session.clone(),
-            netplay_read_receiver_on_refresh_session.resubscribe(),
-            weak.clone(),
-        );
+        update_sessions(sender.clone(), receiver.resubscribe(), weak.clone());
     });
     let weak = join_window.as_weak();
-    let netplay_write_sender_on_join_session = netplay_write_sender.clone();
-    let netplay_read_receiver_on_join_session = netplay_read_receiver.resubscribe();
+    let sender = netplay_write_sender.clone();
+    let receiver = netplay_read_receiver.resubscribe();
     join_window.on_join_session(move |player_name, game_hash, password, port| {
         join_session(
-            netplay_write_sender_on_join_session.clone(),
-            netplay_read_receiver_on_join_session.resubscribe(),
+            sender.clone(),
+            receiver.resubscribe(),
             player_name.to_string(),
             game_hash.to_string(),
             password.to_string(),
