@@ -279,11 +279,9 @@ fn clear_sessions(handle: &NetplayJoin, message: Option<String>) {
 
 fn update_sessions(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
     weak: slint::Weak<NetplayJoin>,
 ) {
-    let mut receiver = netplay_read_receiver.resubscribe();
-    let writer = netplay_write_sender.clone();
     tokio::spawn(async move {
         let now_utc = chrono::Utc::now().timestamp_millis().to_string();
         let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
@@ -302,10 +300,13 @@ fn update_sessions(
             room: None,
         };
 
-        writer.send(Some(request_rooms)).unwrap();
+        netplay_write_sender.send(Some(request_rooms)).unwrap();
 
-        if let Ok(Ok(message)) =
-            tokio::time::timeout(std::time::Duration::from_secs(1), receiver.recv()).await
+        if let Ok(Ok(message)) = tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            netplay_read_receiver.recv(),
+        )
+        .await
         {
             if message.accept.unwrap() == 0 {
                 if let Some(rooms) = message.rooms {
