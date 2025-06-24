@@ -13,6 +13,10 @@ export global NetplayData {
     in-out property <string> game_hash;
     in-out property <string> password;
     in-out property <bool> pending_session;
+    in-out property <string> session_name;
+    in-out property <[[StandardListViewItem]]> sessions;
+    in-out property <[int]> ports;
+    in-out property <int> current_session: -1;
 }
 
 export component NetplayDialog inherits Dialog {

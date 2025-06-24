@@ -1,10 +1,6 @@
 import { LineEdit, HorizontalBox, VerticalBox, Button, ComboBox } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 
-export global NetplayCreateData {
-    in-out property <string> session_name;
-}
-
 export component NetplayCreate inherits Window {
     title: @tr("Netplay: Create Session");
     in-out property server_names <=> NetplayData.server_names;
@@ -27,7 +23,7 @@ export component NetplayCreate inherits Window {
                 LineEdit {
                     placeholder_text: @tr("Enter session name");
                     edited(text) => {
-                        NetplayCreateData.session_name = text;
+                        NetplayData.session_name = text;
                     }
                 }
             }
@@ -100,12 +96,12 @@ export component NetplayCreate inherits Window {
 
         Button {
             text: @tr("Create Session");
-            enabled: NetplayCreateData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
+            enabled: NetplayData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
             clicked => {
                 NetplayData.pending_session = true;
                 create_session(
                     NetplayData.server_urls[server.current-index],
-                    NetplayCreateData.session_name,
+                    NetplayData.session_name,
                     NetplayData.player_name,
                     NetplayData.game_name,
                     NetplayData.game_hash,

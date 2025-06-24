@@ -1,23 +1,31 @@
 import { VerticalBox, HorizontalBox, TextEdit, ScrollView, LineEdit, Button, GridBox } from "std-widgets.slint";
+import { NetplayData } from "netplay_page.slint";
 
 export global NetplayWaitData {
     in-out property <string> chat_message;
+    in-out property <string> motd;
+    in-out property <[string]> players;
+    in-out property <int> port;
 }
 
 export component NetplayWait inherits Window {
     title: @tr("Netplay: Waiting Room");
     preferred-width: 400px;
     preferred-height: 400px;
-    property <[string]> players: ["one", "two", "three", "four"];
+    in-out property players <=> NetplayWaitData.players;
+    in-out property session_name <=> NetplayData.session_name;
+    in-out property game_name <=> NetplayData.game_name;
+    in-out property motd <=> NetplayWaitData.motd;
+    in-out property port <=> NetplayWaitData.port;
     VerticalBox {
         Text {
-            text: @tr("Session Name: Something");
+            text: @tr("Session Name: ") + NetplayData.session_name;
             font-size: 15px;
             horizontal-alignment: center;
         }
 
         Text {
-            text: @tr("Game Name: Something");
+            text: @tr("Game Name: ") + NetplayData.game_name;
             font-size: 15px;
             horizontal-alignment: center;
         }
@@ -46,7 +54,7 @@ export component NetplayWait inherits Window {
 
         TextEdit {
             read-only: true;
-            text: @tr("Waiting for players to join...\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nmore\nend");
+            text: @tr("Chat data");
         }
 
         HorizontalBox {
@@ -64,7 +72,7 @@ export component NetplayWait inherits Window {
         }
 
         Text {
-            text: @tr("You can close this window at any time, but you will not be able to rejoin the session.");
+            text: NetplayWaitData.motd;
         }
 
         Button {

@@ -1,20 +1,14 @@
 import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Button } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 
-export global NetplayJoinData {
-    in-out property <[[StandardListViewItem]]> sessions;
-    in-out property <[int]> ports;
-    in-out property <int> current_session: -1;
-}
-
 export component NetplayJoin inherits Window {
     title: @tr("Netplay: Join Session");
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
     in-out property ping <=> NetplayData.ping;
-    in-out property sessions <=> NetplayJoinData.sessions;
-    in-out property current_session <=> NetplayJoinData.current_session;
-    in-out property ports <=> NetplayJoinData.ports;
+    in-out property sessions <=> NetplayData.sessions;
+    in-out property current_session <=> NetplayData.current_session;
+    in-out property ports <=> NetplayData.ports;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
     in-out property pending_session <=> NetplayData.pending_session;
@@ -61,12 +55,12 @@ export component NetplayJoin inherits Window {
             }
         }
 
-        if NetplayJoinData.sessions.length > 0: Text {
+        if NetplayData.sessions.length > 0: Text {
             text: @tr("Click on a session below to select it");
             horizontal-alignment: center;
             vertical-alignment: center;
         }
-        if NetplayJoinData.sessions.length == 0: Text {
+        if NetplayData.sessions.length == 0: Text {
             text: @tr("No sessions available. Please refresh or try a different server.");
             horizontal-alignment: center;
             vertical-alignment: center;
@@ -77,10 +71,10 @@ export component NetplayJoin inherits Window {
                 { title: "Game Name" },
                 { title: "Password Protected" },
             ];
-            rows: NetplayJoinData.sessions;
-            current-row: NetplayJoinData.current_session;
+            rows: NetplayData.sessions;
+            current-row: NetplayData.current_session;
             current-row-changed(current-row) => {
-                NetplayJoinData.current_session = current-row;
+                NetplayData.current_session = current-row;
             }
         }
 
@@ -118,14 +112,14 @@ export component NetplayJoin inherits Window {
 
             Button {
                 text: @tr("Join Session");
-                enabled: NetplayData.player_name != "" && NetplayJoinData.current_session >= 0 && NetplayData.game_name != "" && !NetplayData.pending_session;
+                enabled: NetplayData.player_name != "" && NetplayData.current_session >= 0 && NetplayData.game_name != "" && !NetplayData.pending_session;
                 clicked => {
                     NetplayData.pending_session = true;
                     join_session(
                     NetplayData.player_name,
                     NetplayData.game_hash,
                     NetplayData.password,
-                    NetplayJoinData.ports[NetplayJoinData.current_session]);
+                    NetplayData.ports[NetplayData.current_session]);
                 }
             }
         }

@@ -455,10 +455,13 @@ fn create_session(
         {
             if message.accept.unwrap() == 0 {
                 weak.upgrade_in_event_loop(move |handle| {
-                    let wait = NetplayWait::new().unwrap();
+                    let session = message.room.as_ref().unwrap();
                     handle.window().hide().unwrap();
-                    setup_wait_window(&wait);
-                    wait.show().unwrap();
+                    setup_wait_window(
+                        session.room_name.as_ref().unwrap().into(),
+                        session.game_name.as_ref().unwrap().into(),
+                        session.port.unwrap(),
+                    );
                 })
                 .unwrap();
             } else {
@@ -524,10 +527,13 @@ fn join_session(
         {
             if message.accept.unwrap() == 0 {
                 weak.upgrade_in_event_loop(move |handle| {
-                    let wait = NetplayWait::new().unwrap();
+                    let session = message.room.as_ref().unwrap();
                     handle.window().hide().unwrap();
-                    setup_wait_window(&wait);
-                    wait.show().unwrap();
+                    setup_wait_window(
+                        session.room_name.as_ref().unwrap().into(),
+                        session.game_name.as_ref().unwrap().into(),
+                        session.port.unwrap(),
+                    );
                 })
                 .unwrap();
             } else {
@@ -549,7 +555,14 @@ fn join_session(
     });
 }
 
-fn setup_wait_window(_wait_window: &NetplayWait) {}
+fn setup_wait_window(session_name: slint::SharedString, game_name: slint::SharedString, port: i32) {
+    let wait = NetplayWait::new().unwrap();
+    wait.set_session_name(session_name);
+    wait.set_game_name(game_name);
+    wait.set_port(port);
+
+    wait.show().unwrap();
+}
 
 pub fn setup_join_window(join_window: &NetplayJoin) {
     let (netplay_read_sender, netplay_read_receiver): (
