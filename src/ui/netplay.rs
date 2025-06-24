@@ -779,11 +779,10 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
     });
     let weak = join_window.as_weak();
     let sender = netplay_write_sender.clone();
-    let receiver = netplay_read_receiver.resubscribe();
     join_window.on_join_session(move |player_name, game_hash, password, port| {
         join_session(
             sender.clone(),
-            receiver.resubscribe(),
+            netplay_read_receiver.resubscribe(),
             player_name.to_string(),
             game_hash.to_string(),
             password.to_string(),
