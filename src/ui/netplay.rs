@@ -278,20 +278,10 @@ fn clear_sessions(handle: &NetplayJoin, message: Option<String>) {
 }
 
 fn update_sessions(
-    server_url: String,
-    netplay_write_sender: &tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    netplay_read_sender: &tokio::sync::broadcast::Sender<NetplayMessage>,
-    netplay_write_receiver: &tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
-    netplay_read_receiver: &tokio::sync::broadcast::Receiver<NetplayMessage>,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
     weak: slint::Weak<NetplayJoin>,
 ) {
-    netplay_write_sender.send(None).unwrap(); // close current websocket if any
-    manage_websocket(
-        server_url,
-        netplay_read_sender.clone(),
-        netplay_write_receiver.resubscribe(),
-    );
-
     let mut receiver = netplay_read_receiver.resubscribe();
     let writer = netplay_write_sender.clone();
     tokio::spawn(async move {
@@ -369,6 +359,12 @@ fn update_sessions(
     });
 }
 
+fn join_session(
+    _netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    _netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+) {
+}
+
 pub fn setup_join_window(join_window: &NetplayJoin) {
     let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<NetplayMessage>,
@@ -393,26 +389,36 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
     join_window.on_select_rom(move || {
         select_rom(weak.clone());
     });
-
-    let netplay_write_sender_closed = netplay_write_sender.clone();
+    let netplay_write_sender_on_close_requested = netplay_write_sender.clone();
     join_window.window().on_close_requested(move || {
-        netplay_write_sender_closed.send(None).unwrap(); // close current websocket if any
+        netplay_write_sender_on_close_requested.send(None).unwrap(); // close current websocket if any
         slint::CloseRequestResponse::HideWindow
     });
 
     let weak = join_window.as_weak();
+    let netplay_write_sender_on_refresh_session = netplay_write_sender.clone();
+    let netplay_read_receiver_on_refresh_session = netplay_read_receiver.resubscribe();
     join_window.on_refresh_session(move |server_url| {
-        update_sessions(
+        netplay_write_sender_on_refresh_session.send(None).unwrap(); // close current websocket if any
+        manage_websocket(
             server_url.to_string(),
-            &netplay_write_sender,
-            &netplay_read_sender,
-            &netplay_write_receiver,
-            &netplay_read_receiver,
+            netplay_read_sender.clone(),
+            netplay_write_receiver.resubscribe(),
+        );
+        update_sessions(
+            netplay_write_sender_on_refresh_session.clone(),
+            netplay_read_receiver_on_refresh_session.resubscribe(),
             weak.clone(),
         );
     });
-
-    join_window.on_join_session(move || {});
+    let netplay_write_sender_on_join_session = netplay_write_sender.clone();
+    let netplay_read_receiver_on_join_session = netplay_read_receiver.resubscribe();
+    join_window.on_join_session(move || {
+        join_session(
+            netplay_write_sender_on_join_session.clone(),
+            netplay_read_receiver_on_join_session.resubscribe(),
+        );
+    });
 
     join_window.show().unwrap();
 }
