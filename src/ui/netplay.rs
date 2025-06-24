@@ -456,7 +456,8 @@ fn create_session(
             if message.accept.unwrap() == 0 {
                 // move to waiting room
             } else {
-                weak.upgrade_in_event_loop(move |_handle| {
+                weak.upgrade_in_event_loop(move |handle| {
+                    handle.set_pending_session(false);
                     if let Some(message) = message.message {
                         show_netplay_error(message);
                     }
@@ -464,7 +465,8 @@ fn create_session(
                 .unwrap();
             }
         } else {
-            weak.upgrade_in_event_loop(move |_handle| {
+            weak.upgrade_in_event_loop(move |handle| {
+                handle.set_pending_session(false);
                 show_netplay_error("Server did not respond".to_string());
             })
             .unwrap();
@@ -517,7 +519,8 @@ fn join_session(
             if message.accept.unwrap() == 0 {
                 // move to waiting room
             } else {
-                weak.upgrade_in_event_loop(move |_handle| {
+                weak.upgrade_in_event_loop(move |handle| {
+                    handle.set_pending_session(false);
                     if let Some(message) = message.message {
                         show_netplay_error(message);
                     }
@@ -525,7 +528,8 @@ fn join_session(
                 .unwrap();
             }
         } else {
-            weak.upgrade_in_event_loop(move |_handle| {
+            weak.upgrade_in_event_loop(move |handle| {
+                handle.set_pending_session(false);
                 show_netplay_error("Server did not respond".to_string());
             })
             .unwrap();

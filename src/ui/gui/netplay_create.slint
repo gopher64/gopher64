@@ -12,6 +12,7 @@ export component NetplayCreate inherits Window {
     in-out property ping <=> NetplayData.ping;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
+    in-out property pending_session <=> NetplayData.pending_session;
     callback get_ping(string);
     callback select_rom;
     callback create_session(string, string, string, string, string, string);
@@ -99,8 +100,9 @@ export component NetplayCreate inherits Window {
 
         Button {
             text: @tr("Create Session");
-            enabled: NetplayCreateData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "";
+            enabled: NetplayCreateData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
             clicked => {
+                NetplayData.pending_session = true;
                 create_session(
                     NetplayData.server_urls[server.current-index],
                     NetplayCreateData.session_name,

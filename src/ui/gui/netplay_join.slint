@@ -17,6 +17,7 @@ export component NetplayJoin inherits Window {
     in-out property ports <=> NetplayJoinData.ports;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
+    in-out property pending_session <=> NetplayData.pending_session;
     callback get_ping(string);
     callback refresh_session(string);
     callback select_rom;
@@ -117,8 +118,9 @@ export component NetplayJoin inherits Window {
 
             Button {
                 text: @tr("Join Session");
-                enabled: NetplayData.player_name != "" && NetplayJoinData.current_session >= 0 && NetplayData.game_name != "";
+                enabled: NetplayData.player_name != "" && NetplayJoinData.current_session >= 0 && NetplayData.game_name != "" && !NetplayData.pending_session;
                 clicked => {
+                    NetplayData.pending_session = true;
                     join_session(
                     NetplayData.player_name,
                     NetplayData.game_hash,
