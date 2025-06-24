@@ -94,6 +94,7 @@ export component NetplayWait inherits Window {
             text: @tr("Start Game");
             enabled: NetplayWaitData.can_start;
             clicked => {
+                NetplayWaitData.can_start = false;
                 begin_game();
             }
         }

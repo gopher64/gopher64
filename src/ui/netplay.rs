@@ -718,9 +718,21 @@ fn setup_wait_window(
                     .unwrap();
                 }
                 "reply_begin_game" => {
-                    return;
+                    if response.accept.unwrap() == 0 {
+                        return;
+                    } else {
+                        weak.upgrade_in_event_loop(move |handle| {
+                            handle.set_can_start(can_start);
+                            if let Some(message) = response.message {
+                                show_netplay_error(message);
+                            }
+                        })
+                        .unwrap();
+                    }
                 }
-                _ => {}
+                _ => {
+                    println!("Unknown netplay message type: {}", response.message_type);
+                }
             }
         }
     });
