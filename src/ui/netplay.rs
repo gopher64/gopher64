@@ -216,12 +216,12 @@ pub fn setup_create_window(create_window: &NetplayCreate, overclock_setting: boo
     let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<NetplayMessage>,
         tokio::sync::broadcast::Receiver<NetplayMessage>,
-    ) = tokio::sync::broadcast::channel(1);
+    ) = tokio::sync::broadcast::channel(5);
 
     let (netplay_write_sender, netplay_write_receiver): (
         tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
-    ) = tokio::sync::broadcast::channel(1);
+    ) = tokio::sync::broadcast::channel(5);
 
     populate_server_names(create_window.as_weak());
     let weak = create_window.as_weak();
@@ -702,12 +702,12 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
     let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<NetplayMessage>,
         tokio::sync::broadcast::Receiver<NetplayMessage>,
-    ) = tokio::sync::broadcast::channel(1);
+    ) = tokio::sync::broadcast::channel(5);
 
     let (netplay_write_sender, netplay_write_receiver): (
         tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
-    ) = tokio::sync::broadcast::channel(1);
+    ) = tokio::sync::broadcast::channel(5);
 
     populate_server_names(join_window.as_weak());
     let weak = join_window.as_weak();

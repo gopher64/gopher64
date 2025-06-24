@@ -312,12 +312,12 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
     let (vru_window_notifier, vru_window_receiver): (
         tokio::sync::mpsc::Sender<Option<Vec<String>>>,
         tokio::sync::mpsc::Receiver<Option<Vec<String>>>,
-    ) = tokio::sync::mpsc::channel(1);
+    ) = tokio::sync::mpsc::channel(5);
 
     let (vru_word_notifier, vru_word_receiver): (
         tokio::sync::mpsc::Sender<String>,
         tokio::sync::mpsc::Receiver<String>,
-    ) = tokio::sync::mpsc::channel(1);
+    ) = tokio::sync::mpsc::channel(5);
 
     let fullscreen = app.get_fullscreen();
     let overclock = app.get_overclock_n64_cpu();
