@@ -1,6 +1,6 @@
 use crate::device;
 use crate::ui;
-use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin};
+use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin, NetplayWait};
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
 use slint::{ComponentHandle, Model};
@@ -454,7 +454,13 @@ fn create_session(
         .await
         {
             if message.accept.unwrap() == 0 {
-                // move to waiting room
+                weak.upgrade_in_event_loop(move |handle| {
+                    let wait = NetplayWait::new().unwrap();
+                    handle.window().hide().unwrap();
+                    setup_wait_window(&wait);
+                    wait.show().unwrap();
+                })
+                .unwrap();
             } else {
                 weak.upgrade_in_event_loop(move |handle| {
                     handle.set_pending_session(false);
@@ -517,7 +523,13 @@ fn join_session(
         .await
         {
             if message.accept.unwrap() == 0 {
-                // move to waiting room
+                weak.upgrade_in_event_loop(move |handle| {
+                    let wait = NetplayWait::new().unwrap();
+                    handle.window().hide().unwrap();
+                    setup_wait_window(&wait);
+                    wait.show().unwrap();
+                })
+                .unwrap();
             } else {
                 weak.upgrade_in_event_loop(move |handle| {
                     handle.set_pending_session(false);
@@ -536,6 +548,8 @@ fn join_session(
         }
     });
 }
+
+fn setup_wait_window(_wait_window: &NetplayWait) {}
 
 pub fn setup_join_window(join_window: &NetplayJoin) {
     let (netplay_read_sender, netplay_read_receiver): (
