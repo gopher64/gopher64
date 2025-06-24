@@ -2,10 +2,11 @@ import { VerticalBox, HorizontalBox, TextEdit, ScrollView, LineEdit, Button, Gri
 import { NetplayData } from "netplay_page.slint";
 
 export global NetplayWaitData {
-    in-out property <string> chat_message;
     in-out property <string> motd;
     in-out property <[string]> players;
     in-out property <int> port;
+    in-out property <bool> can_start;
+    in-out property <string> chat_text;
 }
 
 export component NetplayWait inherits Window {
@@ -17,6 +18,10 @@ export component NetplayWait inherits Window {
     in-out property game_name <=> NetplayData.game_name;
     in-out property motd <=> NetplayWaitData.motd;
     in-out property port <=> NetplayWaitData.port;
+    in-out property can_start <=> NetplayWaitData.can_start;
+    in-out property chat_text <=> NetplayWaitData.chat_text;
+    callback send_chat_message(string);
+
     VerticalBox {
         Text {
             text: @tr("Session Name: ") + NetplayData.session_name;
@@ -54,20 +59,28 @@ export component NetplayWait inherits Window {
 
         TextEdit {
             read-only: true;
-            text: @tr("Chat data");
+            text: NetplayWaitData.chat_text;
         }
 
         HorizontalBox {
-            LineEdit {
+            chat_message := LineEdit {
                 placeholder_text: @tr("Enter chat message");
-                edited(text) => {
-                    NetplayWaitData.chat_message = text;
+                key-released(event) => {
+                    if (event.text == Key.Return && chat_message.text != "") {
+                        send_chat_message(chat_message.text);
+                        chat_message.text = "";
+                    }
+                    accept
                 }
             }
 
             Button {
                 text: @tr("Send Message");
-                enabled: NetplayWaitData.chat_message != "";
+                enabled: chat_message.text != "";
+                clicked => {
+                    send_chat_message(chat_message.text);
+                    chat_message.text = "";
+                }
             }
         }
 
@@ -78,6 +91,7 @@ export component NetplayWait inherits Window {
 
         Button {
             text: @tr("Start Game");
+            enabled: NetplayWaitData.can_start;
         }
     }
 }

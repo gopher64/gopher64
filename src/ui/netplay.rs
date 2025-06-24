@@ -461,7 +461,9 @@ fn create_session(
                         netplay_read_receiver.resubscribe(),
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
+                        message.player_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
+                        true,
                     );
                     handle.window().hide().unwrap();
                 })
@@ -535,7 +537,9 @@ fn join_session(
                         netplay_read_receiver.resubscribe(),
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
+                        message.player_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
+                        false,
                     );
                     handle.window().hide().unwrap();
                 })
@@ -564,12 +568,45 @@ fn setup_wait_window(
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
     session_name: slint::SharedString,
     game_name: slint::SharedString,
+    player_name: slint::SharedString,
     port: i32,
+    can_start: bool,
 ) {
     let wait = NetplayWait::new().unwrap();
     wait.set_session_name(session_name);
     wait.set_game_name(game_name);
     wait.set_port(port);
+    wait.set_can_start(can_start);
+
+    let netplay_write_sender_send_chat = netplay_write_sender.clone();
+    wait.on_send_chat_message(move |message| {
+        let send_chat = NetplayMessage {
+            message_type: "request_chat_message".to_string(),
+            player_name: Some(player_name.to_string()),
+            client_sha: None,
+            netplay_version: None,
+            player_names: None,
+            rooms: None,
+            emulator: None,
+            accept: None,
+            message: Some(message.into()),
+            auth_time: None,
+            auth: None,
+            room: Some(NetplayRoom {
+                room_name: None,
+                password: None,
+                game_name: None,
+                md5: None,
+                protected: None,
+                port: Some(port),
+                features: None,
+                buffer_target: None,
+            }),
+        };
+        netplay_write_sender_send_chat
+            .send(Some(send_chat))
+            .unwrap();
+    });
 
     let motd_message = NetplayMessage {
         message_type: "request_motd".to_string(),
@@ -642,7 +679,14 @@ fn setup_wait_window(
                     })
                     .unwrap();
                 }
-                "reply_chat_message" => {}
+                "reply_chat_message" => {
+                    weak.upgrade_in_event_loop(move |handle| {
+                        let mut chat_text = handle.get_chat_text();
+                        chat_text.push_str(&format!("{}\n", response.message.unwrap()));
+                        handle.set_chat_text(chat_text);
+                    })
+                    .unwrap();
+                }
                 "reply_begin_game" => {
                     return;
                 }
