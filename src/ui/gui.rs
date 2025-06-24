@@ -61,10 +61,10 @@ fn netplay_window(app: &AppWindow) {
 fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     let dirs = ui::get_dirs();
     let weak = app.as_weak();
-    let controller_paths2 = controller_paths.to_owned();
+    let controller_paths = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
-        let controller_paths3 = controller_paths2.clone();
-        weak.upgrade_in_event_loop(move |handle| open_rom(&handle, controller_paths3.clone()))
+        let controller_paths = controller_paths.clone();
+        weak.upgrade_in_event_loop(move |handle| open_rom(&handle, controller_paths.clone()))
             .unwrap();
     });
 
@@ -162,9 +162,9 @@ fn controller_window(
     app.on_input_profile_button_clicked(move || {
         let dialog = InputProfileDialog::new().unwrap();
         let weak_dialog = dialog.as_weak();
-        let weak_app2 = weak_app.clone();
+        let weak_app = weak_app.clone();
         dialog.on_profile_creation_button_clicked(move || {
-            let weak_app3 = weak_app2.clone();
+            let weak_app = weak_app.clone();
             weak_dialog
                 .upgrade_in_event_loop(move |handle| {
                     handle.hide().unwrap();
@@ -174,7 +174,7 @@ fn controller_window(
                     tokio::spawn(async move {
                         let mut game_ui = ui::Ui::new();
                         ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
-                        update_input_profiles(&weak_app3, &game_ui.config);
+                        update_input_profiles(&weak_app, &game_ui.config);
                     });
                 })
                 .unwrap();
