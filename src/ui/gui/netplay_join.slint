@@ -1,0 +1,129 @@
+import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Button } from "std-widgets.slint";
+import { NetplayData } from "netplay_page.slint";
+
+export component NetplayJoin inherits Window {
+    title: @tr("Netplay: Join Session");
+    in-out property server_names <=> NetplayData.server_names;
+    in-out property server_urls <=> NetplayData.server_urls;
+    in-out property ping <=> NetplayData.ping;
+    in-out property sessions <=> NetplayData.sessions;
+    in-out property current_session <=> NetplayData.current_session;
+    in-out property ports <=> NetplayData.ports;
+    in-out property game_name <=> NetplayData.game_name;
+    in-out property game_hash <=> NetplayData.game_hash;
+    in-out property peer_addr <=> NetplayData.peer_addr;
+    in-out property pending_session <=> NetplayData.pending_session;
+    in-out property rom_path <=> NetplayData.rom_path;
+    callback get_ping(string);
+    callback refresh_session(string);
+    callback select_rom;
+    callback join_session(string, string, string, int);
+
+    VerticalBox {
+        HorizontalBox {
+            VerticalBox {
+                Text {
+                    text: @tr("Player Name:");
+                }
+
+                LineEdit {
+                    placeholder_text: @tr("Enter player name");
+                    edited(text) => {
+                        NetplayData.player_name = text;
+                    }
+                }
+            }
+
+            VerticalBox {
+                Text {
+                    text: @tr("Server:");
+                }
+
+                HorizontalBox {
+                    server := ComboBox {
+                        model: NetplayData.server_names;
+                        selected(current-value) => {
+                            if (self.current-index >= 0) {
+                                get_ping(NetplayData.server_urls[self.current-index]);
+                            }
+                        }
+                    }
+
+                    Text {
+                        vertical-alignment: center;
+                        text: NetplayData.ping;
+                    }
+                }
+            }
+        }
+
+        if NetplayData.sessions.length > 0: Text {
+            text: @tr("Click on a session below to select it");
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+        if NetplayData.sessions.length == 0: Text {
+            text: @tr("No sessions available. Please refresh or try a different server.");
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+        StandardTableView {
+            columns: [
+                { title: "Session Name" },
+                { title: "Game Name" },
+                { title: "Password Protected" },
+            ];
+            rows: NetplayData.sessions;
+            current-row: NetplayData.current_session;
+            current-row-changed(current-row) => {
+                NetplayData.current_session = current-row;
+            }
+        }
+
+        HorizontalBox {
+            Rectangle { }
+
+            Button {
+                text: @tr("Refresh Session List");
+                clicked => {
+                    refresh_session(NetplayData.server_urls[server.current-index]);
+                }
+            }
+        }
+
+        HorizontalBox {
+            LineEdit {
+                placeholder-text: @tr("Password (if required)");
+                edited(text) => {
+                    NetplayData.password = text;
+                }
+            }
+
+            if NetplayData.game_name == "": Button {
+                text: @tr("Select ROM");
+                clicked => {
+                    select_rom();
+                }
+            }
+            if NetplayData.game_name != "": Button {
+                text: NetplayData.game_name;
+                clicked => {
+                    select_rom();
+                }
+            }
+
+            Button {
+                text: @tr("Join Session");
+                enabled: NetplayData.player_name != "" && NetplayData.current_session >= 0 && NetplayData.game_name != "" && !NetplayData.pending_session;
+                clicked => {
+                    NetplayData.pending_session = true;
+                    join_session(
+                    NetplayData.player_name,
+                    NetplayData.game_hash,
+                    NetplayData.password,
+                    NetplayData.ports[NetplayData.current_session]);
+                }
+            }
+        }
+    }
+}

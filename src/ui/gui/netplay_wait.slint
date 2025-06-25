@@ -1,0 +1,103 @@
+import { VerticalBox, HorizontalBox, TextEdit, ScrollView, LineEdit, Button, GridBox } from "std-widgets.slint";
+import { NetplayData } from "netplay_page.slint";
+
+export global NetplayWaitData {
+    in-out property <string> motd;
+    in-out property <[string]> players;
+    in-out property <int> port;
+    in-out property <bool> can_start;
+    in-out property <string> chat_text;
+}
+
+export component NetplayWait inherits Window {
+    title: @tr("Netplay: Waiting Room");
+    preferred-width: 400px;
+    preferred-height: 400px;
+    in-out property players <=> NetplayWaitData.players;
+    in-out property session_name <=> NetplayData.session_name;
+    in-out property game_name <=> NetplayData.game_name;
+    in-out property rom_path <=> NetplayData.rom_path;
+    in-out property motd <=> NetplayWaitData.motd;
+    in-out property port <=> NetplayWaitData.port;
+    in-out property can_start <=> NetplayWaitData.can_start;
+    in-out property chat_text <=> NetplayWaitData.chat_text;
+    callback send_chat_message(string);
+    callback begin_game;
+
+    VerticalBox {
+        Text {
+            text: @tr("Session Name: ") + NetplayData.session_name;
+            font-size: 15px;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: @tr("Game Name: ") + NetplayData.game_name;
+            font-size: 15px;
+            horizontal-alignment: center;
+        }
+
+        GridBox {
+            Row {
+                Text {
+                    text: "Player 1: " + players[0];
+                }
+
+                Text {
+                    text: "Player 2: " + players[1];
+                }
+            }
+
+            Row {
+                Text {
+                    text: "Player 3: " + players[2];
+                }
+
+                Text {
+                    text: "Player 4: " + players[3];
+                }
+            }
+        }
+
+        TextEdit {
+            read-only: true;
+            text: NetplayWaitData.chat_text;
+        }
+
+        HorizontalBox {
+            chat_message := LineEdit {
+                placeholder_text: @tr("Enter chat message");
+                key-released(event) => {
+                    if (event.text == Key.Return && chat_message.text != "") {
+                        send_chat_message(chat_message.text);
+                        chat_message.text = "";
+                    }
+                    accept
+                }
+            }
+
+            Button {
+                text: @tr("Send Message");
+                enabled: chat_message.text != "";
+                clicked => {
+                    send_chat_message(chat_message.text);
+                    chat_message.text = "";
+                }
+            }
+        }
+
+        Text {
+            text: NetplayWaitData.motd;
+            wrap: word-wrap;
+        }
+
+        Button {
+            text: @tr("Start Game");
+            enabled: NetplayWaitData.can_start;
+            clicked => {
+                NetplayWaitData.can_start = false;
+                begin_game();
+            }
+        }
+    }
+}

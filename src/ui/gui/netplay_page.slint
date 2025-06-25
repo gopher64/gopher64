@@ -1,0 +1,63 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+import { VerticalBox, HorizontalBox, Button, StandardButton } from "std-widgets.slint";
+import { Page } from "page.slint";
+
+export global NetplayData {
+    in-out property <[string]> server_names;
+    in-out property <[string]> server_urls;
+    in-out property <string> ping: "Ping: Unknown";
+    in-out property <string> player_name;
+    in-out property <string> game_name;
+    in-out property <string> game_hash;
+    in-out property <string> rom_path;
+    in-out property <string> password;
+    in-out property <string> peer_addr;
+    in-out property <bool> pending_session;
+    in-out property <string> session_name;
+    in-out property <[[StandardListViewItem]]> sessions;
+    in-out property <[int]> ports;
+    in-out property <int> current_session: -1;
+}
+
+export component NetplayDialog inherits Dialog {
+    in-out property <string> text;
+    title: @tr("Netplay Error");
+    Text {
+        text: text;
+    }
+
+    StandardButton {
+        kind: close;
+    }
+}
+
+export component Netplay inherits Page {
+    callback create_session_button_clicked;
+    callback join_session_button_clicked;
+    title: @tr("Netplay");
+
+    VerticalBox {
+        alignment: start;
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Create Session");
+                clicked => {
+                    create_session_button_clicked();
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Join Session");
+                clicked => {
+                    join_session_button_clicked();
+                }
+            }
+        }
+    }
+}

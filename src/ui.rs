@@ -2,13 +2,13 @@ pub mod audio;
 pub mod config;
 pub mod gui;
 pub mod input;
+pub mod netplay;
 pub mod storage;
 pub mod video;
 pub mod vru;
 
 pub struct Dirs {
     pub config_dir: std::path::PathBuf,
-    pub cache_dir: std::path::PathBuf,
     pub data_dir: std::path::PathBuf,
 }
 
@@ -76,21 +76,17 @@ pub fn get_dirs() -> Dirs {
     let portable_dir = exe_path.parent();
     let portable = portable_dir.unwrap().join("portable.txt").exists();
     let config_dir;
-    let cache_dir;
     let data_dir;
     if portable {
         config_dir = portable_dir.unwrap().join("portable_data").join("config");
-        cache_dir = portable_dir.unwrap().join("portable_data").join("cache");
         data_dir = portable_dir.unwrap().join("portable_data").join("data");
     } else {
         config_dir = dirs::config_dir().unwrap().join("gopher64");
-        cache_dir = dirs::cache_dir().unwrap().join("gopher64");
         data_dir = dirs::data_dir().unwrap().join("gopher64");
     };
 
     Dirs {
         config_dir,
-        cache_dir,
         data_dir,
     }
 }

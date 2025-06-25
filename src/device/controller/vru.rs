@@ -1,5 +1,4 @@
 use crate::{device, ui};
-use eframe::egui;
 use std::collections::HashMap;
 
 const JCMD_VRU_READ: u8 = 0x09;
@@ -33,11 +32,9 @@ pub struct Vru {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct VruWindow {
     #[serde(skip)]
-    pub window_notifier: Option<tokio::sync::mpsc::Sender<Vec<String>>>,
+    pub window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
     #[serde(skip)]
     pub word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
-    #[serde(skip)]
-    pub gui_ctx: Option<egui::Context>,
 }
 
 pub fn init(device: &mut device::Device) {
@@ -195,7 +192,6 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     &device.vru.words,
                     device.vru_window.window_notifier.as_ref().unwrap(),
                     device.vru_window.word_receiver.as_mut().unwrap(),
-                    device.vru_window.gui_ctx.as_ref().unwrap(),
                 )
             } else {
                 0x7FFF

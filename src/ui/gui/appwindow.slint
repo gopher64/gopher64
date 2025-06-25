@@ -1,0 +1,93 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+import { LocalGame, ControllerConfig,Netplay,Settings,About } from "pages.slint";
+import { SideBar } from "side_bar.slint";
+import { SettingsData } from "settings_page.slint";
+import { AboutData } from "about_page.slint";
+import { ControllerData } from "controller_page.slint";
+import { State } from "localgame_page.slint";
+export { InputProfileDialog } from "input_profile.slint";
+export { VruDialog } from "vru_dialog.slint";
+export { NetplayCreate } from "netplay_create.slint";
+export { NetplayJoin } from "netplay_join.slint";
+export { NetplayWait } from "netplay_wait.slint";
+export { NetplayDialog } from "netplay_page.slint";
+
+export component AppWindow inherits Window {
+    callback wiki_button_clicked;
+    callback discord_button_clicked;
+    callback newversion_button_clicked;
+    callback open_rom_button_clicked;
+    callback saves_folder_button_clicked;
+    callback input_profile_button_clicked;
+    callback create_session_button_clicked;
+    callback join_session_button_clicked;
+    in property version <=> AboutData.version;
+    in property has_update <=> AboutData.has_update;
+    in-out property integer_scaling <=> SettingsData.integer_scaling;
+    in-out property fullscreen <=> SettingsData.fullscreen;
+    in-out property widescreen <=> SettingsData.widescreen;
+    in-out property apply_crt_shader <=> SettingsData.apply_crt_shader;
+    in-out property overclock_n64_cpu <=> SettingsData.overclock_n64_cpu;
+    in-out property resolution <=> SettingsData.resolution;
+    in-out property emulate_vru <=> ControllerData.emulate_vru;
+    in-out property controller_enabled <=> ControllerData.controller_enabled;
+    in-out property transferpak <=> ControllerData.transferpak;
+    in-out property input_profile_binding <=> ControllerData.input_profile_binding;
+    in-out property input_profiles <=> ControllerData.input_profiles;
+    in-out property controller_names <=> ControllerData.controller_names;
+    in-out property selected_controller <=> ControllerData.selected_controller;
+    in-out property game_running <=> State.game_running;
+    preferred-width: 700px;
+    preferred-height: 500px;
+    title: @tr("Gopher64");
+    icon: @image-url("../../../data/gopher64.png");
+
+    HorizontalLayout {
+        side-bar := SideBar {
+            title: @tr("Gopher64");
+            model: [
+                @tr("Menu" => "Local Game"),
+                @tr("Menu" => "Controller Config"),
+                @tr("Menu" => "Netplay"),
+                @tr("Menu" => "Settings"),
+                @tr("Menu" => "About")
+            ];
+        }
+
+        if(side-bar.current-item == 0): LocalGame {
+            open_rom_button_clicked => {
+                open_rom_button_clicked();
+            }
+            saves_folder_button_clicked => {
+                saves_folder_button_clicked();
+            }
+        }
+        if(side-bar.current-item == 1): ControllerConfig {
+            input_profile_button_clicked => {
+                input_profile_button_clicked();
+            }
+        }
+        if(side-bar.current-item == 2): Netplay {
+            create_session_button_clicked => {
+                create_session_button_clicked();
+            }
+            join_session_button_clicked => {
+                join_session_button_clicked();
+            }
+        }
+        if(side-bar.current-item == 3): Settings { }
+        if(side-bar.current-item == 4): About {
+            wiki_button_clicked => {
+                wiki_button_clicked();
+            }
+            discord_button_clicked => {
+                discord_button_clicked();
+            }
+            newversion_button_clicked => {
+                newversion_button_clicked();
+            }
+        }
+    }
+}

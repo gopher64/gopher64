@@ -1,0 +1,94 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+import { ComboBox, HorizontalBox, VerticalBox, CheckBox } from "std-widgets.slint";
+import { Page } from "page.slint";
+
+export global SettingsData {
+    in-out property <bool> integer_scaling;
+    in-out property <bool> fullscreen;
+    in-out property <bool> widescreen;
+    in-out property <bool> apply_crt_shader;
+    in-out property <bool> overclock_n64_cpu;
+    in-out property <string> resolution;
+}
+
+export component Settings inherits Page {
+    title: @tr("Settings");
+
+    VerticalBox {
+        alignment: start;
+        HorizontalBox {
+            alignment: start;
+            Text {
+                text: @tr("Resolution:");
+                vertical-alignment: center;
+            }
+
+            ComboBox {
+                model: ["1x", "2x", "4x"];
+                current-value: SettingsData.resolution;
+                selected => {
+                    SettingsData.resolution = self.current-value;
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Integer Scaling");
+                checked: SettingsData.integer_scaling;
+                toggled => {
+                    SettingsData.integer_scaling = self.checked;
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Fullscreen (Esc closes game)");
+                checked: SettingsData.fullscreen;
+                toggled => {
+                    SettingsData.fullscreen = self.checked;
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Widescreen (strech)");
+                checked: SettingsData.widescreen;
+                toggled => {
+                    SettingsData.widescreen = self.checked;
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Apply CRT shader");
+                checked: SettingsData.apply_crt_shader;
+                toggled => {
+                    SettingsData.apply_crt_shader = self.checked;
+                }
+            }
+        }
+
+        Rectangle { }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Overclock N64 CPU (may cause bugs)");
+                checked: SettingsData.overclock_n64_cpu;
+                toggled => {
+                    SettingsData.overclock_n64_cpu = self.checked;
+                }
+            }
+        }
+    }
+}

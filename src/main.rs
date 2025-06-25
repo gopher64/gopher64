@@ -73,10 +73,6 @@ async fn main() {
     if result.is_err() {
         panic!("could not create config dir: {}", result.err().unwrap())
     }
-    result = std::fs::create_dir_all(dirs.cache_dir.clone());
-    if result.is_err() {
-        panic!("could not create cache dir: {}", result.err().unwrap())
-    }
     result = std::fs::create_dir_all(dirs.data_dir.join("saves"));
     if result.is_err() {
         panic!("could not create save dir: {}", result.err().unwrap())
@@ -84,13 +80,6 @@ async fn main() {
     result = std::fs::create_dir_all(dirs.data_dir.join("states"));
     if result.is_err() {
         panic!("could not create state dir: {}", result.err().unwrap())
-    }
-    let running_file = dirs.cache_dir.join("game_running");
-    if running_file.exists() {
-        result = std::fs::remove_file(running_file);
-        if result.is_err() {
-            panic!("could not remove running file: {}", result.err().unwrap())
-        }
     }
 
     let args = Args::parse();
@@ -168,34 +157,6 @@ async fn main() {
             return;
         }
     } else {
-        let options = eframe::NativeOptions {
-            viewport: eframe::egui::ViewportBuilder::default()
-                .with_inner_size([854.0, 480.0])
-                .with_icon(
-                    eframe::icon_data::from_png_bytes(include_bytes!("../data/gopher64.png"))
-                        .unwrap(),
-                ),
-            ..Default::default()
-        };
-
-        let controllers_paths;
-        let controller_names;
-        {
-            let game_ui = ui::Ui::new();
-            controllers_paths = gui::get_controller_paths(&game_ui);
-            controller_names = ui::input::get_controller_names(&game_ui);
-        }
-        eframe::run_native(
-            "gopher64",
-            options,
-            Box::new(|cc| {
-                Ok(Box::new(ui::gui::GopherEguiApp::new(
-                    cc,
-                    controllers_paths,
-                    controller_names,
-                )))
-            }),
-        )
-        .unwrap();
+        gui::app_window();
     }
 }

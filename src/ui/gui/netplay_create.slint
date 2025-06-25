@@ -1,0 +1,114 @@
+import { LineEdit, HorizontalBox, VerticalBox, Button, ComboBox } from "std-widgets.slint";
+import { NetplayData } from "netplay_page.slint";
+
+export component NetplayCreate inherits Window {
+    title: @tr("Netplay: Create Session");
+    in-out property server_names <=> NetplayData.server_names;
+    in-out property server_urls <=> NetplayData.server_urls;
+    in-out property ping <=> NetplayData.ping;
+    in-out property game_name <=> NetplayData.game_name;
+    in-out property game_hash <=> NetplayData.game_hash;
+    in-out property pending_session <=> NetplayData.pending_session;
+    in-out property rom_path <=> NetplayData.rom_path;
+    in-out property peer_addr <=> NetplayData.peer_addr;
+    callback get_ping(string);
+    callback select_rom;
+    callback create_session(string, string, string, string, string, string);
+
+    VerticalBox {
+        HorizontalBox {
+            VerticalBox {
+                Text {
+                    text: @tr("Session Name:");
+                }
+
+                LineEdit {
+                    placeholder_text: @tr("Enter session name");
+                    edited(text) => {
+                        NetplayData.session_name = text;
+                    }
+                }
+            }
+
+            VerticalBox {
+                Text {
+                    text: @tr("Password (Optional):");
+                }
+
+                LineEdit {
+                    placeholder_text: @tr("Enter session password");
+                    edited(text) => {
+                        NetplayData.password = text;
+                    }
+                }
+            }
+        }
+
+        VerticalBox {
+            Text {
+                text: @tr("Player Name:");
+            }
+
+            LineEdit {
+                placeholder_text: @tr("Enter player name");
+                edited(text) => {
+                    NetplayData.player_name = text;
+                }
+            }
+        }
+
+        VerticalBox {
+            Text {
+                text: @tr("Server:");
+            }
+
+            HorizontalBox {
+                server := ComboBox {
+                    model: NetplayData.server_names;
+                    selected(current-value) => {
+                        if (self.current-index >= 0) {
+                            get_ping(NetplayData.server_urls[self.current-index]);
+                        }
+                    }
+                }
+
+                Text {
+                    vertical-alignment: center;
+                    text: NetplayData.ping;
+                }
+            }
+        }
+
+        if NetplayData.game_name == "": Button {
+            text: @tr("Select ROM");
+            clicked => {
+                select_rom();
+            }
+        }
+        if NetplayData.game_name != "": Button {
+            text: NetplayData.game_name;
+            clicked => {
+                select_rom();
+            }
+        }
+
+        Rectangle { }
+
+        Rectangle { }
+
+        Button {
+            text: @tr("Create Session");
+            enabled: NetplayData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
+            clicked => {
+                NetplayData.pending_session = true;
+                create_session(
+                    NetplayData.server_urls[server.current-index],
+                    NetplayData.session_name,
+                    NetplayData.player_name,
+                    NetplayData.game_name,
+                    NetplayData.game_hash,
+                    NetplayData.password);
+            }
+        }
+    }
+}

@@ -1,53 +1,111 @@
-use crate::{device, netplay, ui};
-use eframe::egui;
+use crate::device;
+use crate::netplay;
+use crate::ui;
+use slint::Model;
 
-pub mod gui_netplay;
-
-pub struct GopherEguiApp {
-    dirs: ui::Dirs,
-    configure_profile: bool,
-    profile_name: String,
-    controller_names: Vec<String>,
-    selected_controller: [i32; 4],
-    selected_profile: [String; 4],
-    input_profiles: Vec<String>,
-    controller_enabled: [bool; 4],
-    transfer_pak: [bool; 4],
-    controller_paths: Vec<String>,
-    upscale: u32,
-    integer_scaling: bool,
-    fullscreen: bool,
-    widescreen: bool,
-    crt: bool,
-    overclock: bool,
-    emulate_vru: bool,
-    dinput: bool,
-    show_vru_dialog: bool,
-    vru_window_receiver: Option<tokio::sync::mpsc::Receiver<Vec<String>>>,
-    vru_word_notifier: Option<tokio::sync::mpsc::Sender<String>>,
-    vru_word_list: Vec<String>,
-    latest_version: Option<semver::Version>,
-    update_receiver: Option<tokio::sync::mpsc::Receiver<GithubData>>,
-    netplay: gui_netplay::GuiNetplay,
-}
+slint::include_modules!();
 
 #[derive(serde::Deserialize)]
 struct GithubData {
     tag_name: String,
 }
 
-struct SaveConfig {
-    selected_controller: [i32; 4],
-    selected_profile: [String; 4],
-    controller_enabled: [bool; 4],
-    transfer_pak: [bool; 4],
-    upscale: u32,
-    integer_scaling: bool,
-    fullscreen: bool,
-    widescreen: bool,
-    crt: bool,
-    emulate_vru: bool,
-    overclock: bool,
+pub struct NetplayDevice {
+    pub peer_addr: std::net::SocketAddr,
+    pub player_number: u8,
+}
+
+pub struct GbPaths {
+    pub rom: [Option<std::path::PathBuf>; 4],
+    pub ram: [Option<std::path::PathBuf>; 4],
+}
+
+pub struct VruChannel {
+    pub vru_window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
+    pub vru_word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+}
+
+fn check_latest_version(weak: slint::Weak<AppWindow>) {
+    let client = reqwest::Client::builder()
+        .user_agent(env!("CARGO_PKG_NAME"))
+        .build()
+        .unwrap();
+    let task = client
+        .get("https://api.github.com/repos/gopher64/gopher64/releases/latest")
+        .send();
+    tokio::spawn(async move {
+        let response = task.await;
+        if let Ok(response) = response {
+            let data: Result<GithubData, reqwest::Error> = response.json().await;
+
+            let latest_version = if let Ok(data) = data {
+                semver::Version::parse(&data.tag_name[1..]).unwrap()
+            } else {
+                semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
+            };
+            let current_version = semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
+            if current_version < latest_version {
+                weak.upgrade_in_event_loop(move |handle| handle.set_has_update(true))
+                    .unwrap();
+            }
+        }
+    });
+}
+
+fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
+    let weak_create = app.as_weak();
+    let weak_app = app.as_weak();
+    let controller_paths_create = controller_paths.to_owned();
+    app.on_create_session_button_clicked(move || {
+        let controller_paths = controller_paths_create.clone();
+        let weak_app = weak_app.clone();
+        weak_create
+            .upgrade_in_event_loop(move |handle| {
+                let create_window = NetplayCreate::new().unwrap();
+                save_settings(&handle, &controller_paths);
+                ui::netplay::setup_create_window(
+                    &create_window,
+                    handle.get_overclock_n64_cpu(),
+                    handle.get_fullscreen(),
+                    weak_app,
+                );
+            })
+            .unwrap();
+    });
+
+    let weak_join = app.as_weak();
+    let weak_app = app.as_weak();
+    let controller_paths_join = controller_paths.to_owned();
+    app.on_join_session_button_clicked(move || {
+        let controller_paths = controller_paths_join.clone();
+        let weak_app = weak_app.clone();
+        weak_join
+            .upgrade_in_event_loop(move |handle| {
+                let join_window = NetplayJoin::new().unwrap();
+                save_settings(&handle, &controller_paths);
+                ui::netplay::setup_join_window(&join_window, handle.get_fullscreen(), weak_app);
+            })
+            .unwrap();
+    });
+}
+
+fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
+    let dirs = ui::get_dirs();
+    let weak = app.as_weak();
+    let controller_paths = controller_paths.to_owned();
+    app.on_open_rom_button_clicked(move || {
+        let controller_paths = controller_paths.clone();
+        weak.upgrade_in_event_loop(move |handle| {
+            save_settings(&handle, &controller_paths);
+            open_rom(&handle)
+        })
+        .unwrap();
+    });
+
+    let saves_path = dirs.data_dir.join("saves");
+    app.on_saves_folder_button_clicked(move || {
+        open::that_detached(saves_path.clone()).unwrap();
+    });
 }
 
 fn get_input_profiles(config: &ui::config::Config) -> Vec<String> {
@@ -58,613 +116,345 @@ fn get_input_profiles(config: &ui::config::Config) -> Vec<String> {
     profiles
 }
 
-pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<String> {
-    let mut controller_paths: Vec<String> = vec![];
-
-    for joystick in game_ui.input.joysticks.iter() {
-        let path = unsafe {
-            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick))
-                .to_string_lossy()
-                .to_string()
-        };
-        controller_paths.push(path);
-    }
-
-    controller_paths
+fn settings_window(app: &AppWindow, config: &ui::config::Config) {
+    app.set_integer_scaling(config.video.integer_scaling);
+    app.set_fullscreen(config.video.fullscreen);
+    app.set_widescreen(config.video.widescreen);
+    app.set_apply_crt_shader(config.video.crt);
+    app.set_overclock_n64_cpu(config.emulation.overclock);
+    app.set_resolution(format!("{}x", config.video.upscale).into());
 }
 
-impl GopherEguiApp {
-    pub fn new(
-        cc: &eframe::CreationContext<'_>,
-        controller_paths: Vec<String>,
-        controller_names: Vec<String>,
-    ) -> GopherEguiApp {
-        add_fonts(&cc.egui_ctx);
-        let config = ui::config::Config::new();
-
-        let mut selected_controller = [-1, -1, -1, -1];
-        for (pos, item) in config.input.controller_assignment.iter().enumerate() {
-            if item.is_some() {
-                for (path_pos, path) in controller_paths.iter().enumerate() {
-                    if item.as_deref().unwrap() == *path {
-                        selected_controller[pos] = path_pos as i32;
-                        break;
-                    }
-                }
-            }
+fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
+    let profiles = get_input_profiles(config);
+    weak.upgrade_in_event_loop(move |handle| {
+        let input_profiles = slint::VecModel::default();
+        for profile in profiles {
+            input_profiles.push(profile.into());
         }
-        GopherEguiApp {
-            configure_profile: false,
-            profile_name: "".to_string(),
-            selected_profile: config.input.input_profile_binding.clone(),
-            selected_controller,
-            controller_names,
-            input_profiles: get_input_profiles(&config),
-            controller_enabled: config.input.controller_enabled,
-            transfer_pak: config.input.transfer_pak,
-            upscale: config.video.upscale,
-            integer_scaling: config.video.integer_scaling,
-            fullscreen: config.video.fullscreen,
-            widescreen: config.video.widescreen,
-            crt: config.video.crt,
-            emulate_vru: config.input.emulate_vru,
-            overclock: config.emulation.overclock,
-            show_vru_dialog: false,
-            dinput: false,
-            controller_paths,
-            vru_window_receiver: None,
-            vru_word_notifier: None,
-            latest_version: None,
-            update_receiver: None,
-            vru_word_list: Vec::new(),
-            netplay: Default::default(),
-            dirs: ui::get_dirs(),
-        }
-    }
+        let input_profiles_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+            std::rc::Rc::new(input_profiles);
+        handle.set_input_profiles(slint::ModelRc::from(input_profiles_model));
+    })
+    .unwrap();
 }
 
-fn save_config(
-    config: &mut ui::config::Config,
-    controller_paths: Vec<String>,
-    save_config_items: SaveConfig,
+fn controller_window(
+    app: &AppWindow,
+    config: &ui::config::Config,
+    controller_names: &Vec<String>,
+    controller_paths: &[Option<String>],
 ) {
-    for (pos, item) in save_config_items.selected_controller.iter().enumerate() {
-        if *item != -1 {
-            config.input.controller_assignment[pos] =
-                Some(controller_paths[*item as usize].clone());
-        } else {
-            config.input.controller_assignment[pos] = None
+    let controller_enabled_model: std::rc::Rc<slint::VecModel<bool>> = std::rc::Rc::new(
+        slint::VecModel::from(config.input.controller_enabled.to_vec()),
+    );
+    app.set_emulate_vru(config.input.emulate_vru);
+
+    app.set_controller_enabled(slint::ModelRc::from(controller_enabled_model));
+
+    let transferpak_enabled_model: std::rc::Rc<slint::VecModel<bool>> =
+        std::rc::Rc::new(slint::VecModel::from(config.input.transfer_pak.to_vec()));
+    app.set_transferpak(slint::ModelRc::from(transferpak_enabled_model));
+
+    let profile_bindings = slint::VecModel::default();
+    for binding in config.input.input_profile_binding.iter() {
+        profile_bindings.push(binding.into());
+    }
+    let input_profile_binding_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+        std::rc::Rc::new(profile_bindings);
+    app.set_input_profile_binding(slint::ModelRc::from(input_profile_binding_model));
+
+    update_input_profiles(&app.as_weak(), config);
+
+    let controllers = slint::VecModel::default();
+    for controller in controller_names {
+        controllers.push(controller.into());
+    }
+    let controller_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+        std::rc::Rc::new(controllers);
+    app.set_controller_names(slint::ModelRc::from(controller_names_model));
+
+    let selected_controllers = slint::VecModel::default();
+    for selected in config.input.controller_assignment.iter() {
+        let mut found = false;
+        for (i, path) in controller_paths.iter().enumerate() {
+            if selected == path {
+                selected_controllers.push(i as i32);
+                found = true;
+                continue;
+            }
+        }
+        if !found {
+            selected_controllers.push(0);
         }
     }
+    let selected_controllers_model: std::rc::Rc<slint::VecModel<i32>> =
+        std::rc::Rc::new(selected_controllers);
+    app.set_selected_controller(slint::ModelRc::from(selected_controllers_model));
 
-    config.input.input_profile_binding = save_config_items.selected_profile;
-    config.input.controller_enabled = save_config_items.controller_enabled;
-    config.input.transfer_pak = save_config_items.transfer_pak;
+    let weak_app = app.as_weak();
+    app.on_input_profile_button_clicked(move || {
+        let dialog = InputProfileDialog::new().unwrap();
+        let weak_dialog = dialog.as_weak();
+        let weak_app = weak_app.clone();
+        dialog.on_profile_creation_button_clicked(move || {
+            let weak_app = weak_app.clone();
+            weak_dialog
+                .upgrade_in_event_loop(move |handle| {
+                    handle.hide().unwrap();
+                    let profile_name = handle.get_profile_name().into();
+                    let dinput = handle.get_dinput();
 
-    config.video.upscale = save_config_items.upscale;
-    config.video.integer_scaling = save_config_items.integer_scaling;
-    config.video.fullscreen = save_config_items.fullscreen;
-    config.video.widescreen = save_config_items.widescreen;
-    config.video.crt = save_config_items.crt;
-    config.input.emulate_vru = save_config_items.emulate_vru;
-
-    config.emulation.overclock = save_config_items.overclock;
-}
-
-impl Drop for GopherEguiApp {
-    fn drop(&mut self) {
-        let save_config_items = SaveConfig {
-            selected_controller: self.selected_controller,
-            selected_profile: self.selected_profile.clone(),
-            controller_enabled: self.controller_enabled,
-            transfer_pak: self.transfer_pak,
-            upscale: self.upscale,
-            integer_scaling: self.integer_scaling,
-            fullscreen: self.fullscreen,
-            widescreen: self.widescreen,
-            crt: self.crt,
-            emulate_vru: self.emulate_vru,
-            overclock: self.overclock,
-        };
-        let mut config = ui::config::Config::new();
-        save_config(
-            &mut config,
-            self.controller_paths.clone(),
-            save_config_items,
-        );
-    }
-}
-
-fn configure_profile(app: &mut GopherEguiApp, ctx: &egui::Context) {
-    egui::Window::new("Configure Input Profile").show(ctx, |ui| {
-        ui.horizontal(|ui| {
-            let name_label = ui.label("Profile Name:");
-            ui.text_edit_singleline(&mut app.profile_name)
-                .labelled_by(name_label.id);
-        });
-        ui.checkbox(&mut app.dinput, "Use DirectInput");
-        ui.horizontal(|ui| {
-            if ui.button("Configure Profile").clicked() {
-                let profile_name = app.profile_name.clone();
-                let dinput = app.dinput;
-                std::thread::spawn(move || {
-                    let mut game_ui = ui::Ui::new();
-                    ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
-                });
-                app.configure_profile = false;
-                if !app.profile_name.is_empty() && !app.input_profiles.contains(&app.profile_name) {
-                    app.input_profiles.push(app.profile_name.clone())
-                }
-            };
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button("Close").clicked() {
-                    app.configure_profile = false
-                };
-            })
-        });
-    });
-}
-
-fn show_vru_dialog(app: &mut GopherEguiApp, ctx: &egui::Context) {
-    egui::CentralPanel::default().show(ctx, |ui| {
-        ui.label("What would you like to say?");
-        egui::Grid::new("vru_words").show(ui, |ui| {
-            for (i, v) in app.vru_word_list.iter().enumerate() {
-                if i % 5 == 0 {
-                    ui.end_row();
-                }
-                if ui.button((*v).to_string()).clicked() {
-                    app.vru_word_notifier
-                        .as_ref()
-                        .unwrap()
-                        .try_send(v.clone())
-                        .unwrap();
-                    app.show_vru_dialog = false;
-                }
-            }
-        });
-
-        ui.add_space(16.0);
-
-        if ui.button("Close without saying anything").clicked() {
-            app.vru_word_notifier
-                .as_ref()
-                .unwrap()
-                .try_send(String::from(""))
+                    tokio::spawn(async move {
+                        let mut game_ui = ui::Ui::new();
+                        ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
+                        update_input_profiles(&weak_app, &game_ui.config);
+                    });
+                })
                 .unwrap();
-            app.show_vru_dialog = false;
-        };
+        });
+        dialog.show().unwrap();
     });
 }
 
-fn get_latest_version(app: &mut GopherEguiApp, ctx: &egui::Context) {
-    if app.update_receiver.is_none() {
-        let (tx, rx) = tokio::sync::mpsc::channel(1);
-        app.update_receiver = Some(rx);
-        let gui_ctx = ctx.clone();
-        let client = reqwest::Client::builder()
-            .user_agent(env!("CARGO_PKG_NAME"))
-            .build()
-            .unwrap();
-        let task = client
-            .get("https://api.github.com/repos/gopher64/gopher64/releases/latest")
-            .send();
-        tokio::spawn(async move {
-            let response = task.await;
-            if let Ok(response) = response {
-                let data: Result<GithubData, reqwest::Error> = response.json().await;
-                if data.is_ok() {
-                    tx.send(data.unwrap()).await.unwrap();
-                } else {
-                    tx.send(GithubData {
-                        tag_name: format!("v{}", env!("CARGO_PKG_VERSION")),
-                    })
-                    .await
-                    .unwrap();
-                }
-                gui_ctx.request_repaint();
-            }
-        });
-    } else if app.latest_version.is_none() {
-        let result = app.update_receiver.as_mut().unwrap().try_recv();
-        if result.is_ok() {
-            let tag = &result.unwrap().tag_name[1..];
-            app.latest_version = Some(semver::Version::parse(tag).unwrap());
-        } else {
-            ctx.request_repaint();
-        }
+fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
+    let mut config = ui::config::Config::new();
+    config.video.integer_scaling = app.get_integer_scaling();
+    config.video.fullscreen = app.get_fullscreen();
+    config.video.widescreen = app.get_widescreen();
+    config.video.crt = app.get_apply_crt_shader();
+    config.emulation.overclock = app.get_overclock_n64_cpu();
+    config.video.upscale = app.get_resolution().trim_end_matches('x').parse().unwrap();
+
+    config.input.emulate_vru = app.get_emulate_vru();
+    for (i, controller_enabled) in app.get_controller_enabled().iter().enumerate() {
+        config.input.controller_enabled[i] = controller_enabled;
+    }
+    for (i, transferpak_enabled) in app.get_transferpak().iter().enumerate() {
+        config.input.transfer_pak[i] = transferpak_enabled;
+    }
+    for (i, input_profile_binding) in app.get_input_profile_binding().iter().enumerate() {
+        config.input.input_profile_binding[i] = input_profile_binding.into();
+    }
+
+    for (i, selected_controller) in app.get_selected_controller().iter().enumerate() {
+        config.input.controller_assignment[i] =
+            controller_paths[selected_controller as usize].clone();
     }
 }
 
-pub fn open_rom(app: &mut GopherEguiApp, ctx: &egui::Context, enable_overclock: bool) {
-    let netplay;
+fn about_window(app: &AppWindow) {
+    app.on_wiki_button_clicked(move || {
+        open::that_detached("https://github.com/gopher64/gopher64/wiki").unwrap();
+    });
+    app.on_discord_button_clicked(move || {
+        open::that_detached("https://discord.gg/9RGXq8W8JQ").unwrap();
+    });
+    app.on_newversion_button_clicked(move || {
+        open::that_detached("https://github.com/gopher64/gopher64/releases/latest").unwrap();
+    });
+    app.set_version(format!("Version: {}", env!("CARGO_PKG_VERSION")).into());
+    check_latest_version(app.as_weak());
+}
 
-    let selected_controller = app.selected_controller;
-    let selected_profile = app.selected_profile.clone();
-    let controller_enabled = app.controller_enabled;
-    let transfer_pak = app.transfer_pak;
-    let upscale = app.upscale;
-    let integer_scaling = app.integer_scaling;
-    let fullscreen = app.fullscreen;
-    let widescreen = app.widescreen;
-    let crt = app.crt;
-    let emulate_vru = app.emulate_vru;
-    let overclock = app.overclock;
-    let mut peer_addr;
-    let player_number;
-    let cache_dir = app.dirs.cache_dir.clone();
-    let controller_paths = app.controller_paths.clone();
+pub fn app_window() {
+    let app = AppWindow::new().unwrap();
+    about_window(&app);
+    let mut controller_paths;
+    {
+        let game_ui = ui::Ui::new();
+        let mut controller_names = ui::input::get_controller_names(&game_ui);
+        controller_names.insert(0, "None".into());
+        controller_paths = ui::input::get_controller_paths(&game_ui);
+        controller_paths.insert(0, None);
+        settings_window(&app, &game_ui.config);
+        controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
+    }
+    local_game_window(&app, &controller_paths);
+    netplay_window(&app, &controller_paths);
+    app.run().unwrap();
+    save_settings(&app, &controller_paths);
+}
 
-    if app.netplay.player_name.is_empty() {
-        netplay = false;
-        peer_addr = None;
-        player_number = None;
-    } else {
-        netplay = true;
-        peer_addr = app.netplay.peer_addr;
-        peer_addr
-            .as_mut()
-            .unwrap()
-            .set_port(app.netplay.waiting_session.as_ref().unwrap().port.unwrap() as u16);
-        player_number = Some(app.netplay.player_number);
+fn setup_vru_word_watcher(
+    weak_vru: slint::Weak<AppWindow>,
+    vru_word_notifier: tokio::sync::mpsc::Sender<String>,
+    mut vru_window_receiver: tokio::sync::mpsc::Receiver<Option<Vec<String>>>,
+) {
+    tokio::spawn(async move {
+        loop {
+            let notifier = vru_word_notifier.clone();
+            let notifier_closed = vru_word_notifier.clone();
+            let result = vru_window_receiver.recv().await;
+            if let Some(Some(words)) = result {
+                weak_vru
+                    .upgrade_in_event_loop(move |_handle| {
+                        let vru_dialog = VruDialog::new().unwrap();
+                        let vru_dialog_weak = vru_dialog.as_weak();
+
+                        vru_dialog.on_vru_button_clicked(move |chosen_word| {
+                            notifier.try_send(chosen_word.to_string()).unwrap();
+                            vru_dialog_weak.unwrap().window().hide().unwrap();
+                        });
+
+                        vru_dialog.window().on_close_requested(move || {
+                            notifier_closed.try_send("".to_string()).unwrap();
+                            slint::CloseRequestResponse::HideWindow
+                        });
+
+                        let words_vec = slint::VecModel::default();
+                        for word in words {
+                            words_vec.push(word.into());
+                        }
+                        let words_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                            std::rc::Rc::new(words_vec);
+                        vru_dialog.set_words(slint::ModelRc::from(words_model));
+
+                        vru_dialog.show().unwrap();
+                    })
+                    .unwrap();
+            } else {
+                return;
+            }
+        }
+    });
+}
+
+pub fn run_rom(
+    gb_paths: GbPaths,
+    file_path: std::path::PathBuf,
+    fullscreen: bool,
+    overclock: bool,
+    vru_channel: VruChannel,
+    netplay: Option<NetplayDevice>,
+    weak: slint::Weak<AppWindow>,
+) {
+    std::thread::Builder::new()
+        .name("n64".to_string())
+        .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
+        .spawn(move || {
+            weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
+                .unwrap();
+
+            let mut device = device::Device::new();
+
+            for i in 0..4 {
+                if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
+                    device.transferpaks[i].cart.rom =
+                        std::fs::read(gb_paths.rom[i].as_ref().unwrap()).unwrap();
+
+                    device.transferpaks[i].cart.ram =
+                        std::fs::read(gb_paths.ram[i].as_ref().unwrap()).unwrap();
+                }
+            }
+
+            device.vru_window.window_notifier = vru_channel.vru_window_notifier;
+            device.vru_window.word_receiver = vru_channel.vru_word_receiver;
+
+            if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
+                if let Some(netplay_device) = netplay {
+                    device.netplay = Some(netplay::init(
+                        netplay_device.peer_addr,
+                        netplay_device.player_number,
+                    ));
+                }
+                device::run_game(&mut device, rom_contents, fullscreen, overclock);
+                if device.netplay.is_some() {
+                    netplay::close(&mut device);
+                }
+            } else {
+                println!("Could not read rom file");
+            }
+
+            if let Some(vru_window_notifier) = device.vru_window.window_notifier {
+                vru_window_notifier.try_send(None).unwrap();
+            }
+
+            weak.upgrade_in_event_loop(move |handle| handle.set_game_running(false))
+                .unwrap();
+        })
+        .unwrap();
+}
+
+fn open_rom(app: &AppWindow) {
+    let select_rom = rfd::AsyncFileDialog::new()
+        .set_title("Select ROM")
+        .pick_file();
+    let mut select_gb_rom = [None, None, None, None];
+    let mut select_gb_ram = [None, None, None, None];
+
+    for (i, transfer_pak_enabled) in app.get_transferpak().iter().enumerate() {
+        if transfer_pak_enabled {
+            select_gb_rom[i] = Some(
+                rfd::AsyncFileDialog::new()
+                    .set_title(format!("GB ROM P{}", i + 1))
+                    .pick_file(),
+            );
+            select_gb_ram[i] = Some(
+                rfd::AsyncFileDialog::new()
+                    .set_title(format!("GB RAM P{}", i + 1))
+                    .pick_file(),
+            );
+        }
     }
 
+    #[allow(clippy::type_complexity)]
     let (vru_window_notifier, vru_window_receiver): (
-        tokio::sync::mpsc::Sender<Vec<String>>,
-        tokio::sync::mpsc::Receiver<Vec<String>>,
-    ) = tokio::sync::mpsc::channel(1);
+        tokio::sync::mpsc::Sender<Option<Vec<String>>>,
+        tokio::sync::mpsc::Receiver<Option<Vec<String>>>,
+    ) = tokio::sync::mpsc::channel(5);
 
     let (vru_word_notifier, vru_word_receiver): (
         tokio::sync::mpsc::Sender<String>,
         tokio::sync::mpsc::Receiver<String>,
-    ) = tokio::sync::mpsc::channel(1);
+    ) = tokio::sync::mpsc::channel(5);
 
-    if emulate_vru && !netplay {
-        app.vru_window_receiver = Some(vru_window_receiver);
-        app.vru_word_notifier = Some(vru_word_notifier);
-    } else {
-        app.vru_window_receiver = None;
-        app.vru_word_notifier = None;
+    let fullscreen = app.get_fullscreen();
+    let overclock = app.get_overclock_n64_cpu();
+    let emulate_vru = app.get_emulate_vru();
+
+    if emulate_vru {
+        setup_vru_word_watcher(app.as_weak(), vru_word_notifier, vru_window_receiver);
     }
-
-    let rom_contents = app.netplay.rom_contents.clone();
-    let gui_ctx = ctx.clone();
-
-    let mut select_rom = None;
-    let mut select_gb_rom = [None, None, None, None];
-    let mut select_gb_ram = [None, None, None, None];
-
-    if !netplay {
-        select_rom = Some(
-            rfd::AsyncFileDialog::new()
-                .set_title("Select ROM")
-                .pick_file(),
-        );
-        for i in 0..4 {
-            if transfer_pak[i] {
-                select_gb_rom[i] = Some(
-                    rfd::AsyncFileDialog::new()
-                        .set_title(format!("GB ROM P{}", i + 1))
-                        .pick_file(),
-                );
-                select_gb_ram[i] = Some(
-                    rfd::AsyncFileDialog::new()
-                        .set_title(format!("GB RAM P{}", i + 1))
-                        .pick_file(),
-                );
-            }
-        }
-    }
+    let weak = app.as_weak();
     tokio::spawn(async move {
-        let file = if !netplay {
-            select_rom.unwrap().await
-        } else {
-            None
-        };
-        let mut gb_rom_path = [None, None, None, None];
-        let mut gb_ram_path = [None, None, None, None];
-        if !netplay {
+        if let Some(file) = select_rom.await {
+            let mut gb_rom_path = [None, None, None, None];
+            let mut gb_ram_path = [None, None, None, None];
+
             for i in 0..4 {
-                if transfer_pak[i] {
-                    gb_rom_path[i] = select_gb_rom[i].as_mut().unwrap().await;
-                    gb_ram_path[i] = select_gb_ram[i].as_mut().unwrap().await;
+                if let (Some(gb_rom), Some(gb_ram)) =
+                    (select_gb_rom[i].as_mut(), select_gb_ram[i].as_mut())
+                {
+                    if let (Some(gb_rom), Some(gb_ram)) = (gb_rom.await, gb_ram.await) {
+                        gb_rom_path[i] = Some(gb_rom.path().to_path_buf());
+                        gb_ram_path[i] = Some(gb_ram.path().to_path_buf());
+                    }
                 }
             }
+
+            run_rom(
+                GbPaths {
+                    rom: gb_rom_path,
+                    ram: gb_ram_path,
+                },
+                file.path().to_path_buf(),
+                fullscreen,
+                overclock,
+                if emulate_vru {
+                    VruChannel {
+                        vru_window_notifier: Some(vru_window_notifier),
+                        vru_word_receiver: Some(vru_word_receiver),
+                    }
+                } else {
+                    VruChannel {
+                        vru_window_notifier: None,
+                        vru_word_receiver: None,
+                    }
+                },
+                None,
+                weak,
+            );
         }
-
-        std::thread::Builder::new()
-            .name("n64".to_string())
-            .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
-            .spawn(move || {
-                let save_config_items = SaveConfig {
-                    selected_controller,
-                    selected_profile,
-                    controller_enabled,
-                    transfer_pak,
-                    upscale,
-                    integer_scaling,
-                    fullscreen,
-                    widescreen,
-                    crt,
-                    emulate_vru,
-                    overclock,
-                };
-
-                if file.is_some() || netplay {
-                    let running_file = cache_dir.join("game_running");
-                    if running_file.exists() {
-                        println!("Game already running");
-                        return;
-                    }
-                    let result = std::fs::File::create(running_file.clone());
-                    if result.is_err() {
-                        panic!("could not create running file: {}", result.err().unwrap())
-                    }
-
-                    let mut device = device::Device::new();
-                    save_config(&mut device.ui.config, controller_paths, save_config_items);
-
-                    if netplay {
-                        device.netplay =
-                            Some(netplay::init(peer_addr.unwrap(), player_number.unwrap()));
-                        device::run_game(&mut device, rom_contents, fullscreen, enable_overclock);
-                        netplay::close(&mut device);
-                    } else {
-                        for i in 0..4 {
-                            if gb_rom_path[i].is_some() && gb_ram_path[i].is_some() {
-                                device.transferpaks[i].cart.rom =
-                                    std::fs::read(gb_rom_path[i].as_ref().unwrap().path()).unwrap();
-
-                                device.transferpaks[i].cart.ram =
-                                    std::fs::read(gb_ram_path[i].as_ref().unwrap().path()).unwrap();
-                            }
-                        }
-
-                        if emulate_vru {
-                            device.vru_window.window_notifier = Some(vru_window_notifier);
-                            device.vru_window.word_receiver = Some(vru_word_receiver);
-                            device.vru_window.gui_ctx = Some(gui_ctx);
-                        }
-
-                        if let Some(rom_contents) = device::get_rom_contents(file.unwrap().path()) {
-                            device::run_game(
-                                &mut device,
-                                rom_contents,
-                                fullscreen,
-                                enable_overclock,
-                            );
-                        } else {
-                            println!("Could not read rom file");
-                        }
-                    }
-                    let result = std::fs::remove_file(running_file);
-                    if result.is_err() {
-                        panic!("could not remove running file: {}", result.err().unwrap())
-                    }
-                }
-            })
-            .unwrap();
     });
-}
-
-impl eframe::App for GopherEguiApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if self.show_vru_dialog {
-            show_vru_dialog(self, ctx);
-            return;
-        }
-
-        if self.netplay.create {
-            gui_netplay::netplay_create(self, ctx);
-        }
-
-        if self.netplay.join {
-            gui_netplay::netplay_join(self, ctx);
-        }
-
-        if self.netplay.wait {
-            gui_netplay::netplay_wait(self, ctx);
-        }
-
-        if !self.netplay.error.is_empty() {
-            gui_netplay::netplay_error(self, ctx, self.netplay.error.clone());
-        }
-
-        if self.configure_profile {
-            configure_profile(self, ctx);
-        }
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            if self.configure_profile {
-                ui.disable()
-            }
-            egui::Grid::new("button_grid")
-                .min_col_width(200.0)
-                .show(ui, |ui| {
-                    if ui.button("Open ROM").clicked() {
-                        open_rom(self, ctx, self.overclock);
-                    }
-                    if ui.button("Netplay: Create Session").clicked()
-                        && !self.dirs.cache_dir.join("game_running").exists()
-                    {
-                        self.netplay.create = true;
-                    }
-
-                    if ui.button("Open Saves Folder").clicked() {
-                        let command = if cfg!(target_os = "windows") {
-                            "explorer"
-                        } else if cfg!(target_os = "linux") {
-                            "xdg-open"
-                        } else {
-                            panic!("Unsupported platform");
-                        };
-                        let _ = std::process::Command::new(command)
-                            .arg(self.dirs.data_dir.join("saves"))
-                            .spawn();
-                    }
-
-                    ui.end_row();
-
-                    if ui.button("Configure Input Profile").clicked()
-                        && !self.dirs.cache_dir.join("game_running").exists()
-                    {
-                        self.configure_profile = true;
-                    }
-
-                    if ui.button("Netplay: Join Session").clicked()
-                        && !self.dirs.cache_dir.join("game_running").exists()
-                    {
-                        self.netplay.join = true;
-                    }
-                });
-
-            ui.add_space(16.0);
-            ui.label("Controller Config:");
-            egui::Grid::new("controller_config").show(ui, |ui| {
-                ui.label("Port");
-                ui.label("Enabled");
-                ui.label("Emulate VRU");
-                ui.label("Transfer Pak");
-                ui.label("Profile");
-                ui.label("Controller");
-                ui.end_row();
-                for i in 0..4 {
-                    ui.label(format!("{}", i + 1));
-                    ui.centered_and_justified(|ui| {
-                        ui.checkbox(&mut self.controller_enabled[i], "");
-                    });
-                    let mut vru = false;
-                    ui.centered_and_justified(|ui| {
-                        if i < 3 {
-                            ui.add_enabled(false, egui::Checkbox::new(&mut vru, ""));
-                        } else {
-                            ui.add_enabled(true, egui::Checkbox::new(&mut self.emulate_vru, ""));
-                        }
-                    });
-
-                    ui.centered_and_justified(|ui| {
-                        ui.checkbox(&mut self.transfer_pak[i], "");
-                    });
-
-                    egui::ComboBox::from_id_salt(format!("profile-combo-{}", i))
-                        .selected_text(self.selected_profile[i].clone())
-                        .show_ui(ui, |ui| {
-                            for j in 0..self.input_profiles.len() {
-                                ui.selectable_value(
-                                    &mut self.selected_profile[i],
-                                    self.input_profiles[j].clone(),
-                                    self.input_profiles[j].clone(),
-                                );
-                            }
-                        });
-
-                    let controller_text = if self.selected_controller[i] == -1 {
-                        "None".to_string()
-                    } else {
-                        self.controller_names[self.selected_controller[i] as usize].clone()
-                    };
-                    egui::ComboBox::from_id_salt(format!("controller-combo-{}", i))
-                        .selected_text(controller_text)
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.selected_controller[i],
-                                -1,
-                                "None".to_string(),
-                            );
-                            for j in 0..self.controller_names.len() {
-                                ui.selectable_value(
-                                    &mut self.selected_controller[i],
-                                    j as i32,
-                                    self.controller_names[j].clone(),
-                                );
-                            }
-                        });
-                    ui.end_row();
-                }
-            });
-            ui.add_space(16.0);
-            let upscale_values = [1, 2, 4];
-            let mut slider_value = match self.upscale {
-                1 => 0,
-                2 => 1,
-                4 => 2,
-                _ => 0,
-            };
-            let display_text = format!("{}x Resolution", upscale_values[slider_value]);
-            if ui
-                .add(
-                    egui::Slider::new(&mut slider_value, 0..=2)
-                        .show_value(false)
-                        .text(display_text),
-                )
-                .changed()
-            {
-                self.upscale = upscale_values[slider_value];
-            };
-            ui.checkbox(&mut self.integer_scaling, "Integer Scaling");
-            ui.checkbox(&mut self.fullscreen, "Fullscreen (Esc closes game)");
-            ui.checkbox(&mut self.widescreen, "Widescreen (stretch)");
-            ui.checkbox(&mut self.crt, "Apply CRT shader");
-
-            ui.add_space(16.0);
-            ui.checkbox(&mut self.overclock, "Overclock N64 CPU (may cause bugs)");
-            ui.add_space(16.0);
-
-            ui.hyperlink_to("Wiki", "https://github.com/gopher64/gopher64/wiki");
-            ui.hyperlink_to("Discord Server", "https://discord.gg/9RGXq8W8JQ");
-            ui.add_space(16.0);
-
-            ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
-            if self.latest_version.is_some() {
-                let current_version = semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
-                if current_version < *self.latest_version.as_ref().unwrap() {
-                    ui.hyperlink_to(
-                        "New version available!",
-                        "https://github.com/gopher64/gopher64/releases/latest",
-                    );
-                }
-            }
-        });
-
-        if self.emulate_vru && self.vru_window_receiver.is_some() {
-            let result = self.vru_window_receiver.as_mut().unwrap().try_recv();
-            if result.is_ok() {
-                self.show_vru_dialog = true;
-                self.vru_word_list = result.unwrap();
-            }
-        }
-
-        get_latest_version(self, ctx);
-    }
-}
-
-fn add_fonts(ctx: &egui::Context) {
-    ctx.add_font(eframe::epaint::text::FontInsert::new(
-        "regular_font",
-        egui::FontData::from_static(include_bytes!("../../data/Roboto-Regular.ttf")),
-        vec![
-            eframe::epaint::text::InsertFontFamily {
-                family: egui::FontFamily::Proportional,
-                priority: egui::epaint::text::FontPriority::Highest,
-            },
-            eframe::epaint::text::InsertFontFamily {
-                family: egui::FontFamily::Monospace,
-                priority: egui::epaint::text::FontPriority::Highest,
-            },
-        ],
-    ));
-    ctx.add_font(eframe::epaint::text::FontInsert::new(
-        "japanese_font",
-        egui::FontData::from_static(include_bytes!("../../data/NotoSansJP-Regular.ttf")),
-        vec![
-            eframe::epaint::text::InsertFontFamily {
-                family: egui::FontFamily::Proportional,
-                priority: egui::epaint::text::FontPriority::Lowest,
-            },
-            eframe::epaint::text::InsertFontFamily {
-                family: egui::FontFamily::Monospace,
-                priority: egui::epaint::text::FontPriority::Lowest,
-            },
-        ],
-    ));
 }
