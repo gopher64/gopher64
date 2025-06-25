@@ -47,6 +47,7 @@ trait NetplayPages {
     fn set_ping(&self, ping: slint::SharedString);
     fn set_game_name(&self, ping: slint::SharedString);
     fn set_game_hash(&self, ping: slint::SharedString);
+    fn set_rom_path(&self, ping: slint::SharedString);
     fn refresh_sessions(&self, _server: slint::SharedString) {
         // Default implementation does nothing
     }
@@ -68,6 +69,9 @@ impl NetplayPages for NetplayCreate {
     fn set_game_hash(&self, game_hash: slint::SharedString) {
         self.set_game_hash(game_hash);
     }
+    fn set_rom_path(&self, rom_path: slint::SharedString) {
+        self.set_rom_path(rom_path);
+    }
 }
 
 impl NetplayPages for NetplayJoin {
@@ -88,6 +92,9 @@ impl NetplayPages for NetplayJoin {
     }
     fn set_game_hash(&self, game_hash: slint::SharedString) {
         self.set_game_hash(game_hash);
+    }
+    fn set_rom_path(&self, rom_path: slint::SharedString) {
+        self.set_rom_path(rom_path);
     }
 }
 
@@ -161,6 +168,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>)
                 weak.upgrade_in_event_loop(move |handle| {
                     handle.set_game_name(game_name.into());
                     handle.set_game_hash(hash.into());
+                    handle.set_rom_path(file.path().to_str().unwrap().into());
                 })
                 .unwrap();
             } else {
@@ -175,6 +183,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>)
 
                     handle.set_game_name("".into());
                     handle.set_game_hash("".into());
+                    handle.set_rom_path("".into());
                 })
                 .unwrap();
             }
@@ -459,6 +468,7 @@ fn create_session(
                         netplay_read_receiver,
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
+                        handle.get_rom_path(),
                         message.player_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
                         true,
@@ -535,6 +545,7 @@ fn join_session(
                         netplay_read_receiver,
                         session.room_name.as_ref().unwrap().into(),
                         session.game_name.as_ref().unwrap().into(),
+                        handle.get_rom_path(),
                         message.player_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
                         false,
@@ -566,6 +577,7 @@ fn setup_wait_window(
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
     session_name: slint::SharedString,
     game_name: slint::SharedString,
+    rom_path: slint::SharedString,
     player_name: slint::SharedString,
     port: i32,
     can_start: bool,
@@ -573,6 +585,7 @@ fn setup_wait_window(
     let wait = NetplayWait::new().unwrap();
     wait.set_session_name(session_name);
     wait.set_game_name(game_name);
+    wait.set_rom_path(rom_path);
     wait.set_port(port);
     wait.set_can_start(can_start);
 
