@@ -723,6 +723,7 @@ fn setup_wait_window(
                     netplay_write_sender.send(Some(request_players)).unwrap();
 
                     weak.upgrade_in_event_loop(move |handle| {
+                        #[allow(clippy::regex_creation_in_loops)]
                         let re = regex::Regex::new(r"<[^>]*>").unwrap();
                         let motd = re
                             .replace_all(response.message.unwrap().as_str(), "")
