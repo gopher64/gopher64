@@ -1,4 +1,3 @@
-#! [allow(dead_code)] // TEMP
 use crate::{device, ui};
 use std::io::{Read, Write};
 //UDP packet formats
