@@ -473,6 +473,7 @@ fn create_session(
             if message.accept.unwrap() == 0 {
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
+                    let overclock = session.features.as_ref().unwrap().get("overclock").unwrap();
                     setup_wait_window(
                         netplay_write_sender,
                         netplay_read_receiver,
@@ -483,6 +484,7 @@ fn create_session(
                         session.port.unwrap(),
                         true,
                         fullscreen,
+                        overclock == "true",
                         weak_app,
                     );
                     handle.window().hide().unwrap();
@@ -554,6 +556,7 @@ fn join_session(
             if message.accept.unwrap() == 0 {
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
+                    let overclock = session.features.as_ref().unwrap().get("overclock").unwrap();
                     setup_wait_window(
                         netplay_write_sender,
                         netplay_read_receiver,
@@ -564,6 +567,7 @@ fn join_session(
                         session.port.unwrap(),
                         false,
                         fullscreen,
+                        overclock == "true",
                         weak_app,
                     );
                     handle.window().hide().unwrap();
@@ -598,6 +602,7 @@ fn setup_wait_window(
     port: i32,
     can_start: bool,
     fullscreen: bool,
+    overclock: bool,
     weak_app: slint::Weak<AppWindow>,
 ) {
     let wait = NetplayWait::new().unwrap();
@@ -754,21 +759,12 @@ fn setup_wait_window(
                             handle.window().hide().unwrap();
                             netplay_write_sender.send(None).unwrap();
 
-                            let overclock = response
-                                .room
-                                .as_ref()
-                                .unwrap()
-                                .features
-                                .as_ref()
-                                .unwrap()
-                                .get("overclock")
-                                .unwrap();
                             run_rom(
                                 [None, None, None, None],
                                 [None, None, None, None],
                                 handle.get_rom_path().as_str().into(),
                                 fullscreen,
-                                *overclock == "true",
+                                overclock,
                                 None,
                                 None,
                                 weak_app,
