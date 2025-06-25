@@ -42,7 +42,7 @@ export component NetplayJoin inherits Window {
                 HorizontalBox {
                     server := ComboBox {
                         model: NetplayData.server_names;
-                        selected(current-value) => {
+                        selected => {
                             if (self.current-index >= 0) {
                                 get_ping(NetplayData.server_urls[self.current-index]);
                             }
