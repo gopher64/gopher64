@@ -108,7 +108,7 @@ fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     });
 }
 
-fn get_input_profiles(config: &ui::config::Config) -> Vec<String> {
+fn input_profiles(config: &ui::config::Config) -> Vec<String> {
     let mut profiles = vec![];
     for key in config.input.input_profiles.keys() {
         profiles.push(key.clone())
@@ -132,8 +132,22 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
 }
 
 fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
-    let profiles = get_input_profiles(config);
+    let profiles = input_profiles(config);
+    let config_bindings = config.input.input_profile_binding.clone();
     weak.upgrade_in_event_loop(move |handle| {
+        let profile_bindings = slint::VecModel::default();
+        for (i, input_profile_binding) in handle.get_selected_profile_binding().iter().enumerate() {
+            let currently_selected = handle
+                .get_input_profiles()
+                .row_data(input_profile_binding as usize)
+                .unwrap_or(config_bindings[i].clone().into())
+                .to_string();
+            let position = profiles
+                .iter()
+                .position(|profile| *profile == currently_selected);
+            profile_bindings.push(position.unwrap() as i32);
+        }
+
         let input_profiles = slint::VecModel::default();
         for profile in profiles {
             input_profiles.push(profile.into());
@@ -141,6 +155,10 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
         let input_profiles_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
             std::rc::Rc::new(input_profiles);
         handle.set_input_profiles(slint::ModelRc::from(input_profiles_model));
+
+        let input_profile_binding_model: std::rc::Rc<slint::VecModel<i32>> =
+            std::rc::Rc::new(profile_bindings);
+        handle.set_selected_profile_binding(slint::ModelRc::from(input_profile_binding_model));
     })
     .unwrap();
 }
@@ -161,17 +179,6 @@ fn controller_window(
     let transferpak_enabled_model: std::rc::Rc<slint::VecModel<bool>> =
         std::rc::Rc::new(slint::VecModel::from(config.input.transfer_pak.to_vec()));
     app.set_transferpak(slint::ModelRc::from(transferpak_enabled_model));
-
-    let profile_bindings = slint::VecModel::default();
-    for binding in config.input.input_profile_binding.iter() {
-        let position = get_input_profiles(config)
-            .iter()
-            .position(|profile| profile == binding);
-        profile_bindings.push(position.unwrap() as i32);
-    }
-    let input_profile_binding_model: std::rc::Rc<slint::VecModel<i32>> =
-        std::rc::Rc::new(profile_bindings);
-    app.set_selected_profile_binding(slint::ModelRc::from(input_profile_binding_model));
 
     update_input_profiles(&app.as_weak(), config);
 
