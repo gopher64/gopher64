@@ -36,22 +36,28 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn netplay_window(app: &AppWindow) {
+fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     let weak_create = app.as_weak();
+    let controller_paths_create = controller_paths.to_owned();
     app.on_create_session_button_clicked(move || {
+        let controller_paths = controller_paths_create.clone();
         weak_create
             .upgrade_in_event_loop(move |handle| {
                 let create_window = NetplayCreate::new().unwrap();
+                save_settings(&handle, &controller_paths);
                 ui::netplay::setup_create_window(&create_window, handle.get_overclock_n64_cpu());
             })
             .unwrap();
     });
 
     let weak_join = app.as_weak();
+    let controller_paths_join = controller_paths.to_owned();
     app.on_join_session_button_clicked(move || {
+        let controller_paths = controller_paths_join.clone();
         weak_join
-            .upgrade_in_event_loop(move |_handle| {
+            .upgrade_in_event_loop(move |handle| {
                 let join_window = NetplayJoin::new().unwrap();
+                save_settings(&handle, &controller_paths);
                 ui::netplay::setup_join_window(&join_window);
             })
             .unwrap();
@@ -64,8 +70,11 @@ fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     let controller_paths = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
         let controller_paths = controller_paths.clone();
-        weak.upgrade_in_event_loop(move |handle| open_rom(&handle, controller_paths.clone()))
-            .unwrap();
+        weak.upgrade_in_event_loop(move |handle| {
+            save_settings(&handle, &controller_paths);
+            open_rom(&handle)
+        })
+        .unwrap();
     });
 
     let saves_path = dirs.data_dir.join("saves");
@@ -237,7 +246,7 @@ pub fn app_window() {
         controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
     }
     local_game_window(&app, &controller_paths);
-    netplay_window(&app);
+    netplay_window(&app, &controller_paths);
     app.run().unwrap();
     save_settings(&app, &controller_paths);
 }
@@ -286,7 +295,7 @@ fn setup_vru_word_watcher(
     });
 }
 
-fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
+fn open_rom(app: &AppWindow) {
     let select_rom = rfd::AsyncFileDialog::new()
         .set_title("Select ROM")
         .pick_file();
@@ -323,7 +332,6 @@ fn open_rom(app: &AppWindow, controller_paths: Vec<Option<String>>) {
     let overclock = app.get_overclock_n64_cpu();
     let emulate_vru = app.get_emulate_vru();
 
-    save_settings(app, &controller_paths);
     app.set_game_running(true);
 
     if emulate_vru {
