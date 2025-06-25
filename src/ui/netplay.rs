@@ -1,5 +1,6 @@
 use crate::device;
 use crate::ui;
+use crate::ui::gui::AppWindow;
 use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin, NetplayWait, run_rom};
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -221,7 +222,12 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
     });
 }
 
-pub fn setup_create_window(create_window: &NetplayCreate, overclock_setting: bool) {
+pub fn setup_create_window(
+    create_window: &NetplayCreate,
+    overclock_setting: bool,
+    fullscreen: bool,
+    weak_app: slint::Weak<AppWindow>,
+) {
     let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<NetplayMessage>,
         tokio::sync::broadcast::Receiver<NetplayMessage>,
@@ -261,6 +267,8 @@ pub fn setup_create_window(create_window: &NetplayCreate, overclock_setting: boo
                 game_hash.to_string(),
                 password.to_string(),
                 overclock_setting,
+                fullscreen,
+                weak_app.clone(),
                 weak.clone(),
             );
         },
@@ -420,6 +428,8 @@ fn create_session(
     game_hash: String,
     password: String,
     overclock: bool,
+    fullscreen: bool,
+    weak_app: slint::Weak<AppWindow>,
     weak: slint::Weak<NetplayCreate>,
 ) {
     tokio::spawn(async move {
@@ -472,6 +482,8 @@ fn create_session(
                         message.player_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
                         true,
+                        fullscreen,
+                        weak_app,
                     );
                     handle.window().hide().unwrap();
                 })
@@ -502,6 +514,8 @@ fn join_session(
     game_hash: String,
     password: String,
     port: i32,
+    fullscreen: bool,
+    weak_app: slint::Weak<AppWindow>,
     weak: slint::Weak<NetplayJoin>,
 ) {
     tokio::spawn(async move {
@@ -549,6 +563,8 @@ fn join_session(
                         message.player_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
                         false,
+                        fullscreen,
+                        weak_app,
                     );
                     handle.window().hide().unwrap();
                 })
@@ -581,6 +597,8 @@ fn setup_wait_window(
     player_name: slint::SharedString,
     port: i32,
     can_start: bool,
+    fullscreen: bool,
+    weak_app: slint::Weak<AppWindow>,
 ) {
     let wait = NetplayWait::new().unwrap();
     wait.set_session_name(session_name);
@@ -738,8 +756,10 @@ fn setup_wait_window(
 
                             let overclock = response
                                 .room
+                                .as_ref()
                                 .unwrap()
                                 .features
+                                .as_ref()
                                 .unwrap()
                                 .get("overclock")
                                 .unwrap();
@@ -776,7 +796,11 @@ fn setup_wait_window(
     wait.show().unwrap();
 }
 
-pub fn setup_join_window(join_window: &NetplayJoin) {
+pub fn setup_join_window(
+    join_window: &NetplayJoin,
+    fullscreen: bool,
+    weak_app: slint::Weak<AppWindow>,
+) {
     let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<NetplayMessage>,
         tokio::sync::broadcast::Receiver<NetplayMessage>,
@@ -828,6 +852,8 @@ pub fn setup_join_window(join_window: &NetplayJoin) {
             game_hash.to_string(),
             password.to_string(),
             port,
+            fullscreen,
+            weak_app.clone(),
             weak.clone(),
         );
     });
