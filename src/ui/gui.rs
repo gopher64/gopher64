@@ -1,4 +1,5 @@
 use crate::device;
+use crate::netplay;
 use crate::ui;
 use slint::Model;
 
@@ -7,6 +8,11 @@ slint::include_modules!();
 #[derive(serde::Deserialize)]
 struct GithubData {
     tag_name: String,
+}
+
+pub struct NetplayDevice {
+    peer_addr: std::net::SocketAddr,
+    player_number: u8,
 }
 
 pub struct VruChannel {
@@ -316,6 +322,7 @@ pub fn run_rom(
     fullscreen: bool,
     overclock: bool,
     vru_channel: VruChannel,
+    netplay: Option<NetplayDevice>,
     weak: slint::Weak<AppWindow>,
 ) {
     std::thread::Builder::new()
@@ -341,7 +348,16 @@ pub fn run_rom(
             device.vru_window.word_receiver = vru_channel.vru_word_receiver;
 
             if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
+                if let Some(netplay_device) = netplay {
+                    device.netplay = Some(netplay::init(
+                        netplay_device.peer_addr,
+                        netplay_device.player_number,
+                    ));
+                }
                 device::run_game(&mut device, rom_contents, fullscreen, overclock);
+                if device.netplay.is_some() {
+                    netplay::close(&mut device);
+                }
             } else {
                 println!("Could not read rom file");
             }
@@ -430,6 +446,7 @@ fn open_rom(app: &AppWindow) {
                         vru_word_receiver: None,
                     }
                 },
+                None,
                 weak,
             );
         }

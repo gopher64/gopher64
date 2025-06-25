@@ -771,6 +771,7 @@ fn setup_wait_window(
                                     vru_window_notifier: None,
                                     vru_word_receiver: None,
                                 },
+                                None,
                                 weak_app,
                             );
                         })
