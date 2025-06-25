@@ -301,7 +301,6 @@ fn run_rom(
     file_path: std::path::PathBuf,
     fullscreen: bool,
     overclock: bool,
-    emulate_vru: bool,
     vru_window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
     vru_word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
     weak: slint::Weak<AppWindow>,
@@ -322,23 +321,17 @@ fn run_rom(
                 }
             }
 
-            if emulate_vru {
-                device.vru_window.window_notifier = vru_window_notifier;
-                device.vru_window.word_receiver = vru_word_receiver;
-            }
+            device.vru_window.window_notifier = vru_window_notifier;
+            device.vru_window.word_receiver = vru_word_receiver;
 
             if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
                 device::run_game(&mut device, rom_contents, fullscreen, overclock);
             } else {
                 println!("Could not read rom file");
             }
-            if emulate_vru {
-                device
-                    .vru_window
-                    .window_notifier
-                    .unwrap()
-                    .try_send(None)
-                    .unwrap();
+
+            if let Some(vru_window_notifier) = device.vru_window.window_notifier {
+                vru_window_notifier.try_send(None).unwrap();
             }
 
             weak.upgrade_in_event_loop(move |handle| handle.set_game_running(false))
@@ -412,9 +405,16 @@ fn open_rom(app: &AppWindow) {
                 file.path().to_path_buf(),
                 fullscreen,
                 overclock,
-                emulate_vru,
-                Some(vru_window_notifier),
-                Some(vru_word_receiver),
+                if emulate_vru {
+                    Some(vru_window_notifier)
+                } else {
+                    None
+                },
+                if emulate_vru {
+                    Some(vru_word_receiver)
+                } else {
+                    None
+                },
                 weak,
             );
         }
