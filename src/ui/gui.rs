@@ -9,6 +9,11 @@ struct GithubData {
     tag_name: String,
 }
 
+pub struct VruChannel {
+    pub vru_window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
+    pub vru_word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+}
+
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
     let client = reqwest::Client::builder()
         .user_agent(env!("CARGO_PKG_NAME"))
@@ -310,8 +315,7 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     fullscreen: bool,
     overclock: bool,
-    vru_window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
-    vru_word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+    vru_channel: VruChannel,
     weak: slint::Weak<AppWindow>,
 ) {
     std::thread::Builder::new()
@@ -333,8 +337,8 @@ pub fn run_rom(
                 }
             }
 
-            device.vru_window.window_notifier = vru_window_notifier;
-            device.vru_window.word_receiver = vru_word_receiver;
+            device.vru_window.window_notifier = vru_channel.vru_window_notifier;
+            device.vru_window.word_receiver = vru_channel.vru_word_receiver;
 
             if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
                 device::run_game(&mut device, rom_contents, fullscreen, overclock);
@@ -416,14 +420,15 @@ fn open_rom(app: &AppWindow) {
                 fullscreen,
                 overclock,
                 if emulate_vru {
-                    Some(vru_window_notifier)
+                    VruChannel {
+                        vru_window_notifier: Some(vru_window_notifier),
+                        vru_word_receiver: Some(vru_word_receiver),
+                    }
                 } else {
-                    None
-                },
-                if emulate_vru {
-                    Some(vru_word_receiver)
-                } else {
-                    None
+                    VruChannel {
+                        vru_window_notifier: None,
+                        vru_word_receiver: None,
+                    }
                 },
                 weak,
             );

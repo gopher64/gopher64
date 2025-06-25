@@ -1,7 +1,8 @@
+#![allow(clippy::too_many_arguments)]
 use crate::device;
 use crate::ui;
 use crate::ui::gui::AppWindow;
-use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin, NetplayWait, run_rom};
+use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin, NetplayWait, VruChannel, run_rom};
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
 use slint::{ComponentHandle, Model};
@@ -765,8 +766,10 @@ fn setup_wait_window(
                                 handle.get_rom_path().as_str().into(),
                                 fullscreen,
                                 overclock,
-                                None,
-                                None,
+                                VruChannel {
+                                    vru_window_notifier: None,
+                                    vru_word_receiver: None,
+                                },
                                 weak_app,
                             );
                         })
