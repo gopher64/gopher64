@@ -1,6 +1,6 @@
 use crate::device;
 use crate::ui;
-use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin, NetplayWait};
+use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin, NetplayWait, run_rom};
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
 use slint::{ComponentHandle, Model};
@@ -735,6 +735,24 @@ fn setup_wait_window(
                         weak.upgrade_in_event_loop(move |handle| {
                             handle.window().hide().unwrap();
                             netplay_write_sender.send(None).unwrap();
+
+                            let overclock = response
+                                .room
+                                .unwrap()
+                                .features
+                                .unwrap()
+                                .get("overclock")
+                                .unwrap();
+                            run_rom(
+                                [None, None, None, None],
+                                [None, None, None, None],
+                                handle.get_rom_path().as_str().into(),
+                                fullscreen,
+                                *overclock == "true",
+                                None,
+                                None,
+                                weak_app,
+                            );
                         })
                         .unwrap();
                         return;

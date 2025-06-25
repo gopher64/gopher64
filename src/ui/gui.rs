@@ -295,7 +295,7 @@ fn setup_vru_word_watcher(
     });
 }
 
-fn run_rom(
+pub fn run_rom(
     gb_rom_path: [Option<std::path::PathBuf>; 4],
     gb_ram_path: [Option<std::path::PathBuf>; 4],
     file_path: std::path::PathBuf,
@@ -309,6 +309,9 @@ fn run_rom(
         .name("n64".to_string())
         .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
         .spawn(move || {
+            weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
+                .unwrap();
+
             let mut device = device::Device::new();
 
             for i in 0..4 {
@@ -376,8 +379,6 @@ fn open_rom(app: &AppWindow) {
     let fullscreen = app.get_fullscreen();
     let overclock = app.get_overclock_n64_cpu();
     let emulate_vru = app.get_emulate_vru();
-
-    app.set_game_running(true);
 
     if emulate_vru {
         setup_vru_word_watcher(app.as_weak(), vru_word_notifier, vru_window_receiver);
