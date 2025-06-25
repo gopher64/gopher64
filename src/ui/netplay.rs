@@ -252,7 +252,7 @@ pub fn setup_create_window(
     let weak = create_window.as_weak();
     create_window.on_create_session(
         move |server_url, session_name, player_name, game_name, game_hash, password| {
-            netplay_write_sender.send(None).unwrap(); // close current websocket if any
+            let _ = netplay_write_sender.send(None); // close current websocket if any
             manage_websocket(
                 server_url.to_string(),
                 netplay_read_sender.clone(),
@@ -294,7 +294,7 @@ fn manage_websocket(
             tokio::spawn(async move {
                 while let Some(Ok(response)) = read.next().await {
                     if let Ok(message) = serde_json::from_slice(&response.into_data()) {
-                        netplay_read_sender.send(message).unwrap();
+                        let _ = netplay_read_sender.send(message);
                     }
                 }
             });
@@ -671,7 +671,7 @@ fn setup_wait_window(
 
     let sender = netplay_write_sender.clone();
     wait.window().on_close_requested(move || {
-        sender.send(None).unwrap(); // close current websocket if any
+        let _ = sender.send(None); // close current websocket if any
         slint::CloseRequestResponse::HideWindow
     });
 
@@ -759,7 +759,7 @@ fn setup_wait_window(
                     if response.accept.unwrap() == 0 {
                         weak.upgrade_in_event_loop(move |handle| {
                             handle.window().hide().unwrap();
-                            netplay_write_sender.send(None).unwrap();
+                            let _ = netplay_write_sender.send(None);
 
                             run_rom(
                                 [None, None, None, None],
@@ -827,7 +827,7 @@ pub fn setup_join_window(
 
     let sender = netplay_write_sender.clone();
     join_window.window().on_close_requested(move || {
-        sender.send(None).unwrap(); // close current websocket if any
+        let _ = sender.send(None); // close current websocket if any
         slint::CloseRequestResponse::HideWindow
     });
 
@@ -835,7 +835,7 @@ pub fn setup_join_window(
     let sender = netplay_write_sender.clone();
     let receiver = netplay_read_receiver.resubscribe();
     join_window.on_refresh_session(move |server_url| {
-        sender.send(None).unwrap(); // close current websocket if any
+        let _ = sender.send(None); // close current websocket if any
         manage_websocket(
             server_url.to_string(),
             netplay_read_sender.clone(),
