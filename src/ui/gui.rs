@@ -11,8 +11,8 @@ struct GithubData {
 }
 
 pub struct NetplayDevice {
-    peer_addr: std::net::SocketAddr,
-    player_number: u8,
+    pub peer_addr: std::net::SocketAddr,
+    pub player_number: u8,
 }
 
 pub struct GbPaths {

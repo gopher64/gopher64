@@ -3,7 +3,8 @@ use crate::device;
 use crate::ui;
 use crate::ui::gui::AppWindow;
 use crate::ui::gui::{
-    GbPaths, NetplayCreate, NetplayDialog, NetplayJoin, NetplayWait, VruChannel, run_rom,
+    GbPaths, NetplayCreate, NetplayDevice, NetplayDialog, NetplayJoin, NetplayWait, VruChannel,
+    run_rom,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -696,6 +697,7 @@ fn setup_wait_window(
 
     let weak = wait.as_weak();
     tokio::spawn(async move {
+        let player_number = 0;
         while let Ok(response) = netplay_read_receiver.recv().await {
             match response.message_type.as_str() {
                 "reply_motd" => {
@@ -739,7 +741,10 @@ fn setup_wait_window(
                         if let Some(player_names) = response.player_names {
                             let players_vec: slint::VecModel<slint::SharedString> =
                                 slint::VecModel::default();
-                            for player in player_names {
+                            for (i, player) in player_names.iter().enumerate() {
+                                if player == player_name.into() {
+                                    player_number = i;
+                                }
                                 players_vec.push(player.into());
                             }
                             let players_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
@@ -775,7 +780,10 @@ fn setup_wait_window(
                                     vru_window_notifier: None,
                                     vru_word_receiver: None,
                                 },
-                                None,
+                                Some(NetplayDevice {
+                                    peer_addr,
+                                    player_number: player_number as u8,
+                                }),
                                 weak_app,
                             );
                         })
