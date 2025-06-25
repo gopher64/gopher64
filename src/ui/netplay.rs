@@ -632,6 +632,12 @@ fn setup_wait_window(
         sender.send(Some(begin_game)).unwrap();
     });
 
+    let sender = netplay_write_sender.clone();
+    wait.window().on_close_requested(move || {
+        sender.send(None).unwrap(); // close current websocket if any
+        slint::CloseRequestResponse::HideWindow
+    });
+
     let motd_message = NetplayMessage {
         message_type: "request_motd".to_string(),
         player_name: None,
