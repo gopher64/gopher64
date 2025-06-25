@@ -164,11 +164,14 @@ fn controller_window(
 
     let profile_bindings = slint::VecModel::default();
     for binding in config.input.input_profile_binding.iter() {
-        profile_bindings.push(binding.into());
+        let position = get_input_profiles(config)
+            .iter()
+            .position(|profile| profile == binding);
+        profile_bindings.push(position.unwrap() as i32);
     }
-    let input_profile_binding_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+    let input_profile_binding_model: std::rc::Rc<slint::VecModel<i32>> =
         std::rc::Rc::new(profile_bindings);
-    app.set_input_profile_binding(slint::ModelRc::from(input_profile_binding_model));
+    app.set_selected_profile_binding(slint::ModelRc::from(input_profile_binding_model));
 
     update_input_profiles(&app.as_weak(), config);
 
@@ -240,8 +243,12 @@ fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     for (i, transferpak_enabled) in app.get_transferpak().iter().enumerate() {
         config.input.transfer_pak[i] = transferpak_enabled;
     }
-    for (i, input_profile_binding) in app.get_input_profile_binding().iter().enumerate() {
-        config.input.input_profile_binding[i] = input_profile_binding.into();
+    for (i, input_profile_binding) in app.get_selected_profile_binding().iter().enumerate() {
+        config.input.input_profile_binding[i] = app
+            .get_input_profiles()
+            .row_data(input_profile_binding as usize)
+            .unwrap()
+            .to_string();
     }
 
     for (i, selected_controller) in app.get_selected_controller().iter().enumerate() {

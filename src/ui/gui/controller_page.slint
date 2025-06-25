@@ -9,7 +9,7 @@ export global ControllerData {
     in-out property <bool> emulate_vru;
     in-out property <[bool]> controller_enabled;
     in-out property <[bool]> transferpak;
-    in-out property <[string]> input_profile_binding;
+    in-out property <[int]> selected_profile_binding;
     in-out property <[string]> input_profiles;
     in-out property <[string]> controller_names;
     in-out property <[int]> selected_controller;
@@ -97,9 +97,9 @@ export component ControllerConfig inherits Page {
                     alignment: space-between;
                     for player in [0, 1, 2, 3]: ComboBox {
                         model: ControllerData.input_profiles;
-                        current-value: ControllerData.input_profile_binding[player];
+                        current-index: ControllerData.selected_profile_binding[player];
                         selected => {
-                            ControllerData.input_profile_binding[player] = self.current-value;
+                            ControllerData.selected_profile_binding[player] = self.current-index;
                         }
                     }
                 }
