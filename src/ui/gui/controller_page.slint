@@ -112,7 +112,7 @@ export component ControllerConfig inherits Page {
                     for player in [0, 1, 2, 3]: ComboBox {
                         model: ControllerData.controller_names;
                         width: self.preferred-width;
-                        current-value: ControllerData.controller_names[ControllerData.selected_controller[player]];
+                        current-index: ControllerData.selected_controller[player];
                         selected => {
                             ControllerData.selected_controller[player] = self.current-index;
                         }
