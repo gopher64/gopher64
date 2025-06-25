@@ -295,6 +295,58 @@ fn setup_vru_word_watcher(
     });
 }
 
+fn run_rom(
+    gb_rom_path: [Option<std::path::PathBuf>; 4],
+    gb_ram_path: [Option<std::path::PathBuf>; 4],
+    file_path: std::path::PathBuf,
+    fullscreen: bool,
+    overclock: bool,
+    emulate_vru: bool,
+    vru_window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
+    vru_word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
+    weak: slint::Weak<AppWindow>,
+) {
+    std::thread::Builder::new()
+        .name("n64".to_string())
+        .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
+        .spawn(move || {
+            let mut device = device::Device::new();
+
+            for i in 0..4 {
+                if gb_rom_path[i].is_some() && gb_ram_path[i].is_some() {
+                    device.transferpaks[i].cart.rom =
+                        std::fs::read(gb_rom_path[i].as_ref().unwrap()).unwrap();
+
+                    device.transferpaks[i].cart.ram =
+                        std::fs::read(gb_ram_path[i].as_ref().unwrap()).unwrap();
+                }
+            }
+
+            if emulate_vru {
+                device.vru_window.window_notifier = vru_window_notifier;
+                device.vru_window.word_receiver = vru_word_receiver;
+            }
+
+            if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
+                device::run_game(&mut device, rom_contents, fullscreen, overclock);
+            } else {
+                println!("Could not read rom file");
+            }
+            if emulate_vru {
+                device
+                    .vru_window
+                    .window_notifier
+                    .unwrap()
+                    .try_send(None)
+                    .unwrap();
+            }
+
+            weak.upgrade_in_event_loop(move |handle| handle.set_game_running(false))
+                .unwrap();
+        })
+        .unwrap();
+}
+
 fn open_rom(app: &AppWindow) {
     let select_rom = rfd::AsyncFileDialog::new()
         .set_title("Select ROM")
@@ -344,53 +396,27 @@ fn open_rom(app: &AppWindow) {
             let mut gb_ram_path = [None, None, None, None];
 
             for i in 0..4 {
-                if select_gb_rom[i].is_some() {
-                    gb_rom_path[i] = select_gb_rom[i].as_mut().unwrap().await;
-                }
-                if select_gb_ram[i].is_some() {
-                    gb_ram_path[i] = select_gb_ram[i].as_mut().unwrap().await;
+                if let (Some(gb_rom), Some(gb_ram)) =
+                    (select_gb_rom[i].as_mut(), select_gb_ram[i].as_mut())
+                {
+                    if let (Some(gb_rom), Some(gb_ram)) = (gb_rom.await, gb_ram.await) {
+                        gb_rom_path[i] = Some(gb_rom.path().to_path_buf());
+                        gb_ram_path[i] = Some(gb_ram.path().to_path_buf());
+                    }
                 }
             }
 
-            std::thread::Builder::new()
-                .name("n64".to_string())
-                .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
-                .spawn(move || {
-                    let mut device = device::Device::new();
-
-                    for i in 0..4 {
-                        if gb_rom_path[i].is_some() && gb_ram_path[i].is_some() {
-                            device.transferpaks[i].cart.rom =
-                                std::fs::read(gb_rom_path[i].as_ref().unwrap().path()).unwrap();
-
-                            device.transferpaks[i].cart.ram =
-                                std::fs::read(gb_ram_path[i].as_ref().unwrap().path()).unwrap();
-                        }
-                    }
-
-                    if emulate_vru {
-                        device.vru_window.window_notifier = Some(vru_window_notifier);
-                        device.vru_window.word_receiver = Some(vru_word_receiver);
-                    }
-
-                    if let Some(rom_contents) = device::get_rom_contents(file.path()) {
-                        device::run_game(&mut device, rom_contents, fullscreen, overclock);
-                    } else {
-                        println!("Could not read rom file");
-                    }
-                    if emulate_vru {
-                        device
-                            .vru_window
-                            .window_notifier
-                            .unwrap()
-                            .try_send(None)
-                            .unwrap();
-                    }
-
-                    weak.upgrade_in_event_loop(move |handle| handle.set_game_running(false))
-                        .unwrap();
-                })
-                .unwrap();
+            run_rom(
+                gb_rom_path,
+                gb_ram_path,
+                file.path().to_path_buf(),
+                fullscreen,
+                overclock,
+                emulate_vru,
+                Some(vru_window_notifier),
+                Some(vru_word_receiver),
+                weak,
+            );
         }
     });
 }
