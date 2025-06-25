@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { CheckBox, ComboBox, Button, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
+import { CheckBox, ComboBox, Button, HorizontalBox, VerticalBox, GroupBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 import { State } from "localgame_page.slint";
 
@@ -16,13 +16,6 @@ export global ControllerData {
 }
 
 export component ControllerConfig inherits Page {
-    property <[{name: string, vru-enabled: bool}]> rows: [
-        { name: "1", vru-enabled: false },
-        { name: "2", vru-enabled: false },
-        { name: "3", vru-enabled: false },
-        { name: "4", vru-enabled: true }
-    ];
-
     callback input_profile_button_clicked;
     title: @tr("Controller Configuration");
 
@@ -46,208 +39,83 @@ export component ControllerConfig inherits Page {
             font-weight: 600;
         }
 
-        GridBox {
-            Row {
-                Text {
-                    text: @tr("Port");
-                }
-
-                Text {
-                    text: @tr("Enabled");
-                }
-
-                Text {
-                    text: @tr("Emulate VRU");
-                }
-
-                Text {
-                    text: @tr("Transfer Pak");
-                }
-
-                Text {
-                    text: @tr("Profile");
-                }
-
-                Text {
-                    text: @tr("Controller");
-                }
-            }
-
-            Row { // 0
-                property <int> number: 0;
-                Text { // Port
-                    text: rows[number].name;
-                    vertical-alignment: center;
-                }
-
-                CheckBox { // Enabled
-                    checked: ControllerData.controller_enabled[number];
-                    toggled => {
-                        ControllerData.controller_enabled[number] = self.checked;
-                    }
-                }
-
-                CheckBox { // Emulate VRU
-                    enabled: rows[number].vru-enabled;
-                    checked: false;
-                }
-
-                CheckBox { // Transfer Pak
-                    checked: ControllerData.transferpak[number];
-                    toggled => {
-                        ControllerData.transferpak[number] = self.checked;
-                    }
-                }
-
-                ComboBox { // Profile
-                    model: ControllerData.input_profiles;
-                    current-value: ControllerData.input_profile_binding[number];
-                    selected => {
-                        ControllerData.input_profile_binding[number] = self.current-value;
-                    }
-                }
-
-                ComboBox { // Controller
-                    model: ControllerData.controller_names;
-                    width: self.preferred-width;
-                    current-value: ControllerData.controller_names[ControllerData.selected_controller[number]];
-                    selected => {
-                        ControllerData.selected_controller[number] = self.current-index;
+        HorizontalBox {
+            GroupBox {
+                title: @tr("Port");
+                VerticalLayout {
+                    alignment: space-between;
+                    for player in [0, 1, 2, 3]: Text {
+                        text: player + 1;
+                        vertical-alignment: center;
                     }
                 }
             }
 
-            Row { // 1
-                property <int> number: 1;
-                Text { // Port
-                    text: rows[number].name;
-                    vertical-alignment: center;
-                }
-
-                CheckBox { // Enabled
-                    checked: ControllerData.controller_enabled[number];
-                    toggled => {
-                        ControllerData.controller_enabled[number] = self.checked;
-                    }
-                }
-
-                CheckBox { // Emulate VRU
-                    enabled: rows[number].vru-enabled;
-                    checked: false;
-                }
-
-                CheckBox { // Transfer Pak
-                    checked: ControllerData.transferpak[number];
-                    toggled => {
-                        ControllerData.transferpak[number] = self.checked;
-                    }
-                }
-
-                ComboBox { // Profile
-                    model: ControllerData.input_profiles;
-                    current-value: ControllerData.input_profile_binding[number];
-                    selected => {
-                        ControllerData.input_profile_binding[number] = self.current-value;
-                    }
-                }
-
-                ComboBox { // Controller
-                    model: ControllerData.controller_names;
-                    width: self.preferred-width;
-                    current-value: ControllerData.controller_names[ControllerData.selected_controller[number]];
-                    selected => {
-                        ControllerData.selected_controller[number] = self.current-index;
+            GroupBox {
+                title: @tr("Enabled");
+                VerticalLayout {
+                    alignment: space-between;
+                    for player in [0, 1, 2, 3]: CheckBox {
+                        checked: ControllerData.controller_enabled[player];
+                        toggled => {
+                            ControllerData.controller_enabled[player] = self.checked;
+                        }
                     }
                 }
             }
 
-            Row { // 2
-                property <int> number: 2;
-                Text { // Port
-                    text: rows[number].name;
-                    vertical-alignment: center;
-                }
-
-                CheckBox { // Enabled
-                    checked: ControllerData.controller_enabled[number];
-                    toggled => {
-                        ControllerData.controller_enabled[number] = self.checked;
-                    }
-                }
-
-                CheckBox { // Emulate VRU
-                    enabled: rows[number].vru-enabled;
-                    checked: false;
-                }
-
-                CheckBox { // Transfer Pak
-                    checked: ControllerData.transferpak[number];
-                    toggled => {
-                        ControllerData.transferpak[number] = self.checked;
-                    }
-                }
-
-                ComboBox { // Profile
-                    model: ControllerData.input_profiles;
-                    current-value: ControllerData.input_profile_binding[number];
-                    selected => {
-                        ControllerData.input_profile_binding[number] = self.current-value;
-                    }
-                }
-
-                ComboBox { // Controller
-                    model: ControllerData.controller_names;
-                    width: self.preferred-width;
-                    current-value: ControllerData.controller_names[ControllerData.selected_controller[number]];
-                    selected => {
-                        ControllerData.selected_controller[number] = self.current-index;
+            GroupBox {
+                title: @tr("Emulate VRU");
+                VerticalLayout {
+                    alignment: space-between;
+                    for valid in [false, false, false, true]: CheckBox {
+                        enabled: valid;
+                        checked: valid && ControllerData.emulate_vru;
+                        toggled => {
+                            ControllerData.emulate_vru = self.checked;
+                        }
                     }
                 }
             }
 
-            Row { // 3
-                property <int> number: 3;
-                Text { // Port
-                    text: rows[number].name;
-                    vertical-alignment: center;
-                }
-
-                CheckBox { // Enabled
-                    checked: ControllerData.controller_enabled[number];
-                    toggled => {
-                        ControllerData.controller_enabled[number] = self.checked;
+            GroupBox {
+                title: @tr("Transfer Pak");
+                VerticalLayout {
+                    alignment: space-between;
+                    for player in [0, 1, 2, 3]: CheckBox {
+                        checked: ControllerData.transferpak[player];
+                        toggled => {
+                            ControllerData.transferpak[player] = self.checked;
+                        }
                     }
                 }
+            }
 
-                CheckBox { // Emulate VRU
-                    enabled: rows[number].vru-enabled;
-                    checked: ControllerData.emulate_vru;
-                    toggled => {
-                        ControllerData.emulate_vru = self.checked;
+            GroupBox {
+                title: @tr("Profile");
+                VerticalLayout {
+                    alignment: space-between;
+                    for player in [0, 1, 2, 3]: ComboBox {
+                        model: ControllerData.input_profiles;
+                        current-value: ControllerData.input_profile_binding[player];
+                        selected => {
+                            ControllerData.input_profile_binding[player] = self.current-value;
+                        }
                     }
                 }
+            }
 
-                CheckBox { // Transfer Pak
-                    checked: ControllerData.transferpak[number];
-                    toggled => {
-                        ControllerData.transferpak[number] = self.checked;
-                    }
-                }
-
-                ComboBox { // Profile
-                    model: ControllerData.input_profiles;
-                    current-value: ControllerData.input_profile_binding[number];
-                    selected => {
-                        ControllerData.input_profile_binding[number] = self.current-value;
-                    }
-                }
-
-                ComboBox { // Controller
-                    model: ControllerData.controller_names;
-                    width: self.preferred-width;
-                    current-value: ControllerData.controller_names[ControllerData.selected_controller[number]];
-                    selected => {
-                        ControllerData.selected_controller[number] = self.current-index;
+            GroupBox {
+                title: @tr("Controller");
+                VerticalLayout {
+                    alignment: space-between;
+                    for player in [0, 1, 2, 3]: ComboBox {
+                        model: ControllerData.controller_names;
+                        width: self.preferred-width;
+                        current-value: ControllerData.controller_names[ControllerData.selected_controller[player]];
+                        selected => {
+                            ControllerData.selected_controller[player] = self.current-index;
+                        }
                     }
                 }
             }
