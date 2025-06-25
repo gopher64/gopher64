@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { LocalGame, ControllerConfig,Netplay,Settings,About } from "pages.slint";
+import { LocalGame, ControllerConfig, Netplay, Settings, About } from "pages.slint";
 import { SideBar } from "side_bar.slint";
 import { SettingsData } from "settings_page.slint";
 import { AboutData } from "about_page.slint";
@@ -39,6 +39,7 @@ export component AppWindow inherits Window {
     in-out property controller_names <=> ControllerData.controller_names;
     in-out property selected_controller <=> ControllerData.selected_controller;
     in-out property game_running <=> State.game_running;
+    in-out property <bool> blank_controller;
     preferred-width: 700px;
     preferred-height: 500px;
     title: @tr("Gopher64");
@@ -64,7 +65,7 @@ export component AppWindow inherits Window {
                 saves_folder_button_clicked();
             }
         }
-        if(side-bar.current-item == 1): ControllerConfig {
+        if(side-bar.current-item == 1 && !blank_controller): ControllerConfig {
             input_profile_button_clicked => {
                 input_profile_button_clicked();
             }

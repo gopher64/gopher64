@@ -134,6 +134,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
 fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
     let profiles = input_profiles(config);
     let config_bindings = config.input.input_profile_binding.clone();
+    let weak2 = weak.clone();
     weak.upgrade_in_event_loop(move |handle| {
         let profile_bindings = slint::VecModel::default();
         for (i, input_profile_binding) in handle.get_selected_profile_binding().iter().enumerate() {
@@ -159,6 +160,16 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
         let input_profile_binding_model: std::rc::Rc<slint::VecModel<i32>> =
             std::rc::Rc::new(profile_bindings);
         handle.set_selected_profile_binding(slint::ModelRc::from(input_profile_binding_model));
+
+        // this is a workaround to make the input profile combobox update
+        handle.set_blank_controller(true);
+        slint::Timer::single_shot(std::time::Duration::from_millis(200), move || {
+            weak2
+                .upgrade_in_event_loop(move |handle| {
+                    handle.set_blank_controller(false);
+                })
+                .unwrap();
+        });
     })
     .unwrap();
 }
