@@ -122,7 +122,13 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_widescreen(config.video.widescreen);
     app.set_apply_crt_shader(config.video.crt);
     app.set_overclock_n64_cpu(config.emulation.overclock);
-    app.set_resolution(format!("{}x", config.video.upscale).into());
+    let combobox_value = match config.video.upscale {
+        1 => 0,
+        2 => 1,
+        4 => 2,
+        _ => 0,
+    };
+    app.set_resolution(combobox_value);
 }
 
 fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
@@ -224,7 +230,8 @@ fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     config.video.widescreen = app.get_widescreen();
     config.video.crt = app.get_apply_crt_shader();
     config.emulation.overclock = app.get_overclock_n64_cpu();
-    config.video.upscale = app.get_resolution().trim_end_matches('x').parse().unwrap();
+    let upscale_values = [1, 2, 4];
+    config.video.upscale = upscale_values[app.get_resolution() as usize];
 
     config.input.emulate_vru = app.get_emulate_vru();
     for (i, controller_enabled) in app.get_controller_enabled().iter().enumerate() {
