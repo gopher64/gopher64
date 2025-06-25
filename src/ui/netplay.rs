@@ -719,6 +719,11 @@ fn setup_wait_window(
                 }
                 "reply_begin_game" => {
                     if response.accept.unwrap() == 0 {
+                        weak.upgrade_in_event_loop(move |handle| {
+                            handle.window().hide().unwrap();
+                            netplay_write_sender.send(None).unwrap();
+                        })
+                        .unwrap();
                         return;
                     } else {
                         weak.upgrade_in_event_loop(move |handle| {
