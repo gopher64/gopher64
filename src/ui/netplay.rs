@@ -1,4 +1,5 @@
 #![allow(clippy::too_many_arguments)]
+
 use crate::device;
 use crate::ui;
 use crate::ui::gui::AppWindow;
@@ -50,9 +51,10 @@ trait NetplayPages {
     fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>);
     fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>);
     fn set_ping(&self, ping: slint::SharedString);
-    fn set_game_name(&self, ping: slint::SharedString);
-    fn set_game_hash(&self, ping: slint::SharedString);
-    fn set_rom_path(&self, ping: slint::SharedString);
+    fn set_game_name(&self, game_name: slint::SharedString);
+    fn set_game_hash(&self, game_hash: slint::SharedString);
+    fn set_rom_path(&self, rom_path: slint::SharedString);
+    fn set_peer_addr(&self, peer_addr: slint::SharedString);
     fn refresh_sessions(&self, _server: slint::SharedString) {
         // Default implementation does nothing
     }
@@ -77,6 +79,9 @@ impl NetplayPages for NetplayCreate {
     fn set_rom_path(&self, rom_path: slint::SharedString) {
         self.set_rom_path(rom_path);
     }
+    fn set_peer_addr(&self, peer_addr: slint::SharedString) {
+        self.set_peer_addr(peer_addr);
+    }
 }
 
 impl NetplayPages for NetplayJoin {
@@ -100,6 +105,9 @@ impl NetplayPages for NetplayJoin {
     }
     fn set_rom_path(&self, rom_path: slint::SharedString) {
         self.set_rom_path(rom_path);
+    }
+    fn set_peer_addr(&self, peer_addr: slint::SharedString) {
+        self.set_peer_addr(peer_addr);
     }
 }
 
@@ -260,6 +268,7 @@ pub fn setup_create_window(
                 server_url.to_string(),
                 netplay_read_sender.clone(),
                 netplay_write_receiver.resubscribe(),
+                weak.clone(),
             );
 
             create_session(
@@ -281,10 +290,11 @@ pub fn setup_create_window(
     create_window.show().unwrap();
 }
 
-fn manage_websocket(
+fn manage_websocket<T: ComponentHandle + NetplayPages + 'static>(
     server_url: String,
     netplay_read_sender: tokio::sync::broadcast::Sender<NetplayMessage>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    weak: slint::Weak<T>,
 ) {
     tokio::spawn(async move {
         if let Ok(Ok((socket, _response))) = tokio::time::timeout(
@@ -293,6 +303,17 @@ fn manage_websocket(
         )
         .await
         {
+            match socket.get_ref() {
+                tokio_tungstenite::MaybeTlsStream::Plain(stream) => {
+                    let addr = stream.peer_addr().unwrap().to_string();
+                    weak.upgrade_in_event_loop(move |handle| {
+                        handle.set_peer_addr(addr.into());
+                    })
+                    .unwrap();
+                }
+                _ => unimplemented!(),
+            }
+
             let (mut write, mut read) = socket.split();
             tokio::spawn(async move {
                 while let Some(Ok(response)) = read.next().await {
@@ -489,6 +510,7 @@ fn create_session(
                         true,
                         fullscreen,
                         overclock == "true",
+                        handle.get_peer_addr(),
                         weak_app,
                     );
                     handle.window().hide().unwrap();
@@ -572,6 +594,7 @@ fn join_session(
                         false,
                         fullscreen,
                         overclock == "true",
+                        handle.get_peer_addr(),
                         weak_app,
                     );
                     handle.window().hide().unwrap();
@@ -607,8 +630,13 @@ fn setup_wait_window(
     can_start: bool,
     fullscreen: bool,
     overclock: bool,
+    peer_addr: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
+    let local_player = player_name.clone();
+
+    let mut socket_addr: std::net::SocketAddr = peer_addr.to_string().parse().unwrap();
+    socket_addr.set_port(port as u16);
     let wait = NetplayWait::new().unwrap();
     wait.set_session_name(session_name);
     wait.set_game_name(game_name);
@@ -697,7 +725,6 @@ fn setup_wait_window(
 
     let weak = wait.as_weak();
     tokio::spawn(async move {
-        let player_number = 0;
         while let Ok(response) = netplay_read_receiver.recv().await {
             match response.message_type.as_str() {
                 "reply_motd" => {
@@ -741,10 +768,7 @@ fn setup_wait_window(
                         if let Some(player_names) = response.player_names {
                             let players_vec: slint::VecModel<slint::SharedString> =
                                 slint::VecModel::default();
-                            for (i, player) in player_names.iter().enumerate() {
-                                if player == player_name.into() {
-                                    player_number = i;
-                                }
+                            for player in player_names {
                                 players_vec.push(player.into());
                             }
                             let players_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
@@ -768,6 +792,17 @@ fn setup_wait_window(
                             handle.window().hide().unwrap();
                             let _ = netplay_write_sender.send(None);
 
+                            let mut player_number = 4;
+                            let players = handle.get_players();
+                            for (i, player) in players.iter().enumerate() {
+                                if player == local_player {
+                                    player_number = i;
+                                }
+                            }
+                            if player_number > 3 {
+                                panic!("Could not determine player number");
+                            }
+
                             run_rom(
                                 GbPaths {
                                     rom: [None, None, None, None],
@@ -781,7 +816,7 @@ fn setup_wait_window(
                                     vru_word_receiver: None,
                                 },
                                 Some(NetplayDevice {
-                                    peer_addr,
+                                    peer_addr: socket_addr,
                                     player_number: player_number as u8,
                                 }),
                                 weak_app,
@@ -853,6 +888,7 @@ pub fn setup_join_window(
             server_url.to_string(),
             netplay_read_sender.clone(),
             netplay_write_receiver.resubscribe(),
+            weak.clone(),
         );
         update_sessions(sender.clone(), receiver.resubscribe(), weak.clone());
     });

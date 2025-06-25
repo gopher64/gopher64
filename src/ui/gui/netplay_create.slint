@@ -10,6 +10,7 @@ export component NetplayCreate inherits Window {
     in-out property game_hash <=> NetplayData.game_hash;
     in-out property pending_session <=> NetplayData.pending_session;
     in-out property rom_path <=> NetplayData.rom_path;
+    in-out property peer_addr <=> NetplayData.peer_addr;
     callback get_ping(string);
     callback select_rom;
     callback create_session(string, string, string, string, string, string);
