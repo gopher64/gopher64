@@ -15,6 +15,11 @@ pub struct NetplayDevice {
     player_number: u8,
 }
 
+pub struct GbPaths {
+    pub rom: [Option<std::path::PathBuf>; 4],
+    pub ram: [Option<std::path::PathBuf>; 4],
+}
+
 pub struct VruChannel {
     pub vru_window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
     pub vru_word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
@@ -316,8 +321,7 @@ fn setup_vru_word_watcher(
 }
 
 pub fn run_rom(
-    gb_rom_path: [Option<std::path::PathBuf>; 4],
-    gb_ram_path: [Option<std::path::PathBuf>; 4],
+    gb_paths: GbPaths,
     file_path: std::path::PathBuf,
     fullscreen: bool,
     overclock: bool,
@@ -335,12 +339,12 @@ pub fn run_rom(
             let mut device = device::Device::new();
 
             for i in 0..4 {
-                if gb_rom_path[i].is_some() && gb_ram_path[i].is_some() {
+                if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
                     device.transferpaks[i].cart.rom =
-                        std::fs::read(gb_rom_path[i].as_ref().unwrap()).unwrap();
+                        std::fs::read(gb_paths.rom[i].as_ref().unwrap()).unwrap();
 
                     device.transferpaks[i].cart.ram =
-                        std::fs::read(gb_ram_path[i].as_ref().unwrap()).unwrap();
+                        std::fs::read(gb_paths.ram[i].as_ref().unwrap()).unwrap();
                 }
             }
 
@@ -430,8 +434,10 @@ fn open_rom(app: &AppWindow) {
             }
 
             run_rom(
-                gb_rom_path,
-                gb_ram_path,
+                GbPaths {
+                    rom: gb_rom_path,
+                    ram: gb_ram_path,
+                },
                 file.path().to_path_buf(),
                 fullscreen,
                 overclock,

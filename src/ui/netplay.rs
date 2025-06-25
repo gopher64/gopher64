@@ -2,7 +2,9 @@
 use crate::device;
 use crate::ui;
 use crate::ui::gui::AppWindow;
-use crate::ui::gui::{NetplayCreate, NetplayDialog, NetplayJoin, NetplayWait, VruChannel, run_rom};
+use crate::ui::gui::{
+    GbPaths, NetplayCreate, NetplayDialog, NetplayJoin, NetplayWait, VruChannel, run_rom,
+};
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
 use slint::{ComponentHandle, Model};
@@ -762,8 +764,10 @@ fn setup_wait_window(
                             let _ = netplay_write_sender.send(None);
 
                             run_rom(
-                                [None, None, None, None],
-                                [None, None, None, None],
+                                GbPaths {
+                                    rom: [None, None, None, None],
+                                    ram: [None, None, None, None],
+                                },
                                 handle.get_rom_path().as_str().into(),
                                 fullscreen,
                                 overclock,
