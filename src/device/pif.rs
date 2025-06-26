@@ -226,7 +226,7 @@ pub fn connect_pif_channels(device: &mut device::Device) {
             device.pif.channels[i].process = Some(device::controller::process);
         }
     }
-    if device.ui.config.input.emulate_vru {
+    if device.ui.config.input.emulate_vru && device.netplay.is_none() {
         device.pif.channels[3].process = Some(device::controller::vru::process);
     }
     device.pif.channels[4].process = Some(device::cart::process)
@@ -280,7 +280,7 @@ pub fn init(device: &mut device::Device) {
             device.pif.channels[i].pak_handler = Some(default_handler);
         }
     }
-    if device.ui.config.input.emulate_vru {
+    if device.ui.config.input.emulate_vru && device.netplay.is_none() {
         device.pif.channels[3].pak_handler = None;
     }
 }
