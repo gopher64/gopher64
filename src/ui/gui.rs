@@ -108,7 +108,7 @@ fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     });
 }
 
-fn get_input_profiles(config: &ui::config::Config) -> Vec<String> {
+fn input_profiles(config: &ui::config::Config) -> Vec<String> {
     let mut profiles = vec![];
     for key in config.input.input_profiles.keys() {
         profiles.push(key.clone())
@@ -122,12 +122,33 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_widescreen(config.video.widescreen);
     app.set_apply_crt_shader(config.video.crt);
     app.set_overclock_n64_cpu(config.emulation.overclock);
-    app.set_resolution(format!("{}x", config.video.upscale).into());
+    let combobox_value = match config.video.upscale {
+        1 => 0,
+        2 => 1,
+        4 => 2,
+        _ => 0,
+    };
+    app.set_resolution(combobox_value);
 }
 
 fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
-    let profiles = get_input_profiles(config);
+    let profiles = input_profiles(config);
+    let config_bindings = config.input.input_profile_binding.clone();
+    let weak2 = weak.clone();
     weak.upgrade_in_event_loop(move |handle| {
+        let profile_bindings = slint::VecModel::default();
+        for (i, input_profile_binding) in handle.get_selected_profile_binding().iter().enumerate() {
+            let currently_selected = handle
+                .get_input_profiles()
+                .row_data(input_profile_binding as usize)
+                .unwrap_or(config_bindings[i].clone().into())
+                .to_string();
+            let position = profiles
+                .iter()
+                .position(|profile| *profile == currently_selected);
+            profile_bindings.push(position.unwrap() as i32);
+        }
+
         let input_profiles = slint::VecModel::default();
         for profile in profiles {
             input_profiles.push(profile.into());
@@ -135,6 +156,20 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
         let input_profiles_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
             std::rc::Rc::new(input_profiles);
         handle.set_input_profiles(slint::ModelRc::from(input_profiles_model));
+
+        let input_profile_binding_model: std::rc::Rc<slint::VecModel<i32>> =
+            std::rc::Rc::new(profile_bindings);
+        handle.set_selected_profile_binding(slint::ModelRc::from(input_profile_binding_model));
+
+        // this is a workaround to make the input profile combobox update
+        handle.set_blank_profiles(true);
+        slint::Timer::single_shot(std::time::Duration::from_millis(200), move || {
+            weak2
+                .upgrade_in_event_loop(move |handle| {
+                    handle.set_blank_profiles(false);
+                })
+                .unwrap();
+        });
     })
     .unwrap();
 }
@@ -155,14 +190,6 @@ fn controller_window(
     let transferpak_enabled_model: std::rc::Rc<slint::VecModel<bool>> =
         std::rc::Rc::new(slint::VecModel::from(config.input.transfer_pak.to_vec()));
     app.set_transferpak(slint::ModelRc::from(transferpak_enabled_model));
-
-    let profile_bindings = slint::VecModel::default();
-    for binding in config.input.input_profile_binding.iter() {
-        profile_bindings.push(binding.into());
-    }
-    let input_profile_binding_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-        std::rc::Rc::new(profile_bindings);
-    app.set_input_profile_binding(slint::ModelRc::from(input_profile_binding_model));
 
     update_input_profiles(&app.as_weak(), config);
 
@@ -224,7 +251,8 @@ fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     config.video.widescreen = app.get_widescreen();
     config.video.crt = app.get_apply_crt_shader();
     config.emulation.overclock = app.get_overclock_n64_cpu();
-    config.video.upscale = app.get_resolution().trim_end_matches('x').parse().unwrap();
+    let upscale_values = [1, 2, 4];
+    config.video.upscale = upscale_values[app.get_resolution() as usize];
 
     config.input.emulate_vru = app.get_emulate_vru();
     for (i, controller_enabled) in app.get_controller_enabled().iter().enumerate() {
@@ -233,8 +261,12 @@ fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     for (i, transferpak_enabled) in app.get_transferpak().iter().enumerate() {
         config.input.transfer_pak[i] = transferpak_enabled;
     }
-    for (i, input_profile_binding) in app.get_input_profile_binding().iter().enumerate() {
-        config.input.input_profile_binding[i] = input_profile_binding.into();
+    for (i, input_profile_binding) in app.get_selected_profile_binding().iter().enumerate() {
+        config.input.input_profile_binding[i] = app
+            .get_input_profiles()
+            .row_data(input_profile_binding as usize)
+            .unwrap()
+            .to_string();
     }
 
     for (i, selected_controller) in app.get_selected_controller().iter().enumerate() {

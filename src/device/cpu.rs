@@ -227,6 +227,7 @@ pub fn init(device: &mut device::Device) {
     device.cpu.clock_rate = if !device.cpu.overclock {
         93750000
     } else {
+        println!("Overclocking enabled, setting clock rate to 125 MHz");
         125000000
     };
 

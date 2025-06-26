@@ -10,7 +10,7 @@ export global SettingsData {
     in-out property <bool> widescreen;
     in-out property <bool> apply_crt_shader;
     in-out property <bool> overclock_n64_cpu;
-    in-out property <string> resolution;
+    in-out property <int> resolution;
 }
 
 export component Settings inherits Page {
@@ -27,9 +27,9 @@ export component Settings inherits Page {
 
             ComboBox {
                 model: ["1x", "2x", "4x"];
-                current-value: SettingsData.resolution;
+                current-index: SettingsData.resolution;
                 selected => {
-                    SettingsData.resolution = self.current-value;
+                    SettingsData.resolution = self.current-index;
                 }
             }
         }
