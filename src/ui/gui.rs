@@ -24,11 +24,6 @@ pub struct GbPaths {
     pub ram: [Option<std::path::PathBuf>; 4],
 }
 
-pub struct VruChannel {
-    pub vru_window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
-    pub vru_word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
-}
-
 #[derive(Clone)]
 pub struct GameSettings {
     pub fullscreen: bool,
@@ -329,55 +324,10 @@ pub fn app_window() {
     save_settings(&app, &controller_paths);
 }
 
-fn setup_vru_word_watcher(
-    weak_vru: slint::Weak<AppWindow>,
-    vru_word_notifier: tokio::sync::mpsc::Sender<String>,
-    mut vru_window_receiver: tokio::sync::mpsc::Receiver<Option<Vec<String>>>,
-) {
-    tokio::spawn(async move {
-        loop {
-            let notifier = vru_word_notifier.clone();
-            let notifier_closed = vru_word_notifier.clone();
-            let result = vru_window_receiver.recv().await;
-            if let Some(Some(words)) = result {
-                weak_vru
-                    .upgrade_in_event_loop(move |_handle| {
-                        let vru_dialog = VruDialog::new().unwrap();
-                        let vru_dialog_weak = vru_dialog.as_weak();
-
-                        vru_dialog.on_vru_button_clicked(move |chosen_word| {
-                            notifier.try_send(chosen_word.to_string()).unwrap();
-                            vru_dialog_weak.unwrap().window().hide().unwrap();
-                        });
-
-                        vru_dialog.window().on_close_requested(move || {
-                            notifier_closed.try_send("".to_string()).unwrap();
-                            slint::CloseRequestResponse::HideWindow
-                        });
-
-                        let words_vec = slint::VecModel::default();
-                        for word in words {
-                            words_vec.push(word.into());
-                        }
-                        let words_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-                            std::rc::Rc::new(words_vec);
-                        vru_dialog.set_words(slint::ModelRc::from(words_model));
-
-                        vru_dialog.show().unwrap();
-                    })
-                    .unwrap();
-            } else {
-                return;
-            }
-        }
-    });
-}
-
 pub fn run_rom(
     gb_paths: GbPaths,
     file_path: std::path::PathBuf,
     mut game_settings: GameSettings,
-    vru_channel: VruChannel,
     netplay: Option<NetplayDevice>,
     usb: ui::Usb,
     weak: slint::Weak<AppWindow>,
@@ -405,9 +355,6 @@ pub fn run_rom(
             device.ui.usb.usb_tx = usb.usb_tx;
             device.ui.usb.cart_rx = usb.cart_rx;
 
-            device.vru_window.window_notifier = vru_channel.vru_window_notifier;
-            device.vru_window.word_receiver = vru_channel.vru_word_receiver;
-
             if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
                 if let Some(netplay_device) = netplay {
                     device.netplay = Some(netplay::init(
@@ -427,10 +374,6 @@ pub fn run_rom(
                 }
             } else {
                 println!("Could not read rom file");
-            }
-
-            if let Some(vru_window_notifier) = device.vru_window.window_notifier {
-                vru_window_notifier.try_send(None).unwrap();
             }
 
             let rom_dir = device.ui.config.rom_dir.clone();
@@ -478,25 +421,10 @@ fn open_rom(app: &AppWindow, usb: ui::Usb) {
         }
     }
 
-    #[allow(clippy::type_complexity)]
-    let (vru_window_notifier, vru_window_receiver): (
-        tokio::sync::mpsc::Sender<Option<Vec<String>>>,
-        tokio::sync::mpsc::Receiver<Option<Vec<String>>>,
-    ) = tokio::sync::mpsc::channel(5);
-
-    let (vru_word_notifier, vru_word_receiver): (
-        tokio::sync::mpsc::Sender<String>,
-        tokio::sync::mpsc::Receiver<String>,
-    ) = tokio::sync::mpsc::channel(5);
-
     let fullscreen = app.get_fullscreen();
     let overclock = app.get_overclock_n64_cpu();
-    let emulate_vru = app.get_emulate_vru();
     let disable_expansion_pak = app.get_disable_expansion_pak();
 
-    if emulate_vru {
-        setup_vru_word_watcher(app.as_weak(), vru_word_notifier, vru_window_receiver);
-    }
     let weak = app.as_weak();
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
@@ -524,17 +452,6 @@ fn open_rom(app: &AppWindow, usb: ui::Usb) {
                     overclock,
                     disable_expansion_pak,
                     cheats: std::collections::HashMap::new(), // will be filled in later
-                },
-                if emulate_vru {
-                    VruChannel {
-                        vru_window_notifier: Some(vru_window_notifier),
-                        vru_word_receiver: Some(vru_word_receiver),
-                    }
-                } else {
-                    VruChannel {
-                        vru_window_notifier: None,
-                        vru_word_receiver: None,
-                    }
                 },
                 None,
                 usb,

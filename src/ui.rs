@@ -7,7 +7,6 @@ pub mod netplay;
 pub mod storage;
 pub mod usb;
 pub mod video;
-pub mod vru;
 
 pub struct Dirs {
     pub config_dir: std::path::PathBuf,
@@ -16,6 +15,7 @@ pub struct Dirs {
 
 pub struct Audio {
     pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
+    pub vru_audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub gain: f32,
 }
 
@@ -183,6 +183,7 @@ impl Ui {
             audio: Audio {
                 audio_stream: std::ptr::null_mut(),
                 gain: 1.0,
+                vru_audio_stream: std::ptr::null_mut(),
             },
             video: Video {
                 window: std::ptr::null_mut(),

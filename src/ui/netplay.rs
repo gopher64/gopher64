@@ -2,7 +2,7 @@ use crate::device;
 use crate::ui;
 use crate::ui::gui::{
     AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, GameSettings, GbPaths,
-    NetplayCreate, NetplayDevice, NetplayJoin, NetplayWait, VruChannel, run_rom, save_settings,
+    NetplayCreate, NetplayDevice, NetplayJoin, NetplayWait, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -1080,10 +1080,6 @@ fn setup_wait_window(
                                         overclock: game_settings.overclock,
                                         disable_expansion_pak: game_settings.disable_expansion_pak,
                                         cheats: game_settings.cheats,
-                                    },
-                                    VruChannel {
-                                        vru_window_notifier: None,
-                                        vru_word_receiver: None,
                                     },
                                     Some(NetplayDevice {
                                         peer_addr: socket_addr,

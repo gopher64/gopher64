@@ -53,10 +53,6 @@ fn upload_rom(
                 disable_expansion_pak: handle.get_disable_expansion_pak(),
                 cheats: std::collections::HashMap::new(), // will be filled in later
             },
-            ui::gui::VruChannel {
-                vru_window_notifier: None,
-                vru_word_receiver: None,
-            },
             None,
             ui::Usb {
                 usb_tx: Some(usb_tx),

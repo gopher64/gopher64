@@ -25,16 +25,7 @@ pub struct Vru {
     #[serde(with = "serde_big_array::BigArray")]
     pub word_buffer: [u16; 40],
     pub words: Vec<String>,
-    pub talking: bool,
     pub word_mappings: HashMap<String, String>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct VruWindow {
-    #[serde(skip)]
-    pub window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
-    #[serde(skip)]
-    pub word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
 }
 
 pub fn init(device: &mut device::Device) {
@@ -59,11 +50,15 @@ fn set_status(device: &mut device::Device, channel: usize) {
         /* words have been loaded, we can change the state from READY to START */
         device.vru.voice_state = VOICE_STATUS_START;
         device.vru.voice_init = 1;
-    } else if device.vru.talking && (device.vru.voice_state == VOICE_STATUS_START) {
+    } else if ui::audio::get_vru_mic_state(&device.ui)
+        && (device.vru.voice_state == VOICE_STATUS_START)
+    {
         /* On Densha de Go, if the player is talking for more than ~2.5 seconds, the input is ignored */
         device.vru.voice_state = VOICE_STATUS_BUSY;
         device.vru.status = 0; /* setting the status to 0 tells the game to check the voice_status */
-    } else if !device.vru.talking && (device.vru.voice_state == VOICE_STATUS_BUSY) {
+    } else if !ui::audio::get_vru_mic_state(&device.ui)
+        && (device.vru.voice_state == VOICE_STATUS_BUSY)
+    {
         device.vru.voice_state = VOICE_STATUS_READY;
         device.vru.status = 0; /* setting the status to 0 tells the game to check the voice_status */
     }
@@ -162,7 +157,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     4,
                 );
             if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0x4E {
-                device.vru.talking = true;
+                ui::audio::set_vru_mic_state(&device.ui, true);
                 device.vru.voice_init = 2;
                 device::events::create_event(
                     device,
@@ -170,7 +165,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     device.cpu.clock_rate * 2, // 2 seconds
                 )
             } else if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0xEF {
-                device.vru.talking = false;
+                ui::audio::set_vru_mic_state(&device.ui, false);
                 device::events::remove_event(device, device::events::EVENT_TYPE_VRU);
             } else if device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 3] == 0x2 {
                 device.vru.voice_init = 0;
@@ -181,22 +176,14 @@ pub fn process(device: &mut device::Device, channel: usize) {
         JCMD_VRU_WRITE_INIT => {
             let offset = device.pif.channels[channel].tx_buf.unwrap() + 1;
             if u16::from_ne_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap()) == 0 {
-                device.vru.talking = false;
+                ui::audio::set_vru_mic_state(&device.ui, false);
                 device::events::remove_event(device, device::events::EVENT_TYPE_VRU);
             }
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
-            let index = if device.vru_window.window_notifier.is_some() {
-                ui::vru::prompt_for_match(
-                    &device.vru.words,
-                    device.vru_window.window_notifier.as_ref().unwrap(),
-                    device.vru_window.word_receiver.as_mut().unwrap(),
-                    device.vi.frame_time,
-                )
-            } else {
-                0x7FFF
-            };
+            let index = ui::audio::process_vru_input(&mut device.ui);
+
             let num_results = if index == 0x7FFF { 0 } else { 1 };
             let data: HashMap<usize, u16> = HashMap::from([
                 (0, 0x8000),
@@ -255,7 +242,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
 }
 
 pub fn vru_talking_event(device: &mut device::Device) {
-    device.vru.talking = false
+    ui::audio::set_vru_mic_state(&device.ui, false);
 }
 
 fn create_word_mappings(device: &mut device::Device) {

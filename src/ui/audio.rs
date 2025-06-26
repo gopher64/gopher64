@@ -3,6 +3,29 @@ use crate::ui;
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_AUDIO);
+
+    if ui.config.input.emulate_vru {
+        let vru_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
+            format: sdl3_sys::audio::SDL_AUDIO_F32,
+            freq: 16000,
+            channels: 1,
+        };
+        ui.audio.vru_audio_stream = unsafe {
+            sdl3_sys::audio::SDL_OpenAudioDeviceStream(
+                sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_RECORDING,
+                &vru_audio_spec,
+                None,
+                std::ptr::null_mut(),
+            )
+        };
+        if ui.audio.vru_audio_stream.is_null() {
+            panic!("Could not open vru audio stream");
+        }
+        unsafe {
+            sdl3_sys::audio::SDL_PauseAudioStreamDevice(ui.audio.vru_audio_stream);
+        }
+    }
+
     init_game_audio(ui, frequency);
 }
 
@@ -34,6 +57,11 @@ pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
 
 pub fn close(ui: &mut ui::Ui) {
     close_game_audio(ui);
+
+    if ui.config.input.emulate_vru {
+        unsafe { sdl3_sys::audio::SDL_DestroyAudioStream(ui.audio.vru_audio_stream) };
+        ui.audio.vru_audio_stream = std::ptr::null_mut();
+    }
 }
 
 pub fn close_game_audio(ui: &mut ui::Ui) {
@@ -112,4 +140,39 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
     {
         panic!("Could not play audio");
     }
+}
+
+pub fn get_vru_mic_state(ui: &ui::Ui) -> bool {
+    unsafe { !sdl3_sys::audio::SDL_AudioStreamDevicePaused(ui.audio.vru_audio_stream) }
+}
+
+pub fn set_vru_mic_state(ui: &ui::Ui, talking: bool) {
+    if talking {
+        unsafe {
+            sdl3_sys::audio::SDL_ClearAudioStream(ui.audio.vru_audio_stream);
+            sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio.vru_audio_stream)
+        };
+    } else {
+        unsafe {
+            sdl3_sys::audio::SDL_PauseAudioStreamDevice(ui.audio.vru_audio_stream);
+            sdl3_sys::audio::SDL_FlushAudioStream(ui.audio.vru_audio_stream)
+        };
+    }
+}
+
+pub fn process_vru_input(ui: &mut ui::Ui) -> u16 {
+    let size = unsafe { sdl3_sys::audio::SDL_GetAudioStreamAvailable(ui.audio.vru_audio_stream) };
+    let mut audio_data: Vec<f32> = vec![0.0; size as usize / 4];
+    let num_bytes = unsafe {
+        sdl3_sys::audio::SDL_GetAudioStreamData(
+            ui.audio.vru_audio_stream,
+            audio_data.as_mut_ptr() as *mut std::ffi::c_void,
+            size,
+        )
+    };
+    if num_bytes == -1 {
+        panic!("Could not get vru audio stream data");
+    }
+    //todo
+    0x7FFF
 }
