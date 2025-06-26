@@ -96,7 +96,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.channels[channel].rx_buf.unwrap(),
             channel,
         ),
-        _ => println!("unknown controller command {}", cmd),
+        _ => println!("unknown controller command {cmd}"),
     }
 }
 
@@ -111,8 +111,8 @@ fn pak_read_block(
         ((device.pif.ram[addr_acrc] as u16) << 8) | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
     let handler = device.pif.channels[channel].pak_handler;
 
-    if handler.is_some() {
-        (handler.unwrap().read)(device, channel, address, data, PAK_CHUNK_SIZE);
+    if let Some(handler) = handler {
+        (handler.read)(device, channel, address, data, PAK_CHUNK_SIZE);
         device.pif.ram[dcrc] = data_crc(device, data, PAK_CHUNK_SIZE)
     } else {
         device.pif.ram[dcrc] = !data_crc(device, data, PAK_CHUNK_SIZE)
@@ -130,8 +130,8 @@ fn pak_write_block(
         ((device.pif.ram[addr_acrc] as u16) << 8) | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
     let handler = device.pif.channels[channel].pak_handler;
 
-    if handler.is_some() {
-        (handler.unwrap().write)(device, channel, address, data, PAK_CHUNK_SIZE);
+    if let Some(handler) = handler {
+        (handler.write)(device, channel, address, data, PAK_CHUNK_SIZE);
         device.pif.ram[dcrc] = data_crc(device, data, PAK_CHUNK_SIZE)
     } else {
         device.pif.ram[dcrc] = !data_crc(device, data, PAK_CHUNK_SIZE)

@@ -51,7 +51,7 @@ pub fn read_regs(
     match reg as u32 {
         SC64_SCR_REG | SC64_DATA0_REG | SC64_DATA1_REG => device.cart.sc64.regs[reg as usize],
         SC64_IDENTIFIER_REG => 0x53437632,
-        _ => panic!("unknown read reg {} address {:#x}", reg, address),
+        _ => panic!("unknown read reg {reg} address {address:#x}"),
     }
 }
 

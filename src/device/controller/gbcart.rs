@@ -155,7 +155,7 @@ fn write_mbc3(
             }
         }
     } else {
-        panic!("Unsupported write address {:x}", address);
+        panic!("Unsupported write address {address:x}");
     }
 }
 
@@ -208,7 +208,7 @@ fn read_mbc3(
             }
         }
     } else {
-        panic!("Unsupported read address {:x}", address);
+        panic!("Unsupported read address {address:x}");
     }
 }
 
@@ -231,7 +231,7 @@ fn write_mbc5(
     } else if address < 0x6000 {
         cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0xa000 {
-        println!("Unknown MBC5 write address {:x}", address);
+        println!("Unknown MBC5 write address {address:x}");
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
             return;
@@ -241,7 +241,7 @@ fn write_mbc5(
         cart.ram[banked_address as usize..banked_address as usize + size]
             .copy_from_slice(&pif_ram[data..data + size]);
     } else {
-        panic!("Unsupported write address {:x}", address);
+        panic!("Unsupported write address {address:x}");
     }
 }
 
@@ -272,7 +272,7 @@ fn read_mbc5(
         pif_ram[data..data + size]
             .copy_from_slice(&cart.ram[banked_address as usize..banked_address as usize + size]);
     } else {
-        panic!("Unsupported read address {:x}", address);
+        panic!("Unsupported read address {address:x}");
     }
 }
 
@@ -323,6 +323,6 @@ pub fn get_cart_type(data: u8) -> CartType {
         0x10 => CartType::MBC3RamBattRtc,
         0x13 => CartType::MBC3RamBatt,
         0x1b => CartType::MBC5RamBatt,
-        _ => panic!("Unsupported cart type {:x}", data),
+        _ => panic!("Unsupported cart type {data:x}"),
     }
 }
