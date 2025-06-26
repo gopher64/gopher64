@@ -4,8 +4,7 @@ use crate::device;
 use crate::ui;
 use crate::ui::gui::AppWindow;
 use crate::ui::gui::{
-    GbPaths, NetplayCreate, NetplayDevice, NetplayDialog, NetplayJoin, NetplayWait, VruChannel,
-    run_rom,
+    GbPaths, NetplayCreate, NetplayDevice, NetplayDialog, NetplayJoin, NetplayWait, run_rom,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -811,10 +810,6 @@ fn setup_wait_window(
                                 handle.get_rom_path().as_str().into(),
                                 fullscreen,
                                 overclock,
-                                VruChannel {
-                                    vru_window_notifier: None,
-                                    vru_word_receiver: None,
-                                },
                                 Some(NetplayDevice {
                                     peer_addr: socket_addr,
                                     player_number: player_number as u8,
