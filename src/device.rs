@@ -491,7 +491,6 @@ impl Device {
                 voice_init: 0,
                 word_buffer: [0; 40],
                 words: Vec::new(),
-                talking: false,
                 word_mappings: HashMap::new(),
             },
             rng: set_rng(),
