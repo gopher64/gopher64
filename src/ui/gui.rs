@@ -162,11 +162,11 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
         handle.set_selected_profile_binding(slint::ModelRc::from(input_profile_binding_model));
 
         // this is a workaround to make the input profile combobox update
-        handle.set_blank_controller(true);
+        handle.set_blank_profiles(true);
         slint::Timer::single_shot(std::time::Duration::from_millis(200), move || {
             weak2
                 .upgrade_in_event_loop(move |handle| {
-                    handle.set_blank_controller(false);
+                    handle.set_blank_profiles(false);
                 })
                 .unwrap();
         });

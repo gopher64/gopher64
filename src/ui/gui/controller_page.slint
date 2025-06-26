@@ -13,6 +13,7 @@ export global ControllerData {
     in-out property <[string]> input_profiles;
     in-out property <[string]> controller_names;
     in-out property <[int]> selected_controller;
+    in-out property <bool> blank_profiles;
 }
 
 export component ControllerConfig inherits Page {
@@ -86,7 +87,7 @@ export component ControllerConfig inherits Page {
                 }
             }
 
-            GroupBox {
+            if !ControllerData.blank_profiles: GroupBox {
                 title: @tr("Profile");
                 VerticalLayout {
                     alignment: space-between;
