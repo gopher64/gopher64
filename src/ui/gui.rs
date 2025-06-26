@@ -457,11 +457,10 @@ fn open_rom(app: &AppWindow) {
             for i in 0..4 {
                 if let (Some(gb_rom), Some(gb_ram)) =
                     (select_gb_rom[i].as_mut(), select_gb_ram[i].as_mut())
+                    && let (Some(gb_rom), Some(gb_ram)) = (gb_rom.await, gb_ram.await)
                 {
-                    if let (Some(gb_rom), Some(gb_ram)) = (gb_rom.await, gb_ram.await) {
-                        gb_rom_path[i] = Some(gb_rom.path().to_path_buf());
-                        gb_ram_path[i] = Some(gb_ram.path().to_path_buf());
-                    }
+                    gb_rom_path[i] = Some(gb_rom.path().to_path_buf());
+                    gb_ram_path[i] = Some(gb_ram.path().to_path_buf());
                 }
             }
 

@@ -80,8 +80,8 @@ impl Config {
         let dirs = ui::get_dirs();
         let file_path = dirs.config_dir.join("config.json");
         let config_file = std::fs::read(file_path);
-        if config_file.is_ok() {
-            let result = serde_json::from_slice(config_file.unwrap().as_ref());
+        if let Ok(config_file) = config_file {
+            let result = serde_json::from_slice(config_file.as_ref());
             if let Ok(result) = result {
                 return result;
             }

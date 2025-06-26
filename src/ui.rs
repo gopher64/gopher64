@@ -66,7 +66,7 @@ pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
             let err = std::ffi::CStr::from_ptr(sdl3_sys::error::SDL_GetError())
                 .to_str()
                 .unwrap();
-            panic!("Could not initialize SDL subsystem: {}, {}", flag, err);
+            panic!("Could not initialize SDL subsystem: {flag}, {err}");
         }
     }
 }

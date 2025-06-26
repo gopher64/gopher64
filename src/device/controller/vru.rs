@@ -126,7 +126,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
 
                         let (res, _enc, errors) = encoding_rs::SHIFT_JIS.decode(&data);
                         if errors {
-                            panic!("Failed to decode Japanese word {:X?}", data);
+                            panic!("Failed to decode Japanese word {data:X?}");
                         } else {
                             device.vru.words.push(res.to_string());
                         }
@@ -144,7 +144,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                         if let Some(result) = word {
                             device.vru.words.push(result.clone());
                         } else {
-                            panic!("Unknown VRU word {}", data);
+                            panic!("Unknown VRU word {data}");
                         }
                     }
                 } else {
@@ -249,7 +249,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
             }
             device.vru.status = 0; /* status is always set to 0 after a write */
         }
-        _ => panic!("unknown VRU command {}", cmd),
+        _ => panic!("unknown VRU command {cmd}"),
     }
 }
 

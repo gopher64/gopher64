@@ -72,10 +72,9 @@ fn set_vertical_interrupt(device: &mut device::Device) {
 fn set_current_line(device: &mut device::Device) {
     let delay = device.vi.delay;
     let next_vi = device::events::get_event(device, device::events::EVENT_TYPE_VI);
-    if next_vi.is_some() {
+    if let Some(next_vi) = next_vi {
         device.vi.regs[VI_CURRENT_REG as usize] = ((delay
-            - (next_vi.unwrap().count
-                - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]))
+            - (next_vi.count - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]))
             / device.vi.count_per_scanline)
             as u32;
 
@@ -178,8 +177,7 @@ pub fn init(device: &mut device::Device) {
 
 fn speed_limiter(device: &mut device::Device) {
     let result = device.vi.limiter.as_ref().unwrap().check();
-    if result.is_err() {
-        let outcome = result.unwrap_err();
+    if let Err(outcome) = result {
         let dur = outcome.wait_time_from(governor::clock::DefaultClock::default().now());
         spin_sleep::sleep(dur);
         if dur < device.vi.min_wait_time {

@@ -57,10 +57,10 @@ fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
             1 => return vec![SaveTypes::Eeprom4k],
             2 => return vec![SaveTypes::Eeprom16k],
             3 => return vec![SaveTypes::Sram],
-            4 => panic!("Unsupported save type: {}", save_type),
+            4 => panic!("Unsupported save type: {save_type}"),
             5 => return vec![SaveTypes::Flash],
-            6 => panic!("Unsupported save type: {}", save_type),
-            _ => panic!("Unknown save type: {}", save_type),
+            6 => panic!("Unsupported save type: {save_type}"),
+            _ => panic!("Unknown save type: {save_type}"),
         }
     }
     match game_id {
@@ -123,12 +123,9 @@ fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
 pub fn get_game_name(rom: &[u8]) -> String {
     let mut game_name = "".to_owned();
     let header_value = std::str::from_utf8(&rom[0x20..0x34]);
-    if header_value.is_ok() {
+    if let Ok(header_value) = header_value {
         let re = regex::Regex::new(r"[^a-zA-Z0-9_ -]").unwrap();
-        game_name = re
-            .replace_all(header_value.unwrap(), "")
-            .trim()
-            .replace('\0', "");
+        game_name = re.replace_all(header_value, "").trim().replace('\0', "");
     }
     game_name
 }
@@ -197,29 +194,28 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
     if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
         let eep = std::fs::read(&ui.storage.paths.eep_file_path);
-        if eep.is_ok() {
-            ui.storage.saves.eeprom.data = eep.unwrap();
+        if let Ok(eep) = eep {
+            ui.storage.saves.eeprom.data = eep;
         }
         let sra = std::fs::read(&ui.storage.paths.sra_file_path);
-        if sra.is_ok() {
-            ui.storage.saves.sram.data = sra.unwrap();
+        if let Ok(sra) = sra {
+            ui.storage.saves.sram.data = sra;
         }
         let fla = std::fs::read(&ui.storage.paths.fla_file_path);
-        if fla.is_ok() {
-            ui.storage.saves.flash.data = fla.unwrap();
+        if let Ok(fla) = fla {
+            ui.storage.saves.flash.data = fla;
         }
         let mempak = std::fs::read(&ui.storage.paths.pak_file_path);
-        if mempak.is_ok() {
-            ui.storage.saves.mempak.data = mempak.unwrap();
+        if let Ok(mempak) = mempak {
+            ui.storage.saves.mempak.data = mempak;
         }
         let sdcard = std::fs::read(&ui.storage.paths.sdcard_file_path);
-        if sdcard.is_ok() {
-            ui.storage.saves.sdcard.data = sdcard.unwrap();
+        if let Ok(sdcard) = sdcard {
+            ui.storage.saves.sdcard.data = sdcard;
         }
         let romsave = std::fs::read(&ui.storage.paths.romsave_file_path);
-        if romsave.is_ok() {
-            ui.storage.saves.romsave.data =
-                postcard::from_bytes(romsave.unwrap().as_ref()).unwrap();
+        if let Ok(romsave) = romsave {
+            ui.storage.saves.romsave.data = postcard::from_bytes(romsave.as_ref()).unwrap();
         }
     }
 

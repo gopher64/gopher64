@@ -66,7 +66,7 @@ fn read_mem_flash(device: &device::Device, address: u64) -> u32 {
     {
         /* flashram MMIO read are not supported except for the "dummy" read @0x0000 done before DMA.
          * returns a "dummy" value. */
-        return 0;
+        0
     } else {
         /* other accesses are not implemented */
         panic!("unknown flashram read")
