@@ -61,7 +61,7 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, fullscreen: bool, ov
 
     mi::init(device);
     pif::init(device);
-    if device.ui.config.input.emulate_vru {
+    if device.ui.config.input.emulate_vru && device.netplay.is_none() {
         controller::vru::init(device);
     }
     memory::init(device);
