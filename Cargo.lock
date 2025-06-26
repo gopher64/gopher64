@@ -1932,7 +1932,7 @@ dependencies = [
 
 [[package]]
 name = "gopher64"
-version = "1.0.18"
+version = "1.0.19"
 dependencies = [
  "ab_glyph",
  "bindgen 0.72.0",
