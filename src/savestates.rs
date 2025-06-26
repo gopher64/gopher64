@@ -87,6 +87,10 @@ pub fn create_savestate(device: &device::Device) {
         compressed_file,
     )
     .unwrap();
+    println!(
+        "Savestate created at {}",
+        device.ui.storage.paths.savestate_file_path.display()
+    );
 }
 
 pub fn load_savestate(device: &mut device::Device) {
@@ -190,6 +194,10 @@ pub fn load_savestate(device: &mut device::Device) {
             ui::audio::close(&mut device.ui);
             ui::audio::init(&mut device.ui, device.ai.freq);
             ui::video::load_state(device, rdp_state.as_ptr());
+            println!(
+                "Savestate loaded from {}",
+                device.ui.storage.paths.savestate_file_path.display()
+            );
         } else {
             println!("Failed to load savestate");
         }
