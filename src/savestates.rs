@@ -157,7 +157,7 @@ pub fn load_savestate(device: &mut device::Device) {
                 }
             }
 
-            device::pif::connect_pif_channels(device);
+            device::pif::connect_pif_channels(device, device.ui.config.input.emulate_vru);
             for i in 0..4 {
                 if device.pif.channels[i].pak_handler.is_some() {
                     if device.pif.channels[i].pak_handler.unwrap().pak_type

@@ -352,11 +352,13 @@ fn setup_vru_word_watcher(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn run_rom(
     gb_paths: GbPaths,
     file_path: std::path::PathBuf,
     fullscreen: bool,
     overclock: bool,
+    emulate_vru: bool,
     vru_channel: VruChannel,
     netplay: Option<NetplayDevice>,
     weak: slint::Weak<AppWindow>,
@@ -390,7 +392,13 @@ pub fn run_rom(
                         netplay_device.player_number,
                     ));
                 }
-                device::run_game(&mut device, rom_contents, fullscreen, overclock);
+                device::run_game(
+                    &mut device,
+                    rom_contents,
+                    fullscreen,
+                    overclock,
+                    emulate_vru,
+                );
                 if device.netplay.is_some() {
                     netplay::close(&mut device);
                 }
@@ -473,6 +481,7 @@ fn open_rom(app: &AppWindow) {
                 file.path().to_path_buf(),
                 fullscreen,
                 overclock,
+                emulate_vru,
                 if emulate_vru {
                     VruChannel {
                         vru_window_notifier: Some(vru_window_notifier),

@@ -811,6 +811,7 @@ fn setup_wait_window(
                                 handle.get_rom_path().as_str().into(),
                                 fullscreen,
                                 overclock,
+                                false,
                                 VruChannel {
                                     vru_window_notifier: None,
                                     vru_word_receiver: None,

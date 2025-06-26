@@ -44,7 +44,13 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, fullscreen: bool, overclock: bool) {
+pub fn run_game(
+    device: &mut Device,
+    rom_contents: Vec<u8>,
+    fullscreen: bool,
+    overclock: bool,
+    emulate_vru: bool,
+) {
     device.ui.video.fullscreen = fullscreen;
     device.cpu.overclock = overclock;
 
@@ -60,8 +66,8 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, fullscreen: bool, ov
     ui::input::init(&mut device.ui);
 
     mi::init(device);
-    pif::init(device);
-    if device.ui.config.input.emulate_vru {
+    pif::init(device, emulate_vru);
+    if emulate_vru {
         controller::vru::init(device);
     }
     memory::init(device);
