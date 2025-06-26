@@ -12,7 +12,7 @@ impl<'de, const N: usize> Visitor<'de> for M128iArrayVisitor<N> {
     type Value = [__m128i; N];
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str(&format!("an array of {} 128-bit integers", N))
+        formatter.write_str(&format!("an array of {N} 128-bit integers"))
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -95,10 +95,10 @@ pub fn create_savestate(device: &device::Device) {
 
 pub fn load_savestate(device: &mut device::Device) {
     let savestate = std::fs::read(&device.ui.storage.paths.savestate_file_path);
-    if savestate.is_ok() {
-        let device_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "device");
-        let save_bytes = ui::storage::decompress_file(savestate.as_ref().unwrap(), "saves");
-        let rdp_state = ui::storage::decompress_file(savestate.as_ref().unwrap(), "rdp_state");
+    if let Ok(savestate) = &savestate {
+        let device_bytes = ui::storage::decompress_file(savestate, "device");
+        let save_bytes = ui::storage::decompress_file(savestate, "saves");
+        let rdp_state = ui::storage::decompress_file(savestate, "rdp_state");
         if let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes) {
             device.ui.storage.saves = postcard::from_bytes(&save_bytes).unwrap();
 

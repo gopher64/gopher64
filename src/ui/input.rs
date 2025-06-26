@@ -917,7 +917,7 @@ pub fn init(ui: &mut ui::Ui) {
                 if !profile.dinput {
                     let gamepad = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick_id) };
                     if gamepad.is_null() {
-                        println!("could not connect gamepad: {}", joystick_id)
+                        println!("could not connect gamepad: {joystick_id}")
                     } else {
                         ui.input.controllers[i].game_controller = gamepad;
                         let properties =
@@ -936,7 +936,7 @@ pub fn init(ui: &mut ui::Ui) {
                 } else {
                     let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) };
                     if joystick.is_null() {
-                        println!("could not connect joystick: {}", joystick_id)
+                        println!("could not connect joystick: {joystick_id}")
                     } else {
                         ui.input.controllers[i].joystick = joystick;
                         let properties =

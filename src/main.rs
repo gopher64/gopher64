@@ -102,7 +102,7 @@ async fn main() {
         if args.list_controllers {
             let controllers = ui::input::get_controller_names(&ui);
             for (i, controller) in controllers.iter().enumerate() {
-                println!("Controller {}: {}", i, controller);
+                println!("Controller {i}: {controller}");
             }
             return;
         }
