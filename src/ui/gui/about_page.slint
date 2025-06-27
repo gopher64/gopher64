@@ -9,6 +9,20 @@ export global AboutData {
     in property <bool> has_update;
 }
 
+export component NewVersionButton {
+    callback newversion_button_clicked;
+    HorizontalBox {
+        alignment: center;
+        Button {
+            text: @tr("New version available! Click here to download");
+            primary: true;
+            clicked => {
+                newversion_button_clicked();
+            }
+        }
+    }
+}
+
 export component About inherits Page {
     callback wiki_button_clicked;
     callback discord_button_clicked;
@@ -44,14 +58,9 @@ export component About inherits Page {
             }
         }
 
-        if AboutData.has_update:HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("New version available! Click to download");
-                primary: true;
-                clicked => {
-                    newversion_button_clicked();
-                }
+        if AboutData.has_update:NewVersionButton {
+            newversion_button_clicked => {
+                newversion_button_clicked();
             }
         }
     }

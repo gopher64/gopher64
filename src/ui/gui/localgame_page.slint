@@ -3,6 +3,7 @@
 
 import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { Page } from "page.slint";
+import { AboutData, NewVersionButton } from "about_page.slint";
 
 export global State {
     in-out property <bool> game_running;
@@ -11,6 +12,7 @@ export global State {
 export component LocalGame inherits Page {
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
+    callback newversion_button_clicked;
     title: @tr("Local Game");
 
     VerticalBox {
@@ -33,6 +35,12 @@ export component LocalGame inherits Page {
                 clicked => {
                     saves_folder_button_clicked();
                 }
+            }
+        }
+
+        if AboutData.has_update:NewVersionButton {
+            newversion_button_clicked => {
+                newversion_button_clicked();
             }
         }
     }
