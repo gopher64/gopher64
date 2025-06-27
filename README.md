@@ -1,7 +1,9 @@
 # gopher64
 ## download
 
-https://github.com/gopher64/gopher64/releases
+Windows: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-windows-x86_64.exe
+
+Linux: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-linux-x86_64
 
 ## wiki
 
