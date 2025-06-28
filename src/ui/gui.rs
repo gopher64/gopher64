@@ -87,6 +87,10 @@ fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
             })
             .unwrap();
     });
+
+    app.on_netplay_discord_button_clicked(move || {
+        open::that_detached("https://discord.gg/JyW6ZgBUyS").unwrap();
+    });
 }
 
 fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
