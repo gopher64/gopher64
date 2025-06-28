@@ -36,6 +36,7 @@ export component NetplayDialog inherits Dialog {
 export component Netplay inherits Page {
     callback create_session_button_clicked;
     callback join_session_button_clicked;
+    callback netplay_discord_button_clicked;
     title: @tr("Netplay");
 
     VerticalBox {
@@ -56,6 +57,16 @@ export component Netplay inherits Page {
                 text: @tr("Join Session");
                 clicked => {
                     join_session_button_clicked();
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Netplay Discord Channel");
+                clicked => {
+                    netplay_discord_button_clicked();
                 }
             }
         }
