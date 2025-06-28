@@ -73,7 +73,15 @@ fn main() {
                 panic!("unknown env")
             }
         } else if arch == "aarch64" {
-            panic!("unsupported platform")
+            if env == "msvc" {
+                build.flag("/arch:armv8.2");
+                simd_build.flag("/arch:armv8.2");
+            } else if env == "gnu" {
+                build.flag("-march=armv8.2-a");
+                simd_build.flag("-march=armv8.2-a");
+            } else {
+                panic!("unknown env")
+            }
         } else {
             panic!("unknown arch")
         }
@@ -89,8 +97,6 @@ fn main() {
         } else if arch == "aarch64" {
             build.flag("-march=armv8.2-a");
             simd_build.flag("-march=armv8.2-a");
-            simd_build.flag("-DSSE2NEON_SUPPRESS_WARNINGS");
-            simd_build.file("src/compat/aarch64.c");
         } else {
             panic!("unknown arch")
         }
@@ -169,6 +175,8 @@ fn main() {
             .write_to_file(out_path.join("simd_bindings.rs"))
             .expect("Couldn't write bindings!");
 
+        simd_build.flag("-DSSE2NEON_SUPPRESS_WARNINGS");
+        simd_build.file("src/compat/aarch64.c");
         simd_build.file(std::env::temp_dir().join("bindgen").join("extern.c"));
         simd_build.include(".");
         simd_build.compile("simd");
