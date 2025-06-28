@@ -27,6 +27,9 @@ export component About inherits Page {
     callback wiki_button_clicked;
     callback discord_button_clicked;
     callback newversion_button_clicked;
+    callback patreon_button_clicked;
+    callback github_sponsors_button_clicked;
+    callback source_code_button_clicked;
     title: @tr("About");
 
     VerticalBox {
@@ -47,6 +50,33 @@ export component About inherits Page {
                 text: @tr("Discord Server");
                 clicked => {
                     discord_button_clicked();
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Source Code");
+                clicked => {
+                    source_code_button_clicked();
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Donate (via Patreon)");
+                clicked => {
+                    patreon_button_clicked();
+                }
+            }
+
+            Button {
+                text: @tr("Donate (via GitHub)");
+                clicked => {
+                    github_sponsors_button_clicked();
                 }
             }
         }
