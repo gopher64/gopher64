@@ -18,6 +18,9 @@ export component AppWindow inherits Window {
     callback wiki_button_clicked;
     callback discord_button_clicked;
     callback newversion_button_clicked;
+    callback patreon_button_clicked;
+    callback github_sponsors_button_clicked;
+    callback source_code_button_clicked;
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
     callback input_profile_button_clicked;
@@ -91,6 +94,15 @@ export component AppWindow inherits Window {
             }
             newversion_button_clicked => {
                 newversion_button_clicked();
+            }
+            patreon_button_clicked => {
+                patreon_button_clicked();
+            }
+            github_sponsors_button_clicked => {
+                github_sponsors_button_clicked();
+            }
+            source_code_button_clicked => {
+                source_code_button_clicked();
             }
         }
     }

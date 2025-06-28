@@ -282,6 +282,15 @@ fn about_window(app: &AppWindow) {
     app.on_discord_button_clicked(move || {
         open::that_detached("https://discord.gg/9RGXq8W8JQ").unwrap();
     });
+    app.on_patreon_button_clicked(move || {
+        open::that_detached("https://patreon.com/loganmc10").unwrap();
+    });
+    app.on_github_sponsors_button_clicked(move || {
+        open::that_detached("https://github.com/sponsors/loganmc10").unwrap();
+    });
+    app.on_source_code_button_clicked(move || {
+        open::that_detached("https://github.com/gopher64/gopher64").unwrap();
+    });
     app.on_newversion_button_clicked(move || {
         open::that_detached("https://github.com/gopher64/gopher64/releases/latest").unwrap();
     });
