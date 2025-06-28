@@ -91,6 +91,9 @@ fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     app.on_netplay_discord_button_clicked(move || {
         open::that_detached("https://discord.gg/JyW6ZgBUyS").unwrap();
     });
+    app.on_netplay_feedback_button_clicked(move || {
+        open::that_detached("https://github.com/gopher64/gopher64/discussions/453").unwrap();
+    });
 }
 
 fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {

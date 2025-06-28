@@ -27,6 +27,7 @@ export component AppWindow inherits Window {
     callback create_session_button_clicked;
     callback join_session_button_clicked;
     callback netplay_discord_button_clicked;
+    callback netplay_feedback_button_clicked;
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
     in-out property integer_scaling <=> SettingsData.integer_scaling;
@@ -86,6 +87,9 @@ export component AppWindow inherits Window {
             }
             netplay_discord_button_clicked => {
                 netplay_discord_button_clicked();
+            }
+            netplay_feedback_button_clicked => {
+                netplay_feedback_button_clicked();
             }
         }
         if(side-bar.current-item == 3): Settings { }
