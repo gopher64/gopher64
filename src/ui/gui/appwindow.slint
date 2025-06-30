@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: MIT
 
 import { StandardButton } from "std-widgets.slint";
-import { LocalGame, ControllerConfig, Netplay, Settings, About } from "pages.slint";
+import { LocalGame, ControllerConfig, Netplay, Cheats, Settings, About } from "pages.slint";
 import { SideBar } from "side_bar.slint";
 import { SettingsData } from "settings_page.slint";
 import { AboutData } from "about_page.slint";
 import { ControllerData } from "controller_page.slint";
 import { State } from "localgame_page.slint";
+import { CheatsData } from "cheat_page.slint";
 export { InputProfileDialog } from "input_profile.slint";
 export { VruDialog } from "vru_dialog.slint";
 export { NetplayCreate } from "netplay_create.slint";
@@ -28,6 +29,9 @@ export component AppWindow inherits Window {
     callback join_session_button_clicked;
     callback netplay_discord_button_clicked;
     callback netplay_feedback_button_clicked;
+    callback cheats_select_rom_clicked;
+    callback cheats_clear_clicked;
+    callback cheat_toggled(string, string, string, bool);
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
     in-out property integer_scaling <=> SettingsData.integer_scaling;
@@ -46,6 +50,9 @@ export component AppWindow inherits Window {
     in-out property selected_controller <=> ControllerData.selected_controller;
     in-out property game_running <=> State.game_running;
     in-out property blank_profiles <=> ControllerData.blank_profiles;
+    in-out property cheat_game_name <=> CheatsData.cheat_game_name;
+    in-out property cheat_game_crc <=> CheatsData.cheat_game_crc;
+    in-out property cheats <=> CheatsData.cheats;
     preferred-width: 700px;
     preferred-height: 500px;
     title: @tr("Gopher64");
@@ -58,6 +65,7 @@ export component AppWindow inherits Window {
                 @tr("Menu" => "Local Game"),
                 @tr("Menu" => "Controller Config"),
                 @tr("Menu" => "Netplay"),
+                @tr("Menu" => "Cheats"),
                 @tr("Menu" => "Settings"),
                 @tr("Menu" => "About")
             ];
@@ -93,8 +101,19 @@ export component AppWindow inherits Window {
                 netplay_feedback_button_clicked();
             }
         }
-        if(side-bar.current-item == 3): Settings { }
-        if(side-bar.current-item == 4): About {
+        if(side-bar.current-item == 3): Cheats {
+            cheats_select_rom_clicked => {
+                cheats_select_rom_clicked();
+            }
+            cheats_clear_clicked => {
+                cheats_clear_clicked();
+            }
+            cheat_toggled(game_crc, cheat_name, option, enabled) => {
+                cheat_toggled(game_crc,cheat_name,option,enabled);
+            }
+        }
+        if(side-bar.current-item == 4): Settings { }
+        if(side-bar.current-item == 5): About {
             wiki_button_clicked => {
                 wiki_button_clicked();
             }

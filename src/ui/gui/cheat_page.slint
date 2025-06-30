@@ -1,0 +1,89 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+import { ListView, HorizontalBox, VerticalBox, Button, GroupBox, CheckBox } from "std-widgets.slint";
+import { Page } from "page.slint";
+
+export global CheatsData {
+    in-out property <string> cheat_game_name;
+    in-out property <string> cheat_game_crc;
+    in-out property <[{cheat_name:string, notes:string, enabled:bool, options:[{option:string, enabled:bool}]}]> cheats;
+}
+
+export component Cheats inherits Page {
+    title: @tr("Cheats");
+    callback cheats_select_rom_clicked;
+    callback cheats_clear_clicked;
+    callback cheat_toggled(string, string, string, bool);
+
+    VerticalBox {
+        alignment: start;
+        HorizontalBox {
+            alignment: start;
+            if CheatsData.cheat_game_name == "": Button {
+                text: @tr("Select ROM");
+                clicked => {
+                    cheats_select_rom_clicked();
+                }
+            }
+            if CheatsData.cheat_game_name != "": Button {
+                text: CheatsData.cheat_game_name;
+                clicked => {
+                    cheats_select_rom_clicked();
+                }
+            }
+            Rectangle {
+                width: 20px;
+            }
+
+            Button {
+                text: @tr("Clear Cheats For All ROMs");
+                clicked => {
+                    cheats_clear_clicked();
+                }
+            }
+        }
+
+        Rectangle { }
+
+        if CheatsData.cheats.length > 0:ListView {
+            preferred-height: 500px;
+            preferred-width: 520px;
+            for data in CheatsData.cheats: VerticalBox {
+                Text {
+                    text: data.cheat_name;
+                    font-size: 16px;
+                    wrap: word-wrap;
+                }
+
+                if data.notes != "":Text {
+                    text: data.notes;
+                    wrap: word-wrap;
+                }
+
+                if data.options.length == 0: CheckBox {
+                    text: @tr("Enabled");
+                    checked: data.enabled;
+                    toggled => {
+                        data.enabled = self.checked;
+                        cheat_toggled(CheatsData.cheat_game_crc,data.cheat_name,"",self.checked);
+                    }
+                }
+                for item[index] in data.options: CheckBox {
+                    text: item.option;
+                    enabled: !data.enabled || (data.enabled && item.enabled);
+                    checked: item.enabled;
+                    toggled => {
+                        item.enabled = self.checked;
+                        data.enabled = self.checked;
+                        cheat_toggled(CheatsData.cheat_game_crc,data.cheat_name,item.option,self.checked);
+                    }
+                }
+                Rectangle { }
+            }
+        }
+        if CheatsData.cheats.length == 0 && CheatsData.cheat_game_name != "": Text {
+            text: @tr("No Cheats Available");
+        }
+    }
+}

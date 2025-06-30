@@ -8,12 +8,13 @@ export component NetplayCreate inherits Window {
     in-out property ping <=> NetplayData.ping;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
+    in-out property game_cheats <=> NetplayData.game_cheats;
     in-out property pending_session <=> NetplayData.pending_session;
     in-out property rom_path <=> NetplayData.rom_path;
     in-out property peer_addr <=> NetplayData.peer_addr;
     callback get_ping(string);
     callback select_rom;
-    callback create_session(string, string, string, string, string, string);
+    callback create_session(string, string, string, string, string, string, string);
 
     VerticalBox {
         HorizontalBox {
@@ -94,6 +95,9 @@ export component NetplayCreate inherits Window {
 
         Rectangle { }
 
+        if NetplayData.game_cheats != "":Text {
+            text: @tr("This game has cheats enabled. Cheats will be synchronized with other players.");
+        }
         Rectangle { }
 
         Button {
@@ -107,6 +111,7 @@ export component NetplayCreate inherits Window {
                     NetplayData.player_name,
                     NetplayData.game_name,
                     NetplayData.game_hash,
+                    NetplayData.game_cheats,
                     NetplayData.password);
             }
         }

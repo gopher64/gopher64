@@ -120,6 +120,20 @@ fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
     }
 }
 
+pub fn get_game_crc(rom: &[u8]) -> String {
+    let crc1 = format!(
+        "{:08X}",
+        u32::from_be_bytes(rom[0x10..0x14].try_into().unwrap())
+    );
+    let crc2 = format!(
+        "{:08X}",
+        u32::from_be_bytes(rom[0x14..0x18].try_into().unwrap())
+    );
+    let country_code = format!("{:02X}", &rom[0x3E]);
+
+    format!("{crc1}-{crc2}-C:{country_code}")
+}
+
 pub fn get_game_name(rom: &[u8]) -> String {
     let mut game_name = "".to_owned();
     let header_value = std::str::from_utf8(&rom[0x20..0x34]);
