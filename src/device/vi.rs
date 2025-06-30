@@ -134,16 +134,19 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
-    ui::video::check_callback(device);
+    let mut speed_limiter_toggled = ui::video::check_callback(device);
 
     if device.netplay.is_some() {
         netplay::send_sync_check(device);
-        device.vi.enable_speed_limiter = !device.netplay.as_ref().unwrap().fast_forward;
+        if device.vi.enable_speed_limiter == device.netplay.as_ref().unwrap().fast_forward {
+            speed_limiter_toggled = true;
+            device.vi.enable_speed_limiter = !device.netplay.as_ref().unwrap().fast_forward;
+        }
     }
 
     device.vi.vi_counter += 1;
     if device.vi.vi_counter % device.vi.limit_freq == 0 && device.vi.enable_speed_limiter {
-        speed_limiter(device);
+        speed_limiter(device, speed_limiter_toggled);
     }
     ui::video::update_screen();
 
@@ -175,7 +178,7 @@ pub fn init(device: &mut device::Device) {
     }
 }
 
-fn speed_limiter(device: &mut device::Device) {
+fn speed_limiter(device: &mut device::Device, speed_limiter_toggled: bool) {
     let result = device.vi.limiter.as_ref().unwrap().check();
     if let Err(outcome) = result {
         let dur = outcome.wait_time_from(governor::clock::DefaultClock::default().now());
@@ -194,14 +197,17 @@ fn speed_limiter(device: &mut device::Device) {
         .as_secs_f64()
         > 1.0
     {
-        if device.vi.min_wait_time.as_secs_f64() == 0.0 && device.vi.limit_freq < MAX_LIMIT_FREQ {
-            device.vi.limit_freq += 1;
-            create_limiter(device);
-        } else if device.vi.min_wait_time.as_secs_f64() > device.vi.frame_time
-            && device.vi.limit_freq > 1
-        {
-            device.vi.limit_freq -= 1;
-            create_limiter(device);
+        if !speed_limiter_toggled {
+            if device.vi.min_wait_time.as_secs_f64() == 0.0 && device.vi.limit_freq < MAX_LIMIT_FREQ
+            {
+                device.vi.limit_freq += 1;
+                create_limiter(device);
+            } else if device.vi.min_wait_time.as_secs_f64() > device.vi.frame_time
+                && device.vi.limit_freq > 1
+            {
+                device.vi.limit_freq -= 1;
+                create_limiter(device);
+            }
         }
 
         //println!("limit freq: {}", device.vi.limit_freq);

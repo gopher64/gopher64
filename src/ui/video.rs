@@ -114,7 +114,8 @@ pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
     }
 }
 
-pub fn check_callback(device: &mut device::Device) {
+pub fn check_callback(device: &mut device::Device) -> bool {
+    let mut speed_limiter_toggled = false;
     let callback = unsafe { rdp_check_callback() };
     device.cpu.running = callback.emu_running;
     if device.netplay.is_none() {
@@ -123,7 +124,10 @@ pub fn check_callback(device: &mut device::Device) {
         } else if callback.load_state {
             device.load_state = true;
         }
-        device.vi.enable_speed_limiter = callback.enable_speedlimiter;
+        if device.vi.enable_speed_limiter != callback.enable_speedlimiter {
+            speed_limiter_toggled = true;
+            device.vi.enable_speed_limiter = callback.enable_speedlimiter;
+        }
     }
 
     if callback.lower_volume {
@@ -131,6 +135,7 @@ pub fn check_callback(device: &mut device::Device) {
     } else if callback.raise_volume {
         ui::audio::raise_audio_volume(&mut device.ui);
     }
+    speed_limiter_toggled
 }
 
 pub fn set_register(reg: u32, value: u32) {
