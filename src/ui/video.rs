@@ -123,7 +123,10 @@ pub fn check_callback(device: &mut device::Device) {
         } else if callback.load_state {
             device.load_state = true;
         }
-        device.vi.enable_speed_limiter = callback.enable_speedlimiter;
+        if device.vi.enable_speed_limiter != callback.enable_speedlimiter {
+            device.vi.speed_limiter_toggled = true;
+            device.vi.enable_speed_limiter = callback.enable_speedlimiter;
+        }
     }
 
     if callback.lower_volume {

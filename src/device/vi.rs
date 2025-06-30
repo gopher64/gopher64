@@ -27,6 +27,7 @@ pub struct Vi {
     pub limiter: Option<governor::DefaultDirectRateLimiter>,
     pub count_per_scanline: u64,
     pub enable_speed_limiter: bool,
+    pub speed_limiter_toggled: bool,
     pub vi_counter: u64,
     pub last_origin: u32,
     pub internal_frame_counter: u64,
@@ -138,7 +139,10 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     if device.netplay.is_some() {
         netplay::send_sync_check(device);
-        device.vi.enable_speed_limiter = !device.netplay.as_ref().unwrap().fast_forward;
+        if device.vi.enable_speed_limiter == device.netplay.as_ref().unwrap().fast_forward {
+            device.vi.speed_limiter_toggled = true;
+            device.vi.enable_speed_limiter = !device.netplay.as_ref().unwrap().fast_forward;
+        }
     }
 
     device.vi.vi_counter += 1;
@@ -194,14 +198,19 @@ fn speed_limiter(device: &mut device::Device) {
         .as_secs_f64()
         > 1.0
     {
-        if device.vi.min_wait_time.as_secs_f64() == 0.0 && device.vi.limit_freq < MAX_LIMIT_FREQ {
-            device.vi.limit_freq += 1;
-            create_limiter(device);
-        } else if device.vi.min_wait_time.as_secs_f64() > device.vi.frame_time
-            && device.vi.limit_freq > 1
-        {
-            device.vi.limit_freq -= 1;
-            create_limiter(device);
+        if !device.vi.speed_limiter_toggled {
+            if device.vi.min_wait_time.as_secs_f64() == 0.0 && device.vi.limit_freq < MAX_LIMIT_FREQ
+            {
+                device.vi.limit_freq += 1;
+                create_limiter(device);
+            } else if device.vi.min_wait_time.as_secs_f64() > device.vi.frame_time
+                && device.vi.limit_freq > 1
+            {
+                device.vi.limit_freq -= 1;
+                create_limiter(device);
+            }
+        } else {
+            device.vi.speed_limiter_toggled = false;
         }
 
         //println!("limit freq: {}", device.vi.limit_freq);
