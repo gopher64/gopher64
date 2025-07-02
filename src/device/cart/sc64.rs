@@ -308,8 +308,12 @@ pub fn dma_read(
     let mut i = dram_addr;
     let mut j = cart_addr;
 
-    while i < dram_addr + length && i < device.rdram.size {
-        buffer[j as usize] = device.rdram.mem[i as usize ^ device.byte_swap];
+    while i < dram_addr + length {
+        buffer[j as usize] = *device
+            .rdram
+            .mem
+            .get(i as usize ^ device.byte_swap)
+            .unwrap_or(&0);
         i += 1;
         j += 1;
     }
@@ -335,8 +339,12 @@ pub fn dma_write(
     let mut i = dram_addr;
     let mut j = cart_addr;
 
-    while i < dram_addr + length && i < device.rdram.size {
-        device.rdram.mem[i as usize ^ device.byte_swap] = buffer[j as usize];
+    while i < dram_addr + length {
+        *device
+            .rdram
+            .mem
+            .get_mut(i as usize ^ device.byte_swap)
+            .unwrap_or(&mut 0) = buffer[j as usize];
         i += 1;
         j += 1;
     }

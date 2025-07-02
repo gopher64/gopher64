@@ -221,7 +221,11 @@ fn unknown_dma_write(
     dram_addr &= device::rdram::RDRAM_MASK as u32;
 
     for i in 0..length {
-        device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap] = 0;
+        *device
+            .rdram
+            .mem
+            .get_mut((dram_addr + i) as usize ^ device.byte_swap)
+            .unwrap_or(&mut 0) = 0;
     }
     device::pi::calculate_cycles(device, 1, length)
 }

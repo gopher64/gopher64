@@ -157,7 +157,11 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
                         .try_into()
                         .unwrap(),
                 );
-                device.rdram.mem[dram_addr as usize..dram_addr as usize + 4]
+                device
+                    .rdram
+                    .mem
+                    .get_mut(dram_addr as usize..dram_addr as usize + 4)
+                    .unwrap_or_default()
                     .copy_from_slice(&data.to_ne_bytes());
                 mem_addr += 4;
                 dram_addr += 4;
@@ -171,14 +175,16 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
         while j < count {
             let mut i = 0;
             while i < length {
-                let mut data = 0;
-                if dram_addr < device.rdram.size {
-                    data = u32::from_ne_bytes(
-                        device.rdram.mem[dram_addr as usize..dram_addr as usize + 4]
-                            .try_into()
-                            .unwrap(),
-                    );
-                }
+                let data = u32::from_ne_bytes(
+                    device
+                        .rdram
+                        .mem
+                        .get(dram_addr as usize..dram_addr as usize + 4)
+                        .unwrap_or_default()
+                        .try_into()
+                        .unwrap(),
+                );
+
                 if offset != 0 {
                     // imem being updated
                     device.rsp.cpu.instructions[((mem_addr & 0xFFF) / 4) as usize].func =

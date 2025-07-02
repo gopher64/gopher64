@@ -91,7 +91,11 @@ pub fn dma_read(
         for i in 0..length {
             device.ui.storage.saves.romsave.data.insert(
                 cart_addr + i,
-                device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap],
+                *device
+                    .rdram
+                    .mem
+                    .get((dram_addr + i) as usize ^ device.byte_swap)
+                    .unwrap_or(&0),
             );
         }
         device.ui.storage.saves.romsave.written = true;
@@ -111,12 +115,19 @@ pub fn dma_write(
     cart_addr &= CART_MASK as u32;
     let mut i = dram_addr;
     let mut j = cart_addr;
-    while i < dram_addr + length && i < device.rdram.size {
+    while i < dram_addr + length {
         if let Some(value) = device.ui.storage.saves.romsave.data.get(&j) {
-            device.rdram.mem[i as usize ^ device.byte_swap] = *value;
+            *device
+                .rdram
+                .mem
+                .get_mut(i as usize ^ device.byte_swap)
+                .unwrap_or(&mut 0) = *value;
         } else {
-            device.rdram.mem[i as usize ^ device.byte_swap] =
-                *device.cart.rom.get(j as usize).unwrap_or(&0);
+            *device
+                .rdram
+                .mem
+                .get_mut(i as usize ^ device.byte_swap)
+                .unwrap_or(&mut 0) = *device.cart.rom.get(j as usize).unwrap_or(&0);
         }
         i += 1;
         j += 1;

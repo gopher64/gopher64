@@ -150,9 +150,12 @@ fn dma_read_sram(device: &mut device::Device, mut cart_addr: u32, mut dram_addr:
 
     format_sram(device);
 
-    while i < dram_addr + length && i < device.rdram.size {
-        device.ui.storage.saves.sram.data[j as usize] =
-            device.rdram.mem[i as usize ^ device.byte_swap];
+    while i < dram_addr + length {
+        device.ui.storage.saves.sram.data[j as usize] = *device
+            .rdram
+            .mem
+            .get(i as usize ^ device.byte_swap)
+            .unwrap_or(&0);
         i += 1;
         j += 1;
     }
@@ -169,8 +172,11 @@ fn dma_read_flash(device: &mut device::Device, cart_addr: u32, dram_addr: u32, l
     {
         /* load page buf using DMA */
         for i in 0..length {
-            device.cart.flashram.page_buf[i as usize] =
-                device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap];
+            device.cart.flashram.page_buf[i as usize] = *device
+                .rdram
+                .mem
+                .get((dram_addr + i) as usize ^ device.byte_swap)
+                .unwrap_or(&0);
         }
     } else {
         /* other accesses are not implemented */
@@ -206,9 +212,12 @@ fn dma_write_sram(
 
     format_sram(device);
 
-    while i < dram_addr + length && i < device.rdram.size {
-        device.rdram.mem[i as usize ^ device.byte_swap] =
-            device.ui.storage.saves.sram.data[j as usize];
+    while i < dram_addr + length {
+        *device
+            .rdram
+            .mem
+            .get_mut(i as usize ^ device.byte_swap)
+            .unwrap_or(&mut 0) = device.ui.storage.saves.sram.data[j as usize];
         i += 1;
         j += 1;
     }
@@ -227,10 +236,18 @@ fn dma_write_flash(
         && device.cart.flashram.mode == FlashramMode::ReadSiliconId
     {
         /* read Silicon ID using DMA */
-        device.rdram.mem[dram_addr as usize..dram_addr as usize + 4]
+        device
+            .rdram
+            .mem
+            .get_mut(dram_addr as usize..dram_addr as usize + 4)
+            .unwrap_or_default()
             .copy_from_slice(&device.cart.flashram.silicon_id[0].to_ne_bytes());
         dram_addr += 4;
-        device.rdram.mem[dram_addr as usize..dram_addr as usize + 4]
+        device
+            .rdram
+            .mem
+            .get_mut(dram_addr as usize..dram_addr as usize + 4)
+            .unwrap_or_default()
             .copy_from_slice(&device.cart.flashram.silicon_id[1].to_ne_bytes());
     } else if (cart_addr & 0x1ffff) < 0x10000
         && device.cart.flashram.mode == FlashramMode::ReadArray
@@ -250,8 +267,11 @@ fn dma_write_flash(
 
         /* do actual DMA */
         for i in 0..length {
-            device.rdram.mem[(dram_addr + i) as usize ^ device.byte_swap] =
-                device.ui.storage.saves.flash.data[(cart_addr + i) as usize];
+            *device
+                .rdram
+                .mem
+                .get_mut((dram_addr + i) as usize ^ device.byte_swap)
+                .unwrap_or(&mut 0) = device.ui.storage.saves.flash.data[(cart_addr + i) as usize];
         }
     } else {
         /* other accesses are not implemented */
