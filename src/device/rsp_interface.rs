@@ -161,7 +161,7 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
                     .rdram
                     .mem
                     .get_mut(dram_addr as usize..dram_addr as usize + 4)
-                    .unwrap_or_default()
+                    .unwrap_or(&mut [0; 4])
                     .copy_from_slice(&data.to_ne_bytes());
                 mem_addr += 4;
                 dram_addr += 4;

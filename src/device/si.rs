@@ -105,7 +105,7 @@ fn copy_pif_rdram(device: &mut device::Device) {
                 .rdram
                 .mem
                 .get_mut(dram_addr + i..dram_addr + i + 4)
-                .unwrap_or_default()
+                .unwrap_or(&mut [0; 4])
                 .copy_from_slice(&data.to_ne_bytes());
             i += 4;
         }

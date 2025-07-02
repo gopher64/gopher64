@@ -76,7 +76,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         .rdram
         .mem
         .get_mut(address as usize..(address + 4) as usize)
-        .unwrap_or_default()
+        .unwrap_or(&mut [0; 4])
         .copy_from_slice(&data.to_ne_bytes());
 }
 
@@ -118,14 +118,14 @@ pub fn init(device: &mut device::Device) {
         .rdram
         .mem
         .get_mut(0x318..0x318 + 4)
-        .unwrap_or_default()
+        .unwrap_or(&mut [0; 4])
         .copy_from_slice(&device.rdram.size.to_ne_bytes());
     // hack, skip RDRAM initialization
     device
         .rdram
         .mem
         .get_mut(0x3f0..0x3f0 + 4)
-        .unwrap_or_default()
+        .unwrap_or(&mut [0; 4])
         .copy_from_slice(&device.rdram.size.to_ne_bytes());
 
     device.ri.regs[device::ri::RI_MODE_REG as usize] = 0x0e;
