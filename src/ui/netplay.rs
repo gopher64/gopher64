@@ -457,6 +457,10 @@ fn create_session(
         let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
         let mut features = std::collections::HashMap::new();
         features.insert("overclock".to_string(), game_settings.overclock.to_string());
+        features.insert(
+            "disable_expansion_pak".to_string(),
+            game_settings.disable_expansion_pak.to_string(),
+        );
 
         let create_room = NetplayMessage {
             message_type: "request_create_room".to_string(),
@@ -517,8 +521,8 @@ fn create_session(
                         true,
                         GameSettings {
                             fullscreen: game_settings.fullscreen,
-                            overclock: overclock == "true",
-                            disable_expansion_pak: disable_expansion_pak == "true",
+                            overclock: overclock.parse().unwrap(),
+                            disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                         },
                         handle.get_peer_addr(),
                         weak_app,
@@ -617,8 +621,8 @@ fn join_session(
                         false,
                         GameSettings {
                             fullscreen,
-                            overclock: overclock == "true",
-                            disable_expansion_pak: disable_expansion_pak == "true",
+                            overclock: overclock.parse().unwrap(),
+                            disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                         },
                         handle.get_peer_addr(),
                         weak_app,
