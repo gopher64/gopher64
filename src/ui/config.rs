@@ -53,6 +53,7 @@ pub struct Video {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Emulation {
     pub overclock: bool,
+    pub disable_expansion_pak: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -109,7 +110,10 @@ impl Config {
                 widescreen: false,
                 crt: false,
             },
-            emulation: Emulation { overclock: false },
+            emulation: Emulation {
+                overclock: false,
+                disable_expansion_pak: false,
+            },
         }
     }
 }

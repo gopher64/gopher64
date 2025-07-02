@@ -25,6 +25,13 @@ pub struct VruChannel {
     pub vru_word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
 }
 
+#[derive(Copy, Clone)]
+pub struct GameSettings {
+    pub fullscreen: bool,
+    pub overclock: bool,
+    pub disable_expansion_pak: bool,
+}
+
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
     let client = reqwest::Client::builder()
         .user_agent(env!("CARGO_PKG_NAME"))
@@ -65,8 +72,11 @@ fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                 save_settings(&handle, &controller_paths);
                 ui::netplay::setup_create_window(
                     &create_window,
-                    handle.get_overclock_n64_cpu(),
-                    handle.get_fullscreen(),
+                    GameSettings {
+                        fullscreen: handle.get_fullscreen(),
+                        overclock: handle.get_overclock_n64_cpu(),
+                        disable_expansion_pak: handle.get_disable_expansion_pak(),
+                    },
                     weak_app,
                 );
             })
@@ -129,6 +139,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_widescreen(config.video.widescreen);
     app.set_apply_crt_shader(config.video.crt);
     app.set_overclock_n64_cpu(config.emulation.overclock);
+    app.set_disable_expansion_pak(config.emulation.disable_expansion_pak);
     let combobox_value = match config.video.upscale {
         1 => 0,
         2 => 1,
@@ -258,6 +269,7 @@ fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     config.video.widescreen = app.get_widescreen();
     config.video.crt = app.get_apply_crt_shader();
     config.emulation.overclock = app.get_overclock_n64_cpu();
+    config.emulation.disable_expansion_pak = app.get_disable_expansion_pak();
     let upscale_values = [1, 2, 4];
     config.video.upscale = upscale_values[app.get_resolution() as usize];
 
@@ -371,8 +383,7 @@ fn setup_vru_word_watcher(
 pub fn run_rom(
     gb_paths: GbPaths,
     file_path: std::path::PathBuf,
-    fullscreen: bool,
-    overclock: bool,
+    game_settings: GameSettings,
     vru_channel: VruChannel,
     netplay: Option<NetplayDevice>,
     weak: slint::Weak<AppWindow>,
@@ -406,7 +417,7 @@ pub fn run_rom(
                         netplay_device.player_number,
                     ));
                 }
-                device::run_game(&mut device, rom_contents, fullscreen, overclock);
+                device::run_game(&mut device, rom_contents, game_settings);
                 if device.netplay.is_some() {
                     netplay::close(&mut device);
                 }
@@ -460,6 +471,7 @@ fn open_rom(app: &AppWindow) {
     let fullscreen = app.get_fullscreen();
     let overclock = app.get_overclock_n64_cpu();
     let emulate_vru = app.get_emulate_vru();
+    let disable_expansion_pak = app.get_disable_expansion_pak();
 
     if emulate_vru {
         setup_vru_word_watcher(app.as_weak(), vru_word_notifier, vru_window_receiver);
@@ -486,8 +498,11 @@ fn open_rom(app: &AppWindow) {
                     ram: gb_ram_path,
                 },
                 file.path().to_path_buf(),
-                fullscreen,
-                overclock,
+                GameSettings {
+                    fullscreen,
+                    overclock,
+                    disable_expansion_pak,
+                },
                 if emulate_vru {
                     VruChannel {
                         vru_window_notifier: Some(vru_window_notifier),
