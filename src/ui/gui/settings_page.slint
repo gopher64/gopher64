@@ -10,6 +10,7 @@ export global SettingsData {
     in-out property <bool> widescreen;
     in-out property <bool> apply_crt_shader;
     in-out property <bool> overclock_n64_cpu;
+    in-out property <bool> disable_expansion_pak;
     in-out property <int> resolution;
 }
 
@@ -87,6 +88,17 @@ export component Settings inherits Page {
                 checked: SettingsData.overclock_n64_cpu;
                 toggled => {
                     SettingsData.overclock_n64_cpu = self.checked;
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Disable Expansion Pak");
+                checked: SettingsData.disable_expansion_pak;
+                toggled => {
+                    SettingsData.disable_expansion_pak = self.checked;
                 }
             }
         }

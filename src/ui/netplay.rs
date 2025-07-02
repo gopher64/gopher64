@@ -2,10 +2,9 @@
 
 use crate::device;
 use crate::ui;
-use crate::ui::gui::AppWindow;
 use crate::ui::gui::{
-    GbPaths, NetplayCreate, NetplayDevice, NetplayDialog, NetplayJoin, NetplayWait, VruChannel,
-    run_rom,
+    AppWindow, GameSettings, GbPaths, NetplayCreate, NetplayDevice, NetplayDialog, NetplayJoin,
+    NetplayWait, VruChannel, run_rom,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -236,8 +235,7 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
 
 pub fn setup_create_window(
     create_window: &NetplayCreate,
-    overclock_setting: bool,
-    fullscreen: bool,
+    game_settings: GameSettings,
     weak_app: slint::Weak<AppWindow>,
 ) {
     let (netplay_read_sender, netplay_read_receiver): (
@@ -279,8 +277,7 @@ pub fn setup_create_window(
                 game_name.to_string(),
                 game_hash.to_string(),
                 password.to_string(),
-                overclock_setting,
-                fullscreen,
+                game_settings,
                 weak_app.clone(),
                 weak.clone(),
             );
@@ -452,8 +449,7 @@ fn create_session(
     game_name: String,
     game_hash: String,
     password: String,
-    overclock: bool,
-    fullscreen: bool,
+    game_settings: GameSettings,
     weak_app: slint::Weak<AppWindow>,
     weak: slint::Weak<NetplayCreate>,
 ) {
@@ -461,7 +457,7 @@ fn create_session(
         let now_utc = chrono::Utc::now().timestamp_millis().to_string();
         let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
         let mut features = std::collections::HashMap::new();
-        features.insert("overclock".to_string(), overclock.to_string());
+        features.insert("overclock".to_string(), game_settings.overclock.to_string());
 
         let create_room = NetplayMessage {
             message_type: "request_create_room".to_string(),
@@ -498,7 +494,19 @@ fn create_session(
             if message.accept.unwrap() == 0 {
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
-                    let overclock = session.features.as_ref().unwrap().get("overclock").unwrap();
+                    let features_default = "false".to_string();
+                    let overclock = session
+                        .features
+                        .as_ref()
+                        .unwrap()
+                        .get("overclock")
+                        .unwrap_or(&features_default);
+                    let disable_expansion_pak = session
+                        .features
+                        .as_ref()
+                        .unwrap()
+                        .get("disable_expansion_pak")
+                        .unwrap_or(&features_default);
                     setup_wait_window(
                         netplay_write_sender,
                         netplay_read_receiver,
@@ -508,8 +516,11 @@ fn create_session(
                         message.player_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
                         true,
-                        fullscreen,
-                        overclock == "true",
+                        GameSettings {
+                            fullscreen: game_settings.fullscreen,
+                            overclock: overclock == "true",
+                            disable_expansion_pak: disable_expansion_pak == "true",
+                        },
                         handle.get_peer_addr(),
                         weak_app,
                     );
@@ -582,7 +593,19 @@ fn join_session(
             if message.accept.unwrap() == 0 {
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
-                    let overclock = session.features.as_ref().unwrap().get("overclock").unwrap();
+                    let features_default = "false".to_string();
+                    let overclock = session
+                        .features
+                        .as_ref()
+                        .unwrap()
+                        .get("overclock")
+                        .unwrap_or(&features_default);
+                    let disable_expansion_pak = session
+                        .features
+                        .as_ref()
+                        .unwrap()
+                        .get("disable_expansion_pak")
+                        .unwrap_or(&features_default);
                     setup_wait_window(
                         netplay_write_sender,
                         netplay_read_receiver,
@@ -592,8 +615,11 @@ fn join_session(
                         message.player_name.as_ref().unwrap().into(),
                         session.port.unwrap(),
                         false,
-                        fullscreen,
-                        overclock == "true",
+                        GameSettings {
+                            fullscreen,
+                            overclock: overclock == "true",
+                            disable_expansion_pak: disable_expansion_pak == "true",
+                        },
                         handle.get_peer_addr(),
                         weak_app,
                     );
@@ -628,8 +654,7 @@ fn setup_wait_window(
     player_name: slint::SharedString,
     port: i32,
     can_start: bool,
-    fullscreen: bool,
-    overclock: bool,
+    game_settings: GameSettings,
     peer_addr: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
@@ -809,8 +834,11 @@ fn setup_wait_window(
                                     ram: [None, None, None, None],
                                 },
                                 handle.get_rom_path().as_str().into(),
-                                fullscreen,
-                                overclock,
+                                GameSettings {
+                                    fullscreen: game_settings.fullscreen,
+                                    overclock: game_settings.overclock,
+                                    disable_expansion_pak: game_settings.disable_expansion_pak,
+                                },
                                 VruChannel {
                                     vru_window_notifier: None,
                                     vru_word_receiver: None,
