@@ -1,5 +1,3 @@
-#![allow(clippy::too_many_arguments)]
-
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{
@@ -277,7 +275,7 @@ pub fn setup_create_window(
                 game_name.to_string(),
                 game_hash.to_string(),
                 password.to_string(),
-                game_settings,
+                game_settings.clone(),
                 weak_app.clone(),
                 weak.clone(),
             );
@@ -441,6 +439,7 @@ fn update_sessions(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn create_session(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
@@ -546,6 +545,7 @@ fn create_session(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn join_session(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
@@ -645,6 +645,7 @@ fn join_session(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn setup_wait_window(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
@@ -949,7 +950,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
             .upgrade_in_event_loop(move |handle| {
                 let create_window = NetplayCreate::new().unwrap();
                 save_settings(&handle, &controller_paths);
-                ui::netplay::setup_create_window(
+                setup_create_window(
                     &create_window,
                     GameSettings {
                         fullscreen: handle.get_fullscreen(),
@@ -972,7 +973,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
             .upgrade_in_event_loop(move |handle| {
                 let join_window = NetplayJoin::new().unwrap();
                 save_settings(&handle, &controller_paths);
-                ui::netplay::setup_join_window(&join_window, handle.get_fullscreen(), weak_app);
+                setup_join_window(&join_window, handle.get_fullscreen(), weak_app);
             })
             .unwrap();
     });

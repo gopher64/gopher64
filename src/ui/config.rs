@@ -33,7 +33,7 @@ pub struct InputProfile {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Input {
-    pub input_profiles: std::collections::HashMap<String, InputProfile>,
+    pub input_profiles: std::collections::BTreeMap<String, InputProfile>,
     pub input_profile_binding: [String; 4],
     pub controller_assignment: [Option<String>; 4],
     pub controller_enabled: [bool; 4],
@@ -87,7 +87,7 @@ impl Config {
                 return result;
             }
         }
-        let mut input_profiles = std::collections::HashMap::new();
+        let mut input_profiles = std::collections::BTreeMap::new();
         input_profiles.insert("default".to_string(), ui::input::get_default_profile());
         Config {
             input: Input {

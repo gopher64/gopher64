@@ -25,7 +25,7 @@ pub struct VruChannel {
     pub vru_word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct GameSettings {
     pub fullscreen: bool,
     pub overclock: bool,
