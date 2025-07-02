@@ -4,7 +4,7 @@ use crate::device;
 use crate::ui;
 use crate::ui::gui::{
     AppWindow, GameSettings, GbPaths, NetplayCreate, NetplayDevice, NetplayDialog, NetplayJoin,
-    NetplayWait, VruChannel, run_rom,
+    NetplayWait, VruChannel, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -936,4 +936,51 @@ pub fn setup_join_window(
     });
 
     join_window.show().unwrap();
+}
+
+pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
+    let weak_create = app.as_weak();
+    let weak_app = app.as_weak();
+    let controller_paths_create = controller_paths.to_owned();
+    app.on_create_session_button_clicked(move || {
+        let controller_paths = controller_paths_create.clone();
+        let weak_app = weak_app.clone();
+        weak_create
+            .upgrade_in_event_loop(move |handle| {
+                let create_window = NetplayCreate::new().unwrap();
+                save_settings(&handle, &controller_paths);
+                ui::netplay::setup_create_window(
+                    &create_window,
+                    GameSettings {
+                        fullscreen: handle.get_fullscreen(),
+                        overclock: handle.get_overclock_n64_cpu(),
+                        disable_expansion_pak: handle.get_disable_expansion_pak(),
+                    },
+                    weak_app,
+                );
+            })
+            .unwrap();
+    });
+
+    let weak_join = app.as_weak();
+    let weak_app = app.as_weak();
+    let controller_paths_join = controller_paths.to_owned();
+    app.on_join_session_button_clicked(move || {
+        let controller_paths = controller_paths_join.clone();
+        let weak_app = weak_app.clone();
+        weak_join
+            .upgrade_in_event_loop(move |handle| {
+                let join_window = NetplayJoin::new().unwrap();
+                save_settings(&handle, &controller_paths);
+                ui::netplay::setup_join_window(&join_window, handle.get_fullscreen(), weak_app);
+            })
+            .unwrap();
+    });
+
+    app.on_netplay_discord_button_clicked(move || {
+        open::that_detached("https://discord.gg/JyW6ZgBUyS").unwrap();
+    });
+    app.on_netplay_feedback_button_clicked(move || {
+        open::that_detached("https://github.com/gopher64/gopher64/discussions/453").unwrap();
+    });
 }
