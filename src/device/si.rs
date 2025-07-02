@@ -86,9 +86,13 @@ fn copy_pif_rdram(device: &mut device::Device) {
         let mut i = 0;
         while i < device::pif::PIF_RAM_SIZE {
             let data = u32::from_ne_bytes(
-                device.rdram.mem[dram_addr + i..dram_addr + i + 4]
+                device
+                    .rdram
+                    .mem
+                    .get(dram_addr + i..dram_addr + i + 4)
+                    .unwrap_or_default()
                     .try_into()
-                    .unwrap(),
+                    .unwrap_or_default(),
             );
             device.pif.ram[i..i + 4].copy_from_slice(&data.to_be_bytes());
             i += 4;
@@ -97,7 +101,12 @@ fn copy_pif_rdram(device: &mut device::Device) {
         let mut i = 0;
         while i < device::pif::PIF_RAM_SIZE {
             let data = u32::from_be_bytes(device.pif.ram[i..i + 4].try_into().unwrap());
-            device.rdram.mem[dram_addr + i..dram_addr + i + 4].copy_from_slice(&data.to_ne_bytes());
+            device
+                .rdram
+                .mem
+                .get_mut(dram_addr + i..dram_addr + i + 4)
+                .unwrap_or_default()
+                .copy_from_slice(&data.to_ne_bytes());
             i += 4;
         }
     } else {

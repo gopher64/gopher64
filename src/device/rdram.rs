@@ -29,9 +29,13 @@ pub fn read_mem_fast(
 ) -> u32 {
     let masked_address = address as usize & RDRAM_MASK;
     u32::from_ne_bytes(
-        device.rdram.mem[masked_address..masked_address + 4]
+        device
+            .rdram
+            .mem
+            .get(masked_address..masked_address + 4)
+            .unwrap_or_default()
             .try_into()
-            .unwrap(),
+            .unwrap_or_default(),
     )
 }
 
@@ -45,28 +49,35 @@ pub fn read_mem(
         rdram_calculate_cycles(access_size as u64) / (access_size as u64 / 4),
     );
     let masked_address = address as usize & RDRAM_MASK;
-    if address < device.rdram.size as u64 {
-        u32::from_ne_bytes(
-            device.rdram.mem[masked_address..masked_address + 4]
-                .try_into()
-                .unwrap(),
-        )
-    } else {
-        0
-    }
+
+    u32::from_ne_bytes(
+        device
+            .rdram
+            .mem
+            .get(masked_address..masked_address + 4)
+            .unwrap_or_default()
+            .try_into()
+            .unwrap_or_default(),
+    )
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    if address < device.rdram.size as u64 {
-        let mut data = u32::from_ne_bytes(
-            device.rdram.mem[address as usize..(address + 4) as usize]
-                .try_into()
-                .unwrap(),
-        );
-        device::memory::masked_write_32(&mut data, value, mask);
-        device.rdram.mem[address as usize..(address + 4) as usize]
-            .copy_from_slice(&data.to_ne_bytes());
-    }
+    let mut data = u32::from_ne_bytes(
+        device
+            .rdram
+            .mem
+            .get(address as usize..(address + 4) as usize)
+            .unwrap_or_default()
+            .try_into()
+            .unwrap_or_default(),
+    );
+    device::memory::masked_write_32(&mut data, value, mask);
+    device
+        .rdram
+        .mem
+        .get_mut(address as usize..(address + 4) as usize)
+        .unwrap_or_default()
+        .copy_from_slice(&data.to_ne_bytes());
 }
 
 pub fn read_regs(
@@ -103,9 +114,19 @@ pub fn init(device: &mut device::Device) {
         unsafe { Vec::from_raw_parts(ptr, device.rdram.size as usize, device.rdram.size as usize) };
 
     // hack, skip RDRAM initialization
-    device.rdram.mem[0x318..0x318 + 4].copy_from_slice(&device.rdram.size.to_ne_bytes());
+    device
+        .rdram
+        .mem
+        .get_mut(0x318..0x318 + 4)
+        .unwrap_or_default()
+        .copy_from_slice(&device.rdram.size.to_ne_bytes());
     // hack, skip RDRAM initialization
-    device.rdram.mem[0x3f0..0x3f0 + 4].copy_from_slice(&device.rdram.size.to_ne_bytes());
+    device
+        .rdram
+        .mem
+        .get_mut(0x3f0..0x3f0 + 4)
+        .unwrap_or_default()
+        .copy_from_slice(&device.rdram.size.to_ne_bytes());
 
     device.ri.regs[device::ri::RI_MODE_REG as usize] = 0x0e;
     device.ri.regs[device::ri::RI_CONFIG_REG as usize] = 0x40;
