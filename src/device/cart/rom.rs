@@ -111,7 +111,7 @@ pub fn dma_write(
     cart_addr &= CART_MASK as u32;
     let mut i = dram_addr;
     let mut j = cart_addr;
-    while i < dram_addr + length {
+    while i < dram_addr + length && i < device.rdram.size {
         if let Some(value) = device.ui.storage.saves.romsave.data.get(&j) {
             device.rdram.mem[i as usize ^ device.byte_swap] = *value;
         } else {
