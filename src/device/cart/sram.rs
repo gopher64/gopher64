@@ -240,14 +240,14 @@ fn dma_write_flash(
             .rdram
             .mem
             .get_mut(dram_addr as usize..dram_addr as usize + 4)
-            .unwrap_or_default()
+            .unwrap_or(&mut [0; 4])
             .copy_from_slice(&device.cart.flashram.silicon_id[0].to_ne_bytes());
         dram_addr += 4;
         device
             .rdram
             .mem
             .get_mut(dram_addr as usize..dram_addr as usize + 4)
-            .unwrap_or_default()
+            .unwrap_or(&mut [0; 4])
             .copy_from_slice(&device.cart.flashram.silicon_id[1].to_ne_bytes());
     } else if (cart_addr & 0x1ffff) < 0x10000
         && device.cart.flashram.mode == FlashramMode::ReadArray
