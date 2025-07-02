@@ -1,7 +1,7 @@
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{
-    AppWindow, GameSettings, GbPaths, NetplayCreate, NetplayDevice, NetplayDialog, NetplayJoin,
+    AppWindow, ErrorDialog, GameSettings, GbPaths, NetplayCreate, NetplayDevice, NetplayJoin,
     NetplayWait, VruChannel, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
@@ -183,7 +183,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>)
                 .unwrap();
             } else {
                 weak.upgrade_in_event_loop(move |handle| {
-                    let message_dialog = NetplayDialog::new().unwrap();
+                    let message_dialog = ErrorDialog::new().unwrap();
                     let weak_dialog = message_dialog.as_weak();
                     message_dialog.on_close_clicked(move || {
                         weak_dialog.unwrap().window().hide().unwrap();
@@ -333,7 +333,7 @@ fn manage_websocket<T: ComponentHandle + NetplayPages + 'static>(
 }
 
 fn show_netplay_error(message: String) {
-    let message_dialog = NetplayDialog::new().unwrap();
+    let message_dialog = ErrorDialog::new().unwrap();
     let weak_dialog = message_dialog.as_weak();
     message_dialog.on_close_clicked(move || {
         weak_dialog.unwrap().window().hide().unwrap();

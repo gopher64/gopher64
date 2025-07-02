@@ -1,6 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
+import { StandardButton } from "std-widgets.slint";
 import { LocalGame, ControllerConfig, Netplay, Settings, About } from "pages.slint";
 import { SideBar } from "side_bar.slint";
 import { SettingsData } from "settings_page.slint";
@@ -12,7 +13,6 @@ export { VruDialog } from "vru_dialog.slint";
 export { NetplayCreate } from "netplay_create.slint";
 export { NetplayJoin } from "netplay_join.slint";
 export { NetplayWait } from "netplay_wait.slint";
-export { NetplayDialog } from "netplay_page.slint";
 
 export component AppWindow inherits Window {
     callback wiki_button_clicked;
@@ -114,5 +114,17 @@ export component AppWindow inherits Window {
                 source_code_button_clicked();
             }
         }
+    }
+}
+
+export component ErrorDialog inherits Dialog {
+    in-out property <string> text;
+    title: @tr("Error");
+    Text {
+        text: text;
+    }
+
+    StandardButton {
+        kind: close;
     }
 }

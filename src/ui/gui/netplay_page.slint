@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { VerticalBox, HorizontalBox, Button, StandardButton } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox, Button } from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export global NetplayData {
@@ -19,18 +19,6 @@ export global NetplayData {
     in-out property <[[StandardListViewItem]]> sessions;
     in-out property <[int]> ports;
     in-out property <int> current_session: -1;
-}
-
-export component NetplayDialog inherits Dialog {
-    in-out property <string> text;
-    title: @tr("Netplay Error");
-    Text {
-        text: text;
-    }
-
-    StandardButton {
-        kind: close;
-    }
 }
 
 export component Netplay inherits Page {
