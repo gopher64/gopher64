@@ -21,7 +21,7 @@ sha2 = "0.10"
 ab_glyph = "0.2"
 sdl3-sys = { version = "0.5", features = ["build-from-source-static"] }
 rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "tokio"] }
-tokio = {version = "1.45", features = ["rt-multi-thread", "macros"] }
+tokio = {version = "1.46", features = ["rt-multi-thread", "macros"] }
 spin_sleep = "1.3"
 encoding_rs = "0.8"
 mimalloc = "0.1"
