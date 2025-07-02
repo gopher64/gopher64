@@ -35,7 +35,7 @@ pub fn read_mem_fast(
             .get(masked_address..masked_address + 4)
             .unwrap_or_default()
             .try_into()
-            .unwrap(),
+            .unwrap_or_default(),
     )
 }
 
@@ -57,7 +57,7 @@ pub fn read_mem(
             .get(masked_address..masked_address + 4)
             .unwrap_or_default()
             .try_into()
-            .unwrap(),
+            .unwrap_or_default(),
     )
 }
 
@@ -69,7 +69,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
             .get(address as usize..(address + 4) as usize)
             .unwrap_or_default()
             .try_into()
-            .unwrap(),
+            .unwrap_or_default(),
     );
     device::memory::masked_write_32(&mut data, value, mask);
     device

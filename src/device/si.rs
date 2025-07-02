@@ -92,7 +92,7 @@ fn copy_pif_rdram(device: &mut device::Device) {
                     .get(dram_addr + i..dram_addr + i + 4)
                     .unwrap_or_default()
                     .try_into()
-                    .unwrap(),
+                    .unwrap_or_default(),
             );
             device.pif.ram[i..i + 4].copy_from_slice(&data.to_be_bytes());
             i += 4;

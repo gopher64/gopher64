@@ -182,7 +182,7 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
                         .get(dram_addr as usize..dram_addr as usize + 4)
                         .unwrap_or_default()
                         .try_into()
-                        .unwrap(),
+                        .unwrap_or_default(),
                 );
 
                 if offset != 0 {
