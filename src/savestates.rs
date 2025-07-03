@@ -120,6 +120,7 @@ pub fn load_savestate(device: &mut device::Device) {
             device.si = state.si;
             device.ri = state.ri;
             device.vru = state.vru;
+            device.cheats = state.cheats;
 
             let mut tpak_rom = [vec![], vec![], vec![], vec![]];
             for (i, item) in tpak_rom.iter_mut().enumerate() {

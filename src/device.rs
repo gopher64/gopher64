@@ -211,6 +211,7 @@ pub struct Device {
     pub vru: controller::vru::Vru,
     pub vru_window: controller::vru::VruWindow,
     pub transferpaks: [controller::transferpak::TransferPak; 4],
+    pub cheats: Vec<Vec<cheats::DecodedCheat>>,
 }
 
 pub fn zero_m128i() -> __m128i {
@@ -502,6 +503,7 @@ impl Device {
                 controller::transferpak::TransferPak::default(),
                 controller::transferpak::TransferPak::default(),
             ],
+            cheats: vec![],
         }
     }
 }

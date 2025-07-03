@@ -1,7 +1,8 @@
 use crate::device;
 use crate::ui;
 
-struct DecodedCheat {
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct DecodedCheat {
     code_type: u8,
     address: u32,
     data: u16,
@@ -19,19 +20,20 @@ pub fn init(
             .unwrap_or_default();
 
     let re = regex::Regex::new(r"\?+").unwrap();
-    //let decoded_cheats: Vec<DecodedCheat> = vec![];
     for cheat_setting in cheat_settings.iter() {
         if let Some(cheat_data) = cheats.get(cheat_setting.0) {
-            let mut option_value = "";
+            let mut option_value = None;
             if let Some(option) = cheat_setting.1 {
-                if let Some(option_data) = cheat_data.options.as_ref() {
-                    if let Some(found_option_value) = option_data.get(option) {
-                        option_value = found_option_value;
-                    } else {
-                        panic!("Cheat option: {option} not found");
-                    }
+                if let Some(found_option_value) = cheat_data
+                    .options
+                    .as_ref()
+                    .cloned()
+                    .unwrap_or_default()
+                    .get(option)
+                {
+                    option_value = Some(found_option_value.to_string());
                 } else {
-                    panic!("No options for cheat: {}", cheat_setting.0);
+                    panic!("Cheat option: {option} not found");
                 }
             }
 
@@ -40,20 +42,23 @@ pub fn init(
                 cheat_setting.0,
                 cheat_setting.1.clone().unwrap_or("none".to_string())
             );
+            let mut decoded_cheat: Vec<DecodedCheat> = vec![];
             for code in cheat_data.data.iter() {
-                let result = re.replace_all(code, option_value);
+                let mut result = code.clone();
+                if let Some(option_value) = option_value.as_ref() {
+                    result = re.replace_all(code, option_value).into_owned();
+                }
                 let mut split = result.split_whitespace();
                 let first_part = u32::from_str_radix(split.next().unwrap(), 16).unwrap();
-                let decoded_cheat = DecodedCheat {
+                decoded_cheat.push(DecodedCheat {
                     code_type: (first_part >> 24) as u8,
                     address: first_part & 0x00FFFFFF,
                     data: u16::from_str_radix(split.next().unwrap(), 16).unwrap(),
-                };
-                println!(
-                    "Cheat code: {:02X} {:08X} {:04X}",
-                    decoded_cheat.code_type, decoded_cheat.address, decoded_cheat.data
-                );
+                });
             }
+            device.cheats.push(decoded_cheat);
+        } else {
+            println!("Could not find cheat: {}", cheat_setting.0);
         }
     }
 }
