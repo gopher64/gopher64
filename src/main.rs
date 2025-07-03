@@ -3,6 +3,7 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+mod cheats;
 mod device;
 mod netplay;
 mod savestates;

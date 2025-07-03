@@ -5,13 +5,13 @@ use crate::ui::gui::ErrorDialog;
 use slint::ComponentHandle;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
-struct CheatData {
+pub struct CheatData {
     note: String,
-    data: Vec<String>,
-    options: Option<std::collections::BTreeMap<String, String>>,
+    pub data: Vec<String>,
+    pub options: Option<std::collections::BTreeMap<String, String>>,
 }
 
-type Cheats = std::collections::BTreeMap<String, std::collections::BTreeMap<String, CheatData>>;
+pub type Cheats = std::collections::BTreeMap<String, std::collections::BTreeMap<String, CheatData>>;
 
 pub fn cheats_window(app: &AppWindow) {
     let weak = app.as_weak();

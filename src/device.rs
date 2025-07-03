@@ -12,7 +12,7 @@ use std::arch::x86_64::*;
 
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 
-use crate::{netplay, ui};
+use crate::{cheats, netplay, ui};
 use std::{collections::HashMap, fs, io::Read};
 
 pub mod ai;
@@ -76,6 +76,8 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
 
     ui::storage::init(&mut device.ui, &device.cart.rom);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
+
+    cheats::init(device, game_settings.cheats);
 
     cpu::run(device);
 
