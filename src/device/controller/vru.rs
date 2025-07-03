@@ -2726,5 +2726,17 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("82B582E382C182CF82C282AF82A282A982A2"),
             String::from("restricted-depart"),
         ),
+        (
+            String::from("009903720366006903C903FF0045033C"),
+            String::from("objection"),
+        ),
+        (
+            String::from("041100CF02EE0381004503B7"),
+            String::from("hold-it"),
+        ),
+        (
+            String::from("03BA019203C9036C0087000303C6"),
+            String::from("take-that"),
+        ),
     ]);
 }
