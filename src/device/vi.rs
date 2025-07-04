@@ -1,4 +1,4 @@
-use crate::{device, netplay, ui};
+use crate::{cheats, device, netplay, ui};
 use governor::clock::Clock;
 
 const VI_STATUS_REG: u32 = 0;
@@ -134,6 +134,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
+    cheats::execute_cheats(device, device.cheats.cheats.clone());
     let mut speed_limiter_toggled = ui::video::check_callback(device);
 
     if device.netplay.is_some() {

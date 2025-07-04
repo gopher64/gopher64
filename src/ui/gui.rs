@@ -30,6 +30,7 @@ pub struct GameSettings {
     pub fullscreen: bool,
     pub overclock: bool,
     pub disable_expansion_pak: bool,
+    pub cheats: std::collections::HashMap<String, Option<String>>,
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
@@ -285,6 +286,7 @@ pub fn app_window() {
     }
     local_game_window(&app, &controller_paths);
     ui::netplay::netplay_window(&app, &controller_paths);
+    ui::cheats::cheats_window(&app);
     app.run().unwrap();
     save_settings(&app, &controller_paths);
 }
@@ -336,7 +338,7 @@ fn setup_vru_word_watcher(
 pub fn run_rom(
     gb_paths: GbPaths,
     file_path: std::path::PathBuf,
-    game_settings: GameSettings,
+    mut game_settings: GameSettings,
     vru_channel: VruChannel,
     netplay: Option<NetplayDevice>,
     weak: slint::Weak<AppWindow>,
@@ -369,6 +371,12 @@ pub fn run_rom(
                         netplay_device.peer_addr,
                         netplay_device.player_number,
                     ));
+                } else {
+                    game_settings.cheats = {
+                        let game_crc = ui::storage::get_game_crc(&rom_contents);
+                        let cheats = ui::config::Cheats::new();
+                        cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
+                    };
                 }
                 device::run_game(&mut device, rom_contents, game_settings);
                 if device.netplay.is_some() {
@@ -455,6 +463,7 @@ fn open_rom(app: &AppWindow) {
                     fullscreen,
                     overclock,
                     disable_expansion_pak,
+                    cheats: std::collections::HashMap::new(), // will be filled in later
                 },
                 if emulate_vru {
                     VruChannel {

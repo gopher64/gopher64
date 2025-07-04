@@ -1,4 +1,5 @@
 pub mod audio;
+pub mod cheats;
 pub mod config;
 pub mod gui;
 pub mod input;
@@ -13,6 +14,7 @@ pub struct Dirs {
 }
 
 pub struct Audio {
+    pub audio_device_spec: sdl3_sys::audio::SDL_AudioSpec,
     pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub event_audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub audio_device: u32,
@@ -178,7 +180,9 @@ impl Ui {
                         include_bytes!("../data/netplay_p3_disconnected.wav").to_vec(),
                         include_bytes!("../data/netplay_p4_disconnected.wav").to_vec(),
                     ],
+                    cheats_enabled: include_bytes!("../data/cheats_enabled.wav").to_vec(),
                 },
+                audio_device_spec: Default::default(),
                 audio_stream: std::ptr::null_mut(),
                 event_audio_stream: std::ptr::null_mut(),
                 audio_device: 0,

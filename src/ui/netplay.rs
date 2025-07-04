@@ -50,6 +50,7 @@ trait NetplayPages {
     fn set_ping(&self, ping: slint::SharedString);
     fn set_game_name(&self, game_name: slint::SharedString);
     fn set_game_hash(&self, game_hash: slint::SharedString);
+    fn set_game_cheats(&self, game_cheats: slint::SharedString);
     fn set_rom_path(&self, rom_path: slint::SharedString);
     fn set_peer_addr(&self, peer_addr: slint::SharedString);
     fn refresh_sessions(&self, _server: slint::SharedString) {
@@ -72,6 +73,9 @@ impl NetplayPages for NetplayCreate {
     }
     fn set_game_hash(&self, game_hash: slint::SharedString) {
         self.set_game_hash(game_hash);
+    }
+    fn set_game_cheats(&self, game_cheats: slint::SharedString) {
+        self.set_game_cheats(game_cheats);
     }
     fn set_rom_path(&self, rom_path: slint::SharedString) {
         self.set_rom_path(rom_path);
@@ -99,6 +103,9 @@ impl NetplayPages for NetplayJoin {
     }
     fn set_game_hash(&self, game_hash: slint::SharedString) {
         self.set_game_hash(game_hash);
+    }
+    fn set_game_cheats(&self, game_cheats: slint::SharedString) {
+        self.set_game_cheats(game_cheats);
     }
     fn set_rom_path(&self, rom_path: slint::SharedString) {
         self.set_rom_path(rom_path);
@@ -175,9 +182,19 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>)
             if let Some(rom_contents) = device::get_rom_contents(file.path()) {
                 let hash = device::cart::rom::calculate_hash(&rom_contents);
                 let game_name = ui::storage::get_game_name(&rom_contents);
+                let game_crc = ui::storage::get_game_crc(&rom_contents);
+                let cheats = ui::config::Cheats::new();
+                let mut parsed_cheats = "".to_string();
+                if let Some(game_cheats) = cheats.cheats.get(&game_crc)
+                    && !game_cheats.is_empty()
+                {
+                    parsed_cheats = serde_json::to_string(game_cheats).unwrap();
+                }
+
                 weak.upgrade_in_event_loop(move |handle| {
                     handle.set_game_name(game_name.into());
                     handle.set_game_hash(hash.into());
+                    handle.set_game_cheats(parsed_cheats.into());
                     handle.set_rom_path(file.path().to_str().unwrap().into());
                 })
                 .unwrap();
@@ -193,6 +210,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>)
 
                     handle.set_game_name("".into());
                     handle.set_game_hash("".into());
+                    handle.set_game_cheats("".into());
                     handle.set_rom_path("".into());
                 })
                 .unwrap();
@@ -258,7 +276,13 @@ pub fn setup_create_window(
 
     let weak = create_window.as_weak();
     create_window.on_create_session(
-        move |server_url, session_name, player_name, game_name, game_hash, password| {
+        move |server_url,
+              session_name,
+              player_name,
+              game_name,
+              game_hash,
+              game_cheats,
+              password| {
             let _ = netplay_write_sender.send(None); // close current websocket if any
             manage_websocket(
                 server_url.to_string(),
@@ -274,6 +298,7 @@ pub fn setup_create_window(
                 player_name.to_string(),
                 game_name.to_string(),
                 game_hash.to_string(),
+                game_cheats.to_string(),
                 password.to_string(),
                 game_settings.clone(),
                 weak_app.clone(),
@@ -402,6 +427,15 @@ fn update_sessions(
                                     "False"
                                 }),
                             ));
+                            session_vec.push(slint::StandardListViewItem::from(
+                                slint::SharedString::from(
+                                    if room.features.unwrap_or_default().contains_key("cheats") {
+                                        "True"
+                                    } else {
+                                        "False"
+                                    },
+                                ),
+                            ));
                             let session_model: std::rc::Rc<
                                 slint::VecModel<slint::StandardListViewItem>,
                             > = std::rc::Rc::new(session_vec);
@@ -447,6 +481,7 @@ fn create_session(
     player_name: String,
     game_name: String,
     game_hash: String,
+    game_cheats: String,
     password: String,
     game_settings: GameSettings,
     weak_app: slint::Weak<AppWindow>,
@@ -456,6 +491,11 @@ fn create_session(
         let now_utc = chrono::Utc::now().timestamp_millis().to_string();
         let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
         let mut features = std::collections::HashMap::new();
+
+        if !game_cheats.is_empty() {
+            features.insert("cheats".to_string(), game_cheats);
+        }
+
         features.insert("overclock".to_string(), game_settings.overclock.to_string());
         features.insert(
             "disable_expansion_pak".to_string(),
@@ -498,6 +538,7 @@ fn create_session(
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
                     let features_default = "false".to_string();
+                    let cheats_default = "{}".to_string();
                     let overclock = session
                         .features
                         .as_ref()
@@ -510,6 +551,12 @@ fn create_session(
                         .unwrap()
                         .get("disable_expansion_pak")
                         .unwrap_or(&features_default);
+                    let cheats = session
+                        .features
+                        .as_ref()
+                        .unwrap()
+                        .get("cheats")
+                        .unwrap_or(&cheats_default);
                     setup_wait_window(
                         netplay_write_sender,
                         netplay_read_receiver,
@@ -523,6 +570,7 @@ fn create_session(
                             fullscreen: game_settings.fullscreen,
                             overclock: overclock.parse().unwrap(),
                             disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
+                            cheats: serde_json::from_str(cheats).unwrap(),
                         },
                         handle.get_peer_addr(),
                         weak_app,
@@ -598,6 +646,7 @@ fn join_session(
                 weak.upgrade_in_event_loop(move |handle| {
                     let session = message.room.as_ref().unwrap();
                     let features_default = "false".to_string();
+                    let cheats_default = "{}".to_string();
                     let overclock = session
                         .features
                         .as_ref()
@@ -610,6 +659,12 @@ fn join_session(
                         .unwrap()
                         .get("disable_expansion_pak")
                         .unwrap_or(&features_default);
+                    let cheats = session
+                        .features
+                        .as_ref()
+                        .unwrap()
+                        .get("cheats")
+                        .unwrap_or(&cheats_default);
                     setup_wait_window(
                         netplay_write_sender,
                         netplay_read_receiver,
@@ -623,6 +678,7 @@ fn join_session(
                             fullscreen,
                             overclock: overclock.parse().unwrap(),
                             disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
+                            cheats: serde_json::from_str(cheats).unwrap(),
                         },
                         handle.get_peer_addr(),
                         weak_app,
@@ -843,6 +899,7 @@ fn setup_wait_window(
                                     fullscreen: game_settings.fullscreen,
                                     overclock: game_settings.overclock,
                                     disable_expansion_pak: game_settings.disable_expansion_pak,
+                                    cheats: game_settings.cheats,
                                 },
                                 VruChannel {
                                     vru_window_notifier: None,
@@ -960,6 +1017,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                         fullscreen: handle.get_fullscreen(),
                         overclock: handle.get_overclock_n64_cpu(),
                         disable_expansion_pak: handle.get_disable_expansion_pak(),
+                        cheats: std::collections::HashMap::new(), // not used here
                     },
                     weak_app,
                 );

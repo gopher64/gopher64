@@ -146,8 +146,8 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
         AI_DACRATE_REG => {
             if device.ai.regs[reg as usize] != value & mask {
                 device.ai.freq = device.vi.clock / (1 + (value & mask)) as u64;
-                ui::audio::close(&mut device.ui);
-                ui::audio::init(&mut device.ui, device.ai.freq)
+                ui::audio::close_game_audio(&mut device.ui);
+                ui::audio::init_game_audio(&mut device.ui, device.ai.freq)
             }
             device::memory::masked_write_32(&mut device.ai.regs[reg as usize], value, mask)
         }

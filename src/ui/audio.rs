@@ -9,16 +9,12 @@ pub struct EventAudio {
     pub netplay_desync: Vec<u8>,
     pub netplay_lost_connection: Vec<u8>,
     pub netplay_disconnected: [Vec<u8>; 4],
+    pub cheats_enabled: Vec<u8>,
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_AUDIO);
 
-    let game_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
-        format: sdl3_sys::audio::SDL_AUDIO_S16LE,
-        freq: frequency as i32,
-        channels: 2,
-    };
     let device_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
         format: sdl3_sys::audio::SDL_AUDIO_S16LE,
         freq: 48000,
@@ -34,27 +30,14 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         panic!("Could not open audio device");
     }
 
-    let mut dst = Default::default();
     if !unsafe {
         sdl3_sys::audio::SDL_GetAudioDeviceFormat(
             ui.audio.audio_device,
-            &mut dst,
+            &mut ui.audio.audio_device_spec,
             std::ptr::null_mut(),
         )
     } {
         panic!("Could not get audio device format");
-    }
-
-    ui.audio.audio_stream =
-        unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&game_audio_spec, &dst) };
-    if ui.audio.audio_stream.is_null() {
-        return;
-    }
-    if !unsafe {
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain)
-            && sdl3_sys::audio::SDL_BindAudioStream(ui.audio.audio_device, ui.audio.audio_stream)
-    } {
-        panic!("Could not bind audio stream");
     }
 
     let wav_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
@@ -63,8 +46,9 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         channels: 1,
     };
 
-    ui.audio.event_audio_stream =
-        unsafe { sdl3_sys::audio::SDL_CreateAudioStream(&wav_audio_spec, &dst) };
+    ui.audio.event_audio_stream = unsafe {
+        sdl3_sys::audio::SDL_CreateAudioStream(&wav_audio_spec, &ui.audio.audio_device_spec)
+    };
     if !unsafe {
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, ui.audio.gain)
             && sdl3_sys::audio::SDL_BindAudioStream(
@@ -74,20 +58,48 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
     } {
         panic!("Could not bind audio stream");
     }
+    init_game_audio(ui, frequency);
+}
+
+pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
+    let game_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
+        format: sdl3_sys::audio::SDL_AUDIO_S16LE,
+        freq: frequency as i32,
+        channels: 2,
+    };
+
+    ui.audio.audio_stream = unsafe {
+        sdl3_sys::audio::SDL_CreateAudioStream(&game_audio_spec, &ui.audio.audio_device_spec)
+    };
+    if ui.audio.audio_stream.is_null() {
+        return;
+    }
+    if !unsafe {
+        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain)
+            && sdl3_sys::audio::SDL_BindAudioStream(ui.audio.audio_device, ui.audio.audio_stream)
+    } {
+        panic!("Could not bind audio stream");
+    }
 }
 
 pub fn close(ui: &mut ui::Ui) {
+    close_game_audio(ui);
     unsafe {
-        if !ui.audio.audio_stream.is_null() {
-            sdl3_sys::audio::SDL_DestroyAudioStream(ui.audio.audio_stream);
-            ui.audio.audio_stream = std::ptr::null_mut();
-        }
         if !ui.audio.event_audio_stream.is_null() {
             sdl3_sys::audio::SDL_DestroyAudioStream(ui.audio.event_audio_stream);
             ui.audio.event_audio_stream = std::ptr::null_mut();
         }
         sdl3_sys::audio::SDL_CloseAudioDevice(ui.audio.audio_device);
         ui.audio.audio_device = 0;
+    }
+}
+
+pub fn close_game_audio(ui: &mut ui::Ui) {
+    unsafe {
+        if !ui.audio.audio_stream.is_null() {
+            sdl3_sys::audio::SDL_DestroyAudioStream(ui.audio.audio_stream);
+            ui.audio.audio_stream = std::ptr::null_mut();
+        }
     }
 }
 
@@ -110,6 +122,22 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
         }
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, ui.audio.gain);
+    }
+}
+
+pub fn play_cheat_event(ui: &ui::Ui) {
+    if ui.audio.event_audio_stream.is_null() {
+        return;
+    }
+    let sound = &ui.audio.event_audio.cheats_enabled;
+    if !unsafe {
+        sdl3_sys::audio::SDL_PutAudioStreamData(
+            ui.audio.event_audio_stream,
+            sound.as_ptr() as *const std::ffi::c_void,
+            sound.len() as i32,
+        )
+    } {
+        panic!("Could not play audio");
     }
 }
 

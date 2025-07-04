@@ -12,7 +12,7 @@ use std::arch::x86_64::*;
 
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 
-use crate::{netplay, ui};
+use crate::{cheats, netplay, ui};
 use std::{collections::HashMap, fs, io::Read};
 
 pub mod ai;
@@ -76,6 +76,8 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
 
     ui::storage::init(&mut device.ui, &device.cart.rom);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
+
+    cheats::init(device, game_settings.cheats);
 
     cpu::run(device);
 
@@ -188,7 +190,7 @@ pub struct Device {
     pub netplay: Option<netplay::Netplay>,
     #[serde(skip, default = "ui::Ui::default")]
     pub ui: ui::Ui,
-    byte_swap: usize,
+    pub byte_swap: usize,
     pub save_state: bool,
     pub load_state: bool,
     pub cpu: cpu::Cpu,
@@ -209,6 +211,7 @@ pub struct Device {
     pub vru: controller::vru::Vru,
     pub vru_window: controller::vru::VruWindow,
     pub transferpaks: [controller::transferpak::TransferPak; 4],
+    pub cheats: cheats::Cheats,
 }
 
 pub fn zero_m128i() -> __m128i {
@@ -500,6 +503,10 @@ impl Device {
                 controller::transferpak::TransferPak::default(),
                 controller::transferpak::TransferPak::default(),
             ],
+            cheats: cheats::Cheats {
+                cheats: vec![],
+                boot: true,
+            },
         }
     }
 }

@@ -11,6 +11,7 @@ export component NetplayJoin inherits Window {
     in-out property ports <=> NetplayData.ports;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
+    in-out property game_cheats <=> NetplayData.game_cheats;
     in-out property peer_addr <=> NetplayData.peer_addr;
     in-out property pending_session <=> NetplayData.pending_session;
     in-out property rom_path <=> NetplayData.rom_path;
@@ -71,7 +72,8 @@ export component NetplayJoin inherits Window {
             columns: [
                 { title: "Session Name" },
                 { title: "Game Name" },
-                { title: "Password Protected" },
+                { title: "Password" },
+                { title: "Cheats" }
             ];
             rows: NetplayData.sessions;
             current-row: NetplayData.current_session;

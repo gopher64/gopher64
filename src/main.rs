@@ -3,6 +3,7 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+mod cheats;
 mod device;
 mod netplay;
 mod savestates;
@@ -148,6 +149,12 @@ async fn main() {
                     let mut device = device::Device::new();
                     let overclock = device.ui.config.emulation.overclock;
                     let disable_expansion_pak = device.ui.config.emulation.disable_expansion_pak;
+
+                    let game_cheats = {
+                        let game_crc = ui::storage::get_game_crc(&rom_contents);
+                        let cheats = ui::config::Cheats::new();
+                        cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
+                    };
                     device::run_game(
                         &mut device,
                         rom_contents,
@@ -155,6 +162,7 @@ async fn main() {
                             fullscreen: args.fullscreen,
                             overclock,
                             disable_expansion_pak,
+                            cheats: game_cheats,
                         },
                     );
                 })

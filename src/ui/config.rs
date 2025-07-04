@@ -57,10 +57,46 @@ pub struct Emulation {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
+pub struct Cheats {
+    pub cheats:
+        std::collections::HashMap<String, std::collections::HashMap<String, Option<String>>>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub input: Input,
     pub video: Video,
     pub emulation: Emulation,
+}
+
+impl Drop for Cheats {
+    fn drop(&mut self) {
+        write_cheats(self);
+    }
+}
+
+fn write_cheats(cheats: &Cheats) {
+    let dirs = ui::get_dirs();
+    let file_path = dirs.config_dir.join("cheats.json");
+    let f = std::fs::File::create(file_path).unwrap();
+    serde_json::to_writer_pretty(f, &cheats).unwrap();
+}
+
+impl Cheats {
+    pub fn new() -> Cheats {
+        let dirs = ui::get_dirs();
+        let file_path = dirs.config_dir.join("cheats.json");
+        let cheats_file = std::fs::read(file_path);
+        if let Ok(cheats_file) = cheats_file {
+            let result = serde_json::from_slice(cheats_file.as_ref());
+            if let Ok(result) = result {
+                return result;
+            }
+        }
+        Cheats {
+            cheats: std::collections::HashMap::new(),
+        }
+    }
 }
 
 impl Drop for Config {
