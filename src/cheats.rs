@@ -173,6 +173,7 @@ pub fn execute_cheats(device: &mut device::Device, cheats: Vec<Vec<DecodedCheat>
                 0xD3 => {
                     valid = !equal_half(device, cheat_line);
                 }
+                0x88 | 0x89 | 0xD8 | 0xD9 | 0xDA | 0xDB => { /* GS button not emulated */ }
                 _ => panic!("Unknown cheat code type: {:X}", cheat_line.code_type),
             }
         }
