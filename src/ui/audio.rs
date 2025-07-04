@@ -9,6 +9,7 @@ pub struct EventAudio {
     pub netplay_desync: Vec<u8>,
     pub netplay_lost_connection: Vec<u8>,
     pub netplay_disconnected: [Vec<u8>; 4],
+    pub cheats_enabled: Vec<u8>,
 }
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
@@ -110,6 +111,22 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
         }
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, ui.audio.gain);
+    }
+}
+
+pub fn play_cheat_event(ui: &ui::Ui) {
+    if ui.audio.event_audio_stream.is_null() {
+        return;
+    }
+    let sound = &ui.audio.event_audio.cheats_enabled;
+    if !unsafe {
+        sdl3_sys::audio::SDL_PutAudioStreamData(
+            ui.audio.event_audio_stream,
+            sound.as_ptr() as *const std::ffi::c_void,
+            sound.len() as i32,
+        )
+    } {
+        panic!("Could not play audio");
     }
 }
 

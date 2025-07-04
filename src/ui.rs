@@ -179,6 +179,7 @@ impl Ui {
                         include_bytes!("../data/netplay_p3_disconnected.wav").to_vec(),
                         include_bytes!("../data/netplay_p4_disconnected.wav").to_vec(),
                     ],
+                    cheats_enabled: include_bytes!("../data/cheats_enabled.wav").to_vec(),
                 },
                 audio_stream: std::ptr::null_mut(),
                 event_audio_stream: std::ptr::null_mut(),

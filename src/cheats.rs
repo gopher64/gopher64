@@ -67,6 +67,10 @@ pub fn init(
             println!("Could not find cheat: {}", cheat_setting.0);
         }
     }
+
+    if !device.cheats.cheats.is_empty() {
+        ui::audio::play_cheat_event(&device.ui);
+    }
 }
 
 fn write_byte(device: &mut device::Device, cheat_line: &DecodedCheat) {
