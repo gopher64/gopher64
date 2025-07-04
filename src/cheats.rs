@@ -82,12 +82,12 @@ fn write_half(device: &mut device::Device, cheat_line: &DecodedCheat) {
         .rdram
         .mem
         .get_mut(cheat_line.address as usize ^ device.byte_swap)
-        .unwrap_or(&mut 0) = cheat_line.data as u8;
+        .unwrap_or(&mut 0) = (cheat_line.data >> 8) as u8;
     *device
         .rdram
         .mem
         .get_mut((cheat_line.address + 1) as usize ^ device.byte_swap)
-        .unwrap_or(&mut 0) = (cheat_line.data >> 8) as u8;
+        .unwrap_or(&mut 0) = cheat_line.data as u8;
 }
 
 fn equal_byte(device: &mut device::Device, cheat_line: &DecodedCheat) -> bool {
@@ -110,7 +110,7 @@ fn equal_half(device: &mut device::Device, cheat_line: &DecodedCheat) -> bool {
         .mem
         .get((cheat_line.address + 1) as usize ^ device.byte_swap)
         .unwrap_or(&0);
-    current_value1 == (cheat_line.data as u8) && current_value2 == (cheat_line.data >> 8) as u8
+    current_value1 == (cheat_line.data >> 8) as u8 && current_value2 == cheat_line.data as u8
 }
 
 pub fn execute_cheats(device: &mut device::Device) {
