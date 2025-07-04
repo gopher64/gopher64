@@ -113,14 +113,29 @@ fn equal_half(device: &mut device::Device, cheat_line: &DecodedCheat) -> bool {
     current_value1 == (cheat_line.data >> 8) as u8 && current_value2 == cheat_line.data as u8
 }
 
-pub fn execute_cheats(device: &mut device::Device) {
-    let cheats = device.cheats.cheats.clone();
+pub fn execute_cheats(device: &mut device::Device, cheats: Vec<Vec<DecodedCheat>>) {
     for cheat in cheats.iter() {
         let mut valid = true;
-        for cheat_line in cheat.iter() {
+        let mut cheat_iter = cheat.iter().peekable();
+        while let Some(cheat_line) = cheat_iter.next() {
             match cheat_line.code_type {
                 0x50 => {
-                    panic!("Cheat code type 0x50 is not supported");
+                    if valid {
+                        let mut expanded_cheat: Vec<DecodedCheat> = vec![];
+                        let compressed_cheat = *cheat_iter.peek().unwrap();
+                        let count = (compressed_cheat.address & 0xFF00) >> 8;
+                        let offset = compressed_cheat.address & 0xFF;
+                        for i in 0..count {
+                            let line = DecodedCheat {
+                                code_type: compressed_cheat.code_type,
+                                address: compressed_cheat.address + (i * offset),
+                                data: compressed_cheat.data + (i as u16 * compressed_cheat.data),
+                            };
+                            expanded_cheat.push(line);
+                        }
+                        execute_cheats(device, [expanded_cheat].to_vec());
+                    }
+                    valid = false; // skip the next line
                 }
                 0x80 | 0xA0 => {
                     if valid {
