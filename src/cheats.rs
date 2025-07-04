@@ -133,7 +133,8 @@ pub fn execute_cheats(device: &mut device::Device, cheats: Vec<Vec<DecodedCheat>
                             let line = DecodedCheat {
                                 code_type: compressed_cheat.code_type,
                                 address: compressed_cheat.address + (i * offset),
-                                data: compressed_cheat.data + (i as u16 * cheat_line.data),
+                                data: compressed_cheat.data
+                                    + (i as i16 * cheat_line.data as i16) as u16,
                             };
                             expanded_cheat.push(line);
                         }
