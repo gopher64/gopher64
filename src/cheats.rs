@@ -123,13 +123,13 @@ pub fn execute_cheats(device: &mut device::Device, cheats: Vec<Vec<DecodedCheat>
                     if valid {
                         let mut expanded_cheat: Vec<DecodedCheat> = vec![];
                         let compressed_cheat = *cheat_iter.peek().unwrap();
-                        let count = (compressed_cheat.address & 0xFF00) >> 8;
-                        let offset = compressed_cheat.address & 0xFF;
+                        let count = (cheat_line.address & 0xFF00) >> 8;
+                        let offset = cheat_line.address & 0xFF;
                         for i in 0..count {
                             let line = DecodedCheat {
                                 code_type: compressed_cheat.code_type,
                                 address: compressed_cheat.address + (i * offset),
-                                data: compressed_cheat.data + (i as u16 * compressed_cheat.data),
+                                data: compressed_cheat.data + (i as u16 * cheat_line.data),
                             };
                             expanded_cheat.push(line);
                         }
