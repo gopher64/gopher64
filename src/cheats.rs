@@ -137,14 +137,14 @@ pub fn execute_cheats(device: &mut device::Device) {
                 0xF0 => {
                     if device.cheats.boot && valid {
                         write_byte(device, cheat_line);
+                        valid = true;
                     }
-                    valid = true;
                 }
                 0xF1 => {
                     if device.cheats.boot && valid {
                         write_half(device, cheat_line);
+                        valid = true;
                     }
-                    valid = true;
                 }
                 0xD0 => {
                     valid = equal_byte(device, cheat_line);
