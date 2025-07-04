@@ -119,6 +119,9 @@ pub fn execute_cheats(device: &mut device::Device) {
         let mut valid = true;
         for cheat_line in cheat.iter() {
             match cheat_line.code_type {
+                0x50 => {
+                    panic!("Cheat code type 0x50 is not supported");
+                }
                 0x80 | 0xA0 => {
                     if valid {
                         write_byte(device, cheat_line);
