@@ -190,7 +190,7 @@ pub struct Device {
     pub netplay: Option<netplay::Netplay>,
     #[serde(skip, default = "ui::Ui::default")]
     pub ui: ui::Ui,
-    byte_swap: usize,
+    pub byte_swap: usize,
     pub save_state: bool,
     pub load_state: bool,
     pub cpu: cpu::Cpu,
@@ -211,7 +211,7 @@ pub struct Device {
     pub vru: controller::vru::Vru,
     pub vru_window: controller::vru::VruWindow,
     pub transferpaks: [controller::transferpak::TransferPak; 4],
-    pub cheats: Vec<Vec<cheats::DecodedCheat>>,
+    pub cheats: cheats::Cheats,
 }
 
 pub fn zero_m128i() -> __m128i {
@@ -503,7 +503,10 @@ impl Device {
                 controller::transferpak::TransferPak::default(),
                 controller::transferpak::TransferPak::default(),
             ],
-            cheats: vec![],
+            cheats: cheats::Cheats {
+                cheats: vec![],
+                boot: true,
+            },
         }
     }
 }
