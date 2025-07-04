@@ -258,9 +258,9 @@ dependencies = [
 
 [[package]]
 name = "async-channel"
-version = "2.3.1"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89b47800b0be77592da0afd425cc03468052844aff33b84e33cc696f64e77b6a"
+checksum = "16c74e56284d2188cabb6ad99603d1ace887a5d7e7b695d01b728155ed9ed427"
 dependencies = [
  "concurrent-queue",
  "event-listener-strategy",
@@ -426,9 +426,9 @@ dependencies = [
 
 [[package]]
 name = "avif-serialize"
-version = "0.8.4"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19135c0c7a60bfee564dbe44ab5ce0557c6bf3884e5291a50be76a15640c4fbd"
+checksum = "2ea8ef51aced2b9191c08197f55450d830876d9933f8f48a429b354f1d496b42"
 dependencies = [
  "arrayvec",
 ]
@@ -704,9 +704,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.27"
+version = "1.2.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d487aa071b5f64da6f19a3e848e3578944b726ee5a4854b82172f02aa876bfdc"
+checksum = "4ad45f4f74e4e20eaa392913b7b33a7091c87e59628f4dd27888205ad888843c"
 dependencies = [
  "jobserver",
  "libc",
@@ -2756,30 +2756,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
 
 [[package]]
-name = "jiff"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be1f93b8b1eb69c77f24bbb0afdf66f54b632ee39af40ca21c4365a1d7347e49"
-dependencies = [
- "jiff-static",
- "log",
- "portable-atomic",
- "portable-atomic-util",
- "serde",
-]
-
-[[package]]
-name = "jiff-static"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03343451ff899767262ec32146f6d559dd759fdadf42ff0e227c7c48f72594b4"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "jni"
 version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2885,9 +2861,9 @@ checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
 
 [[package]]
 name = "libfuzzer-sys"
-version = "0.4.9"
+version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf78f52d400cf2d84a3a973a78a592b4adc535739e0a5597a0da6f0c357adc75"
+checksum = "5037190e1f70cbeef565bd267599242926f724d3b8a9f510fd7e0b540cfa4404"
 dependencies = [
  "arbitrary",
  "cc",
@@ -3314,18 +3290,6 @@ name = "noop_proc_macro"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0676bb32a98c1a483ce53e500a81ad9c3d5b3f7c920c28c24e9cb0980d0b5bc8"
-
-[[package]]
-name = "nt-time"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5e71108c089b161344bacb1227dd2124fee63ed1792fdd8308e6689197c2754"
-dependencies = [
- "chrono",
- "jiff",
- "rand 0.9.1",
- "time",
-]
 
 [[package]]
 name = "num-bigint"
@@ -3995,15 +3959,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f84267b20a16ea918e43c6a88433c2d54fa145c92a811b5b047ccbe153674483"
 dependencies = [
  "critical-section",
-]
-
-[[package]]
-name = "portable-atomic-util"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8a2f0d8d040d7848a709caf78912debcc3f33ee4b3cac47d73d1e1069e83507"
-dependencies = [
- "portable-atomic",
 ]
 
 [[package]]
@@ -4816,16 +4771,14 @@ dependencies = [
 
 [[package]]
 name = "sevenz-rust2"
-version = "0.15.3"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0613c8bcc0d74f26e4c90c94125703dc87bcb3a95abce3fa606c585cd9cbaa5f"
+checksum = "5375315e26d60d20f13d74c5bb0b6b627d334b68aa63f0d6d33d828af499d8d2"
 dependencies = [
- "bit-set",
  "byteorder",
  "crc32fast",
  "js-sys",
  "lzma-rust2",
- "nt-time",
  "wasm-bindgen",
 ]
 
@@ -5377,7 +5330,6 @@ dependencies = [
  "powerfmt",
  "serde",
  "time-core",
- "time-macros",
 ]
 
 [[package]]
@@ -5385,16 +5337,6 @@ name = "time-core"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c9e9a38711f559d9e3ce1cdb06dd7c5b8ea546bc90052da6d06bb76da74bb07c"
-
-[[package]]
-name = "time-macros"
-version = "0.2.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3526739392ec93fd8b359c8e98514cb3e8e021beb4e5f597b00a0221f8ed8a49"
-dependencies = [
- "num-conv",
- "time-core",
-]
 
 [[package]]
 name = "tiny-skia"
@@ -5462,9 +5404,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.46.0"
+version = "1.46.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1140bb80481756a8cbe10541f37433b459c5aa1e727b4c020fbfebdc25bf3ec4"
+checksum = "0cc3a2344dafbe23a245241fe8b09735b521110d30fcefbbd5feb1797ca35d17"
 dependencies = [
  "backtrace",
  "bytes",
@@ -7189,9 +7131,9 @@ dependencies = [
 
 [[package]]
 name = "zune-jpeg"
-version = "0.4.18"
+version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7384255a918371b5af158218d131530f694de9ad3815ebdd0453a940485cb0fa"
+checksum = "2c9e525af0a6a658e031e95f14b7f889976b74a11ba0eca5a5fc9ac8a1c43a6a"
 dependencies = [
  "zune-core",
 ]
