@@ -107,6 +107,14 @@ async fn main() {
             }
             return;
         }
+        if args.configure_input_profile.is_some() {
+            ui::input::configure_input_profile(
+                &mut ui,
+                args.configure_input_profile.unwrap(),
+                args.use_dinput,
+            );
+            return;
+        }
         if args.assign_controller.is_some() {
             if args.port.is_none() {
                 println!("Must specify port number");
@@ -117,7 +125,6 @@ async fn main() {
                 args.assign_controller.unwrap(),
                 args.port.unwrap(),
             );
-            return;
         }
         if args.bind_input_profile.is_some() {
             if args.port.is_none() {
@@ -129,15 +136,6 @@ async fn main() {
                 args.bind_input_profile.unwrap(),
                 args.port.unwrap(),
             );
-            return;
-        }
-        if args.configure_input_profile.is_some() {
-            ui::input::configure_input_profile(
-                &mut ui,
-                args.configure_input_profile.unwrap(),
-                args.use_dinput,
-            );
-            return;
         }
     } else if args.game.is_some() {
         let file_path = std::path::Path::new(args.game.as_ref().unwrap());
