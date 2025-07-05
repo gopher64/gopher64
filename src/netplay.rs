@@ -252,7 +252,7 @@ pub fn init(peer_addr: std::net::SocketAddr, player_number: u8) -> Netplay {
         udp_socket = std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
             .expect("couldn't bind to address");
         socket2::SockRef::from(&udp_socket)
-            .set_tos(CS4 << 2)
+            .set_tos_v4(CS4 << 2)
             .unwrap();
     } else {
         udp_socket = std::net::UdpSocket::bind((std::net::Ipv6Addr::UNSPECIFIED, 0))
