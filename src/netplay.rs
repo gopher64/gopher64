@@ -113,7 +113,7 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
 
 pub fn send_sync_check(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
-    if netplay.vi_counter % 600 == 0 {
+    if netplay.vi_counter.is_multiple_of(600) {
         let mut request: Vec<u8> = [UDP_SYNC_DATA].to_vec();
         request.extend_from_slice(&(netplay.vi_counter).to_be_bytes());
 
