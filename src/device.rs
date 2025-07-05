@@ -506,6 +506,7 @@ impl Device {
             cheats: cheats::Cheats {
                 cheats: vec![],
                 boot: true,
+                enabled: false,
             },
         }
     }

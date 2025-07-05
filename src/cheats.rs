@@ -12,6 +12,7 @@ pub struct DecodedCheat {
 pub struct Cheats {
     pub cheats: Vec<Vec<DecodedCheat>>,
     pub boot: bool,
+    pub enabled: bool,
 }
 
 pub fn init(
@@ -69,6 +70,7 @@ pub fn init(
     }
 
     if !device.cheats.cheats.is_empty() {
+        device.cheats.enabled = true;
         ui::audio::play_cheat_event(&device.ui);
     }
 }
