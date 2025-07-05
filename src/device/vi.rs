@@ -148,7 +148,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     }
 
     device.vi.vi_counter += 1;
-    if device.vi.vi_counter % device.vi.limit_freq == 0 && device.vi.enable_speed_limiter {
+    if device.vi.vi_counter.is_multiple_of(device.vi.limit_freq) && device.vi.enable_speed_limiter {
         speed_limiter(device, speed_limiter_toggled);
     }
     ui::video::update_screen();
