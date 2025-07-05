@@ -58,8 +58,8 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
     // rdram pointer is shared with parallel-rdp
     rdram::init(device);
 
-    ui::audio::init(&mut device.ui, device.ai.freq);
     ui::video::init(device);
+    ui::audio::init(&mut device.ui, device.ai.freq);
     ui::input::init(&mut device.ui);
 
     mi::init(device);
@@ -81,10 +81,10 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
 
     cpu::run(device);
 
-    ui::input::close(&mut device.ui);
-    ui::video::close(&device.ui);
-    ui::audio::close(&mut device.ui);
     ui::storage::write_saves(device);
+    ui::input::close(&mut device.ui);
+    ui::audio::close(&mut device.ui);
+    ui::video::close(&device.ui);
 }
 
 fn set_rng() -> rand_chacha::ChaCha8Rng {
