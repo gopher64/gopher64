@@ -43,5 +43,6 @@ slint-build = "1.12"
 cc = { version = "1.2", features = ["parallel"] }
 
 [profile.release]
+codegen-units = 1
 panic = "abort"
 lto = "thin"
