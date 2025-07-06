@@ -61,6 +61,7 @@ fn main() {
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    let profile = std::env::var("PROFILE").unwrap();
     if arch == "x86_64" {
         rdp_build.flag("-march=x86-64-v3");
     } else if arch == "aarch64" {
@@ -78,6 +79,9 @@ fn main() {
             .unwrap();
     }
 
+    if profile == "release" {
+        rdp_build.flag("-flto");
+    }
     rdp_build.compile("parallel-rdp");
 
     let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
@@ -153,6 +157,9 @@ fn main() {
         simd_build.file("src/compat/aarch64.c");
         simd_build.file(std::env::temp_dir().join("bindgen").join("extern.c"));
         simd_build.include(".");
+        if profile == "release" {
+            simd_build.flag("-flto");
+        }
         simd_build.compile("simd");
     }
 

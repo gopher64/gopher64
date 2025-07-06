@@ -1,3 +1,9 @@
+[target.'cfg(not(target_os = "windows"))']
+rustflags = ["-C", "linker=clang", "-C", "link-arg=-fuse-ld=lld"]
+
+[target.'cfg(target_os = "windows")']
+rustflags = ["-C", "linker=lld-link", "-C", "link-arg=-fuse-ld=lld-link"]
+
 [target.'cfg(target_arch = "x86_64")']
 rustflags = ["-C", "target-cpu=x86-64-v3"]
 
