@@ -6,11 +6,10 @@ fn main() {
     slint_build::compile_with_config("src/ui/gui/appwindow.slint", slint_config).unwrap();
 
     let mut simd_build = cc::Build::new();
-    let mut build = cc::Build::new();
-    build
+    let mut rdp_build = cc::Build::new();
+    rdp_build
         .cpp(true)
         .warnings(false)
-        .std("c++17")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/command_ring.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_device.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_dump_write.cpp")
@@ -63,15 +62,15 @@ fn main() {
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     if arch == "x86_64" {
-        build.flag("-march=x86-64-v3");
+        rdp_build.flag("-march=x86-64-v3");
     } else if arch == "aarch64" {
-        build.flag("-march=armv8.2-a");
+        rdp_build.flag("-march=armv8.2-a");
         simd_build.flag("-march=armv8.2-a");
     } else {
         panic!("unknown arch")
     }
     if os == "windows" {
-        build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
+        rdp_build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
 
         winresource::WindowsResource::new()
             .set_icon("data/icon.ico")
@@ -79,7 +78,7 @@ fn main() {
             .unwrap();
     }
 
-    build.compile("parallel-rdp");
+    rdp_build.compile("parallel-rdp");
 
     let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
 
