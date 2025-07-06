@@ -11,6 +11,7 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  LLVM_VERSION: "20.1"
 
 jobs:
   lint-linux:
@@ -34,6 +35,10 @@ jobs:
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev \
             libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
           version: lint-1.0
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "${{ env.LLVM_VERSION }}"
       - name: Rustfmt Check
         uses: actions-rust-lang/rustfmt@v1
       - name: Lint
