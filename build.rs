@@ -78,6 +78,7 @@ fn main() {
             .unwrap();
     }
 
+    rdp_build.flag("-flto=thin");
     rdp_build.compile("parallel-rdp");
 
     let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
@@ -153,6 +154,7 @@ fn main() {
         simd_build.file("src/compat/aarch64.c");
         simd_build.file(std::env::temp_dir().join("bindgen").join("extern.c"));
         simd_build.include(".");
+        simd_build.flag("-flto=thin");
         simd_build.compile("simd");
     }
 
