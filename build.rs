@@ -80,7 +80,7 @@ fn main() {
     }
 
     if profile == "release" {
-        rdp_build.flag("-flto");
+        rdp_build.flag("-flto=thin");
     }
     rdp_build.compile("parallel-rdp");
 
@@ -158,7 +158,7 @@ fn main() {
         simd_build.file(std::env::temp_dir().join("bindgen").join("extern.c"));
         simd_build.include(".");
         if profile == "release" {
-            simd_build.flag("-flto");
+            simd_build.flag("-flto=thin");
         }
         simd_build.compile("simd");
     }
