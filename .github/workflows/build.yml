@@ -10,6 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  LLVM_VERSION: "20.1"
 
 jobs:
   build-linux:
@@ -44,6 +45,10 @@ jobs:
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev \
             libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
           version: ${{ matrix.target }}-1.0
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "${{ env.LLVM_VERSION }}"
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
@@ -75,11 +80,19 @@ jobs:
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "${{ env.LLVM_VERSION }}"
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
+        env:
+          CC: clang-cl
+          CXX: clang-cl
+          AR: llvm-lib
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
@@ -87,6 +100,7 @@ jobs:
           path: output/gopher64-${{ matrix.arch }}.exe
 
   build-macos:
+    if: false
     runs-on: macos-15
     strategy:
       fail-fast: false

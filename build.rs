@@ -62,46 +62,21 @@ fn main() {
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    let env = std::env::var("CARGO_CFG_TARGET_ENV").unwrap();
+    if arch == "x86_64" {
+        build.flag("-march=x86-64-v3");
+    } else if arch == "aarch64" {
+        build.flag("-march=armv8.2-a");
+        simd_build.flag("-march=armv8.2-a");
+    } else {
+        panic!("unknown arch")
+    }
     if os == "windows" {
-        if arch == "x86_64" {
-            if env == "msvc" {
-                build.flag("/arch:AVX2");
-            } else if env == "gnu" {
-                build.flag("-march=x86-64-v3");
-            } else {
-                panic!("unknown env")
-            }
-        } else if arch == "aarch64" {
-            if env == "msvc" {
-                build.flag("/arch:armv8.2");
-                simd_build.flag("/arch:armv8.2");
-            } else if env == "gnu" {
-                build.flag("-march=armv8.2-a");
-                simd_build.flag("-march=armv8.2-a");
-            } else {
-                panic!("unknown env")
-            }
-        } else {
-            panic!("unknown arch")
-        }
         build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
 
         winresource::WindowsResource::new()
             .set_icon("data/icon.ico")
             .compile()
             .unwrap();
-    } else if os == "linux" || os == "macos" {
-        if arch == "x86_64" {
-            build.flag("-march=x86-64-v3");
-        } else if arch == "aarch64" {
-            build.flag("-march=armv8.2-a");
-            simd_build.flag("-march=armv8.2-a");
-        } else {
-            panic!("unknown arch")
-        }
-    } else {
-        panic!("unknown OS")
     }
 
     build.compile("parallel-rdp");
