@@ -1,5 +1,3 @@
-use crate::ui;
-
 pub fn prompt_for_match(
     words: &[String],
     window_notifier: &tokio::sync::mpsc::Sender<Option<Vec<String>>>,
@@ -13,7 +11,7 @@ pub fn prompt_for_match(
     while result.is_err() {
         result = word_index_receiver.try_recv();
         std::thread::sleep(std::time::Duration::from_secs_f64(1.0 / 60.0));
-        ui::video::update_screen(); // so the OS doesn't complain about the game window being frozen
+        unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the OS doesn't complain about the game window being frozen
     }
     for (i, v) in words.iter().enumerate() {
         if *v == *result.as_ref().unwrap() {

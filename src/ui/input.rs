@@ -363,6 +363,8 @@ pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<Option<String>> {
 }
 
 pub fn get(ui: &ui::Ui, channel: usize) -> InputData {
+    unsafe { sdl3_sys::events::SDL_PumpEvents() };
+
     let profile_name = ui.config.input.input_profile_binding[channel].clone();
     let profile = ui.config.input.input_profiles.get(&profile_name).unwrap();
     let mut keys = 0;

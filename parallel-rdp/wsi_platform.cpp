@@ -56,7 +56,6 @@ bool SDL_WSIPlatform::alive(Vulkan::WSI &wsi)
 
 void SDL_WSIPlatform::poll_input()
 {
-	SDL_PumpEvents();
 }
 
 void SDL_WSIPlatform::poll_input_async(Granite::InputTrackerHandler *handler)
