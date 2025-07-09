@@ -230,6 +230,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info)
 	memset(&rdp_device, 0, sizeof(RDP_DEVICE));
 
 	window = (SDL_Window *)_window;
+	SDL_SyncWindow(window);
 	bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
 	if (!result)
 	{
