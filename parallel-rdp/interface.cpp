@@ -58,6 +58,8 @@ typedef struct
 	int cmd_cur;
 	int cmd_ptr;
 	uint32_t region;
+	uint64_t vi_counter;
+	uint64_t last_sync;
 } RDP_DEVICE;
 
 static SDL_Window *window;
@@ -435,6 +437,7 @@ void rdp_update_screen()
 	render_frame(device);
 	wsi->end_frame();
 	wsi->begin_frame();
+	rdp_device.vi_counter += 1;
 }
 
 CALL_BACK rdp_check_callback()
@@ -542,7 +545,11 @@ uint64_t rdp_process_commands()
 			break;
 		}
 		case RDP::Op::SyncFull:
-			processor->wait_for_timeline(processor->signal_timeline());
+			if (rdp_device.last_sync != rdp_device.vi_counter)
+			{
+				processor->wait_for_timeline(processor->signal_timeline());
+				rdp_device.last_sync = rdp_device.vi_counter;
+			}
 			interrupt_timer = rdp_device.region;
 			if (interrupt_timer == 0)
 				interrupt_timer = 5000;
