@@ -37,10 +37,18 @@ pub fn init(device: &mut device::Device) {
         sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), window_width, window_height, flags)
     };
     if device.ui.video.window.is_null() {
-        panic!("Could not create window");
+        panic!("Could not create window: {}", unsafe {
+            std::ffi::CStr::from_ptr(sdl3_sys::error::SDL_GetError())
+                .to_str()
+                .unwrap()
+        });
     }
     if !unsafe { sdl3_sys::video::SDL_ShowWindow(device.ui.video.window) } {
-        panic!("Could not show window");
+        panic!("Could not show window: {}", unsafe {
+            std::ffi::CStr::from_ptr(sdl3_sys::error::SDL_GetError())
+                .to_str()
+                .unwrap()
+        });
     }
     unsafe {
         sdl3_sys::everything::SDL_HideCursor();
