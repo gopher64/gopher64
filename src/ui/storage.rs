@@ -341,7 +341,8 @@ pub fn compress_file(data: &[(&[u8], &str)]) -> Vec<u8> {
                 .start_file(
                     item.1,
                     zip::write::SimpleFileOptions::default()
-                        .compression_method(zip::CompressionMethod::Zstd),
+                        .compression_method(zip::CompressionMethod::Zstd)
+                        .compression_level(Some(1)),
                 )
                 .unwrap();
             writer.write_all(item.0).unwrap();
