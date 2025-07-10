@@ -7,7 +7,9 @@ fn main() {
 
     let mut simd_build = cc::Build::new();
     let mut volk_build = cc::Build::new();
-    volk_build.file("parallel-rdp/parallel-rdp-standalone/volk/volk.c");
+    volk_build
+        .include("parallel-rdp/parallel-rdp-standalone/vulkan-headers/include")
+        .file("parallel-rdp/parallel-rdp-standalone/volk/volk.c");
     let mut rdp_build = cc::Build::new();
     rdp_build
         .cpp(true)
