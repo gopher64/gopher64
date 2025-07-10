@@ -6,10 +6,13 @@ fn main() {
     slint_build::compile_with_config("src/ui/gui/appwindow.slint", slint_config).unwrap();
 
     let mut simd_build = cc::Build::new();
+    let mut volk_build = cc::Build::new();
+    volk_build.file("parallel-rdp/parallel-rdp-standalone/volk/volk.c");
     let mut rdp_build = cc::Build::new();
     rdp_build
         .cpp(true)
-        .warnings(false)
+        .flag("-Wno-unused-parameter")
+        .flag("-Wno-missing-field-initializers")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/command_ring.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_device.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/rdp_dump_write.cpp")
@@ -46,7 +49,6 @@ fn main() {
         .file("parallel-rdp/parallel-rdp-standalone/util/timeline_trace_file.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/util/environment.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/util/thread_name.cpp")
-        .file("parallel-rdp/parallel-rdp-standalone/volk/volk.c")
         .file("parallel-rdp/interface.cpp")
         .file("parallel-rdp/wsi_platform.cpp")
         .include("parallel-rdp/parallel-rdp-standalone/parallel-rdp")
@@ -62,15 +64,19 @@ fn main() {
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let profile = std::env::var("PROFILE").unwrap();
-    if arch == "x86_64" {
-        rdp_build.flag("-march=x86-64-v3");
+    let opt_flag = if arch == "x86_64" {
+        "-march=x86-64-v3"
     } else if arch == "aarch64" {
-        rdp_build.flag("-march=armv8.2-a");
-        simd_build.flag("-march=armv8.2-a");
+        "-march=armv8.2-a"
     } else {
         panic!("unknown arch")
-    }
+    };
+    volk_build.flag(opt_flag);
+    rdp_build.flag(opt_flag);
+    simd_build.flag(opt_flag);
+
     if os == "windows" {
+        volk_build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
         rdp_build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
 
         winresource::WindowsResource::new()
@@ -80,8 +86,11 @@ fn main() {
     }
 
     if profile == "release" {
+        volk_build.flag("-flto=thin");
         rdp_build.flag("-flto=thin");
+        simd_build.flag("-flto=thin");
     }
+    volk_build.compile("volk");
     rdp_build.compile("parallel-rdp");
 
     let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
@@ -157,9 +166,6 @@ fn main() {
         simd_build.file("src/compat/aarch64.c");
         simd_build.file(std::env::temp_dir().join("bindgen").join("extern.c"));
         simd_build.include(".");
-        if profile == "release" {
-            simd_build.flag("-flto=thin");
-        }
         simd_build.compile("simd");
     }
 
