@@ -44,4 +44,3 @@ cc = { version = "1.2", features = ["parallel"] }
 
 [profile.release]
 panic = "abort"
-lto = "thin"
