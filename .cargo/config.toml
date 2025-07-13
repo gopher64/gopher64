@@ -1,4 +1,4 @@
-[target.'cfg(not(target_os = "windows"))']
+[target.'cfg(target_os = "linux")']
 rustflags = ["-C", "linker=clang", "-C", "link-arg=-fuse-ld=lld"]
 
 [target.'cfg(target_os = "windows")']
