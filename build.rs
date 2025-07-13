@@ -13,6 +13,7 @@ fn main() {
     let mut rdp_build = cc::Build::new();
     rdp_build
         .cpp(true)
+        .std("c++17")
         .flag("-Wno-unused-parameter")
         .flag("-Wno-missing-field-initializers")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/command_ring.cpp")

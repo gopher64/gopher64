@@ -117,6 +117,10 @@ jobs:
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "${{ env.LLVM_VERSION }}"
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
