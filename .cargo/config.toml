@@ -13,3 +13,6 @@ rustflags = ["-C", "target-cpu=cortex-a76"]
 [env]
 CC = "clang"
 CXX = "clang++"
+CFLAGS = -flto=thin
+CXXFLAGS = -flto=thin
+CMAKE_LINKER_TYPE = LLD
