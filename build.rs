@@ -8,6 +8,7 @@ fn main() {
     let mut simd_build = cc::Build::new();
     let mut volk_build = cc::Build::new();
     volk_build
+        .std("c17")
         .include("parallel-rdp/parallel-rdp-standalone/vulkan-headers/include")
         .file("parallel-rdp/parallel-rdp-standalone/volk/volk.c");
     let mut rdp_build = cc::Build::new();
@@ -165,11 +166,13 @@ fn main() {
             .write_to_file(out_path.join("simd_bindings.rs"))
             .expect("Couldn't write bindings!");
 
-        simd_build.flag("-DSSE2NEON_SUPPRESS_WARNINGS");
-        simd_build.file("src/compat/aarch64.c");
-        simd_build.file(std::env::temp_dir().join("bindgen").join("extern.c"));
-        simd_build.include(".");
-        simd_build.compile("simd");
+        simd_build
+            .std("c17")
+            .flag("-DSSE2NEON_SUPPRESS_WARNINGS")
+            .file("src/compat/aarch64.c")
+            .file(std::env::temp_dir().join("bindgen").join("extern.c"))
+            .include(".")
+            .compile("simd");
     }
 
     let git_output = std::process::Command::new("git")
