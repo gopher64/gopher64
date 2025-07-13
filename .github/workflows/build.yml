@@ -54,6 +54,9 @@ jobs:
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
+        env:
+          CFLAGS: -flto=thin -fuse-ld=lld
+          CXXFLAGS: -flto=thin -fuse-ld=lld
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
@@ -93,6 +96,8 @@ jobs:
           CC: clang-cl
           CXX: clang-cl
           AR: llvm-lib
+          CFLAGS: -flto=thin
+          CXXFLAGS: -flto=thin
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
@@ -122,6 +127,9 @@ jobs:
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
+        env:
+          CFLAGS: -flto=thin
+          CXXFLAGS: -flto=thin
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
