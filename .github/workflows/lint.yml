@@ -23,12 +23,14 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy, rustfmt
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
       - name: Install SDL Dependencies
         # https://wiki.libsdl.org/SDL3/README-linux#build-dependencies
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: build-essential git make \
-            pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
+            pkg-config ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
             libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
             libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
             libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
