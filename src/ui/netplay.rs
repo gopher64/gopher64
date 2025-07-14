@@ -116,7 +116,7 @@ impl NetplayPages for NetplayJoin {
 }
 
 fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
-    let task = reqwest::get("https://gopher64.bacoosta.com/servers-gopher64.json");
+    let task = reqwest::get("https://cdn.gopher64.com/servers-gopher64.json");
     tokio::spawn(async move {
         let mut local_servers: Vec<(String, String)> = vec![];
 
