@@ -85,7 +85,7 @@ fn main() {
         rdp_build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
 
         winresource::WindowsResource::new()
-            .set_icon("data/icon.ico")
+            .set_icon("data/icon/icon.ico")
             .compile()
             .unwrap();
     }
