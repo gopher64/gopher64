@@ -411,11 +411,14 @@ pub fn run_rom(
 
 fn open_rom(app: &AppWindow) {
     let rom_dir = app.get_rom_dir();
-    let select_rom = rfd::AsyncFileDialog::new()
-        .set_title("Select ROM")
-        .add_filter("ROM files", &N64_EXTENSIONS)
-        .set_directory(rom_dir)
-        .pick_file();
+    let select_rom = if rom_dir.is_empty() {
+        rfd::AsyncFileDialog::new()
+    } else {
+        rfd::AsyncFileDialog::new().set_directory(rom_dir)
+    }
+    .set_title("Select ROM")
+    .add_filter("ROM files", &N64_EXTENSIONS)
+    .pick_file();
     let mut select_gb_rom = [None, None, None, None];
     let mut select_gb_ram = [None, None, None, None];
 

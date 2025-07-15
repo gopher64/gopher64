@@ -177,11 +177,14 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
     weak: slint::Weak<T>,
     rom_dir: slint::SharedString,
 ) {
-    let select_rom = rfd::AsyncFileDialog::new()
-        .set_title("Select ROM")
-        .add_filter("ROM files", &ui::gui::N64_EXTENSIONS)
-        .set_directory(rom_dir)
-        .pick_file();
+    let select_rom = if rom_dir.is_empty() {
+        rfd::AsyncFileDialog::new()
+    } else {
+        rfd::AsyncFileDialog::new().set_directory(rom_dir)
+    }
+    .set_title("Select ROM")
+    .add_filter("ROM files", &ui::gui::N64_EXTENSIONS)
+    .pick_file();
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
             if let Some(rom_contents) = device::get_rom_contents(file.path()) {
