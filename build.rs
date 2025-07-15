@@ -14,7 +14,7 @@ fn main() {
     let mut rdp_build = cc::Build::new();
     rdp_build
         .cpp(true)
-        .std("c++17")
+        .std("c++23")
         .flag("-Wno-unused-parameter")
         .flag("-Wno-missing-field-initializers")
         .file("parallel-rdp/parallel-rdp-standalone/parallel-rdp/command_ring.cpp")
@@ -168,6 +168,8 @@ fn main() {
             .expect("Couldn't write bindings!");
 
         simd_build
+            .std("c17")
+            .flag("-D_POSIX_C_SOURCE=200112L")
             .flag("-DSSE2NEON_SUPPRESS_WARNINGS")
             .file("src/compat/aarch64.c")
             .file(std::env::temp_dir().join("bindgen").join("extern.c"))
