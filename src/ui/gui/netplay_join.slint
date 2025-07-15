@@ -15,9 +15,10 @@ export component NetplayJoin inherits Window {
     in-out property peer_addr <=> NetplayData.peer_addr;
     in-out property pending_session <=> NetplayData.pending_session;
     in-out property rom_path <=> NetplayData.rom_path;
+    in-out property rom_dir <=> NetplayData.rom_dir;
     callback get_ping(string);
     callback refresh_session(string);
-    callback select_rom;
+    callback select_rom(string);
     callback join_session(string, string, string, int);
 
     VerticalBox {
@@ -104,13 +105,13 @@ export component NetplayJoin inherits Window {
             if NetplayData.game_name == "": Button {
                 text: @tr("Select ROM");
                 clicked => {
-                    select_rom();
+                    select_rom(NetplayData.rom_dir);
                 }
             }
             if NetplayData.game_name != "": Button {
                 text: NetplayData.game_name;
                 clicked => {
-                    select_rom();
+                    select_rom(NetplayData.rom_dir);
                 }
             }
 

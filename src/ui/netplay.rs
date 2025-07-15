@@ -173,10 +173,21 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
     });
 }
 
-fn select_rom<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
-    let select_rom = rfd::AsyncFileDialog::new()
-        .set_title("Select ROM")
-        .pick_file();
+fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
+    weak: slint::Weak<T>,
+    rom_dir: slint::SharedString,
+) {
+    let select_rom = if !rom_dir.is_empty()
+        && let Ok(exists) = std::fs::exists(&rom_dir)
+        && exists
+    {
+        rfd::AsyncFileDialog::new().set_directory(rom_dir)
+    } else {
+        rfd::AsyncFileDialog::new()
+    }
+    .set_title("Select ROM")
+    .add_filter("ROM files", &ui::gui::N64_EXTENSIONS)
+    .pick_file();
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
             if let Some(rom_contents) = device::get_rom_contents(file.path()) {
@@ -252,6 +263,7 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
 pub fn setup_create_window(
     create_window: &NetplayCreate,
     game_settings: GameSettings,
+    rom_dir: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
     let (netplay_read_sender, netplay_read_receiver): (
@@ -264,14 +276,15 @@ pub fn setup_create_window(
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(5);
 
+    create_window.set_rom_dir(rom_dir);
     populate_server_names(create_window.as_weak());
     let weak = create_window.as_weak();
     create_window.on_get_ping(move |server_url| {
         update_ping(weak.clone(), server_url.to_string());
     });
     let weak = create_window.as_weak();
-    create_window.on_select_rom(move || {
-        select_rom(weak.clone());
+    create_window.on_select_rom(move |rom_dir| {
+        select_rom(weak.clone(), rom_dir);
     });
 
     let weak = create_window.as_weak();
@@ -937,6 +950,7 @@ fn setup_wait_window(
 pub fn setup_join_window(
     join_window: &NetplayJoin,
     fullscreen: bool,
+    rom_dir: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
     let (netplay_read_sender, netplay_read_receiver): (
@@ -949,6 +963,7 @@ pub fn setup_join_window(
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(5);
 
+    join_window.set_rom_dir(rom_dir);
     populate_server_names(join_window.as_weak());
     let weak = join_window.as_weak();
     join_window.on_get_ping(move |server_url| {
@@ -959,8 +974,8 @@ pub fn setup_join_window(
         .unwrap();
     });
     let weak = join_window.as_weak();
-    join_window.on_select_rom(move || {
-        select_rom(weak.clone());
+    join_window.on_select_rom(move |rom_dir| {
+        select_rom(weak.clone(), rom_dir);
     });
 
     let sender = netplay_write_sender.clone();
@@ -1019,6 +1034,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                         disable_expansion_pak: handle.get_disable_expansion_pak(),
                         cheats: std::collections::HashMap::new(), // not used here
                     },
+                    handle.get_rom_dir(),
                     weak_app,
                 );
             })
@@ -1035,7 +1051,12 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
             .upgrade_in_event_loop(move |handle| {
                 let join_window = NetplayJoin::new().unwrap();
                 save_settings(&handle, &controller_paths);
-                setup_join_window(&join_window, handle.get_fullscreen(), weak_app);
+                setup_join_window(
+                    &join_window,
+                    handle.get_fullscreen(),
+                    handle.get_rom_dir(),
+                    weak_app,
+                );
             })
             .unwrap();
     });

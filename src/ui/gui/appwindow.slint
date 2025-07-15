@@ -29,7 +29,7 @@ export component AppWindow inherits Window {
     callback join_session_button_clicked;
     callback netplay_discord_button_clicked;
     callback netplay_feedback_button_clicked;
-    callback cheats_select_rom_clicked;
+    callback cheats_select_rom_clicked(string);
     callback cheats_clear_clicked;
     callback cheat_toggled(string, string, string, bool);
     in property version <=> AboutData.version;
@@ -41,6 +41,7 @@ export component AppWindow inherits Window {
     in-out property overclock_n64_cpu <=> SettingsData.overclock_n64_cpu;
     in-out property disable_expansion_pak <=> SettingsData.disable_expansion_pak;
     in-out property resolution <=> SettingsData.resolution;
+    in-out property rom_dir <=> SettingsData.rom_dir;
     in-out property emulate_vru <=> ControllerData.emulate_vru;
     in-out property controller_enabled <=> ControllerData.controller_enabled;
     in-out property transferpak <=> ControllerData.transferpak;
@@ -102,8 +103,8 @@ export component AppWindow inherits Window {
             }
         }
         if(side-bar.current-item == 3): Cheats {
-            cheats_select_rom_clicked => {
-                cheats_select_rom_clicked();
+            cheats_select_rom_clicked(rom_dir) => {
+                cheats_select_rom_clicked(rom_dir);
             }
             cheats_clear_clicked => {
                 cheats_clear_clicked();
