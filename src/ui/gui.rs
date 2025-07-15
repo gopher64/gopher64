@@ -104,9 +104,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     };
     app.set_resolution(combobox_value);
 
-    if let Some(rom_dir) = &config.rom_dir
-        && let Some(rom_dir_str) = rom_dir.to_str()
-    {
+    if let Some(rom_dir_str) = config.rom_dir.to_str() {
         app.set_rom_dir(rom_dir_str.into());
     }
 }
@@ -359,7 +357,7 @@ pub fn run_rom(
                 .unwrap();
 
             let mut device = device::Device::new();
-            device.ui.config.rom_dir = Some(file_path.parent().unwrap().to_path_buf());
+            device.ui.config.rom_dir = file_path.parent().unwrap().to_path_buf();
 
             for i in 0..4 {
                 if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
@@ -401,9 +399,7 @@ pub fn run_rom(
 
             let rom_dir = device.ui.config.rom_dir.clone();
             weak.upgrade_in_event_loop(move |handle| {
-                if let Some(rom_dir) = &rom_dir
-                    && let Some(rom_dir_str) = rom_dir.to_str()
-                {
+                if let Some(rom_dir_str) = rom_dir.to_str() {
                     handle.set_rom_dir(rom_dir_str.into());
                 }
                 handle.set_game_running(false);
