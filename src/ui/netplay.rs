@@ -177,10 +177,13 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
     weak: slint::Weak<T>,
     rom_dir: slint::SharedString,
 ) {
-    let select_rom = if rom_dir.is_empty() {
-        rfd::AsyncFileDialog::new()
-    } else {
+    let select_rom = if !rom_dir.is_empty()
+        && let Ok(exists) = std::fs::exists(&rom_dir)
+        && exists
+    {
         rfd::AsyncFileDialog::new().set_directory(rom_dir)
+    } else {
+        rfd::AsyncFileDialog::new()
     }
     .set_title("Select ROM")
     .add_filter("ROM files", &ui::gui::N64_EXTENSIONS)

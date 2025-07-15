@@ -411,10 +411,13 @@ pub fn run_rom(
 
 fn open_rom(app: &AppWindow) {
     let rom_dir = app.get_rom_dir();
-    let select_rom = if rom_dir.is_empty() {
-        rfd::AsyncFileDialog::new()
-    } else {
+    let select_rom = if !rom_dir.is_empty()
+        && let Ok(exists) = std::fs::exists(&rom_dir)
+        && exists
+    {
         rfd::AsyncFileDialog::new().set_directory(rom_dir)
+    } else {
+        rfd::AsyncFileDialog::new()
     }
     .set_title("Select ROM")
     .add_filter("ROM files", &N64_EXTENSIONS)
