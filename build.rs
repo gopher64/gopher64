@@ -8,7 +8,7 @@ fn main() {
     let mut simd_build = cc::Build::new();
     let mut volk_build = cc::Build::new();
     volk_build
-        .std("c23")
+        .std("c17")
         .include("parallel-rdp/parallel-rdp-standalone/vulkan-headers/include")
         .file("parallel-rdp/parallel-rdp-standalone/volk/volk.c");
     let mut rdp_build = cc::Build::new();
@@ -168,7 +168,7 @@ fn main() {
             .expect("Couldn't write bindings!");
 
         simd_build
-            .std("c23")
+            .std("c17")
             .flag("-DSSE2NEON_SUPPRESS_WARNINGS")
             .file("src/compat/aarch64.c")
             .file(std::env::temp_dir().join("bindgen").join("extern.c"))
