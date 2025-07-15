@@ -67,6 +67,7 @@ pub struct Config {
     pub input: Input,
     pub video: Video,
     pub emulation: Emulation,
+    pub rom_dir: Option<std::path::PathBuf>,
 }
 
 impl Drop for Cheats {
@@ -150,6 +151,7 @@ impl Config {
                 overclock: false,
                 disable_expansion_pak: false,
             },
+            rom_dir: None,
         }
     }
 }

@@ -173,9 +173,14 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
     });
 }
 
-fn select_rom<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
+fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
+    weak: slint::Weak<T>,
+    rom_dir: slint::SharedString,
+) {
     let select_rom = rfd::AsyncFileDialog::new()
         .set_title("Select ROM")
+        .add_filter("ROM files", &ui::gui::N64_EXTENSIONS)
+        .set_directory(rom_dir)
         .pick_file();
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
@@ -270,8 +275,8 @@ pub fn setup_create_window(
         update_ping(weak.clone(), server_url.to_string());
     });
     let weak = create_window.as_weak();
-    create_window.on_select_rom(move || {
-        select_rom(weak.clone());
+    create_window.on_select_rom(move |rom_dir| {
+        select_rom(weak.clone(), rom_dir);
     });
 
     let weak = create_window.as_weak();
@@ -959,8 +964,8 @@ pub fn setup_join_window(
         .unwrap();
     });
     let weak = join_window.as_weak();
-    join_window.on_select_rom(move || {
-        select_rom(weak.clone());
+    join_window.on_select_rom(move |rom_dir| {
+        select_rom(weak.clone(), rom_dir);
     });
 
     let sender = netplay_write_sender.clone();

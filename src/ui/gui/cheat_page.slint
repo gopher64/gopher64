@@ -3,6 +3,7 @@
 
 import { ListView, HorizontalBox, VerticalBox, Button, GroupBox, CheckBox } from "std-widgets.slint";
 import { Page } from "page.slint";
+import { SettingsData } from "settings_page.slint";
 
 export global CheatsData {
     in-out property <string> cheat_game_name;
@@ -12,7 +13,7 @@ export global CheatsData {
 
 export component Cheats inherits Page {
     title: @tr("Cheats");
-    callback cheats_select_rom_clicked;
+    callback cheats_select_rom_clicked(string);
     callback cheats_clear_clicked;
     callback cheat_toggled(string, string, string, bool);
 
@@ -23,13 +24,13 @@ export component Cheats inherits Page {
             if CheatsData.cheat_game_name == "": Button {
                 text: @tr("Select ROM");
                 clicked => {
-                    cheats_select_rom_clicked();
+                    cheats_select_rom_clicked(SettingsData.rom_dir);
                 }
             }
             if CheatsData.cheat_game_name != "": Button {
                 text: CheatsData.cheat_game_name;
                 clicked => {
-                    cheats_select_rom_clicked();
+                    cheats_select_rom_clicked(SettingsData.rom_dir);
                 }
             }
             Rectangle {

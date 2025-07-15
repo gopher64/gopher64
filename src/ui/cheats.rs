@@ -15,9 +15,11 @@ pub type Cheats = std::collections::BTreeMap<String, std::collections::BTreeMap<
 
 pub fn cheats_window(app: &AppWindow) {
     let weak = app.as_weak();
-    app.on_cheats_select_rom_clicked(move || {
+    app.on_cheats_select_rom_clicked(move |rom_dir| {
         let select_rom = rfd::AsyncFileDialog::new()
             .set_title("Select ROM")
+            .add_filter("ROM files", &ui::gui::N64_EXTENSIONS)
+            .set_directory(rom_dir)
             .pick_file();
         let weak = weak.clone();
         tokio::spawn(async move {

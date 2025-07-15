@@ -5,6 +5,8 @@ use slint::Model;
 
 slint::include_modules!();
 
+pub const N64_EXTENSIONS: [&str; 5] = ["n64", "v64", "z64", "7z", "zip"];
+
 #[derive(serde::Deserialize)]
 struct GithubData {
     tag_name: String,
@@ -101,6 +103,12 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
         _ => 0,
     };
     app.set_resolution(combobox_value);
+
+    if let Some(rom_dir) = &config.rom_dir
+        && let Some(rom_dir_str) = rom_dir.to_str()
+    {
+        app.set_rom_dir(rom_dir_str.into());
+    }
 }
 
 fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
@@ -351,6 +359,7 @@ pub fn run_rom(
                 .unwrap();
 
             let mut device = device::Device::new();
+            device.ui.config.rom_dir = Some(file_path.parent().unwrap().to_path_buf());
 
             for i in 0..4 {
                 if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
@@ -390,15 +399,26 @@ pub fn run_rom(
                 vru_window_notifier.try_send(None).unwrap();
             }
 
-            weak.upgrade_in_event_loop(move |handle| handle.set_game_running(false))
-                .unwrap();
+            let rom_dir = device.ui.config.rom_dir.clone();
+            weak.upgrade_in_event_loop(move |handle| {
+                handle.set_game_running(false);
+                if let Some(rom_dir) = &rom_dir
+                    && let Some(rom_dir_str) = rom_dir.to_str()
+                {
+                    handle.set_rom_dir(rom_dir_str.into());
+                }
+            })
+            .unwrap();
         })
         .unwrap();
 }
 
 fn open_rom(app: &AppWindow) {
+    let rom_dir = app.get_rom_dir();
     let select_rom = rfd::AsyncFileDialog::new()
         .set_title("Select ROM")
+        .add_filter("ROM files", &N64_EXTENSIONS)
+        .set_directory(rom_dir)
         .pick_file();
     let mut select_gb_rom = [None, None, None, None];
     let mut select_gb_ram = [None, None, None, None];
@@ -408,11 +428,13 @@ fn open_rom(app: &AppWindow) {
             select_gb_rom[i] = Some(
                 rfd::AsyncFileDialog::new()
                     .set_title(format!("GB ROM P{}", i + 1))
+                    .add_filter("GB ROM files", &["gb", "gbc"])
                     .pick_file(),
             );
             select_gb_ram[i] = Some(
                 rfd::AsyncFileDialog::new()
                     .set_title(format!("GB RAM P{}", i + 1))
+                    .add_filter("GB RAM files", &["sav", "ram"])
                     .pick_file(),
             );
         }
