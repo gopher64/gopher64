@@ -257,6 +257,7 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
 pub fn setup_create_window(
     create_window: &NetplayCreate,
     game_settings: GameSettings,
+    rom_dir: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
     let (netplay_read_sender, netplay_read_receiver): (
@@ -269,6 +270,7 @@ pub fn setup_create_window(
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(5);
 
+    create_window.set_rom_dir(rom_dir);
     populate_server_names(create_window.as_weak());
     let weak = create_window.as_weak();
     create_window.on_get_ping(move |server_url| {
@@ -942,6 +944,7 @@ fn setup_wait_window(
 pub fn setup_join_window(
     join_window: &NetplayJoin,
     fullscreen: bool,
+    rom_dir: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
     let (netplay_read_sender, netplay_read_receiver): (
@@ -954,6 +957,7 @@ pub fn setup_join_window(
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(5);
 
+    join_window.set_rom_dir(rom_dir);
     populate_server_names(join_window.as_weak());
     let weak = join_window.as_weak();
     join_window.on_get_ping(move |server_url| {
@@ -1024,6 +1028,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                         disable_expansion_pak: handle.get_disable_expansion_pak(),
                         cheats: std::collections::HashMap::new(), // not used here
                     },
+                    handle.get_rom_dir(),
                     weak_app,
                 );
             })
@@ -1040,7 +1045,12 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
             .upgrade_in_event_loop(move |handle| {
                 let join_window = NetplayJoin::new().unwrap();
                 save_settings(&handle, &controller_paths);
-                setup_join_window(&join_window, handle.get_fullscreen(), weak_app);
+                setup_join_window(
+                    &join_window,
+                    handle.get_fullscreen(),
+                    handle.get_rom_dir(),
+                    weak_app,
+                );
             })
             .unwrap();
     });

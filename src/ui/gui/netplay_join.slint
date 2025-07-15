@@ -1,6 +1,5 @@
 import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Button } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
-import { SettingsData } from "settings_page.slint";
 
 export component NetplayJoin inherits Window {
     title: @tr("Netplay: Join Session");
@@ -16,6 +15,7 @@ export component NetplayJoin inherits Window {
     in-out property peer_addr <=> NetplayData.peer_addr;
     in-out property pending_session <=> NetplayData.pending_session;
     in-out property rom_path <=> NetplayData.rom_path;
+    in-out property rom_dir <=> NetplayData.rom_dir;
     callback get_ping(string);
     callback refresh_session(string);
     callback select_rom(string);
@@ -105,13 +105,13 @@ export component NetplayJoin inherits Window {
             if NetplayData.game_name == "": Button {
                 text: @tr("Select ROM");
                 clicked => {
-                    select_rom(SettingsData.rom_dir);
+                    select_rom(NetplayData.rom_dir);
                 }
             }
             if NetplayData.game_name != "": Button {
                 text: NetplayData.game_name;
                 clicked => {
-                    select_rom(SettingsData.rom_dir);
+                    select_rom(NetplayData.rom_dir);
                 }
             }
 
