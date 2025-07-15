@@ -401,12 +401,12 @@ pub fn run_rom(
 
             let rom_dir = device.ui.config.rom_dir.clone();
             weak.upgrade_in_event_loop(move |handle| {
-                handle.set_game_running(false);
                 if let Some(rom_dir) = &rom_dir
                     && let Some(rom_dir_str) = rom_dir.to_str()
                 {
                     handle.set_rom_dir(rom_dir_str.into());
                 }
+                handle.set_game_running(false);
             })
             .unwrap();
         })
