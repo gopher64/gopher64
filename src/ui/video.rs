@@ -124,7 +124,7 @@ pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
 
 pub fn check_callback(device: &mut device::Device) -> bool {
     let mut speed_limiter_toggled = false;
-    let callback = unsafe { rdp_check_callback() };
+    let mut callback = unsafe { rdp_check_callback() };
     device.cpu.running = callback.emu_running;
     if device.netplay.is_none() {
         if callback.save_state {
@@ -135,6 +135,11 @@ pub fn check_callback(device: &mut device::Device) -> bool {
         if device.vi.enable_speed_limiter != callback.enable_speedlimiter {
             speed_limiter_toggled = true;
             device.vi.enable_speed_limiter = callback.enable_speedlimiter;
+        }
+        while callback.paused {
+            std::thread::sleep(std::time::Duration::from_secs_f64(1.0 / 60.0));
+            unsafe { sdl3_sys::events::SDL_PumpEvents() };
+            callback = unsafe { rdp_check_callback() };
         }
     }
 

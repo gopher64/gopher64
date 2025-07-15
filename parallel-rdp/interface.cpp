@@ -151,6 +151,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 {
 	if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
 	{
+		callback.paused = false;
 		callback.emu_running = false;
 	}
 	else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running)
@@ -172,6 +173,12 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 			if (event->key.mod & SDL_KMOD_ALT)
 			{
 				callback.enable_speedlimiter = !callback.enable_speedlimiter;
+			}
+			break;
+		case SDL_SCANCODE_P:
+			if (event->key.mod & SDL_KMOD_ALT)
+			{
+				callback.paused = !callback.paused;
 			}
 			break;
 		case SDL_SCANCODE_ESCAPE:
@@ -281,6 +288,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info)
 
 	callback.emu_running = true;
 	callback.enable_speedlimiter = true;
+	callback.paused = false;
 	crop_letterbox = false;
 }
 
