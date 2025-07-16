@@ -151,7 +151,14 @@ fn dma_read_sram(device: &mut device::Device, mut cart_addr: u32, mut dram_addr:
     format_sram(device);
 
     while i < dram_addr + length {
-        device.ui.storage.saves.sram.data[j as usize] = *device
+        *device
+            .ui
+            .storage
+            .saves
+            .sram
+            .data
+            .get_mut(j as usize)
+            .unwrap_or(&mut 0) = *device
             .rdram
             .mem
             .get(i as usize ^ device.byte_swap)
@@ -217,7 +224,14 @@ fn dma_write_sram(
             .rdram
             .mem
             .get_mut(i as usize ^ device.byte_swap)
-            .unwrap_or(&mut 0) = device.ui.storage.saves.sram.data[j as usize];
+            .unwrap_or(&mut 0) = *device
+            .ui
+            .storage
+            .saves
+            .sram
+            .data
+            .get(j as usize)
+            .unwrap_or(&0);
         i += 1;
         j += 1;
     }
