@@ -77,6 +77,7 @@ export component Netplay inherits Page {
 }
 
 export component CustomNetplayServer inherits Dialog {
+    callback ok_clicked(string);
     server_url := LineEdit {
         placeholder-text: "example.com:45000";
     }
@@ -85,6 +86,7 @@ export component CustomNetplayServer inherits Dialog {
         kind: ok;
         clicked => {
             NetplayData.custom_server_url = server_url.text;
+            ok_clicked(server_url.text);
         }
     }
 
