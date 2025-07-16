@@ -268,8 +268,12 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
     });
 }
 
-fn show_custom_url_dialog<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
+fn show_custom_url_dialog<T: ComponentHandle + NetplayPages + 'static>(
+    weak: slint::Weak<T>,
+    server_url: slint::SharedString,
+) {
     let url_dialog = CustomNetplayServer::new().unwrap();
+    url_dialog.set_custom_server_url(server_url);
     let weak_dialog = url_dialog.as_weak();
     url_dialog.on_ok_clicked(move |server_url| {
         weak.upgrade_in_event_loop(move |handle| {
@@ -306,8 +310,8 @@ pub fn setup_create_window(
     let weak = create_window.as_weak();
     create_window.on_get_custom_url(move || {
         let weak2 = weak.clone();
-        weak.upgrade_in_event_loop(move |_handle| {
-            show_custom_url_dialog(weak2);
+        weak.upgrade_in_event_loop(move |handle| {
+            show_custom_url_dialog(weak2, handle.get_custom_server_url());
         })
         .unwrap();
     });
@@ -1005,8 +1009,8 @@ pub fn setup_join_window(
     let weak = join_window.as_weak();
     join_window.on_get_custom_url(move || {
         let weak2 = weak.clone();
-        weak.upgrade_in_event_loop(move |_handle| {
-            show_custom_url_dialog(weak2);
+        weak.upgrade_in_event_loop(move |handle| {
+            show_custom_url_dialog(weak2, handle.get_custom_server_url());
         })
         .unwrap();
     });
