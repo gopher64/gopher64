@@ -57,6 +57,7 @@ trait NetplayPages {
         // Default implementation does nothing
     }
     fn invoke_get_ping(&self, server_url: slint::SharedString);
+    fn set_custom_server_url(&self, server_url: slint::SharedString);
 }
 
 impl NetplayPages for NetplayCreate {
@@ -86,6 +87,9 @@ impl NetplayPages for NetplayCreate {
     }
     fn invoke_get_ping(&self, server_url: slint::SharedString) {
         self.invoke_get_ping(server_url);
+    }
+    fn set_custom_server_url(&self, server_url: slint::SharedString) {
+        self.set_custom_server_url(server_url);
     }
 }
 
@@ -119,6 +123,9 @@ impl NetplayPages for NetplayJoin {
     }
     fn invoke_get_ping(&self, server_url: slint::SharedString) {
         self.invoke_get_ping(server_url);
+    }
+    fn set_custom_server_url(&self, server_url: slint::SharedString) {
+        self.set_custom_server_url(server_url);
     }
 }
 
@@ -277,6 +284,7 @@ fn show_custom_url_dialog<T: ComponentHandle + NetplayPages + 'static>(
     let weak_dialog = url_dialog.as_weak();
     url_dialog.on_ok_clicked(move |server_url| {
         weak.upgrade_in_event_loop(move |handle| {
+            handle.set_custom_server_url(server_url.clone());
             handle.invoke_get_ping(server_url);
         })
         .unwrap();
