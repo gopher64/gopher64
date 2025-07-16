@@ -77,6 +77,8 @@ export component Netplay inherits Page {
 }
 
 export component CustomNetplayServer inherits Dialog {
+    title: @tr("Custom Netplay Server");
+    preferred-width: 400px;
     callback ok_clicked(string);
     server_url := LineEdit {
         placeholder-text: "example.com:45000";
