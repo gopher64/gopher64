@@ -279,10 +279,6 @@ fn show_custom_url_dialog<T: ComponentHandle + NetplayPages + 'static>(
     weak: slint::Weak<T>,
     server_url: slint::SharedString,
 ) {
-    weak.upgrade_in_event_loop(move |handle| {
-        handle.set_ping("Ping: Unknown".into());
-    })
-    .unwrap();
     let url_dialog = CustomNetplayServer::new().unwrap();
     url_dialog.set_custom_server_url(server_url);
     let weak_dialog = url_dialog.as_weak();
@@ -324,6 +320,7 @@ pub fn setup_create_window(
     create_window.on_get_custom_url(move || {
         let weak2 = weak.clone();
         weak.upgrade_in_event_loop(move |handle| {
+            handle.set_ping("Ping: Unknown".into());
             show_custom_url_dialog(weak2, handle.get_custom_server_url());
         })
         .unwrap();
@@ -1023,6 +1020,7 @@ pub fn setup_join_window(
     join_window.on_get_custom_url(move || {
         let weak2 = weak.clone();
         weak.upgrade_in_event_loop(move |handle| {
+            handle.set_ping("Ping: Unknown".into());
             show_custom_url_dialog(weak2, handle.get_custom_server_url());
         })
         .unwrap();
