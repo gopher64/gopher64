@@ -114,7 +114,7 @@ export component NetplayCreate inherits Window {
             clicked => {
                 NetplayData.pending_session = true;
                 if (server.current-value == "Custom") {
-                    server_url = NetplayData.custom_server_url;
+                    server_url = "ws://" + NetplayData.custom_server_url;
                 } else {
                     server_url = NetplayData.server_urls[server.current-index];
                 }

@@ -90,7 +90,7 @@ export component CustomNetplayServer inherits Dialog {
         kind: ok;
         clicked => {
             NetplayData.custom_server_url = server_url.text;
-            ok_clicked("ws://" + NetplayData.custom_server_url);
+            ok_clicked(NetplayData.custom_server_url);
         }
     }
 }

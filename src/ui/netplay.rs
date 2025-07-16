@@ -285,7 +285,8 @@ fn show_custom_url_dialog<T: ComponentHandle + NetplayPages + 'static>(
     url_dialog.on_ok_clicked(move |server_url| {
         weak.upgrade_in_event_loop(move |handle| {
             handle.set_custom_server_url(server_url.clone());
-            handle.invoke_get_ping(server_url);
+            let prefix: slint::SharedString = "ws://".into();
+            handle.invoke_get_ping(prefix + &server_url);
         })
         .unwrap();
         weak_dialog.unwrap().window().hide().unwrap();

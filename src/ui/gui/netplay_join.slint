@@ -96,7 +96,7 @@ export component NetplayJoin inherits Window {
                 text: @tr("Refresh Session List");
                 clicked => {
                     if (server.current-value == "Custom") {
-                        refresh_session(NetplayData.custom_server_url);
+                        refresh_session("ws://" + NetplayData.custom_server_url);
                     } else {
                         refresh_session(NetplayData.server_urls[server.current-index]);
                     }
