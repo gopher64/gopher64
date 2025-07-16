@@ -69,7 +69,11 @@ export component NetplayCreate inherits Window {
                     model: NetplayData.server_names;
                     selected => {
                         if (self.current-index >= 0) {
-                            get_ping(NetplayData.server_urls[self.current-index]);
+                            if (self.current-value == "Custom") {
+                                get_ping(NetplayData.custom_server_url);
+                            } else {
+                                get_ping(NetplayData.server_urls[self.current-index]);
+                            }
                         }
                     }
                 }
@@ -102,12 +106,18 @@ export component NetplayCreate inherits Window {
         Rectangle { }
 
         Button {
+            property <string> server_url;
             text: @tr("Create Session");
             enabled: NetplayData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
             clicked => {
                 NetplayData.pending_session = true;
+                if (server.current-value == "Custom") {
+                    server_url = NetplayData.custom_server_url;
+                } else {
+                    server_url = NetplayData.server_urls[server.current-index];
+                }
                 create_session(
-                    NetplayData.server_urls[server.current-index],
+                    server_url,
                     NetplayData.session_name,
                     NetplayData.player_name,
                     NetplayData.game_name,

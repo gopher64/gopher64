@@ -159,6 +159,7 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                     server_names.push(server.0.into());
                     server_urls.push(server.1.into());
                 }
+                server_names.push("Custom".into());
                 update_ping(weak2, server_urls.row_data(0).unwrap().into());
                 handle.refresh_sessions(server_urls.row_data(0).unwrap());
                 let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
