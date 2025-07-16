@@ -14,6 +14,7 @@ export component NetplayCreate inherits Window {
     in-out property peer_addr <=> NetplayData.peer_addr;
     in-out property rom_dir <=> NetplayData.rom_dir;
     callback get_ping(string);
+    callback get_custom_url();
     callback select_rom(string);
     callback create_session(string, string, string, string, string, string, string);
 
@@ -70,7 +71,7 @@ export component NetplayCreate inherits Window {
                     selected => {
                         if (self.current-index >= 0) {
                             if (self.current-value == "Custom") {
-                                get_ping(NetplayData.custom_server_url);
+                                get_custom_url();
                             } else {
                                 get_ping(NetplayData.server_urls[self.current-index]);
                             }

@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { VerticalBox, HorizontalBox, Button } from "std-widgets.slint";
+import { StandardButton, VerticalBox, HorizontalBox, Button, LineEdit } from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export global NetplayData {
@@ -73,5 +73,22 @@ export component Netplay inherits Page {
                 }
             }
         }
+    }
+}
+
+export component CustomNetplayServer inherits Dialog {
+    server_url := LineEdit {
+        placeholder-text: "example.com:45000";
+    }
+
+    StandardButton {
+        kind: ok;
+        clicked => {
+            NetplayData.custom_server_url = server_url.text;
+        }
+    }
+
+    StandardButton {
+        kind: cancel;
     }
 }

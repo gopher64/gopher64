@@ -1,8 +1,8 @@
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{
-    AppWindow, ErrorDialog, GameSettings, GbPaths, NetplayCreate, NetplayDevice, NetplayJoin,
-    NetplayWait, VruChannel, run_rom, save_settings,
+    AppWindow, CustomNetplayServer, ErrorDialog, GameSettings, GbPaths, NetplayCreate,
+    NetplayDevice, NetplayJoin, NetplayWait, VruChannel, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -261,6 +261,11 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
     });
 }
 
+fn show_custom_url_dialog() {
+    let url_dialog = CustomNetplayServer::new().unwrap();
+    url_dialog.show().unwrap();
+}
+
 pub fn setup_create_window(
     create_window: &NetplayCreate,
     game_settings: GameSettings,
@@ -282,6 +287,13 @@ pub fn setup_create_window(
     let weak = create_window.as_weak();
     create_window.on_get_ping(move |server_url| {
         update_ping(weak.clone(), server_url.to_string());
+    });
+    let weak = create_window.as_weak();
+    create_window.on_get_custom_url(move || {
+        weak.upgrade_in_event_loop(move |_handle| {
+            show_custom_url_dialog();
+        })
+        .unwrap();
     });
     let weak = create_window.as_weak();
     create_window.on_select_rom(move |rom_dir| {
@@ -971,6 +983,13 @@ pub fn setup_join_window(
         update_ping(weak.clone(), server_url.to_string());
         weak.upgrade_in_event_loop(move |handle| {
             handle.invoke_refresh_session(server_url);
+        })
+        .unwrap();
+    });
+    let weak = join_window.as_weak();
+    join_window.on_get_custom_url(move || {
+        weak.upgrade_in_event_loop(move |_handle| {
+            show_custom_url_dialog();
         })
         .unwrap();
     });
