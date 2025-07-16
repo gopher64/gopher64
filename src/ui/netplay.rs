@@ -270,11 +270,13 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
 
 fn show_custom_url_dialog<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
     let url_dialog = CustomNetplayServer::new().unwrap();
+    let weak_dialog = url_dialog.as_weak();
     url_dialog.on_ok_clicked(move |server_url| {
         weak.upgrade_in_event_loop(move |handle| {
             handle.invoke_get_ping(server_url);
         })
         .unwrap();
+        weak_dialog.unwrap().window().hide().unwrap();
     });
     url_dialog.show().unwrap();
 }
