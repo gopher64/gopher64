@@ -1,8 +1,8 @@
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{
-    AppWindow, ErrorDialog, GameSettings, GbPaths, NetplayCreate, NetplayDevice, NetplayJoin,
-    NetplayWait, VruChannel, run_rom, save_settings,
+    AppWindow, CustomNetplayServer, ErrorDialog, GameSettings, GbPaths, NetplayCreate,
+    NetplayDevice, NetplayJoin, NetplayWait, VruChannel, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -56,6 +56,8 @@ trait NetplayPages {
     fn refresh_sessions(&self, _server: slint::SharedString) {
         // Default implementation does nothing
     }
+    fn invoke_get_ping(&self, server_url: slint::SharedString);
+    fn set_custom_server_url(&self, server_url: slint::SharedString);
 }
 
 impl NetplayPages for NetplayCreate {
@@ -82,6 +84,12 @@ impl NetplayPages for NetplayCreate {
     }
     fn set_peer_addr(&self, peer_addr: slint::SharedString) {
         self.set_peer_addr(peer_addr);
+    }
+    fn invoke_get_ping(&self, server_url: slint::SharedString) {
+        self.invoke_get_ping(server_url);
+    }
+    fn set_custom_server_url(&self, server_url: slint::SharedString) {
+        self.set_custom_server_url(server_url);
     }
 }
 
@@ -112,6 +120,12 @@ impl NetplayPages for NetplayJoin {
     }
     fn set_peer_addr(&self, peer_addr: slint::SharedString) {
         self.set_peer_addr(peer_addr);
+    }
+    fn invoke_get_ping(&self, server_url: slint::SharedString) {
+        self.invoke_get_ping(server_url);
+    }
+    fn set_custom_server_url(&self, server_url: slint::SharedString) {
+        self.set_custom_server_url(server_url);
     }
 }
 
@@ -159,6 +173,7 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                     server_names.push(server.0.into());
                     server_urls.push(server.1.into());
                 }
+                server_names.push("Custom".into());
                 update_ping(weak2, server_urls.row_data(0).unwrap().into());
                 handle.refresh_sessions(server_urls.row_data(0).unwrap());
                 let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
@@ -260,6 +275,25 @@ fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
     });
 }
 
+fn show_custom_url_dialog<T: ComponentHandle + NetplayPages + 'static>(
+    weak: slint::Weak<T>,
+    server_url: slint::SharedString,
+) {
+    let url_dialog = CustomNetplayServer::new().unwrap();
+    url_dialog.set_custom_server_url(server_url);
+    let weak_dialog = url_dialog.as_weak();
+    url_dialog.on_ok_clicked(move |server_url| {
+        weak.upgrade_in_event_loop(move |handle| {
+            handle.set_custom_server_url(server_url.clone());
+            let prefix: slint::SharedString = "ws://".into();
+            handle.invoke_get_ping(prefix + &server_url);
+        })
+        .unwrap();
+        weak_dialog.unwrap().window().hide().unwrap();
+    });
+    url_dialog.show().unwrap();
+}
+
 pub fn setup_create_window(
     create_window: &NetplayCreate,
     game_settings: GameSettings,
@@ -281,6 +315,15 @@ pub fn setup_create_window(
     let weak = create_window.as_weak();
     create_window.on_get_ping(move |server_url| {
         update_ping(weak.clone(), server_url.to_string());
+    });
+    let weak = create_window.as_weak();
+    create_window.on_get_custom_url(move || {
+        let weak2 = weak.clone();
+        weak.upgrade_in_event_loop(move |handle| {
+            handle.set_ping("Ping: Unknown".into());
+            show_custom_url_dialog(weak2, handle.get_custom_server_url());
+        })
+        .unwrap();
     });
     let weak = create_window.as_weak();
     create_window.on_select_rom(move |rom_dir| {
@@ -970,6 +1013,15 @@ pub fn setup_join_window(
         update_ping(weak.clone(), server_url.to_string());
         weak.upgrade_in_event_loop(move |handle| {
             handle.invoke_refresh_session(server_url);
+        })
+        .unwrap();
+    });
+    let weak = join_window.as_weak();
+    join_window.on_get_custom_url(move || {
+        let weak2 = weak.clone();
+        weak.upgrade_in_event_loop(move |handle| {
+            handle.set_ping("Ping: Unknown".into());
+            show_custom_url_dialog(weak2, handle.get_custom_server_url());
         })
         .unwrap();
     });

@@ -5,6 +5,7 @@ export component NetplayJoin inherits Window {
     title: @tr("Netplay: Join Session");
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
+    in-out property custom_server_url <=> NetplayData.custom_server_url;
     in-out property ping <=> NetplayData.ping;
     in-out property sessions <=> NetplayData.sessions;
     in-out property current_session <=> NetplayData.current_session;
@@ -17,6 +18,7 @@ export component NetplayJoin inherits Window {
     in-out property rom_path <=> NetplayData.rom_path;
     in-out property rom_dir <=> NetplayData.rom_dir;
     callback get_ping(string);
+    callback get_custom_url();
     callback refresh_session(string);
     callback select_rom(string);
     callback join_session(string, string, string, int);
@@ -46,7 +48,11 @@ export component NetplayJoin inherits Window {
                         model: NetplayData.server_names;
                         selected => {
                             if (self.current-index >= 0) {
-                                get_ping(NetplayData.server_urls[self.current-index]);
+                                if (self.current-value == "Custom") {
+                                    get_custom_url();
+                                } else {
+                                    get_ping(NetplayData.server_urls[self.current-index]);
+                                }
                             }
                         }
                     }
@@ -89,7 +95,11 @@ export component NetplayJoin inherits Window {
             Button {
                 text: @tr("Refresh Session List");
                 clicked => {
-                    refresh_session(NetplayData.server_urls[server.current-index]);
+                    if (server.current-value == "Custom") {
+                        refresh_session("ws://" + NetplayData.custom_server_url);
+                    } else {
+                        refresh_session(NetplayData.server_urls[server.current-index]);
+                    }
                 }
             }
         }
