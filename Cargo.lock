@@ -3081,12 +3081,9 @@ dependencies = [
 
 [[package]]
 name = "lzma-rust2"
-version = "0.2.2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e004a649120b31c06728257815826e075f638502ba49a9677c3c112e324e044d"
-dependencies = [
- "byteorder",
-]
+checksum = "ecaa2bc9f1bd284be221d0770bbc9b92a438fdf422ba45211f6c6bf157ebb932"
 
 [[package]]
 name = "maybe-rayon"
@@ -4704,9 +4701,9 @@ dependencies = [
 
 [[package]]
 name = "sevenz-rust2"
-version = "0.16.0"
+version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5375315e26d60d20f13d74c5bb0b6b627d334b68aa63f0d6d33d828af499d8d2"
+checksum = "5c12bd2c6a1f413f516836e80c1f541116f9b17ccbab2540f655ceeb58f5592c"
 dependencies = [
  "byteorder",
  "crc32fast",
