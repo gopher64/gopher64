@@ -611,7 +611,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
                 } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION) {
                     let axis_value = unsafe { event.gaxis.value };
                     let axis = unsafe { event.gaxis.axis };
-                    if !open_controllers.is_empty() && axis_value.saturating_abs() > i16::MAX / 2 {
+                    if !open_controllers.is_empty()
+                        && axis_value.saturating_abs() > (i16::MAX as i32 * 3 / 4) as i16
+                    {
                         let result = ui::config::InputControllerAxis {
                             enabled: true,
                             id: axis as i32,
@@ -647,7 +649,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
                 {
                     let axis_value = unsafe { event.jaxis.value };
                     let axis = unsafe { event.jaxis.axis };
-                    if !open_joysticks.is_empty() && axis_value.saturating_abs() > i16::MAX / 2 {
+                    if !open_joysticks.is_empty()
+                        && axis_value.saturating_abs() > (i16::MAX as i32 * 3 / 4) as i16
+                    {
                         let result = ui::config::InputControllerAxis {
                             enabled: true,
                             id: axis as i32,
