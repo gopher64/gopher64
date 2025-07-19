@@ -10,7 +10,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  LLVM_VERSION: "20.1.5"
 
 jobs:
   build-linux:
@@ -35,6 +34,8 @@ jobs:
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+      - name: Set LLVM_VERSION
+        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install SDL Dependencies
         # https://wiki.libsdl.org/SDL3/README-linux#build-dependencies
         uses: awalsh128/cache-apt-pkgs-action@v1
@@ -85,6 +86,8 @@ jobs:
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+      - name: Set LLVM_VERSION
+        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
