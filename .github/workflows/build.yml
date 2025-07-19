@@ -50,6 +50,7 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
+          version: ${{ env.LLVM_VERSION }}
           force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-${{ matrix.llvm }}.tar.xz
       - name: Build
         run: |
@@ -87,6 +88,7 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
+          version: ${{ env.LLVM_VERSION }}
           force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-${{ matrix.llvm }}.exe
       - name: Build
         run: |

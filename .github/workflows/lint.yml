@@ -38,6 +38,7 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
+          version: ${{ env.LLVM_VERSION }}
           force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz
       - name: Rustfmt Check
         uses: actions-rust-lang/rustfmt@v1
