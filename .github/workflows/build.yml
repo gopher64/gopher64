@@ -87,7 +87,9 @@ jobs:
           target: ${{ matrix.target }}
           rustflags: ""
       - name: Set LLVM_VERSION
-        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
+        run: |
+          $llvm_version = rustc --version --verbose | Select-String "LLVM version" | ForEach-Object { $_.Line.Split(":")[1].Trim() }
+          echo "LLVM_VERSION=$llvm_version" >> $env:GITHUB_ENV
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
