@@ -11,7 +11,6 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  LLVM_VERSION: "20.1"
 
 jobs:
   lint-linux:
@@ -23,6 +22,8 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy, rustfmt
+      - name: Set LLVM_VERSION
+        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install SDL Dependencies
         # https://wiki.libsdl.org/SDL3/README-linux#build-dependencies
         uses: awalsh128/cache-apt-pkgs-action@v1
@@ -38,7 +39,8 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
-          version: "${{ env.LLVM_VERSION }}"
+          version: ${{ env.LLVM_VERSION }}
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz
       - name: Rustfmt Check
         uses: actions-rust-lang/rustfmt@v1
       - name: Lint
