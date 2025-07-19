@@ -22,11 +22,11 @@ jobs:
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             arch: linux-x86_64
-            llvm: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz
+            llvm: X64
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             arch: linux-aarch64
-            llvm: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-ARM64.tar.xz
+            llvm: ARM64
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,7 +50,7 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
-          force-url: "${{ matrix.llvm }}"
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-${{ matrix.llvm }}.tar.xz
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
@@ -71,11 +71,11 @@ jobs:
           - os: windows-2025
             target: x86_64-pc-windows-msvc
             arch: windows-x86_64
-            llvm: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-win64.exe
+            llvm: win64
           #- os: windows-11-arm
           #  target: aarch64-pc-windows-msvc
           #  arch: windows-aarch64
-          #  llvm: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-woa64.exe
+          #  llvm: woa64
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,7 +87,7 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
-          force-url: "${{ matrix.llvm }}"
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-${{ matrix.llvm }}.exe
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
