@@ -157,10 +157,16 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         while i < length {
                             if offset + i < device.ui.storage.saves.sdcard.data.len() {
                                 let data = u32::from_be_bytes(
-                                    device.ui.storage.saves.sdcard.data
-                                        [(offset + i)..(offset + i + 4)]
+                                    device
+                                        .ui
+                                        .storage
+                                        .saves
+                                        .sdcard
+                                        .data
+                                        .get((offset + i)..(offset + i + 4))
+                                        .unwrap_or(&[0; 4])
                                         .try_into()
-                                        .unwrap(),
+                                        .unwrap_or_default(),
                                 );
 
                                 device::memory::data_write(
@@ -187,19 +193,22 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let mut i = 0;
 
                         while i < length {
-                            if offset + i < device.ui.storage.saves.sdcard.data.len() {
-                                let data = device::memory::data_read(
-                                    device,
-                                    address + i as u64,
-                                    device::memory::AccessSize::Word,
-                                    false,
-                                )
-                                .to_be_bytes();
-                                device.ui.storage.saves.sdcard.data[(offset + i)..(offset + i + 4)]
-                                    .copy_from_slice(&data);
-                            } else {
-                                panic!("sd card write out of bounds")
-                            }
+                            let data = device::memory::data_read(
+                                device,
+                                address + i as u64,
+                                device::memory::AccessSize::Word,
+                                false,
+                            )
+                            .to_be_bytes();
+                            device
+                                .ui
+                                .storage
+                                .saves
+                                .sdcard
+                                .data
+                                .get_mut((offset + i)..(offset + i + 4))
+                                .unwrap_or(&mut [0; 4])
+                                .copy_from_slice(&data);
                             i += 4;
                         }
                         device.ui.storage.saves.sdcard.written = true;
@@ -249,16 +258,28 @@ pub fn read_mem(
         device::cart::format_eeprom(device);
         let masked_address = address as usize & SC64_EEPROM_MASK;
         u32::from_be_bytes(
-            device.ui.storage.saves.eeprom.data[masked_address..masked_address + 4]
+            device
+                .ui
+                .storage
+                .saves
+                .eeprom
+                .data
+                .get(masked_address..masked_address + 4)
+                .unwrap_or(&[0; 4])
                 .try_into()
-                .unwrap(),
+                .unwrap_or_default(),
         )
     } else {
         let masked_address = address as usize & SC64_BUFFER_MASK;
         u32::from_be_bytes(
-            device.cart.sc64.buffer[masked_address..masked_address + 4]
+            device
+                .cart
+                .sc64
+                .buffer
+                .get(masked_address..masked_address + 4)
+                .unwrap_or(&[0; 4])
                 .try_into()
-                .unwrap(),
+                .unwrap_or_default(),
         )
     }
 }
@@ -268,23 +289,47 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         device::cart::format_eeprom(device);
         let masked_address = address as usize & SC64_EEPROM_MASK;
         let mut data = u32::from_be_bytes(
-            device.ui.storage.saves.eeprom.data[masked_address..masked_address + 4]
+            device
+                .ui
+                .storage
+                .saves
+                .eeprom
+                .data
+                .get(masked_address..masked_address + 4)
+                .unwrap_or(&[0; 4])
                 .try_into()
-                .unwrap(),
+                .unwrap_or_default(),
         );
         device::memory::masked_write_32(&mut data, value, mask);
-        device.ui.storage.saves.eeprom.data[masked_address..masked_address + 4]
+        device
+            .ui
+            .storage
+            .saves
+            .eeprom
+            .data
+            .get_mut(masked_address..masked_address + 4)
+            .unwrap_or(&mut [0; 4])
             .copy_from_slice(&data.to_be_bytes());
         device.ui.storage.saves.eeprom.written = true
     } else {
         let masked_address = address as usize & SC64_BUFFER_MASK;
         let mut data = u32::from_be_bytes(
-            device.cart.sc64.buffer[masked_address..masked_address + 4]
+            device
+                .cart
+                .sc64
+                .buffer
+                .get(masked_address..masked_address + 4)
+                .unwrap_or(&[0; 4])
                 .try_into()
-                .unwrap(),
+                .unwrap_or_default(),
         );
         device::memory::masked_write_32(&mut data, value, mask);
-        device.cart.sc64.buffer[masked_address..masked_address + 4]
+        device
+            .cart
+            .sc64
+            .buffer
+            .get_mut(masked_address..masked_address + 4)
+            .unwrap_or(&mut [0; 4])
             .copy_from_slice(&data.to_be_bytes());
     }
 }
@@ -309,7 +354,7 @@ pub fn dma_read(
     let mut j = cart_addr;
 
     while i < dram_addr + length {
-        buffer[j as usize] = *device
+        *buffer.get_mut(j as usize).unwrap_or(&mut 0) = *device
             .rdram
             .mem
             .get(i as usize ^ device.byte_swap)
@@ -344,7 +389,7 @@ pub fn dma_write(
             .rdram
             .mem
             .get_mut(i as usize ^ device.byte_swap)
-            .unwrap_or(&mut 0) = buffer[j as usize];
+            .unwrap_or(&mut 0) = *buffer.get(j as usize).unwrap_or(&0);
         i += 1;
         j += 1;
     }
