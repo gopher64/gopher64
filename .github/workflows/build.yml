@@ -101,8 +101,6 @@ jobs:
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
         env:
-          CC: clang-cl
-          CXX: clang-cl
           AR: llvm-lib
       - name: Upload file
         uses: actions/upload-artifact@v4
