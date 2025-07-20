@@ -129,6 +129,8 @@ jobs:
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
+        env:
+          AR: ar
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
