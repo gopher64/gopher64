@@ -64,15 +64,23 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
+fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>], usb: ui::Usb) {
     let dirs = ui::get_dirs();
     let weak = app.as_weak();
     let controller_paths = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
         let controller_paths = controller_paths.clone();
+        let mut usb_tx = None;
+        if let Some(usb_tx_inner) = usb.usb_tx.as_ref() {
+            usb_tx = Some(usb_tx_inner.clone());
+        }
+        let mut cart_rx = None;
+        if let Some(cart_rx_inner) = usb.cart_rx.as_ref() {
+            cart_rx = Some(cart_rx_inner.resubscribe());
+        }
         weak.upgrade_in_event_loop(move |handle| {
             save_settings(&handle, &controller_paths);
-            open_rom(&handle)
+            open_rom(&handle, ui::Usb { usb_tx, cart_rx })
         })
         .unwrap();
     });
@@ -98,6 +106,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_apply_crt_shader(config.video.crt);
     app.set_overclock_n64_cpu(config.emulation.overclock);
     app.set_disable_expansion_pak(config.emulation.disable_expansion_pak);
+    app.set_emulate_usb(config.emulation.usb);
     let combobox_value = match config.video.upscale {
         1 => 0,
         2 => 1,
@@ -232,6 +241,7 @@ pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     config.video.crt = app.get_apply_crt_shader();
     config.emulation.overclock = app.get_overclock_n64_cpu();
     config.emulation.disable_expansion_pak = app.get_disable_expansion_pak();
+    config.emulation.usb = app.get_emulate_usb();
     let upscale_values = [1, 2, 4];
     config.video.upscale = upscale_values[app.get_resolution() as usize];
 
@@ -282,6 +292,11 @@ fn about_window(app: &AppWindow) {
 pub fn app_window() {
     let app = AppWindow::new().unwrap();
     about_window(&app);
+    let mut usb = ui::Usb {
+        usb_tx: None,
+        cart_rx: None,
+    };
+    let mut shutdown_tx = None;
     let mut controller_paths;
     {
         let game_ui = ui::Ui::new();
@@ -291,11 +306,18 @@ pub fn app_window() {
         controller_paths.insert(0, None);
         settings_window(&app, &game_ui.config);
         controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
+
+        if game_ui.config.emulation.usb {
+            (shutdown_tx, usb) = ui::usb::init(app.as_weak());
+        }
     }
-    local_game_window(&app, &controller_paths);
+    local_game_window(&app, &controller_paths, usb);
     ui::netplay::netplay_window(&app, &controller_paths);
     ui::cheats::cheats_window(&app);
     app.run().unwrap();
+    if let Some(shutdown_tx) = &shutdown_tx {
+        ui::usb::close(shutdown_tx);
+    }
     save_settings(&app, &controller_paths);
 }
 
@@ -349,6 +371,7 @@ pub fn run_rom(
     mut game_settings: GameSettings,
     vru_channel: VruChannel,
     netplay: Option<NetplayDevice>,
+    usb: ui::Usb,
     weak: slint::Weak<AppWindow>,
 ) {
     std::thread::Builder::new()
@@ -370,6 +393,9 @@ pub fn run_rom(
                         std::fs::read(gb_paths.ram[i].as_ref().unwrap()).unwrap();
                 }
             }
+
+            device.ui.usb.usb_tx = usb.usb_tx;
+            device.ui.usb.cart_rx = usb.cart_rx;
 
             device.vru_window.window_notifier = vru_channel.vru_window_notifier;
             device.vru_window.word_receiver = vru_channel.vru_word_receiver;
@@ -411,7 +437,7 @@ pub fn run_rom(
         .unwrap();
 }
 
-fn open_rom(app: &AppWindow) {
+fn open_rom(app: &AppWindow, usb: ui::Usb) {
     let rom_dir = app.get_rom_dir();
     let select_rom = if !rom_dir.is_empty()
         && let Ok(exists) = std::fs::exists(&rom_dir)
@@ -503,6 +529,7 @@ fn open_rom(app: &AppWindow) {
                     }
                 },
                 None,
+                usb,
                 weak,
             );
         }

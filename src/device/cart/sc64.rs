@@ -28,6 +28,7 @@ pub struct Sc64 {
     pub cfg: [u32; SC64_CFG_COUNT as usize],
     pub sector: u32,
     pub writeback_sector: Vec<u32>,
+    pub usb_buffer: Vec<u8>,
 }
 
 fn format_sdcard(device: &mut device::Device) {
@@ -209,8 +210,132 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         }
                         device.ui.storage.saves.sdcard.written = true;
                     }
-                    'U' | 'u' => {} // USB status, ignored
-                    'M' | 'm' => {} // USB read/write, ignored
+                    'U' => {
+                        device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0;
+                    }
+                    'u' => {
+                        // used to notify the game that there is data to read
+                        if let Some(cart_rx) = device.ui.usb.cart_rx.as_mut() {
+                            match cart_rx.try_recv() {
+                                Ok(data) => {
+                                    device.cart.sc64.regs[SC64_DATA0_REG as usize] =
+                                        data.data_type & 0xFF; // read_status/type
+                                    device.cart.sc64.regs[SC64_DATA1_REG as usize] =
+                                        data.data_size & 0xFFFFFF; // length
+                                    device.cart.sc64.usb_buffer = data.data; // store the data to be read
+                                }
+                                Err(err) => {
+                                    match err {
+                                        tokio::sync::broadcast::error::TryRecvError::Lagged(_) => {
+                                            panic!("cart_rx lagged: {err}");
+                                        }
+                                        _ => {
+                                            device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0; // read_status/type
+                                            device.cart.sc64.regs[SC64_DATA1_REG as usize] = 0; // length
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0; // read_status/type
+                            device.cart.sc64.regs[SC64_DATA1_REG as usize] = 0; // length
+                        }
+                    }
+                    'M' => {
+                        // Send data from from flashcart to USB
+                        let address =
+                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
+                        let length =
+                            device.cart.sc64.regs[SC64_DATA1_REG as usize] as usize & 0xFFFFFF;
+
+                        if let Some(usb_tx) = device.ui.usb.usb_tx.as_mut() {
+                            let mut usb_buffer = vec![0; length];
+
+                            let mut i = 0;
+
+                            if address < device.rdram.size as u64 {
+                                while i < length {
+                                    *usb_buffer.get_mut(i).unwrap_or(&mut 0) = *device
+                                        .rdram
+                                        .mem
+                                        .get((address as usize + i) ^ device.byte_swap)
+                                        .unwrap_or(&0);
+                                    i += 1;
+                                }
+                            } else if address >= device::memory::MM_CART_ROM as u64
+                                && address < device::memory::MM_PIF_MEM as u64
+                            {
+                                while i < length {
+                                    *usb_buffer.get_mut(i).unwrap_or(&mut 0) = *device
+                                        .ui
+                                        .storage
+                                        .saves
+                                        .romsave
+                                        .data
+                                        .get(
+                                            &(((address as usize + i)
+                                                & device::cart::rom::CART_MASK)
+                                                as u32),
+                                        )
+                                        .unwrap_or(
+                                            device
+                                                .cart
+                                                .rom
+                                                .get(
+                                                    (address as usize + i)
+                                                        & device::cart::rom::CART_MASK,
+                                                )
+                                                .unwrap_or(&0),
+                                        );
+                                    i += 1;
+                                }
+                            } else {
+                                panic!("Unknown address {address:#x} for SC64 M command");
+                            }
+
+                            ui::usb::send_to_usb(
+                                usb_tx,
+                                ui::usb::UsbData {
+                                    data: usb_buffer,
+                                    data_type: device.cart.sc64.regs[SC64_DATA1_REG as usize] >> 24,
+                                    data_size: device.cart.sc64.regs[SC64_DATA1_REG as usize]
+                                        & 0xFFFFFF,
+                                },
+                            );
+                        }
+                    }
+                    'm' => {
+                        // Receive data from USB to flashcart
+                        let address =
+                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
+                        let length = device.cart.sc64.regs[SC64_DATA1_REG as usize] as usize;
+
+                        let mut i = 0;
+
+                        if address < device.rdram.size as u64 {
+                            while i < length {
+                                *device
+                                    .rdram
+                                    .mem
+                                    .get_mut((address as usize + i) ^ device.byte_swap)
+                                    .unwrap_or(&mut 0) =
+                                    *device.cart.sc64.usb_buffer.get(i).unwrap_or(&0);
+                                i += 1;
+                            }
+                        } else if address >= device::memory::MM_CART_ROM as u64
+                            && address < device::memory::MM_PIF_MEM as u64
+                        {
+                            while i < length {
+                                device.ui.storage.saves.romsave.data.insert(
+                                    ((address as usize + i) & device::cart::rom::CART_MASK) as u32,
+                                    *device.cart.sc64.usb_buffer.get(i).unwrap_or(&0),
+                                );
+                                i += 1;
+                            }
+                        } else {
+                            panic!("Unknown address {address:#x} for SC64 m command");
+                        }
+                    }
                     'w' => {
                         // SD card writeback pending
                         device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0;
