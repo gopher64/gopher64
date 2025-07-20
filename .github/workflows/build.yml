@@ -100,8 +100,6 @@ jobs:
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
-        env:
-          AR: llvm-lib
       - name: Upload file
         uses: actions/upload-artifact@v4
         with:
