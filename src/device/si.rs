@@ -90,7 +90,7 @@ fn copy_pif_rdram(device: &mut device::Device) {
                     .rdram
                     .mem
                     .get(dram_addr + i..dram_addr + i + 4)
-                    .unwrap_or_default()
+                    .unwrap_or(&[0; 4])
                     .try_into()
                     .unwrap_or_default(),
             );

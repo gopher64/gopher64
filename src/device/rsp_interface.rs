@@ -180,7 +180,7 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
                         .rdram
                         .mem
                         .get(dram_addr as usize..dram_addr as usize + 4)
-                        .unwrap_or_default()
+                        .unwrap_or(&[0; 4])
                         .try_into()
                         .unwrap_or_default(),
                 );

@@ -33,7 +33,7 @@ pub fn read_mem_fast(
             .rdram
             .mem
             .get(masked_address..masked_address + 4)
-            .unwrap_or_default()
+            .unwrap_or(&[0; 4])
             .try_into()
             .unwrap_or_default(),
     )
@@ -55,7 +55,7 @@ pub fn read_mem(
             .rdram
             .mem
             .get(masked_address..masked_address + 4)
-            .unwrap_or_default()
+            .unwrap_or(&[0; 4])
             .try_into()
             .unwrap_or_default(),
     )
@@ -67,7 +67,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
             .rdram
             .mem
             .get(address as usize..(address + 4) as usize)
-            .unwrap_or_default()
+            .unwrap_or(&[0; 4])
             .try_into()
             .unwrap_or_default(),
     );

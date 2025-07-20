@@ -155,24 +155,26 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let mut i = 0;
 
                         while i < length {
-                            if offset + i < device.ui.storage.saves.sdcard.data.len() {
-                                let data = u32::from_be_bytes(
-                                    device.ui.storage.saves.sdcard.data
-                                        [(offset + i)..(offset + i + 4)]
-                                        .try_into()
-                                        .unwrap(),
-                                );
+                            let data = u32::from_be_bytes(
+                                device
+                                    .ui
+                                    .storage
+                                    .saves
+                                    .sdcard
+                                    .data
+                                    .get((offset + i)..(offset + i + 4))
+                                    .unwrap_or(&[0; 4])
+                                    .try_into()
+                                    .unwrap_or_default(),
+                            );
 
-                                device::memory::data_write(
-                                    device,
-                                    address + i as u64,
-                                    data,
-                                    0xFFFFFFFF,
-                                    false,
-                                );
-                            } else {
-                                panic!("sd card read out of bounds")
-                            }
+                            device::memory::data_write(
+                                device,
+                                address + i as u64,
+                                data,
+                                0xFFFFFFFF,
+                                false,
+                            );
                             i += 4;
                         }
                     }
@@ -187,19 +189,22 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let mut i = 0;
 
                         while i < length {
-                            if offset + i < device.ui.storage.saves.sdcard.data.len() {
-                                let data = device::memory::data_read(
-                                    device,
-                                    address + i as u64,
-                                    device::memory::AccessSize::Word,
-                                    false,
-                                )
-                                .to_be_bytes();
-                                device.ui.storage.saves.sdcard.data[(offset + i)..(offset + i + 4)]
-                                    .copy_from_slice(&data);
-                            } else {
-                                panic!("sd card write out of bounds")
-                            }
+                            let data = device::memory::data_read(
+                                device,
+                                address + i as u64,
+                                device::memory::AccessSize::Word,
+                                false,
+                            )
+                            .to_be_bytes();
+                            device
+                                .ui
+                                .storage
+                                .saves
+                                .sdcard
+                                .data
+                                .get_mut((offset + i)..(offset + i + 4))
+                                .unwrap_or(&mut [0; 4])
+                                .copy_from_slice(&data);
                             i += 4;
                         }
                         device.ui.storage.saves.sdcard.written = true;
@@ -309,7 +314,7 @@ pub fn dma_read(
     let mut j = cart_addr;
 
     while i < dram_addr + length {
-        buffer[j as usize] = *device
+        *buffer.get_mut(j as usize).unwrap_or(&mut 0) = *device
             .rdram
             .mem
             .get(i as usize ^ device.byte_swap)
@@ -344,7 +349,7 @@ pub fn dma_write(
             .rdram
             .mem
             .get_mut(i as usize ^ device.byte_swap)
-            .unwrap_or(&mut 0) = buffer[j as usize];
+            .unwrap_or(&mut 0) = *buffer.get(j as usize).unwrap_or(&0);
         i += 1;
         j += 1;
     }
