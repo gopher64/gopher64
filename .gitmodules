@@ -1,3 +1,4 @@
 [submodule "parallel-rdp/parallel-rdp-standalone"]
 	path = parallel-rdp/parallel-rdp-standalone
-	url = https://github.com/Themaister/parallel-rdp-standalone.git
+	url = https://github.com/gopher64/parallel-rdp-standalone.git
+	branch = gopher64

@@ -36,6 +36,7 @@ fn main() {
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/image.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/indirect_layout.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/memory_allocator.cpp")
+        .file("parallel-rdp/parallel-rdp-standalone/vulkan/pipeline_cache.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/pipeline_event.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/query_pool.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/render_pass.cpp")
