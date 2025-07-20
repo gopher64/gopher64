@@ -13,3 +13,4 @@ rustflags = ["-C", "target-cpu=cortex-a76"]
 [env]
 CC = "clang"
 CXX = "clang++"
+AR = "llvm-ar"
