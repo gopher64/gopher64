@@ -3,6 +3,8 @@ permissions:
   contents: read
 
 on:
+  release:
+    types: [published]
   push:
     branches: ["main"]
   pull_request:
@@ -107,6 +109,7 @@ jobs:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}.exe
       - name: SignPath
+        if: ${{ github.event_name == 'release' }}
         uses: signpath/github-action-submit-signing-request@v1.1
         with:
           api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
