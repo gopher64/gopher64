@@ -177,11 +177,11 @@ pub fn init(weak: slint::Weak<ui::gui::AppWindow>) -> ui::Usb {
     let (usb_tx, usb_rx): (
         tokio::sync::broadcast::Sender<UsbData>,
         tokio::sync::broadcast::Receiver<UsbData>,
-    ) = tokio::sync::broadcast::channel(5);
+    ) = tokio::sync::broadcast::channel(1024);
     let (cart_tx, cart_rx): (
         tokio::sync::broadcast::Sender<UsbData>,
         tokio::sync::broadcast::Receiver<UsbData>,
-    ) = tokio::sync::broadcast::channel(5);
+    ) = tokio::sync::broadcast::channel(1024);
 
     let usb_tx_clone = usb_tx.clone();
     let cart_rx_clone = cart_rx.resubscribe();
