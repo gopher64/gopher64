@@ -224,9 +224,16 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                         data.data_size & 0xFFFFFF; // length
                                     device.cart.sc64.usb_buffer = data.data; // store the data to be read
                                 }
-                                Err(_err) => {
-                                    device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0; // read_status/type
-                                    device.cart.sc64.regs[SC64_DATA1_REG as usize] = 0; // length
+                                Err(err) => {
+                                    match err {
+                                        tokio::sync::broadcast::error::TryRecvError::Lagged(_) => {
+                                            panic!("cart_rx lagged: {err}");
+                                        }
+                                        _ => {
+                                            device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0; // read_status/type
+                                            device.cart.sc64.regs[SC64_DATA1_REG as usize] = 0; // length
+                                        }
+                                    }
                                 }
                             }
                         } else {

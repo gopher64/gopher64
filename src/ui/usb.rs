@@ -85,16 +85,22 @@ async fn handle_connection(
         loop {
             tokio::select! {
                 data = usb_rx.recv() => {
-                    if let Ok(data) = data {
-                        let mut output: Vec<u8> = vec![];
-                        output.extend_from_slice(&data.data_type.to_be_bytes());
-                        output.extend_from_slice(&data.data_size.to_be_bytes());
-                        output.extend_from_slice(&data.data);
-                        if outgoing.write_all(&output).await.is_err() {
-                            break;
+                    match data {
+                        Ok(data) => {
+                            let mut output: Vec<u8> = vec![];
+                            output.extend_from_slice(&data.data_type.to_be_bytes());
+                            output.extend_from_slice(&data.data_size.to_be_bytes());
+                            output.extend_from_slice(&data.data);
+                            if outgoing.write_all(&output).await.is_err() {
+                                break;
+                            }
                         }
-                    } else {
-                        break;
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                            panic!("usb_rx lagged");
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                          break;
+                        }
                     }
                 }
                 _ = shutdown_rx_clone.changed() => {
