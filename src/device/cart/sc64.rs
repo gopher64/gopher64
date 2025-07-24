@@ -241,25 +241,51 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         let length =
                             device.cart.sc64.regs[SC64_DATA1_REG as usize] as usize & 0xFFFFFF;
 
-                        let mut i = 0;
-                        let mut usb_buffer = vec![0; length + 4]; // make sure there is enough space if length is not a multiple of 4
-
-                        while i < length {
-                            let data = device::memory::data_read(
-                                device,
-                                address + i as u64,
-                                device::memory::AccessSize::Word,
-                                false,
-                            )
-                            .to_be_bytes();
-                            usb_buffer
-                                .get_mut(i..i + 4)
-                                .unwrap_or(&mut [0; 4])
-                                .copy_from_slice(&data);
-                            i += 4;
-                        }
-                        usb_buffer.truncate(length);
                         if let Some(usb_tx) = device.ui.usb.usb_tx.as_mut() {
+                            let mut usb_buffer = vec![0; length];
+
+                            let mut i = 0;
+
+                            if address < device.rdram.size as u64 {
+                                while i < length {
+                                    *usb_buffer.get_mut(i).unwrap_or(&mut 0) = *device
+                                        .rdram
+                                        .mem
+                                        .get((address as usize + i) ^ device.byte_swap)
+                                        .unwrap_or(&0);
+                                    i += 1;
+                                }
+                            } else if address >= device::memory::MM_CART_ROM as u64
+                                && address < device::memory::MM_PIF_MEM as u64
+                            {
+                                while i < length {
+                                    *usb_buffer.get_mut(i).unwrap_or(&mut 0) = *device
+                                        .ui
+                                        .storage
+                                        .saves
+                                        .romsave
+                                        .data
+                                        .get(
+                                            &(((address as usize + i)
+                                                & device::cart::rom::CART_MASK)
+                                                as u32),
+                                        )
+                                        .unwrap_or(
+                                            device
+                                                .cart
+                                                .rom
+                                                .get(
+                                                    (address as usize + i)
+                                                        & device::cart::rom::CART_MASK,
+                                                )
+                                                .unwrap_or(&0),
+                                        );
+                                    i += 1;
+                                }
+                            } else {
+                                panic!("Unknown address {address:#x} for SC64 M command");
+                            }
+
                             ui::usb::send_to_usb(
                                 usb_tx,
                                 ui::usb::UsbData {
@@ -279,34 +305,29 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 
                         let mut i = 0;
 
-                        let restore = device.cart.sc64.cfg
-                            [device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize];
-                        device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] =
-                            1;
-                        device.cart.sc64.usb_buffer.resize(length + 4, 0); // make sure there is enough space if length is not a multiple of 4
-                        while i < length {
-                            let data = u32::from_be_bytes(
-                                device
-                                    .cart
-                                    .sc64
-                                    .usb_buffer
-                                    .get(i..i + 4)
-                                    .unwrap_or(&[0; 4])
-                                    .try_into()
-                                    .unwrap_or_default(),
-                            );
-
-                            device::memory::data_write(
-                                device,
-                                address + i as u64,
-                                data,
-                                0xFF000000,
-                                false,
-                            );
-                            i += 1;
+                        if address < device.rdram.size as u64 {
+                            while i < length {
+                                *device
+                                    .rdram
+                                    .mem
+                                    .get_mut((address as usize + i) ^ device.byte_swap)
+                                    .unwrap_or(&mut 0) =
+                                    *device.cart.sc64.usb_buffer.get(i).unwrap_or(&0);
+                                i += 1;
+                            }
+                        } else if address >= device::memory::MM_CART_ROM as u64
+                            && address < device::memory::MM_PIF_MEM as u64
+                        {
+                            while i < length {
+                                device.ui.storage.saves.romsave.data.insert(
+                                    ((address as usize + i) & device::cart::rom::CART_MASK) as u32,
+                                    *device.cart.sc64.usb_buffer.get(i).unwrap_or(&0),
+                                );
+                                i += 1;
+                            }
+                        } else {
+                            panic!("Unknown address {address:#x} for SC64 m command");
                         }
-                        device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] =
-                            restore;
                     }
                     'w' => {
                         // SD card writeback pending
