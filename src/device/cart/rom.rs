@@ -50,9 +50,7 @@ pub fn read_mem(
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0
-        && device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] == 0
-    {
+    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
         let masked_address = address as usize & CART_MASK;
         let mut data = read_cart_word(device, masked_address);
         device::memory::masked_write_32(&mut data, value, mask);
@@ -82,9 +80,7 @@ pub fn dma_read(
     mut dram_addr: u32,
     length: u32,
 ) -> u64 {
-    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0
-        && device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] == 0
-    {
+    if device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] != 0 {
         dram_addr &= device::rdram::RDRAM_MASK as u32;
         cart_addr &= CART_MASK as u32;
 
@@ -193,7 +189,6 @@ fn set_cic(device: &mut device::Device) {
         "53C0088FB777870D0AF32F0251E964030E2E8B72E830C26042FD191169508C05" => {
             device.cart.cic_seed = 0xdd; // CicNus5167
             device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] = 1;
-            device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 0;
         }
         _ => {
             device.cart.cic_seed = 0x3F; // CicNus6102
