@@ -412,11 +412,8 @@ fn manage_websocket<T: ComponentHandle + NetplayPages + 'static>(
                         Ok(None) => {
                             break;
                         }
-                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
-                            panic!("netplay_write_receiver lagged");
-                        }
-                        Err(tokio::sync::broadcast::error::RecvError::Closed) => {
-                            break;
+                        Err(err) => {
+                            panic!("netplay_write_receiver error: {err}");
                         }
                     }
                 }
@@ -1018,7 +1015,6 @@ fn setup_wait_window(
                         println!("Unknown netplay message type: {}", response.message_type);
                     }
                 },
-
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
                     panic!("netplay_read_receiver lagged");
                 }
