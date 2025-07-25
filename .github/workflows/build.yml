@@ -116,7 +116,7 @@ jobs:
           organization-id: "${{ secrets.SIGNPATH_ORG_ID }}"
           project-slug: "gopher64"
           artifact-configuration-slug: "gopher64-${{ matrix.arch }}"
-          signing-policy-slug: "test-signing"
+          signing-policy-slug: "release-signing"
           github-artifact-id: "${{ steps.upload-unsigned-artifact.outputs.artifact-id }}"
           wait-for-completion: true
 
