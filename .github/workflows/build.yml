@@ -5,6 +5,8 @@ permissions:
 on:
   push:
     branches: ["main"]
+    tags:
+      - "v*"
   pull_request:
     branches: ["main"]
 
@@ -100,11 +102,23 @@ jobs:
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
-      - name: Upload file
+      - name: Upload unsigned artifact
+        id: upload-unsigned-artifact
         uses: actions/upload-artifact@v4
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}.exe
+      - name: SignPath
+        if: ${{ github.ref_type == 'tag' }}
+        uses: signpath/github-action-submit-signing-request@v1.1
+        with:
+          api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
+          organization-id: "${{ secrets.SIGNPATH_ORG_ID }}"
+          project-slug: "gopher64"
+          artifact-configuration-slug: "gopher64-${{ matrix.arch }}"
+          signing-policy-slug: "release-signing"
+          github-artifact-id: "${{ steps.upload-unsigned-artifact.outputs.artifact-id }}"
+          wait-for-completion: true
 
   build-macos:
     runs-on: macos-15
