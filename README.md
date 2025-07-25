@@ -17,10 +17,6 @@ https://discord.gg/9RGXq8W8JQ
 
 Keys are mapped according to [these defaults](https://github.com/gopher64/gopher64/wiki/Default-Keyboard-Setup). Xbox-style controllers also have a [default mapping applied](https://github.com/gopher64/gopher64/wiki/Default-Gamepad-Setup).
 
-You can create your mappings by running `./gopher64 --configure-input-profile my_profile`. You then bind that profile to a port: `./gopher64 --bind-input-profile my_profile --port 1`
-
-To use a controller (for example, an Xbox controller), run `./gopher64 --list-controllers` to get a list of attached controllers, and then assign it by doing `./gopher64 --assign-controller <controller_number> --port 1`
-
 ## netplay
 
 Gopher64 supports netplay (online play with others). It has a few public netplay servers. If you are interested in running a public netplay server, please let me know (open an issue or discussion or contact me on Discord). You can also run the server (https://github.com/gopher64/gopher64-netplay-server) yourself on a LAN.
@@ -36,12 +32,6 @@ If you want to run the flatpak from the command line, you need to add the `--fil
 ```
 flatpak run --filesystem=host:ro io.github.gopher64.gopher64 /path/to/rom.z64
 ```
-
-## goals
-
-1. Performance. I want to be able to use this emulator on my laptop.
-2. Easy to use.
-3. Easy to work on. Dynamic recompilers perform well, but they are very hard to read and understand. This emulator will only have interpreters for the CPU and RSP. Additionally, it is completely written in Rust (besides Parallel-RDP), a modern programming language with a growing user base. I've tried to avoid the use of macros, which can reduce some repetitiveness in the code but also reduce readability.
 
 ## building and usage
 
@@ -59,3 +49,9 @@ I am very open to contributions! Please contact me via a GitHub issue or Discord
 ## license
 
 Gopher64 is licensed under the GPLv3 license. Many portions of gopher64 have been adapted from mupen64plus and/or ares. The license for mupen64plus can be found here: https://github.com/mupen64plus/mupen64plus-core/blob/master/LICENSES. The license for ares can be found here: https://github.com/ares-emulator/ares/blob/master/LICENSE.
+
+## privacy and code signing policy
+
+Free code signing for the Windows release is provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+During online netplay sessions, the server logs your IP address and basic session information (game title and session name) for operational purposes. No additional personal data is collected or stored.
