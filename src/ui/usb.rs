@@ -194,7 +194,7 @@ pub fn init(weak: slint::Weak<ui::gui::AppWindow>) -> ui::Usb {
             tokio::select! {
                 res = listener.accept() => {
                     if let Ok((c,_)) = res {
-                        tokio::spawn(handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone(),cart_rx.resubscribe(),weak.clone()));
+                        handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone(),cart_rx.resubscribe(),weak.clone()).await;
                     } else {
                         break;
                     }
