@@ -996,6 +996,11 @@ fn setup_wait_window(
                                         peer_addr: socket_addr,
                                         player_number: player_number as u8,
                                     }),
+                                    ui::Usb {
+                                        shutdown_tx: None,
+                                        usb_tx: None,
+                                        cart_rx: None,
+                                    },
                                     weak_app,
                                 );
                             })
