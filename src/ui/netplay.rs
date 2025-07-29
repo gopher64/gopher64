@@ -412,12 +412,11 @@ fn manage_websocket<T: ComponentHandle + NetplayPages + 'static>(
                         Ok(None) => {
                             break;
                         }
-                        Err(err) => {
-                            if err == tokio::sync::broadcast::error::RecvError::Closed {
-                                break;
-                            } else {
-                                panic!("netplay_write_receiver error: {err}");
-                            }
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                            panic!("netplay_write_receiver lagged");
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                            break; // exit the loop if the receiver is closed
                         }
                     }
                 }
