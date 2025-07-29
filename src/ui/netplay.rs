@@ -413,7 +413,11 @@ fn manage_websocket<T: ComponentHandle + NetplayPages + 'static>(
                             break;
                         }
                         Err(err) => {
-                            panic!("netplay_write_receiver error: {err}");
+                            if err == tokio::sync::broadcast::error::RecvError::Closed {
+                                break;
+                            } else {
+                                panic!("netplay_write_receiver error: {err}");
+                            }
                         }
                     }
                 }
