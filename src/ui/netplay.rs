@@ -145,8 +145,8 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                     server_urls.push(local_server.1.into());
                 }
                 for server in servers {
-                    server_names.push(server.into());
-                    server_urls.push("".into());
+                    server_names.push(server.clone().into());
+                    server_urls.push(format!("dispatcher:{server}").into());
                 }
                 server_names.push("Custom".into());
                 let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
