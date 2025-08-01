@@ -134,9 +134,9 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
         }
 
         let response = task.await;
-        if let Ok(response) = response {
-            let servers: Vec<String> = response.json().await.unwrap();
-
+        if let Ok(response) = response
+            && let Ok(servers) = response.json::<Vec<String>>().await
+        {
             weak.upgrade_in_event_loop(move |handle| {
                 let server_names: slint::VecModel<slint::SharedString> = slint::VecModel::default();
                 let server_urls: slint::VecModel<slint::SharedString> = slint::VecModel::default();
@@ -297,41 +297,33 @@ pub fn setup_create_window(
                             handle.window().hide().unwrap();
                         })
                         .unwrap();
-                    if let Ok(response) = response {
-                        let server: Result<
-                            std::collections::HashMap<String, String>,
-                            reqwest::Error,
-                        > = response.json().await;
-                        if let Ok(server) = server {
-                            let server_url = server.values().next().unwrap();
+                    if let Ok(response) = response
+                        && let Ok(server) = response
+                            .json::<std::collections::HashMap<String, String>>()
+                            .await
+                    {
+                        let server_url = server.values().next().unwrap();
 
-                            manage_websocket(
-                                server_url.to_string(),
-                                netplay_read_sender,
-                                netplay_write_receiver,
-                                weak.clone(),
-                            );
+                        manage_websocket(
+                            server_url.to_string(),
+                            netplay_read_sender,
+                            netplay_write_receiver,
+                            weak.clone(),
+                        );
 
-                            create_session(
-                                netplay_write_sender,
-                                netplay_read_receiver,
-                                session_name.to_string(),
-                                player_name.to_string(),
-                                game_name.to_string(),
-                                game_hash.to_string(),
-                                game_cheats.to_string(),
-                                password.to_string(),
-                                game_settings,
-                                weak_app,
-                                weak.clone(),
-                            );
-                        } else {
-                            weak.upgrade_in_event_loop(|handle| {
-                                handle.set_pending_session(false);
-                                show_netplay_error("Server could not be created".to_string());
-                            })
-                            .unwrap();
-                        }
+                        create_session(
+                            netplay_write_sender,
+                            netplay_read_receiver,
+                            session_name.to_string(),
+                            player_name.to_string(),
+                            game_name.to_string(),
+                            game_hash.to_string(),
+                            game_cheats.to_string(),
+                            password.to_string(),
+                            game_settings,
+                            weak_app,
+                            weak.clone(),
+                        );
                     } else {
                         weak.upgrade_in_event_loop(|handle| {
                             handle.set_pending_session(false);
