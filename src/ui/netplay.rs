@@ -105,7 +105,7 @@ impl NetplayPages for NetplayJoin {
 fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
     let task = reqwest::Client::new()
         .get("https://dispatch.gopher64.com/getRegions")
-        .header("netplay-id", "gopher64")
+        .header("netplay-id", EMU_NAME)
         .send();
     tokio::spawn(async move {
         let mut local_servers: Vec<(String, String)> = vec![];
@@ -281,7 +281,7 @@ pub fn setup_create_window(
                 let task = reqwest::Client::new()
                     .get("https://dispatch.gopher64.com/createServer")
                     .query(&[("region", server_url.strip_prefix("dispatcher:").unwrap())])
-                    .header("netplay-id", "gopher64")
+                    .header("netplay-id", EMU_NAME)
                     .send();
                 let netplay_read_sender = netplay_read_sender.clone();
                 let netplay_write_receiver = netplay_write_receiver.resubscribe();
