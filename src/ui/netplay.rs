@@ -52,6 +52,9 @@ trait NetplayPages {
     fn set_game_cheats(&self, game_cheats: slint::SharedString);
     fn set_rom_path(&self, rom_path: slint::SharedString);
     fn set_peer_addr(&self, peer_addr: slint::SharedString);
+    fn refresh_sessions(&self) {
+        // Default implementation does nothing
+    }
 }
 
 impl NetplayPages for NetplayCreate {
@@ -84,6 +87,9 @@ impl NetplayPages for NetplayJoin {
     }
     fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>) {
         self.set_server_urls(urls);
+    }
+    fn refresh_sessions(&self) {
+        self.invoke_refresh_session();
     }
     fn set_game_name(&self, game_name: slint::SharedString) {
         self.set_game_name(game_name);
@@ -149,6 +155,7 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                     server_urls.push(format!("dispatcher:{server}").into());
                 }
                 server_names.push("Custom".into());
+                handle.refresh_sessions();
                 let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
                     std::rc::Rc::new(server_names);
                 let server_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
@@ -429,6 +436,8 @@ fn show_netplay_error(message: String) {
     message_dialog.set_text(message.into());
     message_dialog.show().unwrap();
 }
+
+fn update_sessions() {}
 
 #[allow(clippy::too_many_arguments)]
 fn create_session(
@@ -941,6 +950,9 @@ pub fn setup_join_window(
         slint::CloseRequestResponse::HideWindow
     });
 
+    join_window.on_refresh_session(move || {
+        update_sessions();
+    });
     let weak = join_window.as_weak();
     join_window.on_join_session(move |player_name, game_hash, password, port| {
         join_session(

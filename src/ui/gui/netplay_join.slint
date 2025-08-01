@@ -16,6 +16,7 @@ export component NetplayJoin inherits Window {
     in-out property pending_session <=> NetplayData.pending_session;
     in-out property rom_path <=> NetplayData.rom_path;
     in-out property rom_dir <=> NetplayData.rom_dir;
+    callback refresh_session();
     callback select_rom(string);
     callback join_session(string, string, string, int);
     preferred-width: 700px;
@@ -81,7 +82,7 @@ export component NetplayJoin inherits Window {
             Button {
                 text: @tr("Refresh Session List");
                 clicked => {
-                    // TODO
+                    refresh_session();
                 }
             }
         }
