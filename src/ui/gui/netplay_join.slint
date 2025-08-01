@@ -18,6 +18,7 @@ export component NetplayJoin inherits Window {
     in-out property rom_dir <=> NetplayData.rom_dir;
     callback select_rom(string);
     callback join_session(string, string, string, int);
+    preferred-width: 700px;
 
     VerticalBox {
         HorizontalBox {
@@ -61,6 +62,7 @@ export component NetplayJoin inherits Window {
         }
         StandardTableView {
             columns: [
+                { title: "Server" },
                 { title: "Session Name" },
                 { title: "Game Name" },
                 { title: "Password" },
