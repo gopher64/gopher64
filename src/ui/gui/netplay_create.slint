@@ -121,3 +121,10 @@ export component NetplayCreate inherits Window {
         }
     }
 }
+
+export component DispatcherDialog inherits Dialog {
+    title: @tr("Creating Server");
+    Text {
+        text: "Creating server, please wait...This may take about 30 seconds.";
+    }
+}

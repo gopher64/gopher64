@@ -1,8 +1,8 @@
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{
-    AppWindow, CustomNetplayServer, ErrorDialog, GameSettings, GbPaths, NetplayCreate,
-    NetplayDevice, NetplayJoin, NetplayWait, VruChannel, run_rom, save_settings,
+    AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, GameSettings, GbPaths,
+    NetplayCreate, NetplayDevice, NetplayJoin, NetplayWait, VruChannel, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -273,26 +273,84 @@ pub fn setup_create_window(
               game_cheats,
               password| {
             let _ = netplay_write_sender.send(None); // close current websocket if any
-            manage_websocket(
-                server_url.to_string(),
-                netplay_read_sender.clone(),
-                netplay_write_receiver.resubscribe(),
-                weak.clone(),
-            );
+            if server_url.starts_with("dispatcher:") {
+                let message_dialog = DispatcherDialog::new().unwrap();
+                let weak_dialog = message_dialog.as_weak();
+                message_dialog.show().unwrap();
 
-            create_session(
-                netplay_write_sender.clone(),
-                netplay_read_receiver.resubscribe(),
-                session_name.to_string(),
-                player_name.to_string(),
-                game_name.to_string(),
-                game_hash.to_string(),
-                game_cheats.to_string(),
-                password.to_string(),
-                game_settings.clone(),
-                weak_app.clone(),
-                weak.clone(),
-            );
+                let task = reqwest::Client::new()
+                    .get("https://dispatch.gopher64.com/createServer")
+                    .query(&[("region", server_url.strip_prefix("dispatcher:").unwrap())])
+                    .header("netplay-id", "gopher64")
+                    .send();
+                let netplay_read_sender = netplay_read_sender.clone();
+                let netplay_write_receiver = netplay_write_receiver.resubscribe();
+                let netplay_write_sender = netplay_write_sender.clone();
+                let netplay_read_receiver = netplay_read_receiver.resubscribe();
+                let game_settings = game_settings.clone();
+                let weak = weak.clone();
+                let weak_app = weak_app.clone();
+                tokio::spawn(async move {
+                    let response = task.await;
+                    weak_dialog
+                        .upgrade_in_event_loop(move |handle| {
+                            handle.window().hide().unwrap();
+                        })
+                        .unwrap();
+                    if let Ok(response) = response {
+                        let server: std::collections::HashMap<String, String> =
+                            response.json().await.unwrap();
+                        let server_url = server.values().next().unwrap();
+
+                        manage_websocket(
+                            server_url.to_string(),
+                            netplay_read_sender,
+                            netplay_write_receiver,
+                            weak.clone(),
+                        );
+
+                        create_session(
+                            netplay_write_sender,
+                            netplay_read_receiver,
+                            session_name.to_string(),
+                            player_name.to_string(),
+                            game_name.to_string(),
+                            game_hash.to_string(),
+                            game_cheats.to_string(),
+                            password.to_string(),
+                            game_settings,
+                            weak_app,
+                            weak.clone(),
+                        );
+                    } else {
+                        weak.upgrade_in_event_loop(|_handle| {
+                            show_netplay_error("Server could not be created".to_string());
+                        })
+                        .unwrap();
+                    }
+                });
+            } else {
+                manage_websocket(
+                    server_url.to_string(),
+                    netplay_read_sender.clone(),
+                    netplay_write_receiver.resubscribe(),
+                    weak.clone(),
+                );
+
+                create_session(
+                    netplay_write_sender.clone(),
+                    netplay_read_receiver.resubscribe(),
+                    session_name.to_string(),
+                    player_name.to_string(),
+                    game_name.to_string(),
+                    game_hash.to_string(),
+                    game_cheats.to_string(),
+                    password.to_string(),
+                    game_settings.clone(),
+                    weak_app.clone(),
+                    weak.clone(),
+                );
+            }
         },
     );
 
