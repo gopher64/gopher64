@@ -106,6 +106,8 @@ export component NetplayCreate inherits Window {
                 NetplayData.pending_session = true;
                 if (server.current-value == "Custom") {
                     server_url = "ws://" + NetplayData.custom_server_url;
+                } else {
+                    server_url = NetplayData.server_urls[server.current-index];
                 }
                 create_session(
                     server_url,
