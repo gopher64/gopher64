@@ -323,7 +323,8 @@ pub fn setup_create_window(
                             weak.clone(),
                         );
                     } else {
-                        weak.upgrade_in_event_loop(|_handle| {
+                        weak.upgrade_in_event_loop(|handle| {
+                            handle.set_pending_session(false);
                             show_netplay_error("Server could not be created".to_string());
                         })
                         .unwrap();
