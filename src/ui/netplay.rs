@@ -463,7 +463,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                     if !custom_server_url.is_empty() {
                         servers.insert(
                             "Custom".to_string(),
-                            "ws://".to_string() + &custom_server_url.to_string(),
+                            "ws://".to_string() + &custom_server_url,
                         );
                     }
                 } else if let Some(url) = server_urls.row_data(i)
