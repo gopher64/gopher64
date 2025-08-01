@@ -298,30 +298,40 @@ pub fn setup_create_window(
                         })
                         .unwrap();
                     if let Ok(response) = response {
-                        let server: std::collections::HashMap<String, String> =
-                            response.json().await.unwrap();
-                        let server_url = server.values().next().unwrap();
+                        let server: Result<
+                            std::collections::HashMap<String, String>,
+                            reqwest::Error,
+                        > = response.json().await;
+                        if let Ok(server) = server {
+                            let server_url = server.values().next().unwrap();
 
-                        manage_websocket(
-                            server_url.to_string(),
-                            netplay_read_sender,
-                            netplay_write_receiver,
-                            weak.clone(),
-                        );
+                            manage_websocket(
+                                server_url.to_string(),
+                                netplay_read_sender,
+                                netplay_write_receiver,
+                                weak.clone(),
+                            );
 
-                        create_session(
-                            netplay_write_sender,
-                            netplay_read_receiver,
-                            session_name.to_string(),
-                            player_name.to_string(),
-                            game_name.to_string(),
-                            game_hash.to_string(),
-                            game_cheats.to_string(),
-                            password.to_string(),
-                            game_settings,
-                            weak_app,
-                            weak.clone(),
-                        );
+                            create_session(
+                                netplay_write_sender,
+                                netplay_read_receiver,
+                                session_name.to_string(),
+                                player_name.to_string(),
+                                game_name.to_string(),
+                                game_hash.to_string(),
+                                game_cheats.to_string(),
+                                password.to_string(),
+                                game_settings,
+                                weak_app,
+                                weak.clone(),
+                            );
+                        } else {
+                            weak.upgrade_in_event_loop(|handle| {
+                                handle.set_pending_session(false);
+                                show_netplay_error("Server could not be created".to_string());
+                            })
+                            .unwrap();
+                        }
                     } else {
                         weak.upgrade_in_event_loop(|handle| {
                             handle.set_pending_session(false);
