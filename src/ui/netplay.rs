@@ -437,7 +437,51 @@ fn show_netplay_error(message: String) {
     message_dialog.show().unwrap();
 }
 
-fn update_sessions() {}
+fn update_sessions(weak: slint::Weak<NetplayJoin>) {
+    let task = reqwest::Client::new()
+        .get("https://dispatch.gopher64.com/getServers")
+        .header("netplay-id", EMU_NAME)
+        .send();
+    tokio::spawn(async move {
+        let mut dispatcher_servers = std::collections::HashMap::new();
+        let response = task.await;
+        if let Ok(response) = response
+            && let Ok(servers) = response
+                .json::<std::collections::HashMap<String, String>>()
+                .await
+        {
+            dispatcher_servers = servers;
+        }
+        weak.upgrade_in_event_loop(move |handle| {
+            let mut servers: std::collections::HashMap<String, String> =
+                std::collections::HashMap::new();
+            let server_names = handle.get_server_names();
+            let server_urls = handle.get_server_urls();
+            for (i, server_name) in server_names.iter().enumerate() {
+                if server_name == "Custom" {
+                    let custom_server_url = handle.get_custom_server_url();
+                    if !custom_server_url.is_empty() {
+                        servers.insert(
+                            "Custom".to_string(),
+                            "ws://".to_string() + &custom_server_url.to_string(),
+                        );
+                    }
+                } else if let Some(url) = server_urls.row_data(i)
+                    && url.starts_with("dispatcher:")
+                {
+                    continue;
+                } else {
+                    servers.insert(
+                        server_name.to_string(),
+                        server_urls.row_data(i).unwrap().to_string(),
+                    );
+                }
+            }
+            servers.extend(dispatcher_servers);
+        })
+        .unwrap();
+    });
+}
 
 #[allow(clippy::too_many_arguments)]
 fn create_session(
@@ -949,9 +993,9 @@ pub fn setup_join_window(
         let _ = sender.send(None); // close current websocket if any
         slint::CloseRequestResponse::HideWindow
     });
-
+    let weak = join_window.as_weak();
     join_window.on_refresh_session(move || {
-        update_sessions();
+        update_sessions(weak.clone());
     });
     let weak = join_window.as_weak();
     join_window.on_join_session(move |player_name, game_hash, password, port| {
