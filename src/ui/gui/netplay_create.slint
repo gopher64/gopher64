@@ -3,10 +3,7 @@ import { NetplayData } from "netplay_page.slint";
 
 export component NetplayCreate inherits Window {
     title: @tr("Netplay: Create Session");
-    in-out property server_names <=> NetplayData.server_names;
-    in-out property server_urls <=> NetplayData.server_urls;
     in-out property custom_server_url <=> NetplayData.custom_server_url;
-    in-out property ping <=> NetplayData.ping;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
     in-out property game_cheats <=> NetplayData.game_cheats;
@@ -14,7 +11,6 @@ export component NetplayCreate inherits Window {
     in-out property rom_path <=> NetplayData.rom_path;
     in-out property peer_addr <=> NetplayData.peer_addr;
     in-out property rom_dir <=> NetplayData.rom_dir;
-    callback get_ping(string);
     callback get_custom_url();
     callback select_rom(string);
     callback create_session(string, string, string, string, string, string, string);
@@ -68,21 +64,14 @@ export component NetplayCreate inherits Window {
 
             HorizontalBox {
                 server := ComboBox {
-                    model: NetplayData.server_names;
+                    model: ["Custom"];
                     selected => {
                         if (self.current-index >= 0) {
                             if (self.current-value == "Custom") {
                                 get_custom_url();
-                            } else {
-                                get_ping(NetplayData.server_urls[self.current-index]);
                             }
                         }
                     }
-                }
-
-                Text {
-                    vertical-alignment: center;
-                    text: NetplayData.ping;
                 }
             }
         }
@@ -115,8 +104,6 @@ export component NetplayCreate inherits Window {
                 NetplayData.pending_session = true;
                 if (server.current-value == "Custom") {
                     server_url = "ws://" + NetplayData.custom_server_url;
-                } else {
-                    server_url = NetplayData.server_urls[server.current-index];
                 }
                 create_session(
                     server_url,

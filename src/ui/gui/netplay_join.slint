@@ -3,10 +3,7 @@ import { NetplayData } from "netplay_page.slint";
 
 export component NetplayJoin inherits Window {
     title: @tr("Netplay: Join Session");
-    in-out property server_names <=> NetplayData.server_names;
-    in-out property server_urls <=> NetplayData.server_urls;
     in-out property custom_server_url <=> NetplayData.custom_server_url;
-    in-out property ping <=> NetplayData.ping;
     in-out property sessions <=> NetplayData.sessions;
     in-out property current_session <=> NetplayData.current_session;
     in-out property ports <=> NetplayData.ports;
@@ -17,9 +14,6 @@ export component NetplayJoin inherits Window {
     in-out property pending_session <=> NetplayData.pending_session;
     in-out property rom_path <=> NetplayData.rom_path;
     in-out property rom_dir <=> NetplayData.rom_dir;
-    callback get_ping(string);
-    callback get_custom_url();
-    callback refresh_session(string);
     callback select_rom(string);
     callback join_session(string, string, string, int);
 
@@ -40,26 +34,14 @@ export component NetplayJoin inherits Window {
 
             VerticalBox {
                 Text {
-                    text: @tr("Server:");
+                    text: @tr("Custom Server URL:");
                 }
 
-                HorizontalBox {
-                    server := ComboBox {
-                        model: NetplayData.server_names;
-                        selected => {
-                            if (self.current-index >= 0) {
-                                if (self.current-value == "Custom") {
-                                    get_custom_url();
-                                } else {
-                                    get_ping(NetplayData.server_urls[self.current-index]);
-                                }
-                            }
-                        }
-                    }
-
-                    Text {
-                        vertical-alignment: center;
-                        text: NetplayData.ping;
+                LineEdit {
+                    placeholder-text: @tr("example.com:45000");
+                    text: NetplayData.custom_server_url;
+                    edited(text) => {
+                        NetplayData.custom_server_url = text;
                     }
                 }
             }
@@ -95,11 +77,6 @@ export component NetplayJoin inherits Window {
             Button {
                 text: @tr("Refresh Session List");
                 clicked => {
-                    if (server.current-value == "Custom") {
-                        refresh_session("ws://" + NetplayData.custom_server_url);
-                    } else {
-                        refresh_session(NetplayData.server_urls[server.current-index]);
-                    }
                 }
             }
         }

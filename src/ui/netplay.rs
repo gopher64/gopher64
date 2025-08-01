@@ -45,31 +45,14 @@ pub struct NetplayMessage {
 }
 
 trait NetplayPages {
-    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>);
-    fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>);
-    fn set_ping(&self, ping: slint::SharedString);
     fn set_game_name(&self, game_name: slint::SharedString);
     fn set_game_hash(&self, game_hash: slint::SharedString);
     fn set_game_cheats(&self, game_cheats: slint::SharedString);
     fn set_rom_path(&self, rom_path: slint::SharedString);
     fn set_peer_addr(&self, peer_addr: slint::SharedString);
-    fn refresh_sessions(&self, _server: slint::SharedString) {
-        // Default implementation does nothing
-    }
-    fn invoke_get_ping(&self, server_url: slint::SharedString);
-    fn set_custom_server_url(&self, server_url: slint::SharedString);
 }
 
 impl NetplayPages for NetplayCreate {
-    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>) {
-        self.set_server_names(names);
-    }
-    fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>) {
-        self.set_server_urls(urls);
-    }
-    fn set_ping(&self, ping: slint::SharedString) {
-        self.set_ping(ping);
-    }
     fn set_game_name(&self, game_name: slint::SharedString) {
         self.set_game_name(game_name);
     }
@@ -84,28 +67,10 @@ impl NetplayPages for NetplayCreate {
     }
     fn set_peer_addr(&self, peer_addr: slint::SharedString) {
         self.set_peer_addr(peer_addr);
-    }
-    fn invoke_get_ping(&self, server_url: slint::SharedString) {
-        self.invoke_get_ping(server_url);
-    }
-    fn set_custom_server_url(&self, server_url: slint::SharedString) {
-        self.set_custom_server_url(server_url);
     }
 }
 
 impl NetplayPages for NetplayJoin {
-    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>) {
-        self.set_server_names(names);
-    }
-    fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>) {
-        self.set_server_urls(urls);
-    }
-    fn set_ping(&self, ping: slint::SharedString) {
-        self.set_ping(ping);
-    }
-    fn refresh_sessions(&self, server: slint::SharedString) {
-        self.invoke_refresh_session(server);
-    }
     fn set_game_name(&self, game_name: slint::SharedString) {
         self.set_game_name(game_name);
     }
@@ -120,12 +85,6 @@ impl NetplayPages for NetplayJoin {
     }
     fn set_peer_addr(&self, peer_addr: slint::SharedString) {
         self.set_peer_addr(peer_addr);
-    }
-    fn invoke_get_ping(&self, server_url: slint::SharedString) {
-        self.invoke_get_ping(server_url);
-    }
-    fn set_custom_server_url(&self, server_url: slint::SharedString) {
-        self.set_custom_server_url(server_url);
     }
 }
 
@@ -161,8 +120,7 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
         if let Ok(response) = response {
             let servers: std::collections::HashMap<String, String> = response.json().await.unwrap();
 
-            let weak2 = weak.clone();
-            weak.upgrade_in_event_loop(move |handle| {
+            weak.upgrade_in_event_loop(move |_handle| {
                 let server_names: slint::VecModel<slint::SharedString> = slint::VecModel::default();
                 let server_urls: slint::VecModel<slint::SharedString> = slint::VecModel::default();
                 for local_server in local_servers {
@@ -174,14 +132,6 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                     server_urls.push(server.1.into());
                 }
                 server_names.push("Custom".into());
-                update_ping(weak2, server_urls.row_data(0).unwrap().into());
-                handle.refresh_sessions(server_urls.row_data(0).unwrap());
-                let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-                    std::rc::Rc::new(server_names);
-                let server_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-                    std::rc::Rc::new(server_urls);
-                handle.set_server_names(slint::ModelRc::from(server_names_model));
-                handle.set_server_urls(slint::ModelRc::from(server_urls_model));
             })
             .unwrap();
         }
@@ -245,48 +195,13 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
     });
 }
 
-fn update_ping<T: ComponentHandle + NetplayPages + 'static>(
-    weak: slint::Weak<T>,
-    server_url: String,
-) {
-    weak.upgrade_in_event_loop(move |handle| {
-        handle.set_ping("Ping: Unknown".into());
-    })
-    .unwrap();
-    tokio::spawn(async move {
-        if let Ok(Ok((mut sock, _response))) = tokio::time::timeout(
-            std::time::Duration::from_secs(1),
-            tokio_tungstenite::connect_async(server_url),
-        )
-        .await
-        {
-            sock.send(Message::Ping(Vec::new().into())).await.unwrap();
-            let start = std::time::Instant::now();
-
-            if let Some(Ok(_response)) = sock.next().await {
-                let elapsed = start.elapsed();
-                weak.upgrade_in_event_loop(move |handle| {
-                    handle.set_ping(format!("Ping: {:.0} ms", elapsed.as_millis()).into());
-                })
-                .unwrap();
-            }
-            sock.close(None).await.unwrap();
-        }
-    });
-}
-
-fn show_custom_url_dialog<T: ComponentHandle + NetplayPages + 'static>(
-    weak: slint::Weak<T>,
-    server_url: slint::SharedString,
-) {
+fn show_custom_url_dialog(weak: slint::Weak<NetplayCreate>, server_url: slint::SharedString) {
     let url_dialog = CustomNetplayServer::new().unwrap();
     url_dialog.set_custom_server_url(server_url);
     let weak_dialog = url_dialog.as_weak();
     url_dialog.on_ok_clicked(move |server_url| {
         weak.upgrade_in_event_loop(move |handle| {
             handle.set_custom_server_url(server_url.clone());
-            let prefix: slint::SharedString = "ws://".into();
-            handle.invoke_get_ping(prefix + &server_url);
         })
         .unwrap();
         weak_dialog.unwrap().window().hide().unwrap();
@@ -313,14 +228,9 @@ pub fn setup_create_window(
     create_window.set_rom_dir(rom_dir);
     populate_server_names(create_window.as_weak());
     let weak = create_window.as_weak();
-    create_window.on_get_ping(move |server_url| {
-        update_ping(weak.clone(), server_url.to_string());
-    });
-    let weak = create_window.as_weak();
     create_window.on_get_custom_url(move || {
         let weak2 = weak.clone();
         weak.upgrade_in_event_loop(move |handle| {
-            handle.set_ping("Ping: Unknown".into());
             show_custom_url_dialog(weak2, handle.get_custom_server_url());
         })
         .unwrap();
@@ -434,119 +344,6 @@ fn show_netplay_error(message: String) {
     });
     message_dialog.set_text(message.into());
     message_dialog.show().unwrap();
-}
-
-fn clear_sessions(handle: &NetplayJoin, message: Option<String>) {
-    handle.set_sessions(slint::ModelRc::default());
-    handle.set_ports(slint::ModelRc::default());
-    handle.set_current_session(-1);
-    if let Some(message) = message {
-        show_netplay_error(message);
-    }
-}
-
-fn update_sessions(
-    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
-    weak: slint::Weak<NetplayJoin>,
-) {
-    tokio::spawn(async move {
-        let now_utc = chrono::Utc::now().timestamp_millis().to_string();
-        let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
-        let request_rooms = NetplayMessage {
-            message_type: "request_get_rooms".to_string(),
-            player_name: None,
-            client_sha: None,
-            netplay_version: Some(NETPLAY_VERSION),
-            player_names: None,
-            emulator: Some(EMU_NAME.to_string()),
-            accept: None,
-            rooms: None,
-            message: None,
-            auth_time: Some(now_utc),
-            auth: Some(format!("{:x}", hasher.finalize())),
-            room: None,
-        };
-
-        netplay_write_sender.send(Some(request_rooms)).unwrap();
-
-        match tokio::time::timeout(
-            std::time::Duration::from_secs(2),
-            netplay_read_receiver.recv(),
-        )
-        .await
-        {
-            Ok(Ok(message)) => {
-                if message.accept.unwrap() == 0 {
-                    if let Some(rooms) = message.rooms {
-                        weak.upgrade_in_event_loop(move |handle| {
-                            let sessions_vec = slint::VecModel::default();
-                            let ports_vec = slint::VecModel::default();
-                            for room in rooms {
-                                let session_vec = slint::VecModel::default();
-                                session_vec.push(slint::StandardListViewItem::from(
-                                    slint::SharedString::from(room.room_name.unwrap()),
-                                ));
-                                session_vec.push(slint::StandardListViewItem::from(
-                                    slint::SharedString::from(room.game_name.unwrap()),
-                                ));
-                                session_vec.push(slint::StandardListViewItem::from(
-                                    slint::SharedString::from(if room.protected.unwrap() {
-                                        "True"
-                                    } else {
-                                        "False"
-                                    }),
-                                ));
-                                session_vec.push(slint::StandardListViewItem::from(
-                                    slint::SharedString::from(
-                                        if room.features.unwrap_or_default().contains_key("cheats")
-                                        {
-                                            "True"
-                                        } else {
-                                            "False"
-                                        },
-                                    ),
-                                ));
-                                let session_model: std::rc::Rc<
-                                    slint::VecModel<slint::StandardListViewItem>,
-                                > = std::rc::Rc::new(session_vec);
-                                sessions_vec.push(slint::ModelRc::from(session_model));
-                                ports_vec.push(room.port.unwrap());
-                            }
-                            let rooms_model: std::rc::Rc<
-                                slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
-                            > = std::rc::Rc::new(sessions_vec);
-                            let ports_model: std::rc::Rc<slint::VecModel<i32>> =
-                                std::rc::Rc::new(ports_vec);
-                            handle.set_sessions(slint::ModelRc::from(rooms_model));
-                            handle.set_ports(slint::ModelRc::from(ports_model));
-                            handle.set_current_session(-1);
-                        })
-                        .unwrap();
-                    } else {
-                        weak.upgrade_in_event_loop(move |handle| {
-                            clear_sessions(&handle, None);
-                        })
-                        .unwrap();
-                    }
-                } else {
-                    weak.upgrade_in_event_loop(move |handle| {
-                        clear_sessions(&handle, message.message);
-                    })
-                    .unwrap();
-                }
-            }
-            Ok(Err(err)) => {
-                panic!("netplay_read_receiver error: {err}");
-            }
-            Err(_) => {
-                weak.upgrade_in_event_loop(move |handle| {
-                    clear_sessions(&handle, Some("Server did not respond".to_string()));
-                })
-                .unwrap();
-            }
-        }
-    });
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1037,35 +834,18 @@ pub fn setup_join_window(
     rom_dir: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
-    let (netplay_read_sender, netplay_read_receiver): (
+    let (_netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<NetplayMessage>,
         tokio::sync::broadcast::Receiver<NetplayMessage>,
     ) = tokio::sync::broadcast::channel(5);
 
-    let (netplay_write_sender, netplay_write_receiver): (
+    let (netplay_write_sender, _netplay_write_receiver): (
         tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(5);
 
     join_window.set_rom_dir(rom_dir);
     populate_server_names(join_window.as_weak());
-    let weak = join_window.as_weak();
-    join_window.on_get_ping(move |server_url| {
-        update_ping(weak.clone(), server_url.to_string());
-        weak.upgrade_in_event_loop(move |handle| {
-            handle.invoke_refresh_session(server_url);
-        })
-        .unwrap();
-    });
-    let weak = join_window.as_weak();
-    join_window.on_get_custom_url(move || {
-        let weak2 = weak.clone();
-        weak.upgrade_in_event_loop(move |handle| {
-            handle.set_ping("Ping: Unknown".into());
-            show_custom_url_dialog(weak2, handle.get_custom_server_url());
-        })
-        .unwrap();
-    });
     let weak = join_window.as_weak();
     join_window.on_select_rom(move |rom_dir| {
         select_rom(weak.clone(), rom_dir);
@@ -1077,19 +857,6 @@ pub fn setup_join_window(
         slint::CloseRequestResponse::HideWindow
     });
 
-    let weak = join_window.as_weak();
-    let sender = netplay_write_sender.clone();
-    let receiver = netplay_read_receiver.resubscribe();
-    join_window.on_refresh_session(move |server_url| {
-        let _ = sender.send(None); // close current websocket if any
-        manage_websocket(
-            server_url.to_string(),
-            netplay_read_sender.clone(),
-            netplay_write_receiver.resubscribe(),
-            weak.clone(),
-        );
-        update_sessions(sender.clone(), receiver.resubscribe(), weak.clone());
-    });
     let weak = join_window.as_weak();
     join_window.on_join_session(move |player_name, game_hash, password, port| {
         join_session(
