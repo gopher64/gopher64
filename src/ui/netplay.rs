@@ -45,6 +45,8 @@ pub struct NetplayMessage {
 }
 
 trait NetplayPages {
+    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>);
+    fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>);
     fn set_game_name(&self, game_name: slint::SharedString);
     fn set_game_hash(&self, game_hash: slint::SharedString);
     fn set_game_cheats(&self, game_cheats: slint::SharedString);
@@ -53,6 +55,12 @@ trait NetplayPages {
 }
 
 impl NetplayPages for NetplayCreate {
+    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>) {
+        self.set_server_names(names);
+    }
+    fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>) {
+        self.set_server_urls(urls);
+    }
     fn set_game_name(&self, game_name: slint::SharedString) {
         self.set_game_name(game_name);
     }
@@ -71,6 +79,12 @@ impl NetplayPages for NetplayCreate {
 }
 
 impl NetplayPages for NetplayJoin {
+    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>) {
+        self.set_server_names(names);
+    }
+    fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>) {
+        self.set_server_urls(urls);
+    }
     fn set_game_name(&self, game_name: slint::SharedString) {
         self.set_game_name(game_name);
     }
@@ -89,7 +103,10 @@ impl NetplayPages for NetplayJoin {
 }
 
 fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
-    let task = reqwest::get("https://cdn.gopher64.com/servers-gopher64.json");
+    let task = reqwest::Client::new()
+        .get("https://dispatch.gopher64.com/getRegions")
+        .header("netplay-id", "gopher64")
+        .send();
     tokio::spawn(async move {
         let mut local_servers: Vec<(String, String)> = vec![];
 
@@ -118,9 +135,9 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
 
         let response = task.await;
         if let Ok(response) = response {
-            let servers: std::collections::HashMap<String, String> = response.json().await.unwrap();
+            let servers: Vec<String> = response.json().await.unwrap();
 
-            weak.upgrade_in_event_loop(move |_handle| {
+            weak.upgrade_in_event_loop(move |handle| {
                 let server_names: slint::VecModel<slint::SharedString> = slint::VecModel::default();
                 let server_urls: slint::VecModel<slint::SharedString> = slint::VecModel::default();
                 for local_server in local_servers {
@@ -128,10 +145,16 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                     server_urls.push(local_server.1.into());
                 }
                 for server in servers {
-                    server_names.push(server.0.into());
-                    server_urls.push(server.1.into());
+                    server_names.push(server.into());
+                    server_urls.push("".into());
                 }
                 server_names.push("Custom".into());
+                let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                    std::rc::Rc::new(server_names);
+                let server_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                    std::rc::Rc::new(server_urls);
+                handle.set_server_names(slint::ModelRc::from(server_names_model));
+                handle.set_server_urls(slint::ModelRc::from(server_urls_model));
             })
             .unwrap();
         }

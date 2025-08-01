@@ -3,6 +3,8 @@ import { NetplayData } from "netplay_page.slint";
 
 export component NetplayCreate inherits Window {
     title: @tr("Netplay: Create Session");
+    in-out property server_names <=> NetplayData.server_names;
+    in-out property server_urls <=> NetplayData.server_urls;
     in-out property custom_server_url <=> NetplayData.custom_server_url;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
@@ -64,7 +66,7 @@ export component NetplayCreate inherits Window {
 
             HorizontalBox {
                 server := ComboBox {
-                    model: ["Custom"];
+                    model: NetplayData.server_names;
                     selected => {
                         if (self.current-index >= 0) {
                             if (self.current-value == "Custom") {
