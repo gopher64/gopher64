@@ -14,6 +14,7 @@ export component NetplayJoin inherits Window {
     in-out property game_cheats <=> NetplayData.game_cheats;
     in-out property peer_addr <=> NetplayData.peer_addr;
     in-out property pending_session <=> NetplayData.pending_session;
+    in-out property pending_refresh <=> NetplayData.pending_refresh;
     in-out property rom_path <=> NetplayData.rom_path;
     in-out property rom_dir <=> NetplayData.rom_dir;
     callback refresh_session();
@@ -80,8 +81,10 @@ export component NetplayJoin inherits Window {
             Rectangle { }
 
             Button {
+                enabled: !NetplayData.pending_refresh;
                 text: @tr("Refresh Session List");
                 clicked => {
+                    NetplayData.pending_refresh = true;
                     refresh_session();
                 }
             }

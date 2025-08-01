@@ -478,6 +478,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                 }
             }
             servers.extend(dispatcher_servers);
+            handle.set_pending_refresh(false);
         })
         .unwrap();
     });
@@ -981,6 +982,7 @@ pub fn setup_join_window(
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(5);
 
+    join_window.set_pending_refresh(true);
     join_window.set_rom_dir(rom_dir);
     populate_server_names(join_window.as_weak());
     let weak = join_window.as_weak();
