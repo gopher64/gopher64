@@ -1026,7 +1026,7 @@ fn setup_wait_window(
                         let ping_message = ping_message.clone();
                         let ping_writer = netplay_write_sender.clone();
                         tokio::spawn(async move {
-                            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                             let _ = ping_writer.send(Some(ping_message));
                         });
                     }
