@@ -519,7 +519,8 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                             if let Ok(message) =
                                 serde_json::from_slice::<NetplayMessage>(&response.into_data())
                             {
-                                if message.accept.unwrap() == 0
+                                if message.message_type == "reply_get_rooms"
+                                    && message.accept.unwrap() == 0
                                     && let Some(rooms) = message.rooms
                                 {
                                     for room in rooms {
@@ -654,7 +655,7 @@ fn create_session(
         .await
         {
             Ok(Ok(message)) => {
-                if message.accept.unwrap() == 0 {
+                if message.message_type == "reply_create_room" && message.accept.unwrap() == 0 {
                     weak.upgrade_in_event_loop(move |handle| {
                         let session = message.room.as_ref().unwrap();
                         let features_default = "false".to_string();
@@ -762,7 +763,8 @@ fn join_session(
         .await
         {
             Ok(Ok(message)) => {
-                if message.accept.unwrap() == 0
+                if message.message_type == "reply_get_rooms"
+                    && message.accept.unwrap() == 0
                     && let Some(rooms) = message.rooms
                 {
                     for room in rooms {
@@ -817,7 +819,7 @@ fn join_session(
         .await
         {
             Ok(Ok(message)) => {
-                if message.accept.unwrap() == 0 {
+                if message.message_type == "reply_join_room" && message.accept.unwrap() == 0 {
                     weak.upgrade_in_event_loop(move |handle| {
                         let session = message.room.as_ref().unwrap();
                         let features_default = "false".to_string();
