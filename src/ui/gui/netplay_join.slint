@@ -85,6 +85,8 @@ export component NetplayJoin inherits Window {
                 text: @tr("Refresh Session List");
                 clicked => {
                     NetplayData.pending_refresh = true;
+                    NetplayData.current_session = -1;
+                    NetplayData.sessions = [];
                     refresh_session();
                 }
             }

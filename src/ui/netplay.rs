@@ -481,6 +481,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
             servers.extend(dispatcher_servers);
 
             tokio::spawn(async move {
+                let mut sessions = vec![];
                 for (server_name, server_url) in servers.iter() {
                     if let Ok(Ok((socket, _response))) = tokio::time::timeout(
                         std::time::Duration::from_secs(2),
@@ -521,10 +522,37 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                                     && let Some(rooms) = message.rooms
                                 {
                                     for room in rooms {
-                                        println!(
-                                            "Found room: {:?}, server: {:?}",
-                                            room.room_name, server_name
-                                        );
+                                        let mut session = vec![];
+                                        session.push(slint::StandardListViewItem::from(
+                                            slint::SharedString::from(server_name),
+                                        ));
+                                        session.push(slint::StandardListViewItem::from(
+                                            slint::SharedString::from(room.room_name.unwrap()),
+                                        ));
+                                        session.push(slint::StandardListViewItem::from(
+                                            slint::SharedString::from(room.game_name.unwrap()),
+                                        ));
+                                        session.push(slint::StandardListViewItem::from(
+                                            slint::SharedString::from(if room.protected.unwrap() {
+                                                "True"
+                                            } else {
+                                                "False"
+                                            }),
+                                        ));
+                                        session.push(slint::StandardListViewItem::from(
+                                            slint::SharedString::from(
+                                                if room
+                                                    .features
+                                                    .unwrap_or_default()
+                                                    .contains_key("cheats")
+                                                {
+                                                    "True"
+                                                } else {
+                                                    "False"
+                                                },
+                                            ),
+                                        ));
+                                        sessions.push(session);
                                     }
                                 }
                             }
@@ -533,6 +561,20 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                 }
                 weak2
                     .upgrade_in_event_loop(move |handle| {
+                        let sessions_vec = slint::VecModel::default();
+                        for session in sessions.iter() {
+                            let session_vec = slint::VecModel::from(session.to_vec());
+                            let session_model: std::rc::Rc<
+                                slint::VecModel<slint::StandardListViewItem>,
+                            > = std::rc::Rc::new(session_vec);
+                            sessions_vec.push(slint::ModelRc::from(session_model));
+                        }
+                        let rooms_model: std::rc::Rc<
+                            slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
+                        > = std::rc::Rc::new(sessions_vec);
+                        handle.set_sessions(slint::ModelRc::from(rooms_model));
+
+                        handle.set_current_session(-1);
                         handle.set_pending_refresh(false);
                     })
                     .unwrap();
