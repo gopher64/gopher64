@@ -7,6 +7,7 @@ export global NetplayWaitData {
     in-out property <int> port;
     in-out property <bool> can_start;
     in-out property <string> chat_text;
+    in-out property <string> ping;
 }
 
 export component NetplayWait inherits Window {
@@ -21,6 +22,7 @@ export component NetplayWait inherits Window {
     in-out property port <=> NetplayWaitData.port;
     in-out property can_start <=> NetplayWaitData.can_start;
     in-out property chat_text <=> NetplayWaitData.chat_text;
+    in-out property ping <=> NetplayWaitData.ping;
     callback send_chat_message(string);
     callback begin_game;
 
@@ -34,6 +36,11 @@ export component NetplayWait inherits Window {
         Text {
             text: @tr("Game Name: ") + NetplayData.game_name;
             font-size: 15px;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: @tr("Ping: ") + NetplayWaitData.ping;
             horizontal-alignment: center;
         }
 

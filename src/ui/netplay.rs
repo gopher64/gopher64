@@ -911,6 +911,7 @@ fn setup_wait_window(
     wait.set_rom_path(rom_path);
     wait.set_port(port);
     wait.set_can_start(can_start);
+    wait.set_ping("Unknown".into());
 
     let sender = netplay_write_sender.clone();
     wait.on_send_chat_message(move |message| {
@@ -991,11 +992,44 @@ fn setup_wait_window(
 
     netplay_write_sender.send(Some(motd_message)).unwrap();
 
+    let ping_message = NetplayMessage {
+        message_type: "request_ping".to_string(),
+        player_name: None,
+        client_sha: None,
+        netplay_version: None,
+        emulator: None,
+        accept: None,
+        rooms: None,
+        player_names: None,
+        message: None,
+        auth_time: None,
+        auth: None,
+        room: None,
+    };
+
+    netplay_write_sender
+        .send(Some(ping_message.clone()))
+        .unwrap();
+
     let weak = wait.as_weak();
     tokio::spawn(async move {
         loop {
             match netplay_read_receiver.recv().await {
                 Ok(response) => match response.message_type.as_str() {
+                    "reply_ping" => {
+                        if let Some(message) = response.message {
+                            weak.upgrade_in_event_loop(move |handle| {
+                                handle.set_ping((message + " ms").into());
+                            })
+                            .unwrap();
+                        }
+                        let ping_message = ping_message.clone();
+                        let ping_writer = netplay_write_sender.clone();
+                        tokio::spawn(async move {
+                            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                            ping_writer.send(Some(ping_message)).unwrap();
+                        });
+                    }
                     "reply_motd" => {
                         let request_players = NetplayMessage {
                             message_type: "request_players".to_string(),
