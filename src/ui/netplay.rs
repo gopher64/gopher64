@@ -452,6 +452,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
         {
             dispatcher_servers = servers;
         }
+        let weak2 = weak.clone();
         weak.upgrade_in_event_loop(move |handle| {
             let mut servers: std::collections::HashMap<String, String> =
                 std::collections::HashMap::new();
@@ -478,7 +479,64 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                 }
             }
             servers.extend(dispatcher_servers);
-            handle.set_pending_refresh(false);
+
+            tokio::spawn(async move {
+                for (server_name, server_url) in servers.iter() {
+                    if let Ok(Ok((socket, _response))) = tokio::time::timeout(
+                        std::time::Duration::from_secs(2),
+                        tokio_tungstenite::connect_async(server_url.clone()),
+                    )
+                    .await
+                    {
+                        let (mut write, mut read) = socket.split();
+
+                        let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+                        let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
+                        let request_rooms = NetplayMessage {
+                            message_type: "request_get_rooms".to_string(),
+                            player_name: None,
+                            client_sha: None,
+                            netplay_version: Some(NETPLAY_VERSION),
+                            player_names: None,
+                            emulator: Some(EMU_NAME.to_string()),
+                            accept: None,
+                            rooms: None,
+                            message: None,
+                            auth_time: Some(now_utc),
+                            auth: Some(format!("{:x}", hasher.finalize())),
+                            room: None,
+                        };
+                        write
+                            .send(Message::Binary(Bytes::from(
+                                serde_json::to_vec(&request_rooms).unwrap(),
+                            )))
+                            .await
+                            .unwrap();
+
+                        if let Some(Ok(response)) = read.next().await {
+                            if let Ok(message) =
+                                serde_json::from_slice::<NetplayMessage>(&response.into_data())
+                            {
+                                if message.accept.unwrap() == 0
+                                    && let Some(rooms) = message.rooms
+                                {
+                                    for room in rooms {
+                                        println!(
+                                            "Found room: {:?}, server: {:?}",
+                                            room.room_name, server_name
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                weak2
+                    .upgrade_in_event_loop(move |handle| {
+                        handle.set_pending_refresh(false);
+                    })
+                    .unwrap();
+            });
         })
         .unwrap();
     });
