@@ -6,22 +6,21 @@ export component NetplayJoin inherits Window {
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
     in-out property custom_server_url <=> NetplayData.custom_server_url;
-    in-out property ping <=> NetplayData.ping;
     in-out property sessions <=> NetplayData.sessions;
     in-out property current_session <=> NetplayData.current_session;
-    in-out property ports <=> NetplayData.ports;
+    in-out property room_urls <=> NetplayData.room_urls;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
     in-out property game_cheats <=> NetplayData.game_cheats;
     in-out property peer_addr <=> NetplayData.peer_addr;
     in-out property pending_session <=> NetplayData.pending_session;
+    in-out property pending_refresh <=> NetplayData.pending_refresh;
     in-out property rom_path <=> NetplayData.rom_path;
     in-out property rom_dir <=> NetplayData.rom_dir;
-    callback get_ping(string);
-    callback get_custom_url();
-    callback refresh_session(string);
+    callback refresh_session();
     callback select_rom(string);
-    callback join_session(string, string, string, int);
+    callback join_session(string, string, string, string, string);
+    preferred-width: 700px;
 
     VerticalBox {
         HorizontalBox {
@@ -40,26 +39,14 @@ export component NetplayJoin inherits Window {
 
             VerticalBox {
                 Text {
-                    text: @tr("Server:");
+                    text: @tr("Custom Server URL (optional):");
                 }
 
-                HorizontalBox {
-                    server := ComboBox {
-                        model: NetplayData.server_names;
-                        selected => {
-                            if (self.current-index >= 0) {
-                                if (self.current-value == "Custom") {
-                                    get_custom_url();
-                                } else {
-                                    get_ping(NetplayData.server_urls[self.current-index]);
-                                }
-                            }
-                        }
-                    }
-
-                    Text {
-                        vertical-alignment: center;
-                        text: NetplayData.ping;
+                LineEdit {
+                    placeholder-text: @tr("example.com:45000");
+                    text: NetplayData.custom_server_url;
+                    edited(text) => {
+                        NetplayData.custom_server_url = text;
                     }
                 }
             }
@@ -71,12 +58,13 @@ export component NetplayJoin inherits Window {
             vertical-alignment: center;
         }
         if NetplayData.sessions.length == 0: Text {
-            text: @tr("No sessions available. Please refresh or try a different server.");
+            text: @tr("No sessions available. Please refresh to check again.");
             horizontal-alignment: center;
             vertical-alignment: center;
         }
         StandardTableView {
             columns: [
+                { title: "Server" },
                 { title: "Session Name" },
                 { title: "Game Name" },
                 { title: "Password" },
@@ -93,13 +81,14 @@ export component NetplayJoin inherits Window {
             Rectangle { }
 
             Button {
+                enabled: !NetplayData.pending_refresh;
                 text: @tr("Refresh Session List");
                 clicked => {
-                    if (server.current-value == "Custom") {
-                        refresh_session("ws://" + NetplayData.custom_server_url);
-                    } else {
-                        refresh_session(NetplayData.server_urls[server.current-index]);
-                    }
+                    NetplayData.pending_refresh = true;
+                    NetplayData.current_session = -1;
+                    NetplayData.sessions = [];
+                    NetplayData.room_urls = [];
+                    refresh_session();
                 }
             }
         }
@@ -134,7 +123,8 @@ export component NetplayJoin inherits Window {
                     NetplayData.player_name,
                     NetplayData.game_hash,
                     NetplayData.password,
-                    NetplayData.ports[NetplayData.current_session]);
+                    NetplayData.room_urls[NetplayData.current_session],
+                    NetplayData.sessions[NetplayData.current_session][1].text);
                 }
             }
         }
