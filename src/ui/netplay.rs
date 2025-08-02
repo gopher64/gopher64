@@ -482,6 +482,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
 
             tokio::spawn(async move {
                 let mut sessions = vec![];
+                let mut room_names = vec![];
                 for (server_name, server_url) in servers.iter() {
                     if let Ok(Ok((socket, _response))) = tokio::time::timeout(
                         std::time::Duration::from_secs(2),
@@ -523,6 +524,8 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                                 {
                                     for room in rooms {
                                         let mut session = vec![];
+                                        room_names.push(room.room_name.as_ref().unwrap().into());
+
                                         session.push(slint::StandardListViewItem::from(
                                             slint::SharedString::from(server_name),
                                         ));
@@ -573,6 +576,11 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                             slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
                         > = std::rc::Rc::new(sessions_vec);
                         handle.set_sessions(slint::ModelRc::from(rooms_model));
+
+                        let room_names_vec = slint::VecModel::from(room_names.to_vec());
+                        let room_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                            std::rc::Rc::new(room_names_vec);
+                        handle.set_room_names(slint::ModelRc::from(room_names_model));
 
                         handle.set_current_session(-1);
                         handle.set_pending_refresh(false);
@@ -721,12 +729,61 @@ fn join_session(
     player_name: String,
     game_hash: String,
     password: String,
-    port: i32,
+    room_name: String,
     fullscreen: bool,
     weak_app: slint::Weak<AppWindow>,
     weak: slint::Weak<NetplayJoin>,
 ) {
     tokio::spawn(async move {
+        let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+        let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
+        let request_rooms = NetplayMessage {
+            message_type: "request_get_rooms".to_string(),
+            player_name: None,
+            client_sha: None,
+            netplay_version: Some(NETPLAY_VERSION),
+            player_names: None,
+            emulator: Some(EMU_NAME.to_string()),
+            accept: None,
+            rooms: None,
+            message: None,
+            auth_time: Some(now_utc),
+            auth: Some(format!("{:x}", hasher.finalize())),
+            room: None,
+        };
+
+        netplay_write_sender.send(Some(request_rooms)).unwrap();
+
+        let mut port = 0;
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            netplay_read_receiver.recv(),
+        )
+        .await
+        {
+            Ok(Ok(message)) => {
+                if message.accept.unwrap() == 0
+                    && let Some(rooms) = message.rooms
+                {
+                    for room in rooms {
+                        if room.room_name.unwrap() == room_name {
+                            port = room.port.unwrap_or(0);
+                        }
+                    }
+                }
+            }
+            Ok(Err(err)) => {
+                panic!("netplay_read_receiver error: {err}");
+            }
+            Err(_) => {
+                weak.upgrade_in_event_loop(move |handle| {
+                    handle.set_pending_session(false);
+                    show_netplay_error("Server did not respond".to_string());
+                })
+                .unwrap();
+            }
+        }
+
         let join_room = NetplayMessage {
             message_type: "request_join_room".to_string(),
             player_name: Some(player_name),
@@ -1072,12 +1129,12 @@ pub fn setup_join_window(
     rom_dir: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
-    let (_netplay_read_sender, netplay_read_receiver): (
+    let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<NetplayMessage>,
         tokio::sync::broadcast::Receiver<NetplayMessage>,
     ) = tokio::sync::broadcast::channel(5);
 
-    let (netplay_write_sender, _netplay_write_receiver): (
+    let (netplay_write_sender, netplay_write_receiver): (
         tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
         tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     ) = tokio::sync::broadcast::channel(5);
@@ -1100,14 +1157,22 @@ pub fn setup_join_window(
         update_sessions(weak.clone());
     });
     let weak = join_window.as_weak();
-    join_window.on_join_session(move |player_name, game_hash, password, port| {
+    join_window.on_join_session(move |player_name, game_hash, password, room_name| {
+        let _ = netplay_write_sender.send(None); // close current websocket if any
+        manage_websocket(
+            "TODO".to_string(),
+            netplay_read_sender.clone(),
+            netplay_write_receiver.resubscribe(),
+            weak.clone(),
+        );
+
         join_session(
             netplay_write_sender.clone(),
             netplay_read_receiver.resubscribe(),
             player_name.to_string(),
             game_hash.to_string(),
             password.to_string(),
-            port,
+            room_name.to_string(),
             fullscreen,
             weak_app.clone(),
             weak.clone(),

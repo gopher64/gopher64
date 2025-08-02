@@ -8,7 +8,7 @@ export component NetplayJoin inherits Window {
     in-out property custom_server_url <=> NetplayData.custom_server_url;
     in-out property sessions <=> NetplayData.sessions;
     in-out property current_session <=> NetplayData.current_session;
-    in-out property ports <=> NetplayData.ports;
+    in-out property room_names <=> NetplayData.room_names;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
     in-out property game_cheats <=> NetplayData.game_cheats;
@@ -19,7 +19,7 @@ export component NetplayJoin inherits Window {
     in-out property rom_dir <=> NetplayData.rom_dir;
     callback refresh_session();
     callback select_rom(string);
-    callback join_session(string, string, string, int);
+    callback join_session(string, string, string, string);
     preferred-width: 700px;
 
     VerticalBox {
@@ -87,6 +87,7 @@ export component NetplayJoin inherits Window {
                     NetplayData.pending_refresh = true;
                     NetplayData.current_session = -1;
                     NetplayData.sessions = [];
+                    NetplayData.room_names = [];
                     refresh_session();
                 }
             }
@@ -122,7 +123,7 @@ export component NetplayJoin inherits Window {
                     NetplayData.player_name,
                     NetplayData.game_hash,
                     NetplayData.password,
-                    NetplayData.ports[NetplayData.current_session]);
+                    NetplayData.room_names[NetplayData.current_session]);
                 }
             }
         }
