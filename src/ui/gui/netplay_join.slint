@@ -8,7 +8,6 @@ export component NetplayJoin inherits Window {
     in-out property custom_server_url <=> NetplayData.custom_server_url;
     in-out property sessions <=> NetplayData.sessions;
     in-out property current_session <=> NetplayData.current_session;
-    in-out property room_names <=> NetplayData.room_names;
     in-out property room_urls <=> NetplayData.room_urls;
     in-out property game_name <=> NetplayData.game_name;
     in-out property game_hash <=> NetplayData.game_hash;
@@ -88,7 +87,6 @@ export component NetplayJoin inherits Window {
                     NetplayData.pending_refresh = true;
                     NetplayData.current_session = -1;
                     NetplayData.sessions = [];
-                    NetplayData.room_names = [];
                     NetplayData.room_urls = [];
                     refresh_session();
                 }
@@ -126,7 +124,7 @@ export component NetplayJoin inherits Window {
                     NetplayData.game_hash,
                     NetplayData.password,
                     NetplayData.room_urls[NetplayData.current_session],
-                    NetplayData.room_names[NetplayData.current_session]);
+                    NetplayData.sessions[NetplayData.current_session][1].text);
                 }
             }
         }

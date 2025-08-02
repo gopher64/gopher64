@@ -482,7 +482,6 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
 
             tokio::spawn(async move {
                 let mut sessions = vec![];
-                let mut room_names = vec![];
                 let mut room_urls = vec![];
                 for (server_name, server_url) in servers.iter() {
                     if let Ok(Ok((socket, _response))) = tokio::time::timeout(
@@ -525,7 +524,6 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                                 {
                                     for room in rooms {
                                         let mut session = vec![];
-                                        room_names.push(room.room_name.as_ref().unwrap().into());
                                         room_urls.push(server_url.into());
 
                                         session.push(slint::StandardListViewItem::from(
@@ -578,11 +576,6 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                             slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
                         > = std::rc::Rc::new(sessions_vec);
                         handle.set_sessions(slint::ModelRc::from(rooms_model));
-
-                        let room_names_vec = slint::VecModel::from(room_names.to_vec());
-                        let room_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-                            std::rc::Rc::new(room_names_vec);
-                        handle.set_room_names(slint::ModelRc::from(room_names_model));
 
                         let room_urls_vec = slint::VecModel::from(room_urls.to_vec());
                         let room_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
