@@ -483,6 +483,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
             tokio::spawn(async move {
                 let mut sessions = vec![];
                 let mut room_names = vec![];
+                let mut room_urls = vec![];
                 for (server_name, server_url) in servers.iter() {
                     if let Ok(Ok((socket, _response))) = tokio::time::timeout(
                         std::time::Duration::from_secs(2),
@@ -525,6 +526,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                                     for room in rooms {
                                         let mut session = vec![];
                                         room_names.push(room.room_name.as_ref().unwrap().into());
+                                        room_urls.push(server_url.into());
 
                                         session.push(slint::StandardListViewItem::from(
                                             slint::SharedString::from(server_name),
@@ -581,6 +583,11 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                         let room_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
                             std::rc::Rc::new(room_names_vec);
                         handle.set_room_names(slint::ModelRc::from(room_names_model));
+
+                        let room_urls_vec = slint::VecModel::from(room_urls.to_vec());
+                        let room_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                            std::rc::Rc::new(room_urls_vec);
+                        handle.set_room_urls(slint::ModelRc::from(room_urls_model));
 
                         handle.set_current_session(-1);
                         handle.set_pending_refresh(false);
@@ -1157,27 +1164,29 @@ pub fn setup_join_window(
         update_sessions(weak.clone());
     });
     let weak = join_window.as_weak();
-    join_window.on_join_session(move |player_name, game_hash, password, room_name| {
-        let _ = netplay_write_sender.send(None); // close current websocket if any
-        manage_websocket(
-            "TODO".to_string(),
-            netplay_read_sender.clone(),
-            netplay_write_receiver.resubscribe(),
-            weak.clone(),
-        );
+    join_window.on_join_session(
+        move |player_name, game_hash, password, room_url, room_name| {
+            let _ = netplay_write_sender.send(None); // close current websocket if any
+            manage_websocket(
+                room_url.to_string(),
+                netplay_read_sender.clone(),
+                netplay_write_receiver.resubscribe(),
+                weak.clone(),
+            );
 
-        join_session(
-            netplay_write_sender.clone(),
-            netplay_read_receiver.resubscribe(),
-            player_name.to_string(),
-            game_hash.to_string(),
-            password.to_string(),
-            room_name.to_string(),
-            fullscreen,
-            weak_app.clone(),
-            weak.clone(),
-        );
-    });
+            join_session(
+                netplay_write_sender.clone(),
+                netplay_read_receiver.resubscribe(),
+                player_name.to_string(),
+                game_hash.to_string(),
+                password.to_string(),
+                room_name.to_string(),
+                fullscreen,
+                weak_app.clone(),
+                weak.clone(),
+            );
+        },
+    );
 
     join_window.show().unwrap();
 }
