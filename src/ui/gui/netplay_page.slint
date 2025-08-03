@@ -7,7 +7,6 @@ import { Page } from "page.slint";
 export global NetplayData {
     in-out property <[string]> server_names;
     in-out property <[string]> server_urls;
-    in-out property <string> ping: "Ping: Unknown";
     in-out property <string> player_name;
     in-out property <string> game_name;
     in-out property <string> game_hash;
@@ -16,9 +15,10 @@ export global NetplayData {
     in-out property <string> password;
     in-out property <string> peer_addr;
     in-out property <bool> pending_session;
+    in-out property <bool> pending_refresh;
     in-out property <string> session_name;
     in-out property <[[StandardListViewItem]]> sessions;
-    in-out property <[int]> ports;
+    in-out property <[string]> room_urls;
     in-out property <int> current_session: -1;
     in-out property <string> rom_dir;
     in-out property <string> custom_server_url;
