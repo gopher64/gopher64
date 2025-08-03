@@ -118,6 +118,7 @@ jobs:
           artifact-configuration-slug: "gopher64-${{ matrix.arch }}"
           signing-policy-slug: "release-signing"
           github-artifact-id: "${{ steps.upload-unsigned-artifact.outputs.artifact-id }}"
+          wait-for-completion: false
 
   build-macos:
     runs-on: macos-15
