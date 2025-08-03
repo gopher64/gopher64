@@ -52,12 +52,17 @@ export component NetplayJoin inherits Window {
             }
         }
 
-        if NetplayData.sessions.length > 0: Text {
+        if NetplayData.pending_refresh: Text {
+            text: @tr("Refreshing session list, please wait...");
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+        if !NetplayData.pending_refresh && NetplayData.sessions.length > 0: Text {
             text: @tr("Click on a session below to select it");
             horizontal-alignment: center;
             vertical-alignment: center;
         }
-        if NetplayData.sessions.length == 0: Text {
+        if !NetplayData.pending_refresh && NetplayData.sessions.length == 0: Text {
             text: @tr("No sessions available. Please refresh to check again.");
             horizontal-alignment: center;
             vertical-alignment: center;
