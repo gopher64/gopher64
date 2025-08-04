@@ -34,6 +34,7 @@ extern "C"
 		bool lower_volume;
 		bool raise_volume;
 		bool paused;
+		uint32_t save_state_slot;
 	} CALL_BACK;
 
 	void rdp_init(void *_window, GFX_INFO _gfx_info);

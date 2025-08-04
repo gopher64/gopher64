@@ -199,10 +199,13 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
         .paths
         .savestate_file_path
         .clone_from(&states_path);
-    ui.storage
-        .paths
-        .savestate_file_path
-        .push(prefix.to_owned() + "-" + &ui.game_hash + ".state");
+    ui.storage.paths.savestate_file_path.push(
+        prefix.to_owned()
+            + "-"
+            + &ui.game_hash
+            + ".state"
+            + ui.storage.save_state_slot.to_string().as_str(),
+    );
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
