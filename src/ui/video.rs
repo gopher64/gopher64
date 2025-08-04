@@ -174,7 +174,9 @@ pub fn process_rdp_list() -> u64 {
     unsafe { rdp_process_commands() }
 }
 
-pub fn onscreen_message(_ui: &ui::Ui, _message: &str) {}
+pub fn onscreen_message(_ui: &ui::Ui, message: &str) {
+    println!("Onscreen message: {message}");
+}
 
 pub fn draw_text(
     text: &str,
