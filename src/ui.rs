@@ -16,9 +16,7 @@ pub struct Dirs {
 pub struct Audio {
     pub audio_device_spec: sdl3_sys::audio::SDL_AudioSpec,
     pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
-    pub event_audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub audio_device: u32,
-    pub event_audio: audio::EventAudio,
     pub gain: f32,
 }
 
@@ -169,24 +167,8 @@ impl Ui {
             game_id: String::new(),
             game_hash: String::new(),
             audio: Audio {
-                event_audio: audio::EventAudio {
-                    mempak: include_bytes!("../data/mempak.wav").to_vec(),
-                    rumblepak: include_bytes!("../data/rumblepak.wav").to_vec(),
-                    transferpak: include_bytes!("../data/transferpak.wav").to_vec(),
-                    netplay_desync: include_bytes!("../data/netplay_desync.wav").to_vec(),
-                    netplay_lost_connection: include_bytes!("../data/netplay_lost_connection.wav")
-                        .to_vec(),
-                    netplay_disconnected: [
-                        include_bytes!("../data/netplay_p1_disconnected.wav").to_vec(),
-                        include_bytes!("../data/netplay_p2_disconnected.wav").to_vec(),
-                        include_bytes!("../data/netplay_p3_disconnected.wav").to_vec(),
-                        include_bytes!("../data/netplay_p4_disconnected.wav").to_vec(),
-                    ],
-                    cheats_enabled: include_bytes!("../data/cheats_enabled.wav").to_vec(),
-                },
                 audio_device_spec: Default::default(),
                 audio_stream: std::ptr::null_mut(),
-                event_audio_stream: std::ptr::null_mut(),
                 audio_device: 0,
                 gain: 1.0,
             },

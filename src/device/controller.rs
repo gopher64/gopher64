@@ -189,20 +189,22 @@ pub fn pak_switch_event(device: &mut device::Device) {
                     write: device::controller::mempak::write,
                     pak_type: new_pak_type,
                 });
+                ui::video::onscreen_message(&device.ui, "MemPak selected");
             } else if new_pak_type == PakType::RumblePak {
                 channel.pak_handler = Some(device::controller::PakHandler {
                     read: device::controller::rumble::read,
                     write: device::controller::rumble::write,
                     pak_type: new_pak_type,
                 });
+                ui::video::onscreen_message(&device.ui, "RumblePak selected");
             } else if new_pak_type == PakType::TransferPak {
                 channel.pak_handler = Some(device::controller::PakHandler {
                     read: device::controller::transferpak::read,
                     write: device::controller::transferpak::write,
                     pak_type: new_pak_type,
                 });
+                ui::video::onscreen_message(&device.ui, "TransferPak selected");
             }
-            ui::audio::play_pak_switch(&device.ui, new_pak_type);
             channel.change_pak = PakType::None;
         }
     }

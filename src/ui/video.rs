@@ -144,7 +144,10 @@ pub fn check_callback(device: &mut device::Device) -> bool {
     }
 
     if device.ui.storage.save_state_slot != callback.save_state_slot {
-        println!("Switching save state slot to {}", callback.save_state_slot);
+        ui::video::onscreen_message(
+            &device.ui,
+            &format!("Switching save state slot to {}", callback.save_state_slot,),
+        );
         device.ui.storage.save_state_slot = callback.save_state_slot;
         device
             .ui
@@ -170,6 +173,8 @@ pub fn set_register(reg: u32, value: u32) {
 pub fn process_rdp_list() -> u64 {
     unsafe { rdp_process_commands() }
 }
+
+pub fn onscreen_message(_ui: &ui::Ui, _message: &str) {}
 
 pub fn draw_text(
     text: &str,

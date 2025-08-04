@@ -46,14 +46,6 @@ struct InputEvent {
     plugin: u8,
 }
 
-pub const NETPLAY_ERROR_DESYNC: u32 = 0;
-pub const NETPLAY_ERROR_LOST_CONNECTION: u32 = 1;
-pub const NETPLAY_ERROR_PLAYER_DISCONNECTED: u32 = 2;
-pub const NETPLAY_ERROR_PLAYER_1_DISCONNECTED: u32 = 3;
-pub const NETPLAY_ERROR_PLAYER_2_DISCONNECTED: u32 = 4;
-pub const NETPLAY_ERROR_PLAYER_3_DISCONNECTED: u32 = 5;
-pub const NETPLAY_ERROR_PLAYER_4_DISCONNECTED: u32 = 6;
-
 pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
     let mut request: Vec<u8> = [TCP_SEND_RTC].to_vec();
     let size: u32 = 8;
@@ -155,7 +147,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> ui::input::Inpu
             .remove(&netplay.player_data[channel].count);
 
         if std::time::Instant::now() > timeout {
-            ui::audio::play_netplay_audio(&device.ui, NETPLAY_ERROR_LOST_CONNECTION);
+            ui::video::onscreen_message(&device.ui, "Lost connection to netplay server");
             input = Some(InputEvent {
                 input: 0,
                 plugin: 0,
@@ -200,14 +192,14 @@ fn process_incoming(netplay: &mut Netplay, ui: &ui::Ui) {
                 }
                 if current_status != netplay.status {
                     if ((current_status & 0x1) ^ (netplay.status & 0x1)) != 0 {
-                        ui::audio::play_netplay_audio(ui, NETPLAY_ERROR_DESYNC);
+                        ui::video::onscreen_message(ui, "Netplay desync detected");
                     }
                     for dis in 1..5 {
                         if ((current_status & (0x1 << dis)) ^ (netplay.status & (0x1 << dis))) != 0
                         {
-                            ui::audio::play_netplay_audio(
+                            ui::video::onscreen_message(
                                 ui,
-                                NETPLAY_ERROR_PLAYER_DISCONNECTED + dis,
+                                &format!("Player {} disconnected", dis),
                             );
                         }
                     }
