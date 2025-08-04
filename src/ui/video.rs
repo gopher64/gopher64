@@ -144,6 +144,7 @@ pub fn check_callback(device: &mut device::Device) -> bool {
     }
 
     if device.ui.storage.save_state_slot != callback.save_state_slot {
+        println!("Switching save state slot to {}", callback.save_state_slot);
         device.ui.storage.save_state_slot = callback.save_state_slot;
         device
             .ui
