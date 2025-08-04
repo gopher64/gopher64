@@ -197,10 +197,7 @@ fn process_incoming(netplay: &mut Netplay, ui: &ui::Ui) {
                     for dis in 1..5 {
                         if ((current_status & (0x1 << dis)) ^ (netplay.status & (0x1 << dis))) != 0
                         {
-                            ui::video::onscreen_message(
-                                ui,
-                                &format!("Player {} disconnected", dis),
-                            );
+                            ui::video::onscreen_message(ui, &format!("Player {dis} disconnected"));
                         }
                     }
                     netplay.status = current_status;
