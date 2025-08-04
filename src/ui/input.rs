@@ -466,6 +466,7 @@ fn close_controllers(
 
 pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
+    ui::ttf_init();
 
     if profile == "default" {
         println!("Profile name cannot be default");
@@ -567,8 +568,16 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         axis: 0,
     };
 
-    let font =
-        ab_glyph::FontRef::try_from_slice(include_bytes!("../../data/Roboto-Regular.ttf")).unwrap();
+    let text_engine = unsafe { sdl3_ttf_sys::ttf::TTF_CreateRendererTextEngine(renderer) };
+    let font = unsafe {
+        let bytes = include_bytes!("../../data/Roboto-Regular.ttf");
+        let io = sdl3_sys::everything::SDL_IOFromConstMem(
+            bytes.as_ptr() as *const std::ffi::c_void,
+            bytes.len(),
+        );
+
+        sdl3_ttf_sys::ttf::TTF_OpenFontIO(io, true, 35.0)
+    };
 
     for (key, value) in key_labels.iter() {
         let mut event: sdl3_sys::events::SDL_Event = Default::default();
@@ -577,7 +586,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         ui::video::draw_text(
             format!("Select binding for: {key}").as_str(),
             renderer,
-            &font,
+            text_engine,
+            font,
         );
 
         let mut key_set = false;
@@ -671,6 +681,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
     close_controllers(open_joysticks, open_controllers);
 
     unsafe {
+        sdl3_ttf_sys::ttf::TTF_CloseFont(font);
+        sdl3_ttf_sys::ttf::TTF_DestroyRendererTextEngine(text_engine);
         sdl3_sys::render::SDL_DestroyRenderer(renderer);
         sdl3_sys::video::SDL_DestroyWindow(window);
     }

@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::{device, ui};
-use ab_glyph::{Font, ScaleFont};
 
 pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
@@ -181,57 +180,24 @@ pub fn onscreen_message(_ui: &ui::Ui, message: &str) {
 pub fn draw_text(
     text: &str,
     renderer: *mut sdl3_sys::render::SDL_Renderer,
-    font: &ab_glyph::FontRef,
+    text_engine: *mut sdl3_ttf_sys::ttf::TTF_TextEngine,
+    font: *mut sdl3_ttf_sys::ttf::TTF_Font,
 ) {
-    // Clear the canvas
     unsafe {
-        sdl3_sys::render::SDL_SetRenderDrawColor(
-            renderer,
-            0,
-            0,
-            0,
-            sdl3_sys::pixels::SDL_ALPHA_OPAQUE,
+        let (mut w, mut h) = (0, 0);
+        sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h);
+
+        let c_text = std::ffi::CString::new(text).unwrap();
+        let ttf_text = sdl3_ttf_sys::ttf::TTF_CreateText(
+            text_engine,
+            font,
+            c_text.as_ptr(),
+            c_text.count_bytes(),
         );
-        sdl3_sys::render::SDL_RenderClear(renderer);
-    };
 
-    let text_size = 40.0;
-    let (mut w, mut h) = (0, 0);
-    unsafe { sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h) };
-    let x_start = 20.0;
-    let y_start = (h / 2) as f32;
-
-    let mut x_offset = 0.0;
-    for c in text.chars() {
-        let q_glyph_id = font.glyph_id(c);
-        let q_glyph = q_glyph_id.with_scale(text_size);
-
-        if let Some(q) = font.outline_glyph(q_glyph) {
-            q.draw(|x, y, c| {
-                if c > 0.5 {
-                    unsafe {
-                        sdl3_sys::render::SDL_SetRenderDrawColor(
-                            renderer,
-                            255,
-                            255,
-                            255,
-                            sdl3_sys::pixels::SDL_ALPHA_OPAQUE,
-                        );
-                        sdl3_sys::render::SDL_RenderPoint(
-                            renderer,
-                            x_start + x_offset + x as f32 - q.px_bounds().width()
-                                + q.px_bounds().max.x,
-                            y_start + y as f32 - q.px_bounds().height() + q.px_bounds().max.y,
-                        );
-                    };
-                }
-            });
-        }
-        x_offset += font.as_scaled(text_size).h_advance(q_glyph_id);
-    }
-
-    // Present the canvas
-    if !unsafe { sdl3_sys::render::SDL_RenderPresent(renderer) } {
-        panic!("Could not present renderer");
+        sdl3_sys::everything::SDL_RenderClear(renderer);
+        sdl3_ttf_sys::ttf::TTF_DrawRendererText(ttf_text, 20.0, h as f32 / 2.0);
+        sdl3_sys::render::SDL_RenderPresent(renderer);
+        sdl3_ttf_sys::ttf::TTF_DestroyText(ttf_text);
     }
 }

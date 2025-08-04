@@ -55,6 +55,7 @@ impl Drop for Ui {
         if self.with_sdl {
             unsafe {
                 sdl3_sys::init::SDL_Quit();
+                sdl3_ttf_sys::ttf::TTF_Quit();
             }
         }
     }
@@ -68,6 +69,14 @@ pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
                 .to_str()
                 .unwrap();
             panic!("Could not initialize SDL subsystem: {flag}, {err}");
+        }
+    }
+}
+
+pub fn ttf_init() {
+    unsafe {
+        if !sdl3_ttf_sys::ttf::TTF_Init() {
+            panic!("Could not initialize TTF");
         }
     }
 }
