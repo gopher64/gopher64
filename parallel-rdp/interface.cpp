@@ -200,6 +200,24 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 		case SDL_SCANCODE_RIGHTBRACKET:
 			callback.raise_volume = true;
 			break;
+		case SDL_SCANCODE_0:
+		case SDL_SCANCODE_1:
+		case SDL_SCANCODE_2:
+		case SDL_SCANCODE_3:
+		case SDL_SCANCODE_4:
+		case SDL_SCANCODE_5:
+		case SDL_SCANCODE_6:
+		case SDL_SCANCODE_7:
+		case SDL_SCANCODE_8:
+		case SDL_SCANCODE_9:
+			if (event->key.mod & SDL_KMOD_ALT)
+			{
+				if (event->key.scancode == SDL_SCANCODE_0)
+					callback.save_state_slot = 0;
+				else
+					callback.save_state_slot = event->key.scancode - SDL_SCANCODE_1 + 1;
+			}
+			break;
 		default:
 			break;
 		}
@@ -289,6 +307,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info)
 	callback.emu_running = true;
 	callback.enable_speedlimiter = true;
 	callback.paused = false;
+	callback.save_state_slot = 0;
 	crop_letterbox = false;
 }
 

@@ -32,6 +32,7 @@ pub struct Storage {
     pub save_type: Vec<storage::SaveTypes>,
     pub paths: storage::Paths,
     pub saves: storage::Saves,
+    pub save_state_slot: u32,
 }
 
 pub struct Video {
@@ -125,6 +126,7 @@ impl Ui {
                 joysticks,
             },
             storage: Storage {
+                save_state_slot: 0,
                 save_type: vec![],
                 paths: storage::Paths {
                     eep_file_path: std::path::PathBuf::new(),

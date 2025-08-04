@@ -143,6 +143,15 @@ pub fn check_callback(device: &mut device::Device) -> bool {
         }
     }
 
+    if device.ui.storage.save_state_slot != callback.save_state_slot {
+        device.ui.storage.save_state_slot = callback.save_state_slot;
+        device
+            .ui
+            .storage
+            .paths
+            .savestate_file_path
+            .set_extension("state".to_owned() + callback.save_state_slot.to_string().as_str());
+    }
     if callback.lower_volume {
         ui::audio::lower_audio_volume(&mut device.ui);
     } else if callback.raise_volume {
