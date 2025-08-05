@@ -90,8 +90,8 @@ pub fn create_savestate(device: &device::Device) {
     ui::video::onscreen_message(
         &device.ui,
         &format!(
-            "Savestate created at {}",
-            device.ui.storage.paths.savestate_file_path.display()
+            "Savestate created in slot {}",
+            device.ui.storage.save_state_slot
         ),
     );
 }
@@ -201,12 +201,18 @@ pub fn load_savestate(device: &mut device::Device) {
             ui::video::onscreen_message(
                 &device.ui,
                 &format!(
-                    "Savestate loaded from {}",
-                    device.ui.storage.paths.savestate_file_path.display()
+                    "Savestate loaded from slot {}",
+                    device.ui.storage.save_state_slot
                 ),
             );
         } else {
-            ui::video::onscreen_message(&device.ui, "Failed to load savestate");
+            ui::video::onscreen_message(
+                &device.ui,
+                &format!(
+                    "Failed to load savestate from slot {}",
+                    device.ui.storage.save_state_slot
+                ),
+            );
         }
     }
 }
