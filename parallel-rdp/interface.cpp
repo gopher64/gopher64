@@ -263,7 +263,7 @@ static ImageHandle create_message_image(Vulkan::Device &device, int width, const
 	SDL_Color fg = {255, 255, 255, 255};
 	SDL_Color bg = {0, 0, 0, 0};
 	SDL_Surface *surface = TTF_RenderText_LCD_Wrapped(message_font, message, 0, fg, bg, width);
-	ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(surface->w, surface->h, VK_FORMAT_A8B8G8R8_UNORM_PACK32, false);
+	ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(surface->w, surface->h, VK_FORMAT_B8G8R8A8_UNORM, false);
 	ImageInitialData initial_data = {};
 	initial_data.data = surface->pixels;
 	initial_data.row_length = surface->pitch / 4;
