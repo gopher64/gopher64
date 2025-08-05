@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::{device, ui};
-use ab_glyph::{Font, ScaleFont};
 
 pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
+    ui::ttf_init();
 
     let title = std::ffi::CString::new("gopher64").unwrap();
 
@@ -74,7 +74,15 @@ pub fn init(device: &mut device::Device) {
         crt: device.ui.config.video.crt,
     };
 
-    unsafe { rdp_init(device.ui.video.window as *mut std::ffi::c_void, gfx_info) }
+    unsafe {
+        let font_bytes = include_bytes!("../../data/Roboto-Regular.ttf");
+        rdp_init(
+            device.ui.video.window as *mut std::ffi::c_void,
+            gfx_info,
+            font_bytes.as_ptr() as *const std::ffi::c_void,
+            font_bytes.len(),
+        )
+    }
 }
 
 pub fn close(ui: &ui::Ui) {
@@ -144,7 +152,10 @@ pub fn check_callback(device: &mut device::Device) -> bool {
     }
 
     if device.ui.storage.save_state_slot != callback.save_state_slot {
-        println!("Switching save state slot to {}", callback.save_state_slot);
+        ui::video::onscreen_message(
+            &device.ui,
+            &format!("Switching savestate slot to {}", callback.save_state_slot,),
+        );
         device.ui.storage.save_state_slot = callback.save_state_slot;
         device
             .ui
@@ -171,60 +182,30 @@ pub fn process_rdp_list() -> u64 {
     unsafe { rdp_process_commands() }
 }
 
+pub fn onscreen_message(_ui: &ui::Ui, message: &str) {
+    unsafe { rdp_onscreen_message(std::ffi::CString::new(message).unwrap().as_ptr()) };
+}
+
 pub fn draw_text(
     text: &str,
     renderer: *mut sdl3_sys::render::SDL_Renderer,
-    font: &ab_glyph::FontRef,
+    text_engine: *mut sdl3_ttf_sys::ttf::TTF_TextEngine,
+    font: *mut sdl3_ttf_sys::ttf::TTF_Font,
 ) {
-    // Clear the canvas
     unsafe {
-        sdl3_sys::render::SDL_SetRenderDrawColor(
-            renderer,
+        let (mut w, mut h) = (0, 0);
+        sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h);
+
+        let ttf_text = sdl3_ttf_sys::ttf::TTF_CreateText(
+            text_engine,
+            font,
+            std::ffi::CString::new(text).unwrap().as_ptr(),
             0,
-            0,
-            0,
-            sdl3_sys::pixels::SDL_ALPHA_OPAQUE,
         );
-        sdl3_sys::render::SDL_RenderClear(renderer);
-    };
 
-    let text_size = 40.0;
-    let (mut w, mut h) = (0, 0);
-    unsafe { sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h) };
-    let x_start = 20.0;
-    let y_start = (h / 2) as f32;
-
-    let mut x_offset = 0.0;
-    for c in text.chars() {
-        let q_glyph_id = font.glyph_id(c);
-        let q_glyph = q_glyph_id.with_scale(text_size);
-
-        if let Some(q) = font.outline_glyph(q_glyph) {
-            q.draw(|x, y, c| {
-                if c > 0.5 {
-                    unsafe {
-                        sdl3_sys::render::SDL_SetRenderDrawColor(
-                            renderer,
-                            255,
-                            255,
-                            255,
-                            sdl3_sys::pixels::SDL_ALPHA_OPAQUE,
-                        );
-                        sdl3_sys::render::SDL_RenderPoint(
-                            renderer,
-                            x_start + x_offset + x as f32 - q.px_bounds().width()
-                                + q.px_bounds().max.x,
-                            y_start + y as f32 - q.px_bounds().height() + q.px_bounds().max.y,
-                        );
-                    };
-                }
-            });
-        }
-        x_offset += font.as_scaled(text_size).h_advance(q_glyph_id);
-    }
-
-    // Present the canvas
-    if !unsafe { sdl3_sys::render::SDL_RenderPresent(renderer) } {
-        panic!("Could not present renderer");
+        sdl3_sys::everything::SDL_RenderClear(renderer);
+        sdl3_ttf_sys::ttf::TTF_DrawRendererText(ttf_text, 20.0, h as f32 / 2.0);
+        sdl3_sys::render::SDL_RenderPresent(renderer);
+        sdl3_ttf_sys::ttf::TTF_DestroyText(ttf_text);
     }
 }

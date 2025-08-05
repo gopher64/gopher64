@@ -64,6 +64,10 @@ fn main() {
         .include(
             std::path::PathBuf::from(std::env::var("DEP_SDL3_OUT_DIR").to_owned().unwrap())
                 .join("include"),
+        )
+        .include(
+            std::path::PathBuf::from(std::env::var("DEP_SDL3_TTF_OUT_DIR").to_owned().unwrap())
+                .join("include"),
         );
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
@@ -108,6 +112,7 @@ fn main() {
         .allowlist_function("rdp_set_vi_register")
         .allowlist_function("rdp_update_screen")
         .allowlist_function("rdp_process_commands")
+        .allowlist_function("rdp_onscreen_message")
         .allowlist_function("rdp_check_callback")
         .allowlist_function("rdp_new_processor")
         .allowlist_function("rdp_state_size")

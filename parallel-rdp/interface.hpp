@@ -37,12 +37,13 @@ extern "C"
 		uint32_t save_state_slot;
 	} CALL_BACK;
 
-	void rdp_init(void *_window, GFX_INFO _gfx_info);
+	void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_size);
 	void rdp_close();
 	void rdp_set_vi_register(uint32_t reg, uint32_t value);
 	void rdp_update_screen();
 	CALL_BACK rdp_check_callback();
 	uint64_t rdp_process_commands();
+	void rdp_onscreen_message(const char *_message);
 	void rdp_new_processor(GFX_INFO _gfx_info);
 	size_t rdp_state_size();
 	void rdp_save_state(uint8_t *state);

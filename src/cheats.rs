@@ -71,7 +71,7 @@ pub fn init(
 
     if !device.cheats.cheats.is_empty() {
         device.cheats.enabled = true;
-        ui::audio::play_cheat_event(&device.ui);
+        ui::video::onscreen_message(&device.ui, "Cheats enabled");
     }
 }
 

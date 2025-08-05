@@ -5,6 +5,7 @@
 #include "spirv.hpp"
 #include "spirv_crt.hpp"
 #include <SDL3/SDL_vulkan.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 using namespace Vulkan;
 
@@ -73,6 +74,12 @@ static CALL_BACK callback;
 static GFX_INFO gfx_info;
 static const uint32_t *fragment_spirv;
 static size_t fragment_size;
+
+static TTF_Font *message_font;
+static std::queue<std::string> messages;
+static uint64_t message_timer;
+
+#define MESSAGE_TIME 3000 // 3 seconds
 
 typedef struct
 {
@@ -250,7 +257,23 @@ void rdp_new_processor(GFX_INFO _gfx_info)
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 }
 
-void rdp_init(void *_window, GFX_INFO _gfx_info)
+static ImageHandle create_message_image(Vulkan::Device &device, int width, const char *message)
+{
+	SDL_Color fg = {255, 255, 255, 255};
+	SDL_Color bg = {0, 0, 0, 0};
+	SDL_Surface *surface = TTF_RenderText_LCD_Wrapped(message_font, message, 0, fg, bg, width);
+	ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(surface->w, surface->h, VK_FORMAT_B8G8R8A8_UNORM, false);
+	ImageInitialData initial_data = {};
+	initial_data.data = surface->pixels;
+	initial_data.row_length = surface->pitch / 4;
+	initial_data.image_height = surface->h;
+
+	ImageHandle handle = device.create_image(info, &initial_data);
+	SDL_DestroySurface(surface);
+	return handle;
+}
+
+void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_size)
 {
 	memset(&rdp_device, 0, sizeof(RDP_DEVICE));
 
@@ -287,21 +310,29 @@ void rdp_init(void *_window, GFX_INFO _gfx_info)
 	if (!::Vulkan::Context::init_loader((PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr()))
 	{
 		rdp_close();
+		return;
 	}
 	if (!wsi->init_simple(1, handles))
 	{
 		rdp_close();
+		return;
 	}
 
 	rdp_new_processor(gfx_info);
 
 	if (!processor->device_is_supported())
 	{
-		delete processor;
-		delete wsi;
-		processor = nullptr;
 		rdp_close();
+		return;
 	}
+
+	message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 30.0);
+	if (!message_font)
+	{
+		rdp_close();
+		return;
+	}
+
 	wsi->begin_frame();
 
 	callback.emu_running = true;
@@ -309,12 +340,21 @@ void rdp_init(void *_window, GFX_INFO _gfx_info)
 	callback.paused = false;
 	callback.save_state_slot = 0;
 	crop_letterbox = false;
+
+	messages = std::queue<std::string>();
+	message_timer = 0;
 }
 
 void rdp_close()
 {
-	wsi->end_frame();
+	if (wsi)
+		wsi->end_frame();
 
+	if (message_font)
+	{
+		TTF_CloseFont(message_font);
+		message_font = nullptr;
+	}
 	if (processor)
 	{
 		delete processor;
@@ -449,6 +489,25 @@ static void render_frame(Vulkan::Device &device)
 			// The vertices are constants in the shader.
 			// Draws fullscreen quad using oversized triangle.
 			cmd->draw(3);
+
+			if (!messages.empty())
+			{
+				Vulkan::ImageHandle message_image = create_message_image(device, vp.width, messages.front().c_str());
+				cmd->set_texture(0, 0, message_image->get_view(), Vulkan::StockSampler::LinearClamp);
+				vp.x = vp.x + (vp.width - message_image->get_width()) / 2;
+				vp.y = vp.y + vp.height - message_image->get_height();
+				vp.height = message_image->get_height();
+				vp.width = message_image->get_width();
+				cmd->set_viewport(vp);
+
+				cmd->draw(3);
+
+				if (SDL_GetTicks() > message_timer)
+				{
+					messages.pop();
+					message_timer = SDL_GetTicks() + MESSAGE_TIME;
+				}
+			}
 		}
 
 		cmd->end_render_pass();
@@ -493,6 +552,13 @@ void rdp_save_state(uint8_t *state)
 void rdp_load_state(const uint8_t *state)
 {
 	memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
+}
+
+void rdp_onscreen_message(const char *_message)
+{
+	if (messages.empty())
+		message_timer = SDL_GetTicks() + MESSAGE_TIME;
+	messages.push(_message);
 }
 
 uint64_t rdp_process_commands()

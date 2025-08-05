@@ -1,16 +1,5 @@
 use crate::device;
-use crate::netplay;
 use crate::ui;
-
-pub struct EventAudio {
-    pub mempak: Vec<u8>,
-    pub rumblepak: Vec<u8>,
-    pub transferpak: Vec<u8>,
-    pub netplay_desync: Vec<u8>,
-    pub netplay_lost_connection: Vec<u8>,
-    pub netplay_disconnected: [Vec<u8>; 4],
-    pub cheats_enabled: Vec<u8>,
-}
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_AUDIO);
@@ -40,24 +29,6 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
         panic!("Could not get audio device format");
     }
 
-    let wav_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
-        format: sdl3_sys::audio::SDL_AUDIO_S16LE,
-        freq: 24000,
-        channels: 1,
-    };
-
-    ui.audio.event_audio_stream = unsafe {
-        sdl3_sys::audio::SDL_CreateAudioStream(&wav_audio_spec, &ui.audio.audio_device_spec)
-    };
-    if !unsafe {
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, ui.audio.gain)
-            && sdl3_sys::audio::SDL_BindAudioStream(
-                ui.audio.audio_device,
-                ui.audio.event_audio_stream,
-            )
-    } {
-        panic!("Could not bind audio stream");
-    }
     init_game_audio(ui, frequency);
 }
 
@@ -85,10 +56,6 @@ pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
 pub fn close(ui: &mut ui::Ui) {
     close_game_audio(ui);
     unsafe {
-        if !ui.audio.event_audio_stream.is_null() {
-            sdl3_sys::audio::SDL_DestroyAudioStream(ui.audio.event_audio_stream);
-            ui.audio.event_audio_stream = std::ptr::null_mut();
-        }
         sdl3_sys::audio::SDL_CloseAudioDevice(ui.audio.audio_device);
         ui.audio.audio_device = 0;
     }
@@ -110,7 +77,6 @@ pub fn lower_audio_volume(ui: &mut ui::Ui) {
             ui.audio.gain = 0.0;
         }
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, ui.audio.gain);
     }
 }
 
@@ -121,77 +87,6 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
             ui.audio.gain = 2.0;
         }
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.event_audio_stream, ui.audio.gain);
-    }
-}
-
-pub fn play_cheat_event(ui: &ui::Ui) {
-    if ui.audio.event_audio_stream.is_null() {
-        return;
-    }
-    let sound = &ui.audio.event_audio.cheats_enabled;
-    if !unsafe {
-        sdl3_sys::audio::SDL_PutAudioStreamData(
-            ui.audio.event_audio_stream,
-            sound.as_ptr() as *const std::ffi::c_void,
-            sound.len() as i32,
-        )
-    } {
-        panic!("Could not play audio");
-    }
-}
-
-pub fn play_netplay_audio(ui: &ui::Ui, error: u32) {
-    if ui.audio.event_audio_stream.is_null() {
-        return;
-    }
-    let sound = match error {
-        netplay::NETPLAY_ERROR_DESYNC => &ui.audio.event_audio.netplay_desync,
-        netplay::NETPLAY_ERROR_LOST_CONNECTION => &ui.audio.event_audio.netplay_lost_connection,
-        netplay::NETPLAY_ERROR_PLAYER_1_DISCONNECTED => {
-            &ui.audio.event_audio.netplay_disconnected[0]
-        }
-        netplay::NETPLAY_ERROR_PLAYER_2_DISCONNECTED => {
-            &ui.audio.event_audio.netplay_disconnected[1]
-        }
-        netplay::NETPLAY_ERROR_PLAYER_3_DISCONNECTED => {
-            &ui.audio.event_audio.netplay_disconnected[2]
-        }
-        netplay::NETPLAY_ERROR_PLAYER_4_DISCONNECTED => {
-            &ui.audio.event_audio.netplay_disconnected[3]
-        }
-        _ => panic!("Invalid netplay error"),
-    };
-    if !unsafe {
-        sdl3_sys::audio::SDL_PutAudioStreamData(
-            ui.audio.event_audio_stream,
-            sound.as_ptr() as *const std::ffi::c_void,
-            sound.len() as i32,
-        )
-    } {
-        panic!("Could not play audio");
-    }
-}
-
-pub fn play_pak_switch(ui: &ui::Ui, pak: device::controller::PakType) {
-    if ui.audio.event_audio_stream.is_null() {
-        return;
-    }
-
-    let sound = match pak {
-        device::controller::PakType::RumblePak => &ui.audio.event_audio.rumblepak,
-        device::controller::PakType::MemPak => &ui.audio.event_audio.mempak,
-        device::controller::PakType::TransferPak => &ui.audio.event_audio.transferpak,
-        _ => panic!("Invalid pak type"),
-    };
-    if !unsafe {
-        sdl3_sys::audio::SDL_PutAudioStreamData(
-            ui.audio.event_audio_stream,
-            sound.as_ptr() as *const std::ffi::c_void,
-            sound.len() as i32,
-        )
-    } {
-        panic!("Could not play audio");
     }
 }
 
