@@ -254,19 +254,18 @@ void rdp_new_processor(GFX_INFO _gfx_info)
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 }
 
-ImageHandle thing;
-void create_message_image(Vulkan::Device &device)
+static void create_message_image(Vulkan::Device &device)
 {
 	SDL_Color fg = {255, 255, 255, 255};
 	SDL_Color bg = {0, 0, 0, 0};
 	SDL_Surface *surface = TTF_RenderText_LCD(message_font, "hello!", 0, fg, bg);
 	ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(surface->w, surface->h, VK_FORMAT_A8B8G8R8_UNORM_PACK32, false);
-	ImageInitialData what = {};
-	what.data = surface->pixels;
-	what.row_length = surface->pitch / 4;
-	what.image_height = surface->h;
+	ImageInitialData initial_data = {};
+	initial_data.data = surface->pixels;
+	initial_data.row_length = surface->pitch / 4;
+	initial_data.image_height = surface->h;
 
-	thing = device.create_image(info, &what);
+	ImageHandle handle = device.create_image(info, &initial_data);
 	SDL_DestroySurface(surface);
 }
 

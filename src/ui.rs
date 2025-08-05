@@ -54,8 +54,8 @@ impl Drop for Ui {
     fn drop(&mut self) {
         if self.with_sdl {
             unsafe {
-                sdl3_sys::init::SDL_Quit();
                 sdl3_ttf_sys::ttf::TTF_Quit();
+                sdl3_sys::init::SDL_Quit();
             }
         }
     }
