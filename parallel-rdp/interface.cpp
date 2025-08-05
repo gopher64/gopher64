@@ -497,8 +497,7 @@ static void render_frame(Vulkan::Device &device)
 				if (SDL_GetTicks() > message_timer)
 				{
 					messages.pop();
-					if (!messages.empty())
-						message_timer = SDL_GetTicks() + MESSAGE_TIME;
+					message_timer = SDL_GetTicks() + MESSAGE_TIME;
 				}
 			}
 		}
