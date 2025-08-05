@@ -183,8 +183,7 @@ pub fn process_rdp_list() -> u64 {
 }
 
 pub fn onscreen_message(_ui: &ui::Ui, message: &str) {
-    let c_message = std::ffi::CString::new(message).unwrap();
-    unsafe { rdp_onscreen_message(c_message.as_ptr()) };
+    unsafe { rdp_onscreen_message(std::ffi::CString::new(message).unwrap().as_ptr()) };
 }
 
 pub fn draw_text(
