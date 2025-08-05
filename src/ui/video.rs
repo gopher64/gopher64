@@ -75,12 +75,12 @@ pub fn init(device: &mut device::Device) {
     };
 
     unsafe {
-        let bytes = include_bytes!("../../data/Roboto-Regular.ttf");
+        let font_bytes = include_bytes!("../../data/Roboto-Regular.ttf");
         rdp_init(
             device.ui.video.window as *mut std::ffi::c_void,
             gfx_info,
-            bytes.as_ptr() as *const std::ffi::c_void,
-            bytes.len(),
+            font_bytes.as_ptr() as *const std::ffi::c_void,
+            font_bytes.len(),
         )
     }
 }

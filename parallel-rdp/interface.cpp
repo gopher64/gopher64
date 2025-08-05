@@ -336,8 +336,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_s
 
 	font_data = malloc(font_size);
 	memcpy(font_data, font, font_size);
-	SDL_IOStream *stream = SDL_IOFromConstMem(font_data, font_size);
-	message_font = TTF_OpenFontIO(stream, true, 30.0);
+	message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font_data, font_size), true, 30.0);
 	messages = std::queue<std::string>();
 	message_timer = 0;
 }
