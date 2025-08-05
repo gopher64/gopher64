@@ -254,11 +254,11 @@ void rdp_new_processor(GFX_INFO _gfx_info)
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 }
 
-static ImageHandle create_message_image(Vulkan::Device &device)
+static ImageHandle create_message_image(Vulkan::Device &device, const char *message)
 {
 	SDL_Color fg = {255, 255, 255, 255};
 	SDL_Color bg = {0, 0, 0, 0};
-	SDL_Surface *surface = TTF_RenderText_LCD(message_font, "hello!", 0, fg, bg);
+	SDL_Surface *surface = TTF_RenderText_LCD(message_font, message, 0, fg, bg);
 	ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(surface->w, surface->h, VK_FORMAT_A8B8G8R8_UNORM_PACK32, false);
 	ImageInitialData initial_data = {};
 	initial_data.data = surface->pixels;
@@ -429,7 +429,7 @@ static void render_frame(Vulkan::Device &device)
 	}
 
 	Vulkan::ImageHandle image = processor->scanout(options);
-	Vulkan::ImageHandle message_image = create_message_image(device);
+	Vulkan::ImageHandle message_image = create_message_image(device, "hello");
 
 	Vulkan::ResourceLayout vertex_layout = {};
 	Vulkan::ResourceLayout fragment_layout = {};
