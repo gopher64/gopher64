@@ -197,12 +197,11 @@ pub fn draw_text(
         let (mut w, mut h) = (0, 0);
         sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h);
 
-        let c_text = std::ffi::CString::new(text).unwrap();
         let ttf_text = sdl3_ttf_sys::ttf::TTF_CreateText(
             text_engine,
             font,
-            c_text.as_ptr(),
-            c_text.count_bytes(),
+            std::ffi::CString::new(text).unwrap().as_ptr(),
+            0,
         );
 
         sdl3_sys::everything::SDL_RenderClear(renderer);
