@@ -89,10 +89,12 @@ export component ControllerConfig inherits Page {
 
             if !ControllerData.blank_profiles: GroupBox {
                 title: @tr("Profile");
+                horizontal-stretch: 0.25;
                 VerticalLayout {
                     alignment: space-between;
                     for player in [0, 1, 2, 3]: ComboBox {
                         model: ControllerData.input_profiles;
+                        min-width: self.preferred-width;
                         current-index: ControllerData.selected_profile_binding[player];
                         selected => {
                             ControllerData.selected_profile_binding[player] = self.current-index;
@@ -103,11 +105,12 @@ export component ControllerConfig inherits Page {
 
             GroupBox {
                 title: @tr("Controller");
+                horizontal-stretch: 0.75;
                 VerticalLayout {
                     alignment: space-between;
                     for player in [0, 1, 2, 3]: ComboBox {
                         model: ControllerData.controller_names;
-                        width: self.preferred-width;
+                        min-width: self.preferred-width;
                         current-index: ControllerData.selected_controller[player];
                         selected => {
                             ControllerData.selected_controller[player] = self.current-index;
