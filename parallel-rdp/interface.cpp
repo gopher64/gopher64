@@ -336,6 +336,8 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_s
 	memcpy(font_data, font, font_size);
 	SDL_IOStream *stream = SDL_IOFromConstMem(font_data, font_size);
 	message_font = TTF_OpenFontIO(stream, true, 30.0);
+	message.clear();
+	message_timer = 0;
 }
 
 void rdp_close()
