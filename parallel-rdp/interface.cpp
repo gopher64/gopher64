@@ -5,6 +5,7 @@
 #include "spirv.hpp"
 #include "spirv_crt.hpp"
 #include <SDL3/SDL_vulkan.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 using namespace Vulkan;
 
@@ -250,8 +251,28 @@ void rdp_new_processor(GFX_INFO _gfx_info)
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 }
 
-void rdp_init(void *_window, GFX_INFO _gfx_info)
+TTF_Font *test_font;
+SDL_Surface *test_surface;
+ImageHandle thing;
+void test_create_image(Vulkan::Device &device)
 {
+	ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(test_surface->w, test_surface->h, VK_FORMAT_A8B8G8R8_UNORM_PACK32, false);
+	ImageInitialData what = {};
+	what.data = test_surface->pixels;
+	what.row_length = test_surface->pitch / 4;
+	what.image_height = test_surface->h;
+
+	thing = device.create_image(info, &what);
+}
+
+void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_size)
+{
+	SDL_IOStream *stream = SDL_IOFromConstMem(font, font_size);
+	test_font = TTF_OpenFontIO(stream, true, 30.0);
+	SDL_Color fg = {255, 255, 255, 255};
+	SDL_Color bg = {0, 0, 0, 0};
+	test_surface = TTF_RenderText_LCD(test_font, "hello!", 0, fg, bg);
+
 	memset(&rdp_device, 0, sizeof(RDP_DEVICE));
 
 	window = (SDL_Window *)_window;
@@ -309,10 +330,15 @@ void rdp_init(void *_window, GFX_INFO _gfx_info)
 	callback.paused = false;
 	callback.save_state_slot = 0;
 	crop_letterbox = false;
+
+	auto &device = wsi->get_device();
+	test_create_image(device);
 }
 
 void rdp_close()
 {
+	SDL_DestroySurface(test_surface);
+	TTF_CloseFont(test_font);
 	wsi->end_frame();
 
 	if (processor)
@@ -429,23 +455,13 @@ static void render_frame(Vulkan::Device &device)
 		cmd->set_cull_mode(VK_CULL_MODE_NONE);
 
 		// If we don't have an image, we just get a cleared screen in the render pass.
-		if (image)
+		// if (image)
 		{
-			VkViewport vp = cmd->get_viewport();
-			calculate_viewport(&vp.x, &vp.y, &vp.width, &vp.height, image->get_height() / gfx_info.upscale);
+			// VkViewport vp = cmd->get_viewport();
+			// calculate_viewport(&vp.x, &vp.y, &vp.width, &vp.height, image->get_height() / gfx_info.upscale);
 
-			if (gfx_info.crt)
-			{
-				// Set shader parameters
-				Push push = {
-					{float(image->get_width()), float(image->get_height()), 1.0f / float(image->get_width()), 1.0f / float(image->get_height())},
-					{vp.width, vp.height, 1.0f / vp.width, 1.0f / vp.height},
-				};
-				cmd->push_constants(&push, 0, sizeof(push));
-			}
-
-			cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
-			cmd->set_viewport(vp);
+			cmd->set_texture(0, 0, thing->get_view(), Vulkan::StockSampler::LinearClamp);
+			//	cmd->set_viewport(vp);
 			// The vertices are constants in the shader.
 			// Draws fullscreen quad using oversized triangle.
 			cmd->draw(3);

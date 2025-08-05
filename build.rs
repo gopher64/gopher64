@@ -64,6 +64,10 @@ fn main() {
         .include(
             std::path::PathBuf::from(std::env::var("DEP_SDL3_OUT_DIR").to_owned().unwrap())
                 .join("include"),
+        )
+        .include(
+            std::path::PathBuf::from(std::env::var("DEP_SDL3_TTF_OUT_DIR").to_owned().unwrap())
+                .join("include"),
         );
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();

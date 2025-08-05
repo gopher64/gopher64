@@ -4,6 +4,7 @@ use crate::{device, ui};
 
 pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
+    ui::ttf_init();
 
     let title = std::ffi::CString::new("gopher64").unwrap();
 
@@ -73,7 +74,15 @@ pub fn init(device: &mut device::Device) {
         crt: device.ui.config.video.crt,
     };
 
-    unsafe { rdp_init(device.ui.video.window as *mut std::ffi::c_void, gfx_info) }
+    unsafe {
+        let bytes = include_bytes!("../../data/Roboto-Regular.ttf");
+        rdp_init(
+            device.ui.video.window as *mut std::ffi::c_void,
+            gfx_info,
+            bytes.as_ptr() as *const std::ffi::c_void,
+            bytes.len(),
+        )
+    }
 }
 
 pub fn close(ui: &ui::Ui) {
