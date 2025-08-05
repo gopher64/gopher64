@@ -77,8 +77,10 @@ static size_t fragment_size;
 
 static void *font_data;
 static TTF_Font *message_font;
-static std::string message;
+static std::queue<std::string> messages;
 static uint64_t message_timer;
+
+#define MESSAGE_TIME 3000 // 3 seconds
 
 typedef struct
 {
@@ -336,7 +338,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_s
 	memcpy(font_data, font, font_size);
 	SDL_IOStream *stream = SDL_IOFromConstMem(font_data, font_size);
 	message_font = TTF_OpenFontIO(stream, true, 30.0);
-	message.clear();
+	messages = std::queue<std::string>();
 	message_timer = 0;
 }
 
@@ -482,9 +484,9 @@ static void render_frame(Vulkan::Device &device)
 			// Draws fullscreen quad using oversized triangle.
 			cmd->draw(3);
 
-			if (!message.empty())
+			if (!messages.empty())
 			{
-				Vulkan::ImageHandle message_image = create_message_image(device, vp.width, message.c_str());
+				Vulkan::ImageHandle message_image = create_message_image(device, vp.width, messages.front().c_str());
 				cmd->set_texture(0, 0, message_image->get_view(), Vulkan::StockSampler::LinearClamp);
 				vp.y = vp.y + vp.height - message_image->get_height();
 				vp.height = message_image->get_height();
@@ -494,7 +496,11 @@ static void render_frame(Vulkan::Device &device)
 				cmd->draw(3);
 
 				if (SDL_GetTicks() > message_timer)
-					message.clear();
+				{
+					messages.pop();
+					if (!messages.empty())
+						message_timer = SDL_GetTicks() + MESSAGE_TIME;
+				}
 			}
 		}
 
@@ -544,8 +550,9 @@ void rdp_load_state(const uint8_t *state)
 
 void rdp_onscreen_message(const char *_message)
 {
-	message = _message;
-	message_timer = SDL_GetTicks() + 5000; // 5 seconds
+	if (messages.empty())
+		message_timer = SDL_GetTicks() + MESSAGE_TIME;
+	messages.push(_message);
 }
 
 uint64_t rdp_process_commands()
