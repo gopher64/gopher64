@@ -75,7 +75,6 @@ static GFX_INFO gfx_info;
 static const uint32_t *fragment_spirv;
 static size_t fragment_size;
 
-static void *font_data;
 static TTF_Font *message_font;
 static std::queue<std::string> messages;
 static uint64_t message_timer;
@@ -334,9 +333,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_s
 	callback.save_state_slot = 0;
 	crop_letterbox = false;
 
-	font_data = malloc(font_size);
-	memcpy(font_data, font, font_size);
-	message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font_data, font_size), true, 30.0);
+	message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 30.0);
 	messages = std::queue<std::string>();
 	message_timer = 0;
 }
@@ -344,7 +341,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_s
 void rdp_close()
 {
 	TTF_CloseFont(message_font);
-	free(font_data);
 
 	wsi->end_frame();
 
