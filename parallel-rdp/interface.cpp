@@ -254,7 +254,7 @@ void rdp_new_processor(GFX_INFO _gfx_info)
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 }
 
-static void create_message_image(Vulkan::Device &device)
+static ImageHandle create_message_image(Vulkan::Device &device)
 {
 	SDL_Color fg = {255, 255, 255, 255};
 	SDL_Color bg = {0, 0, 0, 0};
@@ -267,6 +267,7 @@ static void create_message_image(Vulkan::Device &device)
 
 	ImageHandle handle = device.create_image(info, &initial_data);
 	SDL_DestroySurface(surface);
+	return handle;
 }
 
 void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_size)
