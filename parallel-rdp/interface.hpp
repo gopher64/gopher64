@@ -43,6 +43,7 @@ extern "C"
 	void rdp_update_screen();
 	CALL_BACK rdp_check_callback();
 	uint64_t rdp_process_commands();
+	void rdp_onscreen_message(const char *_message);
 	void rdp_new_processor(GFX_INFO _gfx_info);
 	size_t rdp_state_size();
 	void rdp_save_state(uint8_t *state);
