@@ -487,6 +487,7 @@ static void render_frame(Vulkan::Device &device)
 			{
 				Vulkan::ImageHandle message_image = create_message_image(device, vp.width, messages.front().c_str());
 				cmd->set_texture(0, 0, message_image->get_view(), Vulkan::StockSampler::LinearClamp);
+				vp.x = vp.x + (vp.width - message_image->get_width()) / 2;
 				vp.y = vp.y + vp.height - message_image->get_height();
 				vp.height = message_image->get_height();
 				vp.width = message_image->get_width();
