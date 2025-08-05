@@ -310,21 +310,29 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_s
 	if (!::Vulkan::Context::init_loader((PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr()))
 	{
 		rdp_close();
+		return;
 	}
 	if (!wsi->init_simple(1, handles))
 	{
 		rdp_close();
+		return;
 	}
 
 	rdp_new_processor(gfx_info);
 
 	if (!processor->device_is_supported())
 	{
-		delete processor;
-		delete wsi;
-		processor = nullptr;
 		rdp_close();
+		return;
 	}
+
+	message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 30.0);
+	if (!message_font)
+	{
+		rdp_close();
+		return;
+	}
+
 	wsi->begin_frame();
 
 	callback.emu_running = true;
@@ -333,17 +341,20 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_s
 	callback.save_state_slot = 0;
 	crop_letterbox = false;
 
-	message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 30.0);
 	messages = std::queue<std::string>();
 	message_timer = 0;
 }
 
 void rdp_close()
 {
-	TTF_CloseFont(message_font);
+	if (wsi)
+		wsi->end_frame();
 
-	wsi->end_frame();
-
+	if (message_font)
+	{
+		TTF_CloseFont(message_font);
+		message_font = nullptr;
+	}
 	if (processor)
 	{
 		delete processor;
