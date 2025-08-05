@@ -568,14 +568,13 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         axis: 0,
     };
 
+    let bytes = include_bytes!("../../data/Roboto-Regular.ttf");
     let text_engine = unsafe { sdl3_ttf_sys::ttf::TTF_CreateRendererTextEngine(renderer) };
     let font = unsafe {
-        let bytes = include_bytes!("../../data/Roboto-Regular.ttf");
         let io = sdl3_sys::everything::SDL_IOFromConstMem(
             bytes.as_ptr() as *const std::ffi::c_void,
             bytes.len(),
         );
-
         sdl3_ttf_sys::ttf::TTF_OpenFontIO(io, true, 35.0)
     };
 
