@@ -22,16 +22,6 @@ const EEPROM_BLOCK_SIZE: usize = 8;
 pub const EEPROM_MAX_SIZE: usize = 0x800;
 
 #[derive(serde::Serialize, serde::Deserialize)]
-pub enum CicType {
-    CicNus6101,
-    CicNus6102,
-    CicNus6103,
-    CicNus6105,
-    CicNus6106,
-    CicNus5167,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
 pub struct AfRtc {
     pub control: u16,
 }

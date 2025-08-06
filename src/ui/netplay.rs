@@ -523,11 +523,10 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                             .await
                             .unwrap();
 
-                        if let Some(Ok(response)) = read.next().await {
-                            if let Ok(message) =
+                        if let Some(Ok(response)) = read.next().await
+                            && let Ok(message) =
                                 serde_json::from_slice::<NetplayMessage>(&response.into_data())
-                            {
-                                if message.message_type == "reply_get_rooms"
+                                && message.message_type == "reply_get_rooms"
                                     && message.accept.unwrap() == 0
                                     && let Some(rooms) = message.rooms
                                 {
@@ -567,8 +566,6 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                                         sessions.push(session);
                                     }
                                 }
-                            }
-                        }
                     }
                 }
                 weak2
