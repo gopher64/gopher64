@@ -484,7 +484,7 @@ static void render_frame(Vulkan::Device &device)
 				cmd->push_constants(&push, 0, sizeof(push));
 			}
 
-			cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
+			cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::NearestClamp);
 			cmd->set_viewport(vp);
 			// The vertices are constants in the shader.
 			// Draws fullscreen quad using oversized triangle.
@@ -493,7 +493,7 @@ static void render_frame(Vulkan::Device &device)
 			if (!messages.empty())
 			{
 				Vulkan::ImageHandle message_image = create_message_image(device, vp.width, messages.front().c_str());
-				cmd->set_texture(0, 0, message_image->get_view(), Vulkan::StockSampler::LinearClamp);
+				cmd->set_texture(0, 0, message_image->get_view(), Vulkan::StockSampler::NearestClamp);
 				vp.x = vp.x + (vp.width - message_image->get_width()) / 2;
 				vp.y = vp.y + vp.height - message_image->get_height();
 				vp.height = message_image->get_height();
