@@ -523,50 +523,44 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                             .await
                             .unwrap();
 
-                        if let Some(Ok(response)) = read.next().await {
-                            if let Ok(message) =
+                        if let Some(Ok(response)) = read.next().await
+                            && let Ok(message) =
                                 serde_json::from_slice::<NetplayMessage>(&response.into_data())
-                            {
-                                if message.message_type == "reply_get_rooms"
-                                    && message.accept.unwrap() == 0
-                                    && let Some(rooms) = message.rooms
-                                {
-                                    for room in rooms {
-                                        let mut session = vec![];
-                                        room_urls.push(server_url.into());
+                            && message.message_type == "reply_get_rooms"
+                            && message.accept.unwrap() == 0
+                            && let Some(rooms) = message.rooms
+                        {
+                            for room in rooms {
+                                let mut session = vec![];
+                                room_urls.push(server_url.into());
 
-                                        session.push(slint::StandardListViewItem::from(
-                                            slint::SharedString::from(server_name),
-                                        ));
-                                        session.push(slint::StandardListViewItem::from(
-                                            slint::SharedString::from(room.room_name.unwrap()),
-                                        ));
-                                        session.push(slint::StandardListViewItem::from(
-                                            slint::SharedString::from(room.game_name.unwrap()),
-                                        ));
-                                        session.push(slint::StandardListViewItem::from(
-                                            slint::SharedString::from(if room.protected.unwrap() {
-                                                "True"
-                                            } else {
-                                                "False"
-                                            }),
-                                        ));
-                                        session.push(slint::StandardListViewItem::from(
-                                            slint::SharedString::from(
-                                                if room
-                                                    .features
-                                                    .unwrap_or_default()
-                                                    .contains_key("cheats")
-                                                {
-                                                    "True"
-                                                } else {
-                                                    "False"
-                                                },
-                                            ),
-                                        ));
-                                        sessions.push(session);
-                                    }
-                                }
+                                session.push(slint::StandardListViewItem::from(
+                                    slint::SharedString::from(server_name),
+                                ));
+                                session.push(slint::StandardListViewItem::from(
+                                    slint::SharedString::from(room.room_name.unwrap()),
+                                ));
+                                session.push(slint::StandardListViewItem::from(
+                                    slint::SharedString::from(room.game_name.unwrap()),
+                                ));
+                                session.push(slint::StandardListViewItem::from(
+                                    slint::SharedString::from(if room.protected.unwrap() {
+                                        "True"
+                                    } else {
+                                        "False"
+                                    }),
+                                ));
+                                session.push(slint::StandardListViewItem::from(
+                                    slint::SharedString::from(
+                                        if room.features.unwrap_or_default().contains_key("cheats")
+                                        {
+                                            "True"
+                                        } else {
+                                            "False"
+                                        },
+                                    ),
+                                ));
+                                sessions.push(session);
                             }
                         }
                     }
