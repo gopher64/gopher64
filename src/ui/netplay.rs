@@ -187,7 +187,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
         if let Some(file) = select_rom.await {
             if let Some(rom_contents) = device::get_rom_contents(file.path()) {
                 let hash = device::cart::rom::calculate_hash(&rom_contents);
-                let game_name = ui::storage::get_game_name(&rom_contents);
+                let mut game_name = ui::storage::get_game_name(&rom_contents);
                 let game_crc = ui::storage::get_game_crc(&rom_contents);
                 let cheats = ui::config::Cheats::new();
                 let mut parsed_cheats = "".to_string();
@@ -195,6 +195,14 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
                     && !game_cheats.is_empty()
                 {
                     parsed_cheats = serde_json::to_string(game_cheats).unwrap();
+                }
+                if game_name.is_empty() {
+                    game_name = file
+                        .path()
+                        .file_name()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string();
                 }
 
                 weak.upgrade_in_event_loop(move |handle| {
