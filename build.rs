@@ -128,7 +128,7 @@ fn main() {
 
     if arch == "aarch64" {
         let simd_bindings = bindgen::Builder::default()
-            .header("src/compat/sse2neon/v1.8.0/sse2neon.h")
+            .header("src/compat/sse2neon/sse2neon.h")
             .allowlist_function("_mm_setzero_si128")
             .allowlist_function("_mm_set_epi8")
             .allowlist_function("_mm_movemask_epi8")
