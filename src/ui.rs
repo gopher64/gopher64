@@ -5,6 +5,7 @@ pub mod gui;
 pub mod input;
 pub mod netplay;
 pub mod storage;
+pub mod usb;
 pub mod video;
 pub mod vru;
 
@@ -38,6 +39,11 @@ pub struct Video {
     pub fullscreen: bool,
 }
 
+pub struct Usb {
+    pub usb_tx: Option<tokio::sync::broadcast::Sender<usb::UsbData>>,
+    pub cart_rx: Option<tokio::sync::broadcast::Receiver<usb::UsbData>>,
+}
+
 pub struct Ui {
     pub dirs: Dirs,
     pub config: config::Config,
@@ -48,6 +54,7 @@ pub struct Ui {
     pub input: Input,
     pub storage: Storage,
     pub video: Video,
+    pub usb: Usb,
 }
 
 impl Drop for Ui {
@@ -184,6 +191,10 @@ impl Ui {
             video: Video {
                 window: std::ptr::null_mut(),
                 fullscreen: false,
+            },
+            usb: Usb {
+                usb_tx: None,
+                cart_rx: None,
             },
             dirs,
             with_sdl,
