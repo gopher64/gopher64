@@ -5,7 +5,9 @@ use slint::Model;
 
 slint::include_modules!();
 
-pub const N64_EXTENSIONS: [&str; 5] = ["n64", "v64", "z64", "7z", "zip"];
+pub const N64_EXTENSIONS: [&str; 12] = [
+    "n64", "v64", "z64", "7z", "zip", "bin", "N64", "V64", "Z64", "7Z", "ZIP", "BIN",
+];
 
 #[derive(serde::Deserialize)]
 struct GithubData {
@@ -430,13 +432,13 @@ fn open_rom(app: &AppWindow) {
             select_gb_rom[i] = Some(
                 rfd::AsyncFileDialog::new()
                     .set_title(format!("GB ROM P{}", i + 1))
-                    .add_filter("GB ROM files", &["gb", "gbc"])
+                    .add_filter("GB ROM files", &["gb", "gbc", "GB", "GBC"])
                     .pick_file(),
             );
             select_gb_ram[i] = Some(
                 rfd::AsyncFileDialog::new()
                     .set_title(format!("GB RAM P{}", i + 1))
-                    .add_filter("GB RAM files", &["sav", "ram"])
+                    .add_filter("GB RAM files", &["sav", "ram", "SAV", "RAM"])
                     .pick_file(),
             );
         }
