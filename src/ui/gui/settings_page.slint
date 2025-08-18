@@ -12,6 +12,7 @@ export global SettingsData {
     in-out property <bool> overclock_n64_cpu;
     in-out property <bool> disable_expansion_pak;
     in-out property <int> resolution;
+    in-out property <bool> emulate_usb;
     in-out property <string> rom_dir;
 }
 
@@ -102,6 +103,17 @@ export component Settings inherits Page {
                 checked: SettingsData.disable_expansion_pak;
                 toggled => {
                     SettingsData.disable_expansion_pak = self.checked;
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            CheckBox {
+                text: @tr("Emulate UNFLoader (reload emulator after changing)");
+                checked: SettingsData.emulate_usb;
+                toggled => {
+                    SettingsData.emulate_usb = self.checked;
                 }
             }
         }

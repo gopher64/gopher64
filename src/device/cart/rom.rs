@@ -2,7 +2,7 @@ use crate::device;
 use crate::netplay;
 use sha2::{Digest, Sha256};
 
-const CART_MASK: usize = 0xFFFFFFF;
+pub const CART_MASK: usize = 0xFFFFFFF;
 
 fn read_cart_word(device: &device::Device, address: usize) -> u32 {
     let mut data: [u8; 4] = [0; 4];

@@ -54,6 +54,7 @@ pub struct Video {
 pub struct Emulation {
     pub overclock: bool,
     pub disable_expansion_pak: bool,
+    pub usb: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -150,6 +151,7 @@ impl Config {
             emulation: Emulation {
                 overclock: false,
                 disable_expansion_pak: false,
+                usb: false,
             },
             rom_dir: std::path::PathBuf::new(),
         }

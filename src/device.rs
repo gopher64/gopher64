@@ -347,6 +347,7 @@ impl Device {
                     sector: 0,
                     buffer: vec![0; 8192],
                     writeback_sector: vec![0; 256],
+                    usb_buffer: vec![],
                 },
                 flashram: cart::sram::Flashram {
                     status: 0,
