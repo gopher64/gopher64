@@ -144,7 +144,7 @@ pub fn check_callback(device: &mut device::Device) -> bool {
             speed_limiter_toggled = true;
             device.vi.enable_speed_limiter = callback.enable_speedlimiter;
         }
-        while callback.paused {
+        while callback.paused && !callback.frame_advance {
             std::thread::sleep(std::time::Duration::from_secs_f64(1.0 / 60.0));
             unsafe { sdl3_sys::events::SDL_PumpEvents() };
             callback = unsafe { rdp_check_callback() };
