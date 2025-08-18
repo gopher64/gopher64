@@ -207,6 +207,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 		case SDL_SCANCODE_RIGHTBRACKET:
 			callback.raise_volume = true;
 			break;
+		case SDL_SCANCODE_SLASH:
+			callback.frame_advance = true;
+			break;
 		case SDL_SCANCODE_0:
 		case SDL_SCANCODE_1:
 		case SDL_SCANCODE_2:
@@ -536,6 +539,7 @@ CALL_BACK rdp_check_callback()
 	callback.load_state = false;
 	callback.lower_volume = false;
 	callback.raise_volume = false;
+	callback.frame_advance = false;
 	return return_value;
 }
 

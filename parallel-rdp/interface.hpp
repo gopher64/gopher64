@@ -34,6 +34,7 @@ extern "C"
 		bool lower_volume;
 		bool raise_volume;
 		bool paused;
+		bool frame_advance;
 		uint32_t save_state_slot;
 	} CALL_BACK;
 
