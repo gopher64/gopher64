@@ -225,8 +225,9 @@ fn set_buttons_from_joystick(
 
     let profile_joystick_hat = profile.joystick_hat[i];
     if profile_joystick_hat.enabled
-        && unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, profile_joystick_hat.id) }
-            == profile_joystick_hat.direction
+        && (unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, profile_joystick_hat.id) }
+            & profile_joystick_hat.direction)
+            != 0
     {
         *keys |= 1 << i;
     }
@@ -326,8 +327,9 @@ fn change_paks(
         pressed =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickButton(joystick, joystick_button.id) };
     } else if joystick_hat.enabled && !joystick.is_null() {
-        pressed = unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, joystick_hat.id) }
-            == joystick_hat.direction;
+        pressed = (unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, joystick_hat.id) }
+            & joystick_hat.direction)
+            != 0;
     } else if key.enabled {
         pressed = unsafe { *keyboard_state.offset(key.id as isize) };
     }
