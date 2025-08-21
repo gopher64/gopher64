@@ -93,10 +93,9 @@ fn set_axis_from_joystick(
         if axis_position.unsigned_abs() > deadzone
             && axis_position as isize * profile.joystick_axis[AXIS_DOWN].axis as isize > 0
         {
-            y = ((axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
-                / (i16::MAX as u16 - deadzone) as f64)
-                .neg();
-            y *= profile.joystick_axis[AXIS_DOWN].axis as f64;
+            y = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            y *= (profile.joystick_axis[AXIS_DOWN].axis as f64).neg();
         }
     }
     if profile.joystick_axis[AXIS_UP].enabled {
@@ -106,10 +105,9 @@ fn set_axis_from_joystick(
         if axis_position.unsigned_abs() > deadzone
             && axis_position as isize * profile.joystick_axis[AXIS_UP].axis as isize > 0
         {
-            y = ((axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
-                / (i16::MAX as u16 - deadzone) as f64)
-                .neg();
-            y *= profile.joystick_axis[AXIS_UP].axis as f64;
+            y = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            y *= (profile.joystick_axis[AXIS_UP].axis as f64).neg();
         }
     }
     (x, y)
@@ -195,10 +193,9 @@ fn set_axis_from_controller(
         if axis_position.unsigned_abs() > deadzone
             && axis_position as isize * profile.controller_axis[AXIS_DOWN].axis as isize > 0
         {
-            y = ((axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
-                / (i16::MAX as u16 - deadzone) as f64)
-                .neg();
-            y *= profile.controller_axis[AXIS_DOWN].axis as f64;
+            y = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            y *= (profile.controller_axis[AXIS_DOWN].axis as f64).neg();
         }
     }
     if profile.controller_axis[AXIS_UP].enabled {
@@ -211,10 +208,9 @@ fn set_axis_from_controller(
         if axis_position.unsigned_abs() > deadzone
             && axis_position as isize * profile.controller_axis[AXIS_UP].axis as isize > 0
         {
-            y = ((axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
-                / (i16::MAX as u16 - deadzone) as f64)
-                .neg();
-            y *= profile.controller_axis[AXIS_UP].axis as f64;
+            y = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            y *= (profile.controller_axis[AXIS_UP].axis as f64).neg();
         }
     }
     (x, y)
