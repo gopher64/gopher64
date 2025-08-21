@@ -29,6 +29,7 @@ pub struct InputProfile {
     pub joystick_hat: [InputJoystickHat; ui::input::PROFILE_SIZE],
     pub joystick_axis: [InputControllerAxis; ui::input::PROFILE_SIZE],
     pub dinput: bool,
+    pub deadzone: i32,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

@@ -28,6 +28,8 @@ const Y_AXIS_SHIFT: usize = 24;
 
 const MAX_AXIS_VALUE: f64 = 85.0;
 
+pub const DEADZONE_DEFAULT: i32 = 5;
+
 pub struct Controllers {
     pub rumble: bool,
     pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
@@ -466,7 +468,7 @@ fn close_controllers(
     }
 }
 
-pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
+pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, deadzone: i32) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
     ui::ttf_init();
 
@@ -699,6 +701,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         joystick_hat: new_joystick_hat,
         joystick_axis: new_joystick_axis,
         dinput,
+        deadzone,
     };
     ui.config.input.input_profiles.insert(profile, new_profile);
 }
@@ -899,6 +902,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
             axis: 0,
         }; PROFILE_SIZE],
         dinput: false,
+        deadzone: DEADZONE_DEFAULT,
     }
 }
 
