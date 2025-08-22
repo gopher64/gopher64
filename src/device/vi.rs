@@ -134,6 +134,8 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
+    ui::video::update_screen();
+
     if device.cheats.enabled {
         cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
@@ -151,7 +153,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     if device.vi.vi_counter.is_multiple_of(device.vi.limit_freq) && device.vi.enable_speed_limiter {
         speed_limiter(device, speed_limiter_toggled);
     }
-    ui::video::update_screen();
 
     /*
     let vis = if device.cart.pal { 50 } else { 60 };
