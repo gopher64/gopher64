@@ -93,8 +93,11 @@ pub fn close(ui: &ui::Ui) {
 }
 
 pub fn update_screen() {
-    // when the window is closed, running is set to false
     unsafe { rdp_update_screen() }
+}
+
+pub fn render_frame() {
+    unsafe { rdp_render_frame() }
 }
 
 pub fn state_size() -> usize {

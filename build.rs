@@ -111,6 +111,7 @@ fn main() {
         .allowlist_function("rdp_close")
         .allowlist_function("rdp_set_vi_register")
         .allowlist_function("rdp_update_screen")
+        .allowlist_function("rdp_render_frame")
         .allowlist_function("rdp_process_commands")
         .allowlist_function("rdp_onscreen_message")
         .allowlist_function("rdp_check_callback")
