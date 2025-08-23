@@ -133,9 +133,21 @@ pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
     }
 }
 
-pub fn check_callback(device: &mut device::Device) -> bool {
+pub fn pause_loop() {
+    let mut paused = true;
+    let mut frame_advance = false;
+    while paused && !frame_advance {
+        std::thread::sleep(std::time::Duration::from_secs_f64(1.0 / 60.0));
+        unsafe { sdl3_sys::events::SDL_PumpEvents() };
+        let callback = unsafe { rdp_check_callback() };
+        paused = callback.paused;
+        frame_advance = callback.frame_advance;
+    }
+}
+
+pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     let mut speed_limiter_toggled = false;
-    let mut callback = unsafe { rdp_check_callback() };
+    let callback = unsafe { rdp_check_callback() };
     device.cpu.running = callback.emu_running;
     if device.netplay.is_none() {
         if callback.save_state {
@@ -146,11 +158,6 @@ pub fn check_callback(device: &mut device::Device) -> bool {
         if device.vi.enable_speed_limiter != callback.enable_speedlimiter {
             speed_limiter_toggled = true;
             device.vi.enable_speed_limiter = callback.enable_speedlimiter;
-        }
-        while callback.paused && !callback.frame_advance {
-            std::thread::sleep(std::time::Duration::from_secs_f64(1.0 / 60.0));
-            unsafe { sdl3_sys::events::SDL_PumpEvents() };
-            callback = unsafe { rdp_check_callback() };
         }
     }
 
@@ -172,7 +179,7 @@ pub fn check_callback(device: &mut device::Device) -> bool {
     } else if callback.raise_volume {
         ui::audio::raise_audio_volume(&mut device.ui);
     }
-    speed_limiter_toggled
+    (speed_limiter_toggled, callback.paused)
 }
 
 pub fn set_register(reg: u32, value: u32) {
