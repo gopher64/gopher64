@@ -134,6 +134,10 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
+    if device.cheats.enabled {
+        cheats::execute_cheats(device, device.cheats.cheats.clone());
+    }
+
     ui::video::render_frame();
 
     let (mut speed_limiter_toggled, paused) = ui::video::check_callback(device);
@@ -155,10 +159,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     if device.netplay.is_none() && paused {
         ui::video::pause_loop();
-    }
-
-    if device.cheats.enabled {
-        cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
 
     /*
