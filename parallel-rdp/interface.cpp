@@ -523,13 +523,17 @@ void rdp_set_vi_register(uint32_t reg, uint32_t value)
 	processor->set_vi_register(RDP::VIRegister(reg), value);
 }
 
-void rdp_update_screen()
+void rdp_render_frame()
 {
 	auto &device = wsi->get_device();
 	render_frame(device);
+	rdp_device.vi_counter += 1;
+}
+
+void rdp_update_screen()
+{
 	wsi->end_frame();
 	wsi->begin_frame();
-	rdp_device.vi_counter += 1;
 }
 
 CALL_BACK rdp_check_callback()

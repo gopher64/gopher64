@@ -42,6 +42,7 @@ extern "C"
 	void rdp_close();
 	void rdp_set_vi_register(uint32_t reg, uint32_t value);
 	void rdp_update_screen();
+	void rdp_render_frame();
 	CALL_BACK rdp_check_callback();
 	uint64_t rdp_process_commands();
 	void rdp_onscreen_message(const char *_message);
