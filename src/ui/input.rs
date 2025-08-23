@@ -28,6 +28,8 @@ const Y_AXIS_SHIFT: usize = 24;
 
 const MAX_AXIS_VALUE: f64 = 85.0;
 
+pub const DEADZONE_DEFAULT: i32 = 5;
+
 pub struct Controllers {
     pub rumble: bool,
     pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
@@ -56,6 +58,7 @@ fn bound_axis(x: &mut f64, y: &mut f64) {
 fn set_axis_from_joystick(
     profile: &ui::config::InputProfile,
     joystick: *mut sdl3_sys::joystick::SDL_Joystick,
+    deadzone: u16,
 ) -> (f64, f64) {
     let mut x = 0.0;
     let mut y = 0.0;
@@ -63,32 +66,48 @@ fn set_axis_from_joystick(
         let axis_position = unsafe {
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_LEFT].id)
         };
-        if axis_position as isize * profile.joystick_axis[AXIS_LEFT].axis as isize > 0 {
-            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+        if axis_position.unsigned_abs() > deadzone
+            && axis_position as isize * profile.joystick_axis[AXIS_LEFT].axis as isize > 0
+        {
+            x = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            x *= profile.joystick_axis[AXIS_LEFT].axis as f64;
         }
     }
     if profile.joystick_axis[AXIS_RIGHT].enabled {
         let axis_position = unsafe {
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_RIGHT].id)
         };
-        if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].axis as isize > 0 {
-            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+        if axis_position.unsigned_abs() > deadzone
+            && axis_position as isize * profile.joystick_axis[AXIS_RIGHT].axis as isize > 0
+        {
+            x = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            x *= profile.joystick_axis[AXIS_RIGHT].axis as f64;
         }
     }
     if profile.joystick_axis[AXIS_DOWN].enabled {
         let axis_position = unsafe {
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_DOWN].id)
         };
-        if axis_position as isize * profile.joystick_axis[AXIS_DOWN].axis as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+        if axis_position.unsigned_abs() > deadzone
+            && axis_position as isize * profile.joystick_axis[AXIS_DOWN].axis as isize > 0
+        {
+            y = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            y *= (profile.joystick_axis[AXIS_DOWN].axis as f64).neg();
         }
     }
     if profile.joystick_axis[AXIS_UP].enabled {
         let axis_position = unsafe {
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_UP].id)
         };
-        if axis_position as isize * profile.joystick_axis[AXIS_UP].axis as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+        if axis_position.unsigned_abs() > deadzone
+            && axis_position as isize * profile.joystick_axis[AXIS_UP].axis as isize > 0
+        {
+            y = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            y *= (profile.joystick_axis[AXIS_UP].axis as f64).neg();
         }
     }
     (x, y)
@@ -130,6 +149,7 @@ fn get_button_from_i32(button: i32) -> sdl3_sys::gamepad::SDL_GamepadButton {
 fn set_axis_from_controller(
     profile: &ui::config::InputProfile,
     controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
+    deadzone: u16,
 ) -> (f64, f64) {
     let mut x = 0.0;
     let mut y = 0.0;
@@ -140,8 +160,12 @@ fn set_axis_from_controller(
                 get_axis_from_i32(profile.controller_axis[AXIS_LEFT].id),
             )
         };
-        if axis_position as isize * profile.controller_axis[AXIS_LEFT].axis as isize > 0 {
-            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+        if axis_position.unsigned_abs() > deadzone
+            && axis_position as isize * profile.controller_axis[AXIS_LEFT].axis as isize > 0
+        {
+            x = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            x *= profile.controller_axis[AXIS_LEFT].axis as f64;
         }
     }
     if profile.controller_axis[AXIS_RIGHT].enabled {
@@ -151,8 +175,12 @@ fn set_axis_from_controller(
                 get_axis_from_i32(profile.controller_axis[AXIS_RIGHT].id),
             )
         };
-        if axis_position as isize * profile.controller_axis[AXIS_RIGHT].axis as isize > 0 {
-            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+        if axis_position.unsigned_abs() > deadzone
+            && axis_position as isize * profile.controller_axis[AXIS_RIGHT].axis as isize > 0
+        {
+            x = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            x *= profile.controller_axis[AXIS_RIGHT].axis as f64;
         }
     }
     if profile.controller_axis[AXIS_DOWN].enabled {
@@ -162,8 +190,12 @@ fn set_axis_from_controller(
                 get_axis_from_i32(profile.controller_axis[AXIS_DOWN].id),
             )
         };
-        if axis_position as isize * profile.controller_axis[AXIS_DOWN].axis as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+        if axis_position.unsigned_abs() > deadzone
+            && axis_position as isize * profile.controller_axis[AXIS_DOWN].axis as isize > 0
+        {
+            y = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            y *= (profile.controller_axis[AXIS_DOWN].axis as f64).neg();
         }
     }
     if profile.controller_axis[AXIS_UP].enabled {
@@ -173,8 +205,12 @@ fn set_axis_from_controller(
                 get_axis_from_i32(profile.controller_axis[AXIS_UP].id),
             )
         };
-        if axis_position as isize * profile.controller_axis[AXIS_UP].axis as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+        if axis_position.unsigned_abs() > deadzone
+            && axis_position as isize * profile.controller_axis[AXIS_UP].axis as isize > 0
+        {
+            y = (axis_position.unsigned_abs() - deadzone) as f64 * MAX_AXIS_VALUE
+                / (i16::MAX as u16 - deadzone) as f64;
+            y *= (profile.controller_axis[AXIS_UP].axis as f64).neg();
         }
     }
     (x, y)
@@ -408,10 +444,11 @@ pub fn get(ui: &ui::Ui, channel: usize) -> InputData {
         (x, y) = set_axis_from_keys(profile, ui.input.keyboard_state);
     }
 
+    let deadzone = (i16::MAX as i32 * profile.deadzone / 100) as u16;
     if !controller.is_null() {
-        (x, y) = set_axis_from_controller(profile, controller)
+        (x, y) = set_axis_from_controller(profile, controller, deadzone)
     } else if !joystick.is_null() {
-        (x, y) = set_axis_from_joystick(profile, joystick)
+        (x, y) = set_axis_from_joystick(profile, joystick, deadzone)
     }
     bound_axis(&mut x, &mut y);
 
@@ -466,7 +503,7 @@ fn close_controllers(
     }
 }
 
-pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
+pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, deadzone: i32) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
     ui::ttf_init();
 
@@ -699,6 +736,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool) {
         joystick_hat: new_joystick_hat,
         joystick_axis: new_joystick_axis,
         dinput,
+        deadzone,
     };
     ui.config.input.input_profiles.insert(profile, new_profile);
 }
@@ -899,6 +937,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
             axis: 0,
         }; PROFILE_SIZE],
         dinput: false,
+        deadzone: DEADZONE_DEFAULT,
     }
 }
 

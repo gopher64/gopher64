@@ -22,15 +22,22 @@ struct Args {
         short,
         long,
         value_name = "PROFILE_NAME",
-        help = "Create a new input profile (keyboard/gamepad mappings)."
+        help = "Create a new input profile (keyboard/gamepad mappings)"
     )]
     configure_input_profile: Option<String>,
     #[arg(
         short,
         long,
-        help = "Use DirectInput when configuring a new input profile."
+        help = "Use DirectInput when configuring a new input profile"
     )]
     use_dinput: bool,
+    #[arg(
+        short,
+        long,
+        value_name = "DEADZONE_PERCENTAGE",
+        help = "Used along with --configure-input-profile to set the deadzone for analog sticks"
+    )]
+    deadzone: Option<i32>,
     #[arg(
         short,
         long,
@@ -112,6 +119,7 @@ async fn main() {
                 &mut ui,
                 args.configure_input_profile.unwrap(),
                 args.use_dinput,
+                args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
             );
             return;
         }

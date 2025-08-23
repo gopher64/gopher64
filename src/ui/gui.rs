@@ -211,6 +211,7 @@ fn controller_window(
     let weak_app = app.as_weak();
     app.on_input_profile_button_clicked(move || {
         let dialog = InputProfileDialog::new().unwrap();
+        dialog.set_deadzone(ui::input::DEADZONE_DEFAULT);
         let weak_dialog = dialog.as_weak();
         let weak_app = weak_app.clone();
         dialog.on_profile_creation_button_clicked(move || {
@@ -220,10 +221,16 @@ fn controller_window(
                     handle.hide().unwrap();
                     let profile_name = handle.get_profile_name().into();
                     let dinput = handle.get_dinput();
+                    let deadzone = handle.get_deadzone();
 
                     tokio::spawn(async move {
                         let mut game_ui = ui::Ui::new();
-                        ui::input::configure_input_profile(&mut game_ui, profile_name, dinput);
+                        ui::input::configure_input_profile(
+                            &mut game_ui,
+                            profile_name,
+                            dinput,
+                            deadzone,
+                        );
                         update_input_profiles(&weak_app, &game_ui.config);
                     });
                 })
