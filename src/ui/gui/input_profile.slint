@@ -32,6 +32,7 @@ export component InputProfileDialog inherits Window {
 
             Slider {
                 min-width: 160px;
+                maximum: 99;
                 value: InputProfileData.deadzone;
                 changed(value) => {
                     InputProfileData.deadzone = value;
