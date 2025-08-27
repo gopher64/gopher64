@@ -1,10 +1,8 @@
 use crate::{device, ui};
-#[cfg(target_arch = "aarch64")]
-use device::__m128i;
+// Use unified SIMD interface instead of arch-specific intrinsics  
+use crate::simd_compat::*;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
 
 struct M128iArrayVisitor<const N: usize>;
 

@@ -7,6 +7,7 @@ mod cheats;
 mod device;
 mod netplay;
 mod savestates;
+mod simd_compat;
 mod ui;
 use clap::Parser;
 use ui::gui;

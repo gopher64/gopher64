@@ -1,10 +1,6 @@
-#[cfg(target_arch = "aarch64")]
-use device::__m128i;
-#[cfg(target_arch = "aarch64")]
-include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
+// Use unified SIMD interface instead of arch-specific intrinsics
+use crate::simd_compat::*;
 use crate::{device, savestates};
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct BranchState {

@@ -1,13 +1,7 @@
-#[cfg(target_arch = "aarch64")]
-use device::__m128i;
-#[cfg(target_arch = "aarch64")]
-include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
-#[cfg(target_arch = "aarch64")]
-include!("../compat/aarch64.rs");
+// Use unified SIMD interface instead of arch-specific intrinsics
+use crate::simd_compat::*;
 use crate::device;
 use crate::device::rsp_su_instructions::{get_vpr16, modify_vpr16};
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
 
 fn vt(opcode: u32) -> u32 {
     (opcode >> 16) & 0x1F

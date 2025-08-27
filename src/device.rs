@@ -1,14 +1,8 @@
 #![allow(non_camel_case_types)]
 #![allow(improper_ctypes)]
 
-#[cfg(target_arch = "aarch64")]
-#[derive(Copy, Clone)]
-#[allow(dead_code)]
-pub struct __m128i(std::arch::aarch64::int64x2_t);
-#[cfg(target_arch = "aarch64")]
-include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
+// Use unified SIMD interface instead of arch-specific intrinsics
+use crate::simd_compat::*;
 
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 
@@ -215,7 +209,7 @@ pub struct Device {
 }
 
 pub fn zero_m128i() -> __m128i {
-    unsafe { _mm_setzero_si128() }
+    simd_setzero()
 }
 
 impl Device {
