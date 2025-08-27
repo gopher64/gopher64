@@ -209,7 +209,7 @@ pub struct Device {
 }
 
 pub fn zero_m128i() -> __m128i {
-    simd_setzero()
+    unsafe { _mm_setzero_si128() }
 }
 
 impl Device {
