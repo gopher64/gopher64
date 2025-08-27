@@ -15,7 +15,7 @@ pub struct __m128i(pub std::arch::aarch64::int64x2_t);
 #[cfg(target_arch = "aarch64")]
 include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 
-/// Zero vector constant for initialization
-pub fn zero_m128i() -> __m128i {
-    unsafe { _mm_setzero_si128() }
-}
+#[cfg(target_arch = "aarch64")]
+include!("compat/aarch64.rs");
+
+// Future: Add utility functions here if needed for std::simd migration
