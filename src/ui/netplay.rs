@@ -534,7 +534,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                             for room in rooms {
                                 let mut session = vec![];
                                 room_urls.push(server_url.into());
-                                room_ports.push(room.port.unwrap_or(0));
+                                room_ports.push(room.port.unwrap());
 
                                 session.push(slint::StandardListViewItem::from(
                                     slint::SharedString::from(server_name),
