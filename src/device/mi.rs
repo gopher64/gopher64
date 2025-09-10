@@ -81,7 +81,8 @@ fn update_init_mode(device: &mut device::Device, w: u32) {
         device.mi.regs[MI_INIT_MODE_REG as usize] &= !MI_INIT_MODE
     }
     if w & MI_SET_INIT != 0 {
-        device.mi.regs[MI_INIT_MODE_REG as usize] |= MI_INIT_MODE
+        panic!("MI_SET_INIT not implemented")
+        //device.mi.regs[MI_INIT_MODE_REG as usize] |= MI_INIT_MODE
     }
     if w & MI_CLR_EBUS != 0 {
         device.mi.regs[MI_INIT_MODE_REG as usize] &= !MI_EBUS_MODE
