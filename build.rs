@@ -164,6 +164,7 @@ fn main() {
             .allowlist_function("_mm_cmplt_epi16")
             .allowlist_function("_mm_subs_epu16")
             .allowlist_function("_mm_set1_epi32")
+            .allowlist_function("_mm_set1_epi16")
             .blocklist_type("__m128i")
             .blocklist_type("int64x2_t")
             .wrap_static_fns(true)
