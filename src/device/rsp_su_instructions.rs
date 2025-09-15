@@ -304,25 +304,44 @@ pub fn lh(device: &mut device::Device, opcode: u32) {
     let address =
         device.rsp.cpu.gpr[rs(opcode) as usize].wrapping_add(imm(opcode) as i16 as i32 as u32);
 
-    let mut w = [0; 2];
-    w[0] = device.rsp.mem[address as usize & 0xFFF];
-    w[1] = device.rsp.mem[(address as usize + 1) & 0xFFF];
+    // Optimize for aligned access when possible
+    let addr_masked = address as usize & 0xFFF;
+    let value = if addr_masked <= 0xFFE {
+        u16::from_be_bytes(
+            device.rsp.mem[addr_masked..addr_masked + 2]
+                .try_into()
+                .unwrap(),
+        )
+    } else {
+        let w0 = device.rsp.mem[addr_masked];
+        let w1 = device.rsp.mem[(addr_masked + 1) & 0xFFF];
+        ((w0 as u16) << 8) | w1 as u16
+    };
 
-    device.rsp.cpu.gpr[rt(opcode) as usize] =
-        (((w[0] as u16) << 8) | w[1] as u16) as i16 as i32 as u32
+    device.rsp.cpu.gpr[rt(opcode) as usize] = value as i16 as i32 as u32;
 }
 
 pub fn lw(device: &mut device::Device, opcode: u32) {
     let address =
         device.rsp.cpu.gpr[rs(opcode) as usize].wrapping_add(imm(opcode) as i16 as i32 as u32);
 
-    let mut w = [0; 4];
-    for (i, item) in w.iter_mut().enumerate() {
-        *item = device.rsp.mem[(address as usize + i) & 0xFFF];
-    }
+    // Optimize for aligned access when possible
+    let addr_masked = address as usize & 0xFFF;
+    let value = if addr_masked <= 0xFFC {
+        u32::from_be_bytes(
+            device.rsp.mem[addr_masked..addr_masked + 4]
+                .try_into()
+                .unwrap(),
+        )
+    } else {
+        let mut value = 0;
+        for i in 0..4 {
+            value |= (device.rsp.mem[(address as usize + i) & 0xFFF] as u32) << (8 * (3 - i));
+        }
+        value
+    };
 
-    device.rsp.cpu.gpr[rt(opcode) as usize] =
-        ((w[0] as u32) << 24) | ((w[1] as u32) << 16) | ((w[2] as u32) << 8) | (w[3] as u32)
+    device.rsp.cpu.gpr[rt(opcode) as usize] = value;
 }
 
 pub fn lbu(device: &mut device::Device, opcode: u32) {
@@ -336,24 +355,44 @@ pub fn lhu(device: &mut device::Device, opcode: u32) {
     let address =
         device.rsp.cpu.gpr[rs(opcode) as usize].wrapping_add(imm(opcode) as i16 as i32 as u32);
 
-    let mut w = [0; 2];
-    w[0] = device.rsp.mem[address as usize & 0xFFF];
-    w[1] = device.rsp.mem[(address as usize + 1) & 0xFFF];
+    // Optimize for aligned access when possible
+    let addr_masked = address as usize & 0xFFF;
+    let value = if addr_masked <= 0xFFE {
+        u16::from_be_bytes(
+            device.rsp.mem[addr_masked..addr_masked + 2]
+                .try_into()
+                .unwrap(),
+        )
+    } else {
+        let w0 = device.rsp.mem[addr_masked];
+        let w1 = device.rsp.mem[(addr_masked + 1) & 0xFFF];
+        ((w0 as u16) << 8) | w1 as u16
+    };
 
-    device.rsp.cpu.gpr[rt(opcode) as usize] = (((w[0] as u16) << 8) | w[1] as u16) as u32
+    device.rsp.cpu.gpr[rt(opcode) as usize] = value as u32;
 }
 
 pub fn lwu(device: &mut device::Device, opcode: u32) {
     let address =
         device.rsp.cpu.gpr[rs(opcode) as usize].wrapping_add(imm(opcode) as i16 as i32 as u32);
 
-    let mut w = [0; 4];
-    for (i, item) in w.iter_mut().enumerate() {
-        *item = device.rsp.mem[(address as usize + i) & 0xFFF];
-    }
+    // Optimize for aligned access when possible
+    let addr_masked = address as usize & 0xFFF;
+    let value = if addr_masked <= 0xFFC {
+        u32::from_be_bytes(
+            device.rsp.mem[addr_masked..addr_masked + 4]
+                .try_into()
+                .unwrap(),
+        )
+    } else {
+        let mut value = 0;
+        for i in 0..4 {
+            value |= (device.rsp.mem[(address as usize + i) & 0xFFF] as u32) << (8 * (3 - i));
+        }
+        value
+    };
 
-    device.rsp.cpu.gpr[rt(opcode) as usize] =
-        ((w[0] as u32) << 24) | ((w[1] as u32) << 16) | ((w[2] as u32) << 8) | (w[3] as u32)
+    device.rsp.cpu.gpr[rt(opcode) as usize] = value;
 }
 
 pub fn sb(device: &mut device::Device, opcode: u32) {
@@ -367,18 +406,30 @@ pub fn sh(device: &mut device::Device, opcode: u32) {
     let address =
         device.rsp.cpu.gpr[rs(opcode) as usize].wrapping_add(imm(opcode) as i16 as i32 as u32);
 
-    device.rsp.mem[address as usize & 0xFFF] = (device.rsp.cpu.gpr[rt(opcode) as usize] >> 8) as u8;
-    device.rsp.mem[(address as usize + 1) & 0xFFF] =
-        (device.rsp.cpu.gpr[rt(opcode) as usize]) as u8;
+    let addr_masked = address as usize & 0xFFF;
+    let value = device.rsp.cpu.gpr[rt(opcode) as usize] as u16;
+    // Optimize for aligned access when possible
+    if addr_masked <= 0xFFE {
+        device.rsp.mem[addr_masked..addr_masked + 2].copy_from_slice(&value.to_be_bytes());
+    } else {
+        device.rsp.mem[addr_masked] = (value >> 8) as u8;
+        device.rsp.mem[(addr_masked + 1) & 0xFFF] = value as u8;
+    }
 }
 
 pub fn sw(device: &mut device::Device, opcode: u32) {
     let address =
         device.rsp.cpu.gpr[rs(opcode) as usize].wrapping_add(imm(opcode) as i16 as i32 as u32);
 
-    for i in 0..4 {
-        device.rsp.mem[(address as usize + i) & 0xFFF] =
-            (device.rsp.cpu.gpr[rt(opcode) as usize] >> ((3 - i) * 8)) as u8;
+    let addr_masked = address as usize & 0xFFF;
+    let value = device.rsp.cpu.gpr[rt(opcode) as usize];
+    // Optimize for aligned access when possible
+    if addr_masked <= 0xFFC {
+        device.rsp.mem[addr_masked..addr_masked + 4].copy_from_slice(&value.to_be_bytes());
+    } else {
+        for i in 0..4 {
+            device.rsp.mem[(address as usize + i) & 0xFFF] = (value >> ((3 - i) * 8)) as u8;
+        }
     }
 }
 
@@ -737,10 +788,21 @@ pub fn llv(device: &mut device::Device, opcode: u32) {
     let mut element = velement(opcode);
 
     if element.is_multiple_of(4) {
-        let mut value = 0;
-        for i in 0..4 {
-            value |= (device.rsp.mem[((address + i) & 0xFFF) as usize] as u32) << (8 * (3 - i));
-        }
+        // Optimize for aligned access when possible
+        let addr_masked = address as usize & 0xFFF;
+        let value = if addr_masked <= 0xFFC {
+            u32::from_be_bytes(
+                device.rsp.mem[addr_masked..addr_masked + 4]
+                    .try_into()
+                    .unwrap(),
+            )
+        } else {
+            let mut value = 0;
+            for i in 0..4 {
+                value |= (device.rsp.mem[(address as usize + i) & 0xFFF] as u32) << (8 * (3 - i));
+            }
+            value
+        };
         modify_vpr32(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
             element / 4,
@@ -767,10 +829,21 @@ pub fn ldv(device: &mut device::Device, opcode: u32) {
     let mut element = velement(opcode);
 
     if element.is_multiple_of(8) {
-        let mut value = 0;
-        for i in 0..8 {
-            value |= (device.rsp.mem[((address + i) & 0xFFF) as usize] as u64) << (8 * (7 - i));
-        }
+        // Optimize for aligned access when possible
+        let addr_masked = address as usize & 0xFFF;
+        let value = if addr_masked <= 0xFF8 {
+            u64::from_be_bytes(
+                device.rsp.mem[addr_masked..addr_masked + 8]
+                    .try_into()
+                    .unwrap(),
+            )
+        } else {
+            let mut value = 0;
+            for i in 0..8 {
+                value |= (device.rsp.mem[(address as usize + i) & 0xFFF] as u64) << (8 * (7 - i));
+            }
+            value
+        };
         modify_vpr64(
             &mut device.rsp.cpu.vpr[rt(opcode) as usize],
             element / 8,
@@ -797,10 +870,21 @@ pub fn lqv(device: &mut device::Device, opcode: u32) {
     let mut element = velement(opcode);
 
     if element == 0 && address.is_multiple_of(16) {
-        let mut value = 0;
-        for i in 0..16 {
-            value |= (device.rsp.mem[((address + i) & 0xFFF) as usize] as u128) << (8 * (15 - i));
-        }
+        // Optimize for aligned 16-byte access
+        let addr_masked = address as usize & 0xFFF;
+        let value = if addr_masked <= 0xFF0 {
+            u128::from_be_bytes(
+                device.rsp.mem[addr_masked..addr_masked + 16]
+                    .try_into()
+                    .unwrap(),
+            )
+        } else {
+            let mut value = 0;
+            for i in 0..16 {
+                value |= (device.rsp.mem[(address as usize + i) & 0xFFF] as u128) << (8 * (15 - i));
+            }
+            value
+        };
         modify_vpr128(&mut device.rsp.cpu.vpr[rt(opcode) as usize], value);
     } else {
         let end = std::cmp::min(16 + element - ((address & 15) as u8), 16);
@@ -823,10 +907,21 @@ pub fn lrv(device: &mut device::Device, opcode: u32) {
     let mut element = 16u8.wrapping_sub(((address & 15) as u8).wrapping_sub(velement(opcode)));
     address &= !15;
     if element == 0 {
-        let mut value = 0;
-        for i in 0..16 {
-            value |= (device.rsp.mem[((address + i) & 0xFFF) as usize] as u128) << (8 * (15 - i));
-        }
+        // Optimize for aligned 16-byte access
+        let addr_masked = address as usize & 0xFFF;
+        let value = if addr_masked <= 0xFF0 {
+            u128::from_be_bytes(
+                device.rsp.mem[addr_masked..addr_masked + 16]
+                    .try_into()
+                    .unwrap(),
+            )
+        } else {
+            let mut value = 0;
+            for i in 0..16 {
+                value |= (device.rsp.mem[(address as usize + i) & 0xFFF] as u128) << (8 * (15 - i));
+            }
+            value
+        };
         modify_vpr128(&mut device.rsp.cpu.vpr[rt(opcode) as usize], value);
     } else {
         while element < 16 {
