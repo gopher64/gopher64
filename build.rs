@@ -54,6 +54,7 @@ fn main() {
         .file("parallel-rdp/parallel-rdp-standalone/util/timeline_trace_file.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/util/environment.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/util/thread_name.cpp")
+        .file("parallel-rdp/parallel-rdp-standalone/util/slab_allocator.cpp")
         .file("parallel-rdp/interface.cpp")
         .file("parallel-rdp/wsi_platform.cpp")
         .include("parallel-rdp/parallel-rdp-standalone/parallel-rdp")
