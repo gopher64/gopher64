@@ -464,6 +464,7 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
 fn do_task(device: &mut device::Device) {
     device.rsp.cpu.sync_point = false;
     device.rsp.last_status_value = 0;
+    device.rdp.last_status_value = 0;
     if device.rsp.regs[SP_DMA_BUSY_REG as usize] == 1 {
         device.rsp.run_after_dma = true
     } else {
