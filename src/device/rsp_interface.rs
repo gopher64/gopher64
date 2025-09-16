@@ -219,6 +219,8 @@ fn fifo_push(device: &mut device::Device, dir: DmaDir) {
         panic!("RSP DMA already full")
     }
 
+    device.rsp.cpu.sync_point = true;
+
     if device.rsp.regs[SP_DMA_BUSY_REG as usize] != 0 {
         device.rsp.fifo[1].dir = dir;
         if dir == DmaDir::Read {
@@ -276,21 +278,20 @@ pub fn read_regs(
     }
     let reg = (address & 0xFFFF) >> 2;
     match reg as u32 {
-        SP_DMA_BUSY_REG | SP_DMA_FULL_REG => {
-            if device.rsp.regs[reg as usize] != 0 {
-                device.rsp.cpu.sync_point = true;
-            }
-            device.rsp.regs[reg as usize]
-        }
         SP_STATUS_REG => {
             let value = device.rsp.regs[reg as usize]
-                & !(SP_STATUS_HALT | SP_STATUS_BROKE | SP_STATUS_INTR_BREAK);
+                & (SP_STATUS_SIG0
+                    | SP_STATUS_SIG1
+                    | SP_STATUS_SIG2
+                    | SP_STATUS_SIG3
+                    | SP_STATUS_SIG4
+                    | SP_STATUS_SIG5
+                    | SP_STATUS_SIG6
+                    | SP_STATUS_SIG7);
             if value == device.rsp.last_status_value && value != 0 {
                 device.rsp.cpu.sync_point = true;
             }
-            if value & (SP_STATUS_DMA_BUSY | SP_STATUS_DMA_FULL) != 0 {
-                device.rsp.cpu.sync_point = true;
-            }
+
             device.rsp.last_status_value = value;
             device.rsp.regs[reg as usize]
         }
