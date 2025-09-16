@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 use rand_chacha::rand_core::RngCore;
 
 const PI_DRAM_ADDR_REG: u32 = 0;
@@ -91,6 +92,9 @@ fn dma_write(device: &mut device::Device) {
     if length <= 0x80 {
         length -= dram_addr & 0x7;
     }
+
+    // check RDP before PI writes to RDRAM
+    ui::video::check_framebuffers(dram_addr, length);
 
     let cycles = (handler.write)(device, cart_addr, dram_addr, length);
 

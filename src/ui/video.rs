@@ -192,6 +192,10 @@ pub fn process_rdp_list() -> u64 {
     unsafe { rdp_process_commands() }
 }
 
+pub fn check_framebuffers(address: u32, length: u32) {
+    unsafe { rdp_check_framebuffers(address, length) }
+}
+
 pub fn onscreen_message(_ui: &ui::Ui, message: &str) {
     unsafe { rdp_onscreen_message(std::ffi::CString::new(message).unwrap().as_ptr()) };
 }

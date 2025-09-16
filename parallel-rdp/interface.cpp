@@ -55,10 +55,24 @@ enum vi_registers
 
 typedef struct
 {
+	uint32_t depthbuffer_address;
+	uint32_t framebuffer_address;
+	uint32_t framebuffer_y_offset;
+	uint32_t texture_address;
+	uint32_t framebuffer_pixel_size;
+	uint32_t framebuffer_width;
+	uint32_t texture_pixel_size;
+	uint32_t texture_width;
+	uint32_t framebuffer_height;
+} FrameBufferInfo;
+
+typedef struct
+{
 	uint32_t cmd_data[0x00040000 >> 2];
 	int cmd_cur;
 	int cmd_ptr;
 	uint32_t region;
+	FrameBufferInfo frame_buffer_info;
 } RDP_DEVICE;
 
 static SDL_Window *window;
@@ -72,6 +86,9 @@ static CALL_BACK callback;
 static GFX_INFO gfx_info;
 static const uint32_t *fragment_spirv;
 static size_t fragment_size;
+
+std::vector<bool> rdram_dirty;
+uint64_t sync_signal;
 
 static TTF_Font *message_font;
 static std::queue<std::string> messages;
@@ -237,6 +254,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event)
 void rdp_new_processor(GFX_INFO _gfx_info)
 {
 	gfx_info = _gfx_info;
+
+	sync_signal = 0;
+	rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
 
 	if (processor)
 	{
@@ -544,6 +564,27 @@ CALL_BACK rdp_check_callback()
 	return return_value;
 }
 
+void rdp_check_framebuffers(uint32_t address, uint32_t length)
+{
+	if (sync_signal)
+	{
+		address >>= 3;
+		length = (length + 7) >> 3;
+		for (uint32_t i = 0; i < length; i++)
+		{
+			if (address + i >= rdram_dirty.size())
+				return;
+			if (rdram_dirty[address + i])
+			{
+				processor->wait_for_timeline(sync_signal);
+				rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
+				sync_signal = 0;
+				return;
+			}
+		}
+	}
+}
+
 size_t rdp_state_size()
 {
 	return sizeof(RDP_DEVICE);
@@ -551,6 +592,7 @@ size_t rdp_state_size()
 
 void rdp_save_state(uint8_t *state)
 {
+	processor->wait_for_timeline(processor->signal_timeline());
 	memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
 
@@ -564,6 +606,24 @@ void rdp_onscreen_message(const char *_message)
 	if (messages.empty())
 		message_timer = SDL_GetTicks() + MESSAGE_TIME;
 	messages.push(_message);
+}
+
+uint32_t pixel_size(uint32_t pixel_type, uint32_t area)
+{
+	switch (pixel_type)
+	{
+	case 0:
+		return area / 2;
+	case 1:
+		return area;
+	case 2:
+		return area * 2;
+	case 3:
+		return area * 4;
+	default:
+		printf("Invalid pixel size: %u\n", pixel_type);
+		return 0;
+	}
 }
 
 uint64_t rdp_process_commands()
@@ -629,6 +689,69 @@ uint64_t rdp_process_commands()
 
 		switch (RDP::Op(command))
 		{
+		case RDP::Op::FillZBufferTriangle:
+		case RDP::Op::TextureZBufferTriangle:
+		case RDP::Op::ShadeZBufferTriangle:
+		case RDP::Op::ShadeTextureZBufferTriangle:
+		{
+			uint32_t offset_address = (rdp_device.frame_buffer_info.depthbuffer_address + pixel_size(2, rdp_device.frame_buffer_info.framebuffer_y_offset * rdp_device.frame_buffer_info.framebuffer_width)) >> 3;
+			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
+			{
+				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(2, rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) + 7) >> 3, true);
+			}
+		}
+		case RDP::Op::FillTriangle:
+		case RDP::Op::TextureTriangle:
+		case RDP::Op::ShadeTriangle:
+		case RDP::Op::ShadeTextureTriangle:
+		case RDP::Op::TextureRectangle:
+		case RDP::Op::TextureRectangleFlip:
+		case RDP::Op::FillRectangle:
+		{
+			uint32_t offset_address = (rdp_device.frame_buffer_info.framebuffer_address + pixel_size(rdp_device.frame_buffer_info.framebuffer_pixel_size, rdp_device.frame_buffer_info.framebuffer_y_offset * rdp_device.frame_buffer_info.framebuffer_width)) >> 3;
+			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
+			{
+				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(rdp_device.frame_buffer_info.framebuffer_pixel_size, rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) + 7) >> 3, true);
+			}
+		}
+		break;
+		case RDP::Op::LoadTLut:
+		case RDP::Op::LoadTile:
+		{
+			uint32_t upper_left_t = (w1 & 0xFFF) >> 2;
+			uint32_t offset_address = (rdp_device.frame_buffer_info.texture_address + pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, upper_left_t * rdp_device.frame_buffer_info.texture_width)) >> 3;
+			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
+			{
+				uint32_t lower_right_t = (w2 & 0xFFF) >> 2;
+				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, (lower_right_t - upper_left_t) * rdp_device.frame_buffer_info.texture_width) + 7) >> 3, true);
+			}
+		}
+		break;
+		case RDP::Op::LoadBlock:
+		{
+			uint32_t upper_left_s = ((w1 >> 12) & 0xFFF) >> 2;
+			uint32_t upper_left_t = (w1 & 0xFFF) >> 2;
+			uint32_t offset_address = (rdp_device.frame_buffer_info.texture_address + pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, upper_left_s + upper_left_t * rdp_device.frame_buffer_info.texture_width)) >> 3;
+			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
+			{
+				uint32_t lower_right_s = ((w2 >> 12) & 0xFFF) >> 2;
+				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, lower_right_s - upper_left_s) + 7) >> 3, true);
+			}
+		}
+		break;
+		case RDP::Op::SetColorImage:
+			rdp_device.frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF);
+			rdp_device.frame_buffer_info.framebuffer_pixel_size = (w1 >> 19) & 0x3;
+			rdp_device.frame_buffer_info.framebuffer_width = (w1 & 0x3FF) + 1;
+			break;
+		case RDP::Op::SetMaskImage:
+			rdp_device.frame_buffer_info.depthbuffer_address = (w2 & 0x00FFFFFF);
+			break;
+		case RDP::Op::SetTextureImage:
+			rdp_device.frame_buffer_info.texture_address = (w2 & 0x00FFFFFF);
+			rdp_device.frame_buffer_info.texture_pixel_size = (w1 >> 19) & 0x3;
+			rdp_device.frame_buffer_info.texture_width = (w1 & 0x3FF) + 1;
+			break;
 		case RDP::Op::SetScissor:
 		{
 			uint32_t upper_left_x = ((w1 >> 12) & 0xFFF) >> 2;
@@ -643,10 +766,13 @@ uint64_t rdp_process_commands()
 			{
 				rdp_device.region = 0;
 			}
-			break;
+
+			rdp_device.frame_buffer_info.framebuffer_y_offset = upper_left_y;
+			rdp_device.frame_buffer_info.framebuffer_height = lower_right_y - upper_left_y;
 		}
+		break;
 		case RDP::Op::SyncFull:
-			processor->wait_for_timeline(processor->signal_timeline());
+			sync_signal = processor->signal_timeline();
 
 			interrupt_timer = rdp_device.region;
 			if (interrupt_timer == 0)
