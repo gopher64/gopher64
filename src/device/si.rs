@@ -1,6 +1,7 @@
 use rand_chacha::rand_core::RngCore;
 
 use crate::device;
+use crate::ui;
 
 const SI_DRAM_ADDR_REG: u32 = 0;
 const SI_PIF_ADDR_RD64B_REG: u32 = 1;
@@ -98,6 +99,8 @@ fn copy_pif_rdram(device: &mut device::Device) {
             i += 4;
         }
     } else if device.si.dma_dir == DmaDir::Read {
+        // check RDP before SI writes to RDRAM
+        ui::video::check_framebuffers(dram_addr as u32, device::pif::PIF_RAM_SIZE as u32);
         let mut i = 0;
         while i < device::pif::PIF_RAM_SIZE {
             let data = u32::from_be_bytes(device.pif.ram[i..i + 4].try_into().unwrap());
