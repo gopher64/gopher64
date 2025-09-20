@@ -1,6 +1,6 @@
 use crate::device;
 
-const MI_INIT_MODE_REG: u32 = 0;
+pub const MI_INIT_MODE_REG: u32 = 0;
 const MI_VERSION_REG: u32 = 1;
 pub const MI_INTR_REG: u32 = 2;
 pub const MI_INTR_MASK_REG: u32 = 3;
@@ -29,7 +29,7 @@ const MI_CLR_DP: u32 = 1 << 10;
 const MI_SET_DP: u32 = 1 << 11;
 
 /* mode read */
-const MI_INIT_MODE: u32 = 1 << 7;
+pub const MI_INIT_MODE: u32 = 1 << 7;
 const MI_EBUS_MODE: u32 = 1 << 8;
 const MI_RDRAM_MODE: u32 = 1 << 9;
 
@@ -42,7 +42,7 @@ const MI_CLR_DP_INTR: u32 = 1 << 11;
 const MI_CLR_RDRAM: u32 = 1 << 12;
 const MI_SET_RDRAM: u32 = 1 << 13;
 
-const MI_INIT_LENGTH_MASK: u32 = 0b1111111;
+pub const MI_INIT_LENGTH_MASK: u32 = 0b1111111;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Mi {
@@ -81,8 +81,10 @@ fn update_init_mode(device: &mut device::Device, w: u32) {
         device.mi.regs[MI_INIT_MODE_REG as usize] &= !MI_INIT_MODE
     }
     if w & MI_SET_INIT != 0 {
-        panic!("MI_SET_INIT not implemented")
-        //device.mi.regs[MI_INIT_MODE_REG as usize] |= MI_INIT_MODE
+        for i in 0..(0x3F00000 >> 16) {
+            device.memory.memory_map_write[i] = device::rdram::write_mem_repeat;
+        }
+        device.mi.regs[MI_INIT_MODE_REG as usize] |= MI_INIT_MODE
     }
     if w & MI_CLR_EBUS != 0 {
         device.mi.regs[MI_INIT_MODE_REG as usize] &= !MI_EBUS_MODE
