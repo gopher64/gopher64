@@ -10,12 +10,12 @@ rust-version = "1.90"
 dirs = "6.0"
 zip = "5.1"
 governor = "0.10"
-sevenz-rust2 = { version = "0.18", default-features = false }
+sevenz-rust2 = { version = "0.19", default-features = false }
 chrono = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde-big-array = "0.5"
-slint = { version = "1.12", default-features = false, features = ["compat-1-2", "std", "backend-winit", "renderer-femtovg-wgpu"] }
+slint = { version = "1.12", default-features = false, features = ["compat-1-2", "std", "backend-winit", "renderer-femtovg"] }
 open = "5.3"
 sha2 = "0.10"
 sdl3-sys = { version = "0.5", features = ["build-from-source-static"] }
