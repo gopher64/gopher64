@@ -85,6 +85,39 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         .copy_from_slice(&data.to_ne_bytes());
 }
 
+pub fn write_mem_repeat(device: &mut device::Device, address: u64, value: u32, mask: u32) {
+    if mask != 0xFFFFFFFF {
+        panic!("RDRAM write_mem_repeat called with mask {:#x}", mask);
+    }
+
+    let repeat_length = (device.mi.regs[device::mi::MI_INIT_MODE_REG as usize]
+        & device::mi::MI_INIT_LENGTH_MASK)
+        + 1;
+
+    if !repeat_length.is_multiple_of(4) {
+        panic!(
+            "RDRAM write_mem_repeat called with non-word-aligned length {}",
+            repeat_length
+        );
+    }
+
+    ui::video::check_framebuffers(address as u32, repeat_length);
+
+    for i in (0..repeat_length as u64).step_by(4) {
+        device
+            .rdram
+            .mem
+            .get_mut((address + i) as usize..(address + i) as usize + 4)
+            .unwrap_or(&mut [0; 4])
+            .copy_from_slice(&value.to_ne_bytes());
+    }
+
+    device.mi.regs[device::mi::MI_INIT_MODE_REG as usize] &= !device::mi::MI_INIT_MODE;
+    for i in 0..(0x3F00000 >> 16) {
+        device.memory.memory_map_write[i] = device::rdram::write_mem;
+    }
+}
+
 pub fn read_regs(
     device: &mut device::Device,
     address: u64,
