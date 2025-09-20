@@ -73,7 +73,6 @@ fn main() {
 
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    let profile = std::env::var("PROFILE").unwrap();
     let opt_flag = if arch == "x86_64" {
         "-march=x86-64-v3"
     } else if arch == "aarch64" {
@@ -96,11 +95,10 @@ fn main() {
             .unwrap();
     }
 
-    if profile == "release" {
-        volk_build.flag("-flto=thin");
-        rdp_build.flag("-flto=thin");
-        simd_build.flag("-flto=thin");
-    }
+    volk_build.flag("-flto=thin");
+    rdp_build.flag("-flto=thin");
+    simd_build.flag("-flto=thin");
+
     volk_build.compile("volk");
     rdp_build.compile("parallel-rdp");
 
