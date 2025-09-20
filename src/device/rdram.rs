@@ -103,11 +103,11 @@ pub fn write_mem_repeat(device: &mut device::Device, address: u64, value: u32, m
 
     ui::video::check_framebuffers(address as u32, repeat_length);
 
-    for i in 0..(repeat_length / 4) as u64 {
+    for i in (0..repeat_length as u64).step_by(4) {
         device
             .rdram
             .mem
-            .get_mut((address + (i * 4)) as usize..(address + (i * 4)) as usize + 4)
+            .get_mut((address + i) as usize..(address + i) as usize + 4)
             .unwrap_or(&mut [0; 4])
             .copy_from_slice(&value.to_ne_bytes());
     }
