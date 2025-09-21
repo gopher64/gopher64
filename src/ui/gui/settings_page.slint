@@ -29,7 +29,7 @@ export component Settings inherits Page {
             }
 
             ComboBox {
-                model: ["1x", "2x", "4x"];
+                model: ["1x", "2x", "4x", "8x"];
                 current-index: SettingsData.resolution;
                 selected => {
                     SettingsData.resolution = self.current-index;

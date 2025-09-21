@@ -274,6 +274,11 @@ void rdp_new_processor(GFX_INFO _gfx_info)
 		flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
 		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_4X_BIT;
 	}
+	else if (gfx_info.upscale == 8)
+	{
+		flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
+		flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_8X_BIT;
+	}
 
 	processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0, gfx_info.RDRAM_SIZE, gfx_info.RDRAM_SIZE / 2, flags);
 }
