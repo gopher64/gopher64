@@ -15,9 +15,7 @@ pub struct Dirs {
 }
 
 pub struct Audio {
-    pub audio_device_spec: sdl3_sys::audio::SDL_AudioSpec,
     pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
-    pub audio_device: u32,
     pub gain: f32,
 }
 
@@ -183,9 +181,7 @@ impl Ui {
             game_id: String::new(),
             game_hash: String::new(),
             audio: Audio {
-                audio_device_spec: Default::default(),
                 audio_stream: std::ptr::null_mut(),
-                audio_device: 0,
                 gain: 1.0,
             },
             video: Video {
