@@ -570,17 +570,18 @@ void rdp_check_framebuffers(uint32_t address, uint32_t length)
 	{
 		address >>= 3;
 		length = (length + 7) >> 3;
-		for (uint32_t i = 0; i < length; i++)
+
+		if (address >= rdram_dirty.size())
+			return;
+
+		uint32_t end_addr = std::min(address + length, static_cast<uint32_t>(rdram_dirty.size()));
+
+		auto it = std::find(rdram_dirty.begin() + address, rdram_dirty.begin() + end_addr, true);
+		if (it != rdram_dirty.begin() + end_addr)
 		{
-			if (address + i >= rdram_dirty.size())
-				return;
-			if (rdram_dirty[address + i])
-			{
-				processor->wait_for_timeline(sync_signal);
-				rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
-				sync_signal = 0;
-				return;
-			}
+			processor->wait_for_timeline(sync_signal);
+			rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
+			sync_signal = 0;
 		}
 	}
 }
