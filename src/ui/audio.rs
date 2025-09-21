@@ -3,32 +3,6 @@ use crate::ui;
 
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_AUDIO);
-
-    let device_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
-        format: sdl3_sys::audio::SDL_AUDIO_S16LE,
-        freq: 48000,
-        channels: 2,
-    };
-    ui.audio.audio_device = unsafe {
-        sdl3_sys::audio::SDL_OpenAudioDevice(
-            sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-            &device_audio_spec,
-        )
-    };
-    if ui.audio.audio_device == 0 {
-        panic!("Could not open audio device");
-    }
-
-    if !unsafe {
-        sdl3_sys::audio::SDL_GetAudioDeviceFormat(
-            ui.audio.audio_device,
-            &mut ui.audio.audio_device_spec,
-            std::ptr::null_mut(),
-        )
-    } {
-        panic!("Could not get audio device format");
-    }
-
     init_game_audio(ui, frequency);
 }
 
@@ -40,25 +14,26 @@ pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
     };
 
     ui.audio.audio_stream = unsafe {
-        sdl3_sys::audio::SDL_CreateAudioStream(&game_audio_spec, &ui.audio.audio_device_spec)
+        sdl3_sys::audio::SDL_OpenAudioDeviceStream(
+            sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+            &game_audio_spec,
+            None,
+            std::ptr::null_mut(),
+        )
     };
     if ui.audio.audio_stream.is_null() {
-        return;
+        panic!("Could not create audio stream");
     }
     if !unsafe {
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain)
-            && sdl3_sys::audio::SDL_BindAudioStream(ui.audio.audio_device, ui.audio.audio_stream)
+            && sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio.audio_stream)
     } {
-        panic!("Could not bind audio stream");
+        panic!("Could not resume audio stream");
     }
 }
 
 pub fn close(ui: &mut ui::Ui) {
     close_game_audio(ui);
-    unsafe {
-        sdl3_sys::audio::SDL_CloseAudioDevice(ui.audio.audio_device);
-        ui.audio.audio_device = 0;
-    }
 }
 
 pub fn close_game_audio(ui: &mut ui::Ui) {
