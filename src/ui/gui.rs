@@ -111,6 +111,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
         1 => 0,
         2 => 1,
         4 => 2,
+        8 => 3,
         _ => 0,
     };
     app.set_resolution(combobox_value);
@@ -249,7 +250,7 @@ pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     config.emulation.overclock = app.get_overclock_n64_cpu();
     config.emulation.disable_expansion_pak = app.get_disable_expansion_pak();
     config.emulation.usb = app.get_emulate_usb();
-    let upscale_values = [1, 2, 4];
+    let upscale_values = [1, 2, 4, 8];
     config.video.upscale = upscale_values[app.get_resolution() as usize];
 
     config.input.emulate_vru = app.get_emulate_vru();
