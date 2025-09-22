@@ -22,8 +22,8 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         let data = std::str::from_utf8(
             &device.cart.is_viewer_buffer[0x20_usize..(0x20 + length) as usize],
         );
-        if data.is_ok() {
-            print!("{}", data.unwrap());
+        if let Ok(data) = data {
+            print!("{}", data);
         }
     } else {
         let mut data = u32::from_be_bytes(
