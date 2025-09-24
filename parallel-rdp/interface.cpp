@@ -64,6 +64,7 @@ typedef struct
 	uint32_t texture_pixel_size;
 	uint32_t texture_width;
 	uint32_t framebuffer_height;
+	bool depth_buffer_enabled;
 } FrameBufferInfo;
 
 typedef struct
@@ -699,13 +700,6 @@ uint64_t rdp_process_commands()
 		case RDP::Op::TextureZBufferTriangle:
 		case RDP::Op::ShadeZBufferTriangle:
 		case RDP::Op::ShadeTextureZBufferTriangle:
-		{
-			uint32_t offset_address = (rdp_device.frame_buffer_info.depthbuffer_address + pixel_size(2, rdp_device.frame_buffer_info.framebuffer_y_offset * rdp_device.frame_buffer_info.framebuffer_width)) >> 3;
-			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
-			{
-				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(2, rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) + 7) >> 3, true);
-			}
-		}
 		case RDP::Op::FillTriangle:
 		case RDP::Op::TextureTriangle:
 		case RDP::Op::ShadeTriangle:
@@ -718,6 +712,15 @@ uint64_t rdp_process_commands()
 			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
 			{
 				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(rdp_device.frame_buffer_info.framebuffer_pixel_size, rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) + 7) >> 3, true);
+			}
+
+			if (rdp_device.frame_buffer_info.depth_buffer_enabled)
+			{
+				offset_address = (rdp_device.frame_buffer_info.depthbuffer_address + pixel_size(2, rdp_device.frame_buffer_info.framebuffer_y_offset * rdp_device.frame_buffer_info.framebuffer_width)) >> 3;
+				if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
+				{
+					std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(2, rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) + 7) >> 3, true);
+				}
 			}
 		}
 		break;
@@ -777,6 +780,9 @@ uint64_t rdp_process_commands()
 			rdp_device.frame_buffer_info.framebuffer_height = lower_right_y - upper_left_y;
 		}
 		break;
+		case RDP::Op::SetOtherModes:
+			rdp_device.frame_buffer_info.depth_buffer_enabled = (w2 >> 5) & 1;
+			break;
 		case RDP::Op::SyncFull:
 			sync_signal = processor->signal_timeline();
 
