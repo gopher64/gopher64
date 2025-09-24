@@ -781,7 +781,7 @@ uint64_t rdp_process_commands()
 		}
 		break;
 		case RDP::Op::SetOtherModes:
-			rdp_device.frame_buffer_info.depth_buffer_enabled = (w2 >> 5) & 1;
+			rdp_device.frame_buffer_info.depth_buffer_enabled = (w2 >> 4) & 3;
 			break;
 		case RDP::Op::SyncFull:
 			sync_signal = processor->signal_timeline();
