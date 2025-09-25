@@ -696,14 +696,14 @@ uint64_t rdp_process_commands()
 
 		switch (RDP::Op(command))
 		{
-		case RDP::Op::FillZBufferTriangle:
-		case RDP::Op::TextureZBufferTriangle:
-		case RDP::Op::ShadeZBufferTriangle:
-		case RDP::Op::ShadeTextureZBufferTriangle:
 		case RDP::Op::FillTriangle:
+		case RDP::Op::FillZBufferTriangle:
 		case RDP::Op::TextureTriangle:
+		case RDP::Op::TextureZBufferTriangle:
 		case RDP::Op::ShadeTriangle:
+		case RDP::Op::ShadeZBufferTriangle:
 		case RDP::Op::ShadeTextureTriangle:
+		case RDP::Op::ShadeTextureZBufferTriangle:
 		case RDP::Op::TextureRectangle:
 		case RDP::Op::TextureRectangleFlip:
 		case RDP::Op::FillRectangle:
