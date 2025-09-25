@@ -26,7 +26,7 @@ spin_sleep = "1.3"
 encoding_rs = "0.8"
 mimalloc = "0.1"
 regex = "1.11"
-tokio-tungstenite = "0.27"
+tokio-tungstenite = "0.28"
 futures = "0.3"
 socket2 = { version = "0.6", features = ["all"] }
 rand_chacha = "0.9"
