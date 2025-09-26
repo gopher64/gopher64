@@ -738,12 +738,12 @@ uint64_t rdp_process_commands()
 		break;
 		case RDP::Op::LoadBlock:
 		{
-			uint32_t upper_left_s = ((w1 >> 12) & 0xFFF) >> 2;
-			uint32_t upper_left_t = (w1 & 0xFFF) >> 2;
+			uint32_t upper_left_s = ((w1 >> 12) & 0xFFF);
+			uint32_t upper_left_t = (w1 & 0xFFF);
 			uint32_t offset_address = (rdp_device.frame_buffer_info.texture_address + pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, upper_left_s + upper_left_t * rdp_device.frame_buffer_info.texture_width)) >> 3;
 			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
 			{
-				uint32_t lower_right_s = ((w2 >> 12) & 0xFFF) >> 2;
+				uint32_t lower_right_s = ((w2 >> 12) & 0xFFF);
 				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, lower_right_s - upper_left_s) + 7) >> 3, true);
 			}
 		}
