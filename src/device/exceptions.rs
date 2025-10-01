@@ -18,7 +18,6 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
         device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP2;
     } else if device.cpu.cop0.pending_compare_interrupt {
         device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP7;
-        device.cpu.cop0.pending_compare_interrupt = false;
     }
 
     if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize]
