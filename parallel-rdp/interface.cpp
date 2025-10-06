@@ -711,7 +711,8 @@ uint64_t rdp_process_commands()
 			uint32_t offset_address = (rdp_device.frame_buffer_info.framebuffer_address + pixel_size(rdp_device.frame_buffer_info.framebuffer_pixel_size, rdp_device.frame_buffer_info.framebuffer_y_offset * rdp_device.frame_buffer_info.framebuffer_width)) >> 3;
 			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
 			{
-				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(rdp_device.frame_buffer_info.framebuffer_pixel_size, rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) + 7) >> 3, true);
+				uint32_t end_addr = std::min(offset_address + ((pixel_size(rdp_device.frame_buffer_info.framebuffer_pixel_size, rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) + 7) >> 3), static_cast<uint32_t>(rdram_dirty.size()));
+				std::fill(rdram_dirty.begin() + offset_address, rdram_dirty.begin() + end_addr, true);
 			}
 
 			if (rdp_device.frame_buffer_info.depth_buffer_enabled)
@@ -719,7 +720,8 @@ uint64_t rdp_process_commands()
 				offset_address = (rdp_device.frame_buffer_info.depthbuffer_address + pixel_size(2, rdp_device.frame_buffer_info.framebuffer_y_offset * rdp_device.frame_buffer_info.framebuffer_width)) >> 3;
 				if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
 				{
-					std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(2, rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) + 7) >> 3, true);
+					uint32_t end_addr = std::min(offset_address + ((pixel_size(2, rdp_device.frame_buffer_info.framebuffer_width * rdp_device.frame_buffer_info.framebuffer_height) + 7) >> 3), static_cast<uint32_t>(rdram_dirty.size()));
+					std::fill(rdram_dirty.begin() + offset_address, rdram_dirty.begin() + end_addr, true);
 				}
 			}
 		}
@@ -732,7 +734,8 @@ uint64_t rdp_process_commands()
 			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
 			{
 				uint32_t lower_right_t = (w2 & 0xFFF) >> 2;
-				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, (lower_right_t - upper_left_t) * rdp_device.frame_buffer_info.texture_width) + 7) >> 3, true);
+				uint32_t end_addr = std::min(offset_address + ((pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, (lower_right_t - upper_left_t) * rdp_device.frame_buffer_info.texture_width) + 7) >> 3), static_cast<uint32_t>(rdram_dirty.size()));
+				std::fill(rdram_dirty.begin() + offset_address, rdram_dirty.begin() + end_addr, true);
 			}
 		}
 		break;
@@ -744,7 +747,8 @@ uint64_t rdp_process_commands()
 			if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address])
 			{
 				uint32_t lower_right_s = ((w2 >> 12) & 0xFFF);
-				std::fill_n(rdram_dirty.begin() + offset_address, (pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, lower_right_s - upper_left_s) + 7) >> 3, true);
+				uint32_t end_addr = std::min(offset_address + ((pixel_size(rdp_device.frame_buffer_info.texture_pixel_size, lower_right_s - upper_left_s) + 7) >> 3), static_cast<uint32_t>(rdram_dirty.size()));
+				std::fill(rdram_dirty.begin() + offset_address, rdram_dirty.begin() + end_addr, true);
 			}
 		}
 		break;
