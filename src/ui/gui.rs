@@ -472,7 +472,7 @@ fn open_rom(app: &AppWindow, usb: ui::Usb) {
             select_gb_ram[i] = Some(
                 rfd::AsyncFileDialog::new()
                     .set_title(format!("GB RAM P{}", i + 1))
-                    .add_filter("GB RAM files", &["sav", "ram", "SAV", "RAM"])
+                    .add_filter("GB RAM files", &["sav", "ram", "srm", "SAV", "RAM", "SRM"])
                     .pick_file(),
             );
         }
