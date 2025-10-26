@@ -8,6 +8,7 @@ pub struct Pif {
     #[serde(with = "serde_big_array::BigArray")]
     pub ram: [u8; 64],
     pub channels: [PifChannel; 5],
+    pub input_gathered: bool,
 }
 
 #[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
@@ -96,6 +97,7 @@ fn process_channel(device: &mut device::Device, channel: usize) -> usize {
 
 pub fn update_pif_ram(device: &mut device::Device) -> u64 {
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
+    device.pif.input_gathered = true;
 
     let mut active_channels = 0;
     for k in 0..PIF_CHANNELS_COUNT {
