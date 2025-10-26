@@ -159,10 +159,13 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     if device.netplay.is_none() && paused {
         ui::video::pause_loop();
-    } else if !device.pif.input_gathered {
-        unsafe { sdl3_sys::events::SDL_PumpEvents() }; // in case the game isn't prompting for input
+    } else {
+        if !device.pif.input_gathered {
+            unsafe { sdl3_sys::events::SDL_PumpEvents() }; // in case the game isn't prompting for input
+        } else {
+            device.pif.input_gathered = false;
+        }
     }
-    device.pif.input_gathered = false;
 
     /*
     let vis = if device.cart.pal { 50 } else { 60 };
