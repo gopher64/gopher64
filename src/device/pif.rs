@@ -95,6 +95,8 @@ fn process_channel(device: &mut device::Device, channel: usize) -> usize {
 }
 
 pub fn update_pif_ram(device: &mut device::Device) -> u64 {
+    unsafe { sdl3_sys::events::SDL_PumpEvents() };
+
     let mut active_channels = 0;
     for k in 0..PIF_CHANNELS_COUNT {
         active_channels += process_channel(device, k)

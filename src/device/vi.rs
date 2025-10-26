@@ -159,6 +159,8 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     if device.netplay.is_none() && paused {
         ui::video::pause_loop();
+    } else {
+        unsafe { sdl3_sys::events::SDL_PumpEvents() }; // in case the game isn't prompting for input
     }
 
     /*
