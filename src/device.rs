@@ -322,6 +322,7 @@ impl Device {
             pif: pif::Pif {
                 rom: [0; 1984],
                 ram: [0; 64],
+                input_gathered: false,
                 channels: [pif::PifChannel {
                     tx: None,
                     tx_buf: None,
