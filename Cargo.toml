@@ -2,7 +2,7 @@
 name = "gopher64"
 version = "1.1.9"
 edition = "2024"
-rust-version = "1.90"
+rust-version = "1.91"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
