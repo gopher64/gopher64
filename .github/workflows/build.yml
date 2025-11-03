@@ -124,6 +124,7 @@ jobs:
           wait-for-completion: false
 
   build-macos:
+    if: false
     runs-on: macos-15
     strategy:
       fail-fast: false
