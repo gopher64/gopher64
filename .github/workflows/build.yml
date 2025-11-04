@@ -60,6 +60,8 @@ jobs:
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
+        env:
+          NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
         uses: actions/upload-artifact@v5
         with:
@@ -105,6 +107,7 @@ jobs:
         env:
           CC: clang-cl
           CXX: clang-cl
+          NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload unsigned artifact
         id: upload-unsigned-artifact
         uses: actions/upload-artifact@v5
@@ -149,6 +152,7 @@ jobs:
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
         env:
           AR: ar
+          NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
         uses: actions/upload-artifact@v5
         with:
