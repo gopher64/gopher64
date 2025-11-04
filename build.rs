@@ -61,7 +61,10 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/volk")
         .include("parallel-rdp/parallel-rdp-standalone/vulkan")
         .include("parallel-rdp/parallel-rdp-standalone/vulkan-headers/include")
-        .include("parallel-rdp/parallel-rdp-standalone/util")
+        .include("parallel-rdp/parallel-rdp-standalone/util");
+
+    #[cfg(feature="sdl-build-from-source")]
+    rdp_build
         .include(
             std::path::PathBuf::from(std::env::var("DEP_SDL3_OUT_DIR").to_owned().unwrap())
                 .join("include"),

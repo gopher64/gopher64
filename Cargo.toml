@@ -6,6 +6,11 @@ rust-version = "1.91"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = [ "sdl-build-from-source" ]
+sdl-build-from-source = [ "sdl3-sys/build-from-source-static", "sdl3-ttf-sys/build-from-source-static" ]
+sdl-use-pkg-config    = [ "sdl3-sys/use-pkg-config", "sdl3-ttf-sys/use-pkg-config" ]
+
 [dependencies]
 dirs = "6.0"
 zip = "6.0"
@@ -18,8 +23,8 @@ serde-big-array = "0.5"
 slint = { version = "1.12", default-features = false, features = ["compat-1-2", "std", "backend-winit", "renderer-skia-vulkan"] }
 open = "5.3"
 sha2 = "0.10"
-sdl3-sys = { version = "0.5", features = ["build-from-source-static"] }
-sdl3-ttf-sys = { version = "0.2", features = ["build-from-source-static", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
+sdl3-sys = { version = "0.5" }
+sdl3-ttf-sys = { version = "0.2", features = ["no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
 rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "tokio"] }
 tokio = {version = "1.46", features = ["rt-multi-thread", "macros"] }
 spin_sleep = "1.3"

@@ -4660,6 +4660,7 @@ checksum = "c531aa18059783450bcddc82a6effc48df5f173bb46142eb421ff2cfccf53984"
 dependencies = [
  "cc",
  "cmake",
+ "pkg-config",
  "rpkg-config",
  "sdl3-src",
 ]
@@ -4677,6 +4678,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d1d8477496fa2b081fb8f63cf8d0a9a9ba6a7a8f2a21b87e7d13d2ab6d73582"
 dependencies = [
  "cmake",
+ "pkg-config",
  "rpkg-config",
  "sdl3-sys",
  "sdl3-ttf-src",
