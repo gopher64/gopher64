@@ -45,7 +45,10 @@ cc = { version = "1.2", features = ["parallel"] }
 [profile.release]
 panic = "abort"
 lto = "thin"
+strip = true
 
 [profile.release-with-debug]
 inherits = "release"
 debug = true
+strip = false
+panic = "unwind"
