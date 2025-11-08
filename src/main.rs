@@ -8,8 +8,8 @@ mod device;
 mod netplay;
 mod savestates;
 mod ui;
-use anyhow::Context;
 use clap::Parser;
+use std::io::Error;
 use ui::gui;
 
 /// N64 emulator
@@ -75,18 +75,20 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
-    std::fs::create_dir_all(dirs.config_dir).context("could not create config dir")?;
-    std::fs::create_dir_all(dirs.data_dir.join("saves")).context("could not create save dir")?;
-    std::fs::create_dir_all(dirs.data_dir.join("states")).context("could not create state dir")?;
-
+    std::fs::create_dir_all(dirs.config_dir)?;
+    std::fs::create_dir_all(dirs.data_dir.join("saves"))?;
+    std::fs::create_dir_all(dirs.data_dir.join("states"))?;
     let args = Args::parse();
     if let Some(game) = args.game {
         let file_path = std::path::Path::new(&game);
         let Some(rom_contents) = device::get_rom_contents(file_path) else {
-            return Err(anyhow::anyhow!("Could not read ROM file: {}", file_path.display()));
+            return Err(Error::other(format!(
+                "Could not read ROM file: {}",
+                file_path.display()
+            )));
         };
         let handle = std::thread::Builder::new()
             .name("n64".to_string())
@@ -123,7 +125,7 @@ async fn main() -> anyhow::Result<()> {
         }
         if let Some(port) = args.port {
             if !(1..=4).contains(&port) {
-                return Err(anyhow::anyhow!("Port must be between 1 and 4"));
+                return Err(Error::other("Port must be between 1 and 4"));
             }
         }
         if args.list_controllers {
@@ -144,23 +146,15 @@ async fn main() -> anyhow::Result<()> {
         }
         if let Some(assign_controller) = args.assign_controller {
             let Some(port) = args.port else {
-                return Err(anyhow::anyhow!("Must specify port number"));
+                return Err(Error::other("Must specify port number"));
             };
-            ui::input::assign_controller(
-                &mut ui,
-                assign_controller,
-                port,
-            );
+            ui::input::assign_controller(&mut ui, assign_controller, port);
         }
         if let Some(profile) = args.bind_input_profile {
             let Some(port) = args.port else {
-                return Err(anyhow::anyhow!("Must specify port number"));
+                return Err(Error::other("Must specify port number"));
             };
-            ui::input::bind_input_profile(
-                &mut ui,
-                profile,
-                port,
-            );
+            ui::input::bind_input_profile(&mut ui, profile, port);
         }
     } else {
         gui::app_window();
