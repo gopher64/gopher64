@@ -123,10 +123,10 @@ async fn main() -> std::io::Result<()> {
             ui::input::clear_bindings(&mut ui);
             return Ok(());
         }
-        if let Some(port) = args.port {
-            if !(1..=4).contains(&port) {
-                return Err(Error::other("Port must be between 1 and 4"));
-            }
+        if let Some(port) = args.port
+            && !(1..=4).contains(&port)
+        {
+            return Err(Error::other("Port must be between 1 and 4"));
         }
         if args.list_controllers {
             let controllers = ui::input::get_controller_names(&ui);
