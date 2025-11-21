@@ -40,6 +40,7 @@ fn main() {
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/pipeline_event.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/query_pool.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/render_pass.cpp")
+        .file("parallel-rdp/parallel-rdp-standalone/vulkan/rtas.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/sampler.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/semaphore.cpp")
         .file("parallel-rdp/parallel-rdp-standalone/vulkan/semaphore_manager.cpp")
