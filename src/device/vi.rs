@@ -161,7 +161,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         ui::video::pause_loop(device.vi.frame_time);
     }
 
-    unsafe { sdl3_sys::events::SDL_PumpEvents() }; // in case the game isn't prompting for input
+    unsafe { sdl3_sys::events::SDL_PumpEvents() };
 
     /*
     let vis = if device.cart.pal { 50 } else { 60 };
