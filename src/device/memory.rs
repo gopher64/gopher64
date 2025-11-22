@@ -62,9 +62,14 @@ pub fn masked_write_64(dst: &mut u64, value: u64, mask: u64) {
 
 pub fn translate_address(
     device: &mut device::Device,
-    address: u64,
+    mut address: u64,
     access_type: AccessType,
 ) -> (u64, bool, bool) {
+    if (address & 0xFFFFFFFF00000000) == 0x9000000000000000 {
+        // this is a hack to support 64-bit addresses used by some homebrew
+        address |= 0xA0000000;
+    }
+
     if (address & 0xc0000000) != 0x80000000 {
         return device::tlb::get_physical_address(device, address, access_type);
     }
