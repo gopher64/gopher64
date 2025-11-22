@@ -65,13 +65,13 @@ pub fn translate_address(
     mut address: u64,
     access_type: AccessType,
 ) -> (u64, bool, bool) {
-    if (address & 0xFFFFFFFF00000000) == 0x9000000000000000 {
-        // this is a hack to support 64-bit addresses used by some homebrew
-        address |= 0xA0000000;
-    }
-
     if (address & 0xc0000000) != 0x80000000 {
-        return device::tlb::get_physical_address(device, address, access_type);
+        if (address & 0xFFFFFFFF00000000) == 0x9000000000000000 {
+            // this is a hack to support 64-bit addresses used by some homebrew
+            address |= 0xA0000000;
+        } else {
+            return device::tlb::get_physical_address(device, address, access_type);
+        }
     }
     (address & 0x1FFFFFFF, address & 0x20000000 == 0, false)
 }
