@@ -133,11 +133,11 @@ pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
     }
 }
 
-pub fn pause_loop() {
+pub fn pause_loop(frame_time: f64) {
     let mut paused = true;
     let mut frame_advance = false;
     while paused && !frame_advance {
-        std::thread::sleep(std::time::Duration::from_secs_f64(1.0 / 60.0));
+        std::thread::sleep(std::time::Duration::from_secs_f64(frame_time));
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
         let callback = unsafe { rdp_check_callback() };
         paused = callback.paused;

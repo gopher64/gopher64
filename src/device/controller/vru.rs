@@ -192,6 +192,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     &device.vru.words,
                     device.vru_window.window_notifier.as_ref().unwrap(),
                     device.vru_window.word_receiver.as_mut().unwrap(),
+                    device.vi.frame_time,
                 )
             } else {
                 0x7FFF

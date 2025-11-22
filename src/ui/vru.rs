@@ -2,6 +2,7 @@ pub fn prompt_for_match(
     words: &[String],
     window_notifier: &tokio::sync::mpsc::Sender<Option<Vec<String>>>,
     word_index_receiver: &mut tokio::sync::mpsc::Receiver<String>,
+    frame_time: f64,
 ) -> u16 {
     let mut dedup_words = words.to_owned();
     dedup_words.sort();
@@ -10,7 +11,7 @@ pub fn prompt_for_match(
     let mut result = word_index_receiver.try_recv();
     while result.is_err() {
         result = word_index_receiver.try_recv();
-        std::thread::sleep(std::time::Duration::from_secs_f64(1.0 / 60.0));
+        std::thread::sleep(std::time::Duration::from_secs_f64(frame_time));
         unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the OS doesn't complain about the game window being frozen
     }
     for (i, v) in words.iter().enumerate() {
