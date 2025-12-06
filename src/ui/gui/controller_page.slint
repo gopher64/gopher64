@@ -13,6 +13,7 @@ export global ControllerData {
     in-out property <[string]> input_profiles;
     in-out property <[string]> controller_names;
     in-out property <[int]> selected_controller;
+    in-out property <[bool]> controller_changed;
     in-out property <bool> blank_profiles;
 }
 
@@ -114,6 +115,7 @@ export component ControllerConfig inherits Page {
                         current-index: ControllerData.selected_controller[player];
                         selected => {
                             ControllerData.selected_controller[player] = self.current-index;
+                            ControllerData.controller_changed[player] = true;
                         }
                     }
                 }

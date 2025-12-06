@@ -191,6 +191,7 @@ fn controller_window(
         std::rc::Rc::new(controllers);
     app.set_controller_names(slint::ModelRc::from(controller_names_model));
 
+    let controller_changed = slint::VecModel::default();
     let selected_controllers = slint::VecModel::default();
     for selected in config.input.controller_assignment.iter() {
         let mut found = false;
@@ -204,10 +205,15 @@ fn controller_window(
         if !found {
             selected_controllers.push(0);
         }
+        controller_changed.push(false);
     }
     let selected_controllers_model: std::rc::Rc<slint::VecModel<i32>> =
         std::rc::Rc::new(selected_controllers);
     app.set_selected_controller(slint::ModelRc::from(selected_controllers_model));
+
+    let controller_changed_model: std::rc::Rc<slint::VecModel<bool>> =
+        std::rc::Rc::new(controller_changed);
+    app.set_controller_changed(slint::ModelRc::from(controller_changed_model));
 
     let weak_app = app.as_weak();
     app.on_input_profile_button_clicked(move || {
@@ -269,8 +275,10 @@ pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     }
 
     for (i, selected_controller) in app.get_selected_controller().iter().enumerate() {
-        config.input.controller_assignment[i] =
-            controller_paths[selected_controller as usize].clone();
+        if app.get_controller_changed().row_data(i).unwrap_or(false) {
+            config.input.controller_assignment[i] =
+                controller_paths[selected_controller as usize].clone();
+        }
     }
 }
 
