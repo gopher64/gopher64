@@ -187,10 +187,10 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
-            let index = if device.vru_window.window_notifier.is_some() {
+            let index = if let Some(window_notifier) = &device.vru_window.window_notifier {
                 ui::vru::prompt_for_match(
                     &device.vru.words,
-                    device.vru_window.window_notifier.as_ref().unwrap(),
+                    window_notifier,
                     device.vru_window.word_receiver.as_mut().unwrap(),
                     device.vi.frame_time,
                 )
