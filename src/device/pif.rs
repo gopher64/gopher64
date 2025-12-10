@@ -218,11 +218,11 @@ pub fn process_ram(device: &mut device::Device) {
 
 pub fn connect_pif_channels(device: &mut device::Device) {
     for i in 0..4 {
-        if device.netplay.is_none() {
-            if device.ui.config.input.controller_enabled[i] {
+        if let Some(netplay) = &device.netplay {
+            if netplay.player_data[i].reg_id != 0 {
                 device.pif.channels[i].process = Some(device::controller::process);
             }
-        } else if device.netplay.as_ref().unwrap().player_data[i].reg_id != 0 {
+        } else if device.ui.config.input.controller_enabled[i] {
             device.pif.channels[i].process = Some(device::controller::process);
         }
     }
@@ -268,16 +268,16 @@ pub fn init(device: &mut device::Device) {
     connect_pif_channels(device);
 
     for i in 0..4 {
-        if device.netplay.is_none() {
-            if device.ui.config.input.controller_enabled[i] {
-                if device.transferpaks[i].cart.rom.is_empty() {
-                    device.pif.channels[i].pak_handler = Some(default_handler);
-                } else {
-                    device.pif.channels[i].pak_handler = Some(tpak_handler);
-                }
+        if let Some(netplay) = &device.netplay {
+            if netplay.player_data[i].reg_id != 0 {
+                device.pif.channels[i].pak_handler = Some(default_handler);
             }
-        } else if device.netplay.as_ref().unwrap().player_data[i].reg_id != 0 {
-            device.pif.channels[i].pak_handler = Some(default_handler);
+        } else if device.ui.config.input.controller_enabled[i] {
+            if device.transferpaks[i].cart.rom.is_empty() {
+                device.pif.channels[i].pak_handler = Some(default_handler);
+            } else {
+                device.pif.channels[i].pak_handler = Some(tpak_handler);
+            }
         }
     }
     if device.ui.config.input.emulate_vru && device.netplay.is_none() {

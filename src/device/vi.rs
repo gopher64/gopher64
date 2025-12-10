@@ -142,11 +142,11 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     let (mut speed_limiter_toggled, paused) = ui::video::check_callback(device);
 
-    if device.netplay.is_some() {
-        netplay::send_sync_check(device);
-        if device.vi.enable_speed_limiter == device.netplay.as_ref().unwrap().fast_forward {
+    if let Some(netplay) = &mut device.netplay {
+        netplay::send_sync_check(netplay, device.cpu.cop0.regs.as_ref());
+        if device.vi.enable_speed_limiter == netplay.fast_forward {
             speed_limiter_toggled = true;
-            device.vi.enable_speed_limiter = !device.netplay.as_ref().unwrap().fast_forward;
+            device.vi.enable_speed_limiter = !netplay.fast_forward;
         }
     }
 

@@ -103,14 +103,13 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = response;
 }
 
-pub fn send_sync_check(device: &mut device::Device) {
-    let netplay = device.netplay.as_mut().unwrap();
+pub fn send_sync_check(netplay: &mut Netplay, regs: &[u64]) {
     if netplay.vi_counter.is_multiple_of(600) {
         let mut request: Vec<u8> = [UDP_SYNC_DATA].to_vec();
         request.extend_from_slice(&(netplay.vi_counter).to_be_bytes());
 
-        for i in 0..device::cop0::COP0_REGS_COUNT as usize {
-            request.extend_from_slice(&(device.cpu.cop0.regs[i] as u32).to_be_bytes());
+        for item in regs.iter().take(device::cop0::COP0_REGS_COUNT as usize) {
+            request.extend_from_slice(&(*item as u32).to_be_bytes());
         }
 
         netplay.udp_socket.send(&request).unwrap();

@@ -93,8 +93,7 @@ fn set_rng() -> rand_chacha::ChaCha8Rng {
 
 fn init_rng(device: &mut Device) {
     let mut rng_seed = set_rng().next_u64();
-    if device.netplay.is_some() {
-        let netplay = device.netplay.as_mut().unwrap();
+    if let Some(netplay) = &mut device.netplay {
         if netplay.player_number == 0 {
             netplay::send_rng(netplay, rng_seed);
         } else {
