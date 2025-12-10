@@ -139,32 +139,34 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
             }
         }
 
+        let mut public_servers: Vec<String> = vec![];
         let response = task.await;
         if let Ok(response) = response
-            && let Ok(servers) = response.json::<Vec<String>>().await
+            && let Ok(mut servers) = response.json::<Vec<String>>().await
         {
-            weak.upgrade_in_event_loop(move |handle| {
-                let server_names: slint::VecModel<slint::SharedString> = slint::VecModel::default();
-                let server_urls: slint::VecModel<slint::SharedString> = slint::VecModel::default();
-                for local_server in local_servers {
-                    server_names.push(local_server.0.into());
-                    server_urls.push(local_server.1.into());
-                }
-                for server in servers {
-                    server_names.push(server.clone().into());
-                    server_urls.push(format!("dispatcher:{server}").into());
-                }
-                server_names.push("Custom".into());
-                handle.refresh_sessions();
-                let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-                    std::rc::Rc::new(server_names);
-                let server_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-                    std::rc::Rc::new(server_urls);
-                handle.set_server_names(slint::ModelRc::from(server_names_model));
-                handle.set_server_urls(slint::ModelRc::from(server_urls_model));
-            })
-            .unwrap();
+            public_servers.append(&mut servers);
         }
+        weak.upgrade_in_event_loop(move |handle| {
+            let server_names: slint::VecModel<slint::SharedString> = slint::VecModel::default();
+            let server_urls: slint::VecModel<slint::SharedString> = slint::VecModel::default();
+            for local_server in local_servers {
+                server_names.push(local_server.0.into());
+                server_urls.push(local_server.1.into());
+            }
+            for server in public_servers {
+                server_names.push(server.clone().into());
+                server_urls.push(format!("dispatcher:{server}").into());
+            }
+            server_names.push("Custom".into());
+            handle.refresh_sessions();
+            let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                std::rc::Rc::new(server_names);
+            let server_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+                std::rc::Rc::new(server_urls);
+            handle.set_server_names(slint::ModelRc::from(server_names_model));
+            handle.set_server_urls(slint::ModelRc::from(server_urls_model));
+        })
+        .unwrap();
     });
 }
 

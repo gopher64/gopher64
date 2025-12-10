@@ -108,7 +108,7 @@ pub fn send_sync_check(netplay: &mut Netplay, regs: &[u64]) {
         let mut request: Vec<u8> = [UDP_SYNC_DATA].to_vec();
         request.extend_from_slice(&(netplay.vi_counter).to_be_bytes());
 
-        for item in regs.iter().take(device::cop0::COP0_REGS_COUNT as usize) {
+        for item in regs.iter() {
             request.extend_from_slice(&(*item as u32).to_be_bytes());
         }
 
