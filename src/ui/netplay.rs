@@ -139,13 +139,14 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
             }
         }
 
-        let mut public_servers: Vec<String> = vec![];
         let response = task.await;
-        if let Ok(response) = response
-            && let Ok(mut servers) = response.json::<Vec<String>>().await
+        let public_servers = if let Ok(response) = response
+            && let Ok(servers) = response.json::<Vec<String>>().await
         {
-            public_servers.append(&mut servers);
-        }
+            servers
+        } else {
+            vec![]
+        };
         weak.upgrade_in_event_loop(move |handle| {
             let server_names: slint::VecModel<slint::SharedString> = slint::VecModel::default();
             let server_urls: slint::VecModel<slint::SharedString> = slint::VecModel::default();
