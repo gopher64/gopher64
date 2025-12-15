@@ -63,7 +63,7 @@ jobs:
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}
@@ -110,7 +110,7 @@ jobs:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload unsigned artifact
         id: upload-unsigned-artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}.exe
@@ -154,7 +154,7 @@ jobs:
           AR: ar
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}
