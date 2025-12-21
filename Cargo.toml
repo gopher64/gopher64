@@ -8,7 +8,7 @@ rust-version = "1.92.0"
 
 [dependencies]
 dirs = "6.0"
-zip = "6.0"
+zip = "7.0"
 governor = "0.10"
 sevenz-rust2 = { version = "0.20", default-features = false }
 chrono = "0.4"
