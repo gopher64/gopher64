@@ -1,5 +1,3 @@
-use sdl3_sys::joystick::SDL_JoystickID;
-
 pub mod audio;
 pub mod cheats;
 pub mod config;
@@ -112,7 +110,7 @@ pub fn get_dirs() -> Dirs {
 }
 
 impl Ui {
-    fn construct_ui(joysticks: Vec<SDL_JoystickID>, with_sdl: bool) -> Ui {
+    fn construct_ui(joysticks: Vec<sdl3_sys::everything::SDL_JoystickID>, with_sdl: bool) -> Ui {
         let dirs = get_dirs();
 
         Ui {
