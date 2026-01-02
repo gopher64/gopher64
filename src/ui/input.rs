@@ -523,7 +523,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
             title.as_ptr(),
             640,
             480,
-            0,
+            sdl3_sys::video::SDL_WindowFlags(0),
             &mut window,
             &mut renderer,
         )
@@ -941,7 +941,7 @@ pub fn init(ui: &mut ui::Ui) {
     for i in 0..4 {
         let controller_assignment = &ui.config.input.controller_assignment[i];
         if controller_assignment.is_some() && ui.config.input.controller_enabled[i] {
-            let mut joystick_id = 0;
+            let mut joystick_id = sdl3_sys::everything::SDL_JoystickID(0);
             let assigned_path = controller_assignment.as_ref().unwrap();
 
             for joystick in ui.input.joysticks.iter() {
@@ -968,7 +968,7 @@ pub fn init(ui: &mut ui::Ui) {
                 if !profile.dinput {
                     let gamepad = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick_id) };
                     if gamepad.is_null() {
-                        println!("could not connect gamepad: {joystick_id}")
+                        println!("could not connect gamepad: {}", u32::from(joystick_id))
                     } else {
                         ui.input.controllers[i].game_controller = gamepad;
                         let properties =
@@ -987,7 +987,7 @@ pub fn init(ui: &mut ui::Ui) {
                 } else {
                     let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) };
                     if joystick.is_null() {
-                        println!("could not connect joystick: {joystick_id}")
+                        println!("could not connect joystick: {}", u32::from(joystick_id))
                     } else {
                         ui.input.controllers[i].joystick = joystick;
                         let properties =
