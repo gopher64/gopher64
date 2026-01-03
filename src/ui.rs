@@ -68,12 +68,15 @@ impl Drop for Ui {
 
 pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
     unsafe {
-        let init = sdl3_sys::init::SDL_WasInit(0);
-        if init & flag == 0 && !sdl3_sys::init::SDL_InitSubSystem(flag) {
+        if sdl3_sys::init::SDL_WasInit(flag) == 0 && !sdl3_sys::init::SDL_InitSubSystem(flag) {
             let err = std::ffi::CStr::from_ptr(sdl3_sys::error::SDL_GetError())
                 .to_str()
                 .unwrap();
-            panic!("Could not initialize SDL subsystem: {flag}, {err}");
+            panic!(
+                "Could not initialize SDL subsystem: {}, {}",
+                u32::from(flag),
+                err
+            );
         }
     }
 }
@@ -107,7 +110,7 @@ pub fn get_dirs() -> Dirs {
 }
 
 impl Ui {
-    fn construct_ui(joysticks: Vec<u32>, with_sdl: bool) -> Ui {
+    fn construct_ui(joysticks: Vec<sdl3_sys::everything::SDL_JoystickID>, with_sdl: bool) -> Ui {
         let dirs = get_dirs();
 
         Ui {

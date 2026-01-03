@@ -18,8 +18,8 @@ serde-big-array = "0.5"
 slint = { version = "1.12", default-features = false, features = ["compat-1-2", "std", "backend-winit", "renderer-skia-vulkan"] }
 open = "5.3"
 sha2 = "0.10"
-sdl3-sys = { version = "0.5", features = ["build-from-source-static"] }
-sdl3-ttf-sys = { version = "0.2", features = ["build-from-source-static", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
+sdl3-sys = { version = "0.6", features = ["build-from-source-static"] }
+sdl3-ttf-sys = { version = "0.6", features = ["build-from-source-static", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
 rfd = { version = "0.16", default-features = false, features = ["xdg-portal", "tokio", "wayland"] }
 tokio = {version = "1.46", features = ["rt-multi-thread", "macros"] }
 spin_sleep = "1.3"
@@ -34,7 +34,7 @@ fatfs = "0.3"
 semver = "1.0"
 postcard = { version = "1.1", features = ["use-std"] }
 clap = { version = "4.5", features = ["derive"] }
-reqwest = { version = "0.12", default-features = false, features = ["http2","rustls-tls","charset","json"] }
+reqwest = { version = "0.13", default-features = false, features = ["http2","rustls","charset","json","query"] }
 
 [build-dependencies]
 winresource = "0.1"
