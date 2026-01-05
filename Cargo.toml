@@ -20,7 +20,7 @@ open = "5.3"
 sha2 = "0.10"
 sdl3-sys = { version = "0.6", features = ["build-from-source-static"] }
 sdl3-ttf-sys = { version = "0.6", features = ["build-from-source-static", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
-rfd = { version = "0.16", default-features = false, features = ["xdg-portal", "tokio", "wayland"] }
+rfd = "0.17"
 tokio = {version = "1.46", features = ["rt-multi-thread", "macros"] }
 spin_sleep = "1.3"
 encoding_rs = "0.8"
