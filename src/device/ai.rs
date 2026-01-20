@@ -48,7 +48,7 @@ fn get_dma_duration(device: &device::Device) -> u64 {
     let bytes_per_sample = 4; /* XXX: assume 16bit stereo - should depends on bitrate instead */
     let length = (device.ai.regs[AI_LEN_REG as usize] & !7) as u64;
 
-    length * (device.cpu.clock_rate / (bytes_per_sample * device.ai.freq))
+    (length * device.cpu.clock_rate) / (bytes_per_sample * device.ai.freq)
 }
 
 fn do_dma(device: &mut device::Device) {
