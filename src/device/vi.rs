@@ -191,8 +191,7 @@ pub fn init(device: &mut device::Device) {
 }
 
 fn speed_limiter(device: &mut device::Device, speed_limiter_toggled: bool) {
-    let result = device.vi.limiter.as_ref().unwrap().check();
-    if let Err(outcome) = result {
+    if let Err(outcome) = device.vi.limiter.as_ref().unwrap().check() {
         let dur = outcome.wait_time_from(governor::clock::DefaultClock::default().now());
         spin_sleep::sleep(dur);
         if dur < device.vi.min_wait_time {
