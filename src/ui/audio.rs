@@ -65,6 +65,27 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
     }
 }
 
+fn adjust_audio_frequency(device: &device::Device, frequency: f32) {
+    if !device.vi.enable_speed_limiter {
+        return;
+    }
+
+    unsafe {
+        let current_ratio =
+            sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(device.ui.audio.audio_stream);
+        sdl3_sys::everything::SDL_SetAudioStreamFrequencyRatio(
+            device.ui.audio.audio_stream,
+            (current_ratio + frequency).clamp(0.99, 1.01),
+        );
+        /*
+        println!(
+            "Adjusted audio frequency ratio to {}",
+            sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(device.ui.audio.audio_stream)
+        );
+        */
+    }
+}
+
 pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
     if device.ui.audio.audio_stream.is_null() {
         return;
@@ -85,11 +106,11 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
 
     let audio_queued =
         unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(device.ui.audio.audio_stream) } as f64;
-    let min_latency = device.ai.freq as f64 * device.vi.frame_time * 4.0;
-    let acceptable_latency = min_latency * 8.0;
+    let samples_per_frame = device.ai.freq as f64 * device.vi.frame_time * 4.0;
+    let max_latency = samples_per_frame * 10.0;
 
-    if audio_queued < min_latency {
-        let silence_buffer: Vec<u8> = vec![0; min_latency as usize & !3];
+    if audio_queued < samples_per_frame {
+        let silence_buffer: Vec<u8> = vec![0; samples_per_frame as usize & !3];
         if !unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio.audio_stream,
@@ -99,17 +120,32 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
         } {
             panic!("Could not play audio");
         }
+        /*
+        println!(
+            "Audio underrun: queued {} samples, expected at least {} samples",
+            audio_queued, samples_per_frame
+        );
+        */
+        adjust_audio_frequency(device, -0.0005);
     }
 
-    if audio_queued < acceptable_latency
-        && !unsafe {
+    if audio_queued < max_latency {
+        if !unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio.audio_stream,
                 primary_buffer.as_ptr() as *const std::ffi::c_void,
                 primary_buffer.len() as i32 * 2,
             )
+        } {
+            panic!("Could not play audio");
         }
-    {
-        panic!("Could not play audio");
+    } else {
+        /*
+        println!(
+            "Audio overrun: queued {} samples, expected at most {} samples",
+            audio_queued, max_latency
+        );
+        */
+        adjust_audio_frequency(device, 0.0005);
     }
 }
