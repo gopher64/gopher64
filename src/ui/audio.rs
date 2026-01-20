@@ -66,6 +66,9 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
 }
 
 fn adjust_audio_frequency(device: &device::Device, frequency: f32) {
+    if !device.vi.enable_speed_limiter {
+        return;
+    }
     unsafe {
         let current_ratio =
             sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(device.ui.audio.audio_stream);
