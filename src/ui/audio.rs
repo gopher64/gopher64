@@ -85,8 +85,8 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
 
     let audio_queued =
         unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(device.ui.audio.audio_stream) } as f64;
-    let acceptable_latency = (device.ai.freq as f64 * 0.2) * 4.0;
-    let min_latency = (device.ai.freq as f64 * 0.02) * 4.0;
+    let min_latency = device.ai.freq as f64 * device.vi.frame_time * 4.0;
+    let acceptable_latency = min_latency * 8.0;
 
     if audio_queued < min_latency {
         let silence_buffer: Vec<u8> = vec![0; min_latency as usize & !3];
