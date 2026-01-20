@@ -65,6 +65,17 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
     }
 }
 
+fn adjust_audio_frequency(device: &device::Device, frequency: f32) {
+    unsafe {
+        let current_ratio =
+            sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(device.ui.audio.audio_stream);
+        sdl3_sys::everything::SDL_SetAudioStreamFrequencyRatio(
+            device.ui.audio.audio_stream,
+            (current_ratio + frequency).clamp(0.99, 1.01),
+        );
+    }
+}
+
 pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
     if device.ui.audio.audio_stream.is_null() {
         return;
@@ -99,17 +110,20 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
         } {
             panic!("Could not play audio");
         }
+        adjust_audio_frequency(device, -0.001);
     }
 
-    if audio_queued < acceptable_latency
-        && !unsafe {
+    if audio_queued < acceptable_latency {
+        if !unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio.audio_stream,
                 primary_buffer.as_ptr() as *const std::ffi::c_void,
                 primary_buffer.len() as i32 * 2,
             )
+        } {
+            panic!("Could not play audio");
         }
-    {
-        panic!("Could not play audio");
+    } else {
+        adjust_audio_frequency(device, 0.001);
     }
 }
