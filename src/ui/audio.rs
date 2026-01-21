@@ -75,7 +75,7 @@ fn adjust_audio_frequency(device: &device::Device, frequency: f32) {
             sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(device.ui.audio.audio_stream);
         sdl3_sys::everything::SDL_SetAudioStreamFrequencyRatio(
             device.ui.audio.audio_stream,
-            (current_ratio + frequency).clamp(0.99, 1.01),
+            (current_ratio + frequency).clamp(0.995, 1.005),
         );
         /*
         println!(
@@ -107,7 +107,7 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
     let audio_queued =
         unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(device.ui.audio.audio_stream) } as f64;
     let samples_per_frame = device.ai.freq as f64 * device.vi.frame_time * 4.0;
-    let max_latency = samples_per_frame * 10.0;
+    let max_latency = samples_per_frame * 8.0;
 
     if audio_queued < samples_per_frame {
         let silence_buffer: Vec<u8> = vec![0; samples_per_frame as usize & !3];
