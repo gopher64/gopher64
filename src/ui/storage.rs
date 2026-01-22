@@ -354,11 +354,6 @@ pub fn compress_file(data: &[(&[u8], &str)]) -> Vec<u8> {
     compressed_file
 }
 
-fn write_rom_save(ui: &ui::Ui) {
-    let data = postcard::to_stdvec(&ui.storage.saves.romsave.data).unwrap();
-    std::fs::write(ui.storage.paths.romsave_file_path.clone(), data).unwrap();
-}
-
 fn writeback_sdcard(device: &mut device::Device) {
     let length;
     let save_data: &[u8];
@@ -422,6 +417,7 @@ pub fn write_saves(device: &mut device::Device) {
 fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
     let path: &std::path::Path;
     let data: &Vec<u8>;
+    let rom_save_data: Vec<u8>;
     match save_type {
         SaveTypes::Eeprom4k | SaveTypes::Eeprom16k => {
             path = ui.storage.paths.eep_file_path.as_ref();
@@ -444,8 +440,9 @@ fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
             data = ui.storage.saves.sdcard.data.as_ref();
         }
         SaveTypes::Romsave => {
-            write_rom_save(ui);
-            return;
+            path = ui.storage.paths.romsave_file_path.as_ref();
+            rom_save_data = postcard::to_stdvec(&ui.storage.saves.romsave.data).unwrap();
+            data = rom_save_data.as_ref();
         }
     }
     let result = std::fs::write(path, data);
