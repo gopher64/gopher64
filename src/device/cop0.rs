@@ -179,6 +179,8 @@ pub fn reserved(device: &mut device::Device, _opcode: u32) {
     device::exceptions::reserved_exception(device, 0);
 }
 
+pub fn emux_xdetect(_device: &mut device::Device, _opcode: u32) {}
+
 fn get_control_registers(device: &device::Device, index: u32) -> u64 {
     match index {
         COP0_COUNT_REG => device.cpu.cop0.regs[index as usize] >> 1,
@@ -261,38 +263,38 @@ pub fn add_cycles(device: &mut device::Device, cycles: u64) {
 
 pub fn map_instructions(device: &mut device::Device) {
     device.cpu.cop0.instrs = [
-        device::cop0::mfc0,        // 0
-        device::cop0::dmfc0,       // 1
-        device::cop0::reserved,    // 2
-        device::cop0::reserved,    // 3
-        device::cop0::mtc0,        // 4
-        device::cop0::dmtc0,       // 5
-        device::cop0::reserved,    // 6
-        device::cop0::reserved,    // 7
-        device::cop0::reserved,    // 8
-        device::cop0::reserved,    // 9
-        device::cop0::reserved,    // 10
-        device::cop0::reserved,    // 11
-        device::cop0::reserved,    // 12
-        device::cop0::reserved,    // 13
-        device::cop0::reserved,    // 14
-        device::cop0::reserved,    // 15
-        device::cop0::execute_cp0, // 16
-        device::cop0::reserved,    // 17
-        device::cop0::reserved,    // 18
-        device::cop0::reserved,    // 19
-        device::cop0::reserved,    // 20
-        device::cop0::reserved,    // 21
-        device::cop0::reserved,    // 22
-        device::cop0::reserved,    // 23
-        device::cop0::reserved,    // 24
-        device::cop0::reserved,    // 25
-        device::cop0::reserved,    // 26
-        device::cop0::reserved,    // 27
-        device::cop0::reserved,    // 28
-        device::cop0::reserved,    // 29
-        device::cop0::reserved,    // 30
-        device::cop0::reserved,    // 31
+        device::cop0::mfc0,         // 0
+        device::cop0::dmfc0,        // 1
+        device::cop0::reserved,     // 2
+        device::cop0::reserved,     // 3
+        device::cop0::mtc0,         // 4
+        device::cop0::dmtc0,        // 5
+        device::cop0::reserved,     // 6
+        device::cop0::reserved,     // 7
+        device::cop0::reserved,     // 8
+        device::cop0::reserved,     // 9
+        device::cop0::reserved,     // 10
+        device::cop0::reserved,     // 11
+        device::cop0::reserved,     // 12
+        device::cop0::reserved,     // 13
+        device::cop0::reserved,     // 14
+        device::cop0::reserved,     // 15
+        device::cop0::execute_cp0,  // 16
+        device::cop0::reserved,     // 17
+        device::cop0::reserved,     // 18
+        device::cop0::reserved,     // 19
+        device::cop0::emux_xdetect, // 20
+        device::cop0::reserved,     // 21
+        device::cop0::reserved,     // 22
+        device::cop0::reserved,     // 23
+        device::cop0::reserved,     // 24
+        device::cop0::reserved,     // 25
+        device::cop0::reserved,     // 26
+        device::cop0::reserved,     // 27
+        device::cop0::reserved,     // 28
+        device::cop0::reserved,     // 29
+        device::cop0::reserved,     // 30
+        device::cop0::reserved,     // 31
     ];
 
     device.cpu.cop0.instrs2 = [
