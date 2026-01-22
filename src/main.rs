@@ -161,7 +161,7 @@ fn main() -> std::io::Result<()> {
             ui::input::bind_input_profile(&mut ui, profile, port);
         }
     } else {
-        runtime.block_on(async move {
+        runtime.block_on(async {
             gui::app_window();
         });
     }
