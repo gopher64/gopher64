@@ -390,67 +390,63 @@ pub fn run_rom(
     usb: ui::Usb,
     weak: slint::Weak<AppWindow>,
 ) {
-    std::thread::Builder::new()
-        .name("n64".to_string())
-        .stack_size(env!("N64_STACK_SIZE").parse().unwrap())
-        .spawn(move || {
-            weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
-                .unwrap();
-
-            let mut device = device::Device::new();
-            device.ui.config.rom_dir = file_path.parent().unwrap().to_path_buf();
-
-            for i in 0..4 {
-                if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
-                    device.transferpaks[i].cart.rom =
-                        std::fs::read(gb_paths.rom[i].as_ref().unwrap()).unwrap();
-
-                    device.transferpaks[i].cart.ram =
-                        std::fs::read(gb_paths.ram[i].as_ref().unwrap()).unwrap();
-                }
-            }
-
-            device.ui.usb.usb_tx = usb.usb_tx;
-            device.ui.usb.cart_rx = usb.cart_rx;
-
-            device.vru_window.window_notifier = vru_channel.vru_window_notifier;
-            device.vru_window.word_receiver = vru_channel.vru_word_receiver;
-
-            if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
-                if let Some(netplay_device) = netplay {
-                    device.netplay = Some(netplay::init(
-                        netplay_device.peer_addr,
-                        netplay_device.player_number,
-                    ));
-                } else {
-                    game_settings.cheats = {
-                        let game_crc = ui::storage::get_game_crc(&rom_contents);
-                        let cheats = ui::config::Cheats::new();
-                        cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
-                    };
-                }
-                device::run_game(&mut device, rom_contents, game_settings);
-                if device.netplay.is_some() {
-                    netplay::close(&mut device);
-                }
-            } else {
-                println!("Could not read rom file");
-            }
-
-            if let Some(vru_window_notifier) = device.vru_window.window_notifier {
-                vru_window_notifier.try_send(None).unwrap();
-            }
-
-            let rom_dir = device.ui.config.rom_dir.clone();
-            weak.upgrade_in_event_loop(move |handle| {
-                if let Some(rom_dir_str) = rom_dir.to_str() {
-                    handle.set_rom_dir(rom_dir_str.into());
-                }
-                handle.set_game_running(false);
-            })
+    tokio::spawn(async move {
+        weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
             .unwrap();
+
+        let mut device = device::Device::new();
+        device.ui.config.rom_dir = file_path.parent().unwrap().to_path_buf();
+
+        for i in 0..4 {
+            if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
+                device.transferpaks[i].cart.rom =
+                    std::fs::read(gb_paths.rom[i].as_ref().unwrap()).unwrap();
+
+                device.transferpaks[i].cart.ram =
+                    std::fs::read(gb_paths.ram[i].as_ref().unwrap()).unwrap();
+            }
+        }
+
+        device.ui.usb.usb_tx = usb.usb_tx;
+        device.ui.usb.cart_rx = usb.cart_rx;
+
+        device.vru_window.window_notifier = vru_channel.vru_window_notifier;
+        device.vru_window.word_receiver = vru_channel.vru_word_receiver;
+
+        if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
+            if let Some(netplay_device) = netplay {
+                device.netplay = Some(netplay::init(
+                    netplay_device.peer_addr,
+                    netplay_device.player_number,
+                ));
+            } else {
+                game_settings.cheats = {
+                    let game_crc = ui::storage::get_game_crc(&rom_contents);
+                    let cheats = ui::config::Cheats::new();
+                    cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
+                };
+            }
+            device::run_game(&mut device, rom_contents, game_settings);
+            if device.netplay.is_some() {
+                netplay::close(&mut device);
+            }
+        } else {
+            println!("Could not read rom file");
+        }
+
+        if let Some(vru_window_notifier) = device.vru_window.window_notifier {
+            vru_window_notifier.try_send(None).unwrap();
+        }
+
+        let rom_dir = device.ui.config.rom_dir.clone();
+        weak.upgrade_in_event_loop(move |handle| {
+            if let Some(rom_dir_str) = rom_dir.to_str() {
+                handle.set_rom_dir(rom_dir_str.into());
+            }
+            handle.set_game_running(false);
         })
         .unwrap();
+    });
 }
 
 fn open_rom(app: &AppWindow, usb: ui::Usb) {
