@@ -29,14 +29,6 @@ pub struct Vru {
     pub word_mappings: HashMap<String, String>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct VruWindow {
-    #[serde(skip)]
-    pub window_notifier: Option<tokio::sync::mpsc::Sender<Option<Vec<String>>>>,
-    #[serde(skip)]
-    pub word_receiver: Option<tokio::sync::mpsc::Receiver<String>>,
-}
-
 pub fn init(device: &mut device::Device) {
     reset_vru(device);
     create_word_mappings(device);
@@ -187,13 +179,8 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
-            let index = if let Some(window_notifier) = &device.vru_window.window_notifier {
-                ui::vru::prompt_for_match(
-                    &device.vru.words,
-                    window_notifier,
-                    device.vru_window.word_receiver.as_mut().unwrap(),
-                    device.vi.frame_time,
-                )
+            let index = if let Some(weak) = &device.ui.weak {
+                ui::vru::prompt_for_match(&device.vru.words, weak, device.vi.frame_time)
             } else {
                 0x7FFF
             };

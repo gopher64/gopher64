@@ -53,6 +53,7 @@ pub struct Ui {
     pub storage: Storage,
     pub video: Video,
     pub usb: Usb,
+    pub weak: Option<slint::Weak<gui::AppWindow>>,
 }
 
 impl Drop for Ui {
@@ -156,27 +157,27 @@ impl Ui {
                     write_to_disk: true,
                     eeprom: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     sram: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     flash: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     mempak: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     sdcard: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     romsave: storage::RomSave {
                         data: std::collections::HashMap::new(),
-                        written: false,
+                        write_pending: false,
                     },
                 },
             },
@@ -195,6 +196,7 @@ impl Ui {
                 usb_tx: None,
                 cart_rx: None,
             },
+            weak: None,
             dirs,
             with_sdl,
         }
