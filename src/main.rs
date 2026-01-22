@@ -165,5 +165,6 @@ fn main() -> std::io::Result<()> {
             gui::app_window();
         });
     }
+    runtime.shutdown_timeout(std::time::Duration::from_secs(1));
     Ok(())
 }
