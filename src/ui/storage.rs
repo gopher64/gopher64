@@ -489,13 +489,6 @@ fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
     let save_data = data.clone();
     let save_path = path.to_path_buf();
     tokio::spawn(async move {
-        let result = std::fs::write(save_path.clone(), save_data);
-        if result.is_err() {
-            panic!(
-                "could not save {} {}",
-                save_path.display(),
-                result.err().unwrap()
-            )
-        }
+        std::fs::write(save_path, save_data).unwrap();
     });
 }
