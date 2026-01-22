@@ -82,10 +82,11 @@ pub fn create_savestate(device: &device::Device) {
         (&rdp_state, "rdp_state"),
     ];
     let compressed_file = ui::storage::compress_file(data);
-    let path = device.ui.storage.paths.savestate_file_path.clone();
-    tokio::spawn(async move {
-        std::fs::write(path, compressed_file).unwrap();
-    });
+    std::fs::write(
+        device.ui.storage.paths.savestate_file_path.clone(),
+        compressed_file,
+    )
+    .unwrap();
     ui::video::onscreen_message(
         &device.ui,
         &format!(
