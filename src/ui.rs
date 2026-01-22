@@ -53,6 +53,7 @@ pub struct Ui {
     pub storage: Storage,
     pub video: Video,
     pub usb: Usb,
+    pub weak: Option<slint::Weak<gui::AppWindow>>,
 }
 
 impl Drop for Ui {
@@ -195,6 +196,7 @@ impl Ui {
                 usb_tx: None,
                 cart_rx: None,
             },
+            weak: None,
             dirs,
             with_sdl,
         }
