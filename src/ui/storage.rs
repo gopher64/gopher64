@@ -28,13 +28,13 @@ pub struct Paths {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Save {
     pub data: Vec<u8>,
-    pub written: bool,
+    pub write_pending: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct RomSave {
     pub data: std::collections::HashMap<u32, u8>,
-    pub written: bool,
+    pub write_pending: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -357,7 +357,7 @@ pub fn compress_file(data: &[(&[u8], &str)]) -> Vec<u8> {
 fn writeback_sdcard(device: &mut device::Device) {
     let length;
     let save_data: &[u8];
-    if device.ui.storage.saves.eeprom.written {
+    if device.ui.storage.saves.eeprom.write_pending {
         if device
             .ui
             .storage
@@ -369,12 +369,15 @@ fn writeback_sdcard(device: &mut device::Device) {
             length = 4;
         }
         save_data = device.ui.storage.saves.eeprom.data.as_ref();
-    } else if device.ui.storage.saves.sram.written {
+        device.ui.storage.saves.eeprom.write_pending = false;
+    } else if device.ui.storage.saves.sram.write_pending {
         length = device.ui.storage.saves.sram.data.len() / 512;
         save_data = device.ui.storage.saves.sram.data.as_ref();
-    } else if device.ui.storage.saves.flash.written {
+        device.ui.storage.saves.sram.write_pending = false;
+    } else if device.ui.storage.saves.flash.write_pending {
         length = device.ui.storage.saves.flash.data.len() / 512;
         save_data = device.ui.storage.saves.flash.data.as_ref();
+        device.ui.storage.saves.flash.write_pending = false;
     } else {
         return;
     }
@@ -384,37 +387,69 @@ fn writeback_sdcard(device: &mut device::Device) {
         device.ui.storage.saves.sdcard.data[offset..offset + 512]
             .copy_from_slice(&save_data[i * 512..(i + 1) * 512]);
     }
-    device.ui.storage.saves.sdcard.written = true;
+    device.ui.storage.saves.sdcard.write_pending = true;
 }
 
 pub fn write_saves(device: &mut device::Device) {
     if device.netplay.is_none() || device.netplay.as_ref().unwrap().player_number == 0 {
         if device.ui.storage.saves.write_to_disk {
-            if device.ui.storage.saves.eeprom.written {
-                write_save(&device.ui, SaveTypes::Eeprom16k)
+            if device.ui.storage.saves.eeprom.write_pending {
+                write_save(&mut device.ui, SaveTypes::Eeprom16k)
             }
-            if device.ui.storage.saves.sram.written {
-                write_save(&device.ui, SaveTypes::Sram)
+            if device.ui.storage.saves.sram.write_pending {
+                write_save(&mut device.ui, SaveTypes::Sram)
             }
-            if device.ui.storage.saves.flash.written {
-                write_save(&device.ui, SaveTypes::Flash)
+            if device.ui.storage.saves.flash.write_pending {
+                write_save(&mut device.ui, SaveTypes::Flash)
             }
-            if device.ui.storage.saves.romsave.written {
-                write_save(&device.ui, SaveTypes::Romsave)
+            if device.ui.storage.saves.romsave.write_pending {
+                write_save(&mut device.ui, SaveTypes::Romsave)
             }
         } else {
             writeback_sdcard(device)
         }
-        if device.ui.storage.saves.mempak.written {
-            write_save(&device.ui, SaveTypes::Mempak)
+        if device.ui.storage.saves.mempak.write_pending {
+            write_save(&mut device.ui, SaveTypes::Mempak)
         }
-        if device.ui.storage.saves.sdcard.written {
-            write_save(&device.ui, SaveTypes::Sdcard)
+        if device.ui.storage.saves.sdcard.write_pending {
+            write_save(&mut device.ui, SaveTypes::Sdcard)
         }
     }
 }
 
-fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
+pub fn save_event(device: &mut device::Device) {
+    write_saves(device);
+}
+
+pub fn schedule_save(device: &mut device::Device, save_type: SaveTypes) {
+    match save_type {
+        SaveTypes::Eeprom4k | SaveTypes::Eeprom16k => {
+            device.ui.storage.saves.eeprom.write_pending = true;
+        }
+        SaveTypes::Sram => {
+            device.ui.storage.saves.sram.write_pending = true;
+        }
+        SaveTypes::Flash => {
+            device.ui.storage.saves.flash.write_pending = true;
+        }
+        SaveTypes::Mempak => {
+            device.ui.storage.saves.mempak.write_pending = true;
+        }
+        SaveTypes::Sdcard => {
+            device.ui.storage.saves.sdcard.write_pending = true;
+        }
+        SaveTypes::Romsave => {
+            device.ui.storage.saves.romsave.write_pending = true;
+        }
+    }
+    device::events::create_event(
+        device,
+        device::events::EVENT_TYPE_SAVE,
+        device.cpu.clock_rate, // 1 second
+    );
+}
+
+fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
     let path: &std::path::Path;
     let data: &Vec<u8>;
     let rom_save_data: Vec<u8>;
@@ -422,35 +457,38 @@ fn write_save(ui: &ui::Ui, save_type: SaveTypes) {
         SaveTypes::Eeprom4k | SaveTypes::Eeprom16k => {
             path = ui.storage.paths.eep_file_path.as_ref();
             data = ui.storage.saves.eeprom.data.as_ref();
+            ui.storage.saves.eeprom.write_pending = false;
         }
         SaveTypes::Sram => {
             path = ui.storage.paths.sra_file_path.as_ref();
             data = ui.storage.saves.sram.data.as_ref();
+            ui.storage.saves.sram.write_pending = false;
         }
         SaveTypes::Flash => {
             path = ui.storage.paths.fla_file_path.as_ref();
             data = ui.storage.saves.flash.data.as_ref();
+            ui.storage.saves.flash.write_pending = false;
         }
         SaveTypes::Mempak => {
             path = ui.storage.paths.pak_file_path.as_ref();
             data = ui.storage.saves.mempak.data.as_ref();
+            ui.storage.saves.mempak.write_pending = false;
         }
         SaveTypes::Sdcard => {
             path = ui.storage.paths.sdcard_file_path.as_ref();
             data = ui.storage.saves.sdcard.data.as_ref();
+            ui.storage.saves.sdcard.write_pending = false;
         }
         SaveTypes::Romsave => {
             path = ui.storage.paths.romsave_file_path.as_ref();
             rom_save_data = postcard::to_stdvec(&ui.storage.saves.romsave.data).unwrap();
             data = rom_save_data.as_ref();
+            ui.storage.saves.romsave.write_pending = false;
         }
     }
-    let result = std::fs::write(path, data);
-    if result.is_err() {
-        panic!(
-            "could not save {} {}",
-            path.display(),
-            result.err().unwrap()
-        )
-    }
+    let save_data = data.clone();
+    let save_path = path.to_path_buf();
+    tokio::spawn(async move {
+        let _ = std::fs::write(save_path, save_data);
+    });
 }

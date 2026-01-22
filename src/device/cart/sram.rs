@@ -107,7 +107,7 @@ fn write_mem_sram(device: &mut device::Device, address: u64, value: u32, mask: u
     device.ui.storage.saves.sram.data[masked_address..masked_address + 4]
         .copy_from_slice(&data.to_be_bytes());
 
-    device.ui.storage.saves.sram.written = true
+    ui::storage::schedule_save(device, ui::storage::SaveTypes::Sram);
 }
 
 fn write_mem_flash(device: &mut device::Device, address: u64, value: u32, mask: u32) {
@@ -167,7 +167,7 @@ fn dma_read_sram(device: &mut device::Device, mut cart_addr: u32, mut dram_addr:
         j += 1;
     }
 
-    device.ui.storage.saves.sram.written = true
+    ui::storage::schedule_save(device, ui::storage::SaveTypes::Sram);
 }
 
 fn dma_read_flash(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) {
@@ -331,12 +331,12 @@ fn flashram_command(device: &mut device::Device, command: u32) {
                 for i in 0..128 * 128 {
                     device.ui.storage.saves.flash.data[offset + i] = 0xFF;
                 }
-                device.ui.storage.saves.flash.written = true
+                ui::storage::schedule_save(device, ui::storage::SaveTypes::Flash);
             } else if device.cart.flashram.mode == FlashramMode::ChipErase {
                 for i in 0..FLASHRAM_SIZE {
                     device.ui.storage.saves.flash.data[i] = 0xFF;
                 }
-                device.ui.storage.saves.flash.written = true
+                ui::storage::schedule_save(device, ui::storage::SaveTypes::Flash);
             } else {
                 panic!("Unexpected flash erase command")
             }
@@ -356,7 +356,7 @@ fn flashram_command(device: &mut device::Device, command: u32) {
             for i in 0..128 {
                 device.ui.storage.saves.flash.data[offset + i] = device.cart.flashram.page_buf[i];
             }
-            device.ui.storage.saves.flash.written = true;
+            ui::storage::schedule_save(device, ui::storage::SaveTypes::Flash);
 
             /* clear program busy flag, set program success flag, transition to status mode */
             device.cart.flashram.status &= !0x01;

@@ -1,5 +1,6 @@
 use crate::device;
 use crate::netplay;
+use crate::ui;
 use sha2::{Digest, Sha256};
 
 pub const CART_MASK: usize = 0xFFFFFFF;
@@ -63,7 +64,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
                 .data
                 .insert((masked_address + i) as u32, *item);
         }
-        device.ui.storage.saves.romsave.written = true;
+        ui::storage::schedule_save(device, ui::storage::SaveTypes::Romsave);
     }
 
     device.cart.latch = value & mask;
@@ -94,7 +95,7 @@ pub fn dma_read(
                     .unwrap_or(&0),
             );
         }
-        device.ui.storage.saves.romsave.written = true;
+        ui::storage::schedule_save(device, ui::storage::SaveTypes::Romsave);
     }
 
     device::pi::calculate_cycles(device, 1, length)

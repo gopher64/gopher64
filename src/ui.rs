@@ -156,27 +156,27 @@ impl Ui {
                     write_to_disk: true,
                     eeprom: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     sram: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     flash: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     mempak: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     sdcard: storage::Save {
                         data: Vec::new(),
-                        written: false,
+                        write_pending: false,
                     },
                     romsave: storage::RomSave {
                         data: std::collections::HashMap::new(),
-                        written: false,
+                        write_pending: false,
                     },
                 },
             },

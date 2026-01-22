@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 
 pub const MEMPAK_SIZE: usize = 0x8000;
 const MPK_PAGE_SIZE: usize = 256;
@@ -96,6 +97,6 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
         device.ui.storage.saves.mempak.data[offset..offset + size]
             .copy_from_slice(&device.pif.ram[data..data + size]);
 
-        device.ui.storage.saves.mempak.written = true
+        ui::storage::schedule_save(device, ui::storage::SaveTypes::Mempak);
     }
 }

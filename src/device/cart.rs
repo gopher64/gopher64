@@ -147,7 +147,7 @@ fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, 
 
     device.pif.ram[status] = 0x00;
 
-    device.ui.storage.saves.eeprom.written = true
+    ui::storage::schedule_save(device, ui::storage::SaveTypes::Eeprom4k);
 }
 
 fn time2data(device: &mut device::Device, offset: usize) {

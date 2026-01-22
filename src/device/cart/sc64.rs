@@ -208,7 +208,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                 .copy_from_slice(&data);
                             i += 4;
                         }
-                        device.ui.storage.saves.sdcard.written = true;
+                        ui::storage::schedule_save(device, ui::storage::SaveTypes::Sdcard);
                     }
                     'U' => {
                         device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0;
@@ -405,7 +405,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         device::memory::masked_write_32(&mut data, value, mask);
         device.ui.storage.saves.eeprom.data[masked_address..masked_address + 4]
             .copy_from_slice(&data.to_be_bytes());
-        device.ui.storage.saves.eeprom.written = true
+        ui::storage::schedule_save(device, ui::storage::SaveTypes::Eeprom4k);
     } else {
         let masked_address = address as usize & SC64_BUFFER_MASK;
         let mut data = u32::from_be_bytes(
@@ -429,7 +429,7 @@ pub fn dma_read(
     let buffer = if cart_addr & 0x2000 != 0 {
         device::cart::format_eeprom(device);
         cart_addr &= SC64_EEPROM_MASK as u32;
-        device.ui.storage.saves.eeprom.written = true;
+        ui::storage::schedule_save(device, ui::storage::SaveTypes::Eeprom4k);
         &mut device.ui.storage.saves.eeprom.data
     } else {
         cart_addr &= SC64_BUFFER_MASK as u32;
