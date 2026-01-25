@@ -309,7 +309,7 @@ pub fn set_rumble(ui: &ui::Ui, channel: usize, rumble: u8) {
                 controller,
                 (rumble & 1) as u16 * u16::MAX,
                 (rumble & 1) as u16 * u16::MAX,
-                (rumble & 1) as u32 * 60000,
+                (rumble & 1) as u32 * sdl3_sys::haptic::SDL_HAPTIC_INFINITY,
             )
         };
     } else if !joystick.is_null() {
@@ -318,7 +318,7 @@ pub fn set_rumble(ui: &ui::Ui, channel: usize, rumble: u8) {
                 joystick,
                 (rumble & 1) as u16 * u16::MAX,
                 (rumble & 1) as u16 * u16::MAX,
-                (rumble & 1) as u32 * 60000,
+                (rumble & 1) as u32 * sdl3_sys::haptic::SDL_HAPTIC_INFINITY,
             )
         };
     }
