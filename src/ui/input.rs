@@ -143,6 +143,17 @@ fn get_button_from_i32(button: i32) -> sdl3_sys::gamepad::SDL_GamepadButton {
         12 => sdl3_sys::gamepad::SDL_GamepadButton::DPAD_DOWN,
         13 => sdl3_sys::gamepad::SDL_GamepadButton::DPAD_LEFT,
         14 => sdl3_sys::gamepad::SDL_GamepadButton::DPAD_RIGHT,
+        15 => sdl3_sys::gamepad::SDL_GamepadButton::MISC1,
+        16 => sdl3_sys::gamepad::SDL_GamepadButton::RIGHT_PADDLE1,
+        17 => sdl3_sys::gamepad::SDL_GamepadButton::LEFT_PADDLE1,
+        18 => sdl3_sys::gamepad::SDL_GamepadButton::RIGHT_PADDLE2,
+        19 => sdl3_sys::gamepad::SDL_GamepadButton::LEFT_PADDLE2,
+        20 => sdl3_sys::gamepad::SDL_GamepadButton::TOUCHPAD,
+        21 => sdl3_sys::gamepad::SDL_GamepadButton::MISC2,
+        22 => sdl3_sys::gamepad::SDL_GamepadButton::MISC3,
+        23 => sdl3_sys::gamepad::SDL_GamepadButton::MISC4,
+        24 => sdl3_sys::gamepad::SDL_GamepadButton::MISC5,
+        25 => sdl3_sys::gamepad::SDL_GamepadButton::MISC6,
         _ => panic!("Invalid button"),
     }
 }
