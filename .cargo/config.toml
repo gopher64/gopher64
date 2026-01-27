@@ -7,10 +7,29 @@ linker = "rust-lld"
 [target.'cfg(target_arch = "x86_64")']
 rustflags = ["-C", "target-cpu=x86-64-v3"]
 
-[target.'cfg(target_arch = "aarch64")']
+[target.'cfg(all(target_arch = "aarch64", not(target_os = "macos")))']
 rustflags = ["-C", "target-cpu=cortex-a76"]
+
+[target.'aarch64-apple-darwin']
+rustflags = [
+    "-L", "/opt/homebrew/opt/freetype/lib",
+    "-l", "freetype",
+    "-C", "link-arg=-isysroot",
+    "-C", "link-arg=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+]
+
+[target.'x86_64-apple-darwin']
+rustflags = [
+    "-L", "/usr/local/opt/freetype/lib",
+    "-l", "freetype",
+    "-C", "link-arg=-isysroot",
+    "-C", "link-arg=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+]
 
 [env]
 CC = "clang"
 CXX = "clang++"
 AR = "llvm-ar"
+
+[target.apple-darwin.env]
+MACOSX_DEPLOYMENT_TARGET = "14.0"
