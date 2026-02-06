@@ -10,7 +10,7 @@ include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-use rand_chacha::rand_core::{RngCore, SeedableRng};
+use rand::{Rng, SeedableRng};
 
 use crate::{cheats, netplay, ui};
 use std::{collections::HashMap, fs, io::Read};
@@ -87,8 +87,8 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
     ui::video::close(&device.ui);
 }
 
-fn set_rng() -> rand_chacha::ChaCha8Rng {
-    rand_chacha::ChaCha8Rng::from_os_rng()
+fn set_rng() -> rand::rngs::ChaCha8Rng {
+    rand::rngs::ChaCha8Rng::try_from_rng(&mut rand::rngs::SysRng).unwrap()
 }
 
 fn init_rng(device: &mut Device) {
@@ -100,7 +100,7 @@ fn init_rng(device: &mut Device) {
             rng_seed = netplay::receive_rng(netplay);
         }
     }
-    device.rng = rand_chacha::ChaCha8Rng::seed_from_u64(rng_seed);
+    device.rng = rand::rngs::ChaCha8Rng::seed_from_u64(rng_seed);
 }
 
 fn swap_rom(contents: Vec<u8>) -> Option<Vec<u8>> {
@@ -206,7 +206,7 @@ pub struct Device {
     pub si: si::Si,
     pub ri: ri::Ri,
     #[serde(skip, default = "set_rng")]
-    pub rng: rand_chacha::ChaCha8Rng,
+    pub rng: rand::rngs::ChaCha8Rng,
     pub vru: controller::vru::Vru,
     pub transferpaks: [controller::transferpak::TransferPak; 4],
     pub cheats: cheats::Cheats,

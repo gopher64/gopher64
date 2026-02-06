@@ -1,7 +1,6 @@
-use rand_chacha::rand_core::RngCore;
-
 use crate::device;
 use crate::ui;
+use rand::Rng;
 
 const SI_DRAM_ADDR_REG: u32 = 0;
 const SI_PIF_ADDR_RD64B_REG: u32 = 1;
@@ -39,7 +38,7 @@ pub fn read_regs(
     device.si.regs[((address & 0xFFFF) >> 2) as usize]
 }
 
-fn randomize_interrupt_time(rng: &mut rand_chacha::ChaCha8Rng) -> u64 {
+fn randomize_interrupt_time(rng: &mut rand::rngs::ChaCha8Rng) -> u64 {
     rng.next_u64() % 0x100
 }
 

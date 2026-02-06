@@ -1,6 +1,6 @@
 use crate::device;
 use crate::ui;
-use rand_chacha::rand_core::RngCore;
+use rand::Rng;
 
 const PI_DRAM_ADDR_REG: u32 = 0;
 const PI_CART_ADDR_REG: u32 = 1;
@@ -169,7 +169,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     }
 }
 
-fn randomize_interrupt_time(rng: &mut rand_chacha::ChaCha8Rng) -> u64 {
+fn randomize_interrupt_time(rng: &mut rand::rngs::ChaCha8Rng) -> u64 {
     rng.next_u64() % 0x10
 }
 
