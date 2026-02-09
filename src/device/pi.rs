@@ -169,7 +169,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     }
 }
 
-fn randomize_interrupt_time(rng: &mut rand::rngs::ChaCha8Rng) -> u64 {
+fn randomize_interrupt_time(rng: &mut rand::rngs::Xoshiro256PlusPlus) -> u64 {
     rng.next_u64() % 0x10
 }
 
