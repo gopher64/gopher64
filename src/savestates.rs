@@ -1,4 +1,4 @@
-use crate::{device, ui};
+use crate::{cheats, device, ui};
 #[cfg(target_arch = "aarch64")]
 use device::__m128i;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
@@ -198,6 +198,11 @@ pub fn load_savestate(device: &mut device::Device) {
             ui::audio::close_game_audio(&mut device.ui);
             ui::audio::init_game_audio(&mut device.ui, device.ai.freq);
             ui::video::load_state(device, rdp_state.as_ptr());
+
+            if device.cheats.enabled {
+                cheats::execute_cheats(device, device.cheats.cheats.clone());
+            }
+
             ui::video::onscreen_message(
                 &device.ui,
                 &format!(
