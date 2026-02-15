@@ -8,9 +8,9 @@ rust-version = "1.93.1"
 
 [dependencies]
 dirs = "6.0"
-zip = "7.0"
+zip = "8.0"
 governor = "0.10"
-sevenz-rust2 = { version = "0.20", default-features = false }
+sevenz-rust2 = "0.20"
 chrono = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -34,7 +34,7 @@ fatfs = "0.3"
 semver = "1.0"
 postcard = { version = "1.1", features = ["use-std"] }
 clap = { version = "4.5", features = ["derive"] }
-reqwest = { version = "0.13", default-features = false, features = ["http2","rustls","charset","json","query"] }
+reqwest = { version = "0.13", features = ["json", "query"] }
 
 [build-dependencies]
 winresource = "0.1"
