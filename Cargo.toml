@@ -36,6 +36,10 @@ postcard = { version = "1.1", features = ["use-std"] }
 clap = { version = "4.5", features = ["derive"] }
 reqwest = { version = "0.13", features = ["json", "query"] }
 
+[target.'apple-darwin'.dependencies]
+sdl3-sys = "0.5"
+sdl3-ttf-sys = "0.2"
+
 [build-dependencies]
 winresource = "0.1"
 bindgen = "0.72"
@@ -52,3 +56,9 @@ inherits = "release"
 debug = true
 strip = false
 panic = "unwind"
+
+[package.metadata.bundle]
+name = "Gopher64"
+identifier = "com.github.gopher64.gopher64"
+icon = ["data/icon/gopher64.icns"]
+category = "public.app-category.games"
