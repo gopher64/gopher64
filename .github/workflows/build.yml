@@ -63,10 +63,11 @@ jobs:
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}
+          archive: false
 
   build-windows:
     runs-on: ${{ matrix.os }}
@@ -110,10 +111,11 @@ jobs:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload unsigned artifact
         id: upload-unsigned-artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}.exe
+          archive: false
       - name: SignPath
         if: ${{ github.ref_type == 'tag' }}
         uses: signpath/github-action-submit-signing-request@v2.0
@@ -154,7 +156,8 @@ jobs:
           AR: ar
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}
+          archive: false
