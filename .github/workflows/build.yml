@@ -79,10 +79,10 @@ jobs:
             target: x86_64-pc-windows-msvc
             arch: windows-x86_64
             llvm: win64
-          #- os: windows-11-arm
-          #  target: aarch64-pc-windows-msvc
-          #  arch: windows-aarch64
-          #  llvm: woa64
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            arch: windows-aarch64
+            llvm: woa64
     steps:
       - uses: actions/checkout@v6
         with:
