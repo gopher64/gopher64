@@ -178,10 +178,10 @@ fn main() {
 
         simd_build
             .cpp(true)
-            .std("c17")
+            .std("c++23")
             .flag("-D_POSIX_C_SOURCE=200112L")
             .flag("-DSSE2NEON_SUPPRESS_WARNINGS")
-            .file("src/compat/aarch64.c")
+            .file("src/compat/aarch64.cpp")
             .file(std::env::temp_dir().join("bindgen").join("extern.c"))
             .include(".")
             .compile("simd");
