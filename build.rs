@@ -177,6 +177,7 @@ fn main() {
             .expect("Couldn't write bindings!");
 
         simd_build
+            .cpp(true)
             .std("c17")
             .flag("-D_POSIX_C_SOURCE=200112L")
             .flag("-DSSE2NEON_SUPPRESS_WARNINGS")
