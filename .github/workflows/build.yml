@@ -158,7 +158,6 @@ jobs:
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
         env:
-          AR: ar
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
         uses: actions/upload-artifact@v7
