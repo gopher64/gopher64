@@ -94,6 +94,9 @@ fn main() {
             .set_icon("data/icon/icon.ico")
             .compile()
             .unwrap();
+    } else if os == "macos" {
+        println!("cargo:rustc-link-search=native=/opt/homebrew/opt/freetype/lib");
+        println!("cargo:rustc-link-lib=freetype");
     }
 
     volk_build.flag("-flto=thin");
