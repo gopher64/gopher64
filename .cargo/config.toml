@@ -14,4 +14,4 @@ rustflags = ["-C", "target-cpu=cortex-a76"]
 CC = "clang"
 CXX = "clang++"
 AR = "llvm-ar"
-MACOSX_DEPLOYMENT_TARGET = { value = "15.0", force = true }
+MACOSX_DEPLOYMENT_TARGET = "15.5"
