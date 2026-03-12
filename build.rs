@@ -94,6 +94,19 @@ fn main() {
             .set_icon("data/icon/icon.ico")
             .compile()
             .unwrap();
+    } else if os == "macos" {
+        println!("cargo:rustc-link-search=native=/opt/homebrew/opt/freetype/lib");
+        println!("cargo:rustc-link-lib=freetype");
+
+        let output = std::process::Command::new("clang")
+            .args(["--print-runtime-dir"])
+            .output()
+            .unwrap();
+
+        let runtime_dir = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        println!("cargo:rustc-link-search=native={}", runtime_dir);
+        println!("cargo:rustc-link-lib=static=clang_rt.osx");
     }
 
     volk_build.flag("-flto=thin");

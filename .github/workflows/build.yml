@@ -129,16 +129,14 @@ jobs:
           wait-for-completion: false
 
   build-macos:
-    if: false
     runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-apple-darwin
-            arch: mac-x86_64
           - target: aarch64-apple-darwin
             arch: mac-aarch64
+            llvm: ARM64
     steps:
       - uses: actions/checkout@v6
         with:
@@ -147,13 +145,19 @@ jobs:
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+      - name: Set LLVM_VERSION
+        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: ${{ env.LLVM_VERSION }}
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-macOS-${{ matrix.llvm }}.tar.xz
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
         env:
-          AR: ar
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
         uses: actions/upload-artifact@v7
