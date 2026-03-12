@@ -129,7 +129,7 @@ jobs:
           wait-for-completion: false
 
   build-macos:
-    runs-on: macos-26
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
