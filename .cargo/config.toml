@@ -14,5 +14,5 @@ rustflags = ["-C", "target-cpu=cortex-a76"]
 CC = "clang"
 CXX = "clang++"
 AR = "llvm-ar"
-MACOSX_DEPLOYMENT_TARGET = "15.0"
+MACOSX_DEPLOYMENT_TARGET = "11.0"
 SDKROOT = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
