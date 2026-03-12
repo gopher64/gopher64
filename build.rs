@@ -77,7 +77,7 @@ fn main() {
     let opt_flag = if arch == "x86_64" {
         "-march=x86-64-v3"
     } else if arch == "aarch64" {
-        "-march=armv8.2-a"
+        "-march=armv8.4-a"
     } else {
         panic!("unknown arch")
     };

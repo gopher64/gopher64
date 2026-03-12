@@ -8,7 +8,7 @@ linker = "rust-lld"
 rustflags = ["-C", "target-cpu=x86-64-v3"]
 
 [target.'cfg(target_arch = "aarch64")']
-rustflags = ["-C", "target-cpu=cortex-a76"]
+rustflags = ["-C", "target-cpu=apple-m1"]
 
 [env]
 CC = "clang"
