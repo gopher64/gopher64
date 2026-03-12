@@ -97,7 +97,6 @@ fn main() {
     } else if os == "macos" {
         println!("cargo:rustc-link-search=native=/opt/homebrew/opt/freetype/lib");
         println!("cargo:rustc-link-lib=freetype");
-        println!("cargo:rustc-link-lib=static=clang_rt.osx");
     }
 
     volk_build.flag("-flto=thin");
