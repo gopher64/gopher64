@@ -3,6 +3,16 @@ include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::{device, ui};
 
 pub fn init(device: &mut device::Device) {
+    #[cfg(target_os = "macos")]
+    unsafe {
+        sdl3_sys::everything::SDL_SetHint(
+            sdl3_sys::hints::SDL_HINT_VULKAN_LIBRARY,
+            std::ffi::CString::new("/opt/homebrew/lib/libvulkan.dylib")
+                .unwrap()
+                .as_ptr(),
+        );
+    }
+
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
     ui::ttf_init();
 
