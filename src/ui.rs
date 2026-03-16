@@ -69,6 +69,16 @@ impl Drop for Ui {
 
 pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
     unsafe {
+        #[cfg(target_os = "macos")]
+        if flag & sdl3_sys::init::SDL_INIT_VIDEO != 0 {
+            sdl3_sys::everything::SDL_SetHint(
+                sdl3_sys::hints::SDL_HINT_VULKAN_LIBRARY,
+                std::ffi::CString::new("/opt/homebrew/lib/libvulkan.dylib")
+                    .unwrap()
+                    .as_ptr(),
+            );
+        }
+
         if sdl3_sys::init::SDL_WasInit(flag) == 0 && !sdl3_sys::init::SDL_InitSubSystem(flag) {
             let err = std::ffi::CStr::from_ptr(sdl3_sys::error::SDL_GetError())
                 .to_str()
