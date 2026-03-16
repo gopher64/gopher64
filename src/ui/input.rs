@@ -711,13 +711,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                 }
             }
         }
-        ui::video::draw_text(
-            format!("Binding set for {key}").as_str(),
-            renderer,
-            text_engine,
-            font,
-        );
-        std::thread::sleep(std::time::Duration::from_millis(200));
+        ui::video::draw_text("Binding set, please wait...", renderer, text_engine, font);
+        std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
     close_controllers(open_joysticks, open_controllers);
