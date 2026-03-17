@@ -618,15 +618,14 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
         let mut event: sdl3_sys::events::SDL_Event = Default::default();
         while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {} // clear events
 
-        ui::video::draw_text(
-            format!("Select binding for: {key}").as_str(),
-            renderer,
-            text_engine,
-            font,
-        );
-
         let mut key_set = false;
         while !key_set {
+            ui::video::draw_text(
+                format!("Select binding for: {key}").as_str(),
+                renderer,
+                text_engine,
+                font,
+            );
             std::thread::sleep(std::time::Duration::from_millis(100));
             while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
                 let event_type = unsafe { event.r#type };
