@@ -485,15 +485,26 @@ pub fn clear_bindings(ui: &mut ui::Ui) {
     }
 }
 
-fn close_controllers(
+fn close_input_profile_window(
     open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick>,
     open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad>,
+    renderer: *mut sdl3_sys::render::SDL_Renderer,
+    text_engine: *mut sdl3_ttf_sys::ttf::TTF_TextEngine,
+    font: *mut sdl3_ttf_sys::ttf::TTF_Font,
+    window: *mut sdl3_sys::video::SDL_Window,
 ) {
     for joystick in open_joysticks {
         unsafe { sdl3_sys::joystick::SDL_CloseJoystick(joystick) }
     }
     for controller in open_controllers {
         unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller) }
+    }
+
+    unsafe {
+        sdl3_ttf_sys::ttf::TTF_CloseFont(font);
+        sdl3_ttf_sys::ttf::TTF_DestroyRendererTextEngine(text_engine);
+        sdl3_sys::render::SDL_DestroyRenderer(renderer);
+        sdl3_sys::video::SDL_DestroyWindow(window);
     }
 }
 
@@ -630,7 +641,14 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
             while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
                 let event_type = unsafe { event.r#type };
                 if event_type == u32::from(sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
-                    close_controllers(open_joysticks, open_controllers);
+                    close_input_profile_window(
+                        open_joysticks,
+                        open_controllers,
+                        renderer,
+                        text_engine,
+                        font,
+                        window,
+                    );
                     return;
                 } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_KEY_DOWN) {
                     if unsafe {
@@ -714,14 +732,14 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
-    close_controllers(open_joysticks, open_controllers);
-
-    unsafe {
-        sdl3_ttf_sys::ttf::TTF_CloseFont(font);
-        sdl3_ttf_sys::ttf::TTF_DestroyRendererTextEngine(text_engine);
-        sdl3_sys::render::SDL_DestroyRenderer(renderer);
-        sdl3_sys::video::SDL_DestroyWindow(window);
-    }
+    close_input_profile_window(
+        open_joysticks,
+        open_controllers,
+        renderer,
+        text_engine,
+        font,
+        window,
+    );
 
     let new_profile = ui::config::InputProfile {
         keys: new_keys,
