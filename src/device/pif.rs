@@ -249,7 +249,7 @@ fn get_default_handler(device: &device::Device) -> device::controller::PakHandle
     }
 }
 
-pub fn init(device: &mut device::Device) {
+pub fn reset_pif(device: &mut device::Device) {
     if device.cart.pal {
         device.pif.rom = rom::PAL_PIF_ROM;
     } else {
@@ -257,6 +257,11 @@ pub fn init(device: &mut device::Device) {
     }
     device.pif.ram[0x26] = device.cart.cic_seed;
     device.pif.ram[0x27] = device.cart.cic_seed;
+    device.pif.ram[0x3F] = 0x00;
+}
+
+pub fn init(device: &mut device::Device) {
+    reset_pif(device);
 
     let default_handler = get_default_handler(device);
     let tpak_handler = device::controller::PakHandler {
