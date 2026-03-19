@@ -30,13 +30,14 @@ pub const COP0_XCONTEXT_REG: u32 = 20;
 //const COP0_CACHEERR_REG: u32 = 27;
 pub const COP0_TAGLO_REG: u32 = 28;
 //const COP0_TAGHI_REG: u32 = 29;
-const COP0_ERROREPC_REG: u32 = 30;
+pub const COP0_ERROREPC_REG: u32 = 30;
 //const COP0_UNUSED_31: u32 = 31;
 pub const COP0_REGS_COUNT: u32 = 32;
 
 pub const COP0_STATUS_IE: u64 = 1 << 0;
 pub const COP0_STATUS_EXL: u64 = 1 << 1;
 pub const COP0_STATUS_ERL: u64 = 1 << 2;
+pub const COP0_STATUS_SR: u64 = 1 << 20;
 pub const COP0_STATUS_BEV: u64 = 1 << 22;
 pub const COP0_STATUS_FR: u64 = 1 << 26;
 pub const COP0_STATUS_CU1: u64 = 1 << 29;

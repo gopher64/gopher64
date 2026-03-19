@@ -155,6 +155,13 @@ pub fn tlb_miss_exception(
 
 pub fn reset_event(device: &mut device::Device) {
     device.cpu.cop0.pending_reset_interrupt = false;
+
+    device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] |= device::cop0::COP0_STATUS_ERL;
+    device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] |= device::cop0::COP0_STATUS_SR;
+
+    device.cpu.cop0.regs[device::cop0::COP0_ERROREPC_REG as usize] = device.cpu.pc;
+    device.cpu.pc = 0xBFC00000;
+
     ui::video::onscreen_message(&device.ui, "Game reset");
 }
 
