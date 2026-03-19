@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 
 pub fn check_pending_interrupts(device: &mut device::Device) {
     if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize]
@@ -152,7 +153,10 @@ pub fn tlb_miss_exception(
     exception_general(device, vector_offset)
 }
 
-pub fn reset_event(_device: &mut device::Device) {}
+pub fn reset_event(device: &mut device::Device) {
+    device.cpu.cop0.pending_reset_interrupt = false;
+    ui::video::onscreen_message(&device.ui, "Game reset");
+}
 
 fn exception_general(device: &mut device::Device, vector_offset: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_EXL
