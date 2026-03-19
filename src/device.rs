@@ -12,7 +12,7 @@ use std::arch::x86_64::*;
 
 use rand::{Rng, SeedableRng};
 
-use crate::{cheats, netplay, ui};
+use crate::{cheats, netplay, savestates, ui};
 use std::{collections::HashMap, fs, io::Read};
 
 pub mod ai;
@@ -50,6 +50,9 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
     if game_settings.disable_expansion_pak {
         device.rdram.size = 0x400000;
     }
+    if let Some(slot) = game_settings.load_savestate_slot {
+        device.ui.storage.save_state_slot = slot;
+    }
 
     init_rng(device);
 
@@ -78,6 +81,10 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
 
     cheats::init(device, game_settings.cheats);
+
+    if game_settings.load_savestate_slot.is_some() {
+        savestates::load_savestate(device);
+    }
 
     cpu::run(device);
 

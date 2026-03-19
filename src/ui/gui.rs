@@ -30,6 +30,7 @@ pub struct GameSettings {
     pub overclock: bool,
     pub disable_expansion_pak: bool,
     pub cheats: std::collections::HashMap<String, Option<String>>,
+    pub load_savestate_slot: Option<u32>,
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
@@ -458,6 +459,7 @@ fn open_rom(app: &AppWindow, usb: ui::Usb) {
                     overclock,
                     disable_expansion_pak,
                     cheats: std::collections::HashMap::new(), // will be filled in later
+                    load_savestate_slot: None,
                 },
                 None,
                 usb,

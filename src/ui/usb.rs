@@ -52,6 +52,7 @@ fn upload_rom(
                 overclock: handle.get_overclock_n64_cpu(),
                 disable_expansion_pak: handle.get_disable_expansion_pak(),
                 cheats: std::collections::HashMap::new(), // will be filled in later
+                load_savestate_slot: None,
             },
             None,
             ui::Usb {
