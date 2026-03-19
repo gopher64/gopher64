@@ -52,6 +52,7 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
     }
     if let Some(slot) = game_settings.load_savestate_slot {
         device.ui.storage.save_state_slot = slot;
+        device.load_state = true;
     }
 
     init_rng(device);
@@ -81,10 +82,6 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
 
     cheats::init(device, game_settings.cheats);
-
-    if game_settings.load_savestate_slot.is_some() {
-        device.load_state = true;
-    }
 
     cpu::run(device);
 
