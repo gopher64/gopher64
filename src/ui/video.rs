@@ -161,7 +161,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
             device::events::create_event(
                 device,
                 device::events::EVENT_TYPE_NMI,
-                device.cpu.clock_rate / 2, // 500ms
+                device.cpu.clock_rate, // 1 second
             );
         }
         if device.vi.enable_speed_limiter != callback.enable_speedlimiter {
