@@ -704,6 +704,7 @@ fn create_session(
                                 overclock: overclock.parse().unwrap(),
                                 disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                 cheats: serde_json::from_str(cheats).unwrap(),
+                                load_savestate_slot: None,
                             },
                             handle.get_peer_addr(),
                             weak_app,
@@ -821,6 +822,7 @@ fn join_session(
                                 overclock: overclock.parse().unwrap(),
                                 disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                 cheats: serde_json::from_str(cheats).unwrap(),
+                                load_savestate_slot: None,
                             },
                             handle.get_peer_addr(),
                             weak_app,
@@ -1083,6 +1085,7 @@ fn setup_wait_window(
                                         overclock: game_settings.overclock,
                                         disable_expansion_pak: game_settings.disable_expansion_pak,
                                         cheats: game_settings.cheats,
+                                        load_savestate_slot: None,
                                     },
                                     Some(NetplayDevice {
                                         peer_addr: socket_addr,
@@ -1203,6 +1206,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                         overclock: handle.get_overclock_n64_cpu(),
                         disable_expansion_pak: handle.get_disable_expansion_pak(),
                         cheats: std::collections::HashMap::new(), // not used here
+                        load_savestate_slot: None,
                     },
                     handle.get_rom_dir(),
                     weak_app,

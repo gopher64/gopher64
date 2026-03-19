@@ -81,6 +81,7 @@ pub fn init(device: &mut device::Device) {
             gfx_info,
             font_bytes.as_ptr() as *const std::ffi::c_void,
             font_bytes.len(),
+            device.ui.storage.save_state_slot,
         )
     }
 }

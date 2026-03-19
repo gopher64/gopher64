@@ -300,7 +300,7 @@ static ImageHandle create_message_image(Vulkan::Device &device, int width, const
 	return handle;
 }
 
-void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_size)
+void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_size, uint32_t save_state_slot)
 {
 	memset(&rdp_device, 0, sizeof(RDP_DEVICE));
 
@@ -365,7 +365,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font, size_t font_s
 	callback.emu_running = true;
 	callback.enable_speedlimiter = true;
 	callback.paused = false;
-	callback.save_state_slot = 0;
+	callback.save_state_slot = save_state_slot;
 	crop_letterbox = false;
 
 	messages = std::queue<std::string>();

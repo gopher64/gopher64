@@ -72,6 +72,13 @@ struct Args {
         help = "Clear all input profile bindings and controller assignments"
     )]
     clear_input_bindings: bool,
+    #[arg(
+        short = 's',
+        long,
+        value_name = "SLOT",
+        help = "Load savestate from slot 0-9 when starting the game"
+    )]
+    load_state: Option<u32>,
 }
 
 fn main() -> std::io::Result<()> {
@@ -98,6 +105,12 @@ fn main() -> std::io::Result<()> {
             )));
         };
 
+        if let Some(slot) = args.load_state
+            && slot > 9
+        {
+            return Err(Error::other("Savestate slot must be between 0 and 9"));
+        }
+
         let handle = runtime.spawn(async move {
             let mut device = device::Device::new();
             let overclock = device.ui.config.emulation.overclock;
@@ -116,6 +129,7 @@ fn main() -> std::io::Result<()> {
                     overclock,
                     disable_expansion_pak,
                     cheats: game_cheats,
+                    load_savestate_slot: args.load_state,
                 },
             );
         });
