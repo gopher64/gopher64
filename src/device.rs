@@ -242,6 +242,7 @@ impl Device {
                     reg_latch: 0,
                     is_event: false,
                     pending_compare_interrupt: false,
+                    pending_reset_interrupt: false,
                     instrs: [cop0::reserved; 32],
                     instrs2: [cop0::reserved; 32],
                     tlb_lut_w: vec![

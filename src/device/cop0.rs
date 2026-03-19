@@ -55,6 +55,7 @@ pub const COP0_CAUSE_EXCCODE_CPU: u64 = 11 << 2;
 pub const COP0_CAUSE_EXCCODE_TR: u64 = 13 << 2;
 pub const COP0_CAUSE_EXCCODE_FPE: u64 = 15 << 2;
 pub const COP0_CAUSE_IP2: u64 = 1 << 10;
+pub const COP0_CAUSE_IP4: u64 = 1 << 12;
 pub const COP0_CAUSE_IP7: u64 = 1 << 15;
 pub const COP0_CAUSE_BD: u64 = 1 << 31;
 
@@ -102,6 +103,7 @@ pub struct Cop0 {
     pub tlb_entries: [device::tlb::TlbEntry; 32],
     pub is_event: bool,
     pub pending_compare_interrupt: bool,
+    pub pending_reset_interrupt: bool,
 }
 
 fn mfc0(device: &mut device::Device, opcode: u32) {

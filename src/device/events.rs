@@ -14,7 +14,8 @@ pub const EVENT_TYPE_COMPARE: usize = 9;
 pub const EVENT_TYPE_VRU: usize = 10;
 pub const EVENT_TYPE_PAK: usize = 11;
 pub const EVENT_TYPE_SAVE: usize = 12;
-pub const EVENT_TYPE_COUNT: usize = 13;
+pub const EVENT_TYPE_NMI: usize = 13;
+pub const EVENT_TYPE_COUNT: usize = 14;
 
 #[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Event {
@@ -63,6 +64,7 @@ fn get_event_handler(name: usize) -> fn(&mut device::Device) {
         EVENT_TYPE_VRU => device::controller::vru::vru_talking_event,
         EVENT_TYPE_PAK => device::controller::pak_switch_event,
         EVENT_TYPE_SAVE => ui::storage::save_event,
+        EVENT_TYPE_NMI => device::exceptions::reset_event,
         _ => dummy_event,
     }
 }

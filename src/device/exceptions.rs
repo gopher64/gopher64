@@ -18,6 +18,8 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
         device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP2;
     } else if device.cpu.cop0.pending_compare_interrupt {
         device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP7;
+    } else if device.cpu.cop0.pending_reset_interrupt {
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP4;
     }
 
     if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize]
@@ -149,6 +151,8 @@ pub fn tlb_miss_exception(
 
     exception_general(device, vector_offset)
 }
+
+pub fn reset_event(device: &mut device::Device) {}
 
 fn exception_general(device: &mut device::Device, vector_offset: u32) {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] & device::cop0::COP0_STATUS_EXL

@@ -156,6 +156,14 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
         } else if callback.load_state {
             device.load_state = true;
         }
+        if callback.reset_game {
+            device.cpu.cop0.pending_reset_interrupt = true;
+            device::events::create_event(
+                device,
+                device::events::EVENT_TYPE_NMI,
+                device.cpu.clock_rate / 2, // 500ms
+            );
+        }
         if device.vi.enable_speed_limiter != callback.enable_speedlimiter {
             speed_limiter_toggled = true;
             device.vi.enable_speed_limiter = callback.enable_speedlimiter;
