@@ -105,10 +105,10 @@ fn main() -> std::io::Result<()> {
             )));
         };
 
-        if let Some(slot) = args.load_state {
-            if slot > 9 {
-                return Err(Error::other("Savestate slot must be between 0 and 9"));
-            }
+        if let Some(slot) = args.load_state
+            && slot > 9
+        {
+            return Err(Error::other("Savestate slot must be between 0 and 9"));
         }
 
         let handle = runtime.spawn(async move {

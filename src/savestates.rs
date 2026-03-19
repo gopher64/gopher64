@@ -219,6 +219,14 @@ pub fn load_savestate(device: &mut device::Device) {
                 ),
             );
         }
+    } else {
+        ui::video::onscreen_message(
+            &device.ui,
+            &format!(
+                "Could not find savestate in slot {}",
+                device.ui.storage.save_state_slot
+            ),
+        );
     }
 }
 
