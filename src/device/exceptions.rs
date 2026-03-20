@@ -154,6 +154,7 @@ pub fn tlb_miss_exception(
 }
 
 pub fn reset_event(device: &mut device::Device) {
+    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &= !device::cop0::COP0_CAUSE_IP4;
     device.cpu.cop0.pending_reset_interrupt = false;
 
     device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] |= device::cop0::COP0_STATUS_ERL;
@@ -161,6 +162,7 @@ pub fn reset_event(device: &mut device::Device) {
 
     device.cpu.cop0.regs[device::cop0::COP0_ERROREPC_REG as usize] = device.cpu.pc;
     device.cpu.pc = 0xBFC00000;
+    //device.cpu.branch_state.state = device::cpu::State::Step;
 
     device::pif::reset_pif(device, true);
 
