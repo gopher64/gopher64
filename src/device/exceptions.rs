@@ -16,11 +16,19 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
         & device.mi.regs[device::mi::MI_INTR_MASK_REG as usize]
         != 0
     {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP2;
-    } else if device.cpu.cop0.pending_compare_interrupt {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP7;
-    } else if device.cpu.cop0.pending_reset_interrupt {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP4;
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |= device::cop0::COP0_CAUSE_IP2;
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
+            !device::cop0::COP0_CAUSE_EXCCODE_MASK;
+    }
+    if device.cpu.cop0.pending_compare_interrupt {
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |= device::cop0::COP0_CAUSE_IP7;
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
+            !device::cop0::COP0_CAUSE_EXCCODE_MASK;
+    }
+    if device.cpu.cop0.pending_reset_interrupt {
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |= device::cop0::COP0_CAUSE_IP4;
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
+            !device::cop0::COP0_CAUSE_EXCCODE_MASK;
     }
 
     if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize]
