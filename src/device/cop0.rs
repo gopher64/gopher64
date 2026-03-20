@@ -103,8 +103,6 @@ pub struct Cop0 {
     pub tlb_lut_w: Vec<device::tlb::TlbLut>,
     pub tlb_entries: [device::tlb::TlbEntry; 32],
     pub is_event: bool,
-    pub pending_compare_interrupt: bool,
-    pub pending_reset_interrupt: bool,
 }
 
 fn mfc0(device: &mut device::Device, opcode: u32) {
@@ -223,7 +221,6 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
                 (compare_event_diff as u64) << 1,
             );
             device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_IP7;
-            device.cpu.cop0.pending_compare_interrupt = false;
         }
         COP0_STATUS_REG => {
             if data & COP0_STATUS_FR != device.cpu.cop0.regs[index as usize] & COP0_STATUS_FR {
@@ -241,7 +238,10 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
 }
 
 pub fn compare_event(device: &mut device::Device) {
-    device.cpu.cop0.pending_compare_interrupt = true;
+    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |= device::cop0::COP0_CAUSE_IP7;
+    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
+        !device::cop0::COP0_CAUSE_EXCCODE_MASK;
+
     device::events::create_event_at(
         device,
         device::events::EVENT_TYPE_COMPARE,

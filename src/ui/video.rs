@@ -157,7 +157,11 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
             device.load_state = true;
         }
         if callback.reset_game {
-            device.cpu.cop0.pending_reset_interrupt = true;
+            device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |=
+                device::cop0::COP0_CAUSE_IP4;
+            device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
+                !device::cop0::COP0_CAUSE_EXCCODE_MASK;
+
             device::events::create_event(
                 device,
                 device::events::EVENT_TYPE_NMI,
