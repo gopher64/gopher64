@@ -154,8 +154,10 @@ pub fn tlb_miss_exception(
 pub fn reset_event(device: &mut device::Device) {
     device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &= !device::cop0::COP0_CAUSE_IP4;
 
-    device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] |= device::cop0::COP0_STATUS_ERL;
-    device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] |= device::cop0::COP0_STATUS_SR;
+    device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] |= device::cop0::COP0_STATUS_ERL
+        | device::cop0::COP0_STATUS_SR
+        | device::cop0::COP0_STATUS_BEV;
+    device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] &= !device::cop0::COP0_STATUS_TS;
 
     device.cpu.cop0.regs[device::cop0::COP0_ERROREPC_REG as usize] = device.cpu.pc;
     device.cpu.pc = 0xBFC00000;

@@ -38,6 +38,7 @@ pub const COP0_STATUS_IE: u64 = 1 << 0;
 pub const COP0_STATUS_EXL: u64 = 1 << 1;
 pub const COP0_STATUS_ERL: u64 = 1 << 2;
 pub const COP0_STATUS_SR: u64 = 1 << 20;
+pub const COP0_STATUS_TS: u64 = 1 << 21;
 pub const COP0_STATUS_BEV: u64 = 1 << 22;
 pub const COP0_STATUS_FR: u64 = 1 << 26;
 pub const COP0_STATUS_CU1: u64 = 1 << 29;
