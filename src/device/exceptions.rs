@@ -162,6 +162,7 @@ pub fn reset_event(device: &mut device::Device) {
     device.cpu.cop0.regs[device::cop0::COP0_ERROREPC_REG as usize] = device.cpu.pc;
     device.cpu.pc = 0xBFC00000;
     device.cpu.branch_state.state = device::cpu::State::Step;
+    device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] = 0;
 
     device::pif::reset_pif(device, true);
 
