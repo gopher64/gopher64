@@ -70,12 +70,10 @@ fn set_vertical_interrupt(device: &mut device::Device) {
 }
 
 fn set_current_line(device: &mut device::Device) {
-    let next_vi = device::events::get_event(device, device::events::EVENT_TYPE_VI);
-    if let Some(next_vi) = next_vi {
-        device.vi.regs[VI_CURRENT_REG as usize] = ((device.vi.delay
-            - (next_vi.count - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize]))
-            / device.vi.count_per_scanline)
-            as u32;
+    if let Some(next_vi) = device::events::get_event(device, device::events::EVENT_TYPE_VI) {
+        device.vi.regs[VI_CURRENT_REG as usize] = ((device.vi.delay.saturating_sub(
+            next_vi.count - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize],
+        )) / device.vi.count_per_scanline) as u32;
 
         // wrap around VI_CURRENT_REG if needed
         if device.vi.regs[VI_CURRENT_REG as usize] >= device.vi.regs[VI_V_SYNC_REG as usize] {

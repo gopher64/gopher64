@@ -1,4 +1,5 @@
 use crate::device;
+use crate::ui;
 
 pub fn check_pending_interrupts(device: &mut device::Device) {
     if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize]
@@ -15,9 +16,9 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
         & device.mi.regs[device::mi::MI_INTR_MASK_REG as usize]
         != 0
     {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP2;
-    } else if device.cpu.cop0.pending_compare_interrupt {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] = device::cop0::COP0_CAUSE_IP7;
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |= device::cop0::COP0_CAUSE_IP2;
+        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
+            !device::cop0::COP0_CAUSE_EXCCODE_MASK;
     }
 
     if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize]
@@ -148,6 +149,24 @@ pub fn tlb_miss_exception(
     }
 
     exception_general(device, vector_offset)
+}
+
+pub fn reset_event(device: &mut device::Device) {
+    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &= !device::cop0::COP0_CAUSE_IP4;
+
+    device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] |= device::cop0::COP0_STATUS_ERL
+        | device::cop0::COP0_STATUS_SR
+        | device::cop0::COP0_STATUS_BEV;
+    device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG as usize] &= !device::cop0::COP0_STATUS_TS;
+
+    device.cpu.cop0.regs[device::cop0::COP0_ERROREPC_REG as usize] = device.cpu.pc;
+    device.cpu.pc = 0xBFC00000;
+    device.cpu.branch_state.state = device::cpu::State::Step;
+    device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] = 0;
+
+    device::pif::reset_pif(device, true);
+
+    ui::video::onscreen_message(&device.ui, "Game reset");
 }
 
 fn exception_general(device: &mut device::Device, vector_offset: u32) {

@@ -141,6 +141,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     case SDL_SCANCODE_F7:
       callback.load_state = true;
       break;
+    case SDL_SCANCODE_F12:
+      callback.reset_game = true;
+      break;
     case SDL_SCANCODE_LEFTBRACKET:
       callback.lower_volume = true;
       break;
@@ -466,6 +469,7 @@ CALL_BACK rdp_check_callback() {
   CALL_BACK return_value = callback;
   callback.save_state = false;
   callback.load_state = false;
+  callback.reset_game = false;
   callback.lower_volume = false;
   callback.raise_volume = false;
   callback.frame_advance = false;

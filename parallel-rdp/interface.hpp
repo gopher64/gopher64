@@ -27,6 +27,7 @@ typedef struct {
   bool emu_running;
   bool save_state;
   bool load_state;
+  bool reset_game;
   bool enable_speedlimiter;
   bool lower_volume;
   bool raise_volume;
