@@ -1,4 +1,4 @@
-#include "src/compat/sse2neon/sse2neon.h"
+#include "src/compat/sse2neon.h"
 
 // Static wrappers
 
