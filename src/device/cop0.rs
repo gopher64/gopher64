@@ -224,9 +224,10 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
             device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_IP7;
         }
         COP0_STATUS_REG
-            if data & COP0_STATUS_FR != device.cpu.cop0.regs[index as usize] & COP0_STATUS_FR => {
-                device::cop1::set_fgr_registers(device, data)
-            }
+            if data & COP0_STATUS_FR != device.cpu.cop0.regs[index as usize] & COP0_STATUS_FR =>
+        {
+            device::cop1::set_fgr_registers(device, data)
+        }
         _ => {}
     }
     device::memory::masked_write_64(
