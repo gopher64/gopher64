@@ -4,4 +4,5 @@
 	branch = gopher64
 [submodule "src/compat/sse2neon"]
 	path = src/compat/sse2neon
-	url = https://github.com/DLTcollab/sse2neon.git
+	url = https://github.com/gopher64/sse2neon.git
+	branch = gopher64
