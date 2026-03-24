@@ -36,6 +36,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+          cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
         run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install SDL Dependencies
@@ -91,6 +92,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+          cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
         run: |
           $llvm_version = rustc --version --verbose | Select-String "LLVM version" | ForEach-Object { $_.Line.Split(":")[1].Trim() }
@@ -145,6 +147,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           rustflags: ""
+          cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
         run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install LLVM and Clang
