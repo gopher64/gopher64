@@ -698,7 +698,6 @@ fn create_session(
                             handle.get_rom_path(),
                             message.player_name.as_ref().unwrap().into(),
                             session.port.unwrap(),
-                            true,
                             GameSettings {
                                 fullscreen: game_settings.fullscreen,
                                 overclock: overclock.parse().unwrap(),
@@ -816,7 +815,6 @@ fn join_session(
                             handle.get_rom_path(),
                             message.player_name.as_ref().unwrap().into(),
                             session.port.unwrap(),
-                            false,
                             GameSettings {
                                 fullscreen,
                                 overclock: overclock.parse().unwrap(),
@@ -863,7 +861,6 @@ fn setup_wait_window(
     rom_path: slint::SharedString,
     player_name: slint::SharedString,
     port: i32,
-    can_start: bool,
     game_settings: GameSettings,
     peer_addr: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
@@ -877,7 +874,6 @@ fn setup_wait_window(
     wait.set_game_name(game_name);
     wait.set_rom_path(rom_path);
     wait.set_port(port);
-    wait.set_can_start(can_start);
     wait.set_ping("Unknown".into());
 
     let sender = netplay_write_sender.clone();
@@ -1034,8 +1030,15 @@ fn setup_wait_window(
                         .unwrap();
                     }
                     "reply_players" => {
+                        let local_player = local_player.clone();
                         weak.upgrade_in_event_loop(move |handle| {
                             if let Some(player_names) = response.player_names {
+                                if player_names[0] == local_player.to_string() {
+                                    handle.set_can_start(true);
+                                } else {
+                                    handle.set_can_start(false);
+                                }
+
                                 let players_vec: slint::VecModel<slint::SharedString> =
                                     slint::VecModel::default();
                                 for player in player_names {
@@ -1101,8 +1104,14 @@ fn setup_wait_window(
                             .unwrap();
                             return;
                         } else {
+                            let local_player = local_player.clone();
                             weak.upgrade_in_event_loop(move |handle| {
-                                handle.set_can_start(can_start);
+                                let players = handle.get_players();
+                                if players.row_data(0).unwrap() == local_player {
+                                    handle.set_can_start(true);
+                                } else {
+                                    handle.set_can_start(false);
+                                }
                                 if let Some(message) = response.message {
                                     show_netplay_error(message);
                                 }
