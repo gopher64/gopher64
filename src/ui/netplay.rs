@@ -1106,11 +1106,12 @@ fn setup_wait_window(
                         } else {
                             let local_player = local_player.clone();
                             weak.upgrade_in_event_loop(move |handle| {
-                                let players = handle.get_players();
-                                if players.row_data(0).unwrap() == local_player {
-                                    handle.set_can_start(true);
-                                } else {
-                                    handle.set_can_start(false);
+                                if let Some(p0) = handle.get_players().row_data(0) {
+                                    if p0 == local_player {
+                                        handle.set_can_start(true);
+                                    } else {
+                                        handle.set_can_start(false);
+                                    }
                                 }
                                 if let Some(message) = response.message {
                                     show_netplay_error(message);
