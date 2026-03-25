@@ -1033,7 +1033,7 @@ fn setup_wait_window(
                         let local_player = local_player.clone();
                         weak.upgrade_in_event_loop(move |handle| {
                             if let Some(player_names) = response.player_names {
-                                if player_names[0] == local_player.to_string() {
+                                if local_player == player_names[0] {
                                     handle.set_can_start(true);
                                 } else {
                                     handle.set_can_start(false);
