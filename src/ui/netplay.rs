@@ -517,7 +517,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                             rooms: None,
                             message: None,
                             auth_time: Some(now_utc),
-                            auth: Some(format!("{:x}", hasher.finalize())),
+                            auth: Some(format!("{:x?}", hasher.finalize())),
                             room: None,
                         };
                         write
@@ -645,7 +645,7 @@ fn create_session(
             rooms: None,
             auth_time: Some(now_utc),
             player_names: None,
-            auth: Some(format!("{:x}", hasher.finalize())),
+            auth: Some(format!("{:x?}", hasher.finalize())),
             room: Some(NetplayRoom {
                 room_name: Some(session_name),
                 password: Some(password),
@@ -762,7 +762,7 @@ fn join_session(
             rooms: None,
             player_names: None,
             auth_time: Some(now_utc),
-            auth: Some(format!("{:x}", hasher.finalize())),
+            auth: Some(format!("{:x?}", hasher.finalize())),
             room: Some(NetplayRoom {
                 room_name: None,
                 password: Some(password),
