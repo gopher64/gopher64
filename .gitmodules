@@ -1,7 +1,7 @@
 [submodule "parallel-rdp/parallel-rdp-standalone"]
 	path = parallel-rdp/parallel-rdp-standalone
-	url = https://github.com/gopher64/parallel-rdp-standalone.git
-	branch = gopher64
+	url = https://github.com/Themaister/parallel-rdp-standalone.git
+	branch = master
 [submodule "src/compat/sse2neon"]
 	path = src/compat/sse2neon
 	url = https://github.com/gopher64/sse2neon.git
