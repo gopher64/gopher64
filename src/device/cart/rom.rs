@@ -192,7 +192,7 @@ fn set_cic(device: &mut device::Device) {
         }
         _ => {
             device.cart.cic_seed = 0x3F; // CicNus6102
-            //println!("unknown IPL3 {}", hash)
+            // println!("unknown IPL3 {}", hash)
         }
     }
 }
@@ -200,5 +200,9 @@ fn set_cic(device: &mut device::Device) {
 pub fn calculate_hash(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(data);
-    format!("{:X?}", hasher.finalize())
+    hasher
+        .finalize()
+        .iter()
+        .map(|b| format!("{:02X}", b))
+        .collect()
 }
