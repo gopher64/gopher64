@@ -192,7 +192,7 @@ fn set_cic(device: &mut device::Device) {
         }
         _ => {
             device.cart.cic_seed = 0x3F; // CicNus6102
-            // println!("unknown IPL3 {}", hash)
+            //println!("unknown IPL3 {}", hash)
         }
     }
 }
