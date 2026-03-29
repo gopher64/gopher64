@@ -201,17 +201,17 @@ fn speed_limiter(device: &mut device::Device, speed_limiter_toggled: bool) {
         device.vi.min_wait_time = std::time::Duration::from_secs(0);
     }
 
-    if std::time::Instant::now()
-        .duration_since(device.vi.limit_freq_check)
-        .as_secs_f64()
-        > 1.0
+    if std::time::Instant::now().duration_since(device.vi.limit_freq_check)
+        > std::time::Duration::from_secs(1)
     {
         if !speed_limiter_toggled {
-            if device.vi.min_wait_time.as_secs_f64() == 0.0 && device.vi.limit_freq < MAX_LIMIT_FREQ
+            if device.vi.min_wait_time == std::time::Duration::from_secs(0)
+                && device.vi.limit_freq < MAX_LIMIT_FREQ
             {
                 device.vi.limit_freq += 1;
                 create_limiter(device);
-            } else if device.vi.min_wait_time.as_secs_f64() > device.vi.frame_time
+            } else if device.vi.min_wait_time
+                > std::time::Duration::from_secs_f64(device.vi.frame_time)
                 && device.vi.limit_freq > 1
             {
                 device.vi.limit_freq -= 1;
