@@ -367,6 +367,18 @@ pub fn run_rom(
                 dirs.cache_dir.join("cheats.json").to_str().unwrap(),
             ]);
         }
+
+        for i in 0..4 {
+            if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
+                command.args([
+                    "--gb-rom",
+                    gb_paths.rom[i].as_ref().unwrap().to_str().unwrap(),
+                    "--gb-ram",
+                    gb_paths.ram[i].as_ref().unwrap().to_str().unwrap(),
+                ]);
+            }
+        }
+
         command.arg(file_path.to_str().unwrap()).output().unwrap();
 
         weak.upgrade_in_event_loop(move |handle| {

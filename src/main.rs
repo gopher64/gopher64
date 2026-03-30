@@ -29,6 +29,10 @@ struct Args {
     netplay_peer_addr: Option<String>,
     #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER")]
     netplay_player_number: Option<u8>,
+    #[arg(long, value_name = "GB_ROM_PATH")]
+    gb_rom: Option<Vec<String>>,
+    #[arg(long, value_name = "GB_RAM_PATH")]
+    gb_ram: Option<Vec<String>>,
     #[arg(
         long,
         value_name = "PROFILE_NAME",
@@ -128,6 +132,20 @@ async fn main() -> std::io::Result<()> {
             && let Some(player_number) = args.netplay_player_number
         {
             device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
+        }
+
+        if let Some(gb_roms) = args.gb_rom
+            && let Some(gb_rams) = args.gb_ram
+        {
+            for i in 0..4 {
+                if let Some(gb_rom) = gb_roms.get(i)
+                    && let Some(gb_ram) = gb_rams.get(i)
+                {
+                    device.transferpaks[i].cart.rom = std::fs::read(gb_rom).unwrap();
+
+                    device.transferpaks[i].cart.ram = std::fs::read(gb_ram).unwrap();
+                }
+            }
         }
 
         device::run_game(
