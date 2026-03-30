@@ -189,14 +189,15 @@ pub fn init(device: &mut device::Device) {
 }
 
 fn speed_limiter(device: &mut device::Device, speed_limiter_toggled: bool) {
-    if let Err(outcome) = device.vi.limiter.as_ref().unwrap().check() {
-        let dur = outcome.wait_time_from(governor::clock::DefaultClock::default().now());
+    let limiter = device.vi.limiter.as_ref().unwrap();
+    if let Err(outcome) = limiter.check() {
+        let dur = outcome.wait_time_from(limiter.clock().now());
         spin_sleep::sleep(dur);
         if dur < device.vi.min_wait_time {
             device.vi.min_wait_time = dur;
         }
 
-        let _ = device.vi.limiter.as_ref().unwrap().check();
+        let _ = limiter.check();
     } else {
         device.vi.min_wait_time = std::time::Duration::from_secs(0);
     }
