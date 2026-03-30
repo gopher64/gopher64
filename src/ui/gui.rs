@@ -1,4 +1,3 @@
-#![allow(unused)]
 use crate::ui;
 use slint::Model;
 
@@ -362,7 +361,7 @@ pub fn run_rom(
         }
 
         command.arg(file_path.to_str().unwrap()).output().unwrap();
-        std::fs::remove_file(cheats_path.to_str().unwrap());
+        std::fs::remove_file(cheats_path.to_str().unwrap()).unwrap();
 
         if let Some(weak_inner) = weak {
             weak_inner
