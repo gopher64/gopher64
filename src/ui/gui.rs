@@ -347,7 +347,15 @@ pub fn run_rom(
             .unwrap();
 
         std::process::Command::new(std::env::current_exe().unwrap())
-            .arg(file_path.to_str().unwrap())
+            .args([
+                "--fullscreen",
+                &game_settings.fullscreen.to_string(),
+                "--overclock",
+                &game_settings.overclock.to_string(),
+                "--disable-expansion-pak",
+                &game_settings.disable_expansion_pak.to_string(),
+                file_path.to_str().unwrap(),
+            ])
             .output()
             .unwrap();
 

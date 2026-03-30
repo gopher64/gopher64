@@ -18,62 +18,55 @@ use ui::gui;
 struct Args {
     game: Option<String>,
     #[arg(short, long)]
-    fullscreen: bool,
+    fullscreen: Option<bool>,
+    #[arg(long)]
+    overclock: Option<bool>,
+    #[arg(long)]
+    disable_expansion_pak: Option<bool>,
     #[arg(
-        short,
         long,
         value_name = "PROFILE_NAME",
         help = "Create a new input profile (keyboard/gamepad mappings)"
     )]
     configure_input_profile: Option<String>,
-    #[arg(
-        short,
-        long,
-        help = "Use DirectInput when configuring a new input profile"
-    )]
+    #[arg(long, help = "Use DirectInput when configuring a new input profile")]
     use_dinput: bool,
     #[arg(
-        short,
         long,
         value_name = "DEADZONE_PERCENTAGE",
         help = "Used along with --configure-input-profile to set the deadzone for analog sticks"
     )]
     deadzone: Option<i32>,
     #[arg(
-        short,
         long,
         value_name = "PROFILE_NAME",
         help = "Must also specify --port. Used to bind a previously created profile to a port"
     )]
     bind_input_profile: Option<String>,
     #[arg(
-        short,
         long,
         help = "Lists connected controllers which can be used in --assign-controller"
     )]
     list_controllers: bool,
     #[arg(
-        short,
         long,
         value_name = "CONTROLLER_NUMBER",
         help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
     )]
     assign_controller: Option<i32>,
     #[arg(
-        short,
         long,
         value_name = "PORT",
         help = "Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller"
     )]
     port: Option<usize>,
     #[arg(
-        short = 'z',
+        short,
         long,
         help = "Clear all input profile bindings and controller assignments"
     )]
     clear_input_bindings: bool,
     #[arg(
-        short = 's',
         long,
         value_name = "SLOT",
         help = "Load savestate from slot 0-9 when starting the game"
@@ -105,8 +98,13 @@ async fn main() -> std::io::Result<()> {
         }
 
         let mut device = device::Device::new();
-        let overclock = device.ui.config.emulation.overclock;
-        let disable_expansion_pak = device.ui.config.emulation.disable_expansion_pak;
+        let fullscreen = args.fullscreen.unwrap_or(device.ui.config.video.fullscreen);
+        let overclock = args
+            .overclock
+            .unwrap_or(device.ui.config.emulation.overclock);
+        let disable_expansion_pak = args
+            .disable_expansion_pak
+            .unwrap_or(device.ui.config.emulation.disable_expansion_pak);
 
         let game_cheats = {
             let game_crc = ui::storage::get_game_crc(&rom_contents);
@@ -117,7 +115,7 @@ async fn main() -> std::io::Result<()> {
             &mut device,
             rom_contents,
             ui::gui::GameSettings {
-                fullscreen: args.fullscreen,
+                fullscreen,
                 overclock,
                 disable_expansion_pak,
                 cheats: game_cheats,
