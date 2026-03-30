@@ -366,7 +366,7 @@ pub fn run_rom(
         }
 
         command.arg(file_path.to_str().unwrap()).output().unwrap();
-        std::fs::remove_file(cheats_path.to_str().unwrap()).unwrap();
+        let _ = std::fs::remove_file(cheats_path.to_str().unwrap());
 
         weak.upgrade_in_event_loop(move |handle| {
             if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
