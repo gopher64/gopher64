@@ -23,6 +23,12 @@ struct Args {
     overclock: Option<bool>,
     #[arg(long)]
     disable_expansion_pak: Option<bool>,
+    #[arg(long, value_name = "CHEATS_FILE")]
+    cheats: Option<String>,
+    #[arg(long, value_name = "NETPLAY_PEER_ADDR")]
+    netplay_peer_addr: Option<String>,
+    #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER")]
+    netplay_player_number: Option<u8>,
     #[arg(
         long,
         value_name = "PROFILE_NAME",
@@ -105,12 +111,25 @@ async fn main() -> std::io::Result<()> {
         let disable_expansion_pak = args
             .disable_expansion_pak
             .unwrap_or(device.ui.config.emulation.disable_expansion_pak);
-
-        let game_cheats = {
+        let cheats = if let Some(cheats_file) = args.cheats
+            && let Ok(data) = std::fs::read(cheats_file)
+            && let Ok(cheats) = serde_json::from_slice(&data)
+        {
+            cheats
+        } else {
             let game_crc = ui::storage::get_game_crc(&rom_contents);
-            let cheats = ui::config::Cheats::new();
-            cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
+            ui::config::Cheats::new()
+                .cheats
+                .get(&game_crc)
+                .cloned()
+                .unwrap_or_default()
         };
+        if let Some(peer_addr) = args.netplay_peer_addr
+            && let Some(player_number) = args.netplay_player_number
+        {
+            device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
+        }
+
         device::run_game(
             &mut device,
             rom_contents,
@@ -118,10 +137,14 @@ async fn main() -> std::io::Result<()> {
                 fullscreen,
                 overclock,
                 disable_expansion_pak,
-                cheats: game_cheats,
+                cheats,
                 load_savestate_slot: args.load_state,
             },
         );
+
+        if device.netplay.is_some() {
+            netplay::close(&mut device);
+        }
     } else if std::env::args().count() > 1 {
         let mut ui = ui::Ui::new();
 

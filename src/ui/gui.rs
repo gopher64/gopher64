@@ -1,6 +1,4 @@
 #![allow(unused)]
-use crate::device;
-use crate::netplay;
 use crate::ui;
 use slint::Model;
 
@@ -337,7 +335,7 @@ pub fn app_window() {
 pub fn run_rom(
     gb_paths: GbPaths,
     file_path: std::path::PathBuf,
-    mut game_settings: GameSettings,
+    game_settings: GameSettings,
     netplay: Option<NetplayDevice>,
     usb: ui::Usb,
     weak: slint::Weak<AppWindow>,
@@ -346,20 +344,33 @@ pub fn run_rom(
         weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
             .unwrap();
 
-        std::process::Command::new(std::env::current_exe().unwrap())
-            .args([
-                "--fullscreen",
-                &game_settings.fullscreen.to_string(),
-                "--overclock",
-                &game_settings.overclock.to_string(),
-                "--disable-expansion-pak",
-                &game_settings.disable_expansion_pak.to_string(),
-                file_path.to_str().unwrap(),
-            ])
-            .output()
-            .unwrap();
+        let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+        command.args([
+            "--fullscreen",
+            &game_settings.fullscreen.to_string(),
+            "--overclock",
+            &game_settings.overclock.to_string(),
+            "--disable-expansion-pak",
+            &game_settings.disable_expansion_pak.to_string(),
+        ]);
+        let dirs = ui::get_dirs();
+        if let Some(netplay_device) = netplay {
+            let f = std::fs::File::create(dirs.cache_dir.join("cheats.json")).unwrap();
+            serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
+
+            command.args([
+                "--netplay-peer-addr",
+                &netplay_device.peer_addr.to_string(),
+                "--netplay-player-number",
+                &netplay_device.player_number.to_string(),
+                "--cheats",
+                dirs.cache_dir.join("cheats.json").to_str().unwrap(),
+            ]);
+        }
+        command.arg(file_path.to_str().unwrap()).output().unwrap();
 
         weak.upgrade_in_event_loop(move |handle| {
+            std::fs::remove_file(dirs.cache_dir.join("cheats.json")).unwrap();
             if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
                 handle.set_rom_dir(rom_dir.into());
             }
