@@ -238,23 +238,23 @@ pub fn default_instruction() -> fn(&mut device::Device, u32) {
     device::cop0::reserved
 }
 
-pub fn default_instructions<const N: usize>() -> [fn(&mut device::Device, u32); N]
+pub fn default_instructions<const N: usize>() -> Vec<fn(&mut device::Device, u32)>
 where
-    [fn(&mut device::Device, u32); N]: Sized,
+    Vec<fn(&mut device::Device, u32)>: Sized,
 {
-    [device::cop0::reserved; N]
+    vec![device::cop0::reserved; N]
 }
 
-pub fn default_memory_read_fast()
--> [fn(&device::Device, u64, device::memory::AccessSize) -> u32; 0x2000] {
-    [device::unmapped::read_mem_fast; 0x2000]
+pub fn default_memory_read_fast() -> Vec<fn(&device::Device, u64, device::memory::AccessSize) -> u32>
+{
+    vec![device::unmapped::read_mem_fast; 0x2000]
 }
 
-pub fn default_memory_read()
--> [fn(&mut device::Device, u64, device::memory::AccessSize) -> u32; 0x2000] {
-    [device::unmapped::read_mem; 0x2000]
+pub fn default_memory_read() -> Vec<fn(&mut device::Device, u64, device::memory::AccessSize) -> u32>
+{
+    vec![device::unmapped::read_mem; 0x2000]
 }
 
-pub fn default_memory_write() -> [fn(&mut device::Device, u64, u32, u32); 0x2000] {
-    [device::unmapped::write_mem; 0x2000]
+pub fn default_memory_write() -> Vec<fn(&mut device::Device, u64, u32, u32)> {
+    vec![device::unmapped::write_mem; 0x2000]
 }

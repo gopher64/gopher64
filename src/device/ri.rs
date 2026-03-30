@@ -12,7 +12,7 @@ pub const RI_REGS_COUNT: u32 = 8;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Ri {
-    pub regs: [u32; RI_REGS_COUNT as usize],
+    pub regs: Vec<u32>,
     pub ram_init: bool,
 }
 

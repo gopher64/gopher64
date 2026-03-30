@@ -79,8 +79,8 @@ pub struct RspDma {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Rsp {
     pub cpu: device::rsp_cpu::Cpu,
-    pub regs: [u32; SP_REGS_COUNT as usize],
-    pub regs2: [u32; SP_REGS2_COUNT as usize],
+    pub regs: Vec<u32>,
+    pub regs2: Vec<u32>,
     pub mem: Vec<u8>,
     pub fifo: [RspDma; 2],
     pub last_status_value: u32,

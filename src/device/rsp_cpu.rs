@@ -42,7 +42,7 @@ pub struct Cpu {
         deserialize_with = "savestates::deserialize_m128i_array"
     )]
     pub shuffle: [__m128i; 16],
-    pub gpr: [u32; 32],
+    pub gpr: Vec<u32>,
     #[serde(
         serialize_with = "savestates::serialize_m128i_array",
         deserialize_with = "savestates::deserialize_m128i_array"
@@ -93,22 +93,22 @@ pub struct Cpu {
     pub divdp: bool,
     pub divin: i16,
     pub divout: i16,
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub special_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub regimm_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub cop0_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub cop2_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub lwc2_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub swc2_instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub vec_instrs: [fn(&mut device::Device, u32); 64],
+    #[serde(skip, default = "savestates::default_instructions::<64>")]
+    pub special_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub regimm_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub cop0_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub cop2_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub lwc2_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub swc2_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<64>")]
+    pub instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<64>")]
+    pub vec_instrs: Vec<fn(&mut device::Device, u32)>,
 }
 
 pub fn in_delay_slot(device: &device::Device) -> bool {
@@ -220,7 +220,7 @@ pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::De
 }
 
 pub fn map_instructions(device: &mut device::Device) {
-    device.rsp.cpu.instrs = [
+    device.rsp.cpu.instrs = vec![
         device::rsp_su_instructions::reserved, // SPECIAL
         device::rsp_su_instructions::reserved, // REGIMM
         device::rsp_su_instructions::j,        // 2
@@ -287,7 +287,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::rsp_su_instructions::reserved, // 63
     ];
 
-    device.rsp.cpu.special_instrs = [
+    device.rsp.cpu.special_instrs = vec![
         device::rsp_su_instructions::sll,              // 0
         device::rsp_su_instructions::special_reserved, // 1
         device::rsp_su_instructions::srl,              // 2
@@ -354,7 +354,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::rsp_su_instructions::special_reserved, // 63
     ];
 
-    device.rsp.cpu.regimm_instrs = [
+    device.rsp.cpu.regimm_instrs = vec![
         device::rsp_su_instructions::bltz,     // 0
         device::rsp_su_instructions::bgez,     // 1
         device::rsp_su_instructions::reserved, // 2
@@ -389,7 +389,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::rsp_su_instructions::reserved, // 31
     ];
 
-    device.rsp.cpu.cop0_instrs = [
+    device.rsp.cpu.cop0_instrs = vec![
         device::rsp_su_instructions::mfc0,     // 0
         device::rsp_su_instructions::reserved, // 1
         device::rsp_su_instructions::reserved, // 2
@@ -424,7 +424,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::rsp_su_instructions::reserved, // 31
     ];
 
-    device.rsp.cpu.cop2_instrs = [
+    device.rsp.cpu.cop2_instrs = vec![
         device::rsp_su_instructions::mfc2,        // 0
         device::rsp_su_instructions::reserved,    // 1
         device::rsp_su_instructions::cfc2,        // 2
@@ -459,7 +459,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::rsp_vu_instructions::execute_vec, // 31
     ];
 
-    device.rsp.cpu.lwc2_instrs = [
+    device.rsp.cpu.lwc2_instrs = vec![
         device::rsp_su_instructions::lbv,      // 0
         device::rsp_su_instructions::lsv,      // 1
         device::rsp_su_instructions::llv,      // 2
@@ -494,7 +494,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::rsp_su_instructions::reserved, // 31
     ];
 
-    device.rsp.cpu.swc2_instrs = [
+    device.rsp.cpu.swc2_instrs = vec![
         device::rsp_su_instructions::sbv,      // 0
         device::rsp_su_instructions::ssv,      // 1
         device::rsp_su_instructions::slv,      // 2
@@ -529,7 +529,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::rsp_su_instructions::reserved, // 31
     ];
 
-    device.rsp.cpu.vec_instrs = [
+    device.rsp.cpu.vec_instrs = vec![
         device::rsp_vu_instructions::vmulf, // 0
         device::rsp_vu_instructions::vmulu, // 1
         device::rsp_vu_instructions::vrndp, // 2

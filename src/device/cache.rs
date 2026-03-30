@@ -1,22 +1,22 @@
 use crate::{device, savestates};
 
-#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ICache {
     pub valid: bool,
     pub tag: u32,
     pub index: u16,
-    pub words: [u32; 8],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub instruction: [fn(&mut device::Device, u32); 8],
+    pub words: Vec<u32>,
+    #[serde(skip, default = "savestates::default_instructions::<8>")]
+    pub instruction: Vec<fn(&mut device::Device, u32)>,
 }
 
-#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct DCache {
     pub valid: bool,
     pub dirty: bool,
     pub tag: u32,
     pub index: u16,
-    pub words: [u32; 4],
+    pub words: Vec<u32>,
 }
 
 pub fn icache_hit(device: &device::Device, line_index: usize, phys_address: u64) -> bool {

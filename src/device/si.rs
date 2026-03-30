@@ -25,7 +25,7 @@ pub enum DmaDir {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Si {
-    pub regs: [u32; SI_REGS_COUNT as usize],
+    pub regs: Vec<u32>,
     pub dma_dir: DmaDir,
 }
 

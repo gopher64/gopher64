@@ -23,7 +23,7 @@ pub struct Cpu {
     pub cop1: device::cop1::Cop1,
     pub cop2: device::cop2::Cop2,
     pub branch_state: BranchState,
-    pub gpr: [u64; 32],
+    pub gpr: Vec<u64>,
     pub pc: u64,
     pub pc_phys: u64,
     pub lo: u64,
@@ -32,13 +32,13 @@ pub struct Cpu {
     pub llbit: bool,
     pub overclock: bool,
     pub clock_rate: u64,
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub special_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub regimm_instrs: [fn(&mut device::Device, u32); 32],
-    pub events: [device::events::Event; device::events::EVENT_TYPE_COUNT],
+    #[serde(skip, default = "savestates::default_instructions::<64>")]
+    pub instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<64>")]
+    pub special_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub regimm_instrs: Vec<fn(&mut device::Device, u32)>,
+    pub events: Vec<device::events::Event>,
     pub next_event_count: u64,
     pub next_event: usize,
 }
@@ -55,7 +55,7 @@ pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::De
 }
 
 pub fn map_instructions(device: &mut device::Device) {
-    device.cpu.instrs = [
+    device.cpu.instrs = vec![
         device::cop0::reserved,           // SPECIAL
         device::cop0::reserved,           // REGIMM
         device::cpu_instructions::j,      // 2
@@ -121,7 +121,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::cop0::reserved,           // 62
         device::cpu_instructions::sd,     // 63
     ];
-    device.cpu.special_instrs = [
+    device.cpu.special_instrs = vec![
         device::cpu_instructions::sll,    // 0
         device::cop0::reserved,           // 1
         device::cpu_instructions::srl,    // 2
@@ -187,7 +187,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::cpu_instructions::dsrl32, // 62
         device::cpu_instructions::dsra32, // 63
     ];
-    device.cpu.regimm_instrs = [
+    device.cpu.regimm_instrs = vec![
         device::cpu_instructions::bltz,    // 0
         device::cpu_instructions::bgez,    // 1
         device::cpu_instructions::bltzl,   // 2

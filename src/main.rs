@@ -86,7 +86,6 @@ fn main() -> std::io::Result<()> {
         .enable_all()
         .worker_threads(4)
         .thread_name("n64")
-        .thread_stack_size(env!("N64_STACK_SIZE").parse().unwrap())
         .build()
         .unwrap();
 

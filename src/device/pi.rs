@@ -30,7 +30,7 @@ const PI_STATUS_CLR_INTR: u32 = 1 << 1;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Pi {
-    pub regs: [u32; PI_REGS_COUNT as usize],
+    pub regs: Vec<u32>,
 }
 
 struct PiHandler {

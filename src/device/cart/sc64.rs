@@ -23,9 +23,9 @@ const SC64_EEPROM_MASK: usize = 0xFFF;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Sc64 {
     pub buffer: Vec<u8>,
-    pub regs: [u32; SC64_REGS_COUNT as usize],
+    pub regs: Vec<u32>,
     pub regs_locked: bool,
-    pub cfg: [u32; SC64_CFG_COUNT as usize],
+    pub cfg: Vec<u32>,
     pub sector: u32,
     pub writeback_sector: Vec<u32>,
     pub usb_buffer: Vec<u8>,

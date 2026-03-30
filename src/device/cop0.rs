@@ -94,15 +94,15 @@ const COP0_TAGLO_REG_MASK: u64 = 0b00001111111111111111111111000000;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cop0 {
     pub reg_latch: u64,
-    pub regs: [u64; COP0_REGS_COUNT as usize],
-    pub reg_write_masks: [u64; COP0_REGS_COUNT as usize],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub instrs2: [fn(&mut device::Device, u32); 32],
+    pub regs: Vec<u64>,
+    pub reg_write_masks: Vec<u64>,
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub instrs2: Vec<fn(&mut device::Device, u32)>,
     pub tlb_lut_r: Vec<device::tlb::TlbLut>,
     pub tlb_lut_w: Vec<device::tlb::TlbLut>,
-    pub tlb_entries: [device::tlb::TlbEntry; 32],
+    pub tlb_entries: Vec<device::tlb::TlbEntry>,
     pub is_event: bool,
 }
 
@@ -266,7 +266,7 @@ pub fn add_cycles(device: &mut device::Device, cycles: u64) {
 }
 
 pub fn map_instructions(device: &mut device::Device) {
-    device.cpu.cop0.instrs = [
+    device.cpu.cop0.instrs = vec![
         device::cop0::mfc0,         // 0
         device::cop0::dmfc0,        // 1
         device::cop0::reserved,     // 2
@@ -301,7 +301,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::cop0::reserved,     // 31
     ];
 
-    device.cpu.cop0.instrs2 = [
+    device.cpu.cop0.instrs2 = vec![
         device::cop0::reserved, // 0
         device::cop0::tlbr,     // 1
         device::cop0::tlbwi,    // 2
@@ -338,7 +338,7 @@ pub fn map_instructions(device: &mut device::Device) {
 }
 
 pub fn init(device: &mut device::Device) {
-    device.cpu.cop0.reg_write_masks = [
+    device.cpu.cop0.reg_write_masks = vec![
         COP0_INDEX_REG_MASK,
         0, // Random, read only
         COP0_ENTRYLO_REG_MASK,

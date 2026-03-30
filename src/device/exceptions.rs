@@ -120,7 +120,7 @@ pub fn tlb_miss_exception(
 
     let mut vector_offset = 0x180;
     let mut valid = true;
-    for i in device.cpu.cop0.tlb_entries {
+    for i in &device.cpu.cop0.tlb_entries {
         if address & !3 >= i.start_even && address & !3 <= i.end_even {
             valid = i.v_even != 0;
             if valid && access_type == device::memory::AccessType::Write && i.d_even == 0 {

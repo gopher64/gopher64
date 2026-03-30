@@ -19,7 +19,7 @@ pub const VI_REGS_COUNT: u32 = 14;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Vi {
-    pub regs: [u32; VI_REGS_COUNT as usize],
+    pub regs: Vec<u32>,
     pub clock: u64,
     pub delay: u64,
     pub field: u32,

@@ -46,7 +46,7 @@ pub const MI_INIT_LENGTH_MASK: u32 = 0b1111111;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Mi {
-    pub regs: [u32; MI_REGS_COUNT as usize],
+    pub regs: Vec<u32>,
 }
 
 pub fn read_regs(

@@ -13,7 +13,7 @@ const AI_STATUS_FULL: u32 = 0x80000000;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Ai {
-    pub regs: [u32; AI_REGS_COUNT as usize],
+    pub regs: Vec<u32>,
     pub fifo: [AiDma; 2],
     pub last_read: u64,
     pub delayed_carry: bool,

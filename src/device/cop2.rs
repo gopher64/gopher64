@@ -2,8 +2,8 @@ use crate::{device, savestates};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cop2 {
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub instrs: [fn(&mut device::Device, u32); 32],
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub instrs: Vec<fn(&mut device::Device, u32)>,
     pub reg_latch: u64,
 }
 
@@ -79,7 +79,7 @@ fn unusable(device: &mut device::Device, _opcode: u32) {
 }
 
 pub fn map_instructions(device: &mut device::Device) {
-    device.cpu.cop2.instrs = [
+    device.cpu.cop2.instrs = vec![
         device::cop2::mfc2,     // 0
         device::cop2::dmfc2,    // 1
         device::cop2::cfc2,     // 2

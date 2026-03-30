@@ -20,7 +20,7 @@ pub const RDRAM_MASK: usize = 0xFFFFFF;
 pub struct Rdram {
     pub mem: Vec<u8>,
     pub size: u32,
-    pub regs: [[u32; RDRAM_REGS_COUNT as usize]; 4],
+    pub regs: Vec<Vec<u32>>,
 }
 
 pub fn read_mem_fast(

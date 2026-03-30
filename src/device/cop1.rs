@@ -30,20 +30,20 @@ pub struct Cop1 {
     pub fcr31: u32,
     //#[cfg(target_arch = "x86_64")]
     //pub flush_mode: u32,
-    pub fgr32: [[u8; 4]; 32],
-    pub fgr64: [[u8; 8]; 32],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub instrs: [fn(&mut device::Device, u32); 32],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub b_instrs: [fn(&mut device::Device, u32); 4],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub s_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub d_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub w_instrs: [fn(&mut device::Device, u32); 64],
-    #[serde(skip, default = "savestates::default_instructions")]
-    pub l_instrs: [fn(&mut device::Device, u32); 64],
+    pub fgr32: Vec<[u8; 4]>,
+    pub fgr64: Vec<[u8; 8]>,
+    #[serde(skip, default = "savestates::default_instructions::<32>")]
+    pub instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<4>")]
+    pub b_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<64>")]
+    pub s_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<64>")]
+    pub d_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<64>")]
+    pub w_instrs: Vec<fn(&mut device::Device, u32)>,
+    #[serde(skip, default = "savestates::default_instructions::<64>")]
+    pub l_instrs: Vec<fn(&mut device::Device, u32)>,
 }
 
 pub fn lwc1(device: &mut device::Device, opcode: u32) {
@@ -456,14 +456,14 @@ pub fn get_fpr_double(device: &device::Device, index: usize) -> f64 {
 }
 
 pub fn map_instructions(device: &mut device::Device) {
-    device.cpu.cop1.b_instrs = [
+    device.cpu.cop1.b_instrs = vec![
         device::fpu_instructions::bc1f,  // 0
         device::fpu_instructions::bc1t,  // 1
         device::fpu_instructions::bc1fl, // 2
         device::fpu_instructions::bc1tl, // 3
     ];
 
-    device.cpu.cop1.s_instrs = [
+    device.cpu.cop1.s_instrs = vec![
         device::fpu_instructions::add_s,     // 0
         device::fpu_instructions::sub_s,     // 1
         device::fpu_instructions::mul_s,     // 2
@@ -530,7 +530,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::fpu_instructions::c_ngt_s,   // 63
     ];
 
-    device.cpu.cop1.d_instrs = [
+    device.cpu.cop1.d_instrs = vec![
         device::fpu_instructions::add_d,     // 0
         device::fpu_instructions::sub_d,     // 1
         device::fpu_instructions::mul_d,     // 2
@@ -597,7 +597,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::fpu_instructions::c_ngt_d,   // 63
     ];
 
-    device.cpu.cop1.l_instrs = [
+    device.cpu.cop1.l_instrs = vec![
         device::cop1::reserved,            // 0
         device::cop1::reserved,            // 1
         device::cop1::reserved,            // 2
@@ -664,7 +664,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::cop1::reserved,            // 63
     ];
 
-    device.cpu.cop1.w_instrs = [
+    device.cpu.cop1.w_instrs = vec![
         device::cop1::reserved,            // 0
         device::cop1::reserved,            // 1
         device::cop1::reserved,            // 2
@@ -731,7 +731,7 @@ pub fn map_instructions(device: &mut device::Device) {
         device::cop1::reserved,            // 63
     ];
 
-    device.cpu.cop1.instrs = [
+    device.cpu.cop1.instrs = vec![
         device::cop1::mfc1,           // 0
         device::cop1::dmfc1,          // 1
         device::cop1::cfc1,           // 2
