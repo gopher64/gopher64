@@ -360,7 +360,7 @@ pub fn run_rom(
             .unwrap();
 
         weak.upgrade_in_event_loop(move |handle| {
-            if let Some(rom_dir) = file_path.parent().unwrap().to_path_buf().to_str() {
+            if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
                 handle.set_rom_dir(rom_dir.into());
             }
             handle.set_game_running(false);
