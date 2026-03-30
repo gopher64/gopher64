@@ -23,15 +23,15 @@ struct Args {
     overclock: Option<bool>,
     #[arg(long)]
     disable_expansion_pak: Option<bool>,
-    #[arg(long, value_name = "CHEATS_FILE")]
+    #[arg(long, value_name = "CHEATS_FILE", hide = true)]
     cheats: Option<String>,
-    #[arg(long, value_name = "NETPLAY_PEER_ADDR")]
+    #[arg(long, value_name = "NETPLAY_PEER_ADDR", hide = true)]
     netplay_peer_addr: Option<String>,
-    #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER")]
+    #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER", hide = true)]
     netplay_player_number: Option<u8>,
-    #[arg(long, value_name = "GB_ROM_PATH")]
+    #[arg(long, value_name = "GB_ROM_PATH", hide = true)]
     gb_rom: Option<Vec<String>>,
-    #[arg(long, value_name = "GB_RAM_PATH")]
+    #[arg(long, value_name = "GB_RAM_PATH", hide = true)]
     gb_ram: Option<Vec<String>>,
     #[arg(
         long,

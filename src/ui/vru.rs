@@ -7,31 +7,32 @@ pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {
     dedup_words.dedup();
 
     let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+    tokio::spawn(async move {
+        let vru_dialog = gui::VruDialog::new().unwrap();
+        let vru_dialog_weak = vru_dialog.as_weak();
 
-    let vru_dialog = gui::VruDialog::new().unwrap();
-    let vru_dialog_weak = vru_dialog.as_weak();
+        let tx_clicked = tx.clone();
 
-    let tx_clicked = tx.clone();
+        vru_dialog.on_vru_button_clicked(move |chosen_word| {
+            tx_clicked.try_send(chosen_word.to_string()).unwrap();
+            vru_dialog_weak.unwrap().window().hide().unwrap();
+        });
 
-    vru_dialog.on_vru_button_clicked(move |chosen_word| {
-        tx_clicked.try_send(chosen_word.to_string()).unwrap();
-        vru_dialog_weak.unwrap().window().hide().unwrap();
+        vru_dialog.window().on_close_requested(move || {
+            tx.try_send("".to_string()).unwrap();
+            slint::CloseRequestResponse::HideWindow
+        });
+
+        let words_vec = slint::VecModel::default();
+        for word in dedup_words {
+            words_vec.push(word.into());
+        }
+        let words_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+            std::rc::Rc::new(words_vec);
+        vru_dialog.set_words(slint::ModelRc::from(words_model));
+
+        vru_dialog.run().unwrap();
     });
-
-    vru_dialog.window().on_close_requested(move || {
-        tx.try_send("".to_string()).unwrap();
-        slint::CloseRequestResponse::HideWindow
-    });
-
-    let words_vec = slint::VecModel::default();
-    for word in dedup_words {
-        words_vec.push(word.into());
-    }
-    let words_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-        std::rc::Rc::new(words_vec);
-    vru_dialog.set_words(slint::ModelRc::from(words_model));
-
-    vru_dialog.run().unwrap();
 
     let mut result = rx.try_recv();
     while result.is_err() {
