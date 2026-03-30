@@ -4,6 +4,9 @@ rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 [target.'cfg(any(target_os = "windows", target_os = "macos"))']
 linker = "rust-lld"
 
+[target.'cfg(target_os = "windows")']
+rustflags = ["-C", "link-arg=/STACK:8388608"]
+
 [target.'cfg(target_arch = "x86_64")']
 rustflags = ["-C", "target-cpu=x86-64-v3"]
 

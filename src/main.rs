@@ -81,15 +81,8 @@ struct Args {
     load_state: Option<u32>,
 }
 
-fn main() -> std::io::Result<()> {
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .worker_threads(4)
-        .thread_name("n64")
-        .thread_stack_size(env!("N64_STACK_SIZE").parse().unwrap())
-        .build()
-        .unwrap();
-
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
     std::fs::create_dir_all(dirs.config_dir)?;
@@ -111,29 +104,26 @@ fn main() -> std::io::Result<()> {
             return Err(Error::other("Savestate slot must be between 0 and 9"));
         }
 
-        let handle = runtime.spawn(async move {
-            let mut device = device::Device::new();
-            let overclock = device.ui.config.emulation.overclock;
-            let disable_expansion_pak = device.ui.config.emulation.disable_expansion_pak;
+        let mut device = device::Device::new();
+        let overclock = device.ui.config.emulation.overclock;
+        let disable_expansion_pak = device.ui.config.emulation.disable_expansion_pak;
 
-            let game_cheats = {
-                let game_crc = ui::storage::get_game_crc(&rom_contents);
-                let cheats = ui::config::Cheats::new();
-                cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
-            };
-            device::run_game(
-                &mut device,
-                rom_contents,
-                ui::gui::GameSettings {
-                    fullscreen: args.fullscreen,
-                    overclock,
-                    disable_expansion_pak,
-                    cheats: game_cheats,
-                    load_savestate_slot: args.load_state,
-                },
-            );
-        });
-        runtime.block_on(handle).unwrap()
+        let game_cheats = {
+            let game_crc = ui::storage::get_game_crc(&rom_contents);
+            let cheats = ui::config::Cheats::new();
+            cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
+        };
+        device::run_game(
+            &mut device,
+            rom_contents,
+            ui::gui::GameSettings {
+                fullscreen: args.fullscreen,
+                overclock,
+                disable_expansion_pak,
+                cheats: game_cheats,
+                load_savestate_slot: args.load_state,
+            },
+        );
     } else if std::env::args().count() > 1 {
         let mut ui = ui::Ui::new();
 
@@ -175,10 +165,8 @@ fn main() -> std::io::Result<()> {
             ui::input::bind_input_profile(&mut ui, profile, port);
         }
     } else {
-        runtime.block_on(async {
-            gui::app_window();
-        });
+        gui::app_window();
     }
-    runtime.shutdown_timeout(std::time::Duration::from_secs(1));
+
     Ok(())
 }
