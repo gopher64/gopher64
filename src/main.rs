@@ -151,7 +151,7 @@ async fn main() -> std::io::Result<()> {
             }
 
             if device.ui.config.emulation.usb {
-                (shutdown_tx, device.ui.usb) = ui::usb::init();
+                (shutdown_tx, device.ui.usb) = ui::usb::init(None);
             }
         }
 

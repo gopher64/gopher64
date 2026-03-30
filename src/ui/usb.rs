@@ -26,7 +26,7 @@ fn respond_to_handshake(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, data: 
     }
 }
 
-fn upload_rom(rom: Vec<u8>) {
+fn upload_rom(rom: Vec<u8>, weak: Option<slint::Weak<ui::gui::AppWindow>>) {
     let dir = std::env::temp_dir();
     let rom_path = dir.join("rom_upload.bin");
     std::fs::write(rom_path.clone(), rom).unwrap();
@@ -47,7 +47,7 @@ fn upload_rom(rom: Vec<u8>) {
             load_savestate_slot: None,
         },
         None,
-        None,
+        weak,
     );
 }
 
@@ -57,6 +57,7 @@ async fn handle_connection(
     mut usb_rx: tokio::sync::broadcast::Receiver<UsbData>,
     usb_tx: tokio::sync::broadcast::Sender<UsbData>,
     cart_tx: tokio::sync::broadcast::Sender<UsbData>,
+    weak: Option<slint::Weak<ui::gui::AppWindow>>,
 ) {
     let (mut incoming, mut outgoing) = conn.into_split();
 
@@ -131,7 +132,7 @@ async fn handle_connection(
                                 if usb_data.data_type == DATATYPE_TCPTEST {
                                     respond_to_handshake(&usb_tx,usb_data.data);
                                 } else if usb_data.data_type == DATATYPE_ROMUPLOAD {
-                                    upload_rom(usb_data.data);
+                                    upload_rom(usb_data.data,weak.clone());
                                 } else {
                                     cart_tx.send(usb_data).unwrap();
                                 }
@@ -152,7 +153,9 @@ async fn handle_connection(
     }
 }
 
-pub fn init() -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
+pub fn init(
+    weak: Option<slint::Weak<ui::gui::AppWindow>>,
+) -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
     let (shutdown_tx, mut shutdown_rx) = tokio::sync::watch::channel(());
     let (usb_tx, usb_rx): (
         tokio::sync::broadcast::Sender<UsbData>,
@@ -174,7 +177,7 @@ pub fn init() -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
             tokio::select! {
                 res = listener.accept() => {
                     if let Ok((c,_)) = res {
-                        handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone()).await;
+                        handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone(),weak.clone()).await;
                     } else {
                         break;
                     }
