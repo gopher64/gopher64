@@ -26,38 +26,12 @@ fn respond_to_handshake(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, data: 
     }
 }
 
-fn upload_rom(rom: Vec<u8>, weak: slint::Weak<ui::gui::AppWindow>) {
-    let dir = std::env::temp_dir();
-    let rom_path = dir.join("rom_upload.bin");
-    std::fs::write(rom_path.clone(), rom).unwrap();
-
-    let config = ui::config::Config::new();
-
-    ui::gui::run_rom(
-        ui::gui::GbPaths {
-            rom: [None, None, None, None],
-            ram: [None, None, None, None],
-        },
-        rom_path,
-        ui::gui::GameSettings {
-            fullscreen: config.video.fullscreen,
-            overclock: config.emulation.overclock,
-            disable_expansion_pak: config.emulation.disable_expansion_pak,
-            cheats: std::collections::HashMap::new(), // will be filled in later
-            load_savestate_slot: None,
-        },
-        None,
-        weak,
-    );
-}
-
 async fn handle_connection(
     conn: tokio::net::TcpStream,
     mut shutdown_rx: tokio::sync::watch::Receiver<()>,
     mut usb_rx: tokio::sync::broadcast::Receiver<UsbData>,
     usb_tx: tokio::sync::broadcast::Sender<UsbData>,
     cart_tx: tokio::sync::broadcast::Sender<UsbData>,
-    weak: Option<slint::Weak<ui::gui::AppWindow>>,
 ) {
     let (mut incoming, mut outgoing) = conn.into_split();
 
@@ -132,9 +106,7 @@ async fn handle_connection(
                                 if usb_data.data_type == DATATYPE_TCPTEST {
                                     respond_to_handshake(&usb_tx,usb_data.data);
                                 } else if usb_data.data_type == DATATYPE_ROMUPLOAD {
-                                    if let Some(weak) = weak.clone() {
-                                        upload_rom(usb_data.data,weak);
-                                    }
+                                    panic!("ROM upload not supported");
                                 } else {
                                     cart_tx.send(usb_data).unwrap();
                                 }
@@ -155,9 +127,7 @@ async fn handle_connection(
     }
 }
 
-pub fn init(
-    weak: Option<slint::Weak<ui::gui::AppWindow>>,
-) -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
+pub fn init() -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
     let (shutdown_tx, mut shutdown_rx) = tokio::sync::watch::channel(());
     let (usb_tx, usb_rx): (
         tokio::sync::broadcast::Sender<UsbData>,
@@ -179,7 +149,7 @@ pub fn init(
             tokio::select! {
                 res = listener.accept() => {
                     if let Ok((c,_)) = res {
-                        handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone(),weak.clone()).await;
+                        handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone()).await;
                     } else {
                         break;
                     }

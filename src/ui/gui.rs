@@ -294,7 +294,6 @@ fn about_window(app: &AppWindow) {
 pub fn app_window() {
     let app = AppWindow::new().unwrap();
     about_window(&app);
-    let mut shutdown_tx = None;
     let mut controller_paths;
     {
         let game_ui = ui::Ui::new();
@@ -304,18 +303,11 @@ pub fn app_window() {
         controller_paths.insert(0, None);
         settings_window(&app, &game_ui.config);
         controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
-
-        if game_ui.config.emulation.usb {
-            (shutdown_tx, _) = ui::usb::init(Some(app.as_weak()));
-        }
     }
     local_game_window(&app, &controller_paths);
     ui::netplay::netplay_window(&app, &controller_paths);
     ui::cheats::cheats_window(&app);
     app.run().unwrap();
-    if let Some(shutdown_tx) = &shutdown_tx {
-        ui::usb::close(shutdown_tx);
-    }
     save_settings(&app, &controller_paths);
 }
 
