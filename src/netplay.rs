@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use crate::{device, ui};
 use std::io::{Read, Write};
 //UDP packet formats

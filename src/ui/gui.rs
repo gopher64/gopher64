@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::device;
 use crate::netplay;
 use crate::ui;
@@ -345,49 +346,14 @@ pub fn run_rom(
         weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
             .unwrap();
 
-        let mut device = device::Device::new();
-        device.ui.config.rom_dir = file_path.parent().unwrap().to_path_buf();
+        std::process::Command::new(std::env::current_exe().unwrap())
+            .arg(file_path.to_str().unwrap())
+            .output()
+            .unwrap();
 
-        for i in 0..4 {
-            if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
-                device.transferpaks[i].cart.rom =
-                    std::fs::read(gb_paths.rom[i].as_ref().unwrap()).unwrap();
-
-                device.transferpaks[i].cart.ram =
-                    std::fs::read(gb_paths.ram[i].as_ref().unwrap()).unwrap();
-            }
-        }
-
-        device.ui.usb.usb_tx = usb.usb_tx;
-        device.ui.usb.cart_rx = usb.cart_rx;
-
-        device.ui.weak = Some(weak.clone());
-
-        if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
-            if let Some(netplay_device) = netplay {
-                device.netplay = Some(netplay::init(
-                    netplay_device.peer_addr,
-                    netplay_device.player_number,
-                ));
-            } else {
-                game_settings.cheats = {
-                    let game_crc = ui::storage::get_game_crc(&rom_contents);
-                    let cheats = ui::config::Cheats::new();
-                    cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
-                };
-            }
-            device::run_game(&mut device, rom_contents, game_settings);
-            if device.netplay.is_some() {
-                netplay::close(&mut device);
-            }
-        } else {
-            println!("Could not read rom file");
-        }
-
-        let rom_dir = device.ui.config.rom_dir.clone();
         weak.upgrade_in_event_loop(move |handle| {
-            if let Some(rom_dir_str) = rom_dir.to_str() {
-                handle.set_rom_dir(rom_dir_str.into());
+            if let Some(rom_dir) = file_path.parent().unwrap().to_path_buf().to_str() {
+                handle.set_rom_dir(rom_dir.into());
             }
             handle.set_game_running(false);
         })
