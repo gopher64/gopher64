@@ -81,8 +81,7 @@ pub struct Rsp {
     pub cpu: device::rsp_cpu::Cpu,
     pub regs: [u32; SP_REGS_COUNT as usize],
     pub regs2: [u32; SP_REGS2_COUNT as usize],
-    #[serde(with = "serde_big_array::BigArray")]
-    pub mem: [u8; 0x2000],
+    pub mem: Vec<u8>,
     pub fifo: [RspDma; 2],
     pub last_status_value: u32,
     pub run_after_dma: bool,

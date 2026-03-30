@@ -23,8 +23,7 @@ pub struct Flashram {
     pub status: u32,
     pub mode: FlashramMode,
     pub erase_page: u16,
-    #[serde(with = "serde_big_array::BigArray")]
-    pub page_buf: [u8; 128],
+    pub page_buf: Vec<u8>,
     pub silicon_id: [u32; 2],
 }
 

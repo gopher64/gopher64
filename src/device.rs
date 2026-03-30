@@ -321,8 +321,8 @@ impl Device {
                 next_event: events::EVENT_TYPE_NONE,
             },
             pif: pif::Pif {
-                rom: [0; 1984],
-                ram: [0; 64],
+                rom: vec![0; 1984],
+                ram: vec![0; 64],
                 channels: [pif::PifChannel {
                     tx: None,
                     tx_buf: None,
@@ -353,7 +353,7 @@ impl Device {
                 flashram: cart::sram::Flashram {
                     status: 0,
                     erase_page: 0,
-                    page_buf: [0xff; 128],
+                    page_buf: vec![0xff; 128],
                     silicon_id: [cart::sram::FLASHRAM_TYPE_ID, cart::sram::MX29L1100_ID],
                     mode: cart::sram::FlashramMode::ReadArray,
                 },
@@ -362,20 +362,26 @@ impl Device {
                 fast_read: [unmapped::read_mem_fast; 0x2000],
                 memory_map_read: [unmapped::read_mem; 0x2000],
                 memory_map_write: [unmapped::write_mem; 0x2000],
-                icache: [cache::ICache {
-                    valid: false,
-                    index: 0,
-                    tag: 0,
-                    words: [0; 8],
-                    instruction: [cop0::reserved; 8],
-                }; 512],
-                dcache: [cache::DCache {
-                    valid: false,
-                    dirty: false,
-                    tag: 0,
-                    index: 0,
-                    words: [0; 4],
-                }; 512],
+                icache: vec![
+                    cache::ICache {
+                        valid: false,
+                        index: 0,
+                        tag: 0,
+                        words: [0; 8],
+                        instruction: [cop0::reserved; 8],
+                    };
+                    512
+                ],
+                dcache: vec![
+                    cache::DCache {
+                        valid: false,
+                        dirty: false,
+                        tag: 0,
+                        index: 0,
+                        words: [0; 4],
+                    };
+                    512
+                ],
             },
             rdram: rdram::Rdram {
                 mem: vec![],
@@ -384,10 +390,13 @@ impl Device {
             },
             rsp: rsp_interface::Rsp {
                 cpu: rsp_cpu::Cpu {
-                    instructions: [rsp_cpu::Instructions {
-                        func: rsp_su_instructions::reserved,
-                        opcode: 0,
-                    }; 0x1000 / 4],
+                    instructions: vec![
+                        rsp_cpu::Instructions {
+                            func: rsp_su_instructions::reserved,
+                            opcode: 0,
+                        };
+                        0x1000 / 4
+                    ],
                     last_instruction_type: rsp_cpu::InstructionType::Su,
                     instruction_type: rsp_cpu::InstructionType::Su,
                     pipeline_full: false,
@@ -402,8 +411,8 @@ impl Device {
                     cycle_counter: 0,
                     gpr: [0; 32],
                     vpr: unsafe { [_mm_setzero_si128(); 32] },
-                    reciprocals: [0; 512],
-                    inverse_square_roots: [0; 512],
+                    reciprocals: vec![0; 512],
+                    inverse_square_roots: vec![0; 512],
                     divdp: false,
                     divin: 0,
                     divout: 0,
@@ -427,7 +436,7 @@ impl Device {
                 },
                 regs: [0; rsp_interface::SP_REGS_COUNT as usize],
                 regs2: [0; rsp_interface::SP_REGS2_COUNT as usize],
-                mem: [0; 0x2000],
+                mem: vec![0; 0x2000],
                 last_status_value: 0,
                 run_after_dma: false,
                 fifo: [rsp_interface::RspDma {
@@ -489,7 +498,7 @@ impl Device {
                 voice_state: 0,
                 load_offset: 0,
                 voice_init: 0,
-                word_buffer: [0; 40],
+                word_buffer: vec![0; 40],
                 words: Vec::new(),
                 talking: false,
                 word_mappings: HashMap::new(),

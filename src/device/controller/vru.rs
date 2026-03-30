@@ -22,8 +22,7 @@ pub struct Vru {
     pub voice_state: u8,
     pub load_offset: u8,
     pub voice_init: u8,
-    #[serde(with = "serde_big_array::BigArray")]
-    pub word_buffer: [u16; 40],
+    pub word_buffer: Vec<u16>,
     pub words: Vec<String>,
     pub talking: bool,
     pub word_mappings: HashMap<String, String>,
@@ -43,7 +42,7 @@ fn reset_vru(device: &mut device::Device) {
     }
     device.vru.load_offset = 0;
     device.vru.voice_init = 1;
-    device.vru.word_buffer = [0; 40];
+    device.vru.word_buffer = vec![0; 40];
 }
 
 fn set_status(device: &mut device::Device, channel: usize) {
@@ -227,7 +226,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     20,
                 );
             if device.vru.load_offset == 0 {
-                device.vru.word_buffer = [0; 40];
+                device.vru.word_buffer = vec![0; 40];
             }
             for i in 0..10 {
                 let offset = device.pif.channels[channel].tx_buf.unwrap() + 3 + (i * 2);

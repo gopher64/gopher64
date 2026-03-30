@@ -3,10 +3,8 @@ use crate::device;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Pif {
-    #[serde(with = "serde_big_array::BigArray")]
-    pub rom: [u8; 1984],
-    #[serde(with = "serde_big_array::BigArray")]
-    pub ram: [u8; 64],
+    pub rom: Vec<u8>,
+    pub ram: Vec<u8>,
     pub channels: [PifChannel; 5],
 }
 
@@ -251,9 +249,9 @@ fn get_default_handler(device: &device::Device) -> device::controller::PakHandle
 
 pub fn reset_pif(device: &mut device::Device, is_nmi_reset: bool) {
     if device.cart.pal {
-        device.pif.rom = rom::PAL_PIF_ROM;
+        device.pif.rom = rom::PAL_PIF_ROM.to_vec();
     } else {
-        device.pif.rom = rom::NTSC_PIF_ROM;
+        device.pif.rom = rom::NTSC_PIF_ROM.to_vec();
     }
 
     let reset_type = u32::from(is_nmi_reset);

@@ -46,10 +46,8 @@ pub struct Memory {
     pub memory_map_read: [fn(&mut device::Device, u64, AccessSize) -> u32; 0x2000],
     #[serde(skip, default = "savestates::default_memory_write")]
     pub memory_map_write: [fn(&mut device::Device, u64, u32, u32); 0x2000],
-    #[serde(with = "serde_big_array::BigArray")]
-    pub icache: [device::cache::ICache; 512],
-    #[serde(with = "serde_big_array::BigArray")]
-    pub dcache: [device::cache::DCache; 512],
+    pub icache: Vec<device::cache::ICache>,
+    pub dcache: Vec<device::cache::DCache>,
 }
 
 pub fn masked_write_32(dst: &mut u32, value: u32, mask: u32) {

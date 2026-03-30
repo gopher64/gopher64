@@ -27,8 +27,7 @@ pub enum InstructionType {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cpu {
-    #[serde(with = "serde_big_array::BigArray")]
-    pub instructions: [Instructions; 0x1000 / 4],
+    pub instructions: Vec<Instructions>,
     pub last_instruction_type: InstructionType,
     pub instruction_type: InstructionType,
     pub pipeline_full: bool,
@@ -49,10 +48,8 @@ pub struct Cpu {
         deserialize_with = "savestates::deserialize_m128i_array"
     )]
     pub vpr: [__m128i; 32],
-    #[serde(with = "serde_big_array::BigArray")]
-    pub reciprocals: [u16; 512],
-    #[serde(with = "serde_big_array::BigArray")]
-    pub inverse_square_roots: [u16; 512],
+    pub reciprocals: Vec<u16>,
+    pub inverse_square_roots: Vec<u16>,
     #[serde(
         serialize_with = "savestates::serialize_m128i",
         deserialize_with = "savestates::deserialize_m128i"
