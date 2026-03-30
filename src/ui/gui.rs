@@ -324,14 +324,11 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: GameSettings,
     netplay: Option<NetplayDevice>,
-    weak: Option<slint::Weak<AppWindow>>,
+    weak: slint::Weak<AppWindow>,
 ) {
     tokio::spawn(async move {
-        if let Some(weak_inner) = weak.clone() {
-            weak_inner
-                .upgrade_in_event_loop(move |handle| handle.set_game_running(true))
-                .unwrap();
-        }
+        weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
+            .unwrap();
 
         let mut command = std::process::Command::new(std::env::current_exe().unwrap());
         command.args([
@@ -371,16 +368,13 @@ pub fn run_rom(
         command.arg(file_path.to_str().unwrap()).output().unwrap();
         std::fs::remove_file(cheats_path.to_str().unwrap()).unwrap();
 
-        if let Some(weak_inner) = weak {
-            weak_inner
-                .upgrade_in_event_loop(move |handle| {
-                    if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
-                        handle.set_rom_dir(rom_dir.into());
-                    }
-                    handle.set_game_running(false);
-                })
-                .unwrap();
-        }
+        weak.upgrade_in_event_loop(move |handle| {
+            if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
+                handle.set_rom_dir(rom_dir.into());
+            }
+            handle.set_game_running(false);
+        })
+        .unwrap();
     });
 }
 
@@ -451,7 +445,7 @@ fn open_rom(app: &AppWindow) {
                     load_savestate_slot: None,
                 },
                 None,
-                Some(weak),
+                weak,
             );
         }
     });

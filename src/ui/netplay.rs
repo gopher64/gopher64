@@ -1112,7 +1112,7 @@ fn setup_wait_window(
                                         peer_addr: socket_addr,
                                         player_number: player_number as u8,
                                     }),
-                                    Some(weak_app),
+                                    weak_app,
                                 );
                             })
                             .unwrap();

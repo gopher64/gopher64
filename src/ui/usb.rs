@@ -26,7 +26,7 @@ fn respond_to_handshake(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, data: 
     }
 }
 
-fn upload_rom(rom: Vec<u8>, weak: Option<slint::Weak<ui::gui::AppWindow>>) {
+fn upload_rom(rom: Vec<u8>, weak: slint::Weak<ui::gui::AppWindow>) {
     let dir = std::env::temp_dir();
     let rom_path = dir.join("rom_upload.bin");
     std::fs::write(rom_path.clone(), rom).unwrap();
@@ -132,7 +132,9 @@ async fn handle_connection(
                                 if usb_data.data_type == DATATYPE_TCPTEST {
                                     respond_to_handshake(&usb_tx,usb_data.data);
                                 } else if usb_data.data_type == DATATYPE_ROMUPLOAD {
-                                    upload_rom(usb_data.data,weak.clone());
+                                    if let Some(weak) = weak.clone() {
+                                        upload_rom(usb_data.data,weak);
+                                    }
                                 } else {
                                     cart_tx.send(usb_data).unwrap();
                                 }
