@@ -365,11 +365,13 @@ pub fn run_rom(
             }
         }
 
-        if let Ok(output) = command.arg(file_path.to_str().unwrap()).output()
-            && !output.status.success()
-        {
-            eprintln!("{}", String::from_utf8_lossy(&output.stderr));
-        }
+        command
+            .arg(file_path.to_str().unwrap())
+            .spawn()
+            .unwrap()
+            .wait()
+            .unwrap();
+
         let _ = std::fs::remove_file(cheats_path.to_str().unwrap());
 
         weak.upgrade_in_event_loop(move |handle| {
