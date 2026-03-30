@@ -110,7 +110,7 @@ export component Settings inherits Page {
         HorizontalBox {
             alignment: start;
             CheckBox {
-                text: @tr("Emulate UNFLoader (reload emulator after changing)");
+                text: @tr("Emulate UNFLoader");
                 checked: SettingsData.emulate_usb;
                 toggled => {
                     SettingsData.emulate_usb = self.checked;
