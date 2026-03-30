@@ -128,30 +128,31 @@ async fn main() -> std::io::Result<()> {
                 .cloned()
                 .unwrap_or_default()
         };
+
+        let mut shutdown_tx = None;
+
         if let Some(peer_addr) = args.netplay_peer_addr
             && let Some(player_number) = args.netplay_player_number
         {
             device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
-        }
+        } else {
+            if let Some(gb_roms) = args.gb_rom
+                && let Some(gb_rams) = args.gb_ram
+            {
+                for i in 0..4 {
+                    if let Some(gb_rom) = gb_roms.get(i)
+                        && let Some(gb_ram) = gb_rams.get(i)
+                    {
+                        device.transferpaks[i].cart.rom = std::fs::read(gb_rom).unwrap();
 
-        if let Some(gb_roms) = args.gb_rom
-            && let Some(gb_rams) = args.gb_ram
-        {
-            for i in 0..4 {
-                if let Some(gb_rom) = gb_roms.get(i)
-                    && let Some(gb_ram) = gb_rams.get(i)
-                {
-                    device.transferpaks[i].cart.rom = std::fs::read(gb_rom).unwrap();
-
-                    device.transferpaks[i].cart.ram = std::fs::read(gb_ram).unwrap();
+                        device.transferpaks[i].cart.ram = std::fs::read(gb_ram).unwrap();
+                    }
                 }
             }
-        }
 
-        let mut shutdown_tx = None;
-
-        if device.ui.config.emulation.usb {
-            (shutdown_tx, device.ui.usb) = ui::usb::init();
+            if device.ui.config.emulation.usb {
+                (shutdown_tx, device.ui.usb) = ui::usb::init();
+            }
         }
 
         device::run_game(
