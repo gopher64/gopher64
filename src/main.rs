@@ -148,6 +148,12 @@ async fn main() -> std::io::Result<()> {
             }
         }
 
+        let mut shutdown_tx = None;
+
+        if device.ui.config.emulation.usb {
+            (shutdown_tx, device.ui.usb) = ui::usb::init();
+        }
+
         device::run_game(
             &mut device,
             rom_contents,
@@ -162,6 +168,9 @@ async fn main() -> std::io::Result<()> {
 
         if device.netplay.is_some() {
             netplay::close(&mut device);
+        }
+        if let Some(shutdown_tx) = &shutdown_tx {
+            ui::usb::close(shutdown_tx);
         }
     } else if std::env::args().count() > 1 {
         let mut ui = ui::Ui::new();

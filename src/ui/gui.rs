@@ -59,23 +59,15 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>], usb: ui::Usb) {
+fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     let dirs = ui::get_dirs();
     let weak = app.as_weak();
     let controller_paths = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
         let controller_paths = controller_paths.clone();
-        let mut usb_tx = None;
-        if let Some(usb_tx_inner) = usb.usb_tx.as_ref() {
-            usb_tx = Some(usb_tx_inner.clone());
-        }
-        let mut cart_rx = None;
-        if let Some(cart_rx_inner) = usb.cart_rx.as_ref() {
-            cart_rx = Some(cart_rx_inner.resubscribe());
-        }
         weak.upgrade_in_event_loop(move |handle| {
             save_settings(&handle, &controller_paths);
-            open_rom(&handle, ui::Usb { usb_tx, cart_rx })
+            open_rom(&handle)
         })
         .unwrap();
     });
@@ -303,11 +295,6 @@ fn about_window(app: &AppWindow) {
 pub fn app_window() {
     let app = AppWindow::new().unwrap();
     about_window(&app);
-    let mut usb = ui::Usb {
-        usb_tx: None,
-        cart_rx: None,
-    };
-    let mut shutdown_tx = None;
     let mut controller_paths;
     {
         let game_ui = ui::Ui::new();
@@ -317,18 +304,11 @@ pub fn app_window() {
         controller_paths.insert(0, None);
         settings_window(&app, &game_ui.config);
         controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
-
-        if game_ui.config.emulation.usb {
-            (shutdown_tx, usb) = ui::usb::init(app.as_weak());
-        }
     }
-    local_game_window(&app, &controller_paths, usb);
+    local_game_window(&app, &controller_paths);
     ui::netplay::netplay_window(&app, &controller_paths);
     ui::cheats::cheats_window(&app);
     app.run().unwrap();
-    if let Some(shutdown_tx) = &shutdown_tx {
-        ui::usb::close(shutdown_tx);
-    }
     save_settings(&app, &controller_paths);
 }
 
@@ -337,12 +317,14 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: GameSettings,
     netplay: Option<NetplayDevice>,
-    usb: ui::Usb,
-    weak: slint::Weak<AppWindow>,
+    weak: Option<slint::Weak<AppWindow>>,
 ) {
     tokio::spawn(async move {
-        weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
-            .unwrap();
+        if let Some(weak_inner) = weak.clone() {
+            weak_inner
+                .upgrade_in_event_loop(move |handle| handle.set_game_running(true))
+                .unwrap();
+        }
 
         let mut command = std::process::Command::new(std::env::current_exe().unwrap());
         command.args([
@@ -353,9 +335,9 @@ pub fn run_rom(
             "--disable-expansion-pak",
             &game_settings.disable_expansion_pak.to_string(),
         ]);
-        let dirs = ui::get_dirs();
+        let cheats_path = std::env::temp_dir().join("cheats.json");
         if let Some(netplay_device) = netplay {
-            let f = std::fs::File::create(dirs.cache_dir.join("cheats.json")).unwrap();
+            let f = std::fs::File::create(cheats_path.to_str().unwrap()).unwrap();
             serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
 
             command.args([
@@ -364,7 +346,7 @@ pub fn run_rom(
                 "--netplay-player-number",
                 &netplay_device.player_number.to_string(),
                 "--cheats",
-                dirs.cache_dir.join("cheats.json").to_str().unwrap(),
+                cheats_path.to_str().unwrap(),
             ]);
         }
 
@@ -380,19 +362,22 @@ pub fn run_rom(
         }
 
         command.arg(file_path.to_str().unwrap()).output().unwrap();
+        std::fs::remove_file(cheats_path.to_str().unwrap());
 
-        weak.upgrade_in_event_loop(move |handle| {
-            std::fs::remove_file(dirs.cache_dir.join("cheats.json")).unwrap();
-            if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
-                handle.set_rom_dir(rom_dir.into());
-            }
-            handle.set_game_running(false);
-        })
-        .unwrap();
+        if let Some(weak_inner) = weak {
+            weak_inner
+                .upgrade_in_event_loop(move |handle| {
+                    if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
+                        handle.set_rom_dir(rom_dir.into());
+                    }
+                    handle.set_game_running(false);
+                })
+                .unwrap();
+        }
     });
 }
 
-fn open_rom(app: &AppWindow, usb: ui::Usb) {
+fn open_rom(app: &AppWindow) {
     let rom_dir = app.get_rom_dir();
     let select_rom = if !rom_dir.is_empty()
         && let Ok(exists) = std::fs::exists(&rom_dir)
@@ -459,8 +444,7 @@ fn open_rom(app: &AppWindow, usb: ui::Usb) {
                     load_savestate_slot: None,
                 },
                 None,
-                usb,
-                weak,
+                Some(weak),
             );
         }
     });
