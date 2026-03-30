@@ -144,7 +144,6 @@ async fn main() -> std::io::Result<()> {
                         && let Some(gb_ram) = gb_rams.get(i)
                     {
                         device.transferpaks[i].cart.rom = std::fs::read(gb_rom).unwrap();
-
                         device.transferpaks[i].cart.ram = std::fs::read(gb_ram).unwrap();
                     }
                 }
