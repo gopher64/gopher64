@@ -148,7 +148,6 @@ jobs:
           target: ${{ matrix.target }}
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
-          components: cargo-bundle
       - name: Set LLVM_VERSION
         run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install LLVM and Clang
@@ -158,6 +157,7 @@ jobs:
           force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-macOS-${{ matrix.llvm }}.tar.xz
       - name: Build
         run: |
+          cargo install cargo-bundle
           brew install molten-vk
           cargo bundle --release -v --target=${{ matrix.target }}
           mkdir output
