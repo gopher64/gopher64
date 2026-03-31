@@ -216,19 +216,18 @@ fn controller_window(
                     let deadzone = handle.get_deadzone();
 
                     tokio::spawn(async move {
-                        std::process::Command::new(std::env::current_exe().unwrap())
-                            .args([
-                                "--configure-input-profile",
-                                &profile_name,
-                                "--use-dinput",
-                                &dinput.to_string(),
-                                "--deadzone",
-                                &deadzone.to_string(),
-                            ])
-                            .spawn()
-                            .unwrap()
-                            .wait()
-                            .unwrap();
+                        let mut command =
+                            std::process::Command::new(std::env::current_exe().unwrap());
+                        command.args([
+                            "--configure-input-profile",
+                            &profile_name,
+                            "--deadzone",
+                            &deadzone.to_string(),
+                        ]);
+                        if dinput {
+                            command.arg("--use-dinput");
+                        }
+                        command.spawn().unwrap().wait().unwrap();
                         let game_ui = ui::Ui::new();
                         update_input_profiles(&weak_app, &game_ui.config);
                     });

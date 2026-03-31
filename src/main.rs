@@ -40,7 +40,7 @@ struct Args {
     )]
     configure_input_profile: Option<String>,
     #[arg(long, help = "Use DirectInput when configuring a new input profile")]
-    use_dinput: Option<bool>,
+    use_dinput: bool,
     #[arg(
         long,
         value_name = "DEADZONE_PERCENTAGE",
@@ -199,7 +199,7 @@ async fn main() -> std::io::Result<()> {
             ui::input::configure_input_profile(
                 &mut ui,
                 profile,
-                args.use_dinput.unwrap_or(false),
+                args.use_dinput,
                 args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
             );
             return Ok(());
