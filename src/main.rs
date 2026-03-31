@@ -18,7 +18,7 @@ use ui::gui;
 struct Args {
     game: Option<String>,
     #[arg(short, long)]
-    fullscreen: Option<bool>,
+    fullscreen: bool,
     #[arg(long)]
     overclock: Option<bool>,
     #[arg(long)]
@@ -109,7 +109,9 @@ async fn main() -> std::io::Result<()> {
         }
 
         let mut device = device::Device::new();
-        let fullscreen = args.fullscreen.unwrap_or(device.ui.config.video.fullscreen);
+        if args.fullscreen {
+            device.ui.video.fullscreen = true;
+        }
         let overclock = args
             .overclock
             .unwrap_or(device.ui.config.emulation.overclock);
@@ -159,7 +161,6 @@ async fn main() -> std::io::Result<()> {
             &mut device,
             rom_contents,
             ui::gui::GameSettings {
-                fullscreen,
                 overclock,
                 disable_expansion_pak,
                 cheats,

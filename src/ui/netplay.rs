@@ -711,7 +711,6 @@ fn create_session(
                             message.player_name.as_ref().unwrap().into(),
                             session.port.unwrap(),
                             GameSettings {
-                                fullscreen: game_settings.fullscreen,
                                 overclock: overclock.parse().unwrap(),
                                 disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                 cheats: serde_json::from_str(cheats).unwrap(),
@@ -755,7 +754,6 @@ fn join_session(
     game_hash: String,
     password: String,
     room_port: i32,
-    fullscreen: bool,
     weak_app: slint::Weak<AppWindow>,
     weak: slint::Weak<NetplayJoin>,
 ) {
@@ -834,7 +832,6 @@ fn join_session(
                             message.player_name.as_ref().unwrap().into(),
                             session.port.unwrap(),
                             GameSettings {
-                                fullscreen,
                                 overclock: overclock.parse().unwrap(),
                                 disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                 cheats: serde_json::from_str(cheats).unwrap(),
@@ -1102,7 +1099,6 @@ fn setup_wait_window(
                                     },
                                     handle.get_rom_path().as_str().into(),
                                     GameSettings {
-                                        fullscreen: game_settings.fullscreen,
                                         overclock: game_settings.overclock,
                                         disable_expansion_pak: game_settings.disable_expansion_pak,
                                         cheats: game_settings.cheats,
@@ -1153,7 +1149,6 @@ fn setup_wait_window(
 
 pub fn setup_join_window(
     join_window: &NetplayJoin,
-    fullscreen: bool,
     rom_dir: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
@@ -1202,7 +1197,6 @@ pub fn setup_join_window(
                 game_hash.to_string(),
                 password.to_string(),
                 room_port,
-                fullscreen,
                 weak_app.clone(),
                 weak.clone(),
             );
@@ -1226,7 +1220,6 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                 setup_create_window(
                     &create_window,
                     GameSettings {
-                        fullscreen: handle.get_fullscreen(),
                         overclock: handle.get_overclock_n64_cpu(),
                         disable_expansion_pak: handle.get_disable_expansion_pak(),
                         cheats: std::collections::HashMap::new(), // not used here
@@ -1249,12 +1242,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
             .upgrade_in_event_loop(move |handle| {
                 let join_window = NetplayJoin::new().unwrap();
                 save_settings(&handle, &controller_paths);
-                setup_join_window(
-                    &join_window,
-                    handle.get_fullscreen(),
-                    handle.get_rom_dir(),
-                    weak_app,
-                );
+                setup_join_window(&join_window, handle.get_rom_dir(), weak_app);
             })
             .unwrap();
     });

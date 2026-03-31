@@ -45,7 +45,6 @@ pub mod unmapped;
 pub mod vi;
 
 pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::gui::GameSettings) {
-    device.ui.video.fullscreen = game_settings.fullscreen;
     device.cpu.overclock = game_settings.overclock;
     if game_settings.disable_expansion_pak {
         device.rdram.size = 0x400000;

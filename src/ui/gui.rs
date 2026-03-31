@@ -24,7 +24,6 @@ pub struct GbPaths {
 
 #[derive(Clone)]
 pub struct GameSettings {
-    pub fullscreen: bool,
     pub overclock: bool,
     pub disable_expansion_pak: bool,
     pub cheats: std::collections::HashMap<String, Option<String>>,
@@ -331,8 +330,6 @@ pub fn run_rom(
 
         let mut command = std::process::Command::new(std::env::current_exe().unwrap());
         command.args([
-            "--fullscreen",
-            &game_settings.fullscreen.to_string(),
             "--overclock",
             &game_settings.overclock.to_string(),
             "--disable-expansion-pak",
@@ -416,7 +413,6 @@ fn open_rom(app: &AppWindow) {
         }
     }
 
-    let fullscreen = app.get_fullscreen();
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
 
@@ -443,7 +439,6 @@ fn open_rom(app: &AppWindow) {
                 },
                 file.path().to_path_buf(),
                 GameSettings {
-                    fullscreen,
                     overclock,
                     disable_expansion_pak,
                     cheats: std::collections::HashMap::new(), // will be filled in later
