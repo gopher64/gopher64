@@ -162,6 +162,7 @@ jobs:
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
+          MACOSX_DEPLOYMENT_TARGET: "26.0"
       - name: Upload file
         uses: actions/upload-artifact@v7
         with:
