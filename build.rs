@@ -206,6 +206,4 @@ fn main() {
 
     let netplay_id = std::env::var("NETPLAY_ID").unwrap_or("gopher64".to_string());
     println!("cargo:rustc-env=NETPLAY_ID={netplay_id}");
-
-    println!("cargo:rustc-env=N64_STACK_SIZE={}", 8 * 1024 * 1024);
 }

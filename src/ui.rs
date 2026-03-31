@@ -12,6 +12,7 @@ pub mod vru;
 pub struct Dirs {
     pub config_dir: std::path::PathBuf,
     pub data_dir: std::path::PathBuf,
+    pub cache_dir: std::path::PathBuf,
 }
 
 pub struct Audio {
@@ -53,7 +54,6 @@ pub struct Ui {
     pub storage: Storage,
     pub video: Video,
     pub usb: Usb,
-    pub weak: Option<slint::Weak<gui::AppWindow>>,
 }
 
 impl Drop for Ui {
@@ -94,19 +94,18 @@ pub fn get_dirs() -> Dirs {
     let exe_path = std::env::current_exe().unwrap();
     let portable_dir = exe_path.parent();
     let portable = portable_dir.unwrap().join("portable.txt").exists();
-    let config_dir;
-    let data_dir;
     if portable {
-        config_dir = portable_dir.unwrap().join("portable_data").join("config");
-        data_dir = portable_dir.unwrap().join("portable_data").join("data");
+        Dirs {
+            config_dir: portable_dir.unwrap().join("portable_data").join("config"),
+            data_dir: portable_dir.unwrap().join("portable_data").join("data"),
+            cache_dir: portable_dir.unwrap().join("portable_data").join("cache"),
+        }
     } else {
-        config_dir = dirs::config_dir().unwrap().join("gopher64");
-        data_dir = dirs::data_dir().unwrap().join("gopher64");
-    };
-
-    Dirs {
-        config_dir,
-        data_dir,
+        Dirs {
+            config_dir: dirs::config_dir().unwrap().join("gopher64"),
+            data_dir: dirs::data_dir().unwrap().join("gopher64"),
+            cache_dir: dirs::cache_dir().unwrap().join("gopher64"),
+        }
     }
 }
 
@@ -196,7 +195,6 @@ impl Ui {
                 usb_tx: None,
                 cart_rx: None,
             },
-            weak: None,
             dirs,
             with_sdl,
         }

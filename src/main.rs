@@ -18,62 +18,65 @@ use ui::gui;
 struct Args {
     game: Option<String>,
     #[arg(short, long)]
-    fullscreen: bool,
+    fullscreen: Option<bool>,
+    #[arg(long)]
+    overclock: Option<bool>,
+    #[arg(long)]
+    disable_expansion_pak: Option<bool>,
+    #[arg(long, value_name = "CHEATS_FILE", hide = true)]
+    cheats: Option<String>,
+    #[arg(long, value_name = "NETPLAY_PEER_ADDR", hide = true)]
+    netplay_peer_addr: Option<String>,
+    #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER", hide = true)]
+    netplay_player_number: Option<u8>,
+    #[arg(long, value_name = "GB_ROM_PATH", hide = true)]
+    gb_rom: Option<Vec<String>>,
+    #[arg(long, value_name = "GB_RAM_PATH", hide = true)]
+    gb_ram: Option<Vec<String>>,
     #[arg(
-        short,
         long,
         value_name = "PROFILE_NAME",
         help = "Create a new input profile (keyboard/gamepad mappings)"
     )]
     configure_input_profile: Option<String>,
+    #[arg(long, help = "Use DirectInput when configuring a new input profile")]
+    use_dinput: Option<bool>,
     #[arg(
-        short,
-        long,
-        help = "Use DirectInput when configuring a new input profile"
-    )]
-    use_dinput: bool,
-    #[arg(
-        short,
         long,
         value_name = "DEADZONE_PERCENTAGE",
         help = "Used along with --configure-input-profile to set the deadzone for analog sticks"
     )]
     deadzone: Option<i32>,
     #[arg(
-        short,
         long,
         value_name = "PROFILE_NAME",
         help = "Must also specify --port. Used to bind a previously created profile to a port"
     )]
     bind_input_profile: Option<String>,
     #[arg(
-        short,
         long,
         help = "Lists connected controllers which can be used in --assign-controller"
     )]
     list_controllers: bool,
     #[arg(
-        short,
         long,
         value_name = "CONTROLLER_NUMBER",
         help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
     )]
     assign_controller: Option<i32>,
     #[arg(
-        short,
         long,
         value_name = "PORT",
         help = "Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller"
     )]
     port: Option<usize>,
     #[arg(
-        short = 'z',
+        short,
         long,
         help = "Clear all input profile bindings and controller assignments"
     )]
     clear_input_bindings: bool,
     #[arg(
-        short = 's',
         long,
         value_name = "SLOT",
         help = "Load savestate from slot 0-9 when starting the game"
@@ -81,18 +84,12 @@ struct Args {
     load_state: Option<u32>,
 }
 
-fn main() -> std::io::Result<()> {
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .worker_threads(4)
-        .thread_name("n64")
-        .thread_stack_size(env!("N64_STACK_SIZE").parse().unwrap())
-        .build()
-        .unwrap();
-
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
     std::fs::create_dir_all(dirs.config_dir)?;
+    std::fs::create_dir_all(dirs.cache_dir)?;
     std::fs::create_dir_all(dirs.data_dir.join("saves"))?;
     std::fs::create_dir_all(dirs.data_dir.join("states"))?;
     let args = Args::parse();
@@ -111,29 +108,71 @@ fn main() -> std::io::Result<()> {
             return Err(Error::other("Savestate slot must be between 0 and 9"));
         }
 
-        let handle = runtime.spawn(async move {
-            let mut device = device::Device::new();
-            let overclock = device.ui.config.emulation.overclock;
-            let disable_expansion_pak = device.ui.config.emulation.disable_expansion_pak;
+        let mut device = device::Device::new();
+        let fullscreen = args.fullscreen.unwrap_or(device.ui.config.video.fullscreen);
+        let overclock = args
+            .overclock
+            .unwrap_or(device.ui.config.emulation.overclock);
+        let disable_expansion_pak = args
+            .disable_expansion_pak
+            .unwrap_or(device.ui.config.emulation.disable_expansion_pak);
+        let cheats = if let Some(cheats_file) = args.cheats
+            && let Ok(data) = std::fs::read(cheats_file)
+            && let Ok(cheats) = serde_json::from_slice(&data)
+        {
+            cheats
+        } else {
+            let game_crc = ui::storage::get_game_crc(&rom_contents);
+            ui::config::Cheats::new()
+                .cheats
+                .get(&game_crc)
+                .cloned()
+                .unwrap_or_default()
+        };
 
-            let game_cheats = {
-                let game_crc = ui::storage::get_game_crc(&rom_contents);
-                let cheats = ui::config::Cheats::new();
-                cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
-            };
-            device::run_game(
-                &mut device,
-                rom_contents,
-                ui::gui::GameSettings {
-                    fullscreen: args.fullscreen,
-                    overclock,
-                    disable_expansion_pak,
-                    cheats: game_cheats,
-                    load_savestate_slot: args.load_state,
-                },
-            );
-        });
-        runtime.block_on(handle).unwrap()
+        let mut shutdown_tx = None;
+
+        if let Some(peer_addr) = args.netplay_peer_addr
+            && let Some(player_number) = args.netplay_player_number
+        {
+            device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
+        } else {
+            if let Some(gb_roms) = args.gb_rom
+                && let Some(gb_rams) = args.gb_ram
+            {
+                for i in 0..4 {
+                    if let Some(gb_rom) = gb_roms.get(i)
+                        && let Some(gb_ram) = gb_rams.get(i)
+                    {
+                        device.transferpaks[i].cart.rom = std::fs::read(gb_rom).unwrap();
+                        device.transferpaks[i].cart.ram = std::fs::read(gb_ram).unwrap();
+                    }
+                }
+            }
+
+            if device.ui.config.emulation.usb {
+                (shutdown_tx, device.ui.usb) = ui::usb::init();
+            }
+        }
+
+        device::run_game(
+            &mut device,
+            rom_contents,
+            ui::gui::GameSettings {
+                fullscreen,
+                overclock,
+                disable_expansion_pak,
+                cheats,
+                load_savestate_slot: args.load_state,
+            },
+        );
+
+        if device.netplay.is_some() {
+            netplay::close(&mut device);
+        }
+        if let Some(shutdown_tx) = &shutdown_tx {
+            ui::usb::close(shutdown_tx);
+        }
     } else if std::env::args().count() > 1 {
         let mut ui = ui::Ui::new();
 
@@ -157,7 +196,7 @@ fn main() -> std::io::Result<()> {
             ui::input::configure_input_profile(
                 &mut ui,
                 profile,
-                args.use_dinput,
+                args.use_dinput.unwrap_or(false),
                 args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
             );
             return Ok(());
@@ -175,10 +214,8 @@ fn main() -> std::io::Result<()> {
             ui::input::bind_input_profile(&mut ui, profile, port);
         }
     } else {
-        runtime.block_on(async {
-            gui::app_window();
-        });
+        gui::app_window();
     }
-    runtime.shutdown_timeout(std::time::Duration::from_secs(1));
+
     Ok(())
 }

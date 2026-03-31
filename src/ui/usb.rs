@@ -26,53 +26,12 @@ fn respond_to_handshake(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, data: 
     }
 }
 
-fn upload_rom(
-    weak: slint::Weak<ui::gui::AppWindow>,
-    rom: Vec<u8>,
-    usb_tx: &tokio::sync::broadcast::Sender<UsbData>,
-    cart_rx: &tokio::sync::broadcast::Receiver<UsbData>,
-) {
-    let weak_clone = weak.clone();
-    let usb_tx = usb_tx.clone();
-    let cart_rx = cart_rx.resubscribe();
-
-    weak.upgrade_in_event_loop(move |handle| {
-        let dir = std::env::temp_dir();
-        let rom_path = dir.join("rom_upload.bin");
-        std::fs::write(rom_path.clone(), rom).unwrap();
-
-        ui::gui::run_rom(
-            ui::gui::GbPaths {
-                rom: [None, None, None, None],
-                ram: [None, None, None, None],
-            },
-            rom_path,
-            ui::gui::GameSettings {
-                fullscreen: handle.get_fullscreen(),
-                overclock: handle.get_overclock_n64_cpu(),
-                disable_expansion_pak: handle.get_disable_expansion_pak(),
-                cheats: std::collections::HashMap::new(), // will be filled in later
-                load_savestate_slot: None,
-            },
-            None,
-            ui::Usb {
-                usb_tx: Some(usb_tx),
-                cart_rx: Some(cart_rx),
-            },
-            weak_clone,
-        );
-    })
-    .unwrap();
-}
-
 async fn handle_connection(
     conn: tokio::net::TcpStream,
     mut shutdown_rx: tokio::sync::watch::Receiver<()>,
     mut usb_rx: tokio::sync::broadcast::Receiver<UsbData>,
     usb_tx: tokio::sync::broadcast::Sender<UsbData>,
     cart_tx: tokio::sync::broadcast::Sender<UsbData>,
-    cart_rx: tokio::sync::broadcast::Receiver<UsbData>,
-    weak: slint::Weak<ui::gui::AppWindow>,
 ) {
     let (mut incoming, mut outgoing) = conn.into_split();
 
@@ -147,7 +106,7 @@ async fn handle_connection(
                                 if usb_data.data_type == DATATYPE_TCPTEST {
                                     respond_to_handshake(&usb_tx,usb_data.data);
                                 } else if usb_data.data_type == DATATYPE_ROMUPLOAD {
-                                    upload_rom(weak.clone(), usb_data.data,&usb_tx,&cart_rx);
+                                    panic!("ROM upload not supported");
                                 } else {
                                     cart_tx.send(usb_data).unwrap();
                                 }
@@ -168,9 +127,7 @@ async fn handle_connection(
     }
 }
 
-pub fn init(
-    weak: slint::Weak<ui::gui::AppWindow>,
-) -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
+pub fn init() -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
     let (shutdown_tx, mut shutdown_rx) = tokio::sync::watch::channel(());
     let (usb_tx, usb_rx): (
         tokio::sync::broadcast::Sender<UsbData>,
@@ -192,7 +149,7 @@ pub fn init(
             tokio::select! {
                 res = listener.accept() => {
                     if let Ok((c,_)) = res {
-                        handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone(),cart_rx.resubscribe(),weak.clone()).await;
+                        handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone()).await;
                     } else {
                         break;
                     }

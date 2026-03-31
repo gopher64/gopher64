@@ -1,5 +1,3 @@
-use crate::device;
-use crate::netplay;
 use crate::ui;
 use slint::Model;
 
@@ -60,23 +58,15 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>], usb: ui::Usb) {
+fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     let dirs = ui::get_dirs();
     let weak = app.as_weak();
     let controller_paths = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
         let controller_paths = controller_paths.clone();
-        let mut usb_tx = None;
-        if let Some(usb_tx_inner) = usb.usb_tx.as_ref() {
-            usb_tx = Some(usb_tx_inner.clone());
-        }
-        let mut cart_rx = None;
-        if let Some(cart_rx_inner) = usb.cart_rx.as_ref() {
-            cart_rx = Some(cart_rx_inner.resubscribe());
-        }
         weak.upgrade_in_event_loop(move |handle| {
             save_settings(&handle, &controller_paths);
-            open_rom(&handle, ui::Usb { usb_tx, cart_rx })
+            open_rom(&handle)
         })
         .unwrap();
     });
@@ -222,18 +212,25 @@ fn controller_window(
             weak_dialog
                 .upgrade_in_event_loop(move |handle| {
                     handle.hide().unwrap();
-                    let profile_name = handle.get_profile_name().into();
+                    let profile_name = handle.get_profile_name();
                     let dinput = handle.get_dinput();
                     let deadzone = handle.get_deadzone();
 
                     tokio::spawn(async move {
-                        let mut game_ui = ui::Ui::new();
-                        ui::input::configure_input_profile(
-                            &mut game_ui,
-                            profile_name,
-                            dinput,
-                            deadzone,
-                        );
+                        std::process::Command::new(std::env::current_exe().unwrap())
+                            .args([
+                                "--configure-input-profile",
+                                &profile_name,
+                                "--use-dinput",
+                                &dinput.to_string(),
+                                "--deadzone",
+                                &deadzone.to_string(),
+                            ])
+                            .spawn()
+                            .unwrap()
+                            .wait()
+                            .unwrap();
+                        let game_ui = ui::Ui::new();
                         update_input_profiles(&weak_app, &game_ui.config);
                     });
                 })
@@ -304,11 +301,6 @@ fn about_window(app: &AppWindow) {
 pub fn app_window() {
     let app = AppWindow::new().unwrap();
     about_window(&app);
-    let mut usb = ui::Usb {
-        usb_tx: None,
-        cart_rx: None,
-    };
-    let mut shutdown_tx = None;
     let mut controller_paths;
     {
         let game_ui = ui::Ui::new();
@@ -318,76 +310,72 @@ pub fn app_window() {
         controller_paths.insert(0, None);
         settings_window(&app, &game_ui.config);
         controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
-
-        if game_ui.config.emulation.usb {
-            (shutdown_tx, usb) = ui::usb::init(app.as_weak());
-        }
     }
-    local_game_window(&app, &controller_paths, usb);
+    local_game_window(&app, &controller_paths);
     ui::netplay::netplay_window(&app, &controller_paths);
     ui::cheats::cheats_window(&app);
     app.run().unwrap();
-    if let Some(shutdown_tx) = &shutdown_tx {
-        ui::usb::close(shutdown_tx);
-    }
     save_settings(&app, &controller_paths);
 }
 
 pub fn run_rom(
     gb_paths: GbPaths,
     file_path: std::path::PathBuf,
-    mut game_settings: GameSettings,
+    game_settings: GameSettings,
     netplay: Option<NetplayDevice>,
-    usb: ui::Usb,
     weak: slint::Weak<AppWindow>,
 ) {
     tokio::spawn(async move {
         weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
             .unwrap();
 
-        let mut device = device::Device::new();
-        device.ui.config.rom_dir = file_path.parent().unwrap().to_path_buf();
+        let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+        command.args([
+            "--fullscreen",
+            &game_settings.fullscreen.to_string(),
+            "--overclock",
+            &game_settings.overclock.to_string(),
+            "--disable-expansion-pak",
+            &game_settings.disable_expansion_pak.to_string(),
+        ]);
+        let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
+        if let Some(netplay_device) = netplay {
+            let f = std::fs::File::create(cheats_path.to_str().unwrap()).unwrap();
+            serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
+
+            command.args([
+                "--netplay-peer-addr",
+                &netplay_device.peer_addr.to_string(),
+                "--netplay-player-number",
+                &netplay_device.player_number.to_string(),
+                "--cheats",
+                cheats_path.to_str().unwrap(),
+            ]);
+        }
 
         for i in 0..4 {
             if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
-                device.transferpaks[i].cart.rom =
-                    std::fs::read(gb_paths.rom[i].as_ref().unwrap()).unwrap();
-
-                device.transferpaks[i].cart.ram =
-                    std::fs::read(gb_paths.ram[i].as_ref().unwrap()).unwrap();
+                command.args([
+                    "--gb-rom",
+                    gb_paths.rom[i].as_ref().unwrap().to_str().unwrap(),
+                    "--gb-ram",
+                    gb_paths.ram[i].as_ref().unwrap().to_str().unwrap(),
+                ]);
             }
         }
 
-        device.ui.usb.usb_tx = usb.usb_tx;
-        device.ui.usb.cart_rx = usb.cart_rx;
+        command
+            .arg(file_path.to_str().unwrap())
+            .spawn()
+            .unwrap()
+            .wait()
+            .unwrap();
 
-        device.ui.weak = Some(weak.clone());
+        let _ = std::fs::remove_file(cheats_path.to_str().unwrap());
 
-        if let Some(rom_contents) = device::get_rom_contents(file_path.as_path()) {
-            if let Some(netplay_device) = netplay {
-                device.netplay = Some(netplay::init(
-                    netplay_device.peer_addr,
-                    netplay_device.player_number,
-                ));
-            } else {
-                game_settings.cheats = {
-                    let game_crc = ui::storage::get_game_crc(&rom_contents);
-                    let cheats = ui::config::Cheats::new();
-                    cheats.cheats.get(&game_crc).cloned().unwrap_or_default()
-                };
-            }
-            device::run_game(&mut device, rom_contents, game_settings);
-            if device.netplay.is_some() {
-                netplay::close(&mut device);
-            }
-        } else {
-            println!("Could not read rom file");
-        }
-
-        let rom_dir = device.ui.config.rom_dir.clone();
         weak.upgrade_in_event_loop(move |handle| {
-            if let Some(rom_dir_str) = rom_dir.to_str() {
-                handle.set_rom_dir(rom_dir_str.into());
+            if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
+                handle.set_rom_dir(rom_dir.into());
             }
             handle.set_game_running(false);
         })
@@ -395,7 +383,7 @@ pub fn run_rom(
     });
 }
 
-fn open_rom(app: &AppWindow, usb: ui::Usb) {
+fn open_rom(app: &AppWindow) {
     let rom_dir = app.get_rom_dir();
     let select_rom = if !rom_dir.is_empty()
         && let Ok(exists) = std::fs::exists(&rom_dir)
@@ -462,7 +450,6 @@ fn open_rom(app: &AppWindow, usb: ui::Usb) {
                     load_savestate_slot: None,
                 },
                 None,
-                usb,
                 weak,
             );
         }
