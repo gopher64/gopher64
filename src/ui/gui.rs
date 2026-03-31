@@ -331,7 +331,7 @@ pub fn run_rom(
             "--disable-expansion-pak",
             &game_settings.disable_expansion_pak.to_string(),
         ]);
-        let cheats_path = std::env::temp_dir().join("cheats.json");
+        let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
         if let Some(netplay_device) = netplay {
             let f = std::fs::File::create(cheats_path.to_str().unwrap()).unwrap();
             serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
