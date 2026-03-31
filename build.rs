@@ -93,7 +93,7 @@ fn main() {
             .unwrap();
     } else if os == "macos" {
         println!("cargo:rustc-link-search=native=/opt/homebrew/opt/freetype/lib");
-        println!("cargo:rustc-link-lib=freetype");
+        println!("cargo:rustc-link-lib=static=freetype");
 
         let output = std::process::Command::new("clang")
             .args(["--print-runtime-dir"])
@@ -104,6 +104,9 @@ fn main() {
 
         println!("cargo:rustc-link-search=native={}", runtime_dir);
         println!("cargo:rustc-link-lib=static=clang_rt.osx");
+
+        println!("cargo:rustc-link-search=native=/opt/homebrew/opt/molten-vk/lib");
+        println!("cargo:rustc-link-lib=static=MoltenVK");
     }
 
     volk_build.flag("-flto=thin");

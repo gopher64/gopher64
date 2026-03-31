@@ -157,6 +157,7 @@ jobs:
           force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-macOS-${{ matrix.llvm }}.tar.xz
       - name: Build
         run: |
+          brew install molten-vk
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
