@@ -111,6 +111,8 @@ async fn main() -> std::io::Result<()> {
         let mut device = device::Device::new();
         if args.fullscreen {
             device.ui.video.fullscreen = true;
+        } else {
+            device.ui.video.fullscreen = device.ui.config.video.fullscreen;
         }
         let overclock = args
             .overclock
