@@ -220,7 +220,7 @@ fn controller_window(
                         std::process::Command::new(std::env::current_exe().unwrap())
                             .args([
                                 "--configure-input-profile",
-                                &profile_name.to_string(),
+                                &profile_name,
                                 "--use-dinput",
                                 &dinput.to_string(),
                                 "--deadzone",
