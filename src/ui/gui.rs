@@ -212,18 +212,25 @@ fn controller_window(
             weak_dialog
                 .upgrade_in_event_loop(move |handle| {
                     handle.hide().unwrap();
-                    let profile_name = handle.get_profile_name().into();
+                    let profile_name = handle.get_profile_name();
                     let dinput = handle.get_dinput();
                     let deadzone = handle.get_deadzone();
 
                     tokio::spawn(async move {
-                        let mut game_ui = ui::Ui::new();
-                        ui::input::configure_input_profile(
-                            &mut game_ui,
-                            profile_name,
-                            dinput,
-                            deadzone,
-                        );
+                        std::process::Command::new(std::env::current_exe().unwrap())
+                            .args([
+                                "--configure-input-profile",
+                                &profile_name.to_string(),
+                                "--use-dinput",
+                                &dinput.to_string(),
+                                "--deadzone",
+                                &deadzone.to_string(),
+                            ])
+                            .spawn()
+                            .unwrap()
+                            .wait()
+                            .unwrap();
+                        let game_ui = ui::Ui::new();
                         update_input_profiles(&weak_app, &game_ui.config);
                     });
                 })
