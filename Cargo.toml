@@ -52,3 +52,7 @@ inherits = "release"
 debug = true
 strip = false
 panic = "unwind"
+
+[package.metadata.bundle]
+identifier = "com.github.gopher64.gopher64"
+osx_frameworks = ["MoltenVK"]

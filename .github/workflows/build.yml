@@ -148,6 +148,7 @@ jobs:
           target: ${{ matrix.target }}
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
+          components: cargo-bundle
       - name: Set LLVM_VERSION
         run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install LLVM and Clang
@@ -158,7 +159,7 @@ jobs:
       - name: Build
         run: |
           brew install molten-vk
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo bundle --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
         env:
