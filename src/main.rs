@@ -89,6 +89,7 @@ async fn main() -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
     std::fs::create_dir_all(dirs.config_dir)?;
+    std::fs::create_dir_all(dirs.cache_dir)?;
     std::fs::create_dir_all(dirs.data_dir.join("saves"))?;
     std::fs::create_dir_all(dirs.data_dir.join("states"))?;
     let args = Args::parse();
