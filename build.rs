@@ -105,7 +105,7 @@ fn main() {
         println!("cargo:rustc-link-search=native={}", runtime_dir);
         println!("cargo:rustc-link-lib=static=clang_rt.osx");
 
-        println!("cargo:rustc-link-search=framework=/opt/homebrew/Frameworks");
+        println!("cargo:rustc-link-search=framework=/opt/homebrew/opt/molten-vk/lib");
         println!("cargo:rustc-link-lib=framework=MoltenVK");
     }
 
