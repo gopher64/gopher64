@@ -159,10 +159,10 @@ jobs:
         run: |
           cargo install cargo-bundle
           brew install molten-vk
-          cargo bundle --target=${{ matrix.target }} --format osx
+          cargo bundle --profile=release-with-debug --target=${{ matrix.target }} --format osx
           install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
-            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/debug/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
-          codesign -f --entitlements data/entitlements.plist --timestamp --options runtime -s - target/${{ matrix.target }}/debug/bundle/osx/Gopher64.app
+            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release-with-debug/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
+          codesign -f --entitlements data/entitlements.plist --timestamp --options runtime -s - target/${{ matrix.target }}/release-with-debug/bundle/osx/Gopher64.app
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
           MACOSX_DEPLOYMENT_TARGET: "26.0"
@@ -170,4 +170,4 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: gopher64-${{ matrix.arch }}
-          path: target/${{ matrix.target }}/debug/bundle/osx
+          path: target/${{ matrix.target }}/release-with-debug/bundle/osx
