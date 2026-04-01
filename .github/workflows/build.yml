@@ -182,7 +182,7 @@ jobs:
 
           # sign
           codesign -f --deep --timestamp --options=runtime \
-            -s "Gopher64" \
+            -s D81DDD11851276E8FB12537C4C908CBF8AD253FC \
             target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
       - name: Upload file
         uses: actions/upload-artifact@v7
