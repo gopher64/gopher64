@@ -178,7 +178,7 @@ jobs:
             --project-slug gopher64 \
             --signing-policy-slug ${{ env.SIGNPATH_SIGNING_POLICY_SLUG }}
 
-          sleep 20 # wait for token to be registered
+          sleep 60 # wait for token to be registered
 
           security find-identity -v -p codesigning
 
