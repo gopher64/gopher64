@@ -182,7 +182,7 @@ jobs:
 
           # sign
           codesign -f --deep --timestamp --options=runtime \
-            -s "Test certificate for 'Gopher64 [OSS]'" \
+            -s "Gopher64" \
             target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
       - name: Upload file
         uses: actions/upload-artifact@v7
