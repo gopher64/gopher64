@@ -3,6 +3,44 @@
 version = 4
 
 [[package]]
+name = "Gopher64"
+version = "1.1.16"
+dependencies = [
+ "bindgen",
+ "cc",
+ "chrono",
+ "clap",
+ "dirs",
+ "encoding_rs",
+ "fatfs",
+ "futures",
+ "governor",
+ "mimalloc",
+ "open",
+ "postcard",
+ "rand 0.10.0",
+ "regex",
+ "reqwest",
+ "rfd",
+ "sdl3-sys",
+ "sdl3-ttf-sys",
+ "semver",
+ "serde",
+ "serde-big-array",
+ "serde_json",
+ "sevenz-rust2",
+ "sha2 0.11.0",
+ "slint",
+ "slint-build",
+ "socket2",
+ "spin_sleep",
+ "tokio",
+ "tokio-tungstenite",
+ "winresource",
+ "zip",
+]
+
+[[package]]
 name = "ab_glyph"
 version = "0.2.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2013,44 +2051,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c4ee00b289aba7a9e5306d57c2d05499b2e5dc427f84ac708bd2c090212cf3e"
 dependencies = [
  "gl_generator",
-]
-
-[[package]]
-name = "gopher64"
-version = "1.1.16"
-dependencies = [
- "bindgen",
- "cc",
- "chrono",
- "clap",
- "dirs",
- "encoding_rs",
- "fatfs",
- "futures",
- "governor",
- "mimalloc",
- "open",
- "postcard",
- "rand 0.10.0",
- "regex",
- "reqwest",
- "rfd",
- "sdl3-sys",
- "sdl3-ttf-sys",
- "semver",
- "serde",
- "serde-big-array",
- "serde_json",
- "sevenz-rust2",
- "sha2 0.11.0",
- "slint",
- "slint-build",
- "socket2",
- "spin_sleep",
- "tokio",
- "tokio-tungstenite",
- "winresource",
- "zip",
 ]
 
 [[package]]
