@@ -93,7 +93,7 @@ fn main() {
             .unwrap();
     } else if os == "macos" {
         println!("cargo:rustc-link-search=native=/opt/homebrew/opt/freetype/lib");
-        println!("cargo:rustc-link-lib=static=freetype");
+        println!("cargo:rustc-link-lib=freetype");
 
         let output = std::process::Command::new("clang")
             .args(["--print-runtime-dir"])
