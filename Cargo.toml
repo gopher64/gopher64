@@ -1,5 +1,5 @@
 [package]
-name = "Gopher64"
+name = "gopher64"
 version = "1.1.16"
 edition = "2024"
 rust-version = "1.94.1"
@@ -54,6 +54,7 @@ strip = false
 panic = "unwind"
 
 [package.metadata.bundle]
+name = "Gopher64"
 identifier = "io.github.gopher64.gopher64"
 category = "public.app-category.games"
 icon = ["data/icon/gopher64_128x128.png","data/icon/gopher64_256x256.png","data/icon/gopher64_512x512.png"]
