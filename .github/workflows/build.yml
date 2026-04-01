@@ -170,4 +170,3 @@ jobs:
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}.app
-          archive: false
