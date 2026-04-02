@@ -73,7 +73,9 @@ fn main() {
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let opt_flag = if arch == "x86_64" {
         "-march=x86-64-v3"
-    } else if arch == "aarch64" {
+    } else if arch == "aarch64" && os == "macos" {
+        "-march=armv8.4-a"
+    } else if arch == "aarch64" && os != "macos" {
         "-march=armv8.2-a"
     } else {
         panic!("unknown arch")

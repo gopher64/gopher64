@@ -10,7 +10,10 @@ rustflags = ["-C", "link-arg=/STACK:8388608"]
 [target.'cfg(target_arch = "x86_64")']
 rustflags = ["-C", "target-cpu=x86-64-v3"]
 
-[target.'cfg(target_arch = "aarch64")']
+[target.'cfg(all(target_arch = "aarch64", target_os = "macos"))']
+rustflags = ["-C", "target-cpu=apple-m1"]
+
+[target.'cfg(all(target_arch = "aarch64", not(target_os = "macos")))']
 rustflags = ["-C", "target-cpu=cortex-a76"]
 
 [env]
