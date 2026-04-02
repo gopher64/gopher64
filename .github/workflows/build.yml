@@ -162,6 +162,8 @@ jobs:
           cargo bundle --release --target=${{ matrix.target }} --format osx
           install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
             @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
+          install_name_tool -change /opt/homebrew/opt/libpng/lib/libpng16.16.dylib \
+            @executable_path/../Frameworks/libpng16.16.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
           codesign -f --entitlements data/entitlements.plist --timestamp --options runtime -s - target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
