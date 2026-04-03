@@ -84,7 +84,7 @@ struct Args {
     load_state: Option<u32>,
 }
 
-#[tokio::main]
+#[tokio::main(worker_threads = 4)]
 async fn main() -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
