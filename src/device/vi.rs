@@ -1,5 +1,4 @@
 use crate::{cheats, device, netplay, ui};
-use governor::clock::Clock;
 
 const VI_STATUS_REG: u32 = 0;
 const VI_ORIGIN_REG: u32 = 1;
@@ -24,7 +23,7 @@ pub struct Vi {
     pub delay: u64,
     pub field: u32,
     #[serde(skip)]
-    pub limiter: Option<governor::DefaultDirectRateLimiter>,
+    pub next_pace_deadline: Option<std::time::Instant>,
     pub count_per_scanline: u64,
     pub enable_speed_limiter: bool,
     pub vi_counter: u64,
@@ -50,17 +49,11 @@ pub fn set_expected_refresh_rate(device: &mut device::Device) {
     device.vi.count_per_scanline =
         device.vi.delay / (device.vi.regs[VI_V_SYNC_REG as usize] + 1) as u64;
 
-    create_limiter(device);
+    reset_pace_deadline(device);
 }
 
-fn create_limiter(device: &mut device::Device) {
-    let quota = governor::Quota::with_period(std::time::Duration::from_secs_f64(
-        device.vi.frame_time * device.vi.limit_freq as f64,
-    ))
-    .unwrap();
-    device.vi.limiter = Some(governor::RateLimiter::direct(quota));
-    let _ = device.vi.limiter.as_ref().unwrap().check();
-    //println!("new limit freq: {}", device.vi.limit_freq);
+fn reset_pace_deadline(device: &mut device::Device) {
+    device.vi.next_pace_deadline = None;
 }
 
 fn set_vertical_interrupt(device: &mut device::Device) {
@@ -188,18 +181,33 @@ pub fn init(device: &mut device::Device) {
     }
 }
 
-fn speed_limiter(device: &mut device::Device, speed_limiter_toggled: bool) {
-    let limiter = device.vi.limiter.as_ref().unwrap();
-    if let Err(outcome) = limiter.check() {
-        let dur = outcome.wait_time_from(limiter.clock().now());
-        spin_sleep::sleep(dur);
-        if dur < device.vi.min_wait_time {
-            device.vi.min_wait_time = dur;
-        }
+fn speed_limiter(device: &mut device::Device, mut speed_limiter_toggled: bool) {
+    let interval =
+        std::time::Duration::from_secs_f64(device.vi.frame_time * device.vi.limit_freq as f64);
 
-        let _ = limiter.check();
-    } else {
-        device.vi.min_wait_time = std::time::Duration::from_secs(0);
+    let now = std::time::Instant::now();
+    match device.vi.next_pace_deadline {
+        None => {
+            device.vi.next_pace_deadline = Some(now + interval);
+            speed_limiter_toggled = true;
+        }
+        Some(deadline) => {
+            if now < deadline {
+                let dur = deadline - now;
+                spin_sleep::sleep(dur);
+                if dur < device.vi.min_wait_time {
+                    device.vi.min_wait_time = dur;
+                }
+            } else {
+                device.vi.min_wait_time = std::time::Duration::from_secs(0);
+            }
+            let mut next = deadline + interval;
+            let t = std::time::Instant::now();
+            while next <= t {
+                next += interval;
+            }
+            device.vi.next_pace_deadline = Some(next);
+        }
     }
 
     if std::time::Instant::now().duration_since(device.vi.limit_freq_check)
@@ -210,13 +218,13 @@ fn speed_limiter(device: &mut device::Device, speed_limiter_toggled: bool) {
                 && device.vi.limit_freq < MAX_LIMIT_FREQ
             {
                 device.vi.limit_freq += 1;
-                create_limiter(device);
+                reset_pace_deadline(device);
             } else if device.vi.min_wait_time
                 > std::time::Duration::from_secs_f64(device.vi.frame_time)
                 && device.vi.limit_freq > 1
             {
                 device.vi.limit_freq -= 1;
-                create_limiter(device);
+                reset_pace_deadline(device);
             }
         }
 
