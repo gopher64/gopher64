@@ -199,6 +199,7 @@ fn speed_limiter(device: &mut device::Device, mut speed_limiter_toggled: bool) {
                     device.vi.min_wait_time = dur;
                 }
             } else {
+                //println!("did not sleep");
                 device.vi.min_wait_time = std::time::Duration::from_secs(0);
             }
             let mut next = deadline + interval;
