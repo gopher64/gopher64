@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
-use crate::{device, ui};
+use crate::{device, retroachievements, ui};
 
 pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
@@ -140,6 +140,7 @@ pub fn pause_loop(frame_time: f64) {
     while paused && !frame_advance {
         std::thread::sleep(std::time::Duration::from_secs_f64(frame_time));
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
+        retroachievements::do_idle();
         let callback = unsafe { rdp_check_callback() };
         paused = callback.paused;
         frame_advance = callback.frame_advance;
@@ -153,7 +154,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     if device.netplay.is_none() {
         if callback.save_state {
             device.save_state = true;
-        } else if callback.load_state {
+        } else if callback.load_state && !retroachievements::get_hardcore() {
             device.load_state = true;
         }
         if callback.reset_game {
@@ -175,7 +176,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     }
 
     if device.ui.storage.save_state_slot != callback.save_state_slot {
-        ui::video::onscreen_message(
+        onscreen_message(
             &device.ui,
             &format!("Switching savestate slot to {}", callback.save_state_slot,),
         );

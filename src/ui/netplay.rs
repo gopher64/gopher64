@@ -121,10 +121,9 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
             .unwrap();
         broadcast_sock.set_broadcast(true).unwrap();
         let data: [u8; 1] = [1];
-        broadcast_sock
+        let _ = broadcast_sock
             .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
-            .await
-            .unwrap();
+            .await;
         let mut buffer = [0; 1024];
         if let Ok(Ok(result)) = tokio::time::timeout(
             std::time::Duration::from_millis(200),

@@ -1,4 +1,4 @@
-use crate::{cheats, device, netplay, ui};
+use crate::{cheats, device, netplay, retroachievements, ui};
 
 const VI_STATUS_REG: u32 = 0;
 const VI_ORIGIN_REG: u32 = 1;
@@ -128,6 +128,8 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
 
+    retroachievements::do_frame();
+
     ui::video::render_frame();
 
     let (mut speed_limiter_toggled, paused) = ui::video::check_callback(device);
@@ -147,7 +149,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     ui::video::update_screen();
     device.vi.vi_counter += 1;
 
-    if device.netplay.is_none() && paused {
+    if device.netplay.is_none() && !retroachievements::get_hardcore() && paused {
         ui::video::pause_loop(device.vi.frame_time);
     }
 

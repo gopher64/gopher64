@@ -1,5 +1,6 @@
 fn main() {
     println!("cargo::rerun-if-changed=parallel-rdp");
+    println!("cargo::rerun-if-changed=retroachievements");
     println!("cargo::rerun-if-changed=src/compat");
 
     let slint_config = slint_build::CompilerConfiguration::new().with_style("cosmic".into());
@@ -69,6 +70,40 @@ fn main() {
                 .join("include"),
         );
 
+    let mut retroachievements_build = cc::Build::new();
+    retroachievements_build
+        .flag("-Wno-unused-parameter")
+        .include("retroachievements/rcheevos/include")
+        .flag("-DRC_CLIENT_SUPPORTS_HASH")
+        .file("retroachievements/rcheevos/src/rc_client.c")
+        .file("retroachievements/rcheevos/src/rc_compat.c")
+        .file("retroachievements/rcheevos/src/rc_util.c")
+        .file("retroachievements/rcheevos/src/rcheevos/alloc.c")
+        .file("retroachievements/rcheevos/src/rcheevos/condition.c")
+        .file("retroachievements/rcheevos/src/rcheevos/condset.c")
+        .file("retroachievements/rcheevos/src/rcheevos/consoleinfo.c")
+        .file("retroachievements/rcheevos/src/rcheevos/format.c")
+        .file("retroachievements/rcheevos/src/rcheevos/lboard.c")
+        .file("retroachievements/rcheevos/src/rcheevos/memref.c")
+        .file("retroachievements/rcheevos/src/rcheevos/operand.c")
+        .file("retroachievements/rcheevos/src/rcheevos/richpresence.c")
+        .file("retroachievements/rcheevos/src/rcheevos/runtime.c")
+        .file("retroachievements/rcheevos/src/rcheevos/runtime_progress.c")
+        .file("retroachievements/rcheevos/src/rcheevos/trigger.c")
+        .file("retroachievements/rcheevos/src/rcheevos/value.c")
+        .file("retroachievements/rcheevos/src/rapi/rc_api_common.c")
+        .file("retroachievements/rcheevos/src/rapi/rc_api_runtime.c")
+        .file("retroachievements/rcheevos/src/rapi/rc_api_user.c")
+        .file("retroachievements/rcheevos/src/rhash/aes.c")
+        .file("retroachievements/rcheevos/src/rhash/cdreader.c")
+        .file("retroachievements/rcheevos/src/rhash/md5.c")
+        .file("retroachievements/rcheevos/src/rhash/hash.c")
+        .file("retroachievements/rcheevos/src/rhash/hash_disc.c")
+        .file("retroachievements/rcheevos/src/rhash/hash_encrypted.c")
+        .file("retroachievements/rcheevos/src/rhash/hash_rom.c")
+        .file("retroachievements/rcheevos/src/rhash/hash_zip.c")
+        .file("retroachievements/retroachievements.c");
+
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let opt_flag = if arch == "x86_64" {
@@ -84,6 +119,7 @@ fn main() {
     volk_build.flag(opt_flag);
     rdp_build.flag(opt_flag);
     simd_build.flag(opt_flag);
+    retroachievements_build.flag(opt_flag);
 
     if os == "windows" {
         volk_build.flag("-DVK_USE_PLATFORM_WIN32_KHR");
@@ -111,11 +147,41 @@ fn main() {
     volk_build.flag("-flto=thin");
     rdp_build.flag("-flto=thin");
     simd_build.flag("-flto=thin");
+    retroachievements_build.flag("-flto=thin");
 
     volk_build.compile("volk");
     rdp_build.compile("parallel-rdp");
+    retroachievements_build.compile("retroachievements");
 
     let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+
+    let retroachievements_bindings = bindgen::Builder::default()
+        .header("retroachievements/retroachievements.h")
+        .allowlist_function("ra_init_client")
+        .allowlist_function("ra_shutdown_client")
+        .allowlist_function("ra_set_hardcore")
+        .allowlist_function("ra_get_hardcore")
+        .allowlist_function("ra_load_game")
+        .allowlist_function("ra_set_dmem")
+        .allowlist_function("ra_do_frame")
+        .allowlist_function("ra_do_idle")
+        .allowlist_function("ra_http_callback")
+        .allowlist_function("ra_logout_user")
+        .allowlist_function("ra_login_user")
+        .allowlist_function("ra_login_token_user")
+        .allowlist_function("ra_is_user_logged_in")
+        .allowlist_function("ra_get_username")
+        .allowlist_function("ra_get_token")
+        .allowlist_function("ra_state_size")
+        .allowlist_function("ra_save_state")
+        .allowlist_function("ra_load_state")
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .generate()
+        .expect("Unable to generate bindings");
+
+    retroachievements_bindings
+        .write_to_file(out_path.join("retroachievements_bindings.rs"))
+        .expect("Couldn't write bindings!");
 
     let parallel_bindings = bindgen::Builder::default()
         .header("parallel-rdp/interface.hpp")

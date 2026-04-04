@@ -1,0 +1,299 @@
+include!(concat!(env!("OUT_DIR"), "/retroachievements_bindings.rs"));
+
+use crate::ui;
+use slint::ComponentHandle;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct RAConfig {
+    pub username: String,
+    pub token: String,
+    pub enabled: bool,
+    pub hardcore: bool,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn store_retroachievements_credentials(
+    c_username: *const std::ffi::c_char,
+    c_token: *const std::ffi::c_char,
+    c_hardcore: bool,
+    ctx: *mut std::ffi::c_void,
+) {
+    let tx = unsafe { Box::from_raw(ctx as *mut tokio::sync::oneshot::Sender<bool>) };
+
+    if c_username.is_null() || c_token.is_null() {
+        tx.send(false).unwrap();
+        return;
+    }
+    let data: RAConfig = RAConfig {
+        username: unsafe { std::ffi::CStr::from_ptr(c_username).to_str().unwrap() }.to_string(),
+        token: unsafe { std::ffi::CStr::from_ptr(c_token).to_str().unwrap() }.to_string(),
+        enabled: true,
+        hardcore: c_hardcore,
+    };
+    let f =
+        std::fs::File::create(ui::get_dirs().config_dir.join("retroachievements.json")).unwrap();
+    serde_json::to_writer_pretty(f, &data).unwrap();
+
+    tx.send(true).unwrap();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rust_server_call(
+    c_url: *const std::ffi::c_char,
+    c_post_data: *const std::ffi::c_char,
+    c_callback: *mut std::ffi::c_void,
+    c_callback_data: *mut std::ffi::c_void,
+) {
+    let url = unsafe { std::ffi::CStr::from_ptr(c_url).to_str().unwrap() };
+    let client = reqwest::Client::builder()
+        .user_agent(format!(
+            "{}/{}",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION")
+        ))
+        .build()
+        .unwrap();
+    let task = if !c_post_data.is_null() {
+        let post_data = unsafe { std::ffi::CStr::from_ptr(c_post_data).to_str().unwrap() };
+        let query_string =
+            reqwest::Url::parse(&format!("http://nothing.com?{}", post_data)).unwrap();
+        client
+            .post(url)
+            .query(
+                &query_string
+                    .query_pairs()
+                    .into_owned()
+                    .collect::<Vec<(String, String)>>(),
+            )
+            .send()
+    } else {
+        client.get(url).send()
+    };
+    let callback = c_callback.addr();
+    let callback_data = c_callback_data.addr();
+    tokio::spawn(async move {
+        let response = task.await;
+        match response {
+            Ok(response) => {
+                let status = response.status().as_u16() as i32;
+                match response.text().await {
+                    Ok(text) => {
+                        let c_text = std::ffi::CString::new(text).unwrap();
+                        unsafe {
+                            ra_http_callback(
+                                c_text.as_ptr(),
+                                c_text.count_bytes(),
+                                status,
+                                std::ptr::null(),
+                                callback as *mut std::ffi::c_void,
+                                callback_data as *mut std::ffi::c_void,
+                            )
+                        };
+                    }
+                    Err(error) => {
+                        let c_error = std::ffi::CString::new(error.to_string()).unwrap();
+                        unsafe {
+                            ra_http_callback(
+                                std::ptr::null(),
+                                0,
+                                status,
+                                c_error.as_ptr(),
+                                callback as *mut std::ffi::c_void,
+                                callback_data as *mut std::ffi::c_void,
+                            )
+                        };
+                    }
+                }
+            }
+            Err(error) => {
+                let c_error = std::ffi::CString::new(error.to_string()).unwrap();
+                unsafe {
+                    ra_http_callback(
+                        std::ptr::null(),
+                        0,
+                        0,
+                        c_error.as_ptr(),
+                        callback as *mut std::ffi::c_void,
+                        callback_data as *mut std::ffi::c_void,
+                    )
+                };
+            }
+        }
+    });
+}
+
+fn set_current_user_message(app: &ui::gui::AppWindow, rx: tokio::sync::oneshot::Receiver<bool>) {
+    app.set_ra_current_user_message("Logging in...".into());
+    let weak_app = app.as_weak();
+    tokio::spawn(async move {
+        rx.await.unwrap();
+        weak_app
+            .upgrade_in_event_loop(move |handle| {
+                if unsafe { ra_is_user_logged_in() } {
+                    handle.set_ra_current_user_message(
+                        format!("Logged in as {}", handle.get_ra_username()).into(),
+                    );
+                } else {
+                    handle.set_ra_current_user_message("Login failed".into());
+                }
+                handle.set_ra_logging_in(false);
+            })
+            .unwrap();
+    });
+}
+
+pub fn ra_window(app: &ui::gui::AppWindow) {
+    let mut token = String::new();
+    if let Ok(ra_config) = std::fs::read(ui::get_dirs().config_dir.join("retroachievements.json"))
+        && let Ok(result) = serde_json::from_slice::<RAConfig>(ra_config.as_ref())
+    {
+        app.set_ra_username(result.username.into());
+        app.set_ra_enabled(result.enabled);
+        app.set_ra_hardcore(result.hardcore);
+        token = result.token;
+    } else {
+        app.set_ra_hardcore(true);
+    }
+
+    if app.get_ra_enabled() && !app.get_ra_username().is_empty() {
+        let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
+        set_hardcore(app.get_ra_hardcore());
+        login_token_user(app.get_ra_username().to_string(), token, tx);
+        set_current_user_message(app, rx);
+    } else {
+        app.set_ra_current_user_message("Not currently logged in".into());
+    }
+
+    let weak_app2 = app.as_weak();
+    app.on_ra_button_clicked(move || {
+        weak_app2
+            .upgrade_in_event_loop(move |handle| {
+                let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
+                set_hardcore(handle.get_ra_hardcore());
+                login_user(
+                    handle.get_ra_username().to_string(),
+                    handle.get_ra_password().to_string(),
+                    tx,
+                );
+
+                set_current_user_message(&handle, rx);
+            })
+            .unwrap();
+    });
+
+    app.on_ra_toggled(move |enabled, hardcore| {
+        set_hardcore(hardcore);
+        let file_path = ui::get_dirs().config_dir.join("retroachievements.json");
+        let raconfig = if let Ok(ra_config) = std::fs::read(&file_path)
+            && let Ok(result) = serde_json::from_slice::<RAConfig>(ra_config.as_ref())
+        {
+            if !enabled {
+                unsafe { ra_logout_user() };
+                RAConfig {
+                    username: "".into(),
+                    token: "".into(),
+                    enabled,
+                    hardcore,
+                }
+            } else {
+                RAConfig {
+                    username: result.username,
+                    token: result.token,
+                    enabled,
+                    hardcore,
+                }
+            }
+        } else {
+            RAConfig {
+                username: "".into(),
+                token: "".into(),
+                enabled,
+                hardcore,
+            }
+        };
+        let f = std::fs::File::create(&file_path).unwrap();
+        serde_json::to_writer_pretty(f, &raconfig).unwrap();
+    });
+}
+
+pub fn load_game(rom: &[u8], rom_size: usize) {
+    unsafe { ra_load_game(rom.as_ptr(), rom_size) };
+}
+
+pub fn set_dmem(dmem: *mut u8, dmem_size: usize) {
+    unsafe { ra_set_dmem(dmem, dmem_size) };
+}
+
+pub fn do_frame() {
+    unsafe { ra_do_frame() };
+}
+
+pub fn do_idle() {
+    unsafe { ra_do_idle() };
+}
+
+pub fn init_client() {
+    unsafe { ra_init_client() };
+}
+
+pub fn shutdown_client() {
+    unsafe { ra_shutdown_client() };
+}
+
+pub fn set_hardcore(hardcore: bool) {
+    unsafe { ra_set_hardcore(hardcore) };
+}
+
+pub fn get_hardcore() -> bool {
+    unsafe { ra_get_hardcore() }
+}
+
+pub fn login_user(username: String, password: String, tx: tokio::sync::oneshot::Sender<bool>) {
+    unsafe {
+        let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
+        ra_login_user(
+            std::ffi::CString::new(username).unwrap().as_ptr(),
+            std::ffi::CString::new(password).unwrap().as_ptr(),
+            tx_ptr,
+        )
+    };
+}
+
+pub fn login_token_user(username: String, token: String, tx: tokio::sync::oneshot::Sender<bool>) {
+    unsafe {
+        let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
+        ra_login_token_user(
+            std::ffi::CString::new(username).unwrap().as_ptr(),
+            std::ffi::CString::new(token).unwrap().as_ptr(),
+            tx_ptr,
+        )
+    };
+}
+
+pub fn is_user_logged_in() -> bool {
+    unsafe { ra_is_user_logged_in() }
+}
+
+pub fn get_username() -> &'static str {
+    unsafe {
+        std::ffi::CStr::from_ptr(ra_get_username())
+            .to_str()
+            .unwrap()
+    }
+}
+
+pub fn get_token() -> &'static str {
+    unsafe { std::ffi::CStr::from_ptr(ra_get_token()).to_str().unwrap() }
+}
+
+pub fn state_size() -> usize {
+    unsafe { ra_state_size() }
+}
+
+pub fn save_state(state: *mut u8) {
+    unsafe { ra_save_state(state) };
+}
+
+pub fn load_state(state: *const u8) {
+    unsafe { ra_load_state(state) };
+}

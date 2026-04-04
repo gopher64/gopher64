@@ -1,4 +1,5 @@
 use crate::device;
+use crate::retroachievements;
 use crate::ui;
 use std::alloc::{Layout, alloc_zeroed};
 
@@ -150,6 +151,8 @@ pub fn init(device: &mut device::Device) {
     let ptr = unsafe { alloc_zeroed(layout) };
     device.rdram.mem =
         unsafe { Vec::from_raw_parts(ptr, device.rdram.size as usize, device.rdram.size as usize) };
+
+    retroachievements::set_dmem(device.rdram.mem.as_mut_ptr(), device.rdram.size as usize);
 
     // hack, skip RDRAM initialization
     device
