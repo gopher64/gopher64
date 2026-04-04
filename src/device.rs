@@ -474,7 +474,7 @@ impl Device {
                 delay: 0,
                 count_per_scanline: 0,
                 enable_speed_limiter: true,
-                limiter: None,
+                next_pace_deadline: None,
                 vi_counter: 0,
                 last_origin: 0,
                 internal_frame_counter: 0,
