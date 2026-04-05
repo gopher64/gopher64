@@ -41,8 +41,8 @@ export component RetroAchievements inherits Page {
             alignment: center;
             CheckBox {
                 text: @tr("Hardcore mode");
-                checked: RAData.hardcore;
-                enabled: RAData.enabled;
+                checked: false; //RAData.hardcore;
+                enabled: false; //RAData.enabled;
                 toggled => {
                     RAData.hardcore = self.checked;
                     ra_toggled(RAData.enabled,RAData.hardcore);

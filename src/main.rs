@@ -185,7 +185,8 @@ async fn main() -> std::io::Result<()> {
 
             if let Some(username) = args.ra_username {
                 let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
-                retroachievements::set_hardcore(args.ra_hardcore);
+                //retroachievements::set_hardcore(args.ra_hardcore);
+                retroachievements::set_hardcore(false);
                 if let Some(password) = args.ra_password {
                     retroachievements::login_user(username, password, tx);
                 } else if let Some(token) = args.ra_token {
