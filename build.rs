@@ -92,6 +92,7 @@ fn main() {
         .file("retroachievements/rcheevos/src/rcheevos/trigger.c")
         .file("retroachievements/rcheevos/src/rcheevos/value.c")
         .file("retroachievements/rcheevos/src/rapi/rc_api_common.c")
+        .file("retroachievements/rcheevos/src/rapi/rc_api_info.c")
         .file("retroachievements/rcheevos/src/rapi/rc_api_runtime.c")
         .file("retroachievements/rcheevos/src/rapi/rc_api_user.c")
         .file("retroachievements/rcheevos/src/rhash/aes.c")
