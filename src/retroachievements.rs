@@ -240,16 +240,12 @@ pub fn do_idle() {
     unsafe { ra_do_idle() };
 }
 
-pub fn init_client() {
-    unsafe { ra_init_client() };
+pub fn init_client(hardcore: bool) {
+    unsafe { ra_init_client(hardcore) };
 }
 
 pub fn shutdown_client() {
     unsafe { ra_shutdown_client() };
-}
-
-pub fn set_hardcore(hardcore: bool) {
-    unsafe { ra_set_hardcore(hardcore) };
 }
 
 pub fn get_hardcore() -> bool {

@@ -158,7 +158,7 @@ async fn main() -> std::io::Result<()> {
                 .unwrap_or_default()
         };
 
-        retroachievements::init_client();
+        retroachievements::init_client(false); //args.ra_hardcore
         let mut shutdown_tx = None;
 
         if let Some(peer_addr) = args.netplay_peer_addr
@@ -185,8 +185,6 @@ async fn main() -> std::io::Result<()> {
 
             if let Some(username) = args.ra_username {
                 let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
-                //retroachievements::set_hardcore(args.ra_hardcore);
-                retroachievements::set_hardcore(false);
                 if let Some(password) = args.ra_password {
                     retroachievements::login_user(username, password, tx);
                 } else if let Some(token) = args.ra_token {
@@ -256,7 +254,7 @@ async fn main() -> std::io::Result<()> {
             ui::input::bind_input_profile(&mut ui, profile, port);
         }
     } else {
-        retroachievements::init_client();
+        retroachievements::init_client(false);
         gui::app_window();
         retroachievements::shutdown_client();
     }

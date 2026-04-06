@@ -2,9 +2,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void ra_init_client();
+void ra_init_client(bool hardcore);
 void ra_shutdown_client();
-void ra_set_hardcore(bool hardcore);
 bool ra_get_hardcore();
 void ra_load_game(const uint8_t *rom, size_t rom_size);
 void ra_set_dmem(uint8_t *dmem, size_t dmem_size);

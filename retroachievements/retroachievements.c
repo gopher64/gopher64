@@ -179,7 +179,7 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   }
 }
 
-void ra_init_client() {
+void ra_init_client(bool hardcore) {
   // Create the client instance (using a global variable simplifies this
   // example)
   g_client = rc_client_create(read_memory, server_call);
@@ -192,9 +192,7 @@ void ra_init_client() {
   rc_client_enable_logging(g_client, RC_CLIENT_LOG_LEVEL_WARN, log_message);
 
   rc_client_set_event_handler(g_client, event_handler);
-}
 
-void ra_set_hardcore(bool hardcore) {
   rc_client_set_hardcore_enabled(g_client, hardcore);
 }
 

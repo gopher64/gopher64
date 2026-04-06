@@ -160,7 +160,6 @@ fn main() {
         .header("retroachievements/retroachievements.h")
         .allowlist_function("ra_init_client")
         .allowlist_function("ra_shutdown_client")
-        .allowlist_function("ra_set_hardcore")
         .allowlist_function("ra_get_hardcore")
         .allowlist_function("ra_load_game")
         .allowlist_function("ra_set_dmem")
