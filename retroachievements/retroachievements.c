@@ -158,6 +158,26 @@ static void achievement_triggered(const rc_client_achievement_t *achievement) {
   rdp_onscreen_message(buffer);
 }
 
+static void game_completed(rc_client_t *client) {
+  char buffer[512];
+  const rc_client_game_t *game = rc_client_get_game_info(client);
+
+  snprintf(buffer, sizeof(buffer), "RA %s: %s",
+           rc_client_get_hardcore_enabled(client) ? "mastered" : "completed",
+           game->title);
+  rdp_onscreen_message(buffer);
+}
+
+static void subset_completed(const rc_client_subset_t *subset,
+                             rc_client_t *client) {
+  char buffer[512];
+
+  snprintf(buffer, sizeof(buffer), "RA subset %s: %s",
+           rc_client_get_hardcore_enabled(client) ? "mastered" : "completed",
+           subset->title);
+  rdp_onscreen_message(buffer);
+}
+
 static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   switch (event->type) {
   case RC_CLIENT_EVENT_ACHIEVEMENT_TRIGGERED:
@@ -186,6 +206,12 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_UPDATE:
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_SCOREBOARD:
+    break;
+  case RC_CLIENT_EVENT_GAME_COMPLETED:
+    game_completed(client);
+    break;
+  case RC_CLIENT_EVENT_SUBSET_COMPLETED:
+    subset_completed(event->subset, client);
     break;
   default:
     printf("RetroAchievements: Unhandled event %d\n", event->type);
