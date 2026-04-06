@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 import { StandardButton } from "std-widgets.slint";
-import { LocalGame, ControllerConfig, Netplay, Cheats, Settings, About } from "pages.slint";
+import { LocalGame, ControllerConfig, Netplay, Cheats, RetroAchievements, Settings, About } from "pages.slint";
 import { SideBar } from "side_bar.slint";
 import { SettingsData } from "settings_page.slint";
+import { RAData } from "retroachievements_page.slint";
 import { AboutData } from "about_page.slint";
 import { ControllerData } from "controller_page.slint";
 import { State } from "localgame_page.slint";
@@ -34,8 +35,16 @@ export component AppWindow inherits Window {
     callback cheats_select_rom_clicked(string);
     callback cheats_clear_clicked;
     callback cheat_toggled(string, string, string, bool);
+    callback ra_button_clicked(string);
+    callback ra_toggled(bool,bool);
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
+    in-out property ra_username <=> RAData.ra_username;
+    in-out property ra_password <=> RAData.ra_password;
+    in-out property ra_logging_in <=> RAData.ra_logging_in;
+    in-out property ra_current_user_message <=> RAData.current_user_message;
+    in-out property ra_enabled <=> RAData.enabled;
+    in-out property ra_hardcore <=> RAData.hardcore;
     in-out property integer_scaling <=> SettingsData.integer_scaling;
     in-out property fullscreen <=> SettingsData.fullscreen;
     in-out property widescreen <=> SettingsData.widescreen;
@@ -71,6 +80,7 @@ export component AppWindow inherits Window {
                 @tr("Menu" => "Controller Config"),
                 @tr("Menu" => "Netplay"),
                 @tr("Menu" => "Cheats"),
+                @tr("Menu" => "RetroAchievements"),
                 @tr("Menu" => "Settings"),
                 @tr("Menu" => "About")
             ];
@@ -117,8 +127,16 @@ export component AppWindow inherits Window {
                 cheat_toggled(game_crc,cheat_name,option,enabled);
             }
         }
-        if(side-bar.current-item == 4): Settings { }
-        if(side-bar.current-item == 5): About {
+        if(side-bar.current-item == 4): RetroAchievements {
+            ra_button_clicked(password) => {
+                ra_button_clicked(password);
+            }
+            ra_toggled(enabled,hardcore) => {
+                ra_toggled(enabled,hardcore);
+            }
+         }
+        if(side-bar.current-item == 5): Settings { }
+        if(side-bar.current-item == 6): About {
             wiki_button_clicked => {
                 wiki_button_clicked();
             }

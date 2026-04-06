@@ -1,0 +1,95 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+import { LineEdit, CheckBox, Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
+import { Page } from "page.slint";
+
+export global RAData {
+    in-out property <bool> enabled;
+    in-out property <bool> hardcore;
+    in-out property <bool> ra_logging_in;
+    in-out property <string> ra_username;
+    in-out property <string> ra_password;
+    in-out property <string> current_user_message;
+}
+
+export component RetroAchievements inherits Page {
+    callback ra_button_clicked(string);
+    callback ra_toggled(bool,bool);
+    title: @tr("RetroAchievements");
+
+    VerticalBox {
+        alignment: start;
+        HorizontalBox {
+            alignment: center;
+            CheckBox {
+                text: @tr("Enabled");
+                checked: RAData.enabled;
+                toggled => {
+                    RAData.enabled = self.checked;
+                    if (!RAData.enabled) {
+                        RAData.ra_username = "";
+                        username_widget.text = "";
+                        password_widget.text = "";
+                        RAData.current_user_message = "Not currently logged in";
+                    }
+                    ra_toggled(RAData.enabled,RAData.hardcore);
+                }
+            }
+        }
+        HorizontalBox {
+            alignment: center;
+            CheckBox {
+                text: @tr("Hardcore mode");
+                checked: false; //RAData.hardcore;
+                enabled: false; //RAData.enabled;
+                toggled => {
+                    RAData.hardcore = self.checked;
+                    ra_toggled(RAData.enabled,RAData.hardcore);
+                }
+            }
+        }
+        HorizontalBox {
+            alignment: center;
+            Text {
+                text: RAData.current_user_message;
+            }
+        }
+        Rectangle {
+            height: 20px;
+        }
+        HorizontalBox {
+            alignment: center;
+            username_widget := LineEdit {
+                enabled: RAData.enabled;
+                placeholder-text: @tr("Username");
+                text: RAData.ra_username;
+                edited(text) => {
+                    RAData.ra_username = text;
+                }
+                
+            }
+            password_widget := LineEdit {
+                enabled: RAData.enabled;
+                input-type: password;
+                placeholder-text: @tr("Password");
+                edited(text) => {
+                    RAData.ra_password = text;
+                }
+            }
+        }
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Login");
+                enabled: RAData.enabled && !RAData.ra_logging_in && RAData.ra_username != "" && RAData.ra_password != "";
+                clicked => {
+                    RAData.ra_logging_in = true;
+                    ra_button_clicked(RAData.ra_password);
+                    RAData.ra_password = "";
+                    password_widget.text = "";
+                }
+            }
+        }
+    }
+}

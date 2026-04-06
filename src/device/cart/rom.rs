@@ -133,7 +133,7 @@ pub fn dma_write(
     device::pi::calculate_cycles(device, 1, length)
 }
 
-pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
+pub fn init(device: &mut device::Device, rom_file: &[u8]) {
     let now: chrono::DateTime<chrono::Local> = chrono::Local::now();
     device.cart.rtc_timestamp = now.naive_local().and_utc().timestamp();
     if let Some(netplay) = &mut device.netplay {
@@ -146,7 +146,7 @@ pub fn init(device: &mut device::Device, rom_file: Vec<u8>) {
 
     device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 1;
 
-    device.cart.rom = rom_file;
+    device.cart.rom = rom_file.to_vec();
     device.cart.pal = is_system_pal(device.cart.rom[0x3E]);
     set_cic(device);
 
