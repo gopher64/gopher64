@@ -165,14 +165,14 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
     }
 
     let weak_app2 = app.as_weak();
-    app.on_ra_button_clicked(move || {
+    app.on_ra_button_clicked(move |password| {
         weak_app2
             .upgrade_in_event_loop(move |handle| {
                 let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
                 set_hardcore(handle.get_ra_hardcore());
                 login_user(
                     handle.get_ra_username().to_string(),
-                    handle.get_ra_password().to_string(),
+                    password.to_string(),
                     tx,
                 );
 

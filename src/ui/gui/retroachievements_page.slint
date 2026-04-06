@@ -14,7 +14,7 @@ export global RAData {
 }
 
 export component RetroAchievements inherits Page {
-    callback ra_button_clicked;
+    callback ra_button_clicked(string);
     callback ra_toggled(bool,bool);
     title: @tr("RetroAchievements");
 
@@ -85,7 +85,9 @@ export component RetroAchievements inherits Page {
                 enabled: RAData.enabled && !RAData.ra_logging_in && RAData.ra_username != "" && RAData.ra_password != "";
                 clicked => {
                     RAData.ra_logging_in = true;
-                    ra_button_clicked();
+                    ra_button_clicked(RAData.ra_password);
+                    RAData.ra_password = "";
+                    password_widget.text = "";
                 }
             }
         }

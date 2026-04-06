@@ -35,7 +35,7 @@ export component AppWindow inherits Window {
     callback cheats_select_rom_clicked(string);
     callback cheats_clear_clicked;
     callback cheat_toggled(string, string, string, bool);
-    callback ra_button_clicked;
+    callback ra_button_clicked(string);
     callback ra_toggled(bool,bool);
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
@@ -128,8 +128,8 @@ export component AppWindow inherits Window {
             }
         }
         if(side-bar.current-item == 4): RetroAchievements {
-            ra_button_clicked => {
-                ra_button_clicked();
+            ra_button_clicked(password) => {
+                ra_button_clicked(password);
             }
             ra_toggled(enabled,hardcore) => {
                 ra_toggled(enabled,hardcore);
