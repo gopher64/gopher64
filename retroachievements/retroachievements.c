@@ -163,6 +163,12 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   case RC_CLIENT_EVENT_ACHIEVEMENT_TRIGGERED:
     achievement_triggered(event->achievement);
     break;
+  case RC_CLIENT_EVENT_LEADERBOARD_STARTED:
+    break;
+  case RC_CLIENT_EVENT_LEADERBOARD_FAILED:
+    break;
+  case RC_CLIENT_EVENT_LEADERBOARD_SUBMITTED:
+    break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_SHOW:
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_HIDE:
@@ -172,6 +178,14 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_HIDE:
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_UPDATE:
+    break;
+  case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_SHOW:
+    break;
+  case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_HIDE:
+    break;
+  case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_UPDATE:
+    break;
+  case RC_CLIENT_EVENT_LEADERBOARD_SCOREBOARD:
     break;
   default:
     printf("RetroAchievements: Unhandled event %d\n", event->type);
