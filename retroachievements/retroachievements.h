@@ -10,8 +10,7 @@ void ra_set_dmem(uint8_t *dmem, size_t dmem_size);
 void ra_do_frame();
 void ra_do_idle();
 void ra_http_callback(const char *content, size_t content_size, int status_code,
-                      const char *error_message, void *callback,
-                      void *callback_data);
+                      void *callback, void *callback_data);
 void ra_logout_user();
 void ra_login_user(const char *username, const char *password, void *userdata);
 void ra_login_token_user(const char *username, const char *token,

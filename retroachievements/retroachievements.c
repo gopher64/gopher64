@@ -35,8 +35,7 @@ static void server_call(const rc_api_request_t *request,
 }
 
 void ra_http_callback(const char *content, size_t content_size, int status_code,
-                      const char *error_message, void *callback,
-                      void *callback_data) {
+                      void *callback, void *callback_data) {
   // Prepare a data object to pass the HTTP response to the callback
   rc_api_server_response_t server_response;
   memset(&server_response, 0, sizeof(server_response));
@@ -45,10 +44,7 @@ void ra_http_callback(const char *content, size_t content_size, int status_code,
   server_response.http_status_code = status_code;
 
   // handle non-http errors (socket timeout, no internet available, etc)
-  if (status_code == 0 && error_message) {
-    // assume no server content and pass the error through instead
-    server_response.body = error_message;
-    server_response.body_length = strlen(error_message);
+  if (status_code == 0) {
     // Let rc_client know the error was not catastrophic and could be retried.
     // It may decide to retry or just immediately pass the error to the
     // callback. To prevent possible retries, use

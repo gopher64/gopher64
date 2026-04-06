@@ -95,7 +95,6 @@ pub extern "C" fn rust_server_call(
                                 c_text.as_ptr(),
                                 c_text.count_bytes(),
                                 status,
-                                std::ptr::null(),
                                 callback as *mut std::ffi::c_void,
                                 callback_data as *mut std::ffi::c_void,
                             )
@@ -105,10 +104,9 @@ pub extern "C" fn rust_server_call(
                         let c_error = std::ffi::CString::new(error.to_string()).unwrap();
                         unsafe {
                             ra_http_callback(
-                                std::ptr::null(),
-                                0,
-                                status,
                                 c_error.as_ptr(),
+                                c_error.count_bytes(),
+                                status,
                                 callback as *mut std::ffi::c_void,
                                 callback_data as *mut std::ffi::c_void,
                             )
@@ -120,10 +118,9 @@ pub extern "C" fn rust_server_call(
                 let c_error = std::ffi::CString::new(error.to_string()).unwrap();
                 unsafe {
                     ra_http_callback(
-                        std::ptr::null(),
-                        0,
-                        0,
                         c_error.as_ptr(),
+                        c_error.count_bytes(),
+                        0,
                         callback as *mut std::ffi::c_void,
                         callback_data as *mut std::ffi::c_void,
                     )
