@@ -10,8 +10,7 @@ void rust_server_call(const char *url, const char *post_data,
                       rc_client_server_callback_t callback,
                       void *callback_data);
 void store_retroachievements_credentials(const char *username,
-                                         const char *token, bool hardcore,
-                                         void *userdata);
+                                         const char *token, void *userdata);
 
 rc_client_t *g_client = NULL;
 uint8_t *g_dmem = NULL;
@@ -70,17 +69,14 @@ static void login_callback(int result, const char *error_message,
   // If not successful, just report the error and bail.
   if (result != RC_OK) {
     printf("RetroAchievements: Login failed: %s\n", error_message);
-    store_retroachievements_credentials(
-        NULL, NULL, rc_client_get_hardcore_enabled(client), userdata);
+    store_retroachievements_credentials(NULL, NULL, userdata);
     return;
   }
 
   // Login was successful. Capture the token for future logins so we don't have
   // to store the password anywhere.
   const rc_client_user_t *user = rc_client_get_user_info(client);
-  store_retroachievements_credentials(user->username, user->token,
-                                      rc_client_get_hardcore_enabled(client),
-                                      userdata);
+  store_retroachievements_credentials(user->username, user->token, userdata);
 
   g_username = user->username;
   g_token = user->token;

@@ -15,7 +15,6 @@ pub struct RAConfig {
 pub extern "C" fn store_retroachievements_credentials(
     c_username: *const std::ffi::c_char,
     c_token: *const std::ffi::c_char,
-    c_hardcore: bool,
     ctx: *mut std::ffi::c_void,
 ) {
     let tx = unsafe { Box::from_raw(ctx as *mut tokio::sync::oneshot::Sender<bool>) };
@@ -24,15 +23,27 @@ pub extern "C" fn store_retroachievements_credentials(
         tx.send(false).unwrap();
         return;
     }
-    let data: RAConfig = RAConfig {
-        username: unsafe { std::ffi::CStr::from_ptr(c_username).to_str().unwrap() }.to_string(),
-        token: unsafe { std::ffi::CStr::from_ptr(c_token).to_str().unwrap() }.to_string(),
-        enabled: true,
-        hardcore: c_hardcore,
+
+    let file_path = ui::get_dirs().config_dir.join("retroachievements.json");
+    let raconfig = if let Ok(ra_config) = std::fs::read(&file_path)
+        && let Ok(result) = serde_json::from_slice::<RAConfig>(ra_config.as_ref())
+    {
+        RAConfig {
+            username: unsafe { std::ffi::CStr::from_ptr(c_username).to_str().unwrap() }.to_string(),
+            token: unsafe { std::ffi::CStr::from_ptr(c_token).to_str().unwrap() }.to_string(),
+            enabled: result.enabled,
+            hardcore: result.hardcore,
+        }
+    } else {
+        RAConfig {
+            username: unsafe { std::ffi::CStr::from_ptr(c_username).to_str().unwrap() }.to_string(),
+            token: unsafe { std::ffi::CStr::from_ptr(c_token).to_str().unwrap() }.to_string(),
+            enabled: false,
+            hardcore: false,
+        }
     };
-    let f =
-        std::fs::File::create(ui::get_dirs().config_dir.join("retroachievements.json")).unwrap();
-    serde_json::to_writer_pretty(f, &data).unwrap();
+    let f = std::fs::File::create(&file_path).unwrap();
+    serde_json::to_writer_pretty(f, &raconfig).unwrap();
 
     tx.send(true).unwrap();
 }
@@ -157,7 +168,6 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
 
     if app.get_ra_enabled() && !app.get_ra_username().is_empty() {
         let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
-        set_hardcore(app.get_ra_hardcore());
         login_token_user(app.get_ra_username().to_string(), token, tx);
         set_current_user_message(app, rx);
     } else {
@@ -169,7 +179,6 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
         weak_app2
             .upgrade_in_event_loop(move |handle| {
                 let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
-                set_hardcore(handle.get_ra_hardcore());
                 login_user(
                     handle.get_ra_username().to_string(),
                     password.to_string(),
@@ -182,7 +191,6 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
     });
 
     app.on_ra_toggled(move |enabled, hardcore| {
-        set_hardcore(hardcore);
         let file_path = ui::get_dirs().config_dir.join("retroachievements.json");
         let raconfig = if let Ok(ra_config) = std::fs::read(&file_path)
             && let Ok(result) = serde_json::from_slice::<RAConfig>(ra_config.as_ref())

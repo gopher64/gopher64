@@ -323,6 +323,7 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: GameSettings,
     netplay: Option<NetplayDevice>,
+    ra_hardcore: bool,
     weak: slint::Weak<AppWindow>,
 ) {
     tokio::spawn(async move {
@@ -356,7 +357,7 @@ pub fn run_rom(
                 "--ra-token",
                 retroachievements::get_token(),
             ]);
-            if retroachievements::get_hardcore() {
+            if ra_hardcore {
                 command.args(["--ra-hardcore"]);
             }
         }
@@ -421,6 +422,7 @@ fn open_rom(app: &AppWindow) {
 
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
+    let ra_hardcore = app.get_ra_hardcore();
 
     let weak = app.as_weak();
     tokio::spawn(async move {
@@ -451,6 +453,7 @@ fn open_rom(app: &AppWindow) {
                     load_savestate_slot: None,
                 },
                 None,
+                ra_hardcore,
                 weak,
             );
         }
