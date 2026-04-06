@@ -222,6 +222,10 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
         let f = std::fs::File::create(&file_path).unwrap();
         serde_json::to_writer_pretty(f, &raconfig).unwrap();
     });
+
+    app.on_ra_games_clicked(move || {
+        open::that_detached("https://retroachievements.org/system/2-nintendo-64/games").unwrap();
+    });
 }
 
 pub fn load_game(rom: &[u8], rom_size: usize) {

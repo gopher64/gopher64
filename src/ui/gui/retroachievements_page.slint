@@ -16,6 +16,7 @@ export global RAData {
 export component RetroAchievements inherits Page {
     callback ra_button_clicked(string);
     callback ra_toggled(bool,bool);
+    callback ra_games_clicked;
     title: @tr("RetroAchievements");
 
     VerticalBox {
@@ -55,9 +56,6 @@ export component RetroAchievements inherits Page {
                 text: RAData.current_user_message;
             }
         }
-        Rectangle {
-            height: 20px;
-        }
         HorizontalBox {
             alignment: center;
             username_widget := LineEdit {
@@ -88,6 +86,18 @@ export component RetroAchievements inherits Page {
                     ra_button_clicked(RAData.ra_password);
                     RAData.ra_password = "";
                     password_widget.text = "";
+                }
+            }
+        }
+        Rectangle {
+            height: 20px;
+        }
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("View Supported Games");
+                clicked => {
+                    ra_games_clicked();
                 }
             }
         }
