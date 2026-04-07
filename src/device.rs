@@ -12,7 +12,7 @@ use std::arch::x86_64::*;
 
 use rand::{Rng, SeedableRng};
 
-use crate::{cheats, netplay, ui};
+use crate::{cheats, netplay, retroachievements, ui};
 use std::{collections::HashMap, fs, io::Read};
 
 pub mod ai;
@@ -49,21 +49,26 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
     if game_settings.disable_expansion_pak {
         device.rdram.size = 0x400000;
     }
-    if let Some(slot) = game_settings.load_savestate_slot {
+    if let Some(slot) = game_settings.load_savestate_slot
+        && !retroachievements::get_hardcore()
+    {
         device.ui.storage.save_state_slot = slot;
         device.load_state = true;
     }
 
     init_rng(device);
 
-    cart::rom::init(device, rom_contents); // cart needs to come before rdram
+    cart::rom::init(device, &rom_contents); // cart needs to come before rdram
 
-    // rdram pointer is shared with parallel-rdp
+    // rdram pointer is shared with parallel-rdp and retroachievements
     rdram::init(device);
 
     ui::video::init(device);
     ui::audio::init(&mut device.ui, device.ai.freq);
     ui::input::init(&mut device.ui);
+
+    // shows messages, needs to be after video init
+    retroachievements::load_game(&rom_contents, rom_contents.len());
 
     mi::init(device);
     pif::init(device);
@@ -80,7 +85,9 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
     ui::storage::init(&mut device.ui, &device.cart.rom);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
 
-    cheats::init(device, game_settings.cheats);
+    if !retroachievements::get_hardcore() {
+        cheats::init(device, game_settings.cheats);
+    }
 
     cpu::run(device);
 

@@ -1,4 +1,4 @@
-use crate::{cheats, device, ui};
+use crate::{cheats, device, retroachievements, ui};
 #[cfg(target_arch = "aarch64")]
 use device::__m128i;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
@@ -73,6 +73,9 @@ pub fn create_savestate(device: &device::Device) {
     let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
     ui::video::save_state(rdp_state.as_mut_ptr());
 
+    let mut ra_state: Vec<u8> = vec![0; retroachievements::state_size()];
+    retroachievements::save_state(ra_state.as_mut_ptr());
+
     let data: &[(&[u8], &str)] = &[
         (&postcard::to_stdvec(device).unwrap(), "device"),
         (
@@ -80,6 +83,7 @@ pub fn create_savestate(device: &device::Device) {
             "saves",
         ),
         (&rdp_state, "rdp_state"),
+        (&ra_state, "ra_state"),
     ];
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
     let compressed_file = ui::storage::compress_file(data);
@@ -101,6 +105,7 @@ pub fn load_savestate(device: &mut device::Device) {
         let device_bytes = ui::storage::decompress_file(savestate, "device");
         let save_bytes = ui::storage::decompress_file(savestate, "saves");
         let rdp_state = ui::storage::decompress_file(savestate, "rdp_state");
+        let ra_state = ui::storage::decompress_file(savestate, "ra_state");
         if let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes) {
             device.ui.storage.saves = postcard::from_bytes(&save_bytes).unwrap();
 
@@ -197,6 +202,8 @@ pub fn load_savestate(device: &mut device::Device) {
             ui::audio::close_game_audio(&mut device.ui);
             ui::audio::init_game_audio(&mut device.ui, device.ai.freq);
             ui::video::load_state(device, rdp_state.as_ptr());
+
+            retroachievements::load_state(ra_state.as_ptr());
 
             if device.cheats.enabled {
                 cheats::execute_cheats(device, device.cheats.cheats.clone());

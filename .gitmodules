@@ -6,3 +6,6 @@
 	path = src/compat/sse2neon
 	url = https://github.com/DLTcollab/sse2neon.git
 	branch = master
+[submodule "retroachievements/rcheevos"]
+	path = retroachievements/rcheevos
+	url = https://github.com/RetroAchievements/rcheevos.git

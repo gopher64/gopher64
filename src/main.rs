@@ -6,6 +6,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 mod cheats;
 mod device;
 mod netplay;
+mod retroachievements;
 mod savestates;
 mod ui;
 use clap::Parser;
@@ -82,6 +83,29 @@ struct Args {
         help = "Load savestate from slot 0-9 when starting the game"
     )]
     load_state: Option<u32>,
+    #[arg(
+        long = "ra-username",
+        value_name = "USERNAME",
+        help = "Username for RetroAchievements"
+    )]
+    ra_username: Option<String>,
+    #[arg(
+        long = "ra-token",
+        value_name = "TOKEN",
+        help = "Token for RetroAchievements"
+    )]
+    ra_token: Option<String>,
+    #[arg(
+        long = "ra-password",
+        value_name = "PASSWORD",
+        help = "Password for RetroAchievements"
+    )]
+    ra_password: Option<String>,
+    #[arg(
+        long = "ra-hardcore",
+        help = "Enable Hardcore mode for RetroAchievements"
+    )]
+    ra_hardcore: bool,
 }
 
 #[tokio::main(worker_threads = 4)]
@@ -134,6 +158,7 @@ async fn main() -> std::io::Result<()> {
                 .unwrap_or_default()
         };
 
+        retroachievements::init_client(false); //args.ra_hardcore
         let mut shutdown_tx = None;
 
         if let Some(peer_addr) = args.netplay_peer_addr
@@ -157,6 +182,17 @@ async fn main() -> std::io::Result<()> {
             if device.ui.config.emulation.usb {
                 (shutdown_tx, device.ui.usb) = ui::usb::init();
             }
+
+            if let Some(username) = args.ra_username {
+                let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
+                if let Some(password) = args.ra_password {
+                    retroachievements::login_user(username, password, tx);
+                } else if let Some(token) = args.ra_token {
+                    retroachievements::login_token_user(username, token, tx);
+                }
+
+                rx.await.unwrap();
+            }
         }
 
         device::run_game(
@@ -169,6 +205,7 @@ async fn main() -> std::io::Result<()> {
                 load_savestate_slot: args.load_state,
             },
         );
+        retroachievements::shutdown_client();
 
         if device.netplay.is_some() {
             netplay::close(&mut device);
@@ -217,7 +254,9 @@ async fn main() -> std::io::Result<()> {
             ui::input::bind_input_profile(&mut ui, profile, port);
         }
     } else {
+        retroachievements::init_client(false);
         gui::app_window();
+        retroachievements::shutdown_client();
     }
 
     Ok(())

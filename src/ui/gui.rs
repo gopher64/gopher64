@@ -1,3 +1,4 @@
+use crate::retroachievements;
 use crate::ui;
 use slint::Model;
 
@@ -299,6 +300,7 @@ fn about_window(app: &AppWindow) {
 pub fn app_window() {
     let app = AppWindow::new().unwrap();
     about_window(&app);
+    retroachievements::ra_window(&app);
     let mut controller_paths;
     {
         let game_ui = ui::Ui::new();
@@ -321,6 +323,7 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: GameSettings,
     netplay: Option<NetplayDevice>,
+    ra_hardcore: bool,
     weak: slint::Weak<AppWindow>,
 ) {
     tokio::spawn(async move {
@@ -347,6 +350,16 @@ pub fn run_rom(
                 "--cheats",
                 cheats_path.to_str().unwrap(),
             ]);
+        } else if retroachievements::is_user_logged_in() {
+            command.args([
+                "--ra-username",
+                retroachievements::get_username(),
+                "--ra-token",
+                retroachievements::get_token(),
+            ]);
+            if ra_hardcore {
+                command.args(["--ra-hardcore"]);
+            }
         }
 
         for i in 0..4 {
@@ -409,6 +422,7 @@ fn open_rom(app: &AppWindow) {
 
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
+    let ra_hardcore = app.get_ra_hardcore();
 
     let weak = app.as_weak();
     tokio::spawn(async move {
@@ -439,6 +453,7 @@ fn open_rom(app: &AppWindow) {
                     load_savestate_slot: None,
                 },
                 None,
+                ra_hardcore,
                 weak,
             );
         }
