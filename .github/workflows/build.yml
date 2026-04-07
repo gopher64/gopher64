@@ -182,8 +182,8 @@ jobs:
         if: ${{ github.ref_type != 'tag' }}
         run: |
           codesign -f --deep --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
-          notarytool submit --wait --apple-id "${{ secrets.APPLE_ID }}" --team-id "${{ secrets.APPLE_DEVELOPER_ID }}" --password "${{ secrets.APPLE_APP_PASSWORD }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
-          stapler staple target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          xcrun notarytool submit --wait --apple-id "${{ secrets.APPLE_ID }}" --team-id "${{ secrets.APPLE_DEVELOPER_ID }}" --password "${{ secrets.APPLE_APP_PASSWORD }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          xcrun stapler staple target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
       - name: Upload file
         uses: actions/upload-artifact@v7
         with:
