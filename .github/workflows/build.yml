@@ -164,10 +164,26 @@ jobs:
             @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
           install_name_tool -change /opt/homebrew/opt/libpng/lib/libpng16.16.dylib \
             @executable_path/../Frameworks/libpng16.16.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
-          codesign -f --entitlements data/entitlements.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
           MACOSX_DEPLOYMENT_TARGET: "26.0"
+      - name: Sign Bundle Dev
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          codesign -f --entitlements data/entitlements.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+      - name: Import Codesign Certs
+        if: ${{ github.ref_type != 'tag' }}
+        uses: apple-actions/import-codesign-certs@v6
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATES_FILE_BASE64 }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATES_PASSWORD }}
+          keychain: gopher64
+      - name: Sign Bundle Release
+        if: ${{ github.ref_type != 'tag' }}
+        run: |
+          codesign -f --deep --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          notarytool submit --wait --apple-id "${{ secrets.APPLE_ID }}" --team-id "${{ secrets.APPLE_DEVELOPER_ID }}" --password "${{ secrets.APPLE_APP_PASSWORD }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          stapler staple target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
       - name: Upload file
         uses: actions/upload-artifact@v7
         with:
