@@ -158,7 +158,11 @@ async fn main() -> std::io::Result<()> {
                 .unwrap_or_default()
         };
 
-        retroachievements::init_client(false); //args.ra_hardcore
+        if cfg!(ra_hardcore_enabled) {
+            retroachievements::init_client(args.ra_hardcore);
+        } else {
+            retroachievements::init_client(false);
+        }
         let mut shutdown_tx = None;
 
         if let Some(peer_addr) = args.netplay_peer_addr
