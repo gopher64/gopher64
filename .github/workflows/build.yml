@@ -4,7 +4,7 @@ permissions:
 
 on:
   push:
-    branches: ["main", "wintest"]
+    branches: ["main"]
     tags:
       - "v*"
   pull_request:
@@ -117,9 +117,9 @@ jobs:
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}.exe
-          archive: ${{ github.ref_type != 'tag' && true || false }}
+          archive: ${{ github.ref_type == 'tag' && true || false }}
       - name: SignPath
-        if: ${{ github.ref_type != 'tag' }}
+        if: ${{ github.ref_type == 'tag' }}
         uses: signpath/github-action-submit-signing-request@v2
         with:
           api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
@@ -132,7 +132,7 @@ jobs:
           wait-for-completion-timeout-in-seconds: 3600
           output-artifact-directory: output-signed
       - name: Upload signed artifact
-        if: ${{ github.ref_type != 'tag' }}
+        if: ${{ github.ref_type == 'tag' }}
         uses: actions/upload-artifact@v7
         with:
           name: gopher64-${{ matrix.arch }}
