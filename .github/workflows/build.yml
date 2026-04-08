@@ -12,6 +12,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RA_HARDCORE: ${{ github.ref_type == 'tag' && 'true' || 'false' }}
 
 jobs:
   build-linux:

@@ -272,6 +272,15 @@ fn main() {
     let git_hash = String::from_utf8(git_output.stdout).unwrap();
     println!("cargo:rustc-env=GIT_HASH={git_hash}");
 
+    println!("cargo:rerun-if-env-changed=NETPLAY_ID");
     let netplay_id = std::env::var("NETPLAY_ID").unwrap_or("gopher64".to_string());
     println!("cargo:rustc-env=NETPLAY_ID={netplay_id}");
+
+    println!("cargo:rerun-if-env-changed=RA_HARDCORE");
+    println!("cargo:rustc-check-cfg=cfg(ra_hardcore_enabled)");
+    if let Ok(ra_hardcore) = std::env::var("RA_HARDCORE")
+        && ra_hardcore.to_lowercase() == "true"
+    {
+        println!("cargo:rustc-cfg=ra_hardcore_enabled");
+    }
 }
