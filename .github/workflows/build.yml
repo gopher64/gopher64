@@ -117,7 +117,7 @@ jobs:
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}.exe
-          archive: false
+          archive: ${{ github.ref_type != 'tag' && true || false }}
       - name: SignPath
         if: ${{ github.ref_type != 'tag' }}
         uses: signpath/github-action-submit-signing-request@v2.0
@@ -131,6 +131,10 @@ jobs:
           wait-for-completion: true
           wait-for-completion-timeout-in-seconds: 3600
           output-artifact-directory: output-signed
+      - name: Unzip signed artifact
+        if: ${{ github.ref_type != 'tag' }}
+        run: |
+          unzip output-signed/gopher64-${{ matrix.arch }}.zip -d output-signed
       - name: Upload signed artifact
         if: ${{ github.ref_type != 'tag' }}
         uses: actions/upload-artifact@v7
