@@ -134,7 +134,8 @@ jobs:
       - name: Unzip signed artifact
         if: ${{ github.ref_type != 'tag' }}
         run: |
-          unzip output-signed/gopher64-${{ matrix.arch }}.zip -d output-signed
+          ls -l output-signed
+          unzip output-signed/*.zip -d output-signed
       - name: Upload signed artifact
         if: ${{ github.ref_type != 'tag' }}
         uses: actions/upload-artifact@v7
