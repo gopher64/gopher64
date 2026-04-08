@@ -147,6 +147,30 @@ void ra_set_dmem(uint8_t *dmem, size_t dmem_size) {
   g_dmem_size = dmem_size;
 }
 
+static void leaderboard_started(const rc_client_leaderboard_t *leaderboard) {
+  char buffer[512];
+
+  snprintf(buffer, sizeof(buffer), "RA leaderboard attempt started: %s",
+           leaderboard->title);
+  rdp_onscreen_message(buffer);
+}
+
+static void leaderboard_failed(const rc_client_leaderboard_t *leaderboard) {
+  char buffer[512];
+
+  snprintf(buffer, sizeof(buffer), "RA leaderboard attempt failed: %s",
+           leaderboard->title);
+  rdp_onscreen_message(buffer);
+}
+
+static void leaderboard_submitted(const rc_client_leaderboard_t *leaderboard) {
+  char buffer[512];
+
+  snprintf(buffer, sizeof(buffer), "RA leaderboard submitted: %s - %s",
+           leaderboard->title, leaderboard->tracker_value);
+  rdp_onscreen_message(buffer);
+}
+
 static void achievement_triggered(const rc_client_achievement_t *achievement) {
   char buffer[512];
 
@@ -180,10 +204,13 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
     achievement_triggered(event->achievement);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_STARTED:
+    leaderboard_started(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_FAILED:
+    leaderboard_failed(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_SUBMITTED:
+    leaderboard_submitted(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_SHOW:
     break;
