@@ -18,20 +18,25 @@ pub fn init(device: &mut device::Device) {
 
     let window_width;
     let window_height;
+    let scale = if device.ui.config.video.upscale > 1 {
+        device.ui.config.video.upscale as i32
+    } else {
+        2
+    };
     if device.cart.pal {
         window_width = if device.ui.config.video.widescreen {
-            1024
+            512 * scale
         } else {
-            768
+            384 * scale
         };
-        window_height = 576;
+        window_height = 288 * scale;
     } else {
         window_width = if device.ui.config.video.widescreen {
-            852
+            426 * scale
         } else {
-            640
+            320 * scale
         };
-        window_height = 480;
+        window_height = 240 * scale;
     }
     device.ui.video.window = unsafe {
         sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), window_width, window_height, flags)
