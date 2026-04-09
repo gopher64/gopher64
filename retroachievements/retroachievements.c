@@ -64,7 +64,6 @@ static void login_callback(int result, const char *error_message,
                            rc_client_t *client, void *userdata) {
   // If not successful, just report the error and bail.
   if (result != RC_OK) {
-    printf("RetroAchievements: Login failed: %s\n", error_message);
     store_retroachievements_credentials(NULL, NULL, userdata);
     return;
   }
@@ -111,7 +110,6 @@ void ra_login_token_user(const char *username, const char *token,
 static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
   if (result != RC_OK) {
-    printf("RetroAchievements: game load failed: %s\n", error_message);
     return;
   }
   char buffer[512];

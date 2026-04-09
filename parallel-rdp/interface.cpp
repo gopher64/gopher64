@@ -272,7 +272,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   }
 
   message_font =
-      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 30.0);
+      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 25.0);
   if (!message_font) {
     rdp_close();
     return;
