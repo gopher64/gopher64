@@ -642,7 +642,7 @@ fn create_session(
         let create_room = NetplayMessage {
             message_type: "request_create_room".to_string(),
             player_name: Some(player_name),
-            client_sha: Some(env!("GIT_HASH").to_string()),
+            client_sha: Some(env!("GIT_DESCRIBE").to_string()),
             netplay_version: Some(NETPLAY_VERSION),
             emulator: Some(EMU_NAME.to_string()),
             accept: None,
@@ -763,7 +763,7 @@ fn join_session(
         let join_room = NetplayMessage {
             message_type: "request_join_room".to_string(),
             player_name: Some(player_name),
-            client_sha: Some(env!("GIT_HASH").to_string()),
+            client_sha: Some(env!("GIT_DESCRIBE").to_string()),
             netplay_version: Some(NETPLAY_VERSION),
             emulator: Some(EMU_NAME.to_string()),
             accept: None,
