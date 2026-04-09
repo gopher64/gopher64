@@ -100,6 +100,9 @@ pub fn create_savestate(device: &device::Device) {
 }
 
 pub fn load_savestate(device: &mut device::Device) {
+    if retroachievements::get_hardcore() {
+        return;
+    }
     let savestate = std::fs::read(&device.ui.storage.paths.savestate_file_path);
     if let Ok(savestate) = &savestate {
         let device_bytes = ui::storage::decompress_file(savestate, "device");
