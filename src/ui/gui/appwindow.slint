@@ -37,12 +37,14 @@ export component AppWindow inherits Window {
     callback cheat_toggled(string, string, string, bool);
     callback ra_button_clicked(string);
     callback ra_games_clicked;
+    callback ra_show_profile_clicked(string);
     callback ra_toggled(bool,bool);
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
     in-out property ra_username <=> RAData.ra_username;
     in-out property ra_password <=> RAData.ra_password;
     in-out property ra_logging_in <=> RAData.ra_logging_in;
+    in-out property ra_show_profile <=> RAData.ra_show_profile;
     in-out property ra_current_user_message <=> RAData.current_user_message;
     in-out property ra_enabled <=> RAData.enabled;
     in-out property ra_hardcore <=> RAData.hardcore;
@@ -137,6 +139,9 @@ export component AppWindow inherits Window {
             }
             ra_games_clicked => {
                 ra_games_clicked();
+            }
+            ra_show_profile_clicked(username) => {
+                ra_show_profile_clicked(username);
             }
          }
         if(side-bar.current-item == 5): Settings { }
