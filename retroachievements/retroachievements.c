@@ -109,25 +109,24 @@ void ra_login_token_user(const char *username, const char *token,
 
 static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
+  char buffer[512];
   if (result != RC_OK) {
+    snprintf(buffer, sizeof(buffer), "RA load failed: %s", error_message);
+    rdp_onscreen_message(buffer);
     return;
   }
-  char buffer[512];
+
   const rc_client_game_t *game = rc_client_get_game_info(client);
   rc_client_user_game_summary_t summary;
   rc_client_get_user_game_summary(client, &summary);
 
-  snprintf(buffer, sizeof(buffer), "RA Loaded: %s", game->title);
-  rdp_onscreen_message(buffer);
-
   int hardcore_enabled = rc_client_get_hardcore_enabled(client);
-  snprintf(buffer, sizeof(buffer), "RA mode: %s",
-           hardcore_enabled ? "Hardcore" : "Softcore");
-  rdp_onscreen_message(buffer);
-
-  snprintf(buffer, sizeof(buffer), "%u/%u achievements unlocked",
+  snprintf(buffer, sizeof(buffer),
+           "RA loaded: %s\nMode: %s\n%u/%u achievements unlocked", game->title,
+           hardcore_enabled ? "Hardcore" : "Softcore",
            summary.num_unlocked_achievements, summary.num_core_achievements);
   rdp_onscreen_message(buffer);
+
   g_game_loaded = true;
 }
 
