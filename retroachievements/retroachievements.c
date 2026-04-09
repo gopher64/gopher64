@@ -126,6 +126,7 @@ static void load_game_callback(int result, const char *error_message,
            hardcore_enabled ? "Hardcore" : "Softcore",
            summary.num_unlocked_achievements, summary.num_core_achievements);
   rdp_onscreen_message(buffer);
+  rdp_onscreen_message(buffer); // show it a bit longer
 
   g_game_loaded = true;
 }
