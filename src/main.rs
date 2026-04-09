@@ -72,7 +72,6 @@ struct Args {
     )]
     port: Option<usize>,
     #[arg(
-        short,
         long,
         help = "Clear all input profile bindings and controller assignments"
     )]
@@ -92,7 +91,8 @@ struct Args {
     #[arg(
         long = "ra-token",
         value_name = "TOKEN",
-        help = "Token for RetroAchievements"
+        help = "Token for RetroAchievements",
+        hide = true
     )]
     ra_token: Option<String>,
     #[arg(
