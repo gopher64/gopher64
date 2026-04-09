@@ -1,4 +1,5 @@
 use crate::gui;
+use crate::retroachievements;
 use slint::ComponentHandle;
 
 pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {
@@ -39,6 +40,7 @@ pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {
         result = rx.try_recv();
         std::thread::sleep(std::time::Duration::from_secs_f64(frame_time));
         unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the OS doesn't complain about the game window being frozen
+        retroachievements::do_idle();
     }
     for (i, v) in words.iter().enumerate() {
         if *v == *result.as_ref().unwrap() {
