@@ -178,6 +178,15 @@ static void achievement_triggered(const rc_client_achievement_t *achievement) {
   rdp_onscreen_message(buffer);
 }
 
+static void
+achievement_progress_updated(const rc_client_achievement_t *achievement) {
+  char buffer[512];
+
+  snprintf(buffer, sizeof(buffer), "RA updated: %s: %s", achievement->title,
+           achievement->measured_progress);
+  rdp_onscreen_message(buffer);
+}
+
 static void game_completed(rc_client_t *client) {
   char buffer[512];
   const rc_client_game_t *game = rc_client_get_game_info(client);
@@ -221,6 +230,7 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_HIDE:
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_UPDATE:
+    achievement_progress_updated(event->achievement);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_SHOW:
     break;
