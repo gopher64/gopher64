@@ -159,7 +159,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     if device.netplay.is_none() {
         if callback.save_state {
             device.save_state = true;
-        } else if callback.load_state && !retroachievements::get_hardcore() {
+        } else if callback.load_state {
             device.load_state = true;
         }
         if callback.reset_game {
