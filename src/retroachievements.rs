@@ -60,7 +60,7 @@ pub extern "C" fn rust_server_call(
         .user_agent(format!(
             "{}/{}",
             env!("CARGO_PKG_NAME"),
-            env!("CARGO_PKG_VERSION")
+            env!("GIT_DESCRIBE")
         ))
         .build()
         .unwrap();

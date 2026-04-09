@@ -265,12 +265,12 @@ fn main() {
     }
 
     let git_output = std::process::Command::new("git")
-        .args(["rev-parse", "HEAD"])
+        .args(["describe", "--always", "--dirty"])
         .output()
         .unwrap();
 
-    let git_hash = String::from_utf8(git_output.stdout).unwrap();
-    println!("cargo:rustc-env=GIT_HASH={git_hash}");
+    let git_describe = String::from_utf8(git_output.stdout).unwrap();
+    println!("cargo:rustc-env=GIT_DESCRIBE={git_describe}");
 
     println!("cargo:rerun-if-env-changed=NETPLAY_ID");
     let netplay_id = std::env::var("NETPLAY_ID").unwrap_or("gopher64".to_string());
