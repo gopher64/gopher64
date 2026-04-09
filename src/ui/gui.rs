@@ -293,7 +293,7 @@ fn about_window(app: &AppWindow) {
     app.on_newversion_button_clicked(move || {
         open::that_detached("https://github.com/gopher64/gopher64/releases/latest").unwrap();
     });
-    app.set_version(format!("Version: {}", env!("CARGO_PKG_VERSION")).into());
+    app.set_version(format!("Version: {}", env!("GIT_DESCRIBE")).into());
     if std::env::var("FLATPAK_ID").is_err() {
         check_latest_version(app.as_weak());
     }
