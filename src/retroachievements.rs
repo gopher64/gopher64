@@ -227,7 +227,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
     });
 
     app.on_ra_show_profile_clicked(move |username| {
-        open::that_detached(&format!("https://retroachievements.org/user/{}", username)).unwrap();
+        open::that_detached(format!("https://retroachievements.org/user/{}", username)).unwrap();
     });
 }
 
