@@ -101,6 +101,7 @@ pub fn create_savestate(device: &device::Device) {
 
 pub fn load_savestate(device: &mut device::Device) {
     if retroachievements::get_hardcore() {
+        ui::video::onscreen_message(&device.ui, "Cannot load savestate in RA hardcore mode");
         return;
     }
     let savestate = std::fs::read(&device.ui.storage.paths.savestate_file_path);
