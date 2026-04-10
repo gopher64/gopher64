@@ -113,6 +113,7 @@ static void load_game_callback(int result, const char *error_message,
   if (result != RC_OK) {
     snprintf(buffer, sizeof(buffer), "RA load failed: %s", error_message);
     rdp_onscreen_message(buffer);
+    rdp_onscreen_message(buffer); // show it a bit longer
     return;
   }
 
