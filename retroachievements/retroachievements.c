@@ -113,6 +113,7 @@ static void load_game_callback(int result, const char *error_message,
   if (result != RC_OK) {
     snprintf(buffer, sizeof(buffer), "RA load failed: %s", error_message);
     rdp_onscreen_message(buffer);
+    rdp_onscreen_message(buffer); // show it a bit longer
     return;
   }
 
@@ -121,10 +122,18 @@ static void load_game_callback(int result, const char *error_message,
   rc_client_get_user_game_summary(client, &summary);
 
   int hardcore_enabled = rc_client_get_hardcore_enabled(client);
-  snprintf(buffer, sizeof(buffer),
-           "RA loaded: %s\nMode: %s\n%u/%u achievements unlocked", game->title,
-           hardcore_enabled ? "Hardcore" : "Softcore",
-           summary.num_unlocked_achievements, summary.num_core_achievements);
+  int message_length =
+      snprintf(buffer, sizeof(buffer), "RA loaded: %s\nMode: %s\n", game->title,
+               hardcore_enabled ? "Hardcore" : "Softcore");
+
+  if (summary.num_core_achievements != 0) {
+    snprintf(buffer + message_length, sizeof(buffer) - message_length,
+             "%u/%u achievements unlocked", summary.num_unlocked_achievements,
+             summary.num_core_achievements);
+  } else {
+    snprintf(buffer + message_length, sizeof(buffer) - message_length,
+             "Game has no achievements");
+  }
   rdp_onscreen_message(buffer);
   rdp_onscreen_message(buffer); // show it a bit longer
 
