@@ -149,8 +149,12 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     ui::video::update_screen();
     device.vi.vi_counter += 1;
 
-    if device.netplay.is_none() && !retroachievements::get_hardcore() && paused {
-        ui::video::pause_loop(device.vi.frame_time);
+    if device.netplay.is_none() && paused {
+        if retroachievements::get_hardcore() {
+            ui::video::onscreen_message(&device.ui, "Cannot pause in RA hardcore mode");
+        } else {
+            ui::video::pause_loop(device.vi.frame_time);
+        }
     }
 
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
