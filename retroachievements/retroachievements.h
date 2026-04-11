@@ -19,5 +19,5 @@ bool ra_is_user_logged_in();
 const char *ra_get_username();
 const char *ra_get_token();
 size_t ra_state_size();
-void ra_save_state(uint8_t *state);
-void ra_load_state(const uint8_t *state);
+void ra_save_state(uint8_t *state, size_t state_size);
+void ra_load_state(const uint8_t *state, size_t state_size);
