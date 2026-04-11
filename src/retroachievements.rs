@@ -301,10 +301,10 @@ pub fn state_size() -> usize {
     unsafe { ra_state_size() }
 }
 
-pub fn save_state(state: *mut u8) {
-    unsafe { ra_save_state(state) };
+pub fn save_state(state: *mut u8, state_size: usize) {
+    unsafe { ra_save_state(state, state_size) };
 }
 
-pub fn load_state(state: *const u8) {
-    unsafe { ra_load_state(state) };
+pub fn load_state(state: *const u8, state_size: usize) {
+    unsafe { ra_load_state(state, state_size) };
 }

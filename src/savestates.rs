@@ -74,7 +74,7 @@ pub fn create_savestate(device: &device::Device) {
     ui::video::save_state(rdp_state.as_mut_ptr());
 
     let mut ra_state: Vec<u8> = vec![0; retroachievements::state_size()];
-    retroachievements::save_state(ra_state.as_mut_ptr());
+    retroachievements::save_state(ra_state.as_mut_ptr(), ra_state.len());
 
     let data: &[(&[u8], &str)] = &[
         (&postcard::to_stdvec(device).unwrap(), "device"),
@@ -207,7 +207,11 @@ pub fn load_savestate(device: &mut device::Device) {
             ui::audio::init_game_audio(&mut device.ui, device.ai.freq);
             ui::video::load_state(device, rdp_state.as_ptr());
 
-            retroachievements::load_state(ra_state.as_ptr());
+            if ra_state.len() > 0 {
+                retroachievements::load_state(ra_state.as_ptr(), ra_state.len());
+            } else {
+                retroachievements::load_state(std::ptr::null(), 0);
+            }
 
             if device.cheats.enabled {
                 cheats::execute_cheats(device, device.cheats.cheats.clone());
