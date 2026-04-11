@@ -12,6 +12,8 @@ void rust_server_call(const char *url, const char *post_data,
 void store_retroachievements_credentials(const char *username,
                                          const char *token, void *userdata);
 
+void notify_load_game(void *userdata);
+
 rc_client_t *g_client = NULL;
 const uint8_t *g_dmem = NULL;
 size_t g_dmem_size = 0;
@@ -114,12 +116,17 @@ static void load_game_callback(int result, const char *error_message,
     snprintf(buffer, sizeof(buffer), "RA load failed: %s", error_message);
     rdp_onscreen_message(buffer);
     rdp_onscreen_message(buffer); // show it a bit longer
+    notify_load_game(userdata);
     return;
   }
 
   const rc_client_game_t *game = rc_client_get_game_info(client);
   rc_client_user_game_summary_t summary;
   rc_client_get_user_game_summary(client, &summary);
+
+  if (!rc_client_is_processing_required(client)) {
+    rc_client_set_hardcore_enabled(client, false);
+  }
 
   int hardcore_enabled = rc_client_get_hardcore_enabled(client);
   int message_length =
@@ -138,15 +145,19 @@ static void load_game_callback(int result, const char *error_message,
   rdp_onscreen_message(buffer); // show it a bit longer
 
   g_game_loaded = true;
+  notify_load_game(userdata);
 }
 
-void ra_load_game(const uint8_t *rom, size_t rom_size) {
-  if (!g_user_logged_in)
-    return;
+bool ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
+  if (!g_user_logged_in) {
+    rc_client_set_hardcore_enabled(g_client, false);
+    return false;
+  }
 
   rc_client_begin_identify_and_load_game(g_client, RC_CONSOLE_NINTENDO_64, NULL,
                                          rom, rom_size, load_game_callback,
-                                         NULL);
+                                         userdata);
+  return true;
 }
 
 void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {

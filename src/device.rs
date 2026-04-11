@@ -44,7 +44,11 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::gui::GameSettings) {
+pub async fn run_game(
+    device: &mut Device,
+    rom_contents: Vec<u8>,
+    game_settings: ui::gui::GameSettings,
+) {
     device.cpu.overclock = game_settings.overclock;
     if game_settings.disable_expansion_pak {
         device.rdram.size = 0x400000;
@@ -66,7 +70,7 @@ pub fn run_game(device: &mut Device, rom_contents: Vec<u8>, game_settings: ui::g
     ui::input::init(&mut device.ui);
 
     // shows messages, needs to be after video init
-    retroachievements::load_game(&rom_contents, rom_contents.len());
+    retroachievements::load_game(&rom_contents, rom_contents.len()).await;
 
     mi::init(device);
     pif::init(device);

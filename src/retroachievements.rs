@@ -12,6 +12,12 @@ pub struct RAConfig {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn notify_load_game(ctx: *mut std::ffi::c_void) {
+    let tx = unsafe { Box::from_raw(ctx as *mut tokio::sync::oneshot::Sender<bool>) };
+    tx.send(true).unwrap();
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn store_retroachievements_credentials(
     c_username: *const std::ffi::c_char,
     c_token: *const std::ffi::c_char,
@@ -231,8 +237,14 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
     });
 }
 
-pub fn load_game(rom: &[u8], rom_size: usize) {
-    unsafe { ra_load_game(rom.as_ptr(), rom_size) };
+pub async fn load_game(rom: &[u8], rom_size: usize) {
+    let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
+    unsafe {
+        let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
+        if ra_load_game(rom.as_ptr(), rom_size, tx_ptr) {
+            rx.await.unwrap();
+        }
+    };
 }
 
 pub fn set_dmem(dmem: *const u8, dmem_size: usize) {

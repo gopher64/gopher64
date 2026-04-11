@@ -208,7 +208,8 @@ async fn main() -> std::io::Result<()> {
                 cheats,
                 load_savestate_slot: args.load_state,
             },
-        );
+        )
+        .await;
         retroachievements::shutdown_client();
 
         if device.netplay.is_some() {
