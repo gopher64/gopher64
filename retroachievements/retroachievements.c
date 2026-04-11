@@ -113,6 +113,7 @@ static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
   char buffer[512];
   if (result != RC_OK) {
+    rc_client_set_hardcore_enabled(client, false);
     snprintf(buffer, sizeof(buffer), "RA load failed: %s", error_message);
     rdp_onscreen_message(buffer);
     rdp_onscreen_message(buffer); // show it a bit longer
