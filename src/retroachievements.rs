@@ -235,7 +235,7 @@ pub fn load_game(rom: &[u8], rom_size: usize) {
     unsafe { ra_load_game(rom.as_ptr(), rom_size) };
 }
 
-pub fn set_dmem(dmem: *mut u8, dmem_size: usize) {
+pub fn set_dmem(dmem: *const u8, dmem_size: usize) {
     unsafe { ra_set_dmem(dmem, dmem_size) };
 }
 
