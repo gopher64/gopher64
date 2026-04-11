@@ -207,7 +207,7 @@ pub fn load_savestate(device: &mut device::Device) {
             ui::audio::init_game_audio(&mut device.ui, device.ai.freq);
             ui::video::load_state(device, rdp_state.as_ptr());
 
-            if ra_state.len() > 0 {
+            if !ra_state.is_empty() {
                 retroachievements::load_state(ra_state.as_ptr(), ra_state.len());
             } else {
                 retroachievements::load_state(std::ptr::null(), 0);
