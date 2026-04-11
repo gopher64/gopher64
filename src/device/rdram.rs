@@ -152,7 +152,7 @@ pub fn init(device: &mut device::Device) {
     device.rdram.mem =
         unsafe { Vec::from_raw_parts(ptr, device.rdram.size as usize, device.rdram.size as usize) };
 
-    retroachievements::set_dmem(device.rdram.mem.as_mut_ptr(), device.rdram.size as usize);
+    retroachievements::set_dmem(device.rdram.mem.as_ptr(), device.rdram.size as usize);
 
     // hack, skip RDRAM initialization
     device

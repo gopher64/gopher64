@@ -13,7 +13,7 @@ void store_retroachievements_credentials(const char *username,
                                          const char *token, void *userdata);
 
 rc_client_t *g_client = NULL;
-uint8_t *g_dmem = NULL;
+const uint8_t *g_dmem = NULL;
 size_t g_dmem_size = 0;
 bool g_game_loaded = false;
 bool g_user_logged_in = false;
@@ -149,7 +149,7 @@ void ra_load_game(const uint8_t *rom, size_t rom_size) {
                                          NULL);
 }
 
-void ra_set_dmem(uint8_t *dmem, size_t dmem_size) {
+void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
   g_dmem = dmem;
   g_dmem_size = dmem_size;
 }
