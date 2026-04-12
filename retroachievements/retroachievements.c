@@ -260,8 +260,10 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
     leaderboard_submitted(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_SHOW:
+    achievement_challenge_indicator_add(event->achievement->title);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_HIDE:
+    achievement_challenge_indicator_remove(event->achievement->title);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_SHOW:
     break;

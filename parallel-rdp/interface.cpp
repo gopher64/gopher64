@@ -97,6 +97,10 @@ static TTF_Font *message_font;
 static std::queue<Message> messages;
 static uint64_t message_timer;
 
+static TTF_Font *achievement_challenge_indicator_font;
+static std::vector<const char *> achievement_challenge_indicators;
+static Vulkan::ImageHandle achievement_challenge_indicator_image;
+
 #define MESSAGE_TIME 3000 // 3 seconds
 
 typedef struct {
@@ -279,7 +283,9 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
 
   message_font =
       TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 25.0);
-  if (!message_font) {
+  achievement_challenge_indicator_font =
+      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 12.0);
+  if (!message_font || !achievement_challenge_indicator_font) {
     rdp_close();
     return;
   }
@@ -294,10 +300,14 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
 
   messages = std::queue<Message>();
   message_timer = 0;
+
+  achievement_challenge_indicators.clear();
+  achievement_challenge_indicator_image = Vulkan::ImageHandle();
 }
 
 void rdp_close() {
   messages = std::queue<Message>();
+  achievement_challenge_indicator_image = Vulkan::ImageHandle();
 
   if (wsi)
     wsi->end_frame();
@@ -305,6 +315,10 @@ void rdp_close() {
   if (message_font) {
     TTF_CloseFont(message_font);
     message_font = nullptr;
+  }
+  if (achievement_challenge_indicator_font) {
+    TTF_CloseFont(achievement_challenge_indicator_font);
+    achievement_challenge_indicator_font = nullptr;
   }
   if (processor) {
     delete processor;
@@ -454,6 +468,19 @@ static void render_frame(Vulkan::Device &device) {
           messages.pop();
           message_timer = SDL_GetTicks() + MESSAGE_TIME;
         }
+      } else if (achievement_challenge_indicator_image) {
+        cmd->set_texture(0, 0,
+                         achievement_challenge_indicator_image->get_view(),
+                         Vulkan::StockSampler::NearestClamp);
+        vp.x = vp.x + vp.width -
+               achievement_challenge_indicator_image->get_width();
+        vp.y = vp.y + vp.height -
+               achievement_challenge_indicator_image->get_height();
+        vp.height = achievement_challenge_indicator_image->get_height();
+        vp.width = achievement_challenge_indicator_image->get_width();
+        cmd->set_viewport(vp);
+
+        cmd->draw(3);
       }
     }
 
@@ -752,4 +779,44 @@ uint64_t rdp_process_commands() {
   *gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
 
   return interrupt_timer;
+}
+
+static ImageHandle update_achievement_challenge_indicator() {
+  auto &device = wsi->get_device();
+  SDL_Color fg = {255, 255, 255, 255};
+  SDL_Color bg = {0, 0, 0, 0};
+
+  std::string message = "RA Challenges:\n";
+  for (const auto &achievement_title : achievement_challenge_indicators) {
+    message += achievement_title;
+    message += "\n";
+  }
+  SDL_Surface *surface = TTF_RenderText_LCD(
+      achievement_challenge_indicator_font, message.c_str(), 0, fg, bg);
+  ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(
+      surface->w, surface->h, VK_FORMAT_B8G8R8A8_UNORM, false);
+  ImageInitialData initial_data = {};
+  initial_data.data = surface->pixels;
+  initial_data.row_length = surface->pitch / 4;
+  initial_data.image_height = surface->h;
+
+  ImageHandle handle = device.create_image(info, &initial_data);
+  SDL_DestroySurface(surface);
+  return handle;
+}
+
+void achievement_challenge_indicator_add(const char *achievement_title) {
+  achievement_challenge_indicators.push_back(achievement_title);
+  achievement_challenge_indicator_image =
+      update_achievement_challenge_indicator();
+}
+
+void achievement_challenge_indicator_remove(const char *achievement_title) {
+  std::erase(achievement_challenge_indicators, achievement_title);
+  if (achievement_challenge_indicators.empty()) {
+    achievement_challenge_indicator_image = Vulkan::ImageHandle();
+  } else {
+    achievement_challenge_indicator_image =
+        update_achievement_challenge_indicator();
+  }
 }
