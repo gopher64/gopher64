@@ -68,6 +68,8 @@ static void login_callback(int result, const char *error_message,
                            rc_client_t *client, void *userdata) {
   // If not successful, just report the error and bail.
   if (result != RC_OK) {
+    snprintf(load_game_error_message, sizeof(load_game_error_message),
+             "RA login failed: %s", error_message);
     store_retroachievements_credentials(NULL, NULL, userdata);
     return;
   }
@@ -130,14 +132,12 @@ static void load_game_callback(int result, const char *error_message,
 }
 
 void ra_welcome() {
-  if (!g_user_logged_in)
-    return;
-
-  if (!g_game_loaded) {
+  if (strlen(load_game_error_message) > 0) {
     rdp_onscreen_message(load_game_error_message);
     rdp_onscreen_message(load_game_error_message); // show it a bit longer
-    return;
   }
+  if (!g_game_loaded)
+    return;
 
   char buffer[512];
 
