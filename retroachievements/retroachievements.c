@@ -14,13 +14,14 @@ void store_retroachievements_credentials(const char *username,
 
 void notify_load_game(void *userdata);
 
-rc_client_t *g_client = NULL;
-const uint8_t *g_dmem = NULL;
-size_t g_dmem_size = 0;
-bool g_game_loaded = false;
-bool g_user_logged_in = false;
-const char *g_username = NULL;
-const char *g_token = NULL;
+static rc_client_t *g_client = NULL;
+static const uint8_t *g_dmem = NULL;
+static size_t g_dmem_size = 0;
+static bool g_game_loaded = false;
+static bool g_user_logged_in = false;
+static const char *g_username = NULL;
+static const char *g_token = NULL;
+static char load_game_error_message[512];
 
 static uint32_t read_memory(uint32_t address, uint8_t *buffer,
                             uint32_t num_bytes, rc_client_t *client) {
@@ -113,6 +114,8 @@ static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
   if (result != RC_OK) {
     rc_client_set_hardcore_enabled(client, false);
+    snprintf(load_game_error_message, sizeof(load_game_error_message),
+             "RA load failed: %s", error_message);
     notify_load_game(userdata);
     return;
   }
@@ -126,8 +129,11 @@ static void load_game_callback(int result, const char *error_message,
 }
 
 void ra_welcome() {
-  if (!g_game_loaded)
+  if (!g_game_loaded) {
+    rdp_onscreen_message(load_game_error_message);
+    rdp_onscreen_message(load_game_error_message); // show it a bit longer
     return;
+  }
 
   char buffer[512];
 
