@@ -217,6 +217,9 @@ void rdp_new_processor(GFX_INFO _gfx_info) {
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
                                         const char *message) {
+  if (strstr(message, "\n"))
+    width = 0;
+
   SDL_Color fg = {255, 255, 255, 255};
   SDL_Color bg = {0, 0, 0, 0};
   SDL_Surface *surface =
@@ -786,13 +789,13 @@ static ImageHandle update_achievement_challenge_indicator() {
   SDL_Color fg = {255, 255, 255, 255};
   SDL_Color bg = {0, 0, 0, 0};
 
-  std::string message = "RA Challenges:\n";
+  std::string message;
   for (const auto &achievement_title : achievement_challenge_indicators) {
     message += achievement_title;
-    message += "\n";
+    message += '\n';
   }
-  SDL_Surface *surface = TTF_RenderText_LCD(
-      achievement_challenge_indicator_font, message.c_str(), 0, fg, bg);
+  SDL_Surface *surface = TTF_RenderText_LCD_Wrapped(
+      achievement_challenge_indicator_font, message.c_str(), 0, fg, bg, 0);
   ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(
       surface->w, surface->h, VK_FORMAT_B8G8R8A8_UNORM, false);
   ImageInitialData initial_data = {};
