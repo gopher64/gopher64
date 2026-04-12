@@ -199,9 +199,10 @@ async fn main() -> std::io::Result<()> {
             }
         }
 
+        retroachievements::load_game(&rom_contents, rom_contents.len()).await;
         device::run_game(
             &mut device,
-            rom_contents,
+            &rom_contents,
             ui::gui::GameSettings {
                 overclock,
                 disable_expansion_pak,

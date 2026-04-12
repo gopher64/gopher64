@@ -4,8 +4,9 @@
 
 void ra_init_client(bool hardcore);
 void ra_shutdown_client();
+void ra_welcome();
 bool ra_get_hardcore();
-void ra_load_game(const uint8_t *rom, size_t rom_size);
+void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata);
 void ra_set_dmem(const uint8_t *dmem, size_t dmem_size);
 void ra_do_frame();
 void ra_do_idle();

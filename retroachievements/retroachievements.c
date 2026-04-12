@@ -12,19 +12,23 @@ void rust_server_call(const char *url, const char *post_data,
 void store_retroachievements_credentials(const char *username,
                                          const char *token, void *userdata);
 
-rc_client_t *g_client = NULL;
-const uint8_t *g_dmem = NULL;
-size_t g_dmem_size = 0;
-bool g_game_loaded = false;
-bool g_user_logged_in = false;
-const char *g_username = NULL;
-const char *g_token = NULL;
+void notify_load_game(void *userdata);
+
+static rc_client_t *g_client = NULL;
+static const uint8_t *g_dmem = NULL;
+static size_t g_dmem_size = 0;
+static bool g_game_loaded = false;
+static bool g_user_logged_in = false;
+static const char *g_username = NULL;
+static const char *g_token = NULL;
+static char load_game_error_message[512];
 
 static uint32_t read_memory(uint32_t address, uint8_t *buffer,
                             uint32_t num_bytes, rc_client_t *client) {
   if (address + num_bytes >= g_dmem_size)
-    return 0;
-  memcpy(buffer, &g_dmem[address], num_bytes);
+    memset(buffer, 0, num_bytes);
+  else
+    memcpy(buffer, &g_dmem[address], num_bytes);
   return num_bytes;
 }
 
@@ -109,22 +113,41 @@ void ra_login_token_user(const char *username, const char *token,
 
 static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
-  char buffer[512];
   if (result != RC_OK) {
-    snprintf(buffer, sizeof(buffer), "RA load failed: %s", error_message);
-    rdp_onscreen_message(buffer);
-    rdp_onscreen_message(buffer); // show it a bit longer
+    rc_client_set_hardcore_enabled(client, false);
+    snprintf(load_game_error_message, sizeof(load_game_error_message),
+             "RA load failed: %s", error_message);
+    notify_load_game(userdata);
     return;
   }
 
-  const rc_client_game_t *game = rc_client_get_game_info(client);
-  rc_client_user_game_summary_t summary;
-  rc_client_get_user_game_summary(client, &summary);
+  if (!rc_client_is_processing_required(client)) {
+    rc_client_set_hardcore_enabled(client, false);
+  }
 
-  int hardcore_enabled = rc_client_get_hardcore_enabled(client);
-  int message_length =
-      snprintf(buffer, sizeof(buffer), "RA loaded: %s\nMode: %s\n", game->title,
-               hardcore_enabled ? "Hardcore" : "Softcore");
+  g_game_loaded = true;
+  notify_load_game(userdata);
+}
+
+void ra_welcome() {
+  if (!g_user_logged_in)
+    return;
+
+  if (!g_game_loaded) {
+    rdp_onscreen_message(load_game_error_message);
+    rdp_onscreen_message(load_game_error_message); // show it a bit longer
+    return;
+  }
+
+  char buffer[512];
+
+  const rc_client_game_t *game = rc_client_get_game_info(g_client);
+  rc_client_user_game_summary_t summary;
+  rc_client_get_user_game_summary(g_client, &summary);
+
+  int message_length = snprintf(
+      buffer, sizeof(buffer), "RA loaded: %s\nMode: %s\n", game->title,
+      rc_client_get_hardcore_enabled(g_client) ? "Hardcore" : "Softcore");
 
   if (summary.num_core_achievements != 0) {
     snprintf(buffer + message_length, sizeof(buffer) - message_length,
@@ -136,17 +159,17 @@ static void load_game_callback(int result, const char *error_message,
   }
   rdp_onscreen_message(buffer);
   rdp_onscreen_message(buffer); // show it a bit longer
-
-  g_game_loaded = true;
 }
 
-void ra_load_game(const uint8_t *rom, size_t rom_size) {
-  if (!g_user_logged_in)
+void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
+  if (!g_user_logged_in) {
+    notify_load_game(userdata);
     return;
+  }
 
   rc_client_begin_identify_and_load_game(g_client, RC_CONSOLE_NINTENDO_64, NULL,
                                          rom, rom_size, load_game_callback,
-                                         NULL);
+                                         userdata);
 }
 
 void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
@@ -189,7 +212,7 @@ static void
 achievement_progress_updated(const rc_client_achievement_t *achievement) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA updated: %s: %s", achievement->title,
+  snprintf(buffer, sizeof(buffer), "RA updated: %s - %s", achievement->title,
            achievement->measured_progress);
   rdp_onscreen_message(buffer);
 }
@@ -211,6 +234,14 @@ static void subset_completed(const rc_client_subset_t *subset,
   snprintf(buffer, sizeof(buffer), "RA subset %s: %s",
            rc_client_get_hardcore_enabled(client) ? "mastered" : "completed",
            subset->title);
+  rdp_onscreen_message(buffer);
+}
+
+static void server_error(const rc_client_server_error_t *server_error) {
+  char buffer[512];
+
+  snprintf(buffer, sizeof(buffer), "RA server error: %s",
+           server_error->error_message);
   rdp_onscreen_message(buffer);
 }
 
@@ -253,6 +284,9 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   case RC_CLIENT_EVENT_SUBSET_COMPLETED:
     subset_completed(event->subset, client);
     break;
+  case RC_CLIENT_EVENT_SERVER_ERROR:
+    server_error(event->server_error);
+    break;
   default:
     printf("RetroAchievements: Unhandled event %d\n", event->type);
     break;
@@ -267,6 +301,7 @@ void ra_init_client(bool hardcore) {
   g_user_logged_in = false;
   g_dmem = NULL;
   g_dmem_size = 0;
+  memset(load_game_error_message, 0, sizeof(load_game_error_message));
 
   // Provide a logging function to simplify debugging
   rc_client_enable_logging(g_client, RC_CLIENT_LOG_LEVEL_WARN, log_message);
