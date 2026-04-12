@@ -6,6 +6,7 @@
 #include "wsi_platform.hpp"
 #include <SDL3/SDL_vulkan.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <cmath>
 
 using namespace Vulkan;
 
@@ -431,7 +432,7 @@ static void render_frame(Vulkan::Device &device) {
             create_message_image(device, vp.width, messages.front().c_str());
         cmd->set_texture(0, 0, message_image->get_view(),
                          Vulkan::StockSampler::NearestClamp);
-        vp.x = vp.x + (vp.width - message_image->get_width()) / 2;
+        vp.x = floor(vp.x + (vp.width - message_image->get_width()) / 2);
         vp.y = vp.y + vp.height - message_image->get_height();
         vp.height = message_image->get_height();
         vp.width = message_image->get_width();
