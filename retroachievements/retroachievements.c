@@ -26,8 +26,9 @@ static char load_game_error_message[512];
 static uint32_t read_memory(uint32_t address, uint8_t *buffer,
                             uint32_t num_bytes, rc_client_t *client) {
   if (address + num_bytes >= g_dmem_size)
-    return 0;
-  memcpy(buffer, &g_dmem[address], num_bytes);
+    memset(buffer, 0, num_bytes);
+  else
+    memcpy(buffer, &g_dmem[address], num_bytes);
   return num_bytes;
 }
 
