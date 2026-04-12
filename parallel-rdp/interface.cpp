@@ -73,6 +73,11 @@ typedef struct {
   FrameBufferInfo frame_buffer_info;
 } RDP_DEVICE;
 
+typedef struct {
+  std::string message;
+  Vulkan::ImageHandle image;
+} Message;
+
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
 static SDL_WSIPlatform *wsi_platform;
@@ -89,7 +94,7 @@ std::vector<bool> rdram_dirty;
 uint64_t sync_signal;
 
 static TTF_Font *message_font;
-static std::queue<std::string> messages;
+static std::queue<Message> messages;
 static uint64_t message_timer;
 
 #define MESSAGE_TIME 3000 // 3 seconds
@@ -287,11 +292,13 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   callback.save_state_slot = save_state_slot;
   crop_letterbox = false;
 
-  messages = std::queue<std::string>();
+  messages = std::queue<Message>();
   message_timer = 0;
 }
 
 void rdp_close() {
+  messages = std::queue<Message>();
+
   if (wsi)
     wsi->end_frame();
 
@@ -428,14 +435,17 @@ static void render_frame(Vulkan::Device &device) {
       cmd->draw(3);
 
       if (!messages.empty()) {
-        Vulkan::ImageHandle message_image =
-            create_message_image(device, vp.width, messages.front().c_str());
-        cmd->set_texture(0, 0, message_image->get_view(),
+        Message *message = &messages.front();
+        if (!message->image) {
+          message->image =
+              create_message_image(device, vp.width, message->message.c_str());
+        }
+        cmd->set_texture(0, 0, message->image->get_view(),
                          Vulkan::StockSampler::NearestClamp);
-        vp.x = floor(vp.x + (vp.width - message_image->get_width()) / 2);
-        vp.y = vp.y + vp.height - message_image->get_height();
-        vp.height = message_image->get_height();
-        vp.width = message_image->get_width();
+        vp.x = floor(vp.x + (vp.width - message->image->get_width()) / 2);
+        vp.y = vp.y + vp.height - message->image->get_height();
+        vp.height = message->image->get_height();
+        vp.width = message->image->get_width();
         cmd->set_viewport(vp);
 
         cmd->draw(3);
@@ -509,10 +519,10 @@ void rdp_load_state(const uint8_t *state) {
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 
-void rdp_onscreen_message(const char *_message) {
+void rdp_onscreen_message(const char *message) {
   if (messages.empty())
     message_timer = SDL_GetTicks() + MESSAGE_TIME;
-  messages.push(_message);
+  messages.push({std::string(message), Vulkan::ImageHandle()});
 }
 
 uint32_t pixel_size(uint32_t pixel_type, uint32_t area) {
