@@ -129,6 +129,9 @@ static void load_game_callback(int result, const char *error_message,
 }
 
 void ra_welcome() {
+  if (!g_user_logged_in)
+    return;
+
   if (!g_game_loaded) {
     rdp_onscreen_message(load_game_error_message);
     rdp_onscreen_message(load_game_error_message); // show it a bit longer
@@ -297,6 +300,7 @@ void ra_init_client(bool hardcore) {
   g_user_logged_in = false;
   g_dmem = NULL;
   g_dmem_size = 0;
+  memset(load_game_error_message, 0, sizeof(load_game_error_message));
 
   // Provide a logging function to simplify debugging
   rc_client_enable_logging(g_client, RC_CLIENT_LOG_LEVEL_WARN, log_message);
