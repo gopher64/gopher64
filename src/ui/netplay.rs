@@ -2,7 +2,7 @@ use crate::device;
 use crate::ui;
 use crate::ui::gui::{
     AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, GameSettings, GbPaths,
-    NetplayCreate, NetplayDevice, NetplayJoin, NetplayWait, run_rom, save_settings,
+    NetplayCreate, NetplayDevice, NetplayJoin, NetplayWait, RASettings, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -1107,7 +1107,10 @@ fn setup_wait_window(
                                         peer_addr: socket_addr,
                                         player_number: player_number as u8,
                                     }),
-                                    false,
+                                    RASettings {
+                                        hardcore: false,
+                                        challenge: false,
+                                    },
                                     weak_app,
                                 );
                             })

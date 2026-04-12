@@ -7,6 +7,7 @@ import { Page } from "page.slint";
 export global RAData {
     in-out property <bool> enabled;
     in-out property <bool> hardcore;
+    in-out property <bool> challenge;
     in-out property <bool> ra_logging_in;
     in-out property <bool> ra_show_profile;
     in-out property <string> ra_username;
@@ -16,7 +17,7 @@ export global RAData {
 
 export component RetroAchievements inherits Page {
     callback ra_button_clicked(string);
-    callback ra_toggled(bool,bool);
+    callback ra_toggled(bool,bool,bool);
     callback ra_games_clicked;
     callback ra_show_profile_clicked(string);
     title: @tr("RetroAchievements");
@@ -37,7 +38,7 @@ export component RetroAchievements inherits Page {
                         RAData.current_user_message = "Not currently logged in";
                         RAData.ra_show_profile = false;
                     }
-                    ra_toggled(RAData.enabled,RAData.hardcore);
+                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge);
                 }
             }
         }
@@ -49,7 +50,19 @@ export component RetroAchievements inherits Page {
                 enabled: RAData.enabled;
                 toggled => {
                     RAData.hardcore = self.checked;
-                    ra_toggled(RAData.enabled,RAData.hardcore);
+                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge);
+                }
+            }
+        }
+        HorizontalBox {
+            alignment: center;
+            CheckBox {
+                text: @tr("Challenge Indicators");
+                checked: RAData.challenge;
+                enabled: RAData.enabled;
+                toggled => {
+                    RAData.challenge = self.checked;
+                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge);
                 }
             }
         }

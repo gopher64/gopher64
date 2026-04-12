@@ -9,6 +9,7 @@ pub struct RAConfig {
     pub token: String,
     pub enabled: bool,
     pub hardcore: bool,
+    pub challenge: bool,
 }
 
 #[unsafe(no_mangle)]
@@ -39,6 +40,7 @@ pub extern "C" fn store_retroachievements_credentials(
             token: unsafe { std::ffi::CStr::from_ptr(c_token).to_str().unwrap() }.to_string(),
             enabled: result.enabled,
             hardcore: result.hardcore,
+            challenge: result.challenge,
         }
     } else {
         RAConfig {
@@ -46,6 +48,7 @@ pub extern "C" fn store_retroachievements_credentials(
             token: unsafe { std::ffi::CStr::from_ptr(c_token).to_str().unwrap() }.to_string(),
             enabled: false,
             hardcore: false,
+            challenge: false,
         }
     };
     let f = std::fs::File::create(&file_path).unwrap();
@@ -166,6 +169,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
         app.set_ra_username(result.username.into());
         app.set_ra_enabled(result.enabled);
         app.set_ra_hardcore(result.hardcore);
+        app.set_ra_challenge(result.challenge);
         token = result.token;
     } else {
         app.set_ra_hardcore(true);
@@ -195,7 +199,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
             .unwrap();
     });
 
-    app.on_ra_toggled(move |enabled, hardcore| {
+    app.on_ra_toggled(move |enabled, hardcore, challenge| {
         let file_path = ui::get_dirs().config_dir.join("retroachievements.json");
         let raconfig = if let Ok(ra_config) = std::fs::read(&file_path)
             && let Ok(result) = serde_json::from_slice::<RAConfig>(ra_config.as_ref())
@@ -207,6 +211,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
                     token: "".into(),
                     enabled,
                     hardcore,
+                    challenge,
                 }
             } else {
                 RAConfig {
@@ -214,6 +219,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
                     token: result.token,
                     enabled,
                     hardcore,
+                    challenge,
                 }
             }
         } else {
@@ -222,6 +228,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
                 token: "".into(),
                 enabled,
                 hardcore,
+                challenge,
             }
         };
         let f = std::fs::File::create(&file_path).unwrap();
@@ -262,8 +269,8 @@ pub fn do_idle() {
     unsafe { ra_do_idle() };
 }
 
-pub fn init_client(hardcore: bool) {
-    unsafe { ra_init_client(hardcore) };
+pub fn init_client(hardcore: bool, challenge: bool) {
+    unsafe { ra_init_client(hardcore, challenge) };
 }
 
 pub fn shutdown_client() {

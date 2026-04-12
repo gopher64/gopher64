@@ -19,6 +19,7 @@ static const uint8_t *g_dmem = NULL;
 static size_t g_dmem_size = 0;
 static bool g_game_loaded = false;
 static bool g_user_logged_in = false;
+static bool g_challenge = false;
 static const char *g_username = NULL;
 static const char *g_token = NULL;
 static char load_game_error_message[512];
@@ -260,10 +261,12 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
     leaderboard_submitted(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_SHOW:
-    achievement_challenge_indicator_add(event->achievement->title);
+    if (g_challenge)
+      achievement_challenge_indicator_add(event->achievement->title);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_HIDE:
-    achievement_challenge_indicator_remove(event->achievement->title);
+    if (g_challenge)
+      achievement_challenge_indicator_remove(event->achievement->title);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_SHOW:
     break;
@@ -295,7 +298,7 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   }
 }
 
-void ra_init_client(bool hardcore) {
+void ra_init_client(bool hardcore, bool challenge) {
   // Create the client instance (using a global variable simplifies this
   // example)
   g_client = rc_client_create(read_memory, server_call);
@@ -311,6 +314,8 @@ void ra_init_client(bool hardcore) {
   rc_client_set_event_handler(g_client, event_handler);
 
   rc_client_set_hardcore_enabled(g_client, hardcore);
+
+  g_challenge = challenge;
 }
 
 bool ra_get_hardcore() {
