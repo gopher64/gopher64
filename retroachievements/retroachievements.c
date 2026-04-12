@@ -149,16 +149,15 @@ static void load_game_callback(int result, const char *error_message,
   notify_load_game(userdata);
 }
 
-bool ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
+void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
   if (!g_user_logged_in) {
     rc_client_set_hardcore_enabled(g_client, false);
-    return false;
+    notify_load_game(userdata);
   }
 
   rc_client_begin_identify_and_load_game(g_client, RC_CONSOLE_NINTENDO_64, NULL,
                                          rom, rom_size, load_game_callback,
                                          userdata);
-  return true;
 }
 
 void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {

@@ -241,10 +241,9 @@ pub async fn load_game(rom: &[u8], rom_size: usize) {
     let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
     unsafe {
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
-        if ra_load_game(rom.as_ptr(), rom_size, tx_ptr) {
-            rx.await.unwrap();
-        }
+        ra_load_game(rom.as_ptr(), rom_size, tx_ptr);
     };
+    rx.await.unwrap();
 }
 
 pub fn set_dmem(dmem: *const u8, dmem_size: usize) {
