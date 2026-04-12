@@ -151,7 +151,6 @@ static void load_game_callback(int result, const char *error_message,
 
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
   if (!g_user_logged_in) {
-    rc_client_set_hardcore_enabled(g_client, false);
     notify_load_game(userdata);
     return;
   }
