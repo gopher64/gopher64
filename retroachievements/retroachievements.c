@@ -153,6 +153,7 @@ void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
   if (!g_user_logged_in) {
     rc_client_set_hardcore_enabled(g_client, false);
     notify_load_game(userdata);
+    return;
   }
 
   rc_client_begin_identify_and_load_game(g_client, RC_CONSOLE_NINTENDO_64, NULL,
