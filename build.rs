@@ -159,6 +159,7 @@ fn main() {
     let retroachievements_bindings = bindgen::Builder::default()
         .header("retroachievements/retroachievements.h")
         .allowlist_function("ra_init_client")
+        .allowlist_function("ra_welcome")
         .allowlist_function("ra_shutdown_client")
         .allowlist_function("ra_get_hardcore")
         .allowlist_function("ra_load_game")

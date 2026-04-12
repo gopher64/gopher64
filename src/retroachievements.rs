@@ -237,13 +237,17 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
     });
 }
 
-pub fn load_game(rom: &[u8], rom_size: usize) {
+pub async fn load_game(rom: &[u8], rom_size: usize) {
     let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
     unsafe {
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
         ra_load_game(rom.as_ptr(), rom_size, tx_ptr);
     };
-    rx.blocking_recv().unwrap();
+    rx.await.unwrap();
+}
+
+pub fn welcome() {
+    unsafe { ra_welcome() };
 }
 
 pub fn set_dmem(dmem: *const u8, dmem_size: usize) {

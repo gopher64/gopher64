@@ -111,28 +111,33 @@ void ra_login_token_user(const char *username, const char *token,
 
 static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
-  char buffer[512];
   if (result != RC_OK) {
     rc_client_set_hardcore_enabled(client, false);
-    snprintf(buffer, sizeof(buffer), "RA load failed: %s", error_message);
-    rdp_onscreen_message(buffer);
-    rdp_onscreen_message(buffer); // show it a bit longer
     notify_load_game(userdata);
     return;
   }
-
-  const rc_client_game_t *game = rc_client_get_game_info(client);
-  rc_client_user_game_summary_t summary;
-  rc_client_get_user_game_summary(client, &summary);
 
   if (!rc_client_is_processing_required(client)) {
     rc_client_set_hardcore_enabled(client, false);
   }
 
-  int hardcore_enabled = rc_client_get_hardcore_enabled(client);
-  int message_length =
-      snprintf(buffer, sizeof(buffer), "RA loaded: %s\nMode: %s\n", game->title,
-               hardcore_enabled ? "Hardcore" : "Softcore");
+  g_game_loaded = true;
+  notify_load_game(userdata);
+}
+
+void ra_welcome() {
+  if (!g_game_loaded)
+    return;
+
+  char buffer[512];
+
+  const rc_client_game_t *game = rc_client_get_game_info(g_client);
+  rc_client_user_game_summary_t summary;
+  rc_client_get_user_game_summary(g_client, &summary);
+
+  int message_length = snprintf(
+      buffer, sizeof(buffer), "RA loaded: %s\nMode: %s\n", game->title,
+      rc_client_get_hardcore_enabled(g_client) ? "Hardcore" : "Softcore");
 
   if (summary.num_core_achievements != 0) {
     snprintf(buffer + message_length, sizeof(buffer) - message_length,
@@ -144,9 +149,6 @@ static void load_game_callback(int result, const char *error_message,
   }
   rdp_onscreen_message(buffer);
   rdp_onscreen_message(buffer); // show it a bit longer
-
-  g_game_loaded = true;
-  notify_load_game(userdata);
 }
 
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
