@@ -181,7 +181,7 @@ void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
 static void leaderboard_started(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA leaderboard attempt started: %s",
+  snprintf(buffer, sizeof(buffer), "Lboard attempt started: %s",
            leaderboard->title);
   rdp_onscreen_message(buffer);
 }
@@ -189,7 +189,7 @@ static void leaderboard_started(const rc_client_leaderboard_t *leaderboard) {
 static void leaderboard_failed(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA leaderboard attempt failed: %s",
+  snprintf(buffer, sizeof(buffer), "Lboard attempt failed: %s",
            leaderboard->title);
   rdp_onscreen_message(buffer);
 }
@@ -197,7 +197,7 @@ static void leaderboard_failed(const rc_client_leaderboard_t *leaderboard) {
 static void leaderboard_submitted(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA leaderboard submitted: %s - %s",
+  snprintf(buffer, sizeof(buffer), "Lboard submitted: %s - %s",
            leaderboard->title, leaderboard->tracker_value);
   rdp_onscreen_message(buffer);
 }
@@ -205,7 +205,7 @@ static void leaderboard_submitted(const rc_client_leaderboard_t *leaderboard) {
 static void achievement_triggered(const rc_client_achievement_t *achievement) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA unlocked: %s", achievement->title);
+  snprintf(buffer, sizeof(buffer), "Unlocked: %s", achievement->title);
   rdp_onscreen_message(buffer);
 }
 
@@ -222,8 +222,8 @@ static void game_completed(rc_client_t *client) {
   char buffer[512];
   const rc_client_game_t *game = rc_client_get_game_info(client);
 
-  snprintf(buffer, sizeof(buffer), "RA %s: %s",
-           rc_client_get_hardcore_enabled(client) ? "mastered" : "completed",
+  snprintf(buffer, sizeof(buffer), "%s: %s",
+           rc_client_get_hardcore_enabled(client) ? "Mastered" : "Completed",
            game->title);
   rdp_onscreen_message(buffer);
 }
@@ -232,7 +232,7 @@ static void subset_completed(const rc_client_subset_t *subset,
                              rc_client_t *client) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA subset %s: %s",
+  snprintf(buffer, sizeof(buffer), "Subset %s: %s",
            rc_client_get_hardcore_enabled(client) ? "mastered" : "completed",
            subset->title);
   rdp_onscreen_message(buffer);
