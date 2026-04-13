@@ -111,6 +111,11 @@ struct Args {
         help = "Enable Challenge Indicators for RetroAchievements"
     )]
     ra_challenge: bool,
+    #[arg(
+        long = "ra-leaderboard",
+        help = "Enable Leaderboard Trackers for RetroAchievements"
+    )]
+    ra_leaderboard: bool,
 }
 
 #[tokio::main(worker_threads = 4)]
@@ -164,9 +169,13 @@ async fn main() -> std::io::Result<()> {
         };
 
         if cfg!(ra_hardcore_enabled) {
-            retroachievements::init_client(args.ra_hardcore, args.ra_challenge);
+            retroachievements::init_client(
+                args.ra_hardcore,
+                args.ra_challenge,
+                args.ra_leaderboard,
+            );
         } else {
-            retroachievements::init_client(false, args.ra_challenge);
+            retroachievements::init_client(false, args.ra_challenge, args.ra_leaderboard);
         }
         let mut shutdown_tx = None;
 
@@ -264,7 +273,7 @@ async fn main() -> std::io::Result<()> {
             ui::input::bind_input_profile(&mut ui, profile, port);
         }
     } else {
-        retroachievements::init_client(false, false);
+        retroachievements::init_client(false, false, false);
         gui::app_window();
         retroachievements::shutdown_client();
     }

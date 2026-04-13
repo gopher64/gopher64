@@ -34,6 +34,7 @@ pub struct GameSettings {
 pub struct RASettings {
     pub hardcore: bool,
     pub challenge: bool,
+    pub leaderboard: bool,
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
@@ -370,6 +371,9 @@ pub fn run_rom(
             if ra_settings.challenge {
                 command.args(["--ra-challenge"]);
             }
+            if ra_settings.leaderboard {
+                command.args(["--ra-leaderboard"]);
+            }
         }
 
         for i in 0..4 {
@@ -434,6 +438,7 @@ fn open_rom(app: &AppWindow) {
     let disable_expansion_pak = app.get_disable_expansion_pak();
     let ra_hardcore = app.get_ra_hardcore();
     let ra_challenge = app.get_ra_challenge();
+    let ra_leaderboard = app.get_ra_leaderboard();
 
     let weak = app.as_weak();
     tokio::spawn(async move {
@@ -467,6 +472,7 @@ fn open_rom(app: &AppWindow) {
                 RASettings {
                     hardcore: ra_hardcore,
                     challenge: ra_challenge,
+                    leaderboard: ra_leaderboard,
                 },
                 weak,
             );
