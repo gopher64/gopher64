@@ -182,7 +182,7 @@ void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
 static void leaderboard_started(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "Lboard attempt started: %s",
+  snprintf(buffer, sizeof(buffer), "Leaderboard started: %s",
            leaderboard->title);
   rdp_onscreen_message(buffer);
 }
@@ -190,7 +190,7 @@ static void leaderboard_started(const rc_client_leaderboard_t *leaderboard) {
 static void leaderboard_failed(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "Lboard attempt failed: %s",
+  snprintf(buffer, sizeof(buffer), "Leaderboard failed: %s",
            leaderboard->title);
   rdp_onscreen_message(buffer);
 }
@@ -198,7 +198,7 @@ static void leaderboard_failed(const rc_client_leaderboard_t *leaderboard) {
 static void leaderboard_submitted(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "Lboard submitted: %s - %s",
+  snprintf(buffer, sizeof(buffer), "Leaderboard submitted: %s - %s",
            leaderboard->title, leaderboard->tracker_value);
   rdp_onscreen_message(buffer);
 }
