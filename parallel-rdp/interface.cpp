@@ -845,8 +845,10 @@ void achievement_progress_remove() {
 
 void leaderboard_tracker_add(uint32_t id, const char *title,
                              const char *display) {
-  leaderboard_trackers[id] = std::format("{}: {}", title, display);
-  update_challenge_indicator();
+  if (title) {
+    leaderboard_trackers[id] = std::format("{}: {}", title, display);
+    update_challenge_indicator();
+  }
 }
 
 void leaderboard_tracker_remove(uint32_t id) {
