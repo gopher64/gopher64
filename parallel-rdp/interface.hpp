@@ -53,6 +53,9 @@ void rdp_load_state(const uint8_t *state);
 
 void achievement_challenge_indicator_add(const char *achievement_title);
 void achievement_challenge_indicator_remove(const char *achievement_title);
+void achievement_progress_add(const char *achievement_title,
+                              const char *progress);
+void achievement_progress_remove(const char *achievement_title);
 
 #ifdef __cplusplus
 }
