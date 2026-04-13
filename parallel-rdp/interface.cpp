@@ -384,6 +384,20 @@ static void calculate_viewport(float *x, float *y, float *width, float *height,
   }
 }
 
+static void draw_indicator(CommandBufferHandle cmd,
+                           Vulkan::ImageHandle indicator_image,
+                           VkViewport &vp) {
+  cmd->set_texture(0, 0, indicator_image->get_view(),
+                   Vulkan::StockSampler::NearestClamp);
+  vp.x = vp.x + vp.width - indicator_image->get_width();
+  vp.y = vp.y + vp.height - indicator_image->get_height();
+  vp.height = indicator_image->get_height();
+  vp.width = indicator_image->get_width();
+  cmd->set_viewport(vp);
+
+  cmd->draw(3);
+}
+
 static void render_frame(Vulkan::Device &device) {
   RDP::ScanoutOptions options = {};
   options.persist_frame_on_invalid_input = true;
@@ -475,30 +489,9 @@ static void render_frame(Vulkan::Device &device) {
           message_timer = SDL_GetTicks() + MESSAGE_TIME;
         }
       } else if (achievement_progress_indicator_image) {
-        cmd->set_texture(0, 0, achievement_progress_indicator_image->get_view(),
-                         Vulkan::StockSampler::NearestClamp);
-        vp.x =
-            vp.x + vp.width - achievement_progress_indicator_image->get_width();
-        vp.y = vp.y + vp.height -
-               achievement_progress_indicator_image->get_height();
-        vp.height = achievement_progress_indicator_image->get_height();
-        vp.width = achievement_progress_indicator_image->get_width();
-        cmd->set_viewport(vp);
-
-        cmd->draw(3);
+        draw_indicator(cmd, achievement_progress_indicator_image, vp);
       } else if (achievement_challenge_indicator_image) {
-        cmd->set_texture(0, 0,
-                         achievement_challenge_indicator_image->get_view(),
-                         Vulkan::StockSampler::NearestClamp);
-        vp.x = vp.x + vp.width -
-               achievement_challenge_indicator_image->get_width();
-        vp.y = vp.y + vp.height -
-               achievement_challenge_indicator_image->get_height();
-        vp.height = achievement_challenge_indicator_image->get_height();
-        vp.width = achievement_challenge_indicator_image->get_width();
-        cmd->set_viewport(vp);
-
-        cmd->draw(3);
+        draw_indicator(cmd, achievement_challenge_indicator_image, vp);
       }
     }
 
