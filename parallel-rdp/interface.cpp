@@ -802,8 +802,9 @@ uint64_t rdp_process_commands() {
 
 static void update_challenge_indicator() {
   std::string message;
-  for (const auto &achievement_title : achievement_challenge_indicators) {
-    message += achievement_title;
+  const auto &v = achievement_challenge_indicators;
+  for (size_t i = 0; i < std::min<size_t>(v.size(), 5); ++i) {
+    message += v[i];
     message += '\n';
   }
   achievement_challenge_indicator_image = create_message_image(
