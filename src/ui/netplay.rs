@@ -1110,6 +1110,7 @@ fn setup_wait_window(
                                     RASettings {
                                         hardcore: false,
                                         challenge: false,
+                                        leaderboard: false,
                                     },
                                     weak_app,
                                 );
