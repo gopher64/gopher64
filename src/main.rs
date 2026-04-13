@@ -106,6 +106,11 @@ struct Args {
         help = "Enable Hardcore mode for RetroAchievements"
     )]
     ra_hardcore: bool,
+    #[arg(
+        long = "ra-challenge",
+        help = "Enable Challenge Indicators for RetroAchievements"
+    )]
+    ra_challenge: bool,
 }
 
 #[tokio::main(worker_threads = 4)]
@@ -159,9 +164,9 @@ async fn main() -> std::io::Result<()> {
         };
 
         if cfg!(ra_hardcore_enabled) {
-            retroachievements::init_client(args.ra_hardcore);
+            retroachievements::init_client(args.ra_hardcore, args.ra_challenge);
         } else {
-            retroachievements::init_client(false);
+            retroachievements::init_client(false, args.ra_challenge);
         }
         let mut shutdown_tx = None;
 
@@ -259,7 +264,7 @@ async fn main() -> std::io::Result<()> {
             ui::input::bind_input_profile(&mut ui, profile, port);
         }
     } else {
-        retroachievements::init_client(false);
+        retroachievements::init_client(false, false);
         gui::app_window();
         retroachievements::shutdown_client();
     }

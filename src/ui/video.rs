@@ -80,7 +80,7 @@ pub fn init(device: &mut device::Device) {
     };
 
     unsafe {
-        let font_bytes = include_bytes!("../../data/Roboto-Regular.ttf");
+        let font_bytes = include_bytes!("../../data/RobotoMono-Regular.ttf");
         rdp_init(
             device.ui.video.window as *mut std::ffi::c_void,
             gfx_info,

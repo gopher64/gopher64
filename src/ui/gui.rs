@@ -31,6 +31,11 @@ pub struct GameSettings {
     pub load_savestate_slot: Option<u32>,
 }
 
+pub struct RASettings {
+    pub hardcore: bool,
+    pub challenge: bool,
+}
+
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
     let client = reqwest::Client::builder()
         .user_agent(env!("CARGO_PKG_NAME"))
@@ -325,7 +330,7 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: GameSettings,
     netplay: Option<NetplayDevice>,
-    ra_hardcore: bool,
+    ra_settings: RASettings,
     weak: slint::Weak<AppWindow>,
 ) {
     tokio::spawn(async move {
@@ -359,8 +364,11 @@ pub fn run_rom(
                 "--ra-token",
                 retroachievements::get_token(),
             ]);
-            if ra_hardcore {
+            if ra_settings.hardcore {
                 command.args(["--ra-hardcore"]);
+            }
+            if ra_settings.challenge {
+                command.args(["--ra-challenge"]);
             }
         }
 
@@ -425,6 +433,7 @@ fn open_rom(app: &AppWindow) {
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
     let ra_hardcore = app.get_ra_hardcore();
+    let ra_challenge = app.get_ra_challenge();
 
     let weak = app.as_weak();
     tokio::spawn(async move {
@@ -455,7 +464,10 @@ fn open_rom(app: &AppWindow) {
                     load_savestate_slot: None,
                 },
                 None,
-                ra_hardcore,
+                RASettings {
+                    hardcore: ra_hardcore,
+                    challenge: ra_challenge,
+                },
                 weak,
             );
         }

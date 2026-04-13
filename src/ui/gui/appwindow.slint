@@ -38,7 +38,7 @@ export component AppWindow inherits Window {
     callback ra_button_clicked(string);
     callback ra_games_clicked;
     callback ra_show_profile_clicked(string);
-    callback ra_toggled(bool,bool);
+    callback ra_toggled(bool,bool,bool);
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
     in-out property ra_username <=> RAData.ra_username;
@@ -48,6 +48,7 @@ export component AppWindow inherits Window {
     in-out property ra_current_user_message <=> RAData.current_user_message;
     in-out property ra_enabled <=> RAData.enabled;
     in-out property ra_hardcore <=> RAData.hardcore;
+    in-out property ra_challenge <=> RAData.challenge;
     in-out property integer_scaling <=> SettingsData.integer_scaling;
     in-out property fullscreen <=> SettingsData.fullscreen;
     in-out property widescreen <=> SettingsData.widescreen;
@@ -134,8 +135,8 @@ export component AppWindow inherits Window {
             ra_button_clicked(password) => {
                 ra_button_clicked(password);
             }
-            ra_toggled(enabled,hardcore) => {
-                ra_toggled(enabled,hardcore);
+            ra_toggled(enabled,hardcore,challenge) => {
+                ra_toggled(enabled,hardcore,challenge);
             }
             ra_games_clicked => {
                 ra_games_clicked();

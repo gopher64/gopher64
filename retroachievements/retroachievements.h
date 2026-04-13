@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void ra_init_client(bool hardcore);
+void ra_init_client(bool hardcore, bool challenge);
 void ra_shutdown_client();
 void ra_welcome();
 bool ra_get_hardcore();

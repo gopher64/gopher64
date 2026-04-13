@@ -19,6 +19,7 @@ static const uint8_t *g_dmem = NULL;
 static size_t g_dmem_size = 0;
 static bool g_game_loaded = false;
 static bool g_user_logged_in = false;
+static bool g_challenge = false;
 static const char *g_username = NULL;
 static const char *g_token = NULL;
 static char load_game_error_message[512];
@@ -180,7 +181,7 @@ void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
 static void leaderboard_started(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA leaderboard attempt started: %s",
+  snprintf(buffer, sizeof(buffer), "Lboard attempt started: %s",
            leaderboard->title);
   rdp_onscreen_message(buffer);
 }
@@ -188,7 +189,7 @@ static void leaderboard_started(const rc_client_leaderboard_t *leaderboard) {
 static void leaderboard_failed(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA leaderboard attempt failed: %s",
+  snprintf(buffer, sizeof(buffer), "Lboard attempt failed: %s",
            leaderboard->title);
   rdp_onscreen_message(buffer);
 }
@@ -196,7 +197,7 @@ static void leaderboard_failed(const rc_client_leaderboard_t *leaderboard) {
 static void leaderboard_submitted(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA leaderboard submitted: %s - %s",
+  snprintf(buffer, sizeof(buffer), "Lboard submitted: %s - %s",
            leaderboard->title, leaderboard->tracker_value);
   rdp_onscreen_message(buffer);
 }
@@ -204,16 +205,7 @@ static void leaderboard_submitted(const rc_client_leaderboard_t *leaderboard) {
 static void achievement_triggered(const rc_client_achievement_t *achievement) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA unlocked: %s", achievement->title);
-  rdp_onscreen_message(buffer);
-}
-
-static void
-achievement_progress_updated(const rc_client_achievement_t *achievement) {
-  char buffer[512];
-
-  snprintf(buffer, sizeof(buffer), "RA updated: %s - %s", achievement->title,
-           achievement->measured_progress);
+  snprintf(buffer, sizeof(buffer), "Unlocked: %s", achievement->title);
   rdp_onscreen_message(buffer);
 }
 
@@ -221,8 +213,8 @@ static void game_completed(rc_client_t *client) {
   char buffer[512];
   const rc_client_game_t *game = rc_client_get_game_info(client);
 
-  snprintf(buffer, sizeof(buffer), "RA %s: %s",
-           rc_client_get_hardcore_enabled(client) ? "mastered" : "completed",
+  snprintf(buffer, sizeof(buffer), "%s: %s",
+           rc_client_get_hardcore_enabled(client) ? "Mastered" : "Completed",
            game->title);
   rdp_onscreen_message(buffer);
 }
@@ -231,7 +223,7 @@ static void subset_completed(const rc_client_subset_t *subset,
                              rc_client_t *client) {
   char buffer[512];
 
-  snprintf(buffer, sizeof(buffer), "RA subset %s: %s",
+  snprintf(buffer, sizeof(buffer), "Subset %s: %s",
            rc_client_get_hardcore_enabled(client) ? "mastered" : "completed",
            subset->title);
   rdp_onscreen_message(buffer);
@@ -260,15 +252,23 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
     leaderboard_submitted(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_SHOW:
+    if (g_challenge)
+      achievement_challenge_indicator_add(event->achievement->title);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_HIDE:
+    if (g_challenge)
+      achievement_challenge_indicator_remove(event->achievement->title);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_SHOW:
+    achievement_progress_add(event->achievement->title,
+                             event->achievement->measured_progress);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_HIDE:
+    achievement_progress_remove(event->achievement->title);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_UPDATE:
-    achievement_progress_updated(event->achievement);
+    achievement_progress_add(event->achievement->title,
+                             event->achievement->measured_progress);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_SHOW:
     break;
@@ -293,7 +293,7 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   }
 }
 
-void ra_init_client(bool hardcore) {
+void ra_init_client(bool hardcore, bool challenge) {
   // Create the client instance (using a global variable simplifies this
   // example)
   g_client = rc_client_create(read_memory, server_call);
@@ -309,6 +309,8 @@ void ra_init_client(bool hardcore) {
   rc_client_set_event_handler(g_client, event_handler);
 
   rc_client_set_hardcore_enabled(g_client, hardcore);
+
+  g_challenge = challenge;
 }
 
 bool ra_get_hardcore() {
