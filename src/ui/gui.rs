@@ -234,7 +234,9 @@ fn controller_window(
                         if dinput {
                             command.arg("--use-dinput");
                         }
-                        command.status().unwrap();
+                        if !command.status().unwrap().success() {
+                            eprintln!("Failed to configure input profile");
+                        }
                         let game_ui = ui::Ui::new();
                         update_input_profiles(&weak_app, &game_ui.config);
                     });
@@ -387,7 +389,14 @@ pub fn run_rom(
             }
         }
 
-        command.arg(file_path.to_str().unwrap()).status().unwrap();
+        if !command
+            .arg(file_path.to_str().unwrap())
+            .status()
+            .unwrap()
+            .success()
+        {
+            eprintln!("Failed to run game");
+        }
 
         let _ = std::fs::remove_file(cheats_path.to_str().unwrap());
 
