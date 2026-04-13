@@ -20,6 +20,7 @@ static size_t g_dmem_size = 0;
 static bool g_game_loaded = false;
 static bool g_user_logged_in = false;
 static bool g_challenge = false;
+static bool g_leaderboard = false;
 static const char *g_username = NULL;
 static const char *g_token = NULL;
 static char load_game_error_message[512];
@@ -243,13 +244,16 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
     achievement_triggered(event->achievement);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_STARTED:
-    leaderboard_started(event->leaderboard);
+    if (g_leaderboard)
+      leaderboard_started(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_FAILED:
-    leaderboard_failed(event->leaderboard);
+    if (g_leaderboard)
+      leaderboard_failed(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_SUBMITTED:
-    leaderboard_submitted(event->leaderboard);
+    if (g_leaderboard)
+      leaderboard_submitted(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_CHALLENGE_INDICATOR_SHOW:
     if (g_challenge)
@@ -271,15 +275,18 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
                              event->achievement->measured_progress);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_SHOW:
-    leaderboard_tracker_add(event->leaderboard_tracker->id,
-                            event->leaderboard_tracker->display);
+    if (g_leaderboard)
+      leaderboard_tracker_add(event->leaderboard_tracker->id,
+                              event->leaderboard_tracker->display);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_HIDE:
-    leaderboard_tracker_remove(event->leaderboard_tracker->id);
+    if (g_leaderboard)
+      leaderboard_tracker_remove(event->leaderboard_tracker->id);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_UPDATE:
-    leaderboard_tracker_add(event->leaderboard_tracker->id,
-                            event->leaderboard_tracker->display);
+    if (g_leaderboard)
+      leaderboard_tracker_add(event->leaderboard_tracker->id,
+                              event->leaderboard_tracker->display);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_SCOREBOARD:
     break;
@@ -298,7 +305,7 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   }
 }
 
-void ra_init_client(bool hardcore, bool challenge) {
+void ra_init_client(bool hardcore, bool challenge, bool leaderboard) {
   // Create the client instance (using a global variable simplifies this
   // example)
   g_client = rc_client_create(read_memory, server_call);
@@ -316,6 +323,7 @@ void ra_init_client(bool hardcore, bool challenge) {
   rc_client_set_hardcore_enabled(g_client, hardcore);
 
   g_challenge = challenge;
+  g_leaderboard = leaderboard;
 }
 
 bool ra_get_hardcore() {

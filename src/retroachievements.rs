@@ -10,6 +10,7 @@ pub struct RAConfig {
     pub enabled: bool,
     pub hardcore: bool,
     pub challenge: bool,
+    pub leaderboard: bool,
 }
 
 #[unsafe(no_mangle)]
@@ -41,6 +42,7 @@ pub extern "C" fn store_retroachievements_credentials(
             enabled: result.enabled,
             hardcore: result.hardcore,
             challenge: result.challenge,
+            leaderboard: result.leaderboard,
         }
     } else {
         RAConfig {
@@ -49,6 +51,7 @@ pub extern "C" fn store_retroachievements_credentials(
             enabled: false,
             hardcore: false,
             challenge: false,
+            leaderboard: false,
         }
     };
     let f = std::fs::File::create(&file_path).unwrap();
@@ -170,6 +173,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
         app.set_ra_enabled(result.enabled);
         app.set_ra_hardcore(result.hardcore);
         app.set_ra_challenge(result.challenge);
+        app.set_ra_leaderboard(result.leaderboard);
         token = result.token;
     } else {
         app.set_ra_hardcore(true);
@@ -199,7 +203,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
             .unwrap();
     });
 
-    app.on_ra_toggled(move |enabled, hardcore, challenge| {
+    app.on_ra_toggled(move |enabled, hardcore, challenge, leaderboard| {
         let file_path = ui::get_dirs().config_dir.join("retroachievements.json");
         let raconfig = if let Ok(ra_config) = std::fs::read(&file_path)
             && let Ok(result) = serde_json::from_slice::<RAConfig>(ra_config.as_ref())
@@ -212,6 +216,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
                     enabled,
                     hardcore,
                     challenge,
+                    leaderboard,
                 }
             } else {
                 RAConfig {
@@ -220,6 +225,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
                     enabled,
                     hardcore,
                     challenge,
+                    leaderboard,
                 }
             }
         } else {
@@ -229,6 +235,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
                 enabled,
                 hardcore,
                 challenge,
+                leaderboard,
             }
         };
         let f = std::fs::File::create(&file_path).unwrap();
@@ -269,8 +276,8 @@ pub fn do_idle() {
     unsafe { ra_do_idle() };
 }
 
-pub fn init_client(hardcore: bool, challenge: bool) {
-    unsafe { ra_init_client(hardcore, challenge) };
+pub fn init_client(hardcore: bool, challenge: bool, leaderboard: bool) {
+    unsafe { ra_init_client(hardcore, challenge, leaderboard) };
 }
 
 pub fn shutdown_client() {
