@@ -818,8 +818,9 @@ static void update_leaderboard_tracker() {
     message += leaderboard_tracker.second;
     message += '\n';
   }
-  leaderboard_tracker_image =
-      create_message_image(wsi->get_device(), 0, message_font, message.c_str());
+  leaderboard_tracker_image = create_message_image(
+      wsi->get_device(), 0, achievement_challenge_indicator_font,
+      message.c_str());
 }
 
 void achievement_challenge_indicator_add(const char *achievement_title) {
@@ -838,18 +839,18 @@ void achievement_challenge_indicator_remove(const char *achievement_title) {
 
 void achievement_progress_add(const char *achievement_title,
                               const char *progress) {
-  char message[512];
-  snprintf(message, sizeof(message), "%s: %s", achievement_title, progress);
+  std::string message = std::format("{}: {}", achievement_title, progress);
   achievement_progress_indicator_image =
-      create_message_image(wsi->get_device(), 0, message_font, message);
+      create_message_image(wsi->get_device(), 0, message_font, message.c_str());
 }
 
-void achievement_progress_remove(const char *achievement_title) {
+void achievement_progress_remove() {
   achievement_progress_indicator_image = Vulkan::ImageHandle();
 }
 
-void leaderboard_tracker_add(uint32_t id, const char *display) {
-  std::string message = display;
+void leaderboard_tracker_add(uint32_t id, const char *title,
+                             const char *display) {
+  std::string message = std::format("{}: {}", title, display);
   leaderboard_trackers[id] = message;
   update_leaderboard_tracker();
 }

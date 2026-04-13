@@ -543,7 +543,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
     if !unsafe {
         sdl3_sys::render::SDL_CreateWindowAndRenderer(
             title.as_ptr(),
-            640,
+            852,
             480,
             sdl3_sys::video::SDL_WindowFlags(0),
             &mut window,

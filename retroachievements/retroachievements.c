@@ -24,6 +24,7 @@ static bool g_leaderboard = false;
 static const char *g_username = NULL;
 static const char *g_token = NULL;
 static char load_game_error_message[512];
+static rc_client_leaderboard_list_t *g_leaderboard_list = NULL;
 
 static uint32_t read_memory(uint32_t address, uint8_t *buffer,
                             uint32_t num_bytes, rc_client_t *client) {
@@ -129,6 +130,9 @@ static void load_game_callback(int result, const char *error_message,
     rc_client_set_hardcore_enabled(client, false);
   }
 
+  g_leaderboard_list = rc_client_create_leaderboard_list(
+      client, RC_CLIENT_LEADERBOARD_LIST_GROUPING_NONE);
+
   g_game_loaded = true;
   notify_load_game(userdata);
 }
@@ -179,22 +183,6 @@ void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
   g_dmem_size = dmem_size;
 }
 
-static void leaderboard_started(const rc_client_leaderboard_t *leaderboard) {
-  char buffer[512];
-
-  snprintf(buffer, sizeof(buffer), "Leaderboard started: %s",
-           leaderboard->title);
-  rdp_onscreen_message(buffer);
-}
-
-static void leaderboard_failed(const rc_client_leaderboard_t *leaderboard) {
-  char buffer[512];
-
-  snprintf(buffer, sizeof(buffer), "Leaderboard failed: %s",
-           leaderboard->title);
-  rdp_onscreen_message(buffer);
-}
-
 static void leaderboard_submitted(const rc_client_leaderboard_t *leaderboard) {
   char buffer[512];
 
@@ -238,18 +226,27 @@ static void server_error(const rc_client_server_error_t *server_error) {
   rdp_onscreen_message(buffer);
 }
 
+static const char *get_leaderboard_title(const char *display) {
+  for (uint32_t i = 0; i < g_leaderboard_list->num_buckets; i++) {
+    for (uint32_t j = 0; j < g_leaderboard_list->buckets[i].num_leaderboards;
+         j++) {
+      if (g_leaderboard_list->buckets[i].leaderboards[j]->tracker_value ==
+          display) {
+        return g_leaderboard_list->buckets[i].leaderboards[j]->title;
+      }
+    }
+  }
+  return NULL;
+}
+
 static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
   switch (event->type) {
   case RC_CLIENT_EVENT_ACHIEVEMENT_TRIGGERED:
     achievement_triggered(event->achievement);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_STARTED:
-    if (g_leaderboard)
-      leaderboard_started(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_FAILED:
-    if (g_leaderboard)
-      leaderboard_failed(event->leaderboard);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_SUBMITTED:
     if (g_leaderboard)
@@ -268,7 +265,7 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
                              event->achievement->measured_progress);
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_HIDE:
-    achievement_progress_remove(event->achievement->title);
+    achievement_progress_remove();
     break;
   case RC_CLIENT_EVENT_ACHIEVEMENT_PROGRESS_INDICATOR_UPDATE:
     achievement_progress_add(event->achievement->title,
@@ -276,8 +273,10 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_SHOW:
     if (g_leaderboard)
-      leaderboard_tracker_add(event->leaderboard_tracker->id,
-                              event->leaderboard_tracker->display);
+      leaderboard_tracker_add(
+          event->leaderboard_tracker->id,
+          get_leaderboard_title(event->leaderboard_tracker->display),
+          event->leaderboard_tracker->display);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_HIDE:
     if (g_leaderboard)
@@ -285,8 +284,10 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_UPDATE:
     if (g_leaderboard)
-      leaderboard_tracker_add(event->leaderboard_tracker->id,
-                              event->leaderboard_tracker->display);
+      leaderboard_tracker_add(
+          event->leaderboard_tracker->id,
+          get_leaderboard_title(event->leaderboard_tracker->display),
+          event->leaderboard_tracker->display);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_SCOREBOARD:
     break;
@@ -333,6 +334,10 @@ bool ra_get_hardcore() {
 }
 
 void ra_shutdown_client() {
+  if (g_leaderboard_list) {
+    rc_client_destroy_leaderboard_list(g_leaderboard_list);
+    g_leaderboard_list = NULL;
+  }
   if (g_client) {
     // Release resources associated to the client instance
     rc_client_destroy(g_client);

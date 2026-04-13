@@ -224,7 +224,6 @@ async fn main() -> std::io::Result<()> {
                 load_savestate_slot: args.load_state,
             },
         );
-        retroachievements::shutdown_client();
 
         if device.netplay.is_some() {
             netplay::close(&mut device);

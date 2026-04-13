@@ -55,8 +55,9 @@ void achievement_challenge_indicator_add(const char *achievement_title);
 void achievement_challenge_indicator_remove(const char *achievement_title);
 void achievement_progress_add(const char *achievement_title,
                               const char *progress);
-void achievement_progress_remove(const char *achievement_title);
-void leaderboard_tracker_add(uint32_t id, const char *display);
+void achievement_progress_remove();
+void leaderboard_tracker_add(uint32_t id, const char *title,
+                             const char *display);
 void leaderboard_tracker_remove(uint32_t id);
 
 #ifdef __cplusplus
