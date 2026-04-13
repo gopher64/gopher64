@@ -821,8 +821,8 @@ void achievement_progress_add(const char *achievement_title,
                               const char *progress) {
   char message[512];
   snprintf(message, sizeof(message), "%s: %s", achievement_title, progress);
-  achievement_progress_indicator_image = create_message_image(
-      wsi->get_device(), 0, achievement_challenge_indicator_font, message);
+  achievement_progress_indicator_image =
+      create_message_image(wsi->get_device(), 0, message_font, message);
 }
 
 void achievement_progress_remove(const char *achievement_title) {
