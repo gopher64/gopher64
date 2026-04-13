@@ -217,14 +217,14 @@ void rdp_new_processor(GFX_INFO _gfx_info) {
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
-                                        const char *message) {
+                                        TTF_Font *font, const char *message) {
   if (strstr(message, "\n"))
     width = 0;
 
   SDL_Color fg = {255, 255, 255, 255};
   SDL_Color bg = {0, 0, 0, 0};
   SDL_Surface *surface =
-      TTF_RenderText_LCD_Wrapped(message_font, message, 0, fg, bg, width);
+      TTF_RenderText_LCD_Wrapped(font, message, 0, fg, bg, width);
   ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(
       surface->w, surface->h, VK_FORMAT_B8G8R8A8_UNORM, false);
   ImageInitialData initial_data = {};
@@ -471,8 +471,8 @@ static void render_frame(Vulkan::Device &device) {
       if (!messages.empty()) {
         Message *message = &messages.front();
         if (!message->image) {
-          message->image =
-              create_message_image(device, vp.width, message->message.c_str());
+          message->image = create_message_image(device, vp.width, message_font,
+                                                message->message.c_str());
         }
         cmd->set_texture(0, 0, message->image->get_view(),
                          Vulkan::StockSampler::NearestClamp);
@@ -792,57 +792,20 @@ uint64_t rdp_process_commands() {
   return interrupt_timer;
 }
 
-static ImageHandle update_achievement_challenge_indicator() {
-  auto &device = wsi->get_device();
-  SDL_Color fg = {255, 255, 255, 255};
-  SDL_Color bg = {0, 0, 0, 0};
-
+static void update_challenge_indicator() {
   std::string message;
   for (const auto &achievement_title : achievement_challenge_indicators) {
     message += achievement_title;
     message += '\n';
   }
-  SDL_Surface *surface = TTF_RenderText_LCD_Wrapped(
-      achievement_challenge_indicator_font, message.c_str(), 0, fg, bg, 0);
-  ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(
-      surface->w, surface->h, VK_FORMAT_B8G8R8A8_UNORM, false);
-  ImageInitialData initial_data = {};
-  initial_data.data = surface->pixels;
-  initial_data.row_length = surface->pitch / 4;
-  initial_data.image_height = surface->h;
-
-  ImageHandle handle = device.create_image(info, &initial_data);
-  SDL_DestroySurface(surface);
-  return handle;
-}
-
-static ImageHandle
-update_achievement_progress_indicator(const char *achievement_title,
-                                      const char *progress) {
-  auto &device = wsi->get_device();
-  SDL_Color fg = {255, 255, 255, 255};
-  SDL_Color bg = {0, 0, 0, 0};
-
-  char message[512];
-  snprintf(message, sizeof(message), "%s: %s", achievement_title, progress);
-  SDL_Surface *surface = TTF_RenderText_LCD(
-      achievement_challenge_indicator_font, message, 0, fg, bg);
-  ImageCreateInfo info = ImageCreateInfo::immutable_2d_image(
-      surface->w, surface->h, VK_FORMAT_B8G8R8A8_UNORM, false);
-  ImageInitialData initial_data = {};
-  initial_data.data = surface->pixels;
-  initial_data.row_length = surface->pitch / 4;
-  initial_data.image_height = surface->h;
-
-  ImageHandle handle = device.create_image(info, &initial_data);
-  SDL_DestroySurface(surface);
-  return handle;
+  achievement_challenge_indicator_image = create_message_image(
+      wsi->get_device(), 0, achievement_challenge_indicator_font,
+      message.c_str());
 }
 
 void achievement_challenge_indicator_add(const char *achievement_title) {
   achievement_challenge_indicators.push_back(achievement_title);
-  achievement_challenge_indicator_image =
-      update_achievement_challenge_indicator();
+  update_challenge_indicator();
 }
 
 void achievement_challenge_indicator_remove(const char *achievement_title) {
@@ -850,15 +813,16 @@ void achievement_challenge_indicator_remove(const char *achievement_title) {
   if (achievement_challenge_indicators.empty()) {
     achievement_challenge_indicator_image = Vulkan::ImageHandle();
   } else {
-    achievement_challenge_indicator_image =
-        update_achievement_challenge_indicator();
+    update_challenge_indicator();
   }
 }
 
 void achievement_progress_add(const char *achievement_title,
                               const char *progress) {
-  achievement_progress_indicator_image =
-      update_achievement_progress_indicator(achievement_title, progress);
+  char message[512];
+  snprintf(message, sizeof(message), "%s: %s", achievement_title, progress);
+  achievement_progress_indicator_image = create_message_image(
+      wsi->get_device(), 0, achievement_challenge_indicator_font, message);
 }
 
 void achievement_progress_remove(const char *achievement_title) {
