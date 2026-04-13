@@ -152,7 +152,7 @@ void ra_welcome() {
   rc_client_get_user_game_summary(g_client, &summary);
 
   int message_length = snprintf(
-      buffer, sizeof(buffer), "RA loaded: %s\nMode: %s\n", game->title,
+      buffer, sizeof(buffer), "%s\nMode: %s\n", game->title,
       rc_client_get_hardcore_enabled(g_client) ? "Hardcore" : "Softcore");
 
   if (summary.num_core_achievements != 0) {
