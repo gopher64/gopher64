@@ -7,6 +7,7 @@
 #include <SDL3/SDL_vulkan.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <cmath>
+#include <map>
 
 using namespace Vulkan;
 
@@ -101,6 +102,8 @@ static TTF_Font *achievement_challenge_indicator_font;
 static std::vector<const char *> achievement_challenge_indicators;
 static Vulkan::ImageHandle achievement_challenge_indicator_image;
 static Vulkan::ImageHandle achievement_progress_indicator_image;
+static std::map<uint32_t, std::string> leaderboard_trackers;
+static Vulkan::ImageHandle leaderboard_tracker_image;
 
 #define MESSAGE_TIME 3000 // 3 seconds
 
@@ -308,12 +311,15 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   achievement_challenge_indicators.clear();
   achievement_challenge_indicator_image = Vulkan::ImageHandle();
   achievement_progress_indicator_image = Vulkan::ImageHandle();
+  leaderboard_trackers.clear();
+  leaderboard_tracker_image = Vulkan::ImageHandle();
 }
 
 void rdp_close() {
   messages = std::queue<Message>();
   achievement_challenge_indicator_image = Vulkan::ImageHandle();
   achievement_progress_indicator_image = Vulkan::ImageHandle();
+  leaderboard_tracker_image = Vulkan::ImageHandle();
 
   if (wsi)
     wsi->end_frame();
@@ -490,6 +496,8 @@ static void render_frame(Vulkan::Device &device) {
         }
       } else if (achievement_progress_indicator_image) {
         draw_indicator(cmd, achievement_progress_indicator_image, vp);
+      } else if (leaderboard_tracker_image) {
+        draw_indicator(cmd, leaderboard_tracker_image, vp);
       } else if (achievement_challenge_indicator_image) {
         draw_indicator(cmd, achievement_challenge_indicator_image, vp);
       }
@@ -803,6 +811,16 @@ static void update_challenge_indicator() {
       message.c_str());
 }
 
+static void update_leaderboard_tracker() {
+  std::string message;
+  for (const auto &leaderboard_tracker : leaderboard_trackers) {
+    message += leaderboard_tracker.second;
+    message += '\n';
+  }
+  leaderboard_tracker_image =
+      create_message_image(wsi->get_device(), 0, message_font, message.c_str());
+}
+
 void achievement_challenge_indicator_add(const char *achievement_title) {
   achievement_challenge_indicators.push_back(achievement_title);
   update_challenge_indicator();
@@ -827,4 +845,19 @@ void achievement_progress_add(const char *achievement_title,
 
 void achievement_progress_remove(const char *achievement_title) {
   achievement_progress_indicator_image = Vulkan::ImageHandle();
+}
+
+void leaderboard_tracker_add(uint32_t id, const char *display) {
+  std::string message = display;
+  leaderboard_trackers[id] = message;
+  update_leaderboard_tracker();
+}
+
+void leaderboard_tracker_remove(uint32_t id) {
+  leaderboard_trackers.erase(id);
+  if (leaderboard_trackers.empty()) {
+    leaderboard_tracker_image = Vulkan::ImageHandle();
+  } else {
+    update_leaderboard_tracker();
+  }
 }

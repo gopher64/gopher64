@@ -128,9 +128,9 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
 
-    retroachievements::do_frame();
-
     ui::video::render_frame();
+
+    retroachievements::do_frame();
 
     let (mut speed_limiter_toggled, paused) = ui::video::check_callback(device);
 

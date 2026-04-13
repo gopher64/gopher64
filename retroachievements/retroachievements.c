@@ -271,10 +271,15 @@ static void event_handler(const rc_client_event_t *event, rc_client_t *client) {
                              event->achievement->measured_progress);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_SHOW:
+    leaderboard_tracker_add(event->leaderboard_tracker->id,
+                            event->leaderboard_tracker->display);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_HIDE:
+    leaderboard_tracker_remove(event->leaderboard_tracker->id);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_TRACKER_UPDATE:
+    leaderboard_tracker_add(event->leaderboard_tracker->id,
+                            event->leaderboard_tracker->display);
     break;
   case RC_CLIENT_EVENT_LEADERBOARD_SCOREBOARD:
     break;
