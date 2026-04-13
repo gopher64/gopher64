@@ -103,6 +103,7 @@ static std::vector<const char *> achievement_challenge_indicators;
 static Vulkan::ImageHandle achievement_challenge_indicator_image;
 static Vulkan::ImageHandle achievement_progress_indicator_image;
 static std::map<uint32_t, std::string> leaderboard_trackers;
+static bool display_challenge_indicator;
 
 #define MESSAGE_TIME 3000 // 3 seconds
 
@@ -153,6 +154,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       break;
     case SDL_SCANCODE_F7:
       callback.load_state = true;
+      break;
+    case SDL_SCANCODE_F9:
+      display_challenge_indicator = !display_challenge_indicator;
       break;
     case SDL_SCANCODE_F12:
       callback.reset_game = true;
@@ -307,6 +311,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   messages = std::queue<Message>();
   message_timer = 0;
 
+  display_challenge_indicator = true;
   achievement_challenge_indicators.clear();
   leaderboard_trackers.clear();
   achievement_challenge_indicator_image = Vulkan::ImageHandle();
@@ -493,7 +498,8 @@ static void render_frame(Vulkan::Device &device) {
         }
       } else if (achievement_progress_indicator_image) {
         draw_indicator(cmd, achievement_progress_indicator_image, vp);
-      } else if (achievement_challenge_indicator_image) {
+      } else if (achievement_challenge_indicator_image &&
+                 display_challenge_indicator) {
         draw_indicator(cmd, achievement_challenge_indicator_image, vp);
       }
     }
@@ -845,8 +851,10 @@ void achievement_progress_remove() {
 
 void leaderboard_tracker_add(uint32_t id, const char *title,
                              const char *display) {
-  leaderboard_trackers[id] = std::format("{}: {}", title, display);
-  update_challenge_indicator();
+  if (title) {
+    leaderboard_trackers[id] = std::format("{}: {}", title, display);
+    update_challenge_indicator();
+  }
 }
 
 void leaderboard_tracker_remove(uint32_t id) {
