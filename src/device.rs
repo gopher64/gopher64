@@ -90,6 +90,7 @@ pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::gui
     cpu::run(device);
 
     ui::storage::write_saves(device);
+    retroachievements::shutdown_client();
     ui::input::close(&mut device.ui);
     ui::audio::close(&mut device.ui);
     ui::video::close(&device.ui);
