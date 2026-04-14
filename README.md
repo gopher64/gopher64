@@ -3,7 +3,7 @@
 
 Windows: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-windows-x86_64.exe
 
-MacOS: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-mac-aarch64.zip
+MacOS: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-macos-aarch64.zip
 
 Linux: https://flathub.org/apps/io.github.gopher64.gopher64
 
