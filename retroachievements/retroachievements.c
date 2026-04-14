@@ -75,6 +75,8 @@ static void login_callback(int result, const char *error_message,
              "RA login failed: %s", error_message);
     store_retroachievements_credentials(NULL, NULL, userdata);
     return;
+  } else {
+    memset(load_game_error_message, 0, sizeof(load_game_error_message));
   }
 
   // Login was successful. Capture the token for future logins so we don't have
@@ -124,6 +126,8 @@ static void load_game_callback(int result, const char *error_message,
              "RA load failed: %s", error_message);
     notify_load_game(userdata);
     return;
+  } else {
+    memset(load_game_error_message, 0, sizeof(load_game_error_message));
   }
 
   if (!rc_client_is_processing_required(client)) {
@@ -314,7 +318,6 @@ void ra_init_client(bool hardcore, bool challenge, bool leaderboard) {
   g_user_logged_in = false;
   g_dmem = NULL;
   g_dmem_size = 0;
-  memset(load_game_error_message, 0, sizeof(load_game_error_message));
 
   // Provide a logging function to simplify debugging
   rc_client_enable_logging(g_client, RC_CLIENT_LOG_LEVEL_WARN, log_message);
