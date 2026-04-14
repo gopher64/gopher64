@@ -157,6 +157,10 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       break;
     case SDL_SCANCODE_F9:
       display_challenge_indicator = !display_challenge_indicator;
+      rdp_onscreen_message(
+          std::format("Challenge indicators: {}",
+                      display_challenge_indicator ? "ON" : "OFF")
+              .c_str());
       break;
     case SDL_SCANCODE_F12:
       callback.reset_game = true;
