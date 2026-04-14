@@ -64,6 +64,7 @@ pub extern "C" fn store_retroachievements_credentials(
 pub extern "C" fn rust_server_call(
     c_url: *const std::ffi::c_char,
     c_post_data: *const std::ffi::c_char,
+    c_content_type: *const std::ffi::c_char,
     c_callback: *mut std::ffi::c_void,
     c_callback_data: *mut std::ffi::c_void,
 ) {
@@ -79,13 +80,12 @@ pub extern "C" fn rust_server_call(
     let task = if !c_post_data.is_null() {
         let post_data =
             unsafe { std::ffi::CStr::from_ptr(c_post_data).to_str().unwrap() }.to_string();
+        let content_type =
+            unsafe { std::ffi::CStr::from_ptr(c_content_type).to_str().unwrap() }.to_string();
         client
             .post(url)
             .body(post_data)
-            .header(
-                reqwest::header::CONTENT_TYPE,
-                "application/x-www-form-urlencoded",
-            )
+            .header(reqwest::header::CONTENT_TYPE, content_type)
             .send()
     } else {
         client.get(url).send()

@@ -7,6 +7,7 @@
 #include <string.h>
 
 void rust_server_call(const char *url, const char *post_data,
+                      const char *content_type,
                       rc_client_server_callback_t callback,
                       void *callback_data);
 void store_retroachievements_credentials(const char *username,
@@ -38,7 +39,8 @@ static uint32_t read_memory(uint32_t address, uint8_t *buffer,
 static void server_call(const rc_api_request_t *request,
                         rc_client_server_callback_t callback,
                         void *callback_data, rc_client_t *client) {
-  rust_server_call(request->url, request->post_data, callback, callback_data);
+  rust_server_call(request->url, request->post_data, request->content_type,
+                   callback, callback_data);
 }
 
 void ra_http_callback(const char *content, size_t content_size, int status_code,
