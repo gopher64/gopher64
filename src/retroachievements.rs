@@ -67,7 +67,7 @@ pub extern "C" fn rust_server_call(
     c_callback: *mut std::ffi::c_void,
     c_callback_data: *mut std::ffi::c_void,
 ) {
-    let url = unsafe { std::ffi::CStr::from_ptr(c_url).to_str().unwrap() };
+    let url = unsafe { std::ffi::CStr::from_ptr(c_url).to_str().unwrap() }.to_string();
     let client = reqwest::Client::builder()
         .user_agent(format!(
             "{}/{}",
@@ -77,16 +77,14 @@ pub extern "C" fn rust_server_call(
         .build()
         .unwrap();
     let task = if !c_post_data.is_null() {
-        let post_data = unsafe { std::ffi::CStr::from_ptr(c_post_data).to_str().unwrap() };
-        let query_string =
-            reqwest::Url::parse(&format!("http://nothing.com?{}", post_data)).unwrap();
+        let post_data =
+            unsafe { std::ffi::CStr::from_ptr(c_post_data).to_str().unwrap() }.to_string();
         client
             .post(url)
-            .query(
-                &query_string
-                    .query_pairs()
-                    .into_owned()
-                    .collect::<Vec<(String, String)>>(),
+            .body(post_data)
+            .header(
+                reqwest::header::CONTENT_TYPE,
+                "application/x-www-form-urlencoded",
             )
             .send()
     } else {
