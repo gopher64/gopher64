@@ -3,6 +3,17 @@ include!(concat!(env!("OUT_DIR"), "/retroachievements_bindings.rs"));
 use crate::ui;
 use slint::ComponentHandle;
 
+static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
+    reqwest::Client::builder()
+        .user_agent(format!(
+            "{}/{}",
+            env!("CARGO_PKG_NAME"),
+            env!("GIT_DESCRIBE")
+        ))
+        .build()
+        .unwrap()
+});
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct RAConfig {
     pub username: String,
@@ -69,26 +80,19 @@ pub extern "C" fn rust_server_call(
     c_callback_data: *mut std::ffi::c_void,
 ) {
     let url = unsafe { std::ffi::CStr::from_ptr(c_url).to_str().unwrap() }.to_string();
-    let client = reqwest::Client::builder()
-        .user_agent(format!(
-            "{}/{}",
-            env!("CARGO_PKG_NAME"),
-            env!("GIT_DESCRIBE")
-        ))
-        .build()
-        .unwrap();
+
     let task = if !c_post_data.is_null() {
         let post_data =
             unsafe { std::ffi::CStr::from_ptr(c_post_data).to_str().unwrap() }.to_string();
         let content_type =
             unsafe { std::ffi::CStr::from_ptr(c_content_type).to_str().unwrap() }.to_string();
-        client
+        WEB_CLIENT
             .post(url)
             .body(post_data)
             .header(reqwest::header::CONTENT_TYPE, content_type)
             .send()
     } else {
-        client.get(url).send()
+        WEB_CLIENT.get(url).send()
     };
     let callback = c_callback.addr();
     let callback_data = c_callback_data.addr();
