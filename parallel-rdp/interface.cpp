@@ -118,6 +118,12 @@ static const unsigned cmd_len_lut[64] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1,  1,  1,  1,  1,  1, 1, 1, 1,
 };
 
+static void show_challenge_indicator_message(void *userdata) {
+  rdp_onscreen_message(std::format("Challenge indicators: {}",
+                                   display_challenge_indicator ? "ON" : "OFF")
+                           .c_str());
+}
+
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
     callback.paused = false;
@@ -157,10 +163,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       break;
     case SDL_SCANCODE_F9:
       display_challenge_indicator = !display_challenge_indicator;
-      rdp_onscreen_message(
-          std::format("Challenge indicators: {}",
-                      display_challenge_indicator ? "ON" : "OFF")
-              .c_str());
+      SDL_RunOnMainThread(show_challenge_indicator_message, NULL, false);
       break;
     case SDL_SCANCODE_F12:
       callback.reset_game = true;
