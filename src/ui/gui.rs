@@ -32,6 +32,7 @@ pub struct GameSettings {
 }
 
 pub struct RASettings {
+    pub enabled: bool,
     pub hardcore: bool,
     pub challenge: bool,
     pub leaderboard: bool,
@@ -360,7 +361,7 @@ pub fn run_rom(
                 "--cheats",
                 cheats_path.to_str().unwrap(),
             ]);
-        } else if retroachievements::is_user_logged_in() {
+        } else if ra_settings.enabled {
             command.args([
                 "--ra-username",
                 retroachievements::get_username(),
@@ -445,6 +446,7 @@ fn open_rom(app: &AppWindow) {
 
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
+    let ra_enabled = app.get_ra_enabled();
     let ra_hardcore = app.get_ra_hardcore();
     let ra_challenge = app.get_ra_challenge();
     let ra_leaderboard = app.get_ra_leaderboard();
@@ -479,6 +481,7 @@ fn open_rom(app: &AppWindow) {
                 },
                 None,
                 RASettings {
+                    enabled: ra_enabled,
                     hardcore: ra_hardcore,
                     challenge: ra_challenge,
                     leaderboard: ra_leaderboard,
