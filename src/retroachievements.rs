@@ -315,7 +315,7 @@ pub fn is_user_logged_in() -> bool {
 pub fn get_username() -> &'static str {
     let c_username = unsafe { ra_get_username() };
     if c_username.is_null() {
-        ""
+        "unknown"
     } else {
         unsafe { std::ffi::CStr::from_ptr(c_username) }
             .to_str()
@@ -326,7 +326,7 @@ pub fn get_username() -> &'static str {
 pub fn get_token() -> &'static str {
     let c_token = unsafe { ra_get_token() };
     if c_token.is_null() {
-        ""
+        "unknown"
     } else {
         unsafe { std::ffi::CStr::from_ptr(c_token) }
             .to_str()
