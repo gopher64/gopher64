@@ -120,7 +120,6 @@ static const unsigned cmd_len_lut[64] = {
 };
 
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
-  bool messages_empty;
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
     callback.paused = false;
     callback.emu_running = false;
@@ -158,9 +157,8 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       callback.load_state = true;
       break;
     case SDL_SCANCODE_F8:
-      messages_empty = messages.empty();
-      SDL_RunOnMainThread(ra_display_inprogress_achievements,
-                          (void *)&messages_empty, true);
+      if (messages.empty())
+        SDL_RunOnMainThread(ra_display_inprogress_achievements, nullptr, true);
       break;
     case SDL_SCANCODE_F9:
       display_challenge_indicator = !display_challenge_indicator;

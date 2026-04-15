@@ -391,11 +391,8 @@ void ra_load_state(const uint8_t *state, size_t state_size) {
   }
 }
 
-void ra_display_inprogress_achievements(void *messages_empty) {
+void ra_display_inprogress_achievements(void *userdata) {
   if (!g_game_loaded)
-    return;
-
-  if (!*(bool *)messages_empty)
     return;
 
   rc_client_achievement_list_t *list = rc_client_create_achievement_list(
@@ -403,7 +400,7 @@ void ra_display_inprogress_achievements(void *messages_empty) {
       RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_LOCK_STATE);
 
   char buffer[1024] = {0};
-  int buffer_length = 0;
+  size_t buffer_length = 0;
 
   for (uint32_t i = 0; i < list->num_buckets; i++) {
     if (list->buckets[i].bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_LOCKED) {
