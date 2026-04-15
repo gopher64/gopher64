@@ -411,9 +411,11 @@ void ra_display_inprogress_achievements(void *messages_empty) {
         const rc_client_achievement_t *achievement =
             list->buckets[i].achievements[j];
         if (achievement->measured_percent > 0.0f) {
-          buffer_length += snprintf(
-              buffer + buffer_length, sizeof(buffer) - buffer_length,
-              "%s: %s\n", achievement->title, achievement->measured_progress);
+          if (buffer_length < sizeof(buffer) - 1) {
+            buffer_length += snprintf(
+                buffer + buffer_length, sizeof(buffer) - buffer_length,
+                "%s: %s\n", achievement->title, achievement->measured_progress);
+          }
         }
       }
     }
