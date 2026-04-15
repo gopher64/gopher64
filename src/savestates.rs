@@ -20,7 +20,7 @@ impl<'de, const N: usize> Visitor<'de> for M128iArrayVisitor<N> {
         A: SeqAccess<'de>,
     {
         let mut arr: [__m128i; N] = [device::zero_m128i(); N];
-        for (index, item) in arr.iter_mut().enumerate().take(N) {
+        for (index, item) in arr.iter_mut().enumerate() {
             match seq.next_element::<u128>()? {
                 Some(value) => *item = unsafe { std::mem::transmute::<u128, __m128i>(value) },
                 None => return Err(serde::de::Error::invalid_length(index, &self)),
@@ -171,28 +171,22 @@ pub fn load_savestate(device: &mut device::Device) {
 
             device::pif::connect_pif_channels(device);
             for i in 0..4 {
-                if device.pif.channels[i].pak_handler.is_some() {
-                    if device.pif.channels[i].pak_handler.unwrap().pak_type
-                        == device::controller::PakType::RumblePak
-                    {
+                if let Some(handler) = device.pif.channels[i].pak_handler {
+                    if handler.pak_type == device::controller::PakType::RumblePak {
                         let rumblepak_handler = device::controller::PakHandler {
                             read: device::controller::rumble::read,
                             write: device::controller::rumble::write,
                             pak_type: device::controller::PakType::RumblePak,
                         };
                         device.pif.channels[i].pak_handler = Some(rumblepak_handler);
-                    } else if device.pif.channels[i].pak_handler.unwrap().pak_type
-                        == device::controller::PakType::MemPak
-                    {
+                    } else if handler.pak_type == device::controller::PakType::MemPak {
                         let mempak_handler = device::controller::PakHandler {
                             read: device::controller::mempak::read,
                             write: device::controller::mempak::write,
                             pak_type: device::controller::PakType::MemPak,
                         };
                         device.pif.channels[i].pak_handler = Some(mempak_handler);
-                    } else if device.pif.channels[i].pak_handler.unwrap().pak_type
-                        == device::controller::PakType::TransferPak
-                    {
+                    } else if handler.pak_type == device::controller::PakType::TransferPak {
                         let tpak_handler = device::controller::PakHandler {
                             read: device::controller::transferpak::read,
                             write: device::controller::transferpak::write,
