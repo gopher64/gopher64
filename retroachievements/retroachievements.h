@@ -22,3 +22,11 @@ const char *ra_get_token();
 size_t ra_state_size();
 void ra_save_state(uint8_t *state, size_t state_size);
 void ra_load_state(const uint8_t *state, size_t state_size);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+void ra_display_inprogress_achievements(void *userdata);
+#ifdef __cplusplus
+}
+#endif

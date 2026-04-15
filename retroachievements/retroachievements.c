@@ -390,3 +390,36 @@ void ra_load_state(const uint8_t *state, size_t state_size) {
     printf("RetroAchievements: Failed to deserialize progress\n");
   }
 }
+
+void ra_display_inprogress_achievements(void *messages_empty) {
+  if (!g_game_loaded)
+    return;
+
+  if (!*(bool *)messages_empty)
+    return;
+
+  rc_client_achievement_list_t *list = rc_client_create_achievement_list(
+      g_client, RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE,
+      RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_LOCK_STATE);
+
+  char buffer[1024] = {0};
+  int buffer_length = 0;
+
+  for (uint32_t i = 0; i < list->num_buckets; i++) {
+    if (list->buckets[i].bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_LOCKED) {
+      for (uint32_t j = 0; j < list->buckets[i].num_achievements; j++) {
+        const rc_client_achievement_t *achievement =
+            list->buckets[i].achievements[j];
+        if (achievement->measured_percent > 0.0f) {
+          buffer_length += snprintf(
+              buffer + buffer_length, sizeof(buffer) - buffer_length,
+              "%s: %s\n", achievement->title, achievement->measured_progress);
+        }
+      }
+    }
+  }
+  if (buffer_length > 0) {
+    rdp_onscreen_message(buffer);
+  }
+  rc_client_destroy_achievement_list(list);
+}
