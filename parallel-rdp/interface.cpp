@@ -165,7 +165,8 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       rdp_onscreen_message(
           std::format("Challenge indicators: {}",
                       display_challenge_indicator ? "ON" : "OFF")
-              .c_str());
+              .c_str(),
+          false);
       break;
     case SDL_SCANCODE_F12:
       callback.reset_game = true;
@@ -581,8 +582,10 @@ static void push_onscreen_message(void *message) {
   messages.push({std::string((const char *)message), Vulkan::ImageHandle()});
 }
 
-void rdp_onscreen_message(const char *message) {
+void rdp_onscreen_message(const char *message, bool long_message) {
   SDL_RunOnMainThread(push_onscreen_message, (void *)message, true);
+  if (long_message)
+    SDL_RunOnMainThread(push_onscreen_message, (void *)message, true);
 }
 
 uint32_t pixel_size(uint32_t pixel_type, uint32_t area) {

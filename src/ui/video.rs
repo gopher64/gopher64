@@ -183,7 +183,8 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     if device.ui.storage.save_state_slot != callback.save_state_slot {
         onscreen_message(
             &device.ui,
-            &format!("Switching savestate slot to {}", callback.save_state_slot,),
+            &format!("Switching savestate slot to {}", callback.save_state_slot),
+            false,
         );
         device.ui.storage.save_state_slot = callback.save_state_slot;
         device
@@ -215,8 +216,13 @@ pub fn check_framebuffers(address: u32, length: u32) {
     unsafe { rdp_check_framebuffers(address, length) }
 }
 
-pub fn onscreen_message(_ui: &ui::Ui, message: &str) {
-    unsafe { rdp_onscreen_message(std::ffi::CString::new(message).unwrap().as_ptr()) };
+pub fn onscreen_message(_ui: &ui::Ui, message: &str, long_message: bool) {
+    unsafe {
+        rdp_onscreen_message(
+            std::ffi::CString::new(message).unwrap().as_ptr(),
+            long_message,
+        )
+    };
 }
 
 pub fn draw_text(
