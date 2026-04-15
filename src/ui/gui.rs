@@ -31,6 +31,7 @@ pub struct GameSettings {
     pub load_savestate_slot: Option<u32>,
 }
 
+#[derive(Clone)]
 pub struct RASettings {
     pub enabled: bool,
     pub hardcore: bool,
@@ -361,7 +362,8 @@ pub fn run_rom(
                 "--cheats",
                 cheats_path.to_str().unwrap(),
             ]);
-        } else if ra_settings.enabled {
+        }
+        if ra_settings.enabled {
             command.args([
                 "--ra-username",
                 retroachievements::get_username(),
