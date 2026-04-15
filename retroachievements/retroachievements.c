@@ -239,6 +239,10 @@ static const char *get_leaderboard_title(const char *display) {
   for (uint32_t i = 0; i < g_leaderboard_list->num_buckets; i++) {
     for (uint32_t j = 0; j < g_leaderboard_list->buckets[i].num_leaderboards;
          j++) {
+      // this looks like a mistake, but it is intentional.
+      // Leaderboard trackers don't contain the title,
+      // but we take advantage of the fact that tracker_vlue and display point
+      // to the same char* to find a matching leaderboard.
       if (g_leaderboard_list->buckets[i].leaderboards[j]->tracker_value ==
           display) {
         return g_leaderboard_list->buckets[i].leaderboards[j]->title;
