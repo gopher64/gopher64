@@ -1237,7 +1237,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                         load_savestate_slot: None,
                     },
                     RASettings {
-                        enabled: false,
+                        enabled: handle.get_ra_enabled(),
                         hardcore: handle.get_ra_hardcore(),
                         challenge: handle.get_ra_challenge(),
                         leaderboard: handle.get_ra_leaderboard(),
@@ -1263,7 +1263,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                     &join_window,
                     handle.get_rom_dir(),
                     RASettings {
-                        enabled: false,
+                        enabled: handle.get_ra_enabled(),
                         hardcore: handle.get_ra_hardcore(),
                         challenge: handle.get_ra_challenge(),
                         leaderboard: handle.get_ra_leaderboard(),
