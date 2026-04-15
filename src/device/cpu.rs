@@ -227,11 +227,7 @@ pub fn init(device: &mut device::Device) {
     device.cpu.clock_rate = if !device.cpu.overclock {
         93750000
     } else {
-        ui::video::onscreen_message(
-            &device.ui,
-            "Overclocking enabled, setting clock rate to 125 MHz",
-            false,
-        );
+        ui::video::onscreen_message("Overclocking enabled, setting clock rate to 125 MHz", false);
         125000000
     };
 

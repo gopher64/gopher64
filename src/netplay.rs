@@ -135,7 +135,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> ui::input::Inpu
     let timeout = std::time::Instant::now() + std::time::Duration::from_secs(10);
     let mut request_timer = std::time::Instant::now() - std::time::Duration::from_millis(5);
     while input.is_none() {
-        process_incoming(netplay, &device.ui); // we execute process_incoming before request_input so that we send an accurate buffer count
+        process_incoming(netplay); // we execute process_incoming before request_input so that we send an accurate buffer count
         if std::time::Instant::now() > request_timer {
             // sends a request packet every 5ms
             request_input(netplay, channel);
@@ -146,7 +146,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> ui::input::Inpu
             .remove(&netplay.player_data[channel].count);
 
         if std::time::Instant::now() > timeout {
-            ui::video::onscreen_message(&device.ui, "Lost connection to netplay server", false);
+            ui::video::onscreen_message("Lost connection to netplay server", false);
             input = Some(InputEvent {
                 input: 0,
                 plugin: 0,
@@ -177,7 +177,7 @@ fn request_input(netplay: &Netplay, channel: usize) {
     netplay.udp_socket.send(&request).unwrap();
 }
 
-fn process_incoming(netplay: &mut Netplay, ui: &ui::Ui) {
+fn process_incoming(netplay: &mut Netplay) {
     let mut buf: [u8; 1024] = [0; 1024];
     while let Ok(_incoming) = netplay.udp_socket.recv(&mut buf) {
         match buf[0] {
@@ -191,13 +191,12 @@ fn process_incoming(netplay: &mut Netplay, ui: &ui::Ui) {
                 }
                 if current_status != netplay.status {
                     if ((current_status & 0x1) ^ (netplay.status & 0x1)) != 0 {
-                        ui::video::onscreen_message(ui, "Netplay desync detected", true);
+                        ui::video::onscreen_message("Netplay desync detected", true);
                     }
                     for dis in 1..5 {
                         if ((current_status & (0x1 << dis)) ^ (netplay.status & (0x1 << dis))) != 0
                         {
                             ui::video::onscreen_message(
-                                ui,
                                 &format!("Player {dis} disconnected"),
                                 false,
                             );

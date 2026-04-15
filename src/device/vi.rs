@@ -151,7 +151,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     if device.netplay.is_none() && paused {
         if retroachievements::get_hardcore() {
-            ui::video::onscreen_message(&device.ui, "Cannot pause in RA hardcore mode", false);
+            ui::video::onscreen_message("Cannot pause in RA hardcore mode", false);
         } else {
             ui::video::pause_loop(device.vi.frame_time);
         }
