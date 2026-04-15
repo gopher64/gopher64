@@ -2,6 +2,31 @@
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::{device, retroachievements, ui};
 
+const PAL_WIDESCREEN_WIDTH: i32 = 512;
+const PAL_STANDARD_WIDTH: i32 = 384;
+const PAL_HEIGHT: i32 = 288;
+const NTSC_WIDESCREEN_WIDTH: i32 = 426;
+const NTSC_STANDARD_WIDTH: i32 = 320;
+const NTSC_HEIGHT: i32 = 240;
+
+fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
+    GFX_INFO {
+        RDRAM: device.rdram.mem.as_mut_ptr(),
+        DMEM: device.rsp.mem.as_mut_ptr(),
+        RDRAM_SIZE: device.rdram.size,
+        DPC_CURRENT_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
+        DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
+        DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
+        DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
+        PAL: device.cart.pal,
+        widescreen: device.ui.config.video.widescreen,
+        fullscreen: device.ui.video.fullscreen,
+        integer_scaling: device.ui.config.video.integer_scaling,
+        upscale: device.ui.config.video.upscale,
+        crt: device.ui.config.video.crt,
+    }
+}
+
 pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
     ui::ttf_init();
@@ -25,18 +50,18 @@ pub fn init(device: &mut device::Device) {
     };
     if device.cart.pal {
         window_width = if device.ui.config.video.widescreen {
-            512 * scale
+            PAL_WIDESCREEN_WIDTH * scale
         } else {
-            384 * scale
+            PAL_STANDARD_WIDTH * scale
         };
-        window_height = 288 * scale;
+        window_height = PAL_HEIGHT * scale;
     } else {
         window_width = if device.ui.config.video.widescreen {
-            426 * scale
+            NTSC_WIDESCREEN_WIDTH * scale
         } else {
-            320 * scale
+            NTSC_STANDARD_WIDTH * scale
         };
-        window_height = 240 * scale;
+        window_height = NTSC_HEIGHT * scale;
     }
     device.ui.video.window = unsafe {
         sdl3_sys::video::SDL_CreateWindow(window_title.as_ptr(), window_width, window_height, flags)
@@ -64,21 +89,7 @@ pub fn init(device: &mut device::Device) {
         );
     }
 
-    let gfx_info = GFX_INFO {
-        RDRAM: device.rdram.mem.as_mut_ptr(),
-        DMEM: device.rsp.mem.as_mut_ptr(),
-        RDRAM_SIZE: device.rdram.size,
-        DPC_CURRENT_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
-        DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
-        DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
-        DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
-        PAL: device.cart.pal,
-        widescreen: device.ui.config.video.widescreen,
-        fullscreen: device.ui.video.fullscreen,
-        integer_scaling: device.ui.config.video.integer_scaling,
-        upscale: device.ui.config.video.upscale,
-        crt: device.ui.config.video.crt,
-    };
+    let gfx_info = build_gfx_info(device);
 
     unsafe {
         let font_bytes = include_bytes!("../../data/RobotoMono-Regular.ttf");
@@ -116,21 +127,7 @@ pub fn save_state(rdp_state: *mut u8) {
 }
 
 pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
-    let gfx_info = GFX_INFO {
-        RDRAM: device.rdram.mem.as_mut_ptr(),
-        DMEM: device.rsp.mem.as_mut_ptr(),
-        RDRAM_SIZE: device.rdram.size,
-        DPC_CURRENT_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
-        DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
-        DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
-        DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
-        PAL: device.cart.pal,
-        widescreen: device.ui.config.video.widescreen,
-        fullscreen: device.ui.video.fullscreen,
-        integer_scaling: device.ui.config.video.integer_scaling,
-        upscale: device.ui.config.video.upscale,
-        crt: device.ui.config.video.crt,
-    };
+    let gfx_info = build_gfx_info(device);
     unsafe {
         rdp_new_processor(gfx_info);
         rdp_load_state(rdp_state);
@@ -193,7 +190,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
             .storage
             .paths
             .savestate_file_path
-            .set_extension("state".to_owned() + callback.save_state_slot.to_string().as_str());
+            .set_extension(format!("state{}", callback.save_state_slot));
     }
     if callback.lower_volume {
         ui::audio::lower_audio_volume(&mut device.ui);
