@@ -241,7 +241,7 @@ static const char *get_leaderboard_title(const char *display) {
          j++) {
       // this looks like a mistake, but it is intentional.
       // Leaderboard trackers don't contain the title,
-      // but we take advantage of the fact that tracker_vlue and display point
+      // but we take advantage of the fact that tracker_value and display point
       // to the same char* to find a matching leaderboard.
       if (g_leaderboard_list->buckets[i].leaderboards[j]->tracker_value ==
           display) {
