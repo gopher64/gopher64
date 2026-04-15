@@ -1108,6 +1108,7 @@ fn setup_wait_window(
                                         player_number: player_number as u8,
                                     }),
                                     RASettings {
+                                        enabled: false,
                                         hardcore: false,
                                         challenge: false,
                                         leaderboard: false,
