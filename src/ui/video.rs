@@ -57,9 +57,10 @@ pub fn init(device: &mut device::Device) {
     }
     unsafe {
         sdl3_sys::everything::SDL_HideCursor();
+        let hint = std::ffi::CString::new("1").unwrap();
         sdl3_sys::everything::SDL_SetHint(
             sdl3_sys::everything::SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,
-            std::ffi::CString::new("1").unwrap().as_ptr(),
+            hint.as_ptr(),
         );
     }
 
@@ -218,10 +219,8 @@ pub fn check_framebuffers(address: u32, length: u32) {
 
 pub fn onscreen_message(_ui: &ui::Ui, message: &str, long_message: bool) {
     unsafe {
-        rdp_onscreen_message(
-            std::ffi::CString::new(message).unwrap().as_ptr(),
-            long_message,
-        )
+        let c_message = std::ffi::CString::new(message).unwrap();
+        rdp_onscreen_message(c_message.as_ptr(), long_message)
     };
 }
 
@@ -235,12 +234,8 @@ pub fn draw_text(
         let (mut w, mut h) = (0, 0);
         sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h);
 
-        let ttf_text = sdl3_ttf_sys::ttf::TTF_CreateText(
-            text_engine,
-            font,
-            std::ffi::CString::new(text).unwrap().as_ptr(),
-            0,
-        );
+        let c_text = std::ffi::CString::new(text).unwrap();
+        let ttf_text = sdl3_ttf_sys::ttf::TTF_CreateText(text_engine, font, c_text.as_ptr(), 0);
 
         sdl3_sys::everything::SDL_RenderClear(renderer);
         sdl3_ttf_sys::ttf::TTF_DrawRendererText(ttf_text, 20.0, h as f32 / 2.0);
