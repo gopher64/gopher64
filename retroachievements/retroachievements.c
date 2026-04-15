@@ -235,6 +235,9 @@ static void server_error(const rc_client_server_error_t *server_error) {
 }
 
 static const char *get_leaderboard_title(const char *display) {
+  if (g_leaderboard_list == NULL)
+    return NULL;
+
   for (uint32_t i = 0; i < g_leaderboard_list->num_buckets; i++) {
     for (uint32_t j = 0; j < g_leaderboard_list->buckets[i].num_leaderboards;
          j++) {
