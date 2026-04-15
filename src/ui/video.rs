@@ -6,7 +6,7 @@ pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
     ui::ttf_init();
 
-    let title = std::ffi::CString::new("gopher64").unwrap();
+    let window_title = std::ffi::CString::new("gopher64").unwrap();
 
     let mut flags = sdl3_sys::video::SDL_WINDOW_VULKAN
         | sdl3_sys::video::SDL_WINDOW_RESIZABLE
@@ -39,7 +39,7 @@ pub fn init(device: &mut device::Device) {
         window_height = 240 * scale;
     }
     device.ui.video.window = unsafe {
-        sdl3_sys::video::SDL_CreateWindow(title.as_ptr(), window_width, window_height, flags)
+        sdl3_sys::video::SDL_CreateWindow(window_title.as_ptr(), window_width, window_height, flags)
     };
     if device.ui.video.window.is_null() {
         panic!("Could not create window: {}", unsafe {

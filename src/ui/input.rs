@@ -42,7 +42,7 @@ pub struct InputData {
 }
 
 fn bound_axis(x: &mut f64, y: &mut f64) {
-    let radius = f64::sqrt(70.0 * 70.0 + 70.0 * 70.0); // this is roughly the maxium diagonal distance of the controller
+    let radius = f64::sqrt(70.0 * 70.0 + 70.0 * 70.0); // this is roughly the maximum diagonal distance of the controller
 
     // Calculate the distance from the origin (0, 0)
     let distance = f64::sqrt((*x) * (*x) + (*y) * (*y));
@@ -73,6 +73,10 @@ fn apply_deadzone(x: &mut f64, y: &mut f64, deadzone: i32) {
     *y = *y / distance * new_distance;
 }
 
+fn normalize_axis_position(axis_position: i16) -> f64 {
+    axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64
+}
+
 fn set_axis_from_joystick(
     profile: &ui::config::InputProfile,
     joystick: *mut sdl3_sys::joystick::SDL_Joystick,
@@ -84,7 +88,7 @@ fn set_axis_from_joystick(
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_LEFT].id)
         };
         if axis_position as isize * profile.joystick_axis[AXIS_LEFT].axis as isize > 0 {
-            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+            x = normalize_axis_position(axis_position);
         }
     }
     if profile.joystick_axis[AXIS_RIGHT].enabled {
@@ -92,7 +96,7 @@ fn set_axis_from_joystick(
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_RIGHT].id)
         };
         if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].axis as isize > 0 {
-            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+            x = normalize_axis_position(axis_position);
         }
     }
     if profile.joystick_axis[AXIS_DOWN].enabled {
@@ -100,7 +104,7 @@ fn set_axis_from_joystick(
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_DOWN].id)
         };
         if axis_position as isize * profile.joystick_axis[AXIS_DOWN].axis as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+            y = normalize_axis_position(axis_position).neg();
         }
     }
     if profile.joystick_axis[AXIS_UP].enabled {
@@ -108,7 +112,7 @@ fn set_axis_from_joystick(
             sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_UP].id)
         };
         if axis_position as isize * profile.joystick_axis[AXIS_UP].axis as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+            y = normalize_axis_position(axis_position).neg();
         }
     }
     (x, y)
@@ -172,7 +176,7 @@ fn set_axis_from_controller(
             )
         };
         if axis_position as isize * profile.controller_axis[AXIS_LEFT].axis as isize > 0 {
-            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+            x = normalize_axis_position(axis_position);
         }
     }
     if profile.controller_axis[AXIS_RIGHT].enabled {
@@ -183,7 +187,7 @@ fn set_axis_from_controller(
             )
         };
         if axis_position as isize * profile.controller_axis[AXIS_RIGHT].axis as isize > 0 {
-            x = axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64;
+            x = normalize_axis_position(axis_position);
         }
     }
     if profile.controller_axis[AXIS_DOWN].enabled {
@@ -194,7 +198,7 @@ fn set_axis_from_controller(
             )
         };
         if axis_position as isize * profile.controller_axis[AXIS_DOWN].axis as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+            y = normalize_axis_position(axis_position).neg();
         }
     }
     if profile.controller_axis[AXIS_UP].enabled {
@@ -205,7 +209,7 @@ fn set_axis_from_controller(
             )
         };
         if axis_position as isize * profile.controller_axis[AXIS_UP].axis as isize > 0 {
-            y = (axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64).neg();
+            y = normalize_axis_position(axis_position).neg();
         }
     }
     (x, y)
