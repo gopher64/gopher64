@@ -252,6 +252,7 @@ fn show_custom_url_dialog(weak: slint::Weak<NetplayCreate>, server_url: slint::S
 pub fn setup_create_window(
     create_window: &NetplayCreate,
     game_settings: GameSettings,
+    ra_settings: RASettings,
     rom_dir: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
@@ -307,6 +308,7 @@ pub fn setup_create_window(
                 let game_settings = game_settings.clone();
                 let weak = weak.clone();
                 let weak_app = weak_app.clone();
+                let ra_settings = ra_settings.clone();
                 tokio::spawn(async move {
                     let response = task.await;
                     weak_dialog
@@ -338,6 +340,7 @@ pub fn setup_create_window(
                             game_cheats.to_string(),
                             password.to_string(),
                             game_settings,
+                            ra_settings,
                             weak_app,
                             weak.clone(),
                         );
@@ -367,6 +370,7 @@ pub fn setup_create_window(
                     game_cheats.to_string(),
                     password.to_string(),
                     game_settings.clone(),
+                    ra_settings.clone(),
                     weak_app.clone(),
                     weak.clone(),
                 );
@@ -621,6 +625,7 @@ fn create_session(
     game_cheats: String,
     password: String,
     game_settings: GameSettings,
+    ra_settings: RASettings,
     weak_app: slint::Weak<AppWindow>,
     weak: slint::Weak<NetplayCreate>,
 ) {
@@ -715,6 +720,7 @@ fn create_session(
                                 cheats: serde_json::from_str(cheats).unwrap(),
                                 load_savestate_slot: None,
                             },
+                            ra_settings,
                             handle.get_peer_addr(),
                             weak_app,
                         );
@@ -753,6 +759,7 @@ fn join_session(
     game_hash: String,
     password: String,
     room_port: i32,
+    ra_settings: RASettings,
     weak_app: slint::Weak<AppWindow>,
     weak: slint::Weak<NetplayJoin>,
 ) {
@@ -836,6 +843,7 @@ fn join_session(
                                 cheats: serde_json::from_str(cheats).unwrap(),
                                 load_savestate_slot: None,
                             },
+                            ra_settings,
                             handle.get_peer_addr(),
                             weak_app,
                         );
@@ -876,6 +884,7 @@ fn setup_wait_window(
     player_name: slint::SharedString,
     port: i32,
     game_settings: GameSettings,
+    ra_settings: RASettings,
     peer_addr: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
 ) {
@@ -1107,12 +1116,7 @@ fn setup_wait_window(
                                         peer_addr: socket_addr,
                                         player_number: player_number as u8,
                                     }),
-                                    RASettings {
-                                        enabled: false,
-                                        hardcore: false,
-                                        challenge: false,
-                                        leaderboard: false,
-                                    },
+                                    ra_settings,
                                     weak_app,
                                 );
                             })
@@ -1155,6 +1159,7 @@ fn setup_wait_window(
 pub fn setup_join_window(
     join_window: &NetplayJoin,
     rom_dir: slint::SharedString,
+    ra_settings: RASettings,
     weak_app: slint::Weak<AppWindow>,
 ) {
     let (netplay_read_sender, netplay_read_receiver): (
@@ -1202,6 +1207,7 @@ pub fn setup_join_window(
                 game_hash.to_string(),
                 password.to_string(),
                 room_port,
+                ra_settings.clone(),
                 weak_app.clone(),
                 weak.clone(),
             );
@@ -1230,6 +1236,12 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                         cheats: std::collections::HashMap::new(), // not used here
                         load_savestate_slot: None,
                     },
+                    RASettings {
+                        enabled: false,
+                        hardcore: handle.get_ra_hardcore(),
+                        challenge: handle.get_ra_challenge(),
+                        leaderboard: handle.get_ra_leaderboard(),
+                    },
                     handle.get_rom_dir(),
                     weak_app,
                 );
@@ -1247,7 +1259,17 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
             .upgrade_in_event_loop(move |handle| {
                 let join_window = NetplayJoin::new().unwrap();
                 save_settings(&handle, &controller_paths);
-                setup_join_window(&join_window, handle.get_rom_dir(), weak_app);
+                setup_join_window(
+                    &join_window,
+                    handle.get_rom_dir(),
+                    RASettings {
+                        enabled: false,
+                        hardcore: handle.get_ra_hardcore(),
+                        challenge: handle.get_ra_challenge(),
+                        leaderboard: handle.get_ra_leaderboard(),
+                    },
+                    weak_app,
+                );
             })
             .unwrap();
     });
