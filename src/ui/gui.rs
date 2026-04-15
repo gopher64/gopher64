@@ -361,7 +361,8 @@ pub fn run_rom(
                 "--cheats",
                 cheats_path.to_str().unwrap(),
             ]);
-        } else if ra_settings.enabled {
+        }
+        if ra_settings.enabled {
             command.args([
                 "--ra-username",
                 retroachievements::get_username(),
