@@ -91,7 +91,6 @@ pub fn create_savestate(device: &device::Device) {
         tokio::fs::write(save_path, compressed_file).await.unwrap();
     });
     ui::video::onscreen_message(
-        &device.ui,
         &format!(
             "Savestate created in slot {}",
             device.ui.storage.save_state_slot
@@ -102,11 +101,7 @@ pub fn create_savestate(device: &device::Device) {
 
 pub fn load_savestate(device: &mut device::Device) {
     if retroachievements::get_hardcore() {
-        ui::video::onscreen_message(
-            &device.ui,
-            "Cannot load savestate in RA hardcore mode",
-            false,
-        );
+        ui::video::onscreen_message("Cannot load savestate in RA hardcore mode", false);
         return;
     }
     let savestate = std::fs::read(&device.ui.storage.paths.savestate_file_path);
@@ -217,7 +212,6 @@ pub fn load_savestate(device: &mut device::Device) {
             }
 
             ui::video::onscreen_message(
-                &device.ui,
                 &format!(
                     "Savestate loaded from slot {}",
                     device.ui.storage.save_state_slot
@@ -226,7 +220,6 @@ pub fn load_savestate(device: &mut device::Device) {
             );
         } else {
             ui::video::onscreen_message(
-                &device.ui,
                 &format!(
                     "Failed to load savestate from slot {}",
                     device.ui.storage.save_state_slot
@@ -236,7 +229,6 @@ pub fn load_savestate(device: &mut device::Device) {
         }
     } else {
         ui::video::onscreen_message(
-            &device.ui,
             &format!(
                 "Could not find savestate in slot {}",
                 device.ui.storage.save_state_slot
