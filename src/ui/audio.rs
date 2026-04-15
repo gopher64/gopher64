@@ -53,7 +53,11 @@ pub fn lower_audio_volume(ui: &mut ui::Ui) {
         }
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
     }
-    ui::video::onscreen_message(ui, &format!("Audio volume: {:.0}%", ui.audio.gain * 100.0));
+    ui::video::onscreen_message(
+        ui,
+        &format!("Audio volume: {:.0}%", ui.audio.gain * 100.0),
+        false,
+    );
 }
 
 pub fn raise_audio_volume(ui: &mut ui::Ui) {
@@ -64,7 +68,11 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
         }
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
     }
-    ui::video::onscreen_message(ui, &format!("Audio volume: {:.0}%", ui.audio.gain * 100.0));
+    ui::video::onscreen_message(
+        ui,
+        &format!("Audio volume: {:.0}%", ui.audio.gain * 100.0),
+        false,
+    );
 }
 
 fn adjust_audio_frequency(device: &device::Device, frequency: f32) {

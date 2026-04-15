@@ -3,6 +3,17 @@ include!(concat!(env!("OUT_DIR"), "/retroachievements_bindings.rs"));
 use crate::ui;
 use slint::ComponentHandle;
 
+static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
+    reqwest::Client::builder()
+        .user_agent(format!(
+            "{}/{}",
+            env!("CARGO_PKG_NAME"),
+            env!("GIT_DESCRIBE")
+        ))
+        .build()
+        .unwrap()
+});
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct RAConfig {
     pub username: String,
@@ -64,33 +75,24 @@ pub extern "C" fn store_retroachievements_credentials(
 pub extern "C" fn rust_server_call(
     c_url: *const std::ffi::c_char,
     c_post_data: *const std::ffi::c_char,
+    c_content_type: *const std::ffi::c_char,
     c_callback: *mut std::ffi::c_void,
     c_callback_data: *mut std::ffi::c_void,
 ) {
-    let url = unsafe { std::ffi::CStr::from_ptr(c_url).to_str().unwrap() };
-    let client = reqwest::Client::builder()
-        .user_agent(format!(
-            "{}/{}",
-            env!("CARGO_PKG_NAME"),
-            env!("GIT_DESCRIBE")
-        ))
-        .build()
-        .unwrap();
+    let url = unsafe { std::ffi::CStr::from_ptr(c_url).to_str().unwrap() }.to_string();
+
     let task = if !c_post_data.is_null() {
-        let post_data = unsafe { std::ffi::CStr::from_ptr(c_post_data).to_str().unwrap() };
-        let query_string =
-            reqwest::Url::parse(&format!("http://nothing.com?{}", post_data)).unwrap();
-        client
+        let post_data =
+            unsafe { std::ffi::CStr::from_ptr(c_post_data).to_str().unwrap() }.to_string();
+        let content_type =
+            unsafe { std::ffi::CStr::from_ptr(c_content_type).to_str().unwrap() }.to_string();
+        WEB_CLIENT
             .post(url)
-            .query(
-                &query_string
-                    .query_pairs()
-                    .into_owned()
-                    .collect::<Vec<(String, String)>>(),
-            )
+            .body(post_data)
+            .header(reqwest::header::CONTENT_TYPE, content_type)
             .send()
     } else {
-        client.get(url).send()
+        WEB_CLIENT.get(url).send()
     };
     let callback = c_callback.addr();
     let callback_data = c_callback_data.addr();

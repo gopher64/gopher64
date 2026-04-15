@@ -166,7 +166,7 @@ pub fn reset_event(device: &mut device::Device) {
 
     device::pif::reset_pif(device, true);
 
-    ui::video::onscreen_message(&device.ui, "Game reset");
+    ui::video::onscreen_message(&device.ui, "Game reset", false);
 }
 
 fn exception_general(device: &mut device::Device, vector_offset: u32) {

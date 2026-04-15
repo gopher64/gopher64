@@ -44,7 +44,7 @@ void rdp_update_screen();
 void rdp_render_frame();
 CALL_BACK rdp_check_callback();
 uint64_t rdp_process_commands();
-void rdp_onscreen_message(const char *_message);
+void rdp_onscreen_message(const char *message, bool long_message);
 void rdp_new_processor(GFX_INFO _gfx_info);
 void rdp_check_framebuffers(uint32_t address, uint32_t length);
 size_t rdp_state_size();

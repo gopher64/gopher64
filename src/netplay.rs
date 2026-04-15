@@ -146,7 +146,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> ui::input::Inpu
             .remove(&netplay.player_data[channel].count);
 
         if std::time::Instant::now() > timeout {
-            ui::video::onscreen_message(&device.ui, "Lost connection to netplay server");
+            ui::video::onscreen_message(&device.ui, "Lost connection to netplay server", false);
             input = Some(InputEvent {
                 input: 0,
                 plugin: 0,
@@ -191,13 +191,16 @@ fn process_incoming(netplay: &mut Netplay, ui: &ui::Ui) {
                 }
                 if current_status != netplay.status {
                     if ((current_status & 0x1) ^ (netplay.status & 0x1)) != 0 {
-                        ui::video::onscreen_message(ui, "Netplay desync detected");
-                        ui::video::onscreen_message(ui, "Netplay desync detected"); // queue this message twice to ensure they see it
+                        ui::video::onscreen_message(ui, "Netplay desync detected", true);
                     }
                     for dis in 1..5 {
                         if ((current_status & (0x1 << dis)) ^ (netplay.status & (0x1 << dis))) != 0
                         {
-                            ui::video::onscreen_message(ui, &format!("Player {dis} disconnected"));
+                            ui::video::onscreen_message(
+                                ui,
+                                &format!("Player {dis} disconnected"),
+                                false,
+                            );
                         }
                     }
                     netplay.status = current_status;

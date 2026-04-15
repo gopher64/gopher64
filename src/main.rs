@@ -207,6 +207,8 @@ async fn main() -> std::io::Result<()> {
                     retroachievements::login_user(username, password, tx);
                 } else if let Some(token) = args.ra_token {
                     retroachievements::login_token_user(username, token, tx);
+                } else {
+                    tx.send(false).unwrap();
                 }
 
                 rx.await.unwrap();

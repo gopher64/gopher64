@@ -150,7 +150,7 @@ jobs:
       matrix:
         include:
           - target: aarch64-apple-darwin
-            arch: mac-aarch64
+            arch: macos-aarch64
             llvm: ARM64
     steps:
       - uses: actions/checkout@v6

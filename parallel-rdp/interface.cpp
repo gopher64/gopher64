@@ -1,4 +1,5 @@
 #include "interface.hpp"
+#include "../retroachievements/retroachievements.h"
 #include "rdp_device.hpp"
 #include "spirv.hpp"
 #include "spirv_crt.hpp"
@@ -155,8 +156,17 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     case SDL_SCANCODE_F7:
       callback.load_state = true;
       break;
+    case SDL_SCANCODE_F8:
+      if (messages.empty())
+        SDL_RunOnMainThread(ra_display_inprogress_achievements, nullptr, true);
+      break;
     case SDL_SCANCODE_F9:
       display_challenge_indicator = !display_challenge_indicator;
+      rdp_onscreen_message(
+          std::format("Challenge indicators: {}",
+                      display_challenge_indicator ? "ON" : "OFF")
+              .c_str(),
+          false);
       break;
     case SDL_SCANCODE_F12:
       callback.reset_game = true;
@@ -566,10 +576,16 @@ void rdp_load_state(const uint8_t *state) {
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 
-void rdp_onscreen_message(const char *message) {
+static void push_onscreen_message(void *message) {
   if (messages.empty())
     message_timer = SDL_GetTicks() + MESSAGE_TIME;
-  messages.push({std::string(message), Vulkan::ImageHandle()});
+  messages.push({std::string((const char *)message), Vulkan::ImageHandle()});
+}
+
+void rdp_onscreen_message(const char *message, bool long_message) {
+  SDL_RunOnMainThread(push_onscreen_message, (void *)message, true);
+  if (long_message)
+    SDL_RunOnMainThread(push_onscreen_message, (void *)message, true);
 }
 
 uint32_t pixel_size(uint32_t pixel_type, uint32_t area) {
