@@ -293,22 +293,18 @@ pub fn get_hardcore() -> bool {
 pub fn login_user(username: String, password: String, tx: tokio::sync::oneshot::Sender<bool>) {
     unsafe {
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
-        ra_login_user(
-            std::ffi::CString::new(username).unwrap().as_ptr(),
-            std::ffi::CString::new(password).unwrap().as_ptr(),
-            tx_ptr,
-        )
+        let c_username = std::ffi::CString::new(username).unwrap();
+        let c_password = std::ffi::CString::new(password).unwrap();
+        ra_login_user(c_username.as_ptr(), c_password.as_ptr(), tx_ptr)
     };
 }
 
 pub fn login_token_user(username: String, token: String, tx: tokio::sync::oneshot::Sender<bool>) {
     unsafe {
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
-        ra_login_token_user(
-            std::ffi::CString::new(username).unwrap().as_ptr(),
-            std::ffi::CString::new(token).unwrap().as_ptr(),
-            tx_ptr,
-        )
+        let c_username = std::ffi::CString::new(username).unwrap();
+        let c_token = std::ffi::CString::new(token).unwrap();
+        ra_login_token_user(c_username.as_ptr(), c_token.as_ptr(), tx_ptr)
     };
 }
 
