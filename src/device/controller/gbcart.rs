@@ -110,7 +110,7 @@ fn write_mbc3(
     if address < 0x2000 {
         cart.ram_enabled = value & 0xf == 0xa;
     } else if address < 0x4000 {
-        let bank = value & if cart.ram.len() > 32768 { 0xff } else { 0x7f };
+        let bank = value & if cart.rom.len() > 2097152 { 0xff } else { 0x7f };
         cart.rom_bank = bank as u32;
         if cart.rom_bank == 0 {
             cart.rom_bank = 1;
@@ -182,7 +182,7 @@ fn read_mbc3(
             return;
         }
         if cart.ram_bank < 0x8 {
-            if cart.ram_bank > 3 {
+            if cart.ram_bank > 3 && cart.ram.len() <= 32768 {
                 for i in 0..size {
                     pif_ram[data + i] = 0;
                 }
