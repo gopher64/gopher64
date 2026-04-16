@@ -3,7 +3,7 @@ fn main() {
     println!("cargo::rerun-if-changed=retroachievements");
     println!("cargo::rerun-if-changed=src/compat");
 
-    let slint_config = slint_build::CompilerConfiguration::new().with_style("cosmic".into());
+    let slint_config = slint_build::CompilerConfiguration::new();
     slint_build::compile_with_config("src/ui/gui/appwindow.slint", slint_config).unwrap();
 
     let mut simd_build = cc::Build::new();
