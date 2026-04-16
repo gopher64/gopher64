@@ -182,16 +182,13 @@ fn read_mbc3(
             return;
         }
         if cart.ram_bank < 0x8 {
-            if cart.ram_bank > 3 && cart.ram.len() <= 32768 {
-                for i in 0..size {
-                    pif_ram[data + i] = 0;
-                }
-            } else {
-                let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
-                pif_ram[data..data + size].copy_from_slice(
-                    &cart.ram[banked_address as usize..banked_address as usize + size],
-                );
-            }
+            let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
+            pif_ram[data..data + size].copy_from_slice(
+                &cart
+                    .ram
+                    .get(banked_address as usize..banked_address as usize + size)
+                    .unwrap_or(&vec![0; size]),
+            );
         } else {
             let latch = match cart.ram_bank {
                 0x8 => cart.latch_second,
