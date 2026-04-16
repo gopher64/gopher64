@@ -184,8 +184,7 @@ fn read_mbc3(
         if cart.ram_bank < 0x8 {
             let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
             pif_ram[data..data + size].copy_from_slice(
-                &cart
-                    .ram
+                cart.ram
                     .get(banked_address as usize..banked_address as usize + size)
                     .unwrap_or(&vec![0; size]),
             );
