@@ -135,13 +135,13 @@ pub fn get_game_crc(rom: &[u8]) -> String {
 }
 
 pub fn get_game_name(rom: &[u8]) -> String {
-    let mut game_name = String::new();
     let header_value = std::str::from_utf8(&rom[0x20..0x34]);
     if let Ok(header_value) = header_value {
         let re = regex::Regex::new(r"[^a-zA-Z0-9_ -]").unwrap();
-        game_name = re.replace_all(header_value, "").trim().replace('\0', "");
+        re.replace_all(header_value, "").trim().replace('\0', "")
+    } else {
+        String::new()
     }
-    game_name
 }
 
 pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
