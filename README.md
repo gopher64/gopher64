@@ -1,4 +1,14 @@
 # gopher64
+Gopher64 is a cross-platform N64 emulator. Some notable features:
+* Netplay
+* Homebrew support
+* Upscaling
+* CRT shader
+* Emulate CPU overclocking
+* Cheats
+* Savestates
+* RetroAchievements
+
 ## download
 
 Windows: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-windows-x86_64.exe
