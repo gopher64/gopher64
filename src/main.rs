@@ -184,8 +184,8 @@ async fn main() -> std::io::Result<()> {
         {
             device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
         } else {
-            if let Some(gb_roms) = args.gb_rom
-                && let Some(gb_rams) = args.gb_ram
+            if let Some(gb_roms) = &args.gb_rom
+                && let Some(gb_rams) = &args.gb_ram
             {
                 for i in 0..4 {
                     if let Some(gb_rom) = gb_roms.get(i)
@@ -229,6 +229,12 @@ async fn main() -> std::io::Result<()> {
 
         if device.netplay.is_some() {
             netplay::close(&mut device);
+        } else if let Some(gb_rams) = &args.gb_ram {
+            for i in 0..4 {
+                if let Some(gb_ram) = gb_rams.get(i) {
+                    std::fs::write(gb_ram, &device.transferpaks[i].cart.ram).unwrap();
+                }
+            }
         }
         if let Some(shutdown_tx) = &shutdown_tx {
             ui::usb::close(shutdown_tx);
