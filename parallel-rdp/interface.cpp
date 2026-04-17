@@ -254,7 +254,8 @@ static ImageHandle create_message_image(Vulkan::Device &device, int width,
 }
 
 void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
-              size_t font_size, uint32_t save_state_slot) {
+              size_t font_size, uint32_t save_state_slot,
+              bool netplay_enabled) {
   memset(&rdp_device, 0, sizeof(RDP_DEVICE));
 
   window = (SDL_Window *)_window;
@@ -275,13 +276,17 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
     fragment_size = sizeof(plain_fragment_spirv);
   }
 
-  bool window_vsync = 0;
   wsi = new WSI;
   wsi_platform = new SDL_WSIPlatform;
   wsi_platform->set_window(window);
   wsi->set_platform(wsi_platform);
-  wsi->set_present_mode(window_vsync ? PresentMode::SyncToVBlank
-                                     : PresentMode::UnlockedMaybeTear);
+  if (netplay_enabled) {
+    // VK_PRESENT_MODE_MAILBOX_KHR, fallback to VK_PRESENT_MODE_IMMEDIATE_KHR
+    wsi->set_present_mode(PresentMode::UnlockedMaybeTear);
+  } else {
+    // VK_PRESENT_MODE_MAILBOX_KHR, fallback to VK_PRESENT_MODE_FIFO_KHR
+    wsi->set_present_mode(PresentMode::UnlockedNoTearing);
+  }
   wsi->set_backbuffer_srgb(false);
   Context::SystemHandles handles = {};
   if (!::Vulkan::Context::init_loader(
