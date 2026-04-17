@@ -232,7 +232,9 @@ async fn main() -> std::io::Result<()> {
         } else if let Some(gb_rams) = &args.gb_ram {
             for i in 0..4 {
                 if let Some(gb_ram) = gb_rams.get(i) {
-                    std::fs::write(gb_ram, &device.transferpaks[i].cart.ram).unwrap();
+                    tokio::fs::write(gb_ram, &device.transferpaks[i].cart.ram)
+                        .await
+                        .unwrap();
                 }
             }
         }
