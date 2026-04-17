@@ -99,6 +99,7 @@ pub fn init(device: &mut device::Device) {
             font_bytes.as_ptr() as *const std::ffi::c_void,
             font_bytes.len(),
             device.ui.storage.save_state_slot,
+            device.netplay.is_some(),
         )
     }
 }
