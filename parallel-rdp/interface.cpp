@@ -280,16 +280,17 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   wsi_platform = new SDL_WSIPlatform;
   wsi_platform->set_window(window);
   wsi->set_platform(wsi_platform);
-  if (netplay_enabled)
+  if (netplay_enabled) {
     wsi->set_present_mode(
-        PresentMode::UnlockedMaybeTear); // VK_PRESENT_MODE_MAILBOX_KHR with
-                                         // fallback to
-                                         // VK_PRESENT_MODE_IMMEDIATE_KHR.
-  else
+        // VK_PRESENT_MODE_MAILBOX_KHR with a fallback to
+        // VK_PRESENT_MODE_IMMEDIATE_KHR
+        PresentMode::UnlockedMaybeTear);
+  } else {
     wsi->set_present_mode(
-        PresentMode::UnlockedNoTearing); // VK_PRESENT_MODE_MAILBOX_KHR with
-                                         // fallback to
-                                         // VK_PRESENT_MODE_FIFO_KHR.
+        // VK_PRESENT_MODE_MAILBOX_KHR with a fallback to
+        // VK_PRESENT_MODE_FIFO_KHR
+        PresentMode::UnlockedNoTearing);
+  }
   wsi->set_backbuffer_srgb(false);
   Context::SystemHandles handles = {};
   if (!::Vulkan::Context::init_loader(
