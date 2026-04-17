@@ -85,7 +85,7 @@ pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8], size:
     request.extend_from_slice(&(size as u32).to_be_bytes());
 
     if size > 0 {
-        request.extend(save_data.to_owned());
+        request.extend_from_slice(save_data);
     }
     netplay.tcp_stream.write_all(&request).unwrap();
 }

@@ -62,11 +62,10 @@ fn main() {
         .include("parallel-rdp/parallel-rdp-standalone/vulkan-headers/include")
         .include("parallel-rdp/parallel-rdp-standalone/util")
         .include(
-            std::path::PathBuf::from(std::env::var("DEP_SDL3_OUT_DIR").to_owned().unwrap())
-                .join("include"),
+            std::path::PathBuf::from(std::env::var("DEP_SDL3_OUT_DIR").unwrap()).join("include"),
         )
         .include(
-            std::path::PathBuf::from(std::env::var("DEP_SDL3_TTF_OUT_DIR").to_owned().unwrap())
+            std::path::PathBuf::from(std::env::var("DEP_SDL3_TTF_OUT_DIR").unwrap())
                 .join("include"),
         );
 
