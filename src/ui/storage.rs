@@ -135,7 +135,7 @@ pub fn get_game_crc(rom: &[u8]) -> String {
 }
 
 pub fn get_game_name(rom: &[u8]) -> String {
-    let mut game_name = "".to_owned();
+    let mut game_name = String::new();
     let header_value = std::str::from_utf8(&rom[0x20..0x34]);
     if let Ok(header_value) = header_value {
         let re = regex::Regex::new(r"[^a-zA-Z0-9_ -]").unwrap();
@@ -163,49 +163,46 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
     ui.storage
         .paths
         .eep_file_path
-        .push(prefix.to_owned() + "-" + &ui.game_hash + ".eep");
+        .push(format!("{}-{}.eep", prefix, ui.game_hash));
 
     ui.storage.paths.sra_file_path.clone_from(&saves_path);
     ui.storage
         .paths
         .sra_file_path
-        .push(prefix.to_owned() + "-" + &ui.game_hash + ".sra");
+        .push(format!("{}-{}.sra", prefix, ui.game_hash));
 
     ui.storage.paths.fla_file_path.clone_from(&saves_path);
     ui.storage
         .paths
         .fla_file_path
-        .push(prefix.to_owned() + "-" + &ui.game_hash + ".fla");
+        .push(format!("{}-{}.fla", prefix, ui.game_hash));
 
     ui.storage.paths.pak_file_path.clone_from(&saves_path);
     ui.storage
         .paths
         .pak_file_path
-        .push(prefix.to_owned() + "-" + &ui.game_hash + ".mpk");
+        .push(format!("{}-{}.mpk", prefix, ui.game_hash));
 
     ui.storage.paths.sdcard_file_path.clone_from(&saves_path);
     ui.storage
         .paths
         .sdcard_file_path
-        .push(prefix.to_owned() + "-" + &ui.game_hash + ".img");
+        .push(format!("{}-{}.img", prefix, ui.game_hash));
 
     ui.storage.paths.romsave_file_path.clone_from(&saves_path);
     ui.storage
         .paths
         .romsave_file_path
-        .push(prefix.to_owned() + "-" + &ui.game_hash + ".romsave");
+        .push(format!("{}-{}.romsave", prefix, ui.game_hash));
 
     ui.storage
         .paths
         .savestate_file_path
         .clone_from(&states_path);
-    ui.storage.paths.savestate_file_path.push(
-        prefix.to_owned()
-            + "-"
-            + &ui.game_hash
-            + ".state"
-            + ui.storage.save_state_slot.to_string().as_str(),
-    );
+    ui.storage.paths.savestate_file_path.push(format!(
+        "{}-{}.state{}",
+        prefix, ui.game_hash, ui.storage.save_state_slot
+    ));
 }
 
 pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {

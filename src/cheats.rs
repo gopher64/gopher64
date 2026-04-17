@@ -53,7 +53,7 @@ pub fn init(
             for code in cheat_data.data.iter() {
                 let mut result = code.clone();
                 if let Some(option_value) = option_value.as_ref() {
-                    result = re.replace_all(code, option_value).into_owned();
+                    result = re.replace_all(code, option_value).to_string();
                 }
                 let mut split = result.split_whitespace();
                 let first_part = u32::from_str_radix(split.next().unwrap(), 16).unwrap();

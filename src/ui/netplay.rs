@@ -1047,7 +1047,7 @@ fn setup_wait_window(
                             let re = regex::Regex::new(r"<[^>]*>").unwrap();
                             let motd = re
                                 .replace_all(response.message.unwrap().as_str(), "")
-                                .into_owned();
+                                .to_string();
                             handle.set_motd(motd.into());
                         })
                         .unwrap();
