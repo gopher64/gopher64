@@ -50,6 +50,7 @@ void rdp_check_framebuffers(uint32_t address, uint32_t length);
 size_t rdp_state_size();
 void rdp_save_state(uint8_t *state);
 void rdp_load_state(const uint8_t *state);
+void rdp_set_fps(uint32_t fps, uint32_t vis);
 
 void achievement_challenge_indicator_add(const char *achievement_title);
 void achievement_challenge_indicator_remove(const char *achievement_title);

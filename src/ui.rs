@@ -36,6 +36,10 @@ pub struct Storage {
 pub struct Video {
     pub window: *mut sdl3_sys::video::SDL_Window,
     pub fullscreen: bool,
+    pub fps_tx: tokio::sync::mpsc::Sender<bool>,
+    pub fps_rx: Option<tokio::sync::mpsc::Receiver<bool>>,
+    pub vis_tx: tokio::sync::mpsc::Sender<bool>,
+    pub vis_rx: Option<tokio::sync::mpsc::Receiver<bool>>,
 }
 
 pub struct Usb {
@@ -113,6 +117,8 @@ impl Ui {
     fn construct_ui(joysticks: Vec<sdl3_sys::everything::SDL_JoystickID>, with_sdl: bool) -> Ui {
         let dirs = get_dirs();
 
+        let (fps_tx, fps_rx) = tokio::sync::mpsc::channel(1000);
+        let (vis_tx, vis_rx) = tokio::sync::mpsc::channel(1000);
         Ui {
             input: Input {
                 controllers: [
@@ -190,6 +196,10 @@ impl Ui {
             video: Video {
                 window: std::ptr::null_mut(),
                 fullscreen: false,
+                fps_tx,
+                fps_rx: Some(fps_rx),
+                vis_tx,
+                vis_rx: Some(vis_rx),
             },
             usb: Usb {
                 usb_tx: None,
