@@ -19,6 +19,7 @@ export global ControllerData {
 
 export component ControllerConfig inherits Page {
     callback input_profile_button_clicked;
+    callback transferpak_toggled(int,bool);
     title: @tr("Controller Configuration");
 
     VerticalBox {
@@ -83,6 +84,7 @@ export component ControllerConfig inherits Page {
                         checked: ControllerData.transferpak[player];
                         toggled => {
                             ControllerData.transferpak[player] = self.checked;
+                            transferpak_toggled(player,self.checked);
                         }
                     }
                 }

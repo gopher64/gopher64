@@ -242,6 +242,32 @@ fn controller_window(
         });
         dialog.show().unwrap();
     });
+    app.on_transferpak_toggled(move |player, enabled| {
+        if enabled {
+            let select_gb_rom = rfd::AsyncFileDialog::new()
+                .set_title(format!("GB ROM P{}", player + 1))
+                .add_filter("GB ROM files", &["gb", "gbc", "GB", "GBC"])
+                .pick_file();
+            let select_gb_ram = rfd::AsyncFileDialog::new()
+                .set_title(format!("GB RAM P{}", player + 1))
+                .add_filter("GB RAM files", &["sav", "ram", "srm", "SAV", "RAM", "SRM"])
+                .pick_file();
+            tokio::spawn(async move {
+                let mut config = ui::config::Config::new();
+                if let (Some(gb_rom), Some(gb_ram)) = (select_gb_rom.await, select_gb_ram.await) {
+                    config.input.gb_rom_path[player as usize] = Some(gb_rom.path().to_path_buf());
+                    config.input.gb_ram_path[player as usize] = Some(gb_ram.path().to_path_buf());
+                } else {
+                    config.input.gb_rom_path[player as usize] = None;
+                    config.input.gb_ram_path[player as usize] = None;
+                }
+            });
+        } else {
+            let mut config = ui::config::Config::new();
+            config.input.gb_rom_path[player as usize] = None;
+            config.input.gb_ram_path[player as usize] = None;
+        }
+    });
 }
 
 pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {

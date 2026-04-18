@@ -28,6 +28,7 @@ export component AppWindow inherits Window {
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
     callback input_profile_button_clicked;
+    callback transferpak_toggled(int,bool);
     callback create_session_button_clicked;
     callback join_session_button_clicked;
     callback netplay_discord_button_clicked;
@@ -105,6 +106,9 @@ export component AppWindow inherits Window {
         if(side-bar.current-item == 1): ControllerConfig {
             input_profile_button_clicked => {
                 input_profile_button_clicked();
+            }
+            transferpak_toggled(player,enabled) => {
+                transferpak_toggled(player,enabled);
             }
         }
         if(side-bar.current-item == 2): Netplay {
