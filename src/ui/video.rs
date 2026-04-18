@@ -102,6 +102,31 @@ pub fn init(device: &mut device::Device) {
             device.netplay.is_some(),
         )
     }
+
+    let mut fps_rx = device.ui.video.fps_rx.take().unwrap();
+    let mut vis_rx = device.ui.video.vis_rx.take().unwrap();
+    tokio::spawn(async move {
+        loop {
+            let mut fps: u32 = 0;
+            let mut vis: u32 = 0;
+            loop {
+                match fps_rx.try_recv() {
+                    Ok(_fps_update) => fps += 1,
+                    Err(tokio::sync::mpsc::error::TryRecvError::Empty) => break,
+                    Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => return,
+                }
+            }
+            loop {
+                match vis_rx.try_recv() {
+                    Ok(_vis_update) => vis += 1,
+                    Err(tokio::sync::mpsc::error::TryRecvError::Empty) => break,
+                    Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => return,
+                }
+            }
+            unsafe { rdp_set_fps(fps, vis) };
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        }
+    });
 }
 
 pub fn close(ui: &ui::Ui) {

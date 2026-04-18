@@ -198,6 +198,7 @@ fn main() {
         .allowlist_function("rdp_state_size")
         .allowlist_function("rdp_save_state")
         .allowlist_function("rdp_load_state")
+        .allowlist_function("rdp_set_fps")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");

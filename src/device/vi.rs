@@ -27,8 +27,6 @@ pub struct Vi {
     pub count_per_scanline: u64,
     pub enable_speed_limiter: bool,
     pub vi_counter: u64,
-    pub last_origin: u32,
-    pub internal_frame_counter: u64,
     pub min_wait_time: std::time::Duration,
     pub frame_time: f64,
     pub limit_freq: u64,
@@ -110,10 +108,10 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             }
         }
         VI_ORIGIN_REG => {
+            let current_origin = device.vi.regs[reg as usize];
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-            if device.vi.regs[reg as usize] != device.vi.last_origin {
-                device.vi.last_origin = device.vi.regs[reg as usize];
-                device.vi.internal_frame_counter += 1;
+            if current_origin != device.vi.regs[reg as usize] {
+                device.ui.video.fps_tx.try_send(true).unwrap();
             }
         }
         _ => {
@@ -129,6 +127,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     }
 
     ui::video::render_frame();
+    device.ui.video.vis_tx.try_send(true).unwrap();
 
     retroachievements::do_frame();
 
@@ -158,14 +157,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     }
 
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
-
-    /*
-    let vis = if device.cart.pal { 50 } else { 60 };
-    if device.vi.vi_counter % vis == 0 {
-        println!("FPS: {}", device.vi.internal_frame_counter);
-        device.vi.internal_frame_counter = 0;
-    }
-    */
 
     /* toggle vi field if in interlaced mode */
     device.vi.field ^= (device.vi.regs[VI_STATUS_REG as usize] >> 6) & 0x1;

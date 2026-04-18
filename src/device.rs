@@ -482,8 +482,6 @@ impl Device {
                 enable_speed_limiter: true,
                 next_pace_deadline: None,
                 vi_counter: 0,
-                last_origin: 0,
-                internal_frame_counter: 0,
                 min_wait_time: std::time::Duration::from_secs(1),
                 frame_time: 0.0,
                 limit_freq: 2,

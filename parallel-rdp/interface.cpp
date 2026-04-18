@@ -76,6 +76,11 @@ typedef struct {
 } RDP_DEVICE;
 
 typedef struct {
+  uint32_t fps;
+  uint32_t vis;
+} FPS_DATA;
+
+typedef struct {
   std::string message;
   Vulkan::ImageHandle image;
 } Message;
@@ -820,6 +825,16 @@ uint64_t rdp_process_commands() {
   *gfx_info.DPC_CURRENT_REG = *gfx_info.DPC_END_REG;
 
   return interrupt_timer;
+}
+
+void rdp_set_fps_callback(void *userdata) {
+  FPS_DATA *data = (FPS_DATA *)userdata;
+  printf("FPS: %u VI/S: %u\n", data->fps, data->vis);
+}
+
+void rdp_set_fps(uint32_t fps, uint32_t vis) {
+  FPS_DATA data = {fps, vis};
+  SDL_RunOnMainThread(rdp_set_fps_callback, &data, true);
 }
 
 static void update_challenge_indicator() {
