@@ -170,6 +170,22 @@ fn controller_window(
         std::rc::Rc::new(slint::VecModel::from(config.input.transfer_pak.to_vec()));
     app.set_transferpak(slint::ModelRc::from(transferpak_enabled_model));
 
+    let gb_rom_paths = slint::VecModel::default();
+    for gb_rom_path in config.input.gb_rom_path.iter() {
+        gb_rom_paths.push(gb_rom_path.into());
+    }
+    let gb_rom_path_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+        std::rc::Rc::new(gb_rom_paths);
+    app.set_gb_rom_paths(slint::ModelRc::from(gb_rom_path_model));
+
+    let gb_ram_paths = slint::VecModel::default();
+    for gb_ram_path in config.input.gb_ram_path.iter() {
+        gb_ram_paths.push(gb_ram_path.into());
+    }
+    let gb_ram_path_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+        std::rc::Rc::new(gb_ram_paths);
+    app.set_gb_ram_paths(slint::ModelRc::from(gb_ram_path_model));
+
     update_input_profiles(&app.as_weak(), config);
 
     let controllers = slint::VecModel::default();
@@ -307,6 +323,8 @@ pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     }
     for (i, transferpak_enabled) in app.get_transferpak().iter().enumerate() {
         config.input.transfer_pak[i] = transferpak_enabled;
+        config.input.gb_rom_path[i] = app.get_gb_rom_paths().row_data(i).unwrap().to_string();
+        config.input.gb_ram_path[i] = app.get_gb_ram_paths().row_data(i).unwrap().to_string();
     }
     for (i, input_profile_binding) in app.get_selected_profile_binding().iter().enumerate() {
         config.input.input_profile_binding[i] = app
