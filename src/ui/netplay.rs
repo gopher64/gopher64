@@ -1,8 +1,8 @@
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{
-    AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, GameSettings, GbPaths,
-    NetplayCreate, NetplayDevice, NetplayJoin, NetplayWait, RASettings, run_rom, save_settings,
+    AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, GameSettings, NetplayCreate,
+    NetplayDevice, NetplayJoin, NetplayWait, RASettings, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -1101,10 +1101,6 @@ fn setup_wait_window(
                                 }
 
                                 run_rom(
-                                    GbPaths {
-                                        rom: [None, None, None, None],
-                                        ram: [None, None, None, None],
-                                    },
                                     handle.get_rom_path().as_str().into(),
                                     GameSettings {
                                         overclock: game_settings.overclock,

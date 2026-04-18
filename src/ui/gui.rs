@@ -18,11 +18,6 @@ pub struct NetplayDevice {
     pub player_number: u8,
 }
 
-pub struct GbPaths {
-    pub rom: [Option<std::path::PathBuf>; 4],
-    pub ram: [Option<std::path::PathBuf>; 4],
-}
-
 #[derive(Clone)]
 pub struct GameSettings {
     pub overclock: bool,
@@ -331,7 +326,6 @@ pub fn app_window() {
 }
 
 pub fn run_rom(
-    gb_paths: GbPaths,
     file_path: std::path::PathBuf,
     game_settings: GameSettings,
     netplay: Option<NetplayDevice>,
@@ -381,17 +375,6 @@ pub fn run_rom(
             }
         }
 
-        for i in 0..4 {
-            if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
-                command.args([
-                    "--gb-rom",
-                    gb_paths.rom[i].as_ref().unwrap().to_str().unwrap(),
-                    "--gb-ram",
-                    gb_paths.ram[i].as_ref().unwrap().to_str().unwrap(),
-                ]);
-            }
-        }
-
         if !command
             .arg(file_path.to_str().unwrap())
             .status()
@@ -426,25 +409,6 @@ fn open_rom(app: &AppWindow) {
     .set_title("Select ROM")
     .add_filter("ROM files", &N64_EXTENSIONS)
     .pick_file();
-    let mut select_gb_rom = [None, None, None, None];
-    let mut select_gb_ram = [None, None, None, None];
-
-    for (i, transfer_pak_enabled) in app.get_transferpak().iter().enumerate() {
-        if transfer_pak_enabled {
-            select_gb_rom[i] = Some(
-                rfd::AsyncFileDialog::new()
-                    .set_title(format!("GB ROM P{}", i + 1))
-                    .add_filter("GB ROM files", &["gb", "gbc", "GB", "GBC"])
-                    .pick_file(),
-            );
-            select_gb_ram[i] = Some(
-                rfd::AsyncFileDialog::new()
-                    .set_title(format!("GB RAM P{}", i + 1))
-                    .add_filter("GB RAM files", &["sav", "ram", "srm", "SAV", "RAM", "SRM"])
-                    .pick_file(),
-            );
-        }
-    }
 
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
@@ -456,24 +420,7 @@ fn open_rom(app: &AppWindow) {
     let weak = app.as_weak();
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
-            let mut gb_rom_path = [None, None, None, None];
-            let mut gb_ram_path = [None, None, None, None];
-
-            for i in 0..4 {
-                if let (Some(gb_rom), Some(gb_ram)) =
-                    (select_gb_rom[i].as_mut(), select_gb_ram[i].as_mut())
-                    && let (Some(gb_rom), Some(gb_ram)) = (gb_rom.await, gb_ram.await)
-                {
-                    gb_rom_path[i] = Some(gb_rom.path().to_path_buf());
-                    gb_ram_path[i] = Some(gb_ram.path().to_path_buf());
-                }
-            }
-
             run_rom(
-                GbPaths {
-                    rom: gb_rom_path,
-                    ram: gb_ram_path,
-                },
                 file.path().to_path_buf(),
                 GameSettings {
                     overclock,

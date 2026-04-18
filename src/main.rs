@@ -30,10 +30,6 @@ struct Args {
     netplay_peer_addr: Option<String>,
     #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER", hide = true)]
     netplay_player_number: Option<u8>,
-    #[arg(long, value_name = "GB_ROM_PATH", hide = true)]
-    gb_rom: Option<Vec<String>>,
-    #[arg(long, value_name = "GB_RAM_PATH", hide = true)]
-    gb_ram: Option<Vec<String>>,
     #[arg(
         long,
         value_name = "PROFILE_NAME",
@@ -184,16 +180,13 @@ async fn main() -> std::io::Result<()> {
         {
             device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
         } else {
-            if let Some(gb_roms) = &args.gb_rom
-                && let Some(gb_rams) = &args.gb_ram
-            {
-                for i in 0..4 {
-                    if let Some(gb_rom) = gb_roms.get(i)
-                        && let Some(gb_ram) = gb_rams.get(i)
-                    {
-                        device.transferpaks[i].cart.rom = std::fs::read(gb_rom).unwrap();
-                        device.transferpaks[i].cart.ram = std::fs::read(gb_ram).unwrap();
-                    }
+            for i in 0..4 {
+                if device.ui.config.input.transfer_pak[i]
+                    && let Some(gb_rom) = &device.ui.config.input.gb_rom_path[i]
+                    && let Some(gb_ram) = &device.ui.config.input.gb_ram_path[i]
+                {
+                    device.transferpaks[i].cart.rom = std::fs::read(gb_rom).unwrap();
+                    device.transferpaks[i].cart.ram = std::fs::read(gb_ram).unwrap();
                 }
             }
 
@@ -229,9 +222,11 @@ async fn main() -> std::io::Result<()> {
 
         if device.netplay.is_some() {
             netplay::close(&mut device);
-        } else if let Some(gb_rams) = &args.gb_ram {
+        } else {
             for i in 0..4 {
-                if let Some(gb_ram) = gb_rams.get(i) {
+                if device.ui.config.input.transfer_pak[i]
+                    && let Some(gb_ram) = &device.ui.config.input.gb_ram_path[i]
+                {
                     tokio::fs::write(gb_ram, &device.transferpaks[i].cart.ram)
                         .await
                         .unwrap();
