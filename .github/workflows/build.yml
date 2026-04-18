@@ -189,7 +189,7 @@ jobs:
             @executable_path/../Frameworks/libpng16.16.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
-          MACOSX_DEPLOYMENT_TARGET: "15.0"
+          MACOSX_DEPLOYMENT_TARGET: "15.7"
       - name: Sign Bundle Dev
         if: ${{ github.ref_type != 'tag' }}
         run: |
