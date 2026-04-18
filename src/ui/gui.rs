@@ -18,11 +18,6 @@ pub struct NetplayDevice {
     pub player_number: u8,
 }
 
-pub struct GbPaths {
-    pub rom: [Option<std::path::PathBuf>; 4],
-    pub ram: [Option<std::path::PathBuf>; 4],
-}
-
 #[derive(Clone)]
 pub struct GameSettings {
     pub overclock: bool,
@@ -175,6 +170,22 @@ fn controller_window(
         std::rc::Rc::new(slint::VecModel::from(config.input.transfer_pak.to_vec()));
     app.set_transferpak(slint::ModelRc::from(transferpak_enabled_model));
 
+    let gb_rom_paths = slint::VecModel::default();
+    for gb_rom_path in config.input.gb_rom_path.iter() {
+        gb_rom_paths.push(gb_rom_path.into());
+    }
+    let gb_rom_path_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+        std::rc::Rc::new(gb_rom_paths);
+    app.set_gb_rom_paths(slint::ModelRc::from(gb_rom_path_model));
+
+    let gb_ram_paths = slint::VecModel::default();
+    for gb_ram_path in config.input.gb_ram_path.iter() {
+        gb_ram_paths.push(gb_ram_path.into());
+    }
+    let gb_ram_path_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
+        std::rc::Rc::new(gb_ram_paths);
+    app.set_gb_ram_paths(slint::ModelRc::from(gb_ram_path_model));
+
     update_input_profiles(&app.as_weak(), config);
 
     let controllers = slint::VecModel::default();
@@ -247,6 +258,51 @@ fn controller_window(
         });
         dialog.show().unwrap();
     });
+    let weak_app2 = app.as_weak();
+    app.on_transferpak_toggled(move |player, enabled| {
+        if enabled {
+            let select_gb_rom = rfd::AsyncFileDialog::new()
+                .set_title(format!("GB ROM P{}", player + 1))
+                .add_filter("GB ROM files", &["gb", "gbc", "GB", "GBC"])
+                .pick_file();
+            let select_gb_ram = rfd::AsyncFileDialog::new()
+                .set_title(format!("GB RAM P{}", player + 1))
+                .add_filter("GB RAM files", &["sav", "ram", "srm", "SAV", "RAM", "SRM"])
+                .pick_file();
+            let weak_app3 = weak_app2.clone();
+            tokio::spawn(async move {
+                if let (Some(gb_rom), Some(gb_ram)) = (select_gb_rom.await, select_gb_ram.await) {
+                    weak_app3
+                        .upgrade_in_event_loop(move |handle| {
+                            let rom_paths = handle.get_gb_rom_paths();
+                            let ram_paths = handle.get_gb_ram_paths();
+                            rom_paths.set_row_data(
+                                player as usize,
+                                gb_rom.path().to_str().unwrap().into(),
+                            );
+                            ram_paths.set_row_data(
+                                player as usize,
+                                gb_ram.path().to_str().unwrap().into(),
+                            );
+                            handle.set_gb_rom_paths(rom_paths);
+                            handle.set_gb_ram_paths(ram_paths);
+                        })
+                        .unwrap();
+                } else {
+                    weak_app3
+                        .upgrade_in_event_loop(move |handle| {
+                            let rom_paths = handle.get_gb_rom_paths();
+                            let ram_paths = handle.get_gb_ram_paths();
+                            rom_paths.set_row_data(player as usize, String::new().into());
+                            ram_paths.set_row_data(player as usize, String::new().into());
+                            handle.set_gb_rom_paths(rom_paths);
+                            handle.set_gb_ram_paths(ram_paths);
+                        })
+                        .unwrap();
+                }
+            });
+        }
+    });
 }
 
 pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
@@ -267,6 +323,8 @@ pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     }
     for (i, transferpak_enabled) in app.get_transferpak().iter().enumerate() {
         config.input.transfer_pak[i] = transferpak_enabled;
+        config.input.gb_rom_path[i] = app.get_gb_rom_paths().row_data(i).unwrap().to_string();
+        config.input.gb_ram_path[i] = app.get_gb_ram_paths().row_data(i).unwrap().to_string();
     }
     for (i, input_profile_binding) in app.get_selected_profile_binding().iter().enumerate() {
         config.input.input_profile_binding[i] = app
@@ -331,7 +389,6 @@ pub fn app_window() {
 }
 
 pub fn run_rom(
-    gb_paths: GbPaths,
     file_path: std::path::PathBuf,
     game_settings: GameSettings,
     netplay: Option<NetplayDevice>,
@@ -381,17 +438,6 @@ pub fn run_rom(
             }
         }
 
-        for i in 0..4 {
-            if gb_paths.rom[i].is_some() && gb_paths.ram[i].is_some() {
-                command.args([
-                    "--gb-rom",
-                    gb_paths.rom[i].as_ref().unwrap().to_str().unwrap(),
-                    "--gb-ram",
-                    gb_paths.ram[i].as_ref().unwrap().to_str().unwrap(),
-                ]);
-            }
-        }
-
         if !command
             .arg(file_path.to_str().unwrap())
             .status()
@@ -426,25 +472,6 @@ fn open_rom(app: &AppWindow) {
     .set_title("Select ROM")
     .add_filter("ROM files", &N64_EXTENSIONS)
     .pick_file();
-    let mut select_gb_rom = [None, None, None, None];
-    let mut select_gb_ram = [None, None, None, None];
-
-    for (i, transfer_pak_enabled) in app.get_transferpak().iter().enumerate() {
-        if transfer_pak_enabled {
-            select_gb_rom[i] = Some(
-                rfd::AsyncFileDialog::new()
-                    .set_title(format!("GB ROM P{}", i + 1))
-                    .add_filter("GB ROM files", &["gb", "gbc", "GB", "GBC"])
-                    .pick_file(),
-            );
-            select_gb_ram[i] = Some(
-                rfd::AsyncFileDialog::new()
-                    .set_title(format!("GB RAM P{}", i + 1))
-                    .add_filter("GB RAM files", &["sav", "ram", "srm", "SAV", "RAM", "SRM"])
-                    .pick_file(),
-            );
-        }
-    }
 
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
@@ -456,24 +483,7 @@ fn open_rom(app: &AppWindow) {
     let weak = app.as_weak();
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
-            let mut gb_rom_path = [None, None, None, None];
-            let mut gb_ram_path = [None, None, None, None];
-
-            for i in 0..4 {
-                if let (Some(gb_rom), Some(gb_ram)) =
-                    (select_gb_rom[i].as_mut(), select_gb_ram[i].as_mut())
-                    && let (Some(gb_rom), Some(gb_ram)) = (gb_rom.await, gb_ram.await)
-                {
-                    gb_rom_path[i] = Some(gb_rom.path().to_path_buf());
-                    gb_ram_path[i] = Some(gb_ram.path().to_path_buf());
-                }
-            }
-
             run_rom(
-                GbPaths {
-                    rom: gb_rom_path,
-                    ram: gb_ram_path,
-                },
                 file.path().to_path_buf(),
                 GameSettings {
                     overclock,

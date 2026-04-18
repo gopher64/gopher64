@@ -213,8 +213,8 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
             if !enabled {
                 unsafe { ra_logout_user() };
                 RAConfig {
-                    username: "".into(),
-                    token: "".into(),
+                    username: String::new(),
+                    token: String::new(),
                     enabled,
                     hardcore,
                     challenge,
@@ -232,8 +232,8 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
             }
         } else {
             RAConfig {
-                username: "".into(),
-                token: "".into(),
+                username: String::new(),
+                token: String::new(),
                 enabled,
                 hardcore,
                 challenge,

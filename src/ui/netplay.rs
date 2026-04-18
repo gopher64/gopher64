@@ -1,8 +1,8 @@
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{
-    AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, GameSettings, GbPaths,
-    NetplayCreate, NetplayDevice, NetplayJoin, NetplayWait, RASettings, run_rom, save_settings,
+    AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, GameSettings, NetplayCreate,
+    NetplayDevice, NetplayJoin, NetplayWait, RASettings, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -192,7 +192,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
                 let mut game_name = ui::storage::get_game_name(&rom_contents);
                 let game_crc = ui::storage::get_game_crc(&rom_contents);
                 let cheats = ui::config::Cheats::new();
-                let mut parsed_cheats = "".to_string();
+                let mut parsed_cheats = String::new();
                 if let Some(game_cheats) = cheats.cheats.get(&game_crc)
                     && !game_cheats.is_empty()
                 {
@@ -224,10 +224,10 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
                     message_dialog.set_text("Could not read ROM".into());
                     message_dialog.show().unwrap();
 
-                    handle.set_game_name("".into());
-                    handle.set_game_hash("".into());
-                    handle.set_game_cheats("".into());
-                    handle.set_rom_path("".into());
+                    handle.set_game_name(String::new().into());
+                    handle.set_game_hash(String::new().into());
+                    handle.set_game_cheats(String::new().into());
+                    handle.set_rom_path(String::new().into());
                 })
                 .unwrap();
             }
@@ -1101,10 +1101,6 @@ fn setup_wait_window(
                                 }
 
                                 run_rom(
-                                    GbPaths {
-                                        rom: [None, None, None, None],
-                                        ram: [None, None, None, None],
-                                    },
                                     handle.get_rom_path().as_str().into(),
                                     GameSettings {
                                         overclock: game_settings.overclock,

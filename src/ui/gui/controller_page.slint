@@ -9,6 +9,8 @@ export global ControllerData {
     in-out property <bool> emulate_vru;
     in-out property <[bool]> controller_enabled;
     in-out property <[bool]> transferpak;
+    in-out property <[string]> gb_rom_paths;
+    in-out property <[string]> gb_ram_paths;
     in-out property <[int]> selected_profile_binding: [-1, -1, -1, -1];
     in-out property <[string]> input_profiles;
     in-out property <[string]> controller_names;
@@ -19,6 +21,7 @@ export global ControllerData {
 
 export component ControllerConfig inherits Page {
     callback input_profile_button_clicked;
+    callback transferpak_toggled(int,bool);
     title: @tr("Controller Configuration");
 
     VerticalBox {
@@ -83,6 +86,7 @@ export component ControllerConfig inherits Page {
                         checked: ControllerData.transferpak[player];
                         toggled => {
                             ControllerData.transferpak[player] = self.checked;
+                            transferpak_toggled(player,self.checked);
                         }
                     }
                 }
