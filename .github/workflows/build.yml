@@ -4,11 +4,11 @@ permissions:
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
     tags:
       - "v*"
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -40,24 +40,28 @@ jobs:
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
-        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
+        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
+          -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install SDL Dependencies
         # https://wiki.libsdl.org/SDL3/README-linux#build-dependencies
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
-          packages: build-essential git make \
-            pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
-            libaudio-dev libfribidi-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
-            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
-            libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
-            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libthai-dev \
-            libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev libfreetype-dev libfontconfig-dev
+          packages: build-essential git make pkg-config cmake ninja-build
+            gnome-desktop-testing libasound2-dev libpulse-dev libaudio-dev
+            libfribidi-dev libjack-dev libsndio-dev libx11-dev libxext-dev
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev
+            libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev
+            libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev
+            libudev-dev libthai-dev libpipewire-0.3-dev libwayland-dev
+            libdecor-0-dev liburing-dev libfreetype-dev libfontconfig-dev
           version: ${{ matrix.target }}-1.0
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: ${{ env.LLVM_VERSION }}
-          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-${{ matrix.llvm }}.tar.xz
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
+            env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-${{
+            matrix.llvm }}.tar.xz
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
@@ -104,7 +108,9 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: ${{ env.LLVM_VERSION }}
-          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-${{ matrix.llvm }}.exe
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
+            env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-${{ matrix.llvm
+            }}.exe
       - name: Build
         run: |
           cargo build --release -v --target=${{ matrix.target }}
@@ -163,12 +169,15 @@ jobs:
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
-        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut -d':' -f2 | xargs)" >> $GITHUB_ENV
+        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
+          -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: ${{ env.LLVM_VERSION }}
-          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-macOS-${{ matrix.llvm }}.tar.xz
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
+            env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-macOS-${{
+            matrix.llvm }}.tar.xz
       - name: Build
         run: |
           cargo install cargo-bundle
@@ -184,7 +193,7 @@ jobs:
       - name: Sign Bundle Dev
         if: ${{ github.ref_type != 'tag' }}
         run: |
-          codesign -f --entitlements data/entitlements_dev.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          codesign -f --entitlements data/macos/entitlements_dev.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
       - name: Import Codesign Certs
         if: ${{ github.ref_type == 'tag' }}
         uses: apple-actions/import-codesign-certs@v6
@@ -194,7 +203,8 @@ jobs:
       - name: Sign Bundle Release
         if: ${{ github.ref_type == 'tag' }}
         run: |
-          codesign -f --entitlements data/entitlements_prod.plist --deep --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          cp data/macos/embedded.provisionprofile target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/embedded.provisionprofile
+          codesign -f --entitlements data/macos/entitlements_prod.plist --deep --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
           zip -r gopher64-${{ matrix.arch }}.zip target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
           xcrun notarytool submit --wait --apple-id "${{ secrets.APPLE_ID }}" --team-id "${{ secrets.APPLE_DEVELOPER_ID }}" --password "${{ secrets.APPLE_APP_PASSWORD }}" gopher64-${{ matrix.arch }}.zip
           xcrun stapler staple target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
