@@ -103,8 +103,12 @@ pub fn init(device: &mut device::Device) {
         )
     }
 
-    let mut fps_rx = device.ui.video.fps_rx.take().unwrap();
-    let mut vis_rx = device.ui.video.vis_rx.take().unwrap();
+    fps_counter(&mut device.ui);
+}
+
+fn fps_counter(ui: &mut ui::Ui) {
+    let mut fps_rx = ui.video.fps_rx.take().unwrap();
+    let mut vis_rx = ui.video.vis_rx.take().unwrap();
     tokio::spawn(async move {
         loop {
             let mut fps: u32 = 0;
