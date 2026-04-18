@@ -242,6 +242,7 @@ fn controller_window(
         });
         dialog.show().unwrap();
     });
+    let weak_app2 = app.as_weak();
     app.on_transferpak_toggled(move |player, enabled| {
         if enabled {
             let select_gb_rom = rfd::AsyncFileDialog::new()
@@ -252,20 +253,38 @@ fn controller_window(
                 .set_title(format!("GB RAM P{}", player + 1))
                 .add_filter("GB RAM files", &["sav", "ram", "srm", "SAV", "RAM", "SRM"])
                 .pick_file();
+            let weak_app3 = weak_app2.clone();
             tokio::spawn(async move {
-                let mut config = ui::config::Config::new();
                 if let (Some(gb_rom), Some(gb_ram)) = (select_gb_rom.await, select_gb_ram.await) {
-                    config.input.gb_rom_path[player as usize] = Some(gb_rom.path().to_path_buf());
-                    config.input.gb_ram_path[player as usize] = Some(gb_ram.path().to_path_buf());
+                    weak_app3
+                        .upgrade_in_event_loop(move |handle| {
+                            let rom_paths = handle.get_gb_rom_paths();
+                            let ram_paths = handle.get_gb_ram_paths();
+                            rom_paths.set_row_data(
+                                player as usize,
+                                gb_rom.path().to_str().unwrap().into(),
+                            );
+                            ram_paths.set_row_data(
+                                player as usize,
+                                gb_ram.path().to_str().unwrap().into(),
+                            );
+                            handle.set_gb_rom_paths(rom_paths);
+                            handle.set_gb_ram_paths(ram_paths);
+                        })
+                        .unwrap();
                 } else {
-                    config.input.gb_rom_path[player as usize] = None;
-                    config.input.gb_ram_path[player as usize] = None;
+                    weak_app3
+                        .upgrade_in_event_loop(move |handle| {
+                            let rom_paths = handle.get_gb_rom_paths();
+                            let ram_paths = handle.get_gb_ram_paths();
+                            rom_paths.set_row_data(player as usize, String::new().into());
+                            ram_paths.set_row_data(player as usize, String::new().into());
+                            handle.set_gb_rom_paths(rom_paths);
+                            handle.set_gb_ram_paths(ram_paths);
+                        })
+                        .unwrap();
                 }
             });
-        } else {
-            let mut config = ui::config::Config::new();
-            config.input.gb_rom_path[player as usize] = None;
-            config.input.gb_ram_path[player as usize] = None;
         }
     });
 }

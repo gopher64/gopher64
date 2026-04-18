@@ -149,7 +149,7 @@ fn clear_cheats(weak: &slint::Weak<AppWindow>, clear_name: bool) {
         > = std::rc::Rc::new(cheats_vec);
         handle.set_cheats(slint::ModelRc::from(cheats_model));
         if clear_name {
-            handle.set_cheat_game_name("".into());
+            handle.set_cheat_game_name(String::new().into());
         }
     })
     .unwrap();

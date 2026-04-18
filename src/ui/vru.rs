@@ -20,7 +20,7 @@ pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {
         });
 
         vru_dialog.window().on_close_requested(move || {
-            tx.try_send("".to_string()).unwrap();
+            tx.try_send(String::new()).unwrap();
             slint::CloseRequestResponse::HideWindow
         });
 

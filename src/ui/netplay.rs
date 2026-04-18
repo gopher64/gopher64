@@ -192,7 +192,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
                 let mut game_name = ui::storage::get_game_name(&rom_contents);
                 let game_crc = ui::storage::get_game_crc(&rom_contents);
                 let cheats = ui::config::Cheats::new();
-                let mut parsed_cheats = "".to_string();
+                let mut parsed_cheats = String::new();
                 if let Some(game_cheats) = cheats.cheats.get(&game_crc)
                     && !game_cheats.is_empty()
                 {
@@ -224,10 +224,10 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
                     message_dialog.set_text("Could not read ROM".into());
                     message_dialog.show().unwrap();
 
-                    handle.set_game_name("".into());
-                    handle.set_game_hash("".into());
-                    handle.set_game_cheats("".into());
-                    handle.set_rom_path("".into());
+                    handle.set_game_name(String::new().into());
+                    handle.set_game_hash(String::new().into());
+                    handle.set_game_cheats(String::new().into());
+                    handle.set_rom_path(String::new().into());
                 })
                 .unwrap();
             }

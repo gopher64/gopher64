@@ -39,8 +39,8 @@ pub struct Input {
     pub controller_assignment: [Option<String>; 4],
     pub controller_enabled: [bool; 4],
     pub transfer_pak: [bool; 4],
-    pub gb_rom_path: [Option<std::path::PathBuf>; 4],
-    pub gb_ram_path: [Option<std::path::PathBuf>; 4],
+    pub gb_rom_path: [String; 4],
+    pub gb_ram_path: [String; 4],
     pub emulate_vru: bool,
 }
 
@@ -142,8 +142,8 @@ impl Config {
                 input_profiles,
                 controller_enabled: [true, false, false, false],
                 transfer_pak: [false, false, false, false],
-                gb_rom_path: [None, None, None, None],
-                gb_ram_path: [None, None, None, None],
+                gb_rom_path: [String::new(), String::new(), String::new(), String::new()],
+                gb_ram_path: [String::new(), String::new(), String::new(), String::new()],
                 emulate_vru: false,
             },
             video: Video {

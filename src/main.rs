@@ -182,11 +182,13 @@ async fn main() -> std::io::Result<()> {
         } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
-                    && let Some(gb_rom) = &device.ui.config.input.gb_rom_path[i]
-                    && let Some(gb_ram) = &device.ui.config.input.gb_ram_path[i]
+                    && !device.ui.config.input.gb_rom_path[i].is_empty()
+                    && !device.ui.config.input.gb_ram_path[i].is_empty()
                 {
-                    device.transferpaks[i].cart.rom = std::fs::read(gb_rom).unwrap();
-                    device.transferpaks[i].cart.ram = std::fs::read(gb_ram).unwrap();
+                    device.transferpaks[i].cart.rom =
+                        std::fs::read(&device.ui.config.input.gb_rom_path[i]).unwrap();
+                    device.transferpaks[i].cart.ram =
+                        std::fs::read(&device.ui.config.input.gb_ram_path[i]).unwrap();
                 }
             }
 
@@ -225,11 +227,14 @@ async fn main() -> std::io::Result<()> {
         } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
-                    && let Some(gb_ram) = &device.ui.config.input.gb_ram_path[i]
+                    && !device.ui.config.input.gb_ram_path[i].is_empty()
                 {
-                    tokio::fs::write(gb_ram, &device.transferpaks[i].cart.ram)
-                        .await
-                        .unwrap();
+                    tokio::fs::write(
+                        &device.ui.config.input.gb_ram_path[i],
+                        &device.transferpaks[i].cart.ram,
+                    )
+                    .await
+                    .unwrap();
                 }
             }
         }
