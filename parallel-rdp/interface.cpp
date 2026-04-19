@@ -858,8 +858,10 @@ void rdp_set_fps_callback(void *userdata) {
 }
 
 void rdp_set_fps(uint32_t fps, uint32_t vis) {
-  FPS_DATA data = {fps, vis};
-  SDL_RunOnMainThread(rdp_set_fps_callback, &data, true);
+  if (display_fps) {
+    FPS_DATA data = {fps, vis};
+    SDL_RunOnMainThread(rdp_set_fps_callback, &data, true);
+  }
 }
 
 static void update_challenge_indicator() {
