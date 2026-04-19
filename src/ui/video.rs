@@ -21,6 +21,11 @@ fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
         PAL: device.cart.pal,
         widescreen: device.ui.config.video.widescreen,
         fullscreen: device.ui.video.fullscreen,
+        vsync: if device.netplay.is_none() {
+            device.ui.config.video.vsync
+        } else {
+            false
+        },
         integer_scaling: device.ui.config.video.integer_scaling,
         upscale: device.ui.config.video.upscale,
         crt: device.ui.config.video.crt,
@@ -99,7 +104,6 @@ pub fn init(device: &mut device::Device) {
             font_bytes.as_ptr() as *const std::ffi::c_void,
             font_bytes.len(),
             device.ui.storage.save_state_slot,
-            device.netplay.is_some(),
         )
     }
 

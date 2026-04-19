@@ -50,6 +50,7 @@ pub struct Video {
     pub integer_scaling: bool,
     pub fullscreen: bool,
     pub widescreen: bool,
+    pub vsync: bool,
     pub crt: bool,
 }
 
@@ -151,6 +152,7 @@ impl Config {
                 integer_scaling: false,
                 fullscreen: false,
                 widescreen: false,
+                vsync: true,
                 crt: false,
             },
             emulation: Emulation {

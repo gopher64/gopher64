@@ -92,6 +92,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_integer_scaling(config.video.integer_scaling);
     app.set_fullscreen(config.video.fullscreen);
     app.set_widescreen(config.video.widescreen);
+    app.set_vsync(config.video.vsync);
     app.set_apply_crt_shader(config.video.crt);
     app.set_overclock_n64_cpu(config.emulation.overclock);
     app.set_disable_expansion_pak(config.emulation.disable_expansion_pak);
@@ -296,6 +297,7 @@ pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
     config.video.integer_scaling = app.get_integer_scaling();
     config.video.fullscreen = app.get_fullscreen();
     config.video.widescreen = app.get_widescreen();
+    config.video.vsync = app.get_vsync();
     config.video.crt = app.get_apply_crt_shader();
     config.emulation.overclock = app.get_overclock_n64_cpu();
     config.emulation.disable_expansion_pak = app.get_disable_expansion_pak();
