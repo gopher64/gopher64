@@ -189,7 +189,7 @@ pub fn login_user(username: String, password: String, tx: tokio::sync::oneshot::
     };
 }
 
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 pub fn logout_user() {
     unsafe { ra_logout_user() };
 }
@@ -203,12 +203,12 @@ pub fn login_token_user(username: String, token: String, tx: tokio::sync::onesho
     };
 }
 
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 pub fn is_user_logged_in() -> bool {
     unsafe { ra_is_user_logged_in() }
 }
 
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 pub fn get_username() -> &'static str {
     let c_username = unsafe { ra_get_username() };
     if c_username.is_null() {
@@ -220,7 +220,7 @@ pub fn get_username() -> &'static str {
     }
 }
 
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 pub fn get_token() -> &'static str {
     let c_token = unsafe { ra_get_token() };
     if c_token.is_null() {

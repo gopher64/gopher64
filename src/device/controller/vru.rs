@@ -1,5 +1,5 @@
 use crate::device;
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 use crate::ui;
 use std::collections::HashMap;
 
@@ -181,9 +181,9 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
         }
         JCMD_VRU_READ => {
-            #[cfg(feature = "slint")]
+            #[cfg(feature = "gui")]
             let index = ui::vru::prompt_for_match(&device.vru.words, device.vi.frame_time);
-            #[cfg(not(feature = "slint"))]
+            #[cfg(not(feature = "gui"))]
             let index = 0x7FFF;
             let num_results = if index == 0x7FFF { 0 } else { 1 };
             let data: HashMap<usize, u16> = HashMap::from([

@@ -3,7 +3,7 @@ fn main() {
     println!("cargo::rerun-if-changed=retroachievements");
     println!("cargo::rerun-if-changed=src/compat");
 
-    #[cfg(feature = "slint")]
+    #[cfg(feature = "gui")]
     {
         let slint_config = slint_build::CompilerConfiguration::new();
         slint_build::compile_with_config("src/ui/gui/appwindow.slint", slint_config).unwrap();
@@ -146,7 +146,7 @@ fn main() {
         println!("cargo:rustc-link-search=native={}", runtime_dir);
         println!("cargo:rustc-link-lib=static=clang_rt.osx");
     }
-    if cfg!(not(feature = "slint")) && os == "linux" {
+    if cfg!(not(feature = "gui")) && os == "linux" {
         println!("cargo:rustc-link-lib=dylib=freetype");
     }
 
@@ -178,8 +178,7 @@ fn main() {
         .allowlist_function("ra_save_state")
         .allowlist_function("ra_load_state");
 
-    #[cfg(feature = "slint")]
-    {
+    if cfg!(feature = "gui") {
         retroachievements_builder = retroachievements_builder
             .allowlist_function("ra_logout_user")
             .allowlist_function("ra_is_user_logged_in")

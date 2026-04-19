@@ -1,18 +1,18 @@
 pub mod audio;
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 pub mod cheats;
 pub mod config;
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 pub mod gui;
 pub mod input;
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 pub mod netplay;
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 pub mod retroachievements;
 pub mod storage;
 pub mod usb;
 pub mod video;
-#[cfg(feature = "slint")]
+#[cfg(feature = "gui")]
 pub mod vru;
 
 pub struct Dirs {

@@ -49,3 +49,4 @@ jobs:
       - name: Lint
         run: |
           cargo clippy -- -Dwarnings
+          cargo clippy --no-default-features -- -Dwarnings
