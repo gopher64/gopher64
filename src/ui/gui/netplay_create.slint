@@ -25,7 +25,7 @@ export component NetplayCreate inherits Window {
                 }
 
                 LineEdit {
-                    placeholder_text: @tr("Enter session name");
+                    placeholder-text: @tr("Enter session name");
                     edited(text) => {
                         NetplayData.session_name = text;
                     }
@@ -38,7 +38,7 @@ export component NetplayCreate inherits Window {
                 }
 
                 LineEdit {
-                    placeholder_text: @tr("Enter session password");
+                    placeholder-text: @tr("Enter session password");
                     edited(text) => {
                         NetplayData.password = text;
                     }
@@ -52,7 +52,7 @@ export component NetplayCreate inherits Window {
             }
 
             LineEdit {
-                placeholder_text: @tr("Enter player name");
+                placeholder-text: @tr("Enter player name");
                 edited(text) => {
                     NetplayData.player_name = text;
                 }
