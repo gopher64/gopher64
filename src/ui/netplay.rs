@@ -1,8 +1,8 @@
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{
-    AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, GameSettings, NetplayCreate,
-    NetplayDevice, NetplayJoin, NetplayWait, RASettings, run_rom, save_settings,
+    AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, NetplayCreate, NetplayDevice,
+    NetplayJoin, NetplayWait, RASettings, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -247,7 +247,7 @@ fn show_custom_url_dialog(weak: slint::Weak<NetplayCreate>, server_url: slint::S
 
 pub fn setup_create_window(
     create_window: &NetplayCreate,
-    game_settings: GameSettings,
+    game_settings: ui::GameSettings,
     ra_settings: RASettings,
     rom_dir: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
@@ -613,7 +613,7 @@ fn create_session(
     game_hash: String,
     game_cheats: String,
     password: String,
-    game_settings: GameSettings,
+    game_settings: ui::GameSettings,
     ra_settings: RASettings,
     weak_app: slint::Weak<AppWindow>,
     weak: slint::Weak<NetplayCreate>,
@@ -703,7 +703,7 @@ fn create_session(
                             handle.get_rom_path(),
                             message.player_name.as_ref().unwrap().into(),
                             session.port.unwrap(),
-                            GameSettings {
+                            ui::GameSettings {
                                 overclock: overclock.parse().unwrap(),
                                 disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                 cheats: serde_json::from_str(cheats).unwrap(),
@@ -826,7 +826,7 @@ fn join_session(
                             handle.get_rom_path(),
                             message.player_name.as_ref().unwrap().into(),
                             session.port.unwrap(),
-                            GameSettings {
+                            ui::GameSettings {
                                 overclock: overclock.parse().unwrap(),
                                 disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                 cheats: serde_json::from_str(cheats).unwrap(),
@@ -872,7 +872,7 @@ fn setup_wait_window(
     rom_path: slint::SharedString,
     player_name: slint::SharedString,
     port: i32,
-    game_settings: GameSettings,
+    game_settings: ui::GameSettings,
     ra_settings: RASettings,
     peer_addr: slint::SharedString,
     weak_app: slint::Weak<AppWindow>,
@@ -1090,7 +1090,7 @@ fn setup_wait_window(
 
                                 run_rom(
                                     handle.get_rom_path().as_str().into(),
-                                    GameSettings {
+                                    ui::GameSettings {
                                         overclock: game_settings.overclock,
                                         disable_expansion_pak: game_settings.disable_expansion_pak,
                                         cheats: game_settings.cheats,
@@ -1214,7 +1214,7 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
                 save_settings(&handle, &controller_paths);
                 setup_create_window(
                     &create_window,
-                    GameSettings {
+                    ui::GameSettings {
                         overclock: handle.get_overclock_n64_cpu(),
                         disable_expansion_pak: handle.get_disable_expansion_pak(),
                         cheats: std::collections::HashMap::new(), // not used here

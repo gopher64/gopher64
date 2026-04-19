@@ -1,17 +1,9 @@
+use crate::cheats;
 use crate::device;
 use crate::ui;
 use crate::ui::gui::AppWindow;
 use crate::ui::gui::ErrorDialog;
 use slint::ComponentHandle;
-
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
-pub struct CheatData {
-    note: String,
-    pub data: Vec<String>,
-    pub options: Option<std::collections::BTreeMap<String, String>>,
-}
-
-pub type Cheats = std::collections::BTreeMap<String, std::collections::BTreeMap<String, CheatData>>;
 
 pub fn cheats_window(app: &AppWindow) {
     let weak = app.as_weak();
@@ -38,7 +30,7 @@ pub fn cheats_window(app: &AppWindow) {
                     handle.set_cheat_game_name(game_name.into());
                 })
                 .unwrap();
-                let cheats: Cheats =
+                let cheats: cheats::Cheat =
                     serde_json::from_slice(include_bytes!("../../data/cheats.json")).unwrap();
                 if let Some(cheat) = cheats.get(&game_crc) {
                     let cheat = cheat.clone();

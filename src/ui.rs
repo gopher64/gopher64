@@ -1,12 +1,18 @@
 pub mod audio;
+#[cfg(feature = "gui")]
 pub mod cheats;
 pub mod config;
+#[cfg(feature = "gui")]
 pub mod gui;
 pub mod input;
+#[cfg(feature = "gui")]
 pub mod netplay;
+#[cfg(feature = "gui")]
+pub mod retroachievements;
 pub mod storage;
 pub mod usb;
 pub mod video;
+#[cfg(feature = "gui")]
 pub mod vru;
 
 pub struct Dirs {
@@ -45,6 +51,14 @@ pub struct Video {
 pub struct Usb {
     pub usb_tx: Option<tokio::sync::broadcast::Sender<usb::UsbData>>,
     pub cart_rx: Option<tokio::sync::broadcast::Receiver<usb::UsbData>>,
+}
+
+#[derive(Clone)]
+pub struct GameSettings {
+    pub overclock: bool,
+    pub disable_expansion_pak: bool,
+    pub cheats: std::collections::HashMap<String, Option<String>>,
+    pub load_savestate_slot: Option<u32>,
 }
 
 pub struct Ui {

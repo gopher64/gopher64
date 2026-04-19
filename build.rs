@@ -3,8 +3,11 @@ fn main() {
     println!("cargo::rerun-if-changed=retroachievements");
     println!("cargo::rerun-if-changed=src/compat");
 
-    let slint_config = slint_build::CompilerConfiguration::new();
-    slint_build::compile_with_config("src/ui/gui/appwindow.slint", slint_config).unwrap();
+    #[cfg(feature = "gui")]
+    {
+        let slint_config = slint_build::CompilerConfiguration::new();
+        slint_build::compile_with_config("src/ui/gui/appwindow.slint", slint_config).unwrap();
+    }
 
     let mut simd_build = cc::Build::new();
     let mut volk_build = cc::Build::new();
@@ -143,6 +146,9 @@ fn main() {
         println!("cargo:rustc-link-search=native={}", runtime_dir);
         println!("cargo:rustc-link-lib=static=clang_rt.osx");
     }
+    if cfg!(not(feature = "gui")) && os == "linux" {
+        println!("cargo:rustc-link-lib=dylib=freetype");
+    }
 
     volk_build.flag("-flto=thin");
     rdp_build.flag("-flto=thin");
@@ -155,7 +161,7 @@ fn main() {
 
     let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
 
-    let retroachievements_bindings = bindgen::Builder::default()
+    let mut retroachievements_builder = bindgen::Builder::default()
         .header("retroachievements/retroachievements.h")
         .allowlist_function("ra_init_client")
         .allowlist_function("ra_welcome")
@@ -166,15 +172,21 @@ fn main() {
         .allowlist_function("ra_do_frame")
         .allowlist_function("ra_do_idle")
         .allowlist_function("ra_http_callback")
-        .allowlist_function("ra_logout_user")
         .allowlist_function("ra_login_user")
         .allowlist_function("ra_login_token_user")
-        .allowlist_function("ra_is_user_logged_in")
-        .allowlist_function("ra_get_username")
-        .allowlist_function("ra_get_token")
         .allowlist_function("ra_state_size")
         .allowlist_function("ra_save_state")
-        .allowlist_function("ra_load_state")
+        .allowlist_function("ra_load_state");
+
+    if cfg!(feature = "gui") {
+        retroachievements_builder = retroachievements_builder
+            .allowlist_function("ra_logout_user")
+            .allowlist_function("ra_is_user_logged_in")
+            .allowlist_function("ra_get_username")
+            .allowlist_function("ra_get_token");
+    }
+
+    let retroachievements_bindings = retroachievements_builder
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");

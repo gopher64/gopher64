@@ -44,7 +44,7 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::gui::GameSettings) {
+pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::GameSettings) {
     device.cpu.overclock = game_settings.overclock;
     if game_settings.disable_expansion_pak {
         device.rdram.size = 0x400000;
