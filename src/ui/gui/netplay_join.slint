@@ -31,7 +31,7 @@ export component NetplayJoin inherits Window {
                 }
 
                 LineEdit {
-                    placeholder_text: @tr("Enter player name");
+                    placeholder-text: @tr("Enter player name");
                     edited(text) => {
                         NetplayData.player_name = text;
                     }

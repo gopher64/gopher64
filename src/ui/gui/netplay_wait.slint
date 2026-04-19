@@ -73,7 +73,7 @@ export component NetplayWait inherits Window {
 
         HorizontalBox {
             chat_message := LineEdit {
-                placeholder_text: @tr("Enter chat message");
+                placeholder-text: @tr("Enter chat message");
                 key-released(event) => {
                     if (event.text == Key.Return && chat_message.text != "") {
                         send_chat_message(chat_message.text);
