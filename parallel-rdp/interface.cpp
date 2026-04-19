@@ -422,8 +422,7 @@ static void calculate_viewport(float *x, float *y, float *width, float *height,
 }
 
 static void draw_indicator(CommandBufferHandle cmd,
-                           Vulkan::ImageHandle indicator_image,
-                           VkViewport &vp) {
+                           Vulkan::ImageHandle indicator_image, VkViewport vp) {
   cmd->set_texture(0, 0, indicator_image->get_view(),
                    Vulkan::StockSampler::NearestClamp);
   vp.x = vp.x + vp.width - indicator_image->get_width();
@@ -435,8 +434,7 @@ static void draw_indicator(CommandBufferHandle cmd,
   cmd->draw(3);
 }
 
-static void draw_fps(CommandBufferHandle cmd, Vulkan::ImageHandle fps_image,
-                     VkViewport &vp) {
+static void draw_fps(CommandBufferHandle cmd, VkViewport vp) {
   cmd->set_texture(0, 0, fps_image->get_view(),
                    Vulkan::StockSampler::NearestClamp);
   vp.y = vp.y + vp.height - fps_image->get_height();
@@ -545,7 +543,7 @@ static void render_frame(Vulkan::Device &device) {
       }
 
       if (messages.empty() && display_fps && fps_image) {
-        draw_fps(cmd, fps_image, vp);
+        draw_fps(cmd, vp);
       }
     }
 
@@ -855,13 +853,15 @@ uint64_t rdp_process_commands() {
 void rdp_set_fps_callback(void *userdata) {
   FPS_DATA *data = (FPS_DATA *)userdata;
   fps_image = create_message_image(
-      wsi->get_device(), 0, message_font,
+      wsi->get_device(), 0, achievement_challenge_indicator_font,
       std::format("FPS: {} VI/S: {}", data->fps, data->vis).c_str());
 }
 
 void rdp_set_fps(uint32_t fps, uint32_t vis) {
-  FPS_DATA data = {fps, vis};
-  SDL_RunOnMainThread(rdp_set_fps_callback, &data, true);
+  if (display_fps) {
+    FPS_DATA data = {fps, vis};
+    SDL_RunOnMainThread(rdp_set_fps_callback, &data, true);
+  }
 }
 
 static void update_challenge_indicator() {
