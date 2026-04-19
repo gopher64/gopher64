@@ -11,7 +11,6 @@ mod savestates;
 mod ui;
 use clap::Parser;
 use std::io::Error;
-use ui::gui;
 
 /// N64 emulator
 #[derive(Parser, Debug)]
@@ -214,7 +213,7 @@ async fn main() -> std::io::Result<()> {
         device::run_game(
             &mut device,
             &rom_contents,
-            ui::gui::GameSettings {
+            ui::GameSettings {
                 overclock,
                 disable_expansion_pak,
                 cheats,
@@ -283,7 +282,8 @@ async fn main() -> std::io::Result<()> {
         }
     } else {
         retroachievements::init_client(false, false, false);
-        gui::app_window();
+        #[cfg(feature = "slint")]
+        ui::gui::app_window();
         retroachievements::shutdown_client();
     }
 

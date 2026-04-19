@@ -15,16 +15,24 @@ pub struct Cheats {
     pub enabled: bool,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct CheatData {
+    pub note: String,
+    pub data: Vec<String>,
+    pub options: Option<std::collections::BTreeMap<String, String>>,
+}
+
+pub type Cheat = std::collections::BTreeMap<String, std::collections::BTreeMap<String, CheatData>>;
+
 pub fn init(
     device: &mut device::Device,
     cheat_settings: std::collections::HashMap<String, Option<String>>,
 ) {
-    let cheats =
-        serde_json::from_slice::<ui::cheats::Cheats>(include_bytes!("../data/cheats.json"))
-            .unwrap()
-            .get(&ui::storage::get_game_crc(&device.cart.rom))
-            .cloned()
-            .unwrap_or_default();
+    let cheats = serde_json::from_slice::<Cheat>(include_bytes!("../data/cheats.json"))
+        .unwrap()
+        .get(&ui::storage::get_game_crc(&device.cart.rom))
+        .cloned()
+        .unwrap_or_default();
 
     let re = regex::Regex::new(r"\?+").unwrap();
     for cheat_setting in cheat_settings.iter() {

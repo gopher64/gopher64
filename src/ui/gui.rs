@@ -19,14 +19,6 @@ pub struct NetplayDevice {
 }
 
 #[derive(Clone)]
-pub struct GameSettings {
-    pub overclock: bool,
-    pub disable_expansion_pak: bool,
-    pub cheats: std::collections::HashMap<String, Option<String>>,
-    pub load_savestate_slot: Option<u32>,
-}
-
-#[derive(Clone)]
 pub struct RASettings {
     pub enabled: bool,
     pub hardcore: bool,
@@ -358,7 +350,7 @@ fn about_window(app: &AppWindow) {
 pub fn app_window() {
     let app = AppWindow::new().unwrap();
     about_window(&app);
-    retroachievements::ra_window(&app);
+    ui::retroachievements::ra_window(&app);
     let mut controller_paths;
     {
         let game_ui = ui::Ui::new();
@@ -378,7 +370,7 @@ pub fn app_window() {
 
 pub fn run_rom(
     file_path: std::path::PathBuf,
-    game_settings: GameSettings,
+    game_settings: ui::GameSettings,
     netplay: Option<NetplayDevice>,
     ra_settings: RASettings,
     weak: slint::Weak<AppWindow>,
@@ -473,7 +465,7 @@ fn open_rom(app: &AppWindow) {
         if let Some(file) = select_rom.await {
             run_rom(
                 file.path().to_path_buf(),
-                GameSettings {
+                ui::GameSettings {
                     overclock,
                     disable_expansion_pak,
                     cheats: std::collections::HashMap::new(), // will be filled in later

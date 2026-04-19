@@ -1,5 +1,5 @@
-use crate::gui;
 use crate::retroachievements;
+use crate::ui::gui;
 use slint::ComponentHandle;
 
 pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {

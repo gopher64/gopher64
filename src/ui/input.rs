@@ -384,6 +384,7 @@ pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
     controllers
 }
 
+#[cfg(feature = "slint")]
 pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<Option<String>> {
     let mut controller_paths: Vec<Option<String>> = vec![];
 

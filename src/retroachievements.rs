@@ -1,7 +1,6 @@
 include!(concat!(env!("OUT_DIR"), "/retroachievements_bindings.rs"));
 
 use crate::ui;
-use slint::ComponentHandle;
 
 static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
     reqwest::Client::builder()
@@ -144,115 +143,6 @@ pub extern "C" fn rust_server_call(
     });
 }
 
-fn set_current_user_message(app: &ui::gui::AppWindow, rx: tokio::sync::oneshot::Receiver<bool>) {
-    app.set_ra_current_user_message("Logging in...".into());
-    let weak_app = app.as_weak();
-    tokio::spawn(async move {
-        rx.await.unwrap();
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                if is_user_logged_in() {
-                    handle.set_ra_current_user_message(
-                        format!("Logged in as {}", handle.get_ra_username()).into(),
-                    );
-                    handle.set_ra_show_profile(true);
-                } else {
-                    handle.set_ra_current_user_message("Login failed".into());
-                    handle.set_ra_show_profile(false);
-                }
-                handle.set_ra_logging_in(false);
-            })
-            .unwrap();
-    });
-}
-
-pub fn ra_window(app: &ui::gui::AppWindow) {
-    let mut token = String::new();
-    if let Ok(ra_config) = std::fs::read(ui::get_dirs().config_dir.join("retroachievements.json"))
-        && let Ok(result) = serde_json::from_slice::<RAConfig>(ra_config.as_ref())
-    {
-        app.set_ra_username(result.username.into());
-        app.set_ra_enabled(result.enabled);
-        app.set_ra_hardcore(result.hardcore);
-        app.set_ra_challenge(result.challenge);
-        app.set_ra_leaderboard(result.leaderboard);
-        token = result.token;
-    } else {
-        app.set_ra_hardcore(true);
-    }
-
-    if app.get_ra_enabled() && !app.get_ra_username().is_empty() {
-        let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
-        login_token_user(app.get_ra_username().to_string(), token, tx);
-        set_current_user_message(app, rx);
-    } else {
-        app.set_ra_current_user_message("Not currently logged in".into());
-    }
-
-    let weak_app2 = app.as_weak();
-    app.on_ra_button_clicked(move |password| {
-        weak_app2
-            .upgrade_in_event_loop(move |handle| {
-                let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
-                login_user(
-                    handle.get_ra_username().to_string(),
-                    password.to_string(),
-                    tx,
-                );
-
-                set_current_user_message(&handle, rx);
-            })
-            .unwrap();
-    });
-
-    app.on_ra_toggled(move |enabled, hardcore, challenge, leaderboard| {
-        let file_path = ui::get_dirs().config_dir.join("retroachievements.json");
-        let raconfig = if let Ok(ra_config) = std::fs::read(&file_path)
-            && let Ok(result) = serde_json::from_slice::<RAConfig>(ra_config.as_ref())
-        {
-            if !enabled {
-                unsafe { ra_logout_user() };
-                RAConfig {
-                    username: String::new(),
-                    token: String::new(),
-                    enabled,
-                    hardcore,
-                    challenge,
-                    leaderboard,
-                }
-            } else {
-                RAConfig {
-                    username: result.username,
-                    token: result.token,
-                    enabled,
-                    hardcore,
-                    challenge,
-                    leaderboard,
-                }
-            }
-        } else {
-            RAConfig {
-                username: String::new(),
-                token: String::new(),
-                enabled,
-                hardcore,
-                challenge,
-                leaderboard,
-            }
-        };
-        let f = std::fs::File::create(&file_path).unwrap();
-        serde_json::to_writer_pretty(f, &raconfig).unwrap();
-    });
-
-    app.on_ra_games_clicked(move || {
-        open::that_detached("https://retroachievements.org/system/2-nintendo-64/games").unwrap();
-    });
-
-    app.on_ra_show_profile_clicked(move |username| {
-        open::that_detached(format!("https://retroachievements.org/user/{}", username)).unwrap();
-    });
-}
-
 pub async fn load_game(rom: &[u8], rom_size: usize) {
     let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
     unsafe {
@@ -299,6 +189,11 @@ pub fn login_user(username: String, password: String, tx: tokio::sync::oneshot::
     };
 }
 
+#[cfg(feature = "slint")]
+pub fn logout_user() {
+    unsafe { ra_logout_user() };
+}
+
 pub fn login_token_user(username: String, token: String, tx: tokio::sync::oneshot::Sender<bool>) {
     unsafe {
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
@@ -308,10 +203,12 @@ pub fn login_token_user(username: String, token: String, tx: tokio::sync::onesho
     };
 }
 
+#[cfg(feature = "slint")]
 pub fn is_user_logged_in() -> bool {
     unsafe { ra_is_user_logged_in() }
 }
 
+#[cfg(feature = "slint")]
 pub fn get_username() -> &'static str {
     let c_username = unsafe { ra_get_username() };
     if c_username.is_null() {
@@ -323,6 +220,7 @@ pub fn get_username() -> &'static str {
     }
 }
 
+#[cfg(feature = "slint")]
 pub fn get_token() -> &'static str {
     let c_token = unsafe { ra_get_token() };
     if c_token.is_null() {
