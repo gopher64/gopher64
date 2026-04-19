@@ -132,13 +132,10 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
         for profile in profiles {
             input_profiles.push(profile.into());
         }
-        let input_profiles_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-            std::rc::Rc::new(input_profiles);
-        handle.set_input_profiles(slint::ModelRc::from(input_profiles_model));
+        handle.set_input_profiles(slint::ModelRc::from(std::rc::Rc::new(input_profiles)));
 
-        let input_profile_binding_model: std::rc::Rc<slint::VecModel<i32>> =
-            std::rc::Rc::new(profile_bindings);
-        handle.set_selected_profile_binding(slint::ModelRc::from(input_profile_binding_model));
+        handle
+            .set_selected_profile_binding(slint::ModelRc::from(std::rc::Rc::new(profile_bindings)));
 
         // this is a workaround to make the input profile combobox update
         handle.set_blank_profiles(true);
@@ -159,32 +156,27 @@ fn controller_window(
     controller_names: &Vec<String>,
     controller_paths: &[Option<String>],
 ) {
-    let controller_enabled_model: std::rc::Rc<slint::VecModel<bool>> = std::rc::Rc::new(
-        slint::VecModel::from(config.input.controller_enabled.to_vec()),
-    );
     app.set_emulate_vru(config.input.emulate_vru);
 
-    app.set_controller_enabled(slint::ModelRc::from(controller_enabled_model));
+    app.set_controller_enabled(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(config.input.controller_enabled.to_vec()),
+    )));
 
-    let transferpak_enabled_model: std::rc::Rc<slint::VecModel<bool>> =
-        std::rc::Rc::new(slint::VecModel::from(config.input.transfer_pak.to_vec()));
-    app.set_transferpak(slint::ModelRc::from(transferpak_enabled_model));
+    app.set_transferpak(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(config.input.transfer_pak.to_vec()),
+    )));
 
     let gb_rom_paths = slint::VecModel::default();
     for gb_rom_path in config.input.gb_rom_path.iter() {
         gb_rom_paths.push(gb_rom_path.into());
     }
-    let gb_rom_path_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-        std::rc::Rc::new(gb_rom_paths);
-    app.set_gb_rom_paths(slint::ModelRc::from(gb_rom_path_model));
+    app.set_gb_rom_paths(slint::ModelRc::from(std::rc::Rc::new(gb_rom_paths)));
 
     let gb_ram_paths = slint::VecModel::default();
     for gb_ram_path in config.input.gb_ram_path.iter() {
         gb_ram_paths.push(gb_ram_path.into());
     }
-    let gb_ram_path_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-        std::rc::Rc::new(gb_ram_paths);
-    app.set_gb_ram_paths(slint::ModelRc::from(gb_ram_path_model));
+    app.set_gb_ram_paths(slint::ModelRc::from(std::rc::Rc::new(gb_ram_paths)));
 
     update_input_profiles(&app.as_weak(), config);
 
@@ -192,9 +184,7 @@ fn controller_window(
     for controller in controller_names {
         controllers.push(controller.into());
     }
-    let controller_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-        std::rc::Rc::new(controllers);
-    app.set_controller_names(slint::ModelRc::from(controller_names_model));
+    app.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(controllers)));
 
     let controller_changed = slint::VecModel::default();
     let selected_controllers = slint::VecModel::default();
@@ -212,13 +202,9 @@ fn controller_window(
         }
         controller_changed.push(false);
     }
-    let selected_controllers_model: std::rc::Rc<slint::VecModel<i32>> =
-        std::rc::Rc::new(selected_controllers);
-    app.set_selected_controller(slint::ModelRc::from(selected_controllers_model));
+    app.set_selected_controller(slint::ModelRc::from(std::rc::Rc::new(selected_controllers)));
 
-    let controller_changed_model: std::rc::Rc<slint::VecModel<bool>> =
-        std::rc::Rc::new(controller_changed);
-    app.set_controller_changed(slint::ModelRc::from(controller_changed_model));
+    app.set_controller_changed(slint::ModelRc::from(std::rc::Rc::new(controller_changed)));
 
     let weak_app = app.as_weak();
     app.on_input_profile_button_clicked(move || {

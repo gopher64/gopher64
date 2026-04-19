@@ -21,9 +21,7 @@ pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {
     for word in dedup_words {
         words_vec.push(word.into());
     }
-    let words_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-        std::rc::Rc::new(words_vec);
-    vru_dialog.set_words(slint::ModelRc::from(words_model));
+    vru_dialog.set_words(slint::ModelRc::from(std::rc::Rc::new(words_vec)));
 
     let timer = slint::Timer::default();
     timer.start(

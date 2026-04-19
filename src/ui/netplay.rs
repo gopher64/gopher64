@@ -159,12 +159,8 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
             }
             server_names.push("Custom".into());
             handle.refresh_sessions();
-            let server_names_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-                std::rc::Rc::new(server_names);
-            let server_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-                std::rc::Rc::new(server_urls);
-            handle.set_server_names(slint::ModelRc::from(server_names_model));
-            handle.set_server_urls(slint::ModelRc::from(server_urls_model));
+            handle.set_server_names(slint::ModelRc::from(std::rc::Rc::new(server_names)));
+            handle.set_server_urls(slint::ModelRc::from(std::rc::Rc::new(server_urls)));
         })
         .unwrap();
     });
@@ -583,26 +579,19 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                     .upgrade_in_event_loop(move |handle| {
                         let sessions_vec = slint::VecModel::default();
                         for session in sessions.iter() {
-                            let session_vec = slint::VecModel::from(session.to_vec());
-                            let session_model: std::rc::Rc<
-                                slint::VecModel<slint::StandardListViewItem>,
-                            > = std::rc::Rc::new(session_vec);
-                            sessions_vec.push(slint::ModelRc::from(session_model));
+                            sessions_vec.push(slint::ModelRc::from(std::rc::Rc::new(
+                                slint::VecModel::from(session.to_vec()),
+                            )));
                         }
-                        let rooms_model: std::rc::Rc<
-                            slint::VecModel<slint::ModelRc<slint::StandardListViewItem>>,
-                        > = std::rc::Rc::new(sessions_vec);
-                        handle.set_sessions(slint::ModelRc::from(rooms_model));
+                        handle.set_sessions(slint::ModelRc::from(std::rc::Rc::new(sessions_vec)));
 
-                        let room_urls_vec = slint::VecModel::from(room_urls.to_vec());
-                        let room_urls_model: std::rc::Rc<slint::VecModel<slint::SharedString>> =
-                            std::rc::Rc::new(room_urls_vec);
-                        handle.set_room_urls(slint::ModelRc::from(room_urls_model));
+                        handle.set_room_urls(slint::ModelRc::from(std::rc::Rc::new(
+                            slint::VecModel::from(room_urls.to_vec()),
+                        )));
 
-                        let room_ports_vec = slint::VecModel::from(room_ports.to_vec());
-                        let room_ports_model: std::rc::Rc<slint::VecModel<i32>> =
-                            std::rc::Rc::new(room_ports_vec);
-                        handle.set_room_ports(slint::ModelRc::from(room_ports_model));
+                        handle.set_room_ports(slint::ModelRc::from(std::rc::Rc::new(
+                            slint::VecModel::from(room_ports.to_vec()),
+                        )));
 
                         handle.set_current_session(-1);
                         handle.set_pending_refresh(false);
@@ -1067,10 +1056,9 @@ fn setup_wait_window(
                                 for player in player_names {
                                     players_vec.push(player.into());
                                 }
-                                let players_model: std::rc::Rc<
-                                    slint::VecModel<slint::SharedString>,
-                                > = std::rc::Rc::new(players_vec);
-                                handle.set_players(slint::ModelRc::from(players_model));
+                                handle.set_players(slint::ModelRc::from(std::rc::Rc::new(
+                                    players_vec,
+                                )));
                             }
                         })
                         .unwrap();

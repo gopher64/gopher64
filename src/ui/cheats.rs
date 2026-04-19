@@ -77,16 +77,7 @@ pub fn cheats_window(app: &AppWindow) {
                                 options,
                             ));
                         }
-                        #[allow(clippy::type_complexity)]
-                        let cheats_model: std::rc::Rc<
-                            slint::VecModel<(
-                                slint::SharedString,
-                                bool,
-                                slint::SharedString,
-                                slint::ModelRc<(bool, slint::SharedString)>,
-                            )>,
-                        > = std::rc::Rc::new(cheats_vec);
-                        handle.set_cheats(slint::ModelRc::from(cheats_model));
+                        handle.set_cheats(slint::ModelRc::from(std::rc::Rc::new(cheats_vec)));
                     })
                     .unwrap();
                 } else {
@@ -137,17 +128,9 @@ pub fn cheats_window(app: &AppWindow) {
 
 fn clear_cheats(weak: &slint::Weak<AppWindow>, clear_name: bool) {
     weak.upgrade_in_event_loop(move |handle| {
-        let cheats_vec = slint::VecModel::default();
-        #[allow(clippy::type_complexity)]
-        let cheats_model: std::rc::Rc<
-            slint::VecModel<(
-                slint::SharedString,
-                bool,
-                slint::SharedString,
-                slint::ModelRc<(bool, slint::SharedString)>,
-            )>,
-        > = std::rc::Rc::new(cheats_vec);
-        handle.set_cheats(slint::ModelRc::from(cheats_model));
+        handle.set_cheats(slint::ModelRc::from(std::rc::Rc::new(
+            slint::VecModel::default(),
+        )));
         if clear_name {
             handle.set_cheat_game_name(String::new().into());
         }
