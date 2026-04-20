@@ -52,7 +52,7 @@ export component Settings inherits Page {
         HorizontalBox {
             alignment: start;
             Switch {
-                text: @tr("Fullscreen (Esc closes game)");
+                text: @tr("Fullscreen");
                 checked: SettingsData.fullscreen;
                 toggled => {
                     SettingsData.fullscreen = self.checked;
