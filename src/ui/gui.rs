@@ -509,9 +509,7 @@ pub fn run_rom(
                         recent_roms.push(rom);
                     }
                 }
-                handle.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
-                    slint::VecModel::from(recent_roms),
-                )));
+                handle.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(recent_roms)));
             }
             handle.set_game_running(false);
         })
