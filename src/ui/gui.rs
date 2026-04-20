@@ -229,8 +229,8 @@ fn controller_window(
                         if !command.status().await.unwrap().success() {
                             eprintln!("Failed to configure input profile");
                         }
-                        let game_ui = ui::Ui::new();
-                        update_input_profiles(&weak_app, &game_ui.config);
+                        let config = ui::config::Config::new();
+                        update_input_profiles(&weak_app, &config);
                     });
                 })
                 .unwrap();
