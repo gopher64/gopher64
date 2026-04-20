@@ -216,7 +216,7 @@ fn controller_window(
 
                     tokio::spawn(async move {
                         let mut command =
-                            std::process::Command::new(std::env::current_exe().unwrap());
+                            tokio::process::Command::new(std::env::current_exe().unwrap());
                         command.args([
                             "--configure-input-profile",
                             &profile_name,
@@ -226,7 +226,7 @@ fn controller_window(
                         if dinput {
                             command.arg("--use-dinput");
                         }
-                        if !command.status().unwrap().success() {
+                        if !command.status().await.unwrap().success() {
                             eprintln!("Failed to configure input profile");
                         }
                         let game_ui = ui::Ui::new();
@@ -379,7 +379,7 @@ pub fn run_rom(
         weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
             .unwrap();
 
-        let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+        let mut command = tokio::process::Command::new(std::env::current_exe().unwrap());
         command.args([
             "--overclock",
             &game_settings.overclock.to_string(),
@@ -421,6 +421,7 @@ pub fn run_rom(
         if !command
             .arg(file_path.to_str().unwrap())
             .status()
+            .await
             .unwrap()
             .success()
         {
