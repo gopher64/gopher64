@@ -1051,13 +1051,14 @@ fn setup_wait_window(
                                     handle.set_can_start(false);
                                 }
 
-                                let players_vec: slint::VecModel<slint::SharedString> =
-                                    slint::VecModel::default();
-                                for player in player_names {
-                                    players_vec.push(player.into());
-                                }
                                 handle.set_players(slint::ModelRc::from(std::rc::Rc::new(
-                                    players_vec,
+                                    slint::VecModel::from(
+                                        player_names
+                                            .to_vec()
+                                            .into_iter()
+                                            .map(|x| x.into())
+                                            .collect::<Vec<slint::SharedString>>(),
+                                    ),
                                 )));
                             }
                         })

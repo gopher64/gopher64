@@ -73,6 +73,7 @@ pub struct Config {
     pub video: Video,
     pub emulation: Emulation,
     pub rom_dir: std::path::PathBuf,
+    pub recent_roms: Vec<String>,
 }
 
 impl Drop for Cheats {
@@ -161,6 +162,7 @@ impl Config {
                 usb: false,
             },
             rom_dir: std::path::PathBuf::new(),
+            recent_roms: Vec::new(),
         }
     }
 }

@@ -93,10 +93,26 @@ fn file_dropped(app: &AppWindow, controller_paths: &[Option<String>]) {
         });
 }
 
-fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
+fn local_game_window(
+    app: &AppWindow,
+    config: &ui::config::Config,
+    controller_paths: &[Option<String>],
+) {
     let dirs = ui::get_dirs();
     let weak = app.as_weak();
     let owned_controller_paths = controller_paths.to_owned();
+
+    app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(
+            config
+                .recent_roms
+                .clone()
+                .into_iter()
+                .map(|x| x.into())
+                .collect::<Vec<slint::SharedString>>(),
+        ),
+    )));
+
     app.on_open_rom_button_clicked(move || {
         let controller_paths = owned_controller_paths.clone();
         weak.upgrade_in_event_loop(move |handle| {
@@ -162,11 +178,14 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
             profile_bindings.push(position.unwrap() as i32);
         }
 
-        let input_profiles = slint::VecModel::default();
-        for profile in profiles {
-            input_profiles.push(profile.into());
-        }
-        handle.set_input_profiles(slint::ModelRc::from(std::rc::Rc::new(input_profiles)));
+        handle.set_input_profiles(slint::ModelRc::from(std::rc::Rc::new(
+            slint::VecModel::from(
+                profiles
+                    .into_iter()
+                    .map(|x| x.into())
+                    .collect::<Vec<slint::SharedString>>(),
+            ),
+        )));
 
         handle
             .set_selected_profile_binding(slint::ModelRc::from(std::rc::Rc::new(profile_bindings)));
@@ -200,25 +219,41 @@ fn controller_window(
         slint::VecModel::from(config.input.transfer_pak.to_vec()),
     )));
 
-    let gb_rom_paths = slint::VecModel::default();
-    for gb_rom_path in config.input.gb_rom_path.iter() {
-        gb_rom_paths.push(gb_rom_path.into());
-    }
-    app.set_gb_rom_paths(slint::ModelRc::from(std::rc::Rc::new(gb_rom_paths)));
+    app.set_gb_rom_paths(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(
+            config
+                .input
+                .gb_rom_path
+                .to_vec()
+                .into_iter()
+                .map(|x| x.into())
+                .collect::<Vec<slint::SharedString>>(),
+        ),
+    )));
 
-    let gb_ram_paths = slint::VecModel::default();
-    for gb_ram_path in config.input.gb_ram_path.iter() {
-        gb_ram_paths.push(gb_ram_path.into());
-    }
-    app.set_gb_ram_paths(slint::ModelRc::from(std::rc::Rc::new(gb_ram_paths)));
+    app.set_gb_ram_paths(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(
+            config
+                .input
+                .gb_ram_path
+                .to_vec()
+                .into_iter()
+                .map(|x| x.into())
+                .collect::<Vec<slint::SharedString>>(),
+        ),
+    )));
 
     update_input_profiles(&app.as_weak(), config);
 
-    let controllers = slint::VecModel::default();
-    for controller in controller_names {
-        controllers.push(controller.into());
-    }
-    app.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(controllers)));
+    app.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(
+            controller_names
+                .to_vec()
+                .into_iter()
+                .map(|x| x.into())
+                .collect::<Vec<slint::SharedString>>(),
+        ),
+    )));
 
     let controller_changed = slint::VecModel::default();
     let selected_controllers = slint::VecModel::default();
@@ -395,8 +430,8 @@ pub fn app_window() {
         controller_paths.insert(0, None);
         settings_window(&app, &game_ui.config);
         controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
+        local_game_window(&app, &game_ui.config, &controller_paths);
     }
-    local_game_window(&app, &controller_paths);
     ui::netplay::netplay_window(&app, &controller_paths);
     ui::cheats::cheats_window(&app);
     app.run().unwrap();

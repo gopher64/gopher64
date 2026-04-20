@@ -17,11 +17,14 @@ pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {
         vru_dialog_weak.unwrap().window().hide().unwrap();
     });
 
-    let words_vec = slint::VecModel::default();
-    for word in dedup_words {
-        words_vec.push(word.into());
-    }
-    vru_dialog.set_words(slint::ModelRc::from(std::rc::Rc::new(words_vec)));
+    vru_dialog.set_words(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(
+            dedup_words
+                .into_iter()
+                .map(|x| x.into())
+                .collect::<Vec<slint::SharedString>>(),
+        ),
+    )));
 
     let timer = slint::Timer::default();
     timer.start(
