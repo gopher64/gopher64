@@ -168,6 +168,7 @@ fn main() {
         .allowlist_function("ra_shutdown_client")
         .allowlist_function("ra_get_hardcore")
         .allowlist_function("ra_load_game")
+        .allowlist_function("ra_unload_game")
         .allowlist_function("ra_set_dmem")
         .allowlist_function("ra_do_frame")
         .allowlist_function("ra_do_idle")

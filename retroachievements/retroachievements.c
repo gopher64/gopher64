@@ -98,6 +98,7 @@ const char *ra_get_token() { return g_token; }
 
 void ra_logout_user() {
   g_user_logged_in = false;
+  g_game_loaded = false;
   g_username = NULL;
   g_token = NULL;
   rc_client_logout(g_client);
@@ -182,6 +183,14 @@ void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
   rc_client_begin_identify_and_load_game(g_client, RC_CONSOLE_NINTENDO_64, NULL,
                                          rom, rom_size, load_game_callback,
                                          userdata);
+}
+
+void ra_unload_game() {
+  if (!g_game_loaded)
+    return;
+
+  rc_client_unload_game(g_client);
+  g_game_loaded = false;
 }
 
 void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
