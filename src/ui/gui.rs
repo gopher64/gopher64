@@ -205,7 +205,7 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
 fn controller_window(
     app: &AppWindow,
     config: &ui::config::Config,
-    controller_names: &Vec<String>,
+    controller_names: &[String],
     controller_paths: &[Option<String>],
 ) {
     app.set_emulate_vru(config.input.emulate_vru);
