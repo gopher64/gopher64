@@ -66,27 +66,20 @@ fn file_dropped(app: &AppWindow, controller_paths: &[Option<String>]) {
                 weak.upgrade_in_event_loop(move |handle| {
                     save_settings(&handle, &controller_paths);
 
-                    let overclock = handle.get_overclock_n64_cpu();
-                    let disable_expansion_pak = handle.get_disable_expansion_pak();
-                    let ra_enabled = handle.get_ra_enabled();
-                    let ra_hardcore = handle.get_ra_hardcore();
-                    let ra_challenge = handle.get_ra_challenge();
-                    let ra_leaderboard = handle.get_ra_leaderboard();
-
                     run_rom(
                         path,
                         ui::GameSettings {
-                            overclock,
-                            disable_expansion_pak,
+                            overclock: handle.get_overclock_n64_cpu(),
+                            disable_expansion_pak: handle.get_disable_expansion_pak(),
                             cheats: std::collections::HashMap::new(), // will be filled in later
                             load_savestate_slot: None,
                         },
                         None,
                         RASettings {
-                            enabled: ra_enabled,
-                            hardcore: ra_hardcore,
-                            challenge: ra_challenge,
-                            leaderboard: ra_leaderboard,
+                            enabled: handle.get_ra_enabled(),
+                            hardcore: handle.get_ra_hardcore(),
+                            challenge: handle.get_ra_challenge(),
+                            leaderboard: handle.get_ra_leaderboard(),
                         },
                         weak2,
                     );
