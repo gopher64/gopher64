@@ -248,7 +248,6 @@ fn controller_window(
     app.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
             controller_names
-                .to_vec()
                 .into_iter()
                 .map(|x| x.into())
                 .collect::<Vec<slint::SharedString>>(),
