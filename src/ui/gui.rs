@@ -56,10 +56,9 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
 
 fn run_with_path(
     weak: slint::Weak<AppWindow>,
-    path: &std::path::PathBuf,
+    path: std::path::PathBuf,
     controller_paths: &[Option<String>],
 ) {
-    let path = path.clone();
     let controller_paths = controller_paths.to_owned();
     let weak2 = weak.clone();
     weak.upgrade_in_event_loop(move |handle| {
@@ -95,7 +94,7 @@ fn file_dropped(app: &AppWindow, controller_paths: &[Option<String>]) {
     app.window()
         .on_winit_window_event(move |_winit_window, event| {
             if let slint::winit_030::winit::event::WindowEvent::DroppedFile(path) = event {
-                run_with_path(weak.clone(), path, &controller_paths);
+                run_with_path(weak.clone(), path.to_path_buf(), &controller_paths);
             }
             slint::winit_030::EventResult::Propagate
         });
@@ -155,7 +154,7 @@ fn local_game_window(
         weak.upgrade_in_event_loop(move |handle| {
             run_with_path(
                 handle.as_weak(),
-                &std::path::PathBuf::from(rom.to_string()),
+                std::path::PathBuf::from(rom.to_string()),
                 &controller_paths,
             );
         })
