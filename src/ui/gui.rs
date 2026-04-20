@@ -106,8 +106,7 @@ fn local_game_window(
         slint::VecModel::from(
             config
                 .recent_roms
-                .clone()
-                .into_iter()
+                .iter()
                 .map(|x| x.into())
                 .collect::<Vec<slint::SharedString>>(),
         ),
@@ -181,7 +180,7 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
         handle.set_input_profiles(slint::ModelRc::from(std::rc::Rc::new(
             slint::VecModel::from(
                 profiles
-                    .into_iter()
+                    .iter()
                     .map(|x| x.into())
                     .collect::<Vec<slint::SharedString>>(),
             ),
@@ -224,8 +223,7 @@ fn controller_window(
             config
                 .input
                 .gb_rom_path
-                .to_vec()
-                .into_iter()
+                .iter()
                 .map(|x| x.into())
                 .collect::<Vec<slint::SharedString>>(),
         ),
@@ -236,8 +234,7 @@ fn controller_window(
             config
                 .input
                 .gb_ram_path
-                .to_vec()
-                .into_iter()
+                .iter()
                 .map(|x| x.into())
                 .collect::<Vec<slint::SharedString>>(),
         ),
@@ -248,7 +245,7 @@ fn controller_window(
     app.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
             controller_names
-                .into_iter()
+                .iter()
                 .map(|x| x.into())
                 .collect::<Vec<slint::SharedString>>(),
         ),

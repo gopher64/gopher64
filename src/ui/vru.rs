@@ -20,7 +20,7 @@ pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {
     vru_dialog.set_words(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
             dedup_words
-                .into_iter()
+                .iter()
                 .map(|x| x.into())
                 .collect::<Vec<slint::SharedString>>(),
         ),

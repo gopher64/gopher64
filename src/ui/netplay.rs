@@ -1054,7 +1054,7 @@ fn setup_wait_window(
                                 handle.set_players(slint::ModelRc::from(std::rc::Rc::new(
                                     slint::VecModel::from(
                                         player_names
-                                            .into_iter()
+                                            .iter()
                                             .map(|x| x.into())
                                             .collect::<Vec<slint::SharedString>>(),
                                     ),
