@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
+import { Button, HorizontalBox, VerticalBox, GroupBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 import { AboutData, NewVersionButton } from "about_page.slint";
 
@@ -45,5 +45,18 @@ export component LocalGame inherits Page {
             }
         }
         Rectangle { }
+
+        if State.recent_roms.length>0:HorizontalBox {
+            alignment: center;
+            GroupBox {
+                title: @tr("Recent ROMs");
+                VerticalLayout {
+                    alignment: space-between;
+                    for rom in State.recent_roms: Button {
+                        text: rom;
+                    }
+                }
+            }
+        }
     }
 }
