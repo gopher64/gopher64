@@ -127,6 +127,32 @@ fn local_game_window(
         ),
     )));
 
+    app.set_recent_roms_label(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(
+            config
+                .recent_roms
+                .iter()
+                .filter(|x| {
+                    if let Ok(exists) = std::fs::exists(x)
+                        && exists
+                    {
+                        true
+                    } else {
+                        false
+                    }
+                })
+                .map(|x| {
+                    std::path::Path::new(x)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .into()
+                })
+                .collect::<Vec<slint::SharedString>>(),
+        ),
+    )));
+
     let weak = app.as_weak();
     let owned_controller_paths = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
@@ -533,18 +559,33 @@ pub fn run_rom(
                 handle.set_rom_dir(rom_dir.into());
             }
             if success {
+                let recent_roms_label = slint::VecModel::default();
                 let recent_roms = slint::VecModel::default();
+
+                recent_roms_label.push(file_path.file_name().unwrap().to_str().unwrap().into());
                 recent_roms.push(file_path.to_str().unwrap().into());
+
                 for rom in handle.get_recent_roms().iter() {
                     if rom != file_path.to_str().unwrap()
                         && recent_roms.row_count() < 5
                         && let Ok(exists) = std::fs::exists(&rom)
                         && exists
                     {
+                        recent_roms_label.push(
+                            std::path::Path::new(&rom)
+                                .file_name()
+                                .unwrap()
+                                .to_str()
+                                .unwrap()
+                                .into(),
+                        );
                         recent_roms.push(rom);
                     }
                 }
                 handle.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(recent_roms)));
+                handle.set_recent_roms_label(slint::ModelRc::from(std::rc::Rc::new(
+                    recent_roms_label,
+                )));
             }
             handle.set_game_running(false);
         })

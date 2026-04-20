@@ -69,7 +69,7 @@ export component Cheats inherits Page {
                         cheat_toggled(CheatsData.cheat_game_crc,data.cheat_name,"",self.checked);
                     }
                 }
-                for item[index] in data.options: CheckBox {
+                for item in data.options: CheckBox {
                     text: item.option;
                     enabled: !data.enabled || (data.enabled && item.enabled);
                     checked: item.enabled;

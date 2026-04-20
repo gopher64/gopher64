@@ -8,6 +8,7 @@ import { AboutData, NewVersionButton } from "about_page.slint";
 export global State {
     in-out property <bool> game_running;
     in-out property <[string]> recent_roms;
+    in-out property <[string]> recent_roms_label;
 }
 
 export component LocalGame inherits Page {
@@ -53,11 +54,11 @@ export component LocalGame inherits Page {
                 title: @tr("Recent ROMs");
                 VerticalLayout {
                     alignment: space-between;
-                    for rom in State.recent_roms: Button {
-                        text: rom;
+                    for rom[index] in State.recent_roms: Button {
+                        text: State.recent_roms_label[index];
                         enabled: !State.game_running;
                         clicked => {
-                            recent_rom_button_clicked(self.text);
+                            recent_rom_button_clicked(rom);
                         }
                     }
                 }
