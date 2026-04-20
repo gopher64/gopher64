@@ -1,4 +1,4 @@
-import { StandardButton, HorizontalBox, VerticalBox, Button, LineEdit, CheckBox, Slider } from "std-widgets.slint";
+import { StandardButton, HorizontalBox, VerticalBox, Button, LineEdit, Switch, Slider } from "std-widgets.slint";
 
 export global InputProfileData {
     in-out property <bool> dinput;
@@ -47,7 +47,7 @@ export component InputProfileDialog inherits Window {
 
         HorizontalBox {
             alignment: center;
-            CheckBox {
+            Switch {
                 text: @tr("Use DirectInput");
                 checked: InputProfileData.dinput;
                 toggled => {

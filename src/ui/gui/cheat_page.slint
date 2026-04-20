@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { ListView, HorizontalBox, VerticalBox, Button, GroupBox, CheckBox } from "std-widgets.slint";
+import { ListView, HorizontalBox, VerticalBox, Button, GroupBox, Switch, CheckBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 import { SettingsData } from "settings_page.slint";
 
@@ -62,8 +62,7 @@ export component Cheats inherits Page {
                     wrap: word-wrap;
                 }
 
-                if data.options.length == 0: CheckBox {
-                    text: @tr("Enabled");
+                if data.options.length == 0: Switch {
                     checked: data.enabled;
                     toggled => {
                         data.enabled = self.checked;

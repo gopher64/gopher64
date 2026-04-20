@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { LineEdit, CheckBox, Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
+import { LineEdit, Switch, Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export global RAData {
@@ -27,7 +27,7 @@ export component RetroAchievements inherits Page {
         alignment: start;
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Enabled");
                 checked: RAData.enabled;
                 toggled => {
@@ -45,7 +45,7 @@ export component RetroAchievements inherits Page {
         }
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Hardcore mode");
                 checked: RAData.hardcore;
                 enabled: RAData.enabled;
@@ -57,7 +57,7 @@ export component RetroAchievements inherits Page {
         }
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Challenge Indicators");
                 checked: RAData.challenge;
                 enabled: RAData.enabled;
@@ -69,7 +69,7 @@ export component RetroAchievements inherits Page {
         }
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Leaderboard Trackers");
                 checked: RAData.leaderboard;
                 enabled: RAData.enabled;

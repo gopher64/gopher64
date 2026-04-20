@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { ComboBox, HorizontalBox, VerticalBox, CheckBox } from "std-widgets.slint";
+import { ComboBox, HorizontalBox, VerticalBox, Switch } from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export global SettingsData {
@@ -40,7 +40,7 @@ export component Settings inherits Page {
 
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Integer Scaling");
                 checked: SettingsData.integer_scaling;
                 toggled => {
@@ -51,7 +51,7 @@ export component Settings inherits Page {
 
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Fullscreen (Esc closes game)");
                 checked: SettingsData.fullscreen;
                 toggled => {
@@ -62,7 +62,7 @@ export component Settings inherits Page {
 
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Widescreen (stretch)");
                 checked: SettingsData.widescreen;
                 toggled => {
@@ -73,7 +73,7 @@ export component Settings inherits Page {
 
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("VSync");
                 checked: SettingsData.vsync;
                 toggled => {
@@ -84,7 +84,7 @@ export component Settings inherits Page {
 
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Apply CRT shader");
                 checked: SettingsData.apply_crt_shader;
                 toggled => {
@@ -99,7 +99,7 @@ export component Settings inherits Page {
 
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Overclock N64 CPU (may cause bugs)");
                 checked: SettingsData.overclock_n64_cpu;
                 toggled => {
@@ -110,7 +110,7 @@ export component Settings inherits Page {
 
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Disable Expansion Pak");
                 checked: SettingsData.disable_expansion_pak;
                 toggled => {
@@ -121,7 +121,7 @@ export component Settings inherits Page {
 
         HorizontalBox {
             alignment: start;
-            CheckBox {
+            Switch {
                 text: @tr("Emulate UNFLoader");
                 checked: SettingsData.emulate_usb;
                 toggled => {
