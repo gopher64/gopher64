@@ -107,6 +107,15 @@ fn local_game_window(
             config
                 .recent_roms
                 .iter()
+                .filter(|x| {
+                    if let Ok(exists) = std::fs::exists(x)
+                        && exists
+                    {
+                        true
+                    } else {
+                        false
+                    }
+                })
                 .map(|x| x.into())
                 .collect::<Vec<slint::SharedString>>(),
         ),
@@ -505,7 +514,11 @@ pub fn run_rom(
                 let recent_roms = slint::VecModel::default();
                 recent_roms.push(file_path.to_str().unwrap().into());
                 for rom in handle.get_recent_roms().iter() {
-                    if rom != file_path.to_str().unwrap() && recent_roms.row_count() < 5 {
+                    if rom != file_path.to_str().unwrap()
+                        && recent_roms.row_count() < 5
+                        && let Ok(exists) = std::fs::exists(&rom)
+                        && exists
+                    {
                         recent_roms.push(rom);
                     }
                 }
