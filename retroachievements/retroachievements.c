@@ -184,6 +184,14 @@ void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
                                          userdata);
 }
 
+void ra_unload_game() {
+  if (!g_game_loaded)
+    return;
+
+  rc_client_unload_game(g_client);
+  g_game_loaded = false;
+}
+
 void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
   g_dmem = dmem;
   g_dmem_size = dmem_size;

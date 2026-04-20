@@ -152,6 +152,10 @@ pub async fn load_game(rom: &[u8], rom_size: usize) {
     rx.await.unwrap();
 }
 
+pub fn unload_game() {
+    unsafe { ra_unload_game() };
+}
+
 pub fn welcome() {
     unsafe { ra_welcome() };
 }
