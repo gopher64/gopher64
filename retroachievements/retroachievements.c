@@ -98,6 +98,7 @@ const char *ra_get_token() { return g_token; }
 
 void ra_logout_user() {
   g_user_logged_in = false;
+  g_game_loaded = false;
   g_username = NULL;
   g_token = NULL;
   rc_client_logout(g_client);
