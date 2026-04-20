@@ -64,6 +64,9 @@ fn file_dropped(app: &AppWindow, controller_paths: &[Option<String>]) {
                 let path = path.clone();
                 let weak2 = weak.clone();
                 weak.upgrade_in_event_loop(move |handle| {
+                    if handle.get_game_running() {
+                        return;
+                    }
                     save_settings(&handle, &controller_paths);
 
                     run_rom(
