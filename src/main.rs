@@ -141,9 +141,7 @@ async fn main() -> std::io::Result<()> {
 
         device.ui.config.recent_roms.retain(|x| *x != game);
         device.ui.config.recent_roms.insert(0, game);
-        if device.ui.config.recent_roms.len() > 5 {
-            device.ui.config.recent_roms.pop();
-        }
+        device.ui.config.recent_roms.truncate(5);
 
         if args.fullscreen {
             device.ui.video.fullscreen = true;
