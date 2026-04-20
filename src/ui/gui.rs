@@ -223,17 +223,11 @@ fn controller_window(
     let controller_changed = slint::VecModel::default();
     let selected_controllers = slint::VecModel::default();
     for selected in config.input.controller_assignment.iter() {
-        let mut found = false;
-        for (i, path) in controller_paths.iter().enumerate() {
-            if selected == path {
-                selected_controllers.push(i as i32);
-                found = true;
-                continue;
-            }
-        }
-        if !found {
-            selected_controllers.push(0);
-        }
+        let selected_index = controller_paths
+            .iter()
+            .position(|path| selected == path)
+            .unwrap_or(0) as i32;
+        selected_controllers.push(selected_index);
         controller_changed.push(false);
     }
     app.set_selected_controller(slint::ModelRc::from(std::rc::Rc::new(selected_controllers)));
