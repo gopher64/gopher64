@@ -484,13 +484,14 @@ pub fn run_rom(
             }
         }
 
-        if !command
+        let success = command
             .arg(file_path.to_str().unwrap())
             .status()
             .await
             .unwrap()
-            .success()
-        {
+            .success();
+
+        if !success {
             eprintln!("Failed to run game");
         }
 
@@ -499,6 +500,18 @@ pub fn run_rom(
         weak.upgrade_in_event_loop(move |handle| {
             if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
                 handle.set_rom_dir(rom_dir.into());
+            }
+            if success {
+                let recent_roms = slint::VecModel::default();
+                recent_roms.push(file_path.to_str().unwrap().into());
+                for rom in handle.get_recent_roms().iter() {
+                    if rom != file_path.to_str().unwrap() && recent_roms.row_count() < 5 {
+                        recent_roms.push(rom);
+                    }
+                }
+                handle.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
+                    slint::VecModel::from(recent_roms),
+                )));
             }
             handle.set_game_running(false);
         })
