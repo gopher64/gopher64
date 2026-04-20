@@ -22,6 +22,7 @@ export component AppWindow inherits Window {
     callback wiki_button_clicked;
     callback discord_button_clicked;
     callback newversion_button_clicked;
+    callback recent_rom_button_clicked(string);
     callback patreon_button_clicked;
     callback github_sponsors_button_clicked;
     callback source_code_button_clicked;
@@ -105,6 +106,9 @@ export component AppWindow inherits Window {
             }
             newversion_button_clicked => {
                 newversion_button_clicked();
+            }
+            recent_rom_button_clicked(rom) => {
+                recent_rom_button_clicked(rom);
             }
         }
         if(side-bar.current-item == 1): ControllerConfig {
