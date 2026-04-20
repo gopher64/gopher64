@@ -5200,6 +5200,7 @@ checksum = "364a1e8fae7f1969224acc59ba729f06aeaf808123796389eae458c396119ef0"
 dependencies = [
  "const-field-offset",
  "i-slint-backend-selector",
+ "i-slint-backend-winit",
  "i-slint-common",
  "i-slint-core",
  "i-slint-core-macros",

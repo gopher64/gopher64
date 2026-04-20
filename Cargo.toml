@@ -16,7 +16,7 @@ chrono = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde-big-array = "0.5"
-slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "backend-winit", "renderer-skia"], optional = true }
+slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "unstable-winit-030", "backend-winit", "renderer-skia"], optional = true }
 open = "5.3"
 sha2 = "0.11"
 sdl3-sys = { version = "0.6", features = ["build-from-source-static"] }

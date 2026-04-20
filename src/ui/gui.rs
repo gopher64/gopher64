@@ -1,6 +1,7 @@
 use crate::retroachievements;
 use crate::ui;
 use slint::Model;
+use slint::winit_030::WinitWindowAccessor;
 
 slint::include_modules!();
 
@@ -53,12 +54,48 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
+fn file_dropped(app: &AppWindow, controller_paths: &[Option<String>]) {
+    let weak = app.as_weak();
+    let owned_controller_paths = controller_paths.to_owned();
+    app.window()
+        .on_winit_window_event(move |_winit_window, event| {
+            if let slint::winit_030::winit::event::WindowEvent::DroppedFile(path) = event {
+                let controller_paths = owned_controller_paths.clone();
+                let path = path.clone();
+                let weak2 = weak.clone();
+                weak.upgrade_in_event_loop(move |handle| {
+                    save_settings(&handle, &controller_paths);
+
+                    run_rom(
+                        path,
+                        ui::GameSettings {
+                            overclock: handle.get_overclock_n64_cpu(),
+                            disable_expansion_pak: handle.get_disable_expansion_pak(),
+                            cheats: std::collections::HashMap::new(), // will be filled in later
+                            load_savestate_slot: None,
+                        },
+                        None,
+                        RASettings {
+                            enabled: handle.get_ra_enabled(),
+                            hardcore: handle.get_ra_hardcore(),
+                            challenge: handle.get_ra_challenge(),
+                            leaderboard: handle.get_ra_leaderboard(),
+                        },
+                        weak2,
+                    );
+                })
+                .unwrap();
+            }
+            slint::winit_030::EventResult::Propagate
+        });
+}
+
 fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     let dirs = ui::get_dirs();
     let weak = app.as_weak();
-    let controller_paths = controller_paths.to_owned();
+    let owned_controller_paths = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
-        let controller_paths = controller_paths.clone();
+        let controller_paths = owned_controller_paths.clone();
         weak.upgrade_in_event_loop(move |handle| {
             save_settings(&handle, &controller_paths);
             open_rom(&handle)
@@ -70,6 +107,7 @@ fn local_game_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     app.on_saves_folder_button_clicked(move || {
         open::that_detached(saves_path.clone()).unwrap();
     });
+    file_dropped(app, controller_paths);
 }
 
 fn input_profiles(config: &ui::config::Config) -> Vec<String> {
