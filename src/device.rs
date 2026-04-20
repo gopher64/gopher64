@@ -182,7 +182,8 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
             )
             .expect("ok");
     } else {
-        contents = fs::read(file_path).expect("Should have been able to read the file");
+        contents = fs::read(file_path)
+            .expect(&format!("Could not read ROM file: {}", file_path.display()));
     }
 
     if contents.is_empty() {
