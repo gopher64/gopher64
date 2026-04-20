@@ -138,6 +138,11 @@ async fn main() -> std::io::Result<()> {
         }
 
         let mut device = device::Device::new();
+
+        device.ui.config.recent_roms.retain(|x| *x != game);
+        device.ui.config.recent_roms.insert(0, game);
+        device.ui.config.recent_roms.truncate(5);
+
         if args.fullscreen {
             device.ui.video.fullscreen = true;
         } else {

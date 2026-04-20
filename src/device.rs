@@ -140,7 +140,11 @@ fn swap_rom(contents: Vec<u8>) -> Option<Vec<u8>> {
 
 pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
     let mut contents = vec![];
-    if file_path.extension().unwrap().eq_ignore_ascii_case("zip") {
+    if file_path
+        .extension()
+        .unwrap_or_default()
+        .eq_ignore_ascii_case("zip")
+    {
         let zip_file = fs::File::open(file_path).unwrap();
         let mut archive = zip::ZipArchive::new(zip_file).unwrap();
         for i in 0..archive.len() {
@@ -157,7 +161,11 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
                 break;
             }
         }
-    } else if file_path.extension().unwrap().eq_ignore_ascii_case("7z") {
+    } else if file_path
+        .extension()
+        .unwrap_or_default()
+        .eq_ignore_ascii_case("7z")
+    {
         let mut archive =
             sevenz_rust2::ArchiveReader::open(file_path, sevenz_rust2::Password::empty()).unwrap();
 
@@ -182,7 +190,8 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
             )
             .expect("ok");
     } else {
-        contents = fs::read(file_path).expect("Should have been able to read the file");
+        contents = fs::read(file_path)
+            .unwrap_or_else(|_| panic!("Could not read ROM file: {}", file_path.display()));
     }
 
     if contents.is_empty() {

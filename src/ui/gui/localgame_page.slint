@@ -1,18 +1,20 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
+import { Button, HorizontalBox, VerticalBox, GroupBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 import { AboutData, NewVersionButton } from "about_page.slint";
 
 export global State {
     in-out property <bool> game_running;
+    in-out property <[{a:string, b:string}]> recent_roms;
 }
 
 export component LocalGame inherits Page {
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
     callback newversion_button_clicked;
+    callback recent_rom_button_clicked(string);
     title: @tr("Local Game");
 
     VerticalBox {
@@ -44,5 +46,22 @@ export component LocalGame inherits Page {
             }
         }
         Rectangle { }
+
+        if State.recent_roms.length>0:HorizontalBox {
+            alignment: center;
+            GroupBox {
+                title: @tr("Recent ROMs");
+                VerticalLayout {
+                    alignment: space-between;
+                    for rom in State.recent_roms: Button {
+                        text: rom.b;
+                        enabled: !State.game_running;
+                        clicked => {
+                            recent_rom_button_clicked(rom.a);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
