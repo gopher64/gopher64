@@ -182,7 +182,6 @@ fn main() {
     if cfg!(feature = "gui") {
         retroachievements_builder = retroachievements_builder
             .allowlist_function("ra_logout_user")
-            .allowlist_function("ra_is_user_logged_in")
             .allowlist_function("ra_get_username")
             .allowlist_function("ra_get_token");
     }

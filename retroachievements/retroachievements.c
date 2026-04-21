@@ -18,13 +18,8 @@ void notify_load_game(void *userdata);
 static rc_client_t *g_client = NULL;
 static const uint8_t *g_dmem = NULL;
 static size_t g_dmem_size = 0;
-static bool g_game_loaded = false;
-static bool g_user_logged_in = false;
 static bool g_challenge = false;
 static bool g_leaderboard = false;
-static const char *g_username = NULL;
-static const char *g_token = NULL;
-static char load_game_error_message[512];
 static rc_client_leaderboard_list_t *g_leaderboard_list = NULL;
 
 static uint32_t read_memory(uint32_t address, uint8_t *buffer,
@@ -73,42 +68,31 @@ static void login_callback(int result, const char *error_message,
                            rc_client_t *client, void *userdata) {
   // If not successful, just report the error and bail.
   if (result != RC_OK) {
-    snprintf(load_game_error_message, sizeof(load_game_error_message),
-             "RA login failed: %s", error_message);
     store_retroachievements_credentials(NULL, NULL, userdata);
     return;
-  } else {
-    memset(load_game_error_message, 0, sizeof(load_game_error_message));
   }
 
   // Login was successful. Capture the token for future logins so we don't have
   // to store the password anywhere.
   const rc_client_user_t *user = rc_client_get_user_info(client);
   store_retroachievements_credentials(user->username, user->token, userdata);
-
-  g_username = user->username;
-  g_token = user->token;
-  g_user_logged_in = true;
 }
 
-bool ra_is_user_logged_in() { return g_user_logged_in; }
-
-const char *ra_get_username() { return g_username; }
-const char *ra_get_token() { return g_token; }
-
-void ra_logout_user() {
-  g_user_logged_in = false;
-  g_game_loaded = false;
-  g_username = NULL;
-  g_token = NULL;
-  rc_client_logout(g_client);
+const char *ra_get_username() {
+  const rc_client_user_t *user = rc_client_get_user_info(g_client);
+  return user ? user->username : NULL;
 }
+const char *ra_get_token() {
+  const rc_client_user_t *user = rc_client_get_user_info(g_client);
+  return user ? user->token : NULL;
+}
+
+void ra_logout_user() { rc_client_logout(g_client); }
 
 void ra_login_user(const char *username, const char *password, void *userdata) {
   // This will generate an HTTP payload and call the server_call chain above.
   // Eventually, login_callback will be called to let us know if the login was
   // successful.
-  g_user_logged_in = false;
   rc_client_begin_login_with_password(g_client, username, password,
                                       login_callback, userdata);
 }
@@ -118,7 +102,6 @@ void ra_login_token_user(const char *username, const char *token,
   // This is exactly the same functionality as
   // rc_client_begin_login_with_password, but uses the token captured from the
   // first login instead of a password. Note that it uses the same callback.
-  g_user_logged_in = false;
   rc_client_begin_login_with_token(g_client, username, token, login_callback,
                                    userdata);
 }
@@ -127,12 +110,8 @@ static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
   if (result != RC_OK) {
     rc_client_set_hardcore_enabled(client, false);
-    snprintf(load_game_error_message, sizeof(load_game_error_message),
-             "RA load failed: %s", error_message);
     notify_load_game(userdata);
     return;
-  } else {
-    memset(load_game_error_message, 0, sizeof(load_game_error_message));
   }
 
   if (!rc_client_is_processing_required(client)) {
@@ -142,20 +121,29 @@ static void load_game_callback(int result, const char *error_message,
   g_leaderboard_list = rc_client_create_leaderboard_list(
       client, RC_CLIENT_LEADERBOARD_LIST_GROUPING_NONE);
 
-  g_game_loaded = true;
   notify_load_game(userdata);
 }
 
 void ra_welcome() {
-  if (strlen(load_game_error_message) > 0) {
-    rdp_onscreen_message(load_game_error_message, true);
-  }
-  if (!g_game_loaded)
+  if (!g_client)
     return;
 
   char buffer[512];
 
+  if (!rc_client_get_user_info(g_client)) {
+    snprintf(buffer, sizeof(buffer), "RA login failed");
+    rdp_onscreen_message(buffer, true);
+    return;
+  }
+
   const rc_client_game_t *game = rc_client_get_game_info(g_client);
+
+  if (!game) {
+    snprintf(buffer, sizeof(buffer), "RA load failed");
+    rdp_onscreen_message(buffer, true);
+    return;
+  }
+
   rc_client_user_game_summary_t summary;
   rc_client_get_user_game_summary(g_client, &summary);
 
@@ -175,22 +163,17 @@ void ra_welcome() {
 }
 
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
-  if (!g_user_logged_in) {
-    notify_load_game(userdata);
-    return;
-  }
-
   rc_client_begin_identify_and_load_game(g_client, RC_CONSOLE_NINTENDO_64, NULL,
                                          rom, rom_size, load_game_callback,
                                          userdata);
 }
 
 void ra_unload_game() {
-  if (!g_game_loaded)
-    return;
-
+  if (g_leaderboard_list) {
+    rc_client_destroy_leaderboard_list(g_leaderboard_list);
+    g_leaderboard_list = NULL;
+  }
   rc_client_unload_game(g_client);
-  g_game_loaded = false;
 }
 
 void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
@@ -332,8 +315,6 @@ void ra_init_client(bool hardcore, bool challenge, bool leaderboard) {
   // Create the client instance (using a global variable simplifies this
   // example)
   g_client = rc_client_create(read_memory, server_call);
-  g_game_loaded = false;
-  g_user_logged_in = false;
   g_dmem = NULL;
   g_dmem_size = 0;
 
@@ -348,17 +329,9 @@ void ra_init_client(bool hardcore, bool challenge, bool leaderboard) {
   g_leaderboard = leaderboard;
 }
 
-bool ra_get_hardcore() {
-  if (!g_user_logged_in)
-    return false;
-  return rc_client_get_hardcore_enabled(g_client);
-}
+bool ra_get_hardcore() { return rc_client_get_hardcore_enabled(g_client); }
 
 void ra_shutdown_client() {
-  if (g_leaderboard_list) {
-    rc_client_destroy_leaderboard_list(g_leaderboard_list);
-    g_leaderboard_list = NULL;
-  }
   if (g_client) {
     // Release resources associated to the client instance
     rc_client_destroy(g_client);
@@ -366,30 +339,16 @@ void ra_shutdown_client() {
   }
 }
 
-void ra_do_frame() {
-  if (!g_game_loaded)
-    return;
+void ra_do_frame() { rc_client_do_frame(g_client); }
 
-  rc_client_do_frame(g_client);
-}
+void ra_do_idle() { rc_client_idle(g_client); }
 
-void ra_do_idle() {
-  if (!g_game_loaded)
-    return;
-
-  rc_client_idle(g_client);
-}
-
-size_t ra_state_size() {
-  if (!g_game_loaded)
-    return 0;
-
-  return rc_client_progress_size(g_client);
-}
+size_t ra_state_size() { return rc_client_progress_size(g_client); }
 
 void ra_save_state(uint8_t *state, size_t state_size) {
-  if (!g_game_loaded)
+  if (!rc_client_is_game_loaded(g_client))
     return;
+
   if (rc_client_serialize_progress_sized(g_client, state, state_size) !=
       RC_OK) {
     printf("RetroAchievements: Failed to serialize progress\n");
@@ -397,8 +356,9 @@ void ra_save_state(uint8_t *state, size_t state_size) {
 }
 
 void ra_load_state(const uint8_t *state, size_t state_size) {
-  if (!g_game_loaded)
+  if (!rc_client_is_game_loaded(g_client))
     return;
+
   if (rc_client_deserialize_progress_sized(g_client, state, state_size) !=
       RC_OK) {
     printf("RetroAchievements: Failed to deserialize progress\n");
@@ -406,7 +366,7 @@ void ra_load_state(const uint8_t *state, size_t state_size) {
 }
 
 void ra_display_inprogress_achievements(void *userdata) {
-  if (!g_game_loaded)
+  if (!rc_client_is_game_loaded(g_client))
     return;
 
   rc_client_achievement_list_t *list = rc_client_create_achievement_list(

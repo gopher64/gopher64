@@ -86,8 +86,12 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
         open::that_detached("https://retroachievements.org/system/2-nintendo-64/games").unwrap();
     });
 
-    app.on_ra_show_profile_clicked(move |username| {
-        open::that_detached(format!("https://retroachievements.org/user/{}", username)).unwrap();
+    app.on_ra_show_profile_clicked(move || {
+        open::that_detached(format!(
+            "https://retroachievements.org/user/{}",
+            retroachievements::get_username().unwrap_or_default()
+        ))
+        .unwrap();
     });
 }
 
@@ -98,10 +102,8 @@ fn set_current_user_message(app: &ui::gui::AppWindow, rx: tokio::sync::oneshot::
         rx.await.unwrap();
         weak_app
             .upgrade_in_event_loop(move |handle| {
-                if retroachievements::is_user_logged_in() {
-                    handle.set_ra_current_user_message(
-                        format!("Logged in as {}", handle.get_ra_username()).into(),
-                    );
+                if let Some(username) = retroachievements::get_username() {
+                    handle.set_ra_current_user_message(format!("Logged in as {}", username).into());
                     handle.set_ra_show_profile(true);
                 } else {
                     handle.set_ra_current_user_message("Login failed".into());
