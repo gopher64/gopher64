@@ -7,7 +7,7 @@ mod savestates;
 mod ui;
 
 #[unsafe(no_mangle)]
-pub extern "C" fn run_game(c_rom_contents: *const u8, rom_size: usize) {
+pub extern "C" fn gopher64_run_game(c_rom_contents: *const u8, rom_size: usize) {
     let dirs = ui::get_dirs();
 
     std::fs::create_dir_all(dirs.config_dir).unwrap();
