@@ -137,12 +137,15 @@ void ra_welcome() {
   if (strlen(load_game_error_message) > 0) {
     rdp_onscreen_message(load_game_error_message, true);
   }
-  if (!g_client)
-    return;
 
   char buffer[512];
 
   const rc_client_game_t *game = rc_client_get_game_info(g_client);
+
+  if (!game) {
+    return;
+  }
+
   rc_client_user_game_summary_t summary;
   rc_client_get_user_game_summary(g_client, &summary);
 
@@ -172,7 +175,13 @@ void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
                                          userdata);
 }
 
-void ra_unload_game() { rc_client_unload_game(g_client); }
+void ra_unload_game() {
+  if (g_leaderboard_list) {
+    rc_client_destroy_leaderboard_list(g_leaderboard_list);
+    g_leaderboard_list = NULL;
+  }
+  rc_client_unload_game(g_client);
+}
 
 void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
   g_dmem = dmem;
@@ -330,10 +339,6 @@ void ra_init_client(bool hardcore, bool challenge, bool leaderboard) {
 bool ra_get_hardcore() { return rc_client_get_hardcore_enabled(g_client); }
 
 void ra_shutdown_client() {
-  if (g_leaderboard_list) {
-    rc_client_destroy_leaderboard_list(g_leaderboard_list);
-    g_leaderboard_list = NULL;
-  }
   if (g_client) {
     // Release resources associated to the client instance
     rc_client_destroy(g_client);
