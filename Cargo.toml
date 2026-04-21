@@ -9,6 +9,7 @@ default = ["gui"]
 gui = ["dep:rfd", "dep:slint", "dep:slint-build"]
 
 [lib]
+path = "src/c_lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
