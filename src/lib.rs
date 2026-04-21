@@ -7,7 +7,8 @@ mod savestates;
 mod ui;
 
 #[unsafe(no_mangle)]
-pub extern "C" fn gopher64_run_game(rom_contents: *const u8, rom_size: usize) {
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn gopher64_run_game(rom_contents: *const u8, rom_size: usize) {
     let dirs = ui::get_dirs();
 
     std::fs::create_dir_all(dirs.config_dir).unwrap();
@@ -20,7 +21,7 @@ pub extern "C" fn gopher64_run_game(rom_contents: *const u8, rom_size: usize) {
     device.ui.video.fullscreen = device.ui.config.video.fullscreen;
     device::run_game(
         &mut device,
-        &unsafe { std::slice::from_raw_parts(rom_contents, rom_size) },
+        unsafe { std::slice::from_raw_parts(rom_contents, rom_size) },
         ui::GameSettings {
             overclock: false,
             disable_expansion_pak: false,
