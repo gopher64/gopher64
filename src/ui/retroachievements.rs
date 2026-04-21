@@ -86,8 +86,12 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
         open::that_detached("https://retroachievements.org/system/2-nintendo-64/games").unwrap();
     });
 
-    app.on_ra_show_profile_clicked(move |username| {
-        open::that_detached(format!("https://retroachievements.org/user/{}", username)).unwrap();
+    app.on_ra_show_profile_clicked(move || {
+        open::that_detached(format!(
+            "https://retroachievements.org/user/{}",
+            retroachievements::get_username().unwrap_or_default()
+        ))
+        .unwrap();
     });
 }
 

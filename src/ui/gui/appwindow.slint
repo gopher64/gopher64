@@ -39,7 +39,7 @@ export component AppWindow inherits Window {
     callback cheat_toggled(string, string, string, bool);
     callback ra_button_clicked(string);
     callback ra_games_clicked;
-    callback ra_show_profile_clicked(string);
+    callback ra_show_profile_clicked;
     callback ra_toggled(bool,bool,bool,bool);
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
@@ -154,8 +154,8 @@ export component AppWindow inherits Window {
             ra_games_clicked => {
                 ra_games_clicked();
             }
-            ra_show_profile_clicked(username) => {
-                ra_show_profile_clicked(username);
+            ra_show_profile_clicked => {
+                ra_show_profile_clicked();
             }
          }
         if(side-bar.current-item == 5): Settings { }
