@@ -130,7 +130,7 @@ void ra_welcome() {
 
   char buffer[512];
 
-  if (g_client && !rc_client_get_user_info(g_client)) {
+  if (!rc_client_get_user_info(g_client)) {
     snprintf(buffer, sizeof(buffer), "RA login failed");
     rdp_onscreen_message(buffer, true);
     return;
