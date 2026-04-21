@@ -113,7 +113,7 @@ void ra_login_token_user(const char *username, const char *token,
 
 static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
-  if (result != RC_OK) {
+  if (rc_client_get_user_info(client) && result != RC_OK) {
     rc_client_set_hardcore_enabled(client, false);
     snprintf(load_game_error_message, sizeof(load_game_error_message),
              "RA load failed: %s", error_message);
@@ -165,11 +165,6 @@ void ra_welcome() {
 }
 
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
-  if (!rc_client_get_user_info(g_client)) {
-    notify_load_game(userdata);
-    return;
-  }
-
   rc_client_begin_identify_and_load_game(g_client, RC_CONSOLE_NINTENDO_64, NULL,
                                          rom, rom_size, load_game_callback,
                                          userdata);
