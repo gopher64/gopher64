@@ -339,19 +339,9 @@ void ra_shutdown_client() {
   }
 }
 
-void ra_do_frame() {
-  if (!g_client)
-    return;
+void ra_do_frame() { rc_client_do_frame(g_client); }
 
-  rc_client_do_frame(g_client);
-}
-
-void ra_do_idle() {
-  if (!g_client)
-    return;
-
-  rc_client_idle(g_client);
-}
+void ra_do_idle() { rc_client_idle(g_client); }
 
 size_t ra_state_size() { return rc_client_progress_size(g_client); }
 
