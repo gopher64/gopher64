@@ -358,6 +358,9 @@ void ra_do_idle() {
 size_t ra_state_size() { return rc_client_progress_size(g_client); }
 
 void ra_save_state(uint8_t *state, size_t state_size) {
+  if (!g_client)
+    return;
+
   if (rc_client_serialize_progress_sized(g_client, state, state_size) !=
       RC_OK) {
     printf("RetroAchievements: Failed to serialize progress\n");
@@ -365,6 +368,9 @@ void ra_save_state(uint8_t *state, size_t state_size) {
 }
 
 void ra_load_state(const uint8_t *state, size_t state_size) {
+  if (!g_client)
+    return;
+
   if (rc_client_deserialize_progress_sized(g_client, state, state_size) !=
       RC_OK) {
     printf("RetroAchievements: Failed to deserialize progress\n");
