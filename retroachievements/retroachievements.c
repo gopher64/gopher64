@@ -68,6 +68,8 @@ static void login_callback(int result, const char *error_message,
                            rc_client_t *client, void *userdata) {
   // If not successful, just report the error and bail.
   if (result != RC_OK) {
+    if (!rc_client_get_userdata(client))
+      rc_client_set_userdata(client, strdup(error_message));
     store_retroachievements_credentials(NULL, NULL, userdata);
     return;
   }
@@ -109,6 +111,8 @@ void ra_login_token_user(const char *username, const char *token,
 static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
   if (result != RC_OK) {
+    if (!rc_client_get_userdata(client))
+      rc_client_set_userdata(client, strdup(error_message));
     rc_client_set_hardcore_enabled(client, false);
     notify_load_game(userdata);
     return;
@@ -130,19 +134,16 @@ void ra_welcome() {
 
   char buffer[512];
 
-  if (!rc_client_get_user_info(g_client)) {
-    snprintf(buffer, sizeof(buffer), "RA login failed");
+  char *error_message = rc_client_get_userdata(g_client);
+  if (error_message) {
+    snprintf(buffer, sizeof(buffer), "RA Error: %s", error_message);
     rdp_onscreen_message(buffer, true);
+    free(error_message);
+    rc_client_set_userdata(g_client, NULL);
     return;
   }
 
   const rc_client_game_t *game = rc_client_get_game_info(g_client);
-
-  if (!game) {
-    snprintf(buffer, sizeof(buffer), "RA load failed");
-    rdp_onscreen_message(buffer, true);
-    return;
-  }
 
   rc_client_user_game_summary_t summary;
   rc_client_get_user_game_summary(g_client, &summary);
