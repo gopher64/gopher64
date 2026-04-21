@@ -8,6 +8,9 @@ rust-version = "1.95.0"
 default = ["gui"]
 gui = ["dep:rfd", "dep:slint", "dep:slint-build"]
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
 dirs = "6.0"
 zip = "8.0"

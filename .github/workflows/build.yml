@@ -64,8 +64,8 @@ jobs:
             matrix.llvm }}.tar.xz
       - name: Build
         run: |
-          cargo build --no-default-features -v --target=${{ matrix.target }}
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo build --lib --no-default-features -v --target=${{ matrix.target }}
+          cargo build --bin gopher64 --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
         env:
@@ -114,8 +114,8 @@ jobs:
             }}.exe
       - name: Build
         run: |
-          cargo build --no-default-features -v --target=${{ matrix.target }}
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo build --lib --no-default-features -v --target=${{ matrix.target }}
+          cargo build --bin gopher64 --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
         env:
@@ -184,8 +184,8 @@ jobs:
         run: |
           cargo install cargo-bundle
           brew install molten-vk
-          cargo build --no-default-features -v --target=${{ matrix.target }}
-          cargo bundle --release --target=${{ matrix.target }} --format osx
+          cargo build --lib --no-default-features -v --target=${{ matrix.target }}
+          cargo bundle --bin gopher64 --release --target=${{ matrix.target }} --format osx
           install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
             @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
           install_name_tool -change /opt/homebrew/opt/libpng/lib/libpng16.16.dylib \
