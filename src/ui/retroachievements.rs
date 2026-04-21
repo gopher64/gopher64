@@ -98,10 +98,8 @@ fn set_current_user_message(app: &ui::gui::AppWindow, rx: tokio::sync::oneshot::
         rx.await.unwrap();
         weak_app
             .upgrade_in_event_loop(move |handle| {
-                if retroachievements::get_username() == handle.get_ra_username().to_string() {
-                    handle.set_ra_current_user_message(
-                        format!("Logged in as {}", handle.get_ra_username()).into(),
-                    );
+                if let Some(username) = retroachievements::get_username() {
+                    handle.set_ra_current_user_message(format!("Logged in as {}", username).into());
                     handle.set_ra_show_profile(true);
                 } else {
                     handle.set_ra_current_user_message("Login failed".into());

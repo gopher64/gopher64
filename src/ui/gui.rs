@@ -509,9 +509,9 @@ pub fn run_rom(
         if ra_settings.enabled {
             command.args([
                 "--ra-username",
-                retroachievements::get_username(),
+                &retroachievements::get_username().unwrap_or("unknown".into()),
                 "--ra-token",
-                retroachievements::get_token(),
+                &retroachievements::get_token().unwrap_or("unknown".into()),
             ]);
             if ra_settings.hardcore {
                 command.args(["--ra-hardcore"]);
