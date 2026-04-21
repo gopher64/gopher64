@@ -108,7 +108,7 @@ void ra_login_token_user(const char *username, const char *token,
 
 static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
-  if (rc_client_get_user_info(client) && result != RC_OK) {
+  if (result != RC_OK) {
     rc_client_set_hardcore_enabled(client, false);
     notify_load_game(userdata);
     return;
