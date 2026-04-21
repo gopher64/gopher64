@@ -83,10 +83,6 @@ static void login_callback(int result, const char *error_message,
   store_retroachievements_credentials(user->username, user->token, userdata);
 }
 
-bool ra_is_user_logged_in() {
-  return rc_client_get_user_info(g_client) != NULL;
-}
-
 const char *ra_get_username() {
   const rc_client_user_t *user = rc_client_get_user_info(g_client);
   return user ? user->username : NULL;

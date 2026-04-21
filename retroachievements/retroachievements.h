@@ -17,7 +17,6 @@ void ra_logout_user();
 void ra_login_user(const char *username, const char *password, void *userdata);
 void ra_login_token_user(const char *username, const char *token,
                          void *userdata);
-bool ra_is_user_logged_in();
 const char *ra_get_username();
 const char *ra_get_token();
 size_t ra_state_size();

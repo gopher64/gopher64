@@ -208,11 +208,6 @@ pub fn login_token_user(username: String, token: String, tx: tokio::sync::onesho
 }
 
 #[cfg(feature = "gui")]
-pub fn is_user_logged_in() -> bool {
-    unsafe { ra_is_user_logged_in() }
-}
-
-#[cfg(feature = "gui")]
 pub fn get_username() -> &'static str {
     let c_username = unsafe { ra_get_username() };
     if c_username.is_null() {
