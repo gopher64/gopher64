@@ -20,7 +20,6 @@ static const uint8_t *g_dmem = NULL;
 static size_t g_dmem_size = 0;
 static bool g_challenge = false;
 static bool g_leaderboard = false;
-static char load_game_error_message[512];
 static rc_client_leaderboard_list_t *g_leaderboard_list = NULL;
 
 static uint32_t read_memory(uint32_t address, uint8_t *buffer,
@@ -69,12 +68,8 @@ static void login_callback(int result, const char *error_message,
                            rc_client_t *client, void *userdata) {
   // If not successful, just report the error and bail.
   if (result != RC_OK) {
-    snprintf(load_game_error_message, sizeof(load_game_error_message),
-             "RA login failed: %s", error_message);
     store_retroachievements_credentials(NULL, NULL, userdata);
     return;
-  } else {
-    memset(load_game_error_message, 0, sizeof(load_game_error_message));
   }
 
   // Login was successful. Capture the token for future logins so we don't have
@@ -115,12 +110,8 @@ static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
   if (rc_client_get_user_info(client) && result != RC_OK) {
     rc_client_set_hardcore_enabled(client, false);
-    snprintf(load_game_error_message, sizeof(load_game_error_message),
-             "RA load failed: %s", error_message);
     notify_load_game(userdata);
     return;
-  } else {
-    memset(load_game_error_message, 0, sizeof(load_game_error_message));
   }
 
   if (!rc_client_is_processing_required(client)) {
@@ -134,15 +125,22 @@ static void load_game_callback(int result, const char *error_message,
 }
 
 void ra_welcome() {
-  if (strlen(load_game_error_message) > 0) {
-    rdp_onscreen_message(load_game_error_message, true);
-  }
+  if (!g_client)
+    return;
 
   char buffer[512];
+
+  if (g_client && !rc_client_get_user_info(g_client)) {
+    snprintf(buffer, sizeof(buffer), "RA login failed");
+    rdp_onscreen_message(buffer, true);
+    return;
+  }
 
   const rc_client_game_t *game = rc_client_get_game_info(g_client);
 
   if (!game) {
+    snprintf(buffer, sizeof(buffer), "RA load failed");
+    rdp_onscreen_message(buffer, true);
     return;
   }
 
