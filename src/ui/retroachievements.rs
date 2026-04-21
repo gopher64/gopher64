@@ -98,7 +98,7 @@ fn set_current_user_message(app: &ui::gui::AppWindow, rx: tokio::sync::oneshot::
         rx.await.unwrap();
         weak_app
             .upgrade_in_event_loop(move |handle| {
-                if retroachievements::get_username() != "unknown" {
+                if retroachievements::get_username() == handle.get_ra_username().to_string() {
                     handle.set_ra_current_user_message(
                         format!("Logged in as {}", handle.get_ra_username()).into(),
                     );
