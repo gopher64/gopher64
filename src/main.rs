@@ -192,15 +192,15 @@ async fn main() -> std::io::Result<()> {
             }
 
             if let Some(username) = args.ra_username {
-                if cfg!(ra_hardcore_enabled) {
-                    retroachievements::init_client(
-                        args.ra_hardcore,
-                        args.ra_challenge,
-                        args.ra_leaderboard,
-                    );
-                } else {
-                    retroachievements::init_client(false, args.ra_challenge, args.ra_leaderboard);
-                }
+                retroachievements::init_client(
+                    if cfg!(ra_hardcore_enabled) {
+                        args.ra_hardcore
+                    } else {
+                        false
+                    },
+                    args.ra_challenge,
+                    args.ra_leaderboard,
+                );
 
                 let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
                 if let Some(password) = args.ra_password {
