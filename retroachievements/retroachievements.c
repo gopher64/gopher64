@@ -68,7 +68,7 @@ static void login_callback(int result, const char *error_message,
                            rc_client_t *client, void *userdata) {
   // If not successful, just report the error and bail.
   if (result != RC_OK) {
-    if (!rc_client_get_userdata(client))
+    if (client && !rc_client_get_userdata(client))
       rc_client_set_userdata(client, strdup(error_message));
     store_retroachievements_credentials(NULL, NULL, userdata);
     return;
@@ -111,7 +111,7 @@ void ra_login_token_user(const char *username, const char *token,
 static void load_game_callback(int result, const char *error_message,
                                rc_client_t *client, void *userdata) {
   if (result != RC_OK) {
-    if (!rc_client_get_userdata(client))
+    if (client && !rc_client_get_userdata(client))
       rc_client_set_userdata(client, strdup(error_message));
     rc_client_set_hardcore_enabled(client, false);
     notify_load_game(userdata);
