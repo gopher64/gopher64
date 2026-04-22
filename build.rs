@@ -277,12 +277,24 @@ fn main() {
             .compile("simd");
     }
 
-    let git_output = std::process::Command::new("git")
-        .args(["describe", "--always", "--dirty"])
-        .output()
-        .unwrap();
+    let mut git_output = std::process::Command::new("git");
+    git_output.args(["describe", "--dirty"]);
 
-    let git_describe = String::from_utf8(git_output.stdout).unwrap();
+    let git_describe = if let Ok(git_output) = git_output.output()
+        && git_output.status.success()
+    {
+        String::from_utf8(git_output.stdout).unwrap()
+    } else if let Ok(git_output) = git_output.args(["--always"]).output()
+        && git_output.status.success()
+    {
+        format!(
+            "v{}-{}",
+            env!("CARGO_PKG_VERSION"),
+            String::from_utf8(git_output.stdout,).unwrap()
+        )
+    } else {
+        panic!("Failed to get git describe");
+    };
     println!("cargo:rustc-env=GIT_DESCRIBE={git_describe}");
 
     println!("cargo:rerun-if-env-changed=NETPLAY_ID");
