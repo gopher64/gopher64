@@ -11,6 +11,7 @@ export global RAData {
     in-out property <bool> leaderboard;
     in-out property <bool> ra_logging_in;
     in-out property <bool> ra_show_profile;
+    in-out property <bool> ra_softcore_only;
     in-out property <string> ra_username;
     in-out property <string> ra_password;
     in-out property <string> current_user_message;
@@ -43,7 +44,7 @@ export component RetroAchievements inherits Page {
                 }
             }
         }
-        HorizontalBox {
+        if !RAData.ra_softcore_only:HorizontalBox {
             alignment: start;
             Switch {
                 text: @tr("Hardcore mode");

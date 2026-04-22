@@ -18,6 +18,10 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
         app.set_ra_hardcore(true);
     }
 
+    if !cfg!(ra_hardcore_enabled) {
+        app.set_ra_softcore_only(true);
+    }
+
     if app.get_ra_enabled() && !app.get_ra_username().is_empty() {
         let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
         retroachievements::login_token_user(app.get_ra_username().to_string(), token, tx);
