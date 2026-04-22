@@ -290,7 +290,7 @@ fn main() {
         format!(
             "v{}-{}",
             env!("CARGO_PKG_VERSION"),
-            String::from_utf8(git_output.stdout,).unwrap()
+            String::from_utf8(git_output.stdout).unwrap()
         )
     } else {
         panic!("Failed to get git describe");
