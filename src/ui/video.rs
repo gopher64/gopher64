@@ -248,7 +248,7 @@ pub fn check_framebuffers(address: u32, length: u32) {
     unsafe { rdp_check_framebuffers(address, length) }
 }
 
-pub fn onscreen_message(message: &str, milliseconds: u32) {
+pub fn onscreen_message(message: &str, milliseconds: MESSAGE_LENGTH) {
     unsafe {
         let c_message = std::ffi::CString::new(message).unwrap();
         rdp_onscreen_message(c_message.as_ptr(), milliseconds)
