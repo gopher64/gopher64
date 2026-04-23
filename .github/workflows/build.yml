@@ -64,7 +64,6 @@ jobs:
             matrix.llvm }}.tar.xz
       - name: Build
         run: |
-          cargo build --no-default-features -v --target=${{ matrix.target }}
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
@@ -114,7 +113,6 @@ jobs:
             }}.exe
       - name: Build
         run: |
-          cargo build --no-default-features -v --target=${{ matrix.target }}
           cargo build --release -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/release/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
@@ -184,10 +182,14 @@ jobs:
         run: |
           cargo install cargo-bundle
           brew install molten-vk
-          cargo build --no-default-features -v --target=${{ matrix.target }}
+          cargo build --release --no-default-features -v --target=${{ matrix.target }}
+          mv target/${{ matrix.target }}/release/gopher64 target/${{ matrix.target }}/release/gopher64-cli
           cargo bundle --release --target=${{ matrix.target }} --format osx
+          cp target/${{ matrix.target }}/release/gopher64-cli target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
           install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
             @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
+          install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
+            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
           install_name_tool -change /opt/homebrew/opt/libpng/lib/libpng16.16.dylib \
             @executable_path/../Frameworks/libpng16.16.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
         env:
@@ -206,8 +208,12 @@ jobs:
       - name: Sign Bundle Release
         if: ${{ github.ref_type == 'tag' }}
         run: |
-          cp data/macos/embedded.provisionprofile target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/embedded.provisionprofile
-          codesign -f --entitlements data/macos/entitlements_prod.plist --deep --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libpng16.16.dylib
+          codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
+          codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libMoltenVK.dylib
+          codesign -f --entitlements data/macos/entitlements_prod.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
+          codesign -f --entitlements data/macos/entitlements_child.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
+          codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
           zip -r gopher64-${{ matrix.arch }}.zip target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
           xcrun notarytool submit --wait --apple-id "${{ secrets.APPLE_ID }}" --team-id "${{ secrets.APPLE_DEVELOPER_ID }}" --password "${{ secrets.APPLE_APP_PASSWORD }}" gopher64-${{ matrix.arch }}.zip
           xcrun stapler staple target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
