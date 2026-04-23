@@ -182,9 +182,10 @@ jobs:
         run: |
           cargo install cargo-bundle
           brew install molten-vk
-          cargo build --release --no-default-features -v --target=${{ matrix.target }} --target-dir=target/${{ matrix.target }}/cli
+          cargo build --release --no-default-features -v --target=${{ matrix.target }}
+          mv target/${{ matrix.target }}/release/gopher64 target/${{ matrix.target }}/release/gopher64-cli
           cargo bundle --release --target=${{ matrix.target }} --format osx
-          cp target/${{ matrix.target }}/cli/release/gopher64 target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
+          cp target/${{ matrix.target }}/release/gopher64-cli target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
           install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
             @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
           install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
