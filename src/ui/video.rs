@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::{device, retroachievements, ui};
 
@@ -8,6 +9,10 @@ const PAL_HEIGHT: i32 = 288;
 const NTSC_WIDESCREEN_WIDTH: i32 = 426;
 const NTSC_STANDARD_WIDTH: i32 = 320;
 const NTSC_HEIGHT: i32 = 240;
+
+pub const MESSAGE_VERY_SHORT: u32 = MESSAGE_LENGTH_MESSAGE_VERY_SHORT;
+pub const MESSAGE_SHORT: u32 = MESSAGE_LENGTH_MESSAGE_SHORT;
+pub const MESSAGE_LONG: u32 = MESSAGE_LENGTH_MESSAGE_LONG;
 
 fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
     GFX_INFO {
@@ -215,7 +220,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     if device.ui.storage.save_state_slot != callback.save_state_slot {
         onscreen_message(
             &format!("Switching savestate slot to {}", callback.save_state_slot),
-            false,
+            ui::video::MESSAGE_SHORT,
         );
         device.ui.storage.save_state_slot = callback.save_state_slot;
         device
@@ -247,10 +252,10 @@ pub fn check_framebuffers(address: u32, length: u32) {
     unsafe { rdp_check_framebuffers(address, length) }
 }
 
-pub fn onscreen_message(message: &str, long_message: bool) {
+pub fn onscreen_message(message: &str, milliseconds: u32) {
     unsafe {
         let c_message = std::ffi::CString::new(message).unwrap();
-        rdp_onscreen_message(c_message.as_ptr(), long_message)
+        rdp_onscreen_message(c_message.as_ptr(), milliseconds)
     };
 }
 

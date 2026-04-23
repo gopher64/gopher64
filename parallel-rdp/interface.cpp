@@ -82,8 +82,14 @@ typedef struct {
 
 typedef struct {
   std::string message;
+  uint64_t milliseconds;
   Vulkan::ImageHandle image;
 } Message;
+
+typedef struct {
+  std::string message;
+  uint64_t milliseconds;
+} MessageData;
 
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
@@ -102,7 +108,6 @@ uint64_t sync_signal;
 
 static TTF_Font *message_font;
 static std::queue<Message> messages;
-static uint64_t message_timer;
 
 static TTF_Font *achievement_challenge_indicator_font;
 static std::vector<const char *> achievement_challenge_indicators;
@@ -113,8 +118,6 @@ static bool display_challenge_indicator;
 
 static bool display_fps;
 static Vulkan::ImageHandle fps_image;
-
-#define MESSAGE_TIME 3000 // 3 seconds
 
 typedef struct {
   float SourceSize[4];
@@ -177,7 +180,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
           std::format("Challenge indicators: {}",
                       display_challenge_indicator ? "ON" : "OFF")
               .c_str(),
-          false);
+          MESSAGE_SHORT);
       break;
     case SDL_SCANCODE_F12:
       callback.reset_game = true;
@@ -334,7 +337,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   crop_letterbox = false;
 
   messages = std::queue<Message>();
-  message_timer = 0;
 
   display_challenge_indicator = true;
   achievement_challenge_indicators.clear();
@@ -444,6 +446,13 @@ static void draw_fps(CommandBufferHandle cmd, VkViewport vp) {
   cmd->draw(3);
 }
 
+static void pop_message(void *userdata) { messages.pop(); }
+static uint32_t pop_message_callback(void *userdata, SDL_TimerID timerID,
+                                     uint32_t interval) {
+  SDL_RunOnMainThread(pop_message, NULL, true);
+  return 0;
+}
+
 static void render_frame(Vulkan::Device &device) {
   RDP::ScanoutOptions options = {};
   options.persist_frame_on_invalid_input = true;
@@ -519,6 +528,7 @@ static void render_frame(Vulkan::Device &device) {
         if (!message->image) {
           message->image = create_message_image(device, vp.width, message_font,
                                                 message->message.c_str());
+          SDL_AddTimer(message->milliseconds, pop_message_callback, NULL);
         }
         cmd->set_texture(0, 0, message->image->get_view(),
                          Vulkan::StockSampler::NearestClamp);
@@ -529,11 +539,6 @@ static void render_frame(Vulkan::Device &device) {
         cmd->set_viewport(vp);
 
         cmd->draw(3);
-
-        if (SDL_GetTicks() > message_timer) {
-          messages.pop();
-          message_timer = SDL_GetTicks() + MESSAGE_TIME;
-        }
       } else if (achievement_progress_indicator_image) {
         draw_indicator(cmd, achievement_progress_indicator_image, vp);
       } else if (achievement_challenge_indicator_image &&
@@ -608,16 +613,15 @@ void rdp_load_state(const uint8_t *state) {
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 
-static void push_onscreen_message(void *message) {
-  if (messages.empty())
-    message_timer = SDL_GetTicks() + MESSAGE_TIME;
-  messages.push({std::string((const char *)message), Vulkan::ImageHandle()});
+static void push_onscreen_message(void *data) {
+  MessageData *message_data = (MessageData *)data;
+  messages.push({message_data->message, message_data->milliseconds,
+                 Vulkan::ImageHandle()});
 }
 
-void rdp_onscreen_message(const char *message, bool long_message) {
-  SDL_RunOnMainThread(push_onscreen_message, (void *)message, true);
-  if (long_message)
-    SDL_RunOnMainThread(push_onscreen_message, (void *)message, true);
+void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds) {
+  MessageData data = {message, milliseconds};
+  SDL_RunOnMainThread(push_onscreen_message, (void *)&data, true);
 }
 
 uint32_t pixel_size(uint32_t pixel_type, uint32_t area) {
@@ -849,7 +853,7 @@ uint64_t rdp_process_commands() {
   return interrupt_timer;
 }
 
-void rdp_set_fps_callback(void *userdata) {
+static void rdp_set_fps_callback(void *userdata) {
   FPS_DATA *data = (FPS_DATA *)userdata;
   fps_image = create_message_image(
       wsi->get_device(), 0, achievement_challenge_indicator_font,

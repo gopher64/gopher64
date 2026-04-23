@@ -55,7 +55,7 @@ pub fn lower_audio_volume(ui: &mut ui::Ui) {
     }
     ui::video::onscreen_message(
         &format!("Audio volume: {:.0}%", ui.audio.gain * 100.0),
-        false,
+        ui::video::MESSAGE_VERY_SHORT,
     );
 }
 
@@ -69,7 +69,7 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
     }
     ui::video::onscreen_message(
         &format!("Audio volume: {:.0}%", ui.audio.gain * 100.0),
-        false,
+        ui::video::MESSAGE_VERY_SHORT,
     );
 }
 
