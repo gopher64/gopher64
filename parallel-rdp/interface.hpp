@@ -37,6 +37,12 @@ typedef struct {
   uint32_t save_state_slot;
 } CALL_BACK;
 
+typedef enum {
+  MESSAGE_VERY_SHORT = 500,
+  MESSAGE_SHORT = 3000,
+  MESSAGE_LONG = 6000,
+} MESSAGE_LENGTH;
+
 void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
               size_t font_size, uint32_t save_state_slot);
 void rdp_close();
@@ -45,7 +51,7 @@ void rdp_update_screen();
 void rdp_render_frame();
 CALL_BACK rdp_check_callback();
 uint64_t rdp_process_commands();
-void rdp_onscreen_message(const char *message, bool long_message);
+void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds);
 void rdp_new_processor(GFX_INFO _gfx_info);
 void rdp_check_framebuffers(uint32_t address, uint32_t length);
 size_t rdp_state_size();

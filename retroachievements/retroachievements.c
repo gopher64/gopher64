@@ -137,7 +137,7 @@ void ra_welcome() {
   char *error_message = rc_client_get_userdata(g_client);
   if (error_message) {
     snprintf(buffer, sizeof(buffer), "RA Error: %s", error_message);
-    rdp_onscreen_message(buffer, true);
+    rdp_onscreen_message(buffer, MESSAGE_LONG);
     free(error_message);
     rc_client_set_userdata(g_client, NULL);
     return;
@@ -160,7 +160,7 @@ void ra_welcome() {
     snprintf(buffer + message_length, sizeof(buffer) - message_length,
              "Game has no achievements");
   }
-  rdp_onscreen_message(buffer, true);
+  rdp_onscreen_message(buffer, MESSAGE_LONG);
 }
 
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
@@ -187,14 +187,14 @@ static void leaderboard_submitted(const rc_client_leaderboard_t *leaderboard) {
 
   snprintf(buffer, sizeof(buffer), "Leaderboard submitted: %s - %s",
            leaderboard->title, leaderboard->tracker_value);
-  rdp_onscreen_message(buffer, false);
+  rdp_onscreen_message(buffer, MESSAGE_SHORT);
 }
 
 static void achievement_triggered(const rc_client_achievement_t *achievement) {
   char buffer[512];
 
   snprintf(buffer, sizeof(buffer), "Unlocked: %s", achievement->title);
-  rdp_onscreen_message(buffer, false);
+  rdp_onscreen_message(buffer, MESSAGE_SHORT);
 }
 
 static void game_completed(rc_client_t *client) {
@@ -204,7 +204,7 @@ static void game_completed(rc_client_t *client) {
   snprintf(buffer, sizeof(buffer), "%s: %s",
            rc_client_get_hardcore_enabled(client) ? "Mastered" : "Completed",
            game->title);
-  rdp_onscreen_message(buffer, false);
+  rdp_onscreen_message(buffer, MESSAGE_SHORT);
 }
 
 static void subset_completed(const rc_client_subset_t *subset,
@@ -214,7 +214,7 @@ static void subset_completed(const rc_client_subset_t *subset,
   snprintf(buffer, sizeof(buffer), "Subset %s: %s",
            rc_client_get_hardcore_enabled(client) ? "mastered" : "completed",
            subset->title);
-  rdp_onscreen_message(buffer, false);
+  rdp_onscreen_message(buffer, MESSAGE_SHORT);
 }
 
 static void server_error(const rc_client_server_error_t *server_error) {
@@ -222,7 +222,7 @@ static void server_error(const rc_client_server_error_t *server_error) {
 
   snprintf(buffer, sizeof(buffer), "RA server error: %s",
            server_error->error_message);
-  rdp_onscreen_message(buffer, false);
+  rdp_onscreen_message(buffer, MESSAGE_SHORT);
 }
 
 static const char *get_leaderboard_title(const char *display) {
@@ -393,7 +393,7 @@ void ra_display_inprogress_achievements(void *userdata) {
     }
   }
   if (buffer_length > 0) {
-    rdp_onscreen_message(buffer, false);
+    rdp_onscreen_message(buffer, MESSAGE_SHORT);
   }
   rc_client_destroy_achievement_list(list);
 }

@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
 use crate::{device, retroachievements, ui};
 
@@ -215,7 +216,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     if device.ui.storage.save_state_slot != callback.save_state_slot {
         onscreen_message(
             &format!("Switching savestate slot to {}", callback.save_state_slot),
-            false,
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
         );
         device.ui.storage.save_state_slot = callback.save_state_slot;
         device
@@ -247,10 +248,10 @@ pub fn check_framebuffers(address: u32, length: u32) {
     unsafe { rdp_check_framebuffers(address, length) }
 }
 
-pub fn onscreen_message(message: &str, long_message: bool) {
+pub fn onscreen_message(message: &str, milliseconds: MESSAGE_LENGTH) {
     unsafe {
         let c_message = std::ffi::CString::new(message).unwrap();
-        rdp_onscreen_message(c_message.as_ptr(), long_message)
+        rdp_onscreen_message(c_message.as_ptr(), milliseconds)
     };
 }
 
