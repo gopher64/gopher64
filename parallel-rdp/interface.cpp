@@ -620,7 +620,7 @@ static void push_onscreen_message(void *data) {
 }
 
 void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds) {
-  MessageData data = {message, milliseconds};
+  MessageData data = {message, static_cast<uint64_t>(milliseconds)};
   SDL_RunOnMainThread(push_onscreen_message, (void *)&data, true);
 }
 
