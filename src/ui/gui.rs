@@ -326,7 +326,7 @@ fn controller_window(
                             .parent()
                             .unwrap()
                             .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
-                        let cmd_path = if cli_path.exists() {
+                        let cmd_path = if cfg!(target_os = "macos") && cli_path.exists() {
                             cli_path
                         } else {
                             std::env::current_exe().unwrap()
@@ -499,7 +499,7 @@ pub fn run_rom(
             .parent()
             .unwrap()
             .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
-        let cmd_path = if cli_path.exists() {
+        let cmd_path = if cfg!(target_os = "macos") && cli_path.exists() {
             cli_path
         } else {
             std::env::current_exe().unwrap()
