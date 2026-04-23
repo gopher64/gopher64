@@ -321,8 +321,17 @@ fn controller_window(
                     let deadzone = handle.get_deadzone();
 
                     tokio::spawn(async move {
-                        let mut command =
-                            tokio::process::Command::new(std::env::current_exe().unwrap());
+                        let cli_path = std::env::current_exe()
+                            .unwrap()
+                            .parent()
+                            .unwrap()
+                            .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
+                        let cmd_path = if cli_path.exists() {
+                            cli_path
+                        } else {
+                            std::env::current_exe().unwrap()
+                        };
+                        let mut command = tokio::process::Command::new(cmd_path);
                         command.args([
                             "--configure-input-profile",
                             &profile_name,
@@ -485,7 +494,17 @@ pub fn run_rom(
         weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
             .unwrap();
 
-        let mut command = tokio::process::Command::new(std::env::current_exe().unwrap());
+        let cli_path = std::env::current_exe()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
+        let cmd_path = if cli_path.exists() {
+            cli_path
+        } else {
+            std::env::current_exe().unwrap()
+        };
+        let mut command = tokio::process::Command::new(cmd_path);
         command.args([
             "--overclock",
             &game_settings.overclock.to_string(),
