@@ -14,7 +14,7 @@ use std::io::Error;
 
 /// N64 emulator
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None, arg_required_else_help = if cfg!(feature = "gui") { false } else { true })]
+#[command(author, version=env!("GIT_DESCRIBE"), about, long_about = None, arg_required_else_help = if cfg!(feature = "gui") { false } else { true })]
 struct Args {
     game: Option<String>,
     #[arg(short, long)]
