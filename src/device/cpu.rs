@@ -229,7 +229,7 @@ pub fn init(device: &mut device::Device) {
     } else {
         ui::video::onscreen_message(
             "Overclocking enabled, setting clock rate to 125 MHz",
-            ui::video::MESSAGE_SHORT,
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
         );
         125000000
     };

@@ -79,7 +79,7 @@ pub fn init(
 
     if !device.cheats.cheats.is_empty() {
         device.cheats.enabled = true;
-        ui::video::onscreen_message("Cheats enabled", ui::video::MESSAGE_SHORT);
+        ui::video::onscreen_message("Cheats enabled", ui::video::MESSAGE_LENGTH_MESSAGE_SHORT);
     }
 }
 

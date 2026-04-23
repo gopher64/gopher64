@@ -10,10 +10,6 @@ const NTSC_WIDESCREEN_WIDTH: i32 = 426;
 const NTSC_STANDARD_WIDTH: i32 = 320;
 const NTSC_HEIGHT: i32 = 240;
 
-pub const MESSAGE_VERY_SHORT: u32 = MESSAGE_LENGTH_MESSAGE_VERY_SHORT as u32;
-pub const MESSAGE_SHORT: u32 = MESSAGE_LENGTH_MESSAGE_SHORT as u32;
-pub const MESSAGE_LONG: u32 = MESSAGE_LENGTH_MESSAGE_LONG as u32;
-
 fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
     GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
@@ -220,7 +216,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     if device.ui.storage.save_state_slot != callback.save_state_slot {
         onscreen_message(
             &format!("Switching savestate slot to {}", callback.save_state_slot),
-            ui::video::MESSAGE_SHORT,
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
         );
         device.ui.storage.save_state_slot = callback.save_state_slot;
         device

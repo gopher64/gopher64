@@ -95,7 +95,7 @@ pub fn create_savestate(device: &device::Device) {
             "Savestate created in slot {}",
             device.ui.storage.save_state_slot
         ),
-        ui::video::MESSAGE_SHORT,
+        ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
     );
 }
 
@@ -103,7 +103,7 @@ pub fn load_savestate(device: &mut device::Device) {
     if retroachievements::get_hardcore() {
         ui::video::onscreen_message(
             "Cannot load savestate in RA hardcore mode",
-            ui::video::MESSAGE_SHORT,
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
         );
         return;
     }
@@ -219,7 +219,7 @@ pub fn load_savestate(device: &mut device::Device) {
                     "Savestate loaded from slot {}",
                     device.ui.storage.save_state_slot
                 ),
-                ui::video::MESSAGE_SHORT,
+                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
         } else {
             ui::video::onscreen_message(
@@ -227,7 +227,7 @@ pub fn load_savestate(device: &mut device::Device) {
                     "Failed to load savestate from slot {}",
                     device.ui.storage.save_state_slot
                 ),
-                ui::video::MESSAGE_SHORT,
+                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
         }
     } else {
@@ -236,7 +236,7 @@ pub fn load_savestate(device: &mut device::Device) {
                 "Could not find savestate in slot {}",
                 device.ui.storage.save_state_slot
             ),
-            ui::video::MESSAGE_SHORT,
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
         );
     }
 }

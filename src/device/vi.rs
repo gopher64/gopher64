@@ -152,7 +152,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         if retroachievements::get_hardcore() {
             ui::video::onscreen_message(
                 "Cannot pause in RA hardcore mode",
-                ui::video::MESSAGE_SHORT,
+                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
         } else {
             ui::video::pause_loop(device.vi.frame_time);
