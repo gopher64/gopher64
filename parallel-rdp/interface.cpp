@@ -86,11 +86,6 @@ typedef struct {
   Vulkan::ImageHandle image;
 } Message;
 
-typedef struct {
-  std::string message;
-  uint64_t milliseconds;
-} MessageData;
-
 static SDL_Window *window;
 static RDP::CommandProcessor *processor;
 static SDL_WSIPlatform *wsi_platform;
@@ -614,13 +609,12 @@ void rdp_load_state(const uint8_t *state) {
 }
 
 static void push_onscreen_message(void *data) {
-  MessageData *message_data = (MessageData *)data;
-  messages.push({message_data->message, message_data->milliseconds,
-                 Vulkan::ImageHandle()});
+  messages.push(*(Message *)data);
 }
 
 void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds) {
-  MessageData data = {message, static_cast<uint64_t>(milliseconds)};
+  Message data = {message, static_cast<uint64_t>(milliseconds),
+                  Vulkan::ImageHandle()};
   SDL_RunOnMainThread(push_onscreen_message, (void *)&data, true);
 }
 
