@@ -167,7 +167,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       break;
     case SDL_SCANCODE_F8:
       if (messages.empty())
-        SDL_RunOnMainThread(ra_display_inprogress_achievements, nullptr, true);
+        SDL_RunOnMainThread(ra_display_inprogress_achievements, nullptr, false);
       break;
     case SDL_SCANCODE_F9:
       display_challenge_indicator = !display_challenge_indicator;
@@ -444,7 +444,7 @@ static void draw_fps(CommandBufferHandle cmd, VkViewport vp) {
 static void pop_message(void *userdata) { messages.pop(); }
 static uint32_t pop_message_callback(void *userdata, SDL_TimerID timerID,
                                      uint32_t interval) {
-  SDL_RunOnMainThread(pop_message, NULL, true);
+  SDL_RunOnMainThread(pop_message, NULL, false);
   return 0;
 }
 
@@ -609,13 +609,17 @@ void rdp_load_state(const uint8_t *state) {
 }
 
 static void push_onscreen_message(void *data) {
-  messages.push(*(Message *)data);
+  Message *message = (Message *)data;
+  messages.push(*message);
+  delete message;
 }
 
 void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds) {
-  Message data = {message, static_cast<uint64_t>(milliseconds),
-                  Vulkan::ImageHandle()};
-  SDL_RunOnMainThread(push_onscreen_message, (void *)&data, true);
+  Message *data = new Message;
+  data->message = message;
+  data->milliseconds = static_cast<uint64_t>(milliseconds);
+  data->image = Vulkan::ImageHandle();
+  SDL_RunOnMainThread(push_onscreen_message, data, false);
 }
 
 uint32_t pixel_size(uint32_t pixel_type, uint32_t area) {
@@ -852,12 +856,15 @@ static void rdp_set_fps_callback(void *userdata) {
   fps_image = create_message_image(
       wsi->get_device(), 0, achievement_challenge_indicator_font,
       std::format("FPS: {} VI/S: {}", data->fps, data->vis).c_str());
+  delete data;
 }
 
 void rdp_set_fps(uint32_t fps, uint32_t vis) {
   if (display_fps) {
-    FPS_DATA data = {fps, vis};
-    SDL_RunOnMainThread(rdp_set_fps_callback, &data, true);
+    FPS_DATA *data = new FPS_DATA;
+    data->fps = fps;
+    data->vis = vis;
+    SDL_RunOnMainThread(rdp_set_fps_callback, data, false);
   }
 }
 
