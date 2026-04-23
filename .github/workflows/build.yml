@@ -211,9 +211,8 @@ jobs:
           codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libpng16.16.dylib
           codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
           codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libMoltenVK.dylib
-          codesign -f --entitlements data/macos/entitlements_prod.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
           codesign -f --entitlements data/macos/entitlements_child.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
-          codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          codesign -f --entitlements data/macos/entitlements_prod.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
           zip -r gopher64-${{ matrix.arch }}.zip target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
           xcrun notarytool submit --wait --apple-id "${{ secrets.APPLE_ID }}" --team-id "${{ secrets.APPLE_DEVELOPER_ID }}" --password "${{ secrets.APPLE_APP_PASSWORD }}" gopher64-${{ matrix.arch }}.zip
           xcrun stapler staple target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
