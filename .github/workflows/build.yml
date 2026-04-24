@@ -75,6 +75,15 @@ jobs:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}
           archive: false
+      - name: Setup butler
+        if: ${{ github.ref_type == 'tag' }}
+        uses: remarkablegames/setup-butler@v2
+      - name: Upload to itch.io
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          butler push output/gopher64-${{ matrix.arch }} loganmc10/gopher64:${{ matrix.arch }} --userversion ${GITHUB_REF_NAME#v}
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
 
   build-windows:
     runs-on: ${{ matrix.os }}
@@ -148,6 +157,15 @@ jobs:
           path: output-signed/gopher64-${{ matrix.arch }}.exe
           archive: false
           overwrite: true
+      - name: Setup butler
+        if: ${{ github.ref_type == 'tag' }}
+        uses: remarkablegames/setup-butler@v2
+      - name: Upload to itch.io
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          butler push output-signed/gopher64-${{ matrix.arch }}.exe loganmc10/gopher64:${{ matrix.arch }} --userversion ${GITHUB_REF_NAME#v}
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
 
   build-macos:
     runs-on: macos-15
@@ -221,3 +239,12 @@ jobs:
         with:
           name: gopher64-${{ matrix.arch }}
           path: target/${{ matrix.target }}/release/bundle/osx
+      - name: Setup butler
+        if: ${{ github.ref_type == 'tag' }}
+        uses: remarkablegames/setup-butler@v2
+      - name: Upload to itch.io
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          butler push target/${{ matrix.target }}/release/bundle/osx/Gopher64.app loganmc10/gopher64:${{ matrix.arch }} --userversion ${GITHUB_REF_NAME#v}
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
