@@ -13,11 +13,16 @@ Gopher64 is a cross-platform N64 emulator. Some notable features:
 
 <a href="https://loganmc10.itch.io/gopher64"><img src="https://static.itch.io/images/badge.svg" width="200" ></a>
 
-Windows: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-windows-x86_64.exe
+Windows:
+* Standalone executable: [gopher64-windows-x86_64.exe](https://github.com/gopher64/gopher64/releases/latest/download/gopher64-windows-x86_64.exe)
 
-MacOS: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-macos-aarch64.zip
+MacOS:
+* App Bundle: [gopher64-macos-aarch64.zip](https://github.com/gopher64/gopher64/releases/latest/download/gopher64-macos-aarch64.zip)
+* Homebrew: `brew install --cask gopher64`
 
-Linux: https://flathub.org/apps/io.github.gopher64.gopher64
+Linux:
+* Standalone executable: [gopher64-linux-x86_64](https://github.com/gopher64/gopher64/releases/latest/download/gopher64-linux-x86_64)
+* Flatpak: `flatpak install flathub io.github.gopher64.gopher64`
 
 ## wiki
 
