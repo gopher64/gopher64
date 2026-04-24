@@ -11,6 +11,8 @@ Gopher64 is a cross-platform N64 emulator. Some notable features:
 
 ## download
 
+<a href="https://loganmc10.itch.io/gopher64"><img src="https://static.itch.io/images/badge.svg" width="200" ></a>
+
 Windows: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-windows-x86_64.exe
 
 MacOS: https://github.com/gopher64/gopher64/releases/latest/download/gopher64-macos-aarch64.zip
