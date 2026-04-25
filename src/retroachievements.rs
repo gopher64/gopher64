@@ -2,17 +2,6 @@ include!(concat!(env!("OUT_DIR"), "/retroachievements_bindings.rs"));
 
 use crate::ui;
 
-static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
-    reqwest::Client::builder()
-        .user_agent(format!(
-            "{}/{}",
-            env!("CARGO_PKG_NAME"),
-            env!("GIT_DESCRIBE")
-        ))
-        .build()
-        .unwrap()
-});
-
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct RAConfig {
     pub username: String,
@@ -85,13 +74,13 @@ pub extern "C" fn rust_server_call(
             unsafe { std::ffi::CStr::from_ptr(c_post_data).to_str().unwrap() }.to_string();
         let content_type =
             unsafe { std::ffi::CStr::from_ptr(c_content_type).to_str().unwrap() }.to_string();
-        WEB_CLIENT
+        ui::gui::WEB_CLIENT
             .post(url)
             .body(post_data)
             .header(reqwest::header::CONTENT_TYPE, content_type)
             .send()
     } else {
-        WEB_CLIENT.get(url).send()
+        ui::gui::WEB_CLIENT.get(url).send()
     };
     let callback = c_callback.addr();
     let callback_data = c_callback_data.addr();
