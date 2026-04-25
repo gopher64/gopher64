@@ -6,6 +6,25 @@ pub fn init(ui: &mut ui::Ui, frequency: u64) {
     init_game_audio(ui, frequency);
 }
 
+unsafe extern "C" fn audio_callback(
+    _userdata: *mut std::ffi::c_void,
+    audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
+    additional_amount: i32,
+    _total_amount: i32,
+) {
+    if additional_amount > 0 {
+        unsafe {
+            sdl3_sys::audio::SDL_PutAudioStreamData(
+                audio_stream,
+                vec![0; additional_amount as usize].as_ptr() as *const std::ffi::c_void,
+                additional_amount,
+            )
+        };
+
+        adjust_audio_frequency(audio_stream, -0.0005);
+    }
+}
+
 pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
     let game_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
         format: sdl3_sys::audio::SDL_AUDIO_S16LE,
@@ -26,14 +45,31 @@ pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
     }
     if !unsafe {
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain)
-            && sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio.audio_stream)
+            && sdl3_sys::audio::SDL_PauseAudioStreamDevice(ui.audio.audio_stream)
+            && sdl3_sys::audio::SDL_SetAudioStreamGetCallback(
+                ui.audio.audio_stream,
+                Some(audio_callback),
+                std::ptr::null_mut(),
+            )
     } {
-        panic!("Could not resume audio stream");
+        panic!("Could not initialize audio stream");
     }
 }
 
 pub fn close(ui: &mut ui::Ui) {
     close_game_audio(ui);
+}
+
+pub fn resume_game_audio(ui: &mut ui::Ui) {
+    unsafe {
+        sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio.audio_stream);
+    }
+}
+
+pub fn pause_game_audio(ui: &mut ui::Ui) {
+    unsafe {
+        sdl3_sys::audio::SDL_PauseAudioStreamDevice(ui.audio.audio_stream);
+    }
 }
 
 pub fn close_game_audio(ui: &mut ui::Ui) {
@@ -73,22 +109,18 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
     );
 }
 
-fn adjust_audio_frequency(device: &device::Device, frequency: f32) {
-    if !device.vi.enable_speed_limiter {
-        return;
-    }
-
+fn adjust_audio_frequency(audio_stream: *mut sdl3_sys::audio::SDL_AudioStream, frequency: f32) {
     unsafe {
-        let current_ratio =
-            sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(device.ui.audio.audio_stream);
+        let current_ratio = sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(audio_stream);
         sdl3_sys::everything::SDL_SetAudioStreamFrequencyRatio(
-            device.ui.audio.audio_stream,
+            audio_stream,
             (current_ratio + frequency).clamp(0.995, 1.005),
         );
+
         /*
         println!(
             "Adjusted audio frequency ratio to {}",
-            sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(device.ui.audio.audio_stream)
+            sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(audio_stream)
         );
         */
     }
@@ -116,44 +148,15 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
         unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(device.ui.audio.audio_stream) } as f64;
     let samples_per_frame = device.ai.freq as f64 * device.vi.frame_time * 4.0;
     let max_latency = samples_per_frame * 8.0;
-
-    if audio_queued < samples_per_frame {
-        let silence_buffer: Vec<u8> = vec![0; samples_per_frame as usize & !3];
-        if !unsafe {
-            sdl3_sys::audio::SDL_PutAudioStreamData(
-                device.ui.audio.audio_stream,
-                silence_buffer.as_ptr() as *const std::ffi::c_void,
-                silence_buffer.len() as i32,
-            )
-        } {
-            panic!("Could not play audio");
-        }
-        /*
-        println!(
-            "Audio underrun: queued {} samples, expected at least {} samples",
-            audio_queued, samples_per_frame
-        );
-        */
-        adjust_audio_frequency(device, -0.0005);
-    }
-
     if audio_queued < max_latency {
-        if !unsafe {
+        unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
                 device.ui.audio.audio_stream,
                 primary_buffer.as_ptr() as *const std::ffi::c_void,
                 primary_buffer.len() as i32 * 2,
             )
-        } {
-            panic!("Could not play audio");
-        }
-    } else {
-        /*
-        println!(
-            "Audio overrun: queued {} samples, expected at most {} samples",
-            audio_queued, max_latency
-        );
-        */
-        adjust_audio_frequency(device, 0.0005);
+        };
+    } else if device.vi.enable_speed_limiter {
+        adjust_audio_frequency(device.ui.audio.audio_stream, 0.0005);
     }
 }
