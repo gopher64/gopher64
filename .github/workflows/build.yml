@@ -162,6 +162,7 @@ jobs:
         uses: remarkablegames/setup-butler@v2
       - name: Upload to itch.io
         if: ${{ github.ref_type == 'tag' }}
+        shell: bash
         run: |
           butler push output-signed/gopher64-${{ matrix.arch }}.exe loganmc10/gopher64:${{ matrix.arch }} --userversion ${GITHUB_REF_NAME#v}
         env:
