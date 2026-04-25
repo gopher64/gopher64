@@ -45,19 +45,31 @@ pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
     }
     if !unsafe {
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain)
-            && sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio.audio_stream)
+            && sdl3_sys::audio::SDL_PauseAudioStreamDevice(ui.audio.audio_stream)
             && sdl3_sys::audio::SDL_SetAudioStreamGetCallback(
                 ui.audio.audio_stream,
                 Some(audio_callback),
                 std::ptr::null_mut(),
             )
     } {
-        panic!("Could not resume audio stream");
+        panic!("Could not initialize audio stream");
     }
 }
 
 pub fn close(ui: &mut ui::Ui) {
     close_game_audio(ui);
+}
+
+pub fn resume_game_audio(ui: &mut ui::Ui) {
+    unsafe {
+        sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio.audio_stream);
+    }
+}
+
+pub fn pause_game_audio(ui: &mut ui::Ui) {
+    unsafe {
+        sdl3_sys::audio::SDL_PauseAudioStreamDevice(ui.audio.audio_stream);
+    }
 }
 
 pub fn close_game_audio(ui: &mut ui::Ui) {
@@ -105,10 +117,12 @@ fn adjust_audio_frequency(audio_stream: *mut sdl3_sys::audio::SDL_AudioStream, f
             (current_ratio + frequency).clamp(0.995, 1.005),
         );
 
+        /*
         println!(
             "Adjusted audio frequency ratio to {}",
             sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(audio_stream)
         );
+        */
     }
 }
 
