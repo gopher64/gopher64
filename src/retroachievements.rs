@@ -74,13 +74,13 @@ pub extern "C" fn rust_server_call(
             unsafe { std::ffi::CStr::from_ptr(c_post_data).to_str().unwrap() }.to_string();
         let content_type =
             unsafe { std::ffi::CStr::from_ptr(c_content_type).to_str().unwrap() }.to_string();
-        ui::gui::WEB_CLIENT
+        ui::WEB_CLIENT
             .post(url)
             .body(post_data)
             .header(reqwest::header::CONTENT_TYPE, content_type)
             .send()
     } else {
-        ui::gui::WEB_CLIENT.get(url).send()
+        ui::WEB_CLIENT.get(url).send()
     };
     let callback = c_callback.addr();
     let callback_data = c_callback_data.addr();

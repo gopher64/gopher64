@@ -5,17 +5,6 @@ use slint::winit_030::WinitWindowAccessor;
 
 slint::include_modules!();
 
-pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
-    reqwest::Client::builder()
-        .user_agent(format!(
-            "{}/{}",
-            env!("CARGO_PKG_NAME"),
-            env!("GIT_DESCRIBE")
-        ))
-        .build()
-        .unwrap()
-});
-
 pub const N64_EXTENSIONS: [&str; 12] = [
     "n64", "v64", "z64", "7z", "zip", "bin", "N64", "V64", "Z64", "7Z", "ZIP", "BIN",
 ];
@@ -39,7 +28,7 @@ pub struct RASettings {
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
-    let task = WEB_CLIENT
+    let task = ui::WEB_CLIENT
         .get("https://api.github.com/repos/gopher64/gopher64/releases/latest")
         .send();
     tokio::spawn(async move {
