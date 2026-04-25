@@ -28,11 +28,7 @@ pub struct RASettings {
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
-    let client = reqwest::Client::builder()
-        .user_agent(env!("CARGO_PKG_NAME"))
-        .build()
-        .unwrap();
-    let task = client
+    let task = ui::WEB_CLIENT
         .get("https://api.github.com/repos/gopher64/gopher64/releases/latest")
         .send();
     tokio::spawn(async move {

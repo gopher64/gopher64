@@ -109,7 +109,7 @@ impl NetplayPages for NetplayJoin {
 }
 
 fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
-    let task = reqwest::Client::new()
+    let task = ui::WEB_CLIENT
         .get("https://dispatch.gopher64.com/getRegions")
         .header("netplay-id", env!("NETPLAY_ID"))
         .send();
@@ -292,7 +292,7 @@ pub fn setup_create_window(
                 let weak_dialog = message_dialog.as_weak();
                 message_dialog.show().unwrap();
 
-                let task = reqwest::Client::new()
+                let task = ui::WEB_CLIENT
                     .get("https://dispatch.gopher64.com/createServer")
                     .query(&[("region", server_url.strip_prefix("dispatcher:").unwrap())])
                     .header("netplay-id", env!("NETPLAY_ID"))
@@ -448,7 +448,7 @@ fn show_netplay_error(message: String) {
 }
 
 fn update_sessions(weak: slint::Weak<NetplayJoin>) {
-    let task = reqwest::Client::new()
+    let task = ui::WEB_CLIENT
         .get("https://dispatch.gopher64.com/getServers")
         .header("netplay-id", env!("NETPLAY_ID"))
         .send();

@@ -15,6 +15,17 @@ pub mod video;
 #[cfg(feature = "gui")]
 pub mod vru;
 
+pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
+    reqwest::Client::builder()
+        .user_agent(format!(
+            "{}/{}",
+            env!("CARGO_PKG_NAME"),
+            env!("GIT_DESCRIBE")
+        ))
+        .build()
+        .unwrap()
+});
+
 pub struct Dirs {
     pub config_dir: std::path::PathBuf,
     pub data_dir: std::path::PathBuf,
