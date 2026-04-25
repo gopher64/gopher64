@@ -1,6 +1,8 @@
 use crate::device;
 use crate::ui;
 
+static ADJUST_LOCKED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 pub fn init(ui: &mut ui::Ui, frequency: u64) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_AUDIO);
     init_game_audio(ui, frequency);
@@ -109,8 +111,24 @@ pub fn raise_audio_volume(ui: &mut ui::Ui) {
     );
 }
 
+unsafe extern "C" fn lock_callback(
+    _userdata: *mut std::ffi::c_void,
+    _id: sdl3_sys::timer::SDL_TimerID,
+    _interval: u32,
+) -> u32 {
+    ADJUST_LOCKED.store(false, std::sync::atomic::Ordering::Relaxed);
+    0
+}
+
 fn adjust_audio_frequency(audio_stream: *mut sdl3_sys::audio::SDL_AudioStream, frequency: f32) {
+    if ADJUST_LOCKED.load(std::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
+
+    ADJUST_LOCKED.store(true, std::sync::atomic::Ordering::Relaxed);
+
     unsafe {
+        sdl3_sys::timer::SDL_AddTimer(1000, Some(lock_callback), std::ptr::null_mut());
         let current_ratio = sdl3_sys::everything::SDL_GetAudioStreamFrequencyRatio(audio_stream);
         sdl3_sys::everything::SDL_SetAudioStreamFrequencyRatio(
             audio_stream,
