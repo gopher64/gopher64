@@ -142,7 +142,7 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
                 primary_buffer.len() as i32 * 2,
             )
         };
-    } else {
+    } else if device.vi.enable_speed_limiter {
         adjust_audio_frequency(device.ui.audio.audio_stream, 0.0005);
     }
 }
