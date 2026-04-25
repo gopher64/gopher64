@@ -77,7 +77,7 @@ jobs:
           archive: false
       - name: Setup butler
         if: ${{ github.ref_type == 'tag' }}
-        uses: remarkablegames/setup-butler@v2
+        uses: remarkablegames/setup-butler@v3
       - name: Upload to itch.io
         if: ${{ github.ref_type == 'tag' }}
         run: |
@@ -159,7 +159,7 @@ jobs:
           overwrite: true
       - name: Setup butler
         if: ${{ github.ref_type == 'tag' }}
-        uses: remarkablegames/setup-butler@v2
+        uses: remarkablegames/setup-butler@v3
       - name: Upload to itch.io
         if: ${{ github.ref_type == 'tag' }}
         shell: bash
@@ -242,7 +242,7 @@ jobs:
           path: target/${{ matrix.target }}/release/bundle/osx
       - name: Setup butler
         if: ${{ github.ref_type == 'tag' }}
-        uses: remarkablegames/setup-butler@v2
+        uses: remarkablegames/setup-butler@v3
       - name: Upload to itch.io
         if: ${{ github.ref_type == 'tag' }}
         run: |
