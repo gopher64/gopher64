@@ -7,7 +7,7 @@ export global InputProfileData {
 }
 
 export component InputProfileDialog inherits Window {
-    title: @tr("Create Input Profile");
+    title: @tr("Create/Modify Input Profile");
     callback profile_creation_button_clicked;
     in-out property dinput <=> InputProfileData.dinput;
     in-out property profile_name <=> InputProfileData.profile_name;
@@ -15,7 +15,7 @@ export component InputProfileDialog inherits Window {
     VerticalBox {
         HorizontalBox {
             LineEdit {
-                placeholder-text: @tr("Enter profile name");
+                placeholder-text: @tr("Enter profile name to create or modify");
                 preferred-width: 300px;
                 edited(text) => {
                     InputProfileData.profile_name = text;
