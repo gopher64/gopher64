@@ -37,6 +37,11 @@ typedef struct {
   uint32_t save_state_slot;
 } CALL_BACK;
 
+typedef struct {
+  uint32_t joystick_id;
+  bool connected;
+} JoystickEvent;
+
 typedef enum {
   MESSAGE_VERY_SHORT = 500,
   MESSAGE_SHORT = 3000,
@@ -58,6 +63,8 @@ size_t rdp_state_size();
 void rdp_save_state(uint8_t *state);
 void rdp_load_state(const uint8_t *state);
 void rdp_set_fps(uint32_t fps, uint32_t vis);
+
+JoystickEvent get_joystick_event();
 
 void achievement_challenge_indicator_add(const char *achievement_title);
 void achievement_challenge_indicator_remove(const char *achievement_title);
