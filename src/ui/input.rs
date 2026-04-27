@@ -119,50 +119,6 @@ fn set_axis_from_joystick(
     (x, y)
 }
 
-fn get_axis_from_i32(axis: i32) -> sdl3_sys::gamepad::SDL_GamepadAxis {
-    match axis {
-        0 => sdl3_sys::gamepad::SDL_GamepadAxis::LEFTX,
-        1 => sdl3_sys::gamepad::SDL_GamepadAxis::LEFTY,
-        2 => sdl3_sys::gamepad::SDL_GamepadAxis::RIGHTX,
-        3 => sdl3_sys::gamepad::SDL_GamepadAxis::RIGHTY,
-        4 => sdl3_sys::gamepad::SDL_GamepadAxis::LEFT_TRIGGER,
-        5 => sdl3_sys::gamepad::SDL_GamepadAxis::RIGHT_TRIGGER,
-        _ => panic!("Invalid axis"),
-    }
-}
-
-fn get_button_from_i32(button: i32) -> sdl3_sys::gamepad::SDL_GamepadButton {
-    match button {
-        0 => sdl3_sys::gamepad::SDL_GamepadButton::SOUTH,
-        1 => sdl3_sys::gamepad::SDL_GamepadButton::EAST,
-        2 => sdl3_sys::gamepad::SDL_GamepadButton::WEST,
-        3 => sdl3_sys::gamepad::SDL_GamepadButton::NORTH,
-        4 => sdl3_sys::gamepad::SDL_GamepadButton::BACK,
-        5 => sdl3_sys::gamepad::SDL_GamepadButton::GUIDE,
-        6 => sdl3_sys::gamepad::SDL_GamepadButton::START,
-        7 => sdl3_sys::gamepad::SDL_GamepadButton::LEFT_STICK,
-        8 => sdl3_sys::gamepad::SDL_GamepadButton::RIGHT_STICK,
-        9 => sdl3_sys::gamepad::SDL_GamepadButton::LEFT_SHOULDER,
-        10 => sdl3_sys::gamepad::SDL_GamepadButton::RIGHT_SHOULDER,
-        11 => sdl3_sys::gamepad::SDL_GamepadButton::DPAD_UP,
-        12 => sdl3_sys::gamepad::SDL_GamepadButton::DPAD_DOWN,
-        13 => sdl3_sys::gamepad::SDL_GamepadButton::DPAD_LEFT,
-        14 => sdl3_sys::gamepad::SDL_GamepadButton::DPAD_RIGHT,
-        15 => sdl3_sys::gamepad::SDL_GamepadButton::MISC1,
-        16 => sdl3_sys::gamepad::SDL_GamepadButton::RIGHT_PADDLE1,
-        17 => sdl3_sys::gamepad::SDL_GamepadButton::LEFT_PADDLE1,
-        18 => sdl3_sys::gamepad::SDL_GamepadButton::RIGHT_PADDLE2,
-        19 => sdl3_sys::gamepad::SDL_GamepadButton::LEFT_PADDLE2,
-        20 => sdl3_sys::gamepad::SDL_GamepadButton::TOUCHPAD,
-        21 => sdl3_sys::gamepad::SDL_GamepadButton::MISC2,
-        22 => sdl3_sys::gamepad::SDL_GamepadButton::MISC3,
-        23 => sdl3_sys::gamepad::SDL_GamepadButton::MISC4,
-        24 => sdl3_sys::gamepad::SDL_GamepadButton::MISC5,
-        25 => sdl3_sys::gamepad::SDL_GamepadButton::MISC6,
-        _ => panic!("Invalid button"),
-    }
-}
-
 fn set_axis_from_controller(
     profile: &ui::config::InputProfile,
     controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
@@ -173,7 +129,7 @@ fn set_axis_from_controller(
         let axis_position = unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadAxis(
                 controller,
-                get_axis_from_i32(profile.controller_axis[AXIS_LEFT].id),
+                sdl3_sys::gamepad::SDL_GamepadAxis(profile.controller_axis[AXIS_LEFT].id),
             )
         };
         if axis_position as isize * profile.controller_axis[AXIS_LEFT].axis as isize > 0 {
@@ -184,7 +140,7 @@ fn set_axis_from_controller(
         let axis_position = unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadAxis(
                 controller,
-                get_axis_from_i32(profile.controller_axis[AXIS_RIGHT].id),
+                sdl3_sys::gamepad::SDL_GamepadAxis(profile.controller_axis[AXIS_RIGHT].id),
             )
         };
         if axis_position as isize * profile.controller_axis[AXIS_RIGHT].axis as isize > 0 {
@@ -195,7 +151,7 @@ fn set_axis_from_controller(
         let axis_position = unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadAxis(
                 controller,
-                get_axis_from_i32(profile.controller_axis[AXIS_DOWN].id),
+                sdl3_sys::gamepad::SDL_GamepadAxis(profile.controller_axis[AXIS_DOWN].id),
             )
         };
         if axis_position as isize * profile.controller_axis[AXIS_DOWN].axis as isize > 0 {
@@ -206,7 +162,7 @@ fn set_axis_from_controller(
         let axis_position = unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadAxis(
                 controller,
-                get_axis_from_i32(profile.controller_axis[AXIS_UP].id),
+                sdl3_sys::gamepad::SDL_GamepadAxis(profile.controller_axis[AXIS_UP].id),
             )
         };
         if axis_position as isize * profile.controller_axis[AXIS_UP].axis as isize > 0 {
@@ -287,11 +243,18 @@ fn set_buttons_from_controller(
     keys: &mut u32,
 ) {
     let profile_controller_button = profile.controller_buttons[i];
-    if profile_controller_button.enabled {
+    if profile_controller_button.enabled
+        && !unsafe {
+            sdl3_sys::gamepad::SDL_GetGamepadButton(
+                controller,
+                sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_BACK,
+            )
+        }
+    {
         *keys |= (unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadButton(
                 controller,
-                get_button_from_i32(profile_controller_button.id),
+                sdl3_sys::gamepad::SDL_GamepadButton(profile_controller_button.id),
             )
         } as u32)
             << i;
@@ -302,7 +265,7 @@ fn set_buttons_from_controller(
         let axis_position = unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadAxis(
                 controller,
-                get_axis_from_i32(profile_controller_axis.id),
+                sdl3_sys::gamepad::SDL_GamepadAxis(profile_controller_axis.id),
             )
         };
         if axis_position as isize * profile_controller_axis.axis as isize > 0
@@ -347,8 +310,10 @@ fn change_paks(
     keyboard_state: *const bool,
 ) -> bool {
     let controller_button = profile.controller_buttons[CHANGE_PAK];
+    let controller_axis = profile.controller_axis[CHANGE_PAK];
     let joystick_button = profile.joystick_buttons[CHANGE_PAK];
     let joystick_hat = profile.joystick_hat[CHANGE_PAK];
+    let joystick_axis = profile.joystick_axis[CHANGE_PAK];
     let key = profile.keys[CHANGE_PAK];
 
     let mut pressed = false;
@@ -356,9 +321,21 @@ fn change_paks(
         pressed = unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadButton(
                 controller,
-                get_button_from_i32(controller_button.id),
+                sdl3_sys::gamepad::SDL_GamepadButton(controller_button.id),
             )
         };
+    } else if controller_axis.enabled && !controller.is_null() {
+        let axis_position = unsafe {
+            sdl3_sys::gamepad::SDL_GetGamepadAxis(
+                controller,
+                sdl3_sys::gamepad::SDL_GamepadAxis(controller_axis.id),
+            )
+        };
+        if axis_position as isize * controller_axis.axis as isize > 0
+            && axis_position.saturating_abs() > i16::MAX / 2
+        {
+            pressed = true;
+        }
     } else if joystick_button.enabled && !joystick.is_null() {
         pressed =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickButton(joystick, joystick_button.id) };
@@ -366,6 +343,14 @@ fn change_paks(
         pressed = (unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, joystick_hat.id) }
             & joystick_hat.direction)
             != 0;
+    } else if joystick_axis.enabled && !joystick.is_null() {
+        let axis_position =
+            unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, joystick_axis.id) };
+        if axis_position as isize * joystick_axis.axis as isize > 0
+            && axis_position.saturating_abs() > i16::MAX / 2
+        {
+            pressed = true;
+        }
     } else if key.enabled {
         pressed = unsafe { *keyboard_state.offset(key.id as isize) };
     }
@@ -695,8 +680,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
             );
             std::thread::sleep(std::time::Duration::from_millis(100));
             while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
-                let event_type = unsafe { event.r#type };
-                if event_type == u32::from(sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+                if event.event_type()
+                    == u32::from(sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED)
+                {
                     close_input_profile_window(
                         open_joysticks,
                         open_controllers,
@@ -706,7 +692,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         window,
                     );
                     return;
-                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_KEY_DOWN) {
+                } else if event.event_type() == u32::from(sdl3_sys::events::SDL_EVENT_KEY_DOWN) {
                     if unsafe {
                         !event.key.repeat
                             && event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_LALT
@@ -718,7 +704,11 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         };
                         key_set = true
                     }
-                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+                } else if event.event_type()
+                    == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN)
+                    && sdl3_sys::gamepad::SDL_GamepadButton(unsafe { event.gbutton.button } as i32)
+                        != sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_BACK
+                {
                     if !open_controllers.is_empty() {
                         new_controller_buttons[*value] = ui::config::InputKeyButton {
                             enabled: true,
@@ -726,7 +716,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         };
                         key_set = true
                     }
-                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION) {
+                } else if event.event_type()
+                    == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION)
+                {
                     let axis_value = unsafe { event.gaxis.value };
                     let axis = unsafe { event.gaxis.axis };
                     if !open_controllers.is_empty()
@@ -743,7 +735,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                             key_set = true
                         }
                     }
-                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN)
+                } else if event.event_type()
+                    == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN)
                 {
                     if !open_joysticks.is_empty() {
                         new_joystick_buttons[*value] = ui::config::InputKeyButton {
@@ -752,7 +745,9 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         };
                         key_set = true
                     }
-                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION) {
+                } else if event.event_type()
+                    == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION)
+                {
                     let state = unsafe { event.jhat.value };
                     let hat = unsafe { event.jhat.hat };
                     if !open_joysticks.is_empty() && state != sdl3_sys::joystick::SDL_HAT_CENTERED {
@@ -763,7 +758,8 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         };
                         key_set = true
                     }
-                } else if event_type == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_AXIS_MOTION)
+                } else if event.event_type()
+                    == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_AXIS_MOTION)
                 {
                     let axis_value = unsafe { event.jaxis.value };
                     let axis = unsafe { event.jaxis.axis };
@@ -982,9 +978,10 @@ pub fn get_default_profile() -> ui::config::InputProfile {
         id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_LEFTY),
         axis: 1,
     };
-    default_controller_buttons[CHANGE_PAK] = ui::config::InputKeyButton {
+    default_controller_axis[CHANGE_PAK] = ui::config::InputControllerAxis {
         enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_BACK),
+        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_RIGHT_TRIGGER),
+        axis: 1,
     };
 
     ui::config::InputProfile {
