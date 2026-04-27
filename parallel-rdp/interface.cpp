@@ -98,8 +98,8 @@ static GFX_INFO gfx_info;
 static const uint32_t *fragment_spirv;
 static size_t fragment_size;
 
-std::vector<bool> rdram_dirty;
-uint64_t sync_signal;
+static std::vector<bool> rdram_dirty;
+static uint64_t sync_signal;
 
 static TTF_Font *message_font;
 static std::queue<Message> messages;
@@ -114,6 +114,8 @@ static bool display_challenge_indicator;
 static bool display_fps;
 static Vulkan::ImageHandle fps_image;
 
+static std::queue<JoystickEvent> joystick_events;
+
 typedef struct {
   float SourceSize[4];
   float OutputSize[4];
@@ -124,6 +126,12 @@ static const unsigned cmd_len_lut[64] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1,  1,  1,  2,  2,  1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1,  1,  1,  1,  1,  1, 1, 1, 1,
 };
+
+static void add_joystick_event(void *userdata) {
+  JoystickEvent *joystick_event = (JoystickEvent *)userdata;
+  joystick_events.push(*joystick_event);
+  delete joystick_event;
+}
 
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
@@ -209,9 +217,27 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     default:
       break;
     }
+  } else if (event->type == SDL_EVENT_JOYSTICK_ADDED) {
+    JoystickEvent *joystick_event = new JoystickEvent;
+    joystick_event->joystick_id = event->jdevice.which;
+    joystick_event->connected = true;
+    SDL_RunOnMainThread(add_joystick_event, joystick_event, false);
+  } else if (event->type == SDL_EVENT_JOYSTICK_REMOVED) {
+    JoystickEvent *joystick_event = new JoystickEvent;
+    joystick_event->joystick_id = event->jdevice.which;
+    joystick_event->connected = false;
+    SDL_RunOnMainThread(add_joystick_event, joystick_event, false);
   }
 
   return 0;
+}
+
+JoystickEvent get_joystick_event() {
+  if (joystick_events.empty())
+    return JoystickEvent{0, false};
+  JoystickEvent joystick_event = joystick_events.front();
+  joystick_events.pop();
+  return joystick_event;
 }
 
 void rdp_new_processor(GFX_INFO _gfx_info) {
