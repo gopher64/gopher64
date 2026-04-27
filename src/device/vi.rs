@@ -161,6 +161,10 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
 
+    if device.vi.vi_counter.is_multiple_of(60) {
+        ui::input::refresh_controllers(&mut device.ui);
+    }
+
     /* toggle vi field if in interlaced mode */
     device.vi.field ^= (device.vi.regs[VI_STATUS_REG as usize] >> 6) & 0x1;
 
