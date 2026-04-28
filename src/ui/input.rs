@@ -312,7 +312,7 @@ fn change_paks(
         pressed = unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadButton(
                 controller,
-                get_button_from_i32(controller_button.id),
+                sdl3_sys::gamepad::SDL_GamepadButton(controller_button.id),
             )
         };
     } else if joystick_button.enabled && !joystick.is_null() {
