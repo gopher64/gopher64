@@ -651,9 +651,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
             );
             std::thread::sleep(std::time::Duration::from_millis(100));
             while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
-                if event.event_type()
-                    == u32::from(sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED)
-                {
+                if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
                     close_input_profile_window(
                         open_joysticks,
                         open_controllers,
@@ -663,7 +661,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         window,
                     );
                     return;
-                } else if event.event_type() == u32::from(sdl3_sys::events::SDL_EVENT_KEY_DOWN) {
+                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_KEY_DOWN {
                     if unsafe {
                         !event.key.repeat
                             && event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_LALT
@@ -675,9 +673,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         };
                         key_set = true
                     }
-                } else if event.event_type()
-                    == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN)
-                {
+                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN {
                     if !open_controllers.is_empty() {
                         new_controller_buttons[*value] = ui::config::InputKeyButton {
                             enabled: true,
@@ -685,9 +681,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         };
                         key_set = true
                     }
-                } else if event.event_type()
-                    == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION)
-                {
+                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION {
                     let axis_value = unsafe { event.gaxis.value };
                     let axis = unsafe { event.gaxis.axis };
                     if !open_controllers.is_empty()
@@ -704,9 +698,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                             key_set = true
                         }
                     }
-                } else if event.event_type()
-                    == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN)
-                {
+                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN {
                     if !open_joysticks.is_empty() {
                         new_joystick_buttons[*value] = ui::config::InputKeyButton {
                             enabled: true,
@@ -714,9 +706,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         };
                         key_set = true
                     }
-                } else if event.event_type()
-                    == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION)
-                {
+                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION {
                     let state = unsafe { event.jhat.value };
                     let hat = unsafe { event.jhat.hat };
                     if !open_joysticks.is_empty() && state != sdl3_sys::joystick::SDL_HAT_CENTERED {
@@ -727,9 +717,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                         };
                         key_set = true
                     }
-                } else if event.event_type()
-                    == u32::from(sdl3_sys::events::SDL_EVENT_JOYSTICK_AXIS_MOTION)
-                {
+                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_JOYSTICK_AXIS_MOTION {
                     let axis_value = unsafe { event.jaxis.value };
                     let axis = unsafe { event.jaxis.axis };
                     if !open_joysticks.is_empty()
