@@ -191,7 +191,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
                     pak_type: new_pak_type,
                 });
                 ui::video::onscreen_message(
-                    "MemPak selected",
+                    &format!("P{} MemPak selected", i + 1),
                     ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
                 );
             } else if new_pak_type == PakType::RumblePak {
@@ -201,7 +201,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
                     pak_type: new_pak_type,
                 });
                 ui::video::onscreen_message(
-                    "RumblePak selected",
+                    &format!("P{} RumblePak selected", i + 1),
                     ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
                 );
             } else if new_pak_type == PakType::TransferPak {
@@ -211,7 +211,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
                     pak_type: new_pak_type,
                 });
                 ui::video::onscreen_message(
-                    "TransferPak selected",
+                    &format!("P{} TransferPak selected", i + 1),
                     ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
                 );
             }
