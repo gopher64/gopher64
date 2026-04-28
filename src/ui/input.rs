@@ -243,14 +243,7 @@ fn set_buttons_from_controller(
     keys: &mut u32,
 ) {
     let profile_controller_button = profile.controller_buttons[i];
-    if profile_controller_button.enabled
-        && !unsafe {
-            sdl3_sys::gamepad::SDL_GetGamepadButton(
-                controller,
-                sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_BACK,
-            )
-        }
-    {
+    if profile_controller_button.enabled {
         *keys |= (unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadButton(
                 controller,
@@ -652,8 +645,6 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
                     }
                 } else if event.event_type()
                     == u32::from(sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN)
-                    && sdl3_sys::gamepad::SDL_GamepadButton(unsafe { event.gbutton.button } as i32)
-                        != sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_BACK
                 {
                     if !open_controllers.is_empty() {
                         new_controller_buttons[*value] = ui::config::InputKeyButton {
