@@ -20,7 +20,7 @@ const AXIS_LEFT: usize = 14;
 const AXIS_RIGHT: usize = 15;
 const AXIS_UP: usize = 16;
 const AXIS_DOWN: usize = 17;
-const HOTKEY: usize = 18;
+const CHANGE_PAK: usize = 18;
 pub const PROFILE_SIZE: usize = 19;
 
 const X_AXIS_SHIFT: usize = 16;
@@ -296,6 +296,38 @@ pub fn set_rumble(ui: &ui::Ui, channel: usize, rumble: u8) {
     }
 }
 
+fn change_paks(
+    profile: &ui::config::InputProfile,
+    joystick: *mut sdl3_sys::joystick::SDL_Joystick,
+    controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
+    keyboard_state: *const bool,
+) -> bool {
+    let controller_button = profile.controller_buttons[CHANGE_PAK];
+    let joystick_button = profile.joystick_buttons[CHANGE_PAK];
+    let joystick_hat = profile.joystick_hat[CHANGE_PAK];
+    let key = profile.keys[CHANGE_PAK];
+
+    let mut pressed = false;
+    if controller_button.enabled && !controller.is_null() {
+        pressed = unsafe {
+            sdl3_sys::gamepad::SDL_GetGamepadButton(
+                controller,
+                get_button_from_i32(controller_button.id),
+            )
+        };
+    } else if joystick_button.enabled && !joystick.is_null() {
+        pressed =
+            unsafe { sdl3_sys::joystick::SDL_GetJoystickButton(joystick, joystick_button.id) };
+    } else if joystick_hat.enabled && !joystick.is_null() {
+        pressed = (unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, joystick_hat.id) }
+            & joystick_hat.direction)
+            != 0;
+    } else if key.enabled {
+        pressed = unsafe { *keyboard_state.offset(key.id as isize) };
+    }
+    pressed
+}
+
 pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
     let mut controllers: Vec<String> = vec![];
 
@@ -431,7 +463,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 
     InputData {
         data: keys,
-        pak_change_pressed: false,
+        pak_change_pressed: change_paks(profile, joystick, controller, ui.input.keyboard_state),
     }
 }
 
@@ -555,7 +587,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
         ("Control Stick Down", AXIS_DOWN),
         ("Control Stick Left", AXIS_LEFT),
         ("Control Stick Right", AXIS_RIGHT),
-        ("Activate Hotkeys", HOTKEY),
+        ("Change Pak", CHANGE_PAK),
     ];
 
     let mut new_keys = [ui::config::InputKeyButton {
@@ -829,6 +861,10 @@ pub fn get_default_profile() -> ui::config::InputProfile {
         enabled: true,
         id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_DOWN),
     };
+    default_keys[CHANGE_PAK] = ui::config::InputKeyButton {
+        enabled: true,
+        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_COMMA),
+    };
 
     default_controller_buttons[R_DPAD] = ui::config::InputKeyButton {
         enabled: true,
@@ -911,7 +947,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
         id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_LEFTY),
         axis: 1,
     };
-    default_controller_buttons[HOTKEY] = ui::config::InputKeyButton {
+    default_controller_buttons[CHANGE_PAK] = ui::config::InputKeyButton {
         enabled: true,
         id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_BACK),
     };
