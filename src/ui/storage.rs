@@ -322,6 +322,13 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
     }
 }
 
+pub fn format_saves(device: &mut device::Device) {
+    device::cart::format_eeprom(device);
+    device::cart::sram::format_sram(device);
+    device::cart::sram::format_flash(device);
+    device::controller::mempak::format_mempak(device);
+}
+
 pub fn decompress_file(input: &[u8], name: &str) -> Vec<u8> {
     let mut decompressed_file = Vec::new();
     {

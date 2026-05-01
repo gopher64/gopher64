@@ -4,7 +4,7 @@ use crate::ui;
 pub const MEMPAK_SIZE: usize = 0x8000;
 const MPK_PAGE_SIZE: usize = 256;
 
-fn format_mempak(device: &mut device::Device) {
+pub fn format_mempak(device: &mut device::Device) {
     if device.ui.storage.saves.mempak.data.len() < MEMPAK_SIZE * 4 {
         device
             .ui
@@ -43,6 +43,11 @@ fn format_mempak(device: &mut device::Device) {
         ];
         for i in 0..4 {
             let offset = i * MEMPAK_SIZE;
+            if device.ui.storage.saves.mempak.data[offset..offset + MEMPAK_SIZE] != [0; MEMPAK_SIZE]
+            {
+                // don't overwrite existing data
+                continue;
+            }
 
             /* Fill Page 0 with pre-initialized content */
             device.ui.storage.saves.mempak.data[offset..offset + MPK_PAGE_SIZE]
@@ -77,8 +82,6 @@ fn format_mempak(device: &mut device::Device) {
 
 pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usize, size: usize) {
     if (address as usize) < MEMPAK_SIZE {
-        format_mempak(device);
-
         let offset = (channel * MEMPAK_SIZE) + address as usize;
         device.pif.ram[data..data + size]
             .copy_from_slice(&device.ui.storage.saves.mempak.data[offset..offset + size])
@@ -91,8 +94,6 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
 
 pub fn write(device: &mut device::Device, channel: usize, address: u16, data: usize, size: usize) {
     if (address as usize) < MEMPAK_SIZE {
-        format_mempak(device);
-
         let offset = (channel * MEMPAK_SIZE) + address as usize;
         device.ui.storage.saves.mempak.data[offset..offset + size]
             .copy_from_slice(&device.pif.ram[data..data + size]);

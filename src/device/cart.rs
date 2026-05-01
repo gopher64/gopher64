@@ -130,8 +130,6 @@ pub fn format_eeprom(device: &mut device::Device) {
 fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usize) {
     let address = device.pif.ram[block] as usize * EEPROM_BLOCK_SIZE;
 
-    format_eeprom(device);
-
     device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE].copy_from_slice(
         &device.ui.storage.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE],
     );
@@ -139,8 +137,6 @@ fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usize) {
 
 fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
     let address = device.pif.ram[block] as usize * EEPROM_BLOCK_SIZE;
-
-    format_eeprom(device);
 
     device.ui.storage.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE]
         .copy_from_slice(&device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]);
