@@ -82,6 +82,7 @@ pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::Gam
 
     ui::storage::init(&mut device.ui, &device.cart.rom);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay);
+    ui::storage::format_saves(device);
 
     if !retroachievements::get_hardcore() {
         cheats::init(device, game_settings.cheats);

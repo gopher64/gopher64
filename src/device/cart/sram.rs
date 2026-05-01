@@ -28,13 +28,13 @@ pub struct Flashram {
     pub silicon_id: [u32; 2],
 }
 
-fn format_sram(device: &mut device::Device) {
+pub fn format_sram(device: &mut device::Device) {
     if device.ui.storage.saves.sram.data.len() < SRAM_SIZE {
         device.ui.storage.saves.sram.data.resize(SRAM_SIZE, 0xFF)
     }
 }
 
-fn format_flash(device: &mut device::Device) {
+pub fn format_flash(device: &mut device::Device) {
     if device.ui.storage.saves.flash.data.len() < FLASHRAM_SIZE {
         device
             .ui
@@ -48,8 +48,6 @@ fn format_flash(device: &mut device::Device) {
 
 fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
     let masked_address = address as usize & SRAM_MASK;
-
-    format_sram(device);
 
     u32::from_be_bytes(
         device.ui.storage.saves.sram.data[masked_address..masked_address + 4]
@@ -96,8 +94,6 @@ pub fn read_mem(
 fn write_mem_sram(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let masked_address = address as usize & SRAM_MASK;
 
-    format_sram(device);
-
     let mut data = u32::from_be_bytes(
         device.ui.storage.saves.sram.data[masked_address..masked_address + 4]
             .try_into()
@@ -116,7 +112,6 @@ fn write_mem_flash(device: &mut device::Device, address: u64, value: u32, mask: 
         device.cart.flashram.status = (value & mask) & 0xff;
     } else if (address & 0x1ffff) == 0x10000 {
         /* set command */
-        format_flash(device);
         flashram_command(device, value & mask);
     } else {
         /* other accesses are not implemented */
@@ -148,8 +143,6 @@ fn dma_read_sram(device: &mut device::Device, mut cart_addr: u32, mut dram_addr:
     let mut i = dram_addr;
     let mut j = cart_addr;
 
-    format_sram(device);
-
     while i < dram_addr + length {
         *device
             .ui
@@ -171,8 +164,6 @@ fn dma_read_sram(device: &mut device::Device, mut cart_addr: u32, mut dram_addr:
 }
 
 fn dma_read_flash(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) {
-    format_flash(device);
-
     if (cart_addr & 0x1ffff) == 0x00000
         && length == 128
         && device.cart.flashram.mode == FlashramMode::PageProgram
@@ -216,8 +207,6 @@ fn dma_write_sram(
     cart_addr &= SRAM_MASK as u32;
     let mut i = dram_addr;
     let mut j = cart_addr;
-
-    format_sram(device);
 
     while i < dram_addr + length {
         *device
@@ -266,7 +255,6 @@ fn dma_write_flash(
     } else if (cart_addr & 0x1ffff) < 0x10000
         && device.cart.flashram.mode == FlashramMode::ReadArray
     {
-        format_flash(device);
         /* adjust flashram address before starting DMA. */
         if device.cart.flashram.silicon_id[1] == MX29L1100_ID
             || device.cart.flashram.silicon_id[1] == MX29L0000_ID
