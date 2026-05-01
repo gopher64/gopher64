@@ -99,13 +99,15 @@ impl Drop for Ui {
 pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
     unsafe {
         if sdl3_sys::init::SDL_WasInit(flag) == 0 && !sdl3_sys::init::SDL_InitSubSystem(flag) {
-            let err = std::ffi::CStr::from_ptr(sdl3_sys::error::SDL_GetError())
-                .to_str()
-                .unwrap();
+            let err = sdl3_sys::error::SDL_GetError();
             panic!(
                 "Could not initialize SDL subsystem: {}, {}",
                 u32::from(flag),
-                err
+                if err.is_null() {
+                    "Unknown error"
+                } else {
+                    std::ffi::CStr::from_ptr(err).to_str().unwrap()
+                }
             );
         }
     }
