@@ -453,7 +453,9 @@ fn about_window(app: &AppWindow) {
         open::that_detached("https://github.com/gopher64/gopher64/releases/latest").unwrap();
     });
     app.set_version(format!("Version: {}", env!("GIT_DESCRIBE")).into());
-    if std::env::var("FLATPAK_ID").is_err() {
+
+    //flatpak and itch.io have their own update checking mechanism
+    if std::env::var("FLATPAK_ID").is_err() && std::env::var("ITCHIO_APP").is_err() {
         check_latest_version(app.as_weak());
     }
 }
