@@ -332,10 +332,12 @@ pub fn get_controller_names(game_ui: &ui::Ui) -> Vec<String> {
     let mut controllers: Vec<String> = vec![];
 
     for joystick in game_ui.input.joysticks.iter() {
-        let name = unsafe {
-            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick))
-        };
-        controllers.push(name.to_string_lossy().to_string());
+        let name = unsafe { sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick) };
+        controllers.push(if name.is_null() {
+            "Unknown controller".to_string()
+        } else {
+            unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
+        });
     }
 
     controllers
@@ -346,12 +348,12 @@ pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<Option<String>> {
     let mut controller_paths: Vec<Option<String>> = vec![];
 
     for joystick in game_ui.input.joysticks.iter() {
-        let path = unsafe {
-            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick))
-                .to_string_lossy()
-                .to_string()
-        };
-        controller_paths.push(Some(path));
+        let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
+        controller_paths.push(if path.is_null() {
+            None
+        } else {
+            Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string())
+        });
     }
 
     controller_paths
@@ -468,15 +470,12 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 }
 
 pub fn assign_controller(ui: &mut ui::Ui, controller: i32, port: usize) {
-    if controller < ui.input.joysticks.len() as i32 {
-        let path = unsafe {
-            std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
-                ui.input.joysticks[controller as usize],
-            ))
-            .to_string_lossy()
-            .to_string()
-        };
-        ui.config.input.controller_assignment[port - 1] = Some(path);
+    let path = unsafe {
+        sdl3_sys::joystick::SDL_GetJoystickPathForID(ui.input.joysticks[controller as usize])
+    };
+    if controller < ui.input.joysticks.len() as i32 && !path.is_null() {
+        ui.config.input.controller_assignment[port - 1] =
+            Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string() });
     } else {
         println!("Invalid controller number")
     }
@@ -977,14 +976,9 @@ pub fn init(ui: &mut ui::Ui) {
             let assigned_path = controller_assignment.as_ref().unwrap();
 
             for joystick in ui.input.joysticks.iter() {
-                let path = unsafe {
-                    std::ffi::CStr::from_ptr(sdl3_sys::joystick::SDL_GetJoystickPathForID(
-                        *joystick,
-                    ))
-                    .to_string_lossy()
-                    .to_string()
-                };
-                if path == *assigned_path
+                let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
+                if !path.is_null()
+                    && unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() } == *assigned_path
                     && unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(*joystick) }.is_null()
                     && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(*joystick) }.is_null()
                 {
