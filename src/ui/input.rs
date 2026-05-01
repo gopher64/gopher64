@@ -470,12 +470,14 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 }
 
 pub fn assign_controller(ui: &mut ui::Ui, controller: i32, port: usize) {
-    let path = unsafe {
-        sdl3_sys::joystick::SDL_GetJoystickPathForID(ui.input.joysticks[controller as usize])
-    };
-    if controller < ui.input.joysticks.len() as i32 && !path.is_null() {
-        ui.config.input.controller_assignment[port - 1] =
-            Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string() });
+    if controller < ui.input.joysticks.len() as i32 {
+        let path = unsafe {
+            sdl3_sys::joystick::SDL_GetJoystickPathForID(ui.input.joysticks[controller as usize])
+        };
+        if !path.is_null() {
+            ui.config.input.controller_assignment[port - 1] =
+                Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string() });
+        }
     } else {
         println!("Invalid controller number")
     }
