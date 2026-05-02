@@ -140,13 +140,13 @@ static void add_joystick_event(void *userdata) {
 }
 
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
-  SDL_Event user_event;
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
     callback.paused = false;
     callback.emu_running = false;
   } else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running) {
     wsi_platform->do_resize();
   } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat) {
+    SDL_Event user_event;
     switch (event->key.scancode) {
     case SDL_SCANCODE_RETURN:
       if (event->key.mod & SDL_KMOD_ALT) {
