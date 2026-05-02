@@ -73,7 +73,7 @@ pub fn init(
                         data,
                     })
                 } else {
-                    println!("Could not parse data for : {}", cheat_setting.0);
+                    println!("Could not parse data for: {}", cheat_setting.0);
                 };
             }
             if !decoded_cheat.is_empty() {
