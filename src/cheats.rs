@@ -48,7 +48,8 @@ pub fn init(
                 {
                     option_value = Some(found_option_value.to_string());
                 } else {
-                    panic!("Cheat option: {option} not found");
+                    println!("Cheat option: {option} not found");
+                    continue;
                 }
             }
 
