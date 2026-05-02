@@ -54,6 +54,12 @@ enum vi_registers {
   VI_REGS_COUNT
 };
 
+enum user_event_codes {
+  USER_EVENT_SAVE_STATE = 1,
+  USER_EVENT_LOAD_STATE = 2,
+  USER_EVENT_EXIT_GAME = 3,
+};
+
 typedef struct {
   uint32_t depthbuffer_address;
   uint32_t framebuffer_address;
@@ -134,74 +140,112 @@ static void add_joystick_event(void *userdata) {
 }
 
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
+  SDL_Event user_event;
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
     callback.paused = false;
     callback.emu_running = false;
   } else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running) {
     wsi_platform->do_resize();
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_RETURN &&
-             (event->key.mod & SDL_KMOD_ALT)) {
-    gfx_info.fullscreen = !gfx_info.fullscreen;
-    SDL_SetWindowFullscreen(window, gfx_info.fullscreen);
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_F &&
-             (event->key.mod & SDL_KMOD_ALT)) {
-    callback.enable_speedlimiter = !callback.enable_speedlimiter;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_P &&
-             (event->key.mod & SDL_KMOD_ALT)) {
-    callback.paused = !callback.paused;
-  } else if ((event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-              event->key.scancode == SDL_SCANCODE_ESCAPE &&
-              gfx_info.fullscreen) ||
-             (event->type == SDL_EVENT_USER && event->user.code == 3)) {
-    callback.emu_running = false;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_F1) {
-    display_fps = !display_fps;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_F4) {
-    crop_letterbox = !crop_letterbox;
-  } else if ((event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-              event->key.scancode == SDL_SCANCODE_F5) ||
-             (event->type == SDL_EVENT_USER && event->user.code == 1)) {
-    callback.save_state = true;
-  } else if ((event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-              event->key.scancode == SDL_SCANCODE_F7) ||
-             (event->type == SDL_EVENT_USER && event->user.code == 2)) {
-    callback.load_state = true;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_F8) {
-    if (messages.empty())
-      SDL_RunOnMainThread(ra_display_inprogress_achievements, nullptr, false);
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_F9) {
-    display_challenge_indicator = !display_challenge_indicator;
-    rdp_onscreen_message(std::format("Challenge indicators: {}",
-                                     display_challenge_indicator ? "ON" : "OFF")
-                             .c_str(),
-                         MESSAGE_SHORT);
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_F12) {
-    callback.reset_game = true;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_LEFTBRACKET) {
-    callback.lower_volume = true;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_RIGHTBRACKET) {
-    callback.raise_volume = true;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode == SDL_SCANCODE_SLASH) {
-    callback.frame_advance = true;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-             event->key.scancode >= SDL_SCANCODE_1 &&
-             event->key.scancode <= SDL_SCANCODE_0 &&
-             (event->key.mod & SDL_KMOD_ALT)) {
-    if (event->key.scancode == SDL_SCANCODE_0)
-      callback.save_state_slot = 0;
-    else
-      callback.save_state_slot = event->key.scancode - SDL_SCANCODE_1 + 1;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat) {
+    switch (event->key.scancode) {
+    case SDL_SCANCODE_RETURN:
+      if (event->key.mod & SDL_KMOD_ALT) {
+        gfx_info.fullscreen = !gfx_info.fullscreen;
+        SDL_SetWindowFullscreen(window, gfx_info.fullscreen);
+      }
+      break;
+    case SDL_SCANCODE_F:
+      if (event->key.mod & SDL_KMOD_ALT) {
+        callback.enable_speedlimiter = !callback.enable_speedlimiter;
+      }
+      break;
+    case SDL_SCANCODE_P:
+      if (event->key.mod & SDL_KMOD_ALT) {
+        callback.paused = !callback.paused;
+      }
+      break;
+    case SDL_SCANCODE_ESCAPE:
+      if (gfx_info.fullscreen) {
+        SDL_zero(user_event);
+        user_event.type = SDL_EVENT_USER;
+        user_event.user.code = USER_EVENT_EXIT_GAME;
+        SDL_PushEvent(&user_event);
+      }
+      break;
+    case SDL_SCANCODE_F1:
+      display_fps = !display_fps;
+      break;
+    case SDL_SCANCODE_F4:
+      crop_letterbox = !crop_letterbox;
+      break;
+    case SDL_SCANCODE_F5:
+      SDL_zero(user_event);
+      user_event.type = SDL_EVENT_USER;
+      user_event.user.code = USER_EVENT_SAVE_STATE;
+      SDL_PushEvent(&user_event);
+      break;
+    case SDL_SCANCODE_F7:
+      SDL_zero(user_event);
+      user_event.type = SDL_EVENT_USER;
+      user_event.user.code = USER_EVENT_LOAD_STATE;
+      SDL_PushEvent(&user_event);
+      break;
+    case SDL_SCANCODE_F8:
+      if (messages.empty())
+        SDL_RunOnMainThread(ra_display_inprogress_achievements, nullptr, false);
+      break;
+    case SDL_SCANCODE_F9:
+      display_challenge_indicator = !display_challenge_indicator;
+      rdp_onscreen_message(
+          std::format("Challenge indicators: {}",
+                      display_challenge_indicator ? "ON" : "OFF")
+              .c_str(),
+          MESSAGE_SHORT);
+      break;
+    case SDL_SCANCODE_F12:
+      callback.reset_game = true;
+      break;
+    case SDL_SCANCODE_LEFTBRACKET:
+      callback.lower_volume = true;
+      break;
+    case SDL_SCANCODE_RIGHTBRACKET:
+      callback.raise_volume = true;
+      break;
+    case SDL_SCANCODE_SLASH:
+      callback.frame_advance = true;
+      break;
+    case SDL_SCANCODE_0:
+    case SDL_SCANCODE_1:
+    case SDL_SCANCODE_2:
+    case SDL_SCANCODE_3:
+    case SDL_SCANCODE_4:
+    case SDL_SCANCODE_5:
+    case SDL_SCANCODE_6:
+    case SDL_SCANCODE_7:
+    case SDL_SCANCODE_8:
+    case SDL_SCANCODE_9:
+      if (event->key.mod & SDL_KMOD_ALT) {
+        if (event->key.scancode == SDL_SCANCODE_0)
+          callback.save_state_slot = 0;
+        else
+          callback.save_state_slot = event->key.scancode - SDL_SCANCODE_1 + 1;
+      }
+      break;
+    default:
+      break;
+    }
+  } else if (event->type == SDL_EVENT_USER) {
+    switch (event->user.code) {
+    case USER_EVENT_SAVE_STATE:
+      callback.save_state = true;
+      break;
+    case USER_EVENT_LOAD_STATE:
+      callback.load_state = true;
+      break;
+    case USER_EVENT_EXIT_GAME:
+      callback.emu_running = false;
+      break;
+    }
   } else if (event->type == SDL_EVENT_JOYSTICK_ADDED) {
     JoystickEvent *joystick_event = new JoystickEvent;
     joystick_event->joystick_id = event->jdevice.which;
