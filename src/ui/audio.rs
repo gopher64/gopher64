@@ -47,7 +47,7 @@ pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
     }
     if !unsafe {
         sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain)
-            && sdl3_sys::audio::SDL_PauseAudioStreamDevice(ui.audio.audio_stream)
+            && sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio.audio_stream)
             && sdl3_sys::audio::SDL_SetAudioStreamGetCallback(
                 ui.audio.audio_stream,
                 Some(audio_callback),
