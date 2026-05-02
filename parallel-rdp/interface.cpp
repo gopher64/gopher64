@@ -163,12 +163,12 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
   } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
              event->key.scancode == SDL_SCANCODE_F4) {
     crop_letterbox = !crop_letterbox;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-                 event->key.scancode == SDL_SCANCODE_F5 ||
+  } else if ((event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+              event->key.scancode == SDL_SCANCODE_F5) ||
              (event->type == SDL_EVENT_USER && event->user.code == 1)) {
     callback.save_state = true;
-  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
-                 event->key.scancode == SDL_SCANCODE_F7 ||
+  } else if ((event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+              event->key.scancode == SDL_SCANCODE_F7) ||
              (event->type == SDL_EVENT_USER && event->user.code == 2)) {
     callback.load_state = true;
   } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
