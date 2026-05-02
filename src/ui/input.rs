@@ -35,6 +35,7 @@ pub struct Controllers {
     pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
     pub joystick: *mut sdl3_sys::joystick::SDL_Joystick,
     pub guid: sdl3_sys::guid::SDL_GUID,
+    pub last_key_state: u32,
 }
 
 pub struct InputData {
@@ -419,6 +420,24 @@ fn handle_joystick_events(ui: &mut ui::Ui) {
     }
 }
 
+fn handle_hotkeys(keys: u32, last_key_state: u32) {
+    let mut event = sdl3_sys::events::SDL_Event {
+        r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
+    };
+    if keys & (1 << L_TRIG) != 0 && last_key_state & (1 << L_TRIG) == 0 {
+        event.user.code = 1; //save state
+        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
+    }
+    if keys & (1 << R_TRIG) != 0 && last_key_state & (1 << R_TRIG) == 0 {
+        event.user.code = 2; //load state
+        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
+    }
+    if keys & (1 << START_BUTTON) != 0 && last_key_state & (1 << START_BUTTON) == 0 {
+        event.user.code = 3; //exit game
+        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
+    }
+}
+
 pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     handle_joystick_events(ui);
 
@@ -475,7 +494,11 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
     keys |= (y.round() as i8 as u8 as u32) << Y_AXIS_SHIFT;
 
+    let last_key_state = ui.input.controllers[channel].last_key_state;
+    ui.input.controllers[channel].last_key_state = keys;
+
     if hotkey_pressed(profile, joystick, controller) {
+        handle_hotkeys(keys, last_key_state);
         InputData {
             data: 0,
             pak_change_pressed: keys & (1 << B_BUTTON) != 0,
