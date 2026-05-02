@@ -245,6 +245,8 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     case USER_EVENT_EXIT_GAME:
       callback.emu_running = false;
       break;
+    default:
+      break;
     }
   } else if (event->type == SDL_EVENT_JOYSTICK_ADDED) {
     JoystickEvent *joystick_event = new JoystickEvent;
