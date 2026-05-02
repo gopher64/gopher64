@@ -48,7 +48,8 @@ pub fn init(
                 {
                     option_value = Some(found_option_value.to_string());
                 } else {
-                    panic!("Cheat option: {option} not found");
+                    println!("Cheat option: {option} not found");
+                    continue;
                 }
             }
 
@@ -65,13 +66,19 @@ pub fn init(
                 }
                 let mut split = result.split_whitespace();
                 let first_part = u32::from_str_radix(split.next().unwrap(), 16).unwrap();
-                decoded_cheat.push(DecodedCheat {
-                    code_type: (first_part >> 24) as u8,
-                    address: first_part & 0x00FFFFFF,
-                    data: u16::from_str_radix(split.next().unwrap(), 16).unwrap(),
-                });
+                if let Ok(data) = u16::from_str_radix(split.next().unwrap(), 16) {
+                    decoded_cheat.push(DecodedCheat {
+                        code_type: (first_part >> 24) as u8,
+                        address: first_part & 0x00FFFFFF,
+                        data,
+                    })
+                } else {
+                    println!("Could not parse data for: {}", cheat_setting.0);
+                };
             }
-            device.cheats.cheats.push(decoded_cheat);
+            if !decoded_cheat.is_empty() {
+                device.cheats.cheats.push(decoded_cheat);
+            }
         } else {
             println!("Could not find cheat: {}", cheat_setting.0);
         }
