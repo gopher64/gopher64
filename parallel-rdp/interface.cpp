@@ -54,6 +54,12 @@ enum vi_registers {
   VI_REGS_COUNT
 };
 
+enum user_event_codes {
+  USER_EVENT_SAVE_STATE = 1,
+  USER_EVENT_LOAD_STATE = 2,
+  USER_EVENT_EXIT_GAME = 3,
+};
+
 typedef struct {
   uint32_t depthbuffer_address;
   uint32_t framebuffer_address;
@@ -140,6 +146,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
   } else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running) {
     wsi_platform->do_resize();
   } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat) {
+    SDL_Event user_event;
     switch (event->key.scancode) {
     case SDL_SCANCODE_RETURN:
       if (event->key.mod & SDL_KMOD_ALT) {
@@ -158,8 +165,12 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       }
       break;
     case SDL_SCANCODE_ESCAPE:
-      if (gfx_info.fullscreen)
-        callback.emu_running = false;
+      if (gfx_info.fullscreen) {
+        SDL_zero(user_event);
+        user_event.type = SDL_EVENT_USER;
+        user_event.user.code = USER_EVENT_EXIT_GAME;
+        SDL_PushEvent(&user_event);
+      }
       break;
     case SDL_SCANCODE_F1:
       display_fps = !display_fps;
@@ -168,10 +179,16 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       crop_letterbox = !crop_letterbox;
       break;
     case SDL_SCANCODE_F5:
-      callback.save_state = true;
+      SDL_zero(user_event);
+      user_event.type = SDL_EVENT_USER;
+      user_event.user.code = USER_EVENT_SAVE_STATE;
+      SDL_PushEvent(&user_event);
       break;
     case SDL_SCANCODE_F7:
-      callback.load_state = true;
+      SDL_zero(user_event);
+      user_event.type = SDL_EVENT_USER;
+      user_event.user.code = USER_EVENT_LOAD_STATE;
+      SDL_PushEvent(&user_event);
       break;
     case SDL_SCANCODE_F8:
       if (messages.empty())
@@ -213,6 +230,20 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
         else
           callback.save_state_slot = event->key.scancode - SDL_SCANCODE_1 + 1;
       }
+      break;
+    default:
+      break;
+    }
+  } else if (event->type == SDL_EVENT_USER) {
+    switch (event->user.code) {
+    case USER_EVENT_SAVE_STATE:
+      callback.save_state = true;
+      break;
+    case USER_EVENT_LOAD_STATE:
+      callback.load_state = true;
+      break;
+    case USER_EVENT_EXIT_GAME:
+      callback.emu_running = false;
       break;
     default:
       break;
