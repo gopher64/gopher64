@@ -179,13 +179,11 @@ async fn main() -> std::io::Result<()> {
                 if device.ui.config.input.transfer_pak[i]
                     && !device.ui.config.input.gb_rom_path[i].is_empty()
                     && !device.ui.config.input.gb_ram_path[i].is_empty()
+                    && let Ok(rom) = std::fs::read(&device.ui.config.input.gb_rom_path[i])
+                    && let Ok(ram) = std::fs::read(&device.ui.config.input.gb_ram_path[i])
                 {
-                    if let Ok(rom) = std::fs::read(&device.ui.config.input.gb_rom_path[i])
-                        && let Ok(ram) = std::fs::read(&device.ui.config.input.gb_ram_path[i])
-                    {
-                        device.transferpaks[i].cart.rom = rom;
-                        device.transferpaks[i].cart.ram = ram;
-                    }
+                    device.transferpaks[i].cart.rom = rom;
+                    device.transferpaks[i].cart.ram = ram;
                 }
             }
 
