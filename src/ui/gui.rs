@@ -210,7 +210,7 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
             let position = profiles
                 .iter()
                 .position(|profile| *profile == currently_selected);
-            profile_bindings.push(position.unwrap() as i32);
+            profile_bindings.push(position.unwrap_or(0) as i32);
         }
 
         handle.set_input_profiles(slint::ModelRc::from(std::rc::Rc::new(
