@@ -139,66 +139,69 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     callback.emu_running = false;
   } else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running) {
     wsi_platform->do_resize();
-  } else if ((event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat) ||
-             event->type == SDL_EVENT_USER) {
-    if (event->key.scancode == SDL_SCANCODE_RETURN &&
-        event->key.mod & SDL_KMOD_ALT) {
-      gfx_info.fullscreen = !gfx_info.fullscreen;
-      SDL_SetWindowFullscreen(window, gfx_info.fullscreen);
-    } else if (event->key.scancode == SDL_SCANCODE_F &&
-               event->key.mod & SDL_KMOD_ALT) {
-      callback.enable_speedlimiter = !callback.enable_speedlimiter;
-    } else if (event->key.scancode == SDL_SCANCODE_P &&
-               event->key.mod & SDL_KMOD_ALT) {
-      callback.paused = !callback.paused;
-    } else if ((event->key.scancode == SDL_SCANCODE_ESCAPE &&
-                gfx_info.fullscreen) ||
-               (event->type == SDL_EVENT_USER && event->user.code == 3)) {
-      callback.emu_running = false;
-    } else if (event->key.scancode == SDL_SCANCODE_F1) {
-      display_fps = !display_fps;
-    } else if (event->key.scancode == SDL_SCANCODE_F4) {
-      crop_letterbox = !crop_letterbox;
-    } else if (event->key.scancode == SDL_SCANCODE_F5 ||
-               (event->type == SDL_EVENT_USER && event->user.code == 1)) {
-      callback.save_state = true;
-    } else if (event->key.scancode == SDL_SCANCODE_F7 ||
-               (event->type == SDL_EVENT_USER && event->user.code == 2)) {
-      callback.load_state = true;
-    } else if (event->key.scancode == SDL_SCANCODE_F8) {
-      if (messages.empty())
-        SDL_RunOnMainThread(ra_display_inprogress_achievements, nullptr, false);
-    } else if (event->key.scancode == SDL_SCANCODE_F9) {
-      display_challenge_indicator = !display_challenge_indicator;
-      rdp_onscreen_message(
-          std::format("Challenge indicators: {}",
-                      display_challenge_indicator ? "ON" : "OFF")
-              .c_str(),
-          MESSAGE_SHORT);
-    } else if (event->key.scancode == SDL_SCANCODE_F12) {
-      callback.reset_game = true;
-    } else if (event->key.scancode == SDL_SCANCODE_LEFTBRACKET) {
-      callback.lower_volume = true;
-    } else if (event->key.scancode == SDL_SCANCODE_RIGHTBRACKET) {
-      callback.raise_volume = true;
-    } else if (event->key.scancode == SDL_SCANCODE_SLASH) {
-      callback.frame_advance = true;
-    } else if ((event->key.scancode == SDL_SCANCODE_0 ||
-                event->key.scancode == SDL_SCANCODE_1 ||
-                event->key.scancode == SDL_SCANCODE_2 ||
-                event->key.scancode == SDL_SCANCODE_3 ||
-                event->key.scancode == SDL_SCANCODE_4 ||
-                event->key.scancode == SDL_SCANCODE_5 ||
-                event->key.scancode == SDL_SCANCODE_6 ||
-                event->key.scancode == SDL_SCANCODE_7 ||
-                event->key.scancode == SDL_SCANCODE_8 ||
-                event->key.scancode == SDL_SCANCODE_9) &&
-               event->key.mod & SDL_KMOD_ALT) {
-      if (event->key.scancode == SDL_SCANCODE_0)
-        callback.save_state_slot = 0;
-      else
-        callback.save_state_slot = event->key.scancode - SDL_SCANCODE_1 + 1;
-    }
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_RETURN &&
+             (event->key.mod & SDL_KMOD_ALT)) {
+    gfx_info.fullscreen = !gfx_info.fullscreen;
+    SDL_SetWindowFullscreen(window, gfx_info.fullscreen);
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_F &&
+             (event->key.mod & SDL_KMOD_ALT)) {
+    callback.enable_speedlimiter = !callback.enable_speedlimiter;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_P &&
+             (event->key.mod & SDL_KMOD_ALT)) {
+    callback.paused = !callback.paused;
+  } else if ((event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+              event->key.scancode == SDL_SCANCODE_ESCAPE &&
+              gfx_info.fullscreen) ||
+             (event->type == SDL_EVENT_USER && event->user.code == 3)) {
+    callback.emu_running = false;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_F1) {
+    display_fps = !display_fps;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_F4) {
+    crop_letterbox = !crop_letterbox;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+                 event->key.scancode == SDL_SCANCODE_F5 ||
+             (event->type == SDL_EVENT_USER && event->user.code == 1)) {
+    callback.save_state = true;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+                 event->key.scancode == SDL_SCANCODE_F7 ||
+             (event->type == SDL_EVENT_USER && event->user.code == 2)) {
+    callback.load_state = true;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_F8) {
+    if (messages.empty())
+      SDL_RunOnMainThread(ra_display_inprogress_achievements, nullptr, false);
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_F9) {
+    display_challenge_indicator = !display_challenge_indicator;
+    rdp_onscreen_message(std::format("Challenge indicators: {}",
+                                     display_challenge_indicator ? "ON" : "OFF")
+                             .c_str(),
+                         MESSAGE_SHORT);
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_F12) {
+    callback.reset_game = true;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_LEFTBRACKET) {
+    callback.lower_volume = true;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_RIGHTBRACKET) {
+    callback.raise_volume = true;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode == SDL_SCANCODE_SLASH) {
+    callback.frame_advance = true;
+  } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat &&
+             event->key.scancode >= SDL_SCANCODE_1 &&
+             event->key.scancode <= SDL_SCANCODE_0 &&
+             (event->key.mod & SDL_KMOD_ALT)) {
+    if (event->key.scancode == SDL_SCANCODE_0)
+      callback.save_state_slot = 0;
+    else
+      callback.save_state_slot = event->key.scancode - SDL_SCANCODE_1 + 1;
   } else if (event->type == SDL_EVENT_JOYSTICK_ADDED) {
     JoystickEvent *joystick_event = new JoystickEvent;
     joystick_event->joystick_id = event->jdevice.which;
