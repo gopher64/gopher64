@@ -88,7 +88,9 @@ pub fn create_savestate(device: &device::Device) {
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
     if let Ok(compressed_file) = ui::storage::compress_file(data) {
         tokio::spawn(async move {
-            tokio::fs::write(save_path, compressed_file).await.unwrap();
+            if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
+                eprintln!("Error writing savestate: {}", e);
+            }
         });
     }
     ui::video::onscreen_message(
