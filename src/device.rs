@@ -62,7 +62,7 @@ pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::Gam
     rdram::init(device);
 
     ui::video::init(device);
-    ui::audio::init(&mut device.ui, device.ai.freq);
+    ui::audio::init(device);
     ui::input::init(&mut device.ui);
 
     // must be after video init

@@ -201,7 +201,7 @@ pub fn load_savestate(device: &mut device::Device) {
             }
 
             ui::audio::close_game_audio(&mut device.ui);
-            ui::audio::init_game_audio(&mut device.ui, device.ai.freq);
+            ui::audio::init_game_audio(device);
             ui::video::load_state(device, rdp_state.as_ptr());
 
             if !ra_state.is_empty() {

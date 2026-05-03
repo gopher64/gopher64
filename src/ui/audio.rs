@@ -3,9 +3,9 @@ use crate::ui;
 
 static ADJUST_LOCKED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-pub fn init(ui: &mut ui::Ui, frequency: u64) {
+pub fn init(device: &mut device::Device) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_AUDIO);
-    init_game_audio(ui, frequency);
+    init_game_audio(device);
 }
 
 unsafe extern "C" fn audio_callback(
@@ -27,14 +27,14 @@ unsafe extern "C" fn audio_callback(
     }
 }
 
-pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
+pub fn init_game_audio(device: &mut device::Device) {
     let game_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
         format: sdl3_sys::audio::SDL_AUDIO_S16LE,
-        freq: frequency as i32,
+        freq: device.ai.freq as i32,
         channels: 2,
     };
 
-    ui.audio.audio_stream = unsafe {
+    device.ui.audio.audio_stream = unsafe {
         sdl3_sys::audio::SDL_OpenAudioDeviceStream(
             sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
             &game_audio_spec,
@@ -42,19 +42,23 @@ pub fn init_game_audio(ui: &mut ui::Ui, frequency: u64) {
             std::ptr::null_mut(),
         )
     };
-    if ui.audio.audio_stream.is_null() {
+    if device.ui.audio.audio_stream.is_null() {
         panic!("Could not create audio stream");
     }
     if !unsafe {
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain)
-            && sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio.audio_stream)
+        sdl3_sys::audio::SDL_SetAudioStreamGain(device.ui.audio.audio_stream, device.ui.audio.gain)
             && sdl3_sys::audio::SDL_SetAudioStreamGetCallback(
-                ui.audio.audio_stream,
+                device.ui.audio.audio_stream,
                 Some(audio_callback),
                 std::ptr::null_mut(),
             )
     } {
         panic!("Could not initialize audio stream");
+    }
+    if device.ai.regs[device::ai::AI_STATUS_REG as usize] & device::ai::AI_STATUS_BUSY != 0 {
+        resume_game_audio(&mut device.ui);
+    } else {
+        pause_game_audio(&mut device.ui);
     }
 }
 
