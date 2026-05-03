@@ -116,25 +116,27 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
     tokio::spawn(async move {
         let mut local_servers: Vec<(String, String)> = vec![];
 
-        let broadcast_sock = tokio::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
-            .await
-            .unwrap();
-        broadcast_sock.set_broadcast(true).unwrap();
-        let data: [u8; 1] = [1];
-        let _ = broadcast_sock
-            .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
-            .await;
-        let mut buffer = [0; 1024];
-        if let Ok(Ok(result)) = tokio::time::timeout(
-            std::time::Duration::from_millis(200),
-            broadcast_sock.recv(&mut buffer),
-        )
-        .await
+        if let Ok(broadcast_sock) =
+            tokio::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0)).await
+            && let Ok(_) = broadcast_sock.set_broadcast(true)
         {
-            let data: std::collections::HashMap<String, String> =
-                serde_json::from_slice(&buffer[..result]).unwrap();
-            for server in data.iter() {
-                local_servers.push((server.0.into(), server.1.into()));
+            let data: [u8; 1] = [1];
+            let _ = broadcast_sock
+                .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
+                .await;
+            let mut buffer = [0; 1024];
+            if let Ok(Ok(result)) = tokio::time::timeout(
+                std::time::Duration::from_millis(200),
+                broadcast_sock.recv(&mut buffer),
+            )
+            .await
+                && let Ok(data) = serde_json::from_slice::<std::collections::HashMap<String, String>>(
+                    &buffer[..result],
+                )
+            {
+                for server in data.iter() {
+                    local_servers.push((server.0.into(), server.1.into()));
+                }
             }
         }
 
@@ -1259,9 +1261,14 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
     });
 
     app.on_netplay_discord_button_clicked(move || {
-        open::that_detached("https://discord.gg/JyW6ZgBUyS").unwrap();
+        if let Err(e) = open::that_detached("https://discord.gg/JyW6ZgBUyS") {
+            eprintln!("Error opening Discord: {}", e);
+        }
     });
     app.on_netplay_feedback_button_clicked(move || {
-        open::that_detached("https://github.com/gopher64/gopher64/discussions/453").unwrap();
+        if let Err(e) = open::that_detached("https://github.com/gopher64/gopher64/discussions/453")
+        {
+            eprintln!("Error opening feedback: {}", e);
+        }
     });
 }

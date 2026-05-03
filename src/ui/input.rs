@@ -1041,15 +1041,16 @@ pub fn init(ui: &mut ui::Ui) {
     }
 
     for i in 0..4 {
-        let controller_assignment = &ui.config.input.controller_assignment[i];
-        if controller_assignment.is_some() && ui.config.input.controller_enabled[i] {
+        if let Some(controller_assignment) = &ui.config.input.controller_assignment[i]
+            && ui.config.input.controller_enabled[i]
+        {
             let mut joystick_id = sdl3_sys::everything::SDL_JoystickID(0);
-            let assigned_path = controller_assignment.as_ref().unwrap();
 
             for joystick in ui.input.joysticks.iter() {
                 let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
                 if !path.is_null()
-                    && unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() } == *assigned_path
+                    && unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }
+                        == controller_assignment
                     && unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(*joystick) }.is_null()
                     && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(*joystick) }.is_null()
                 {

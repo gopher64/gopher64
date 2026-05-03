@@ -153,7 +153,9 @@ fn local_game_window(
 
     let saves_path = dirs.data_dir.join("saves");
     app.on_saves_folder_button_clicked(move || {
-        open::that_detached(saves_path.clone()).unwrap();
+        if let Err(e) = open::that_detached(saves_path.clone()) {
+            eprintln!("Error opening saves folder: {}", e);
+        }
     });
     file_dropped(app, controller_paths);
 }
@@ -448,22 +450,35 @@ pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
 
 fn about_window(app: &AppWindow) {
     app.on_wiki_button_clicked(move || {
-        open::that_detached("https://github.com/gopher64/gopher64/wiki").unwrap();
+        if let Err(e) = open::that_detached("https://github.com/gopher64/gopher64/wiki") {
+            eprintln!("Error opening wiki: {}", e);
+        }
     });
     app.on_discord_button_clicked(move || {
-        open::that_detached("https://discord.gg/9RGXq8W8JQ").unwrap();
+        if let Err(e) = open::that_detached("https://discord.gg/9RGXq8W8JQ") {
+            eprintln!("Error opening Discord: {}", e);
+        }
     });
     app.on_patreon_button_clicked(move || {
-        open::that_detached("https://patreon.com/loganmc10").unwrap();
+        if let Err(e) = open::that_detached("https://patreon.com/loganmc10") {
+            eprintln!("Error opening Patreon: {}", e);
+        }
     });
     app.on_github_sponsors_button_clicked(move || {
-        open::that_detached("https://github.com/sponsors/loganmc10").unwrap();
+        if let Err(e) = open::that_detached("https://github.com/sponsors/loganmc10") {
+            eprintln!("Error opening GitHub Sponsors: {}", e);
+        }
     });
     app.on_source_code_button_clicked(move || {
-        open::that_detached("https://github.com/gopher64/gopher64").unwrap();
+        if let Err(e) = open::that_detached("https://github.com/gopher64/gopher64") {
+            eprintln!("Error opening source code: {}", e);
+        }
     });
     app.on_newversion_button_clicked(move || {
-        open::that_detached("https://github.com/gopher64/gopher64/releases/latest").unwrap();
+        if let Err(e) = open::that_detached("https://github.com/gopher64/gopher64/releases/latest")
+        {
+            eprintln!("Error opening new version: {}", e);
+        }
     });
     app.set_version(format!("Version: {}", env!("GIT_DESCRIBE")).into());
 

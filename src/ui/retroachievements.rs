@@ -82,20 +82,28 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
                 leaderboard,
             }
         };
-        let f = std::fs::File::create(&file_path).unwrap();
-        serde_json::to_writer_pretty(f, &raconfig).unwrap();
+        if let Ok(f) = std::fs::File::create(&file_path)
+            && let Err(e) = serde_json::to_writer_pretty(f, &raconfig)
+        {
+            eprintln!("Error writing RA config: {}", e);
+        }
     });
 
     app.on_ra_games_clicked(move || {
-        open::that_detached("https://retroachievements.org/system/2-nintendo-64/games").unwrap();
+        if let Err(e) =
+            open::that_detached("https://retroachievements.org/system/2-nintendo-64/games")
+        {
+            eprintln!("Error opening games: {}", e);
+        }
     });
 
     app.on_ra_show_profile_clicked(move || {
-        open::that_detached(format!(
+        if let Err(e) = open::that_detached(format!(
             "https://retroachievements.org/user/{}",
             retroachievements::get_username().unwrap_or_default()
-        ))
-        .unwrap();
+        )) {
+            eprintln!("Error opening profile: {}", e);
+        }
     });
 }
 

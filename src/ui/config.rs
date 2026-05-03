@@ -85,8 +85,11 @@ impl Drop for Cheats {
 fn write_cheats(cheats: &Cheats) {
     let dirs = ui::get_dirs();
     let file_path = dirs.config_dir.join("cheats.json");
-    let f = std::fs::File::create(file_path).unwrap();
-    serde_json::to_writer_pretty(f, &cheats).unwrap();
+    if let Ok(f) = std::fs::File::create(file_path)
+        && let Err(e) = serde_json::to_writer_pretty(f, &cheats)
+    {
+        eprintln!("Error writing cheats: {}", e);
+    }
 }
 
 impl Cheats {
@@ -115,8 +118,11 @@ impl Drop for Config {
 fn write_config(config: &Config) {
     let dirs = ui::get_dirs();
     let file_path = dirs.config_dir.join("config.json");
-    let f = std::fs::File::create(file_path).unwrap();
-    serde_json::to_writer_pretty(f, &config).unwrap();
+    if let Ok(f) = std::fs::File::create(file_path)
+        && let Err(e) = serde_json::to_writer_pretty(f, &config)
+    {
+        eprintln!("Error writing config: {}", e);
+    }
 }
 
 impl Config {
