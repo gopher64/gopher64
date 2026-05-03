@@ -9,6 +9,7 @@ on:
       - "v*"
   pull_request:
     branches: [ "main" ]
+  merge_group:
 
 env:
   CARGO_TERM_COLOR: always
