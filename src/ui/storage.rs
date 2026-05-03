@@ -324,10 +324,9 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut compressed_romsave);
             if !compressed_romsave.is_empty()
                 && let Ok(romsave_bytes) = decompress_file(&compressed_romsave, "save")
+                && let Ok(romsave_data) = postcard::from_bytes(&romsave_bytes)
             {
-                if let Ok(romsave_data) = postcard::from_bytes(&romsave_bytes) {
-                    ui.storage.saves.romsave.data = romsave_data;
-                }
+                ui.storage.saves.romsave.data = romsave_data;
             }
         }
     }
