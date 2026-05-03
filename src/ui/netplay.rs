@@ -130,15 +130,13 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                 broadcast_sock.recv(&mut buffer),
             )
             .await
-            {
-                if let Ok(data) = serde_json::from_slice::<std::collections::HashMap<String, String>>(
+                && let Ok(data) = serde_json::from_slice::<std::collections::HashMap<String, String>>(
                     &buffer[..result],
                 ) {
                     for server in data.iter() {
                         local_servers.push((server.0.into(), server.1.into()));
                     }
                 }
-            }
         }
 
         let response = task.await;
