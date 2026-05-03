@@ -462,79 +462,78 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     handle_joystick_events(ui);
 
     let profile_name = &ui.config.input.input_profile_binding[channel];
-    if let Some(profile) = ui.config.input.input_profiles.get(profile_name) {
-        let mut keys = 0;
-        let controller = ui.input.controllers[channel].game_controller;
-        let joystick = ui.input.controllers[channel].joystick;
-
-        let alt_pressed = unsafe {
-            // ignore key presses if ALT is pressed
-            *ui.input
-                .keyboard_state
-                .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_LALT) as isize)
-                || *ui
-                    .input
-                    .keyboard_state
-                    .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
+    let Some(profile) = ui.config.input.input_profiles.get(profile_name) else {
+        return InputData {
+            data: 0,
+            pak_change_pressed: false,
         };
+    };
+    let mut keys = 0;
+    let controller = ui.input.controllers[channel].game_controller;
+    let joystick = ui.input.controllers[channel].joystick;
 
-        for i in 0..14 {
-            if profile_name != "default" || channel == 0 {
-                let profile_key = profile.keys[i];
-                if profile_key.enabled && !alt_pressed {
-                    keys |= (unsafe { *ui.input.keyboard_state.offset(profile_key.id as isize) }
-                        as u32)
-                        << i;
-                }
-            }
+    let alt_pressed = unsafe {
+        // ignore key presses if ALT is pressed
+        *ui.input
+            .keyboard_state
+            .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_LALT) as isize)
+            || *ui
+                .input
+                .keyboard_state
+                .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
+    };
 
-            if !controller.is_null() {
-                set_buttons_from_controller(profile, i, controller, &mut keys);
-            } else if !joystick.is_null() {
-                set_buttons_from_joystick(profile, i, joystick, &mut keys);
-            }
-        }
-
-        let mut x: f64 = 0.0;
-        let mut y: f64 = 0.0;
-
+    for i in 0..14 {
         if profile_name != "default" || channel == 0 {
-            (x, y) = set_axis_from_keys(profile, ui.input.keyboard_state);
+            let profile_key = profile.keys[i];
+            if profile_key.enabled && !alt_pressed {
+                keys |= (unsafe { *ui.input.keyboard_state.offset(profile_key.id as isize) }
+                    as u32)
+                    << i;
+            }
         }
 
         if !controller.is_null() {
-            (x, y) = set_axis_from_controller(profile, controller);
-            apply_deadzone(&mut x, &mut y, profile.deadzone);
+            set_buttons_from_controller(profile, i, controller, &mut keys);
         } else if !joystick.is_null() {
-            (x, y) = set_axis_from_joystick(profile, joystick);
-            apply_deadzone(&mut x, &mut y, profile.deadzone);
+            set_buttons_from_joystick(profile, i, joystick, &mut keys);
         }
-        bound_axis(&mut x, &mut y);
+    }
 
-        keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
-        keys |= (y.round() as i8 as u8 as u32) << Y_AXIS_SHIFT;
+    let mut x: f64 = 0.0;
+    let mut y: f64 = 0.0;
 
-        let last_key_state = ui.input.controllers[channel].last_key_state;
-        ui.input.controllers[channel].last_key_state = keys;
+    if profile_name != "default" || channel == 0 {
+        (x, y) = set_axis_from_keys(profile, ui.input.keyboard_state);
+    }
 
-        if hotkey_pressed(profile, joystick, controller) {
-            handle_hotkeys(keys, last_key_state);
-            InputData {
-                data: 0,
-                pak_change_pressed: keys & (1 << B_BUTTON) != 0,
-            }
-        } else {
-            let key = profile.keys[HOTKEY];
-            InputData {
-                data: keys,
-                pak_change_pressed: key.enabled
-                    && unsafe { *ui.input.keyboard_state.offset(key.id as isize) },
-            }
-        }
-    } else {
+    if !controller.is_null() {
+        (x, y) = set_axis_from_controller(profile, controller);
+        apply_deadzone(&mut x, &mut y, profile.deadzone);
+    } else if !joystick.is_null() {
+        (x, y) = set_axis_from_joystick(profile, joystick);
+        apply_deadzone(&mut x, &mut y, profile.deadzone);
+    }
+    bound_axis(&mut x, &mut y);
+
+    keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
+    keys |= (y.round() as i8 as u8 as u32) << Y_AXIS_SHIFT;
+
+    let last_key_state = ui.input.controllers[channel].last_key_state;
+    ui.input.controllers[channel].last_key_state = keys;
+
+    if hotkey_pressed(profile, joystick, controller) {
+        handle_hotkeys(keys, last_key_state);
         InputData {
             data: 0,
-            pak_change_pressed: false,
+            pak_change_pressed: keys & (1 << B_BUTTON) != 0,
+        }
+    } else {
+        let key = profile.keys[HOTKEY];
+        InputData {
+            data: keys,
+            pak_change_pressed: key.enabled
+                && unsafe { *ui.input.keyboard_state.offset(key.id as isize) },
         }
     }
 }
