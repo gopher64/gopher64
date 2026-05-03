@@ -83,9 +83,10 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
             }
         };
         if let Ok(f) = std::fs::File::create(&file_path)
-            && let Err(e) = serde_json::to_writer_pretty(f, &raconfig) {
-                eprintln!("Error writing RA config: {}", e);
-            }
+            && let Err(e) = serde_json::to_writer_pretty(f, &raconfig)
+        {
+            eprintln!("Error writing RA config: {}", e);
+        }
     });
 
     app.on_ra_games_clicked(move || {
