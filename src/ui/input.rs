@@ -316,7 +316,7 @@ fn hotkey_pressed(
                 sdl3_sys::gamepad::SDL_GamepadButton(controller_button.id),
             )
         };
-    } else if controller_axis.enabled {
+    } else if controller_axis.enabled && !controller.is_null() {
         let axis_position = unsafe {
             sdl3_sys::gamepad::SDL_GetGamepadAxis(
                 controller,
@@ -332,7 +332,7 @@ fn hotkey_pressed(
         pressed = (unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, joystick_hat.id) }
             & joystick_hat.direction)
             != 0;
-    } else if joystick_axis.enabled {
+    } else if joystick_axis.enabled && !joystick.is_null() {
         let axis_position =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, joystick_axis.id) };
         pressed = axis_position as isize * joystick_axis.axis as isize > 0

@@ -113,8 +113,10 @@ pub fn load_savestate(device: &mut device::Device) {
         let save_bytes = ui::storage::decompress_file(savestate, "saves");
         let rdp_state = ui::storage::decompress_file(savestate, "rdp_state");
         let ra_state = ui::storage::decompress_file(savestate, "ra_state");
-        if let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes) {
-            device.ui.storage.saves = postcard::from_bytes(&save_bytes).unwrap();
+        if let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes)
+            && let Ok(saves) = postcard::from_bytes(&save_bytes)
+        {
+            device.ui.storage.saves = saves;
 
             device.cpu = state.cpu;
             device.pif = state.pif;

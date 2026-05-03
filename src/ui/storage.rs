@@ -228,8 +228,10 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             ui.storage.saves.sdcard.data = sdcard;
         }
         let romsave = std::fs::read(&ui.storage.paths.romsave_file_path);
-        if let Ok(romsave) = romsave {
-            ui.storage.saves.romsave.data = postcard::from_bytes(romsave.as_ref()).unwrap();
+        if let Ok(romsave) = romsave
+            && let Ok(romsave_data) = postcard::from_bytes(romsave.as_ref())
+        {
+            ui.storage.saves.romsave.data = romsave_data;
         }
     }
 
@@ -316,7 +318,9 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut compressed_romsave);
             if !compressed_romsave.is_empty() {
                 let romsave_bytes = decompress_file(&compressed_romsave, "save");
-                ui.storage.saves.romsave.data = postcard::from_bytes(&romsave_bytes).unwrap();
+                if let Ok(romsave_data) = postcard::from_bytes(&romsave_bytes) {
+                    ui.storage.saves.romsave.data = romsave_data;
+                }
             }
         }
     }

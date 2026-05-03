@@ -36,8 +36,10 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
         if let Ok(response) = response {
             let data: Result<GithubData, reqwest::Error> = response.json().await;
 
-            let latest_version = if let Ok(data) = data {
-                semver::Version::parse(&data.tag_name[1..]).unwrap()
+            let latest_version = if let Ok(data) = data
+                && let Ok(github_version) = semver::Version::parse(&data.tag_name[1..])
+            {
+                github_version
             } else {
                 semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
             };
@@ -108,15 +110,7 @@ fn local_game_window(
             config
                 .recent_roms
                 .iter()
-                .filter(|x| {
-                    if let Ok(exists) = std::fs::exists(x)
-                        && exists
-                    {
-                        true
-                    } else {
-                        false
-                    }
-                })
+                .filter(|x| std::fs::exists(x).unwrap_or(false))
                 .map(|x| {
                     (
                         x.into(),
