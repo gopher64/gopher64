@@ -86,10 +86,11 @@ pub fn create_savestate(device: &device::Device) {
         (&ra_state, "ra_state"),
     ];
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
-    let compressed_file = ui::storage::compress_file(data);
-    tokio::spawn(async move {
-        tokio::fs::write(save_path, compressed_file).await.unwrap();
-    });
+    if let Ok(compressed_file) = ui::storage::compress_file(data) {
+        tokio::spawn(async move {
+            tokio::fs::write(save_path, compressed_file).await.unwrap();
+        });
+    }
     ui::video::onscreen_message(
         &format!(
             "Savestate created in slot {}",
@@ -109,11 +110,11 @@ pub fn load_savestate(device: &mut device::Device) {
     }
     let savestate = std::fs::read(&device.ui.storage.paths.savestate_file_path);
     if let Ok(savestate) = &savestate {
-        let device_bytes = ui::storage::decompress_file(savestate, "device");
-        let save_bytes = ui::storage::decompress_file(savestate, "saves");
-        let rdp_state = ui::storage::decompress_file(savestate, "rdp_state");
-        let ra_state = ui::storage::decompress_file(savestate, "ra_state");
-        if let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes)
+        if let Ok(device_bytes) = ui::storage::decompress_file(savestate, "device")
+            && let Ok(save_bytes) = ui::storage::decompress_file(savestate, "saves")
+            && let Ok(rdp_state) = ui::storage::decompress_file(savestate, "rdp_state")
+            && let Ok(ra_state) = ui::storage::decompress_file(savestate, "ra_state")
+            && let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes)
             && let Ok(saves) = postcard::from_bytes(&save_bytes)
         {
             device.ui.storage.saves = saves;

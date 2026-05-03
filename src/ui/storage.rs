@@ -263,8 +263,10 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             );
 
             let mut compressed_sd = Vec::new();
-            if !ui.storage.saves.sdcard.data.is_empty() {
-                compressed_sd = compress_file(&[(&ui.storage.saves.sdcard.data, "save")]);
+            if !ui.storage.saves.sdcard.data.is_empty()
+                && let Ok(file_data) = compress_file(&[(&ui.storage.saves.sdcard.data, "save")])
+            {
+                compressed_sd = file_data;
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -274,11 +276,13 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             );
 
             let mut compressed_romsave = Vec::new();
-            if !ui.storage.saves.romsave.data.is_empty() {
-                compressed_romsave = compress_file(&[(
+            if !ui.storage.saves.romsave.data.is_empty()
+                && let Ok(file_data) = compress_file(&[(
                     &postcard::to_stdvec(&ui.storage.saves.romsave.data).unwrap(),
                     "save",
-                )]);
+                )])
+            {
+                compressed_romsave = file_data;
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -310,14 +314,17 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
 
             let mut compressed_sd = Vec::new();
             netplay::receive_save(netplay.as_mut().unwrap(), "img", &mut compressed_sd);
-            if !compressed_sd.is_empty() {
-                ui.storage.saves.sdcard.data = decompress_file(&compressed_sd, "save");
+            if !compressed_sd.is_empty()
+                && let Ok(file_data) = decompress_file(&compressed_sd, "save")
+            {
+                ui.storage.saves.sdcard.data = file_data;
             }
 
             let mut compressed_romsave = Vec::new();
             netplay::receive_save(netplay.as_mut().unwrap(), "rom", &mut compressed_romsave);
-            if !compressed_romsave.is_empty() {
-                let romsave_bytes = decompress_file(&compressed_romsave, "save");
+            if !compressed_romsave.is_empty()
+                && let Ok(romsave_bytes) = decompress_file(&compressed_romsave, "save")
+            {
                 if let Ok(romsave_data) = postcard::from_bytes(&romsave_bytes) {
                     ui.storage.saves.romsave.data = romsave_data;
                 }
@@ -333,33 +340,39 @@ pub fn format_saves(device: &mut device::Device) {
     device::controller::mempak::format_mempak(device);
 }
 
-pub fn decompress_file(input: &[u8], name: &str) -> Vec<u8> {
+pub fn decompress_file(input: &[u8], name: &str) -> Result<Vec<u8>, zip::result::ZipError> {
     let mut decompressed_file = Vec::new();
     {
-        let mut reader = zip::ZipArchive::new(std::io::Cursor::new(input)).unwrap();
-        let mut file = reader.by_name(name).unwrap();
-        file.read_to_end(&mut decompressed_file).unwrap();
+        if let Ok(mut reader) = zip::ZipArchive::new(std::io::Cursor::new(input))
+            && let Ok(mut file) = reader.by_name(name)
+            && let Ok(_) = file.read_to_end(&mut decompressed_file)
+        {
+            return Ok(decompressed_file);
+        }
     }
-    decompressed_file
+    Err(zip::result::ZipError::FileNotFound)
 }
 
-pub fn compress_file(data: &[(&[u8], &str)]) -> Vec<u8> {
+pub fn compress_file(data: &[(&[u8], &str)]) -> Result<Vec<u8>, zip::result::ZipError> {
     let mut compressed_file = Vec::new();
     {
         let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut compressed_file));
         for item in data {
-            writer
+            if writer
                 .start_file(
                     item.1,
                     zip::write::SimpleFileOptions::default()
                         .compression_method(zip::CompressionMethod::Zstd)
                         .compression_level(Some(1)),
                 )
-                .unwrap();
-            writer.write_all(item.0).unwrap();
+                .is_err()
+                || writer.write_all(item.0).is_err()
+            {
+                return Err(zip::result::ZipError::FileNotFound);
+            }
         }
     }
-    compressed_file
+    Ok(compressed_file)
 }
 
 fn writeback_sdcard(device: &mut device::Device) {
