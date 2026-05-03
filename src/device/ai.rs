@@ -3,12 +3,12 @@ use crate::{device, ui};
 const AI_DRAM_ADDR_REG: u32 = 0;
 const AI_LEN_REG: u32 = 1;
 // const AI_CONTROL_REG: u32 = 2;
-const AI_STATUS_REG: u32 = 3;
+pub const AI_STATUS_REG: u32 = 3;
 const AI_DACRATE_REG: u32 = 4;
 // const AI_BITRATE_REG: u32 = 5;
 pub const AI_REGS_COUNT: u32 = 6;
 
-const AI_STATUS_BUSY: u32 = 0x40000000;
+pub const AI_STATUS_BUSY: u32 = 0x40000000;
 const AI_STATUS_FULL: u32 = 0x80000000;
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -148,7 +148,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             if device.ai.regs[reg as usize] != value & mask {
                 device.ai.freq = device.vi.clock / (1 + (value & mask)) as u64;
                 ui::audio::close_game_audio(&mut device.ui);
-                ui::audio::init_game_audio(&mut device.ui, device.ai.freq)
+                ui::audio::init_game_audio(device)
             }
             device::memory::masked_write_32(&mut device.ai.regs[reg as usize], value, mask)
         }
