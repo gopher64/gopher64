@@ -11,7 +11,7 @@ gui = ["dep:rfd", "dep:slint", "dep:slint-build"]
 [dependencies]
 dirs = "6.0"
 zip = "8.0"
-sevenz-rust2 = "0.20"
+sevenz-rust2 = "0.21"
 chrono = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
