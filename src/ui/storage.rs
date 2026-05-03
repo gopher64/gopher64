@@ -49,8 +49,9 @@ pub struct Saves {
 }
 
 fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
-    let header_type = std::str::from_utf8(rom[0x3C..0x3E].try_into().unwrap());
-    if header_type.is_ok() && header_type.unwrap() == "ED" {
+    if let Ok(header_type) = std::str::from_utf8(rom[0x3C..0x3E].try_into().unwrap())
+        && header_type == "ED"
+    {
         let save_type = rom[0x3F] >> 4;
         match save_type {
             0 => return vec![],
@@ -497,6 +498,8 @@ fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
     let save_data = data.clone();
     let save_path = path.to_path_buf();
     tokio::spawn(async move {
-        tokio::fs::write(save_path, save_data).await.unwrap();
+        if let Err(e) = tokio::fs::write(save_path, save_data).await {
+            eprintln!("Error writing save: {}", e);
+        }
     });
 }
