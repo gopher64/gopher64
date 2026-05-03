@@ -372,49 +372,41 @@ pub fn get_controller_paths(game_ui: &ui::Ui) -> Vec<Option<String>> {
     controller_paths
 }
 
-fn handle_joystick_events(ui: &mut ui::Ui) {
+fn handle_joystick_events(profile: &ui::config::InputProfile, controller: &mut Controllers) {
     let joystick_event = unsafe { ui::video::get_joystick_event() };
     if joystick_event.joystick_id != 0 {
         let joystick_id = sdl3_sys::joystick::SDL_JoystickID(joystick_event.joystick_id);
-        for (i, controller) in ui.input.controllers.iter_mut().enumerate() {
-            if joystick_event.connected {
-                let profile = ui
-                    .config
-                    .input
-                    .input_profiles
-                    .get(&ui.config.input.input_profile_binding[i])
-                    .unwrap();
-                if profile.dinput {
-                    if controller.joystick.is_null()
-                        && controller.guid
-                            == unsafe { sdl3_sys::joystick::SDL_GetJoystickGUIDForID(joystick_id) }
-                    {
-                        controller.joystick =
-                            unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) };
-                    }
-                } else {
-                    if controller.game_controller.is_null()
-                        && controller.guid
-                            == unsafe { sdl3_sys::gamepad::SDL_GetGamepadGUIDForID(joystick_id) }
-                    {
-                        controller.game_controller =
-                            unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick_id) };
-                    }
+        if joystick_event.connected {
+            if profile.dinput {
+                if controller.joystick.is_null()
+                    && controller.guid
+                        == unsafe { sdl3_sys::joystick::SDL_GetJoystickGUIDForID(joystick_id) }
+                {
+                    controller.joystick =
+                        unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) };
                 }
             } else {
-                if !controller.joystick.is_null()
-                    && controller.joystick
-                        == unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(joystick_id) }
+                if controller.game_controller.is_null()
+                    && controller.guid
+                        == unsafe { sdl3_sys::gamepad::SDL_GetGamepadGUIDForID(joystick_id) }
                 {
-                    unsafe { sdl3_sys::joystick::SDL_CloseJoystick(controller.joystick) };
-                    controller.joystick = std::ptr::null_mut();
-                } else if !controller.game_controller.is_null()
-                    && controller.game_controller
-                        == unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(joystick_id) }
-                {
-                    unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller.game_controller) };
-                    controller.game_controller = std::ptr::null_mut();
+                    controller.game_controller =
+                        unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick_id) };
                 }
+            }
+        } else {
+            if !controller.joystick.is_null()
+                && controller.joystick
+                    == unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(joystick_id) }
+            {
+                unsafe { sdl3_sys::joystick::SDL_CloseJoystick(controller.joystick) };
+                controller.joystick = std::ptr::null_mut();
+            } else if !controller.game_controller.is_null()
+                && controller.game_controller
+                    == unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(joystick_id) }
+            {
+                unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller.game_controller) };
+                controller.game_controller = std::ptr::null_mut();
             }
         }
     }
@@ -454,76 +446,81 @@ fn handle_hotkeys(keys: u32, last_key_state: u32) {
 }
 
 pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
-    handle_joystick_events(ui);
-
     let profile_name = &ui.config.input.input_profile_binding[channel];
-    let profile = ui.config.input.input_profiles.get(profile_name).unwrap();
-    let mut keys = 0;
-    let controller = ui.input.controllers[channel].game_controller;
-    let joystick = ui.input.controllers[channel].joystick;
+    if let Some(profile) = ui.config.input.input_profiles.get(profile_name) {
+        handle_joystick_events(profile, &mut ui.input.controllers[channel]);
+        let mut keys = 0;
+        let controller = ui.input.controllers[channel].game_controller;
+        let joystick = ui.input.controllers[channel].joystick;
 
-    let alt_pressed = unsafe {
-        // ignore key presses if ALT is pressed
-        *ui.input
-            .keyboard_state
-            .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_LALT) as isize)
-            || *ui
-                .input
+        let alt_pressed = unsafe {
+            // ignore key presses if ALT is pressed
+            *ui.input
                 .keyboard_state
-                .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
-    };
+                .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_LALT) as isize)
+                || *ui
+                    .input
+                    .keyboard_state
+                    .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
+        };
 
-    for i in 0..14 {
-        if profile_name != "default" || channel == 0 {
-            let profile_key = profile.keys[i];
-            if profile_key.enabled && !alt_pressed {
-                keys |= (unsafe { *ui.input.keyboard_state.offset(profile_key.id as isize) }
-                    as u32)
-                    << i;
+        for i in 0..14 {
+            if profile_name != "default" || channel == 0 {
+                let profile_key = profile.keys[i];
+                if profile_key.enabled && !alt_pressed {
+                    keys |= (unsafe { *ui.input.keyboard_state.offset(profile_key.id as isize) }
+                        as u32)
+                        << i;
+                }
+            }
+
+            if !controller.is_null() {
+                set_buttons_from_controller(profile, i, controller, &mut keys);
+            } else if !joystick.is_null() {
+                set_buttons_from_joystick(profile, i, joystick, &mut keys);
             }
         }
 
-        if !controller.is_null() {
-            set_buttons_from_controller(profile, i, controller, &mut keys);
-        } else if !joystick.is_null() {
-            set_buttons_from_joystick(profile, i, joystick, &mut keys);
+        let mut x: f64 = 0.0;
+        let mut y: f64 = 0.0;
+
+        if profile_name != "default" || channel == 0 {
+            (x, y) = set_axis_from_keys(profile, ui.input.keyboard_state);
         }
-    }
 
-    let mut x: f64 = 0.0;
-    let mut y: f64 = 0.0;
+        if !controller.is_null() {
+            (x, y) = set_axis_from_controller(profile, controller);
+            apply_deadzone(&mut x, &mut y, profile.deadzone);
+        } else if !joystick.is_null() {
+            (x, y) = set_axis_from_joystick(profile, joystick);
+            apply_deadzone(&mut x, &mut y, profile.deadzone);
+        }
+        bound_axis(&mut x, &mut y);
 
-    if profile_name != "default" || channel == 0 {
-        (x, y) = set_axis_from_keys(profile, ui.input.keyboard_state);
-    }
+        keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
+        keys |= (y.round() as i8 as u8 as u32) << Y_AXIS_SHIFT;
 
-    if !controller.is_null() {
-        (x, y) = set_axis_from_controller(profile, controller);
-        apply_deadzone(&mut x, &mut y, profile.deadzone);
-    } else if !joystick.is_null() {
-        (x, y) = set_axis_from_joystick(profile, joystick);
-        apply_deadzone(&mut x, &mut y, profile.deadzone);
-    }
-    bound_axis(&mut x, &mut y);
+        let last_key_state = ui.input.controllers[channel].last_key_state;
+        ui.input.controllers[channel].last_key_state = keys;
 
-    keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
-    keys |= (y.round() as i8 as u8 as u32) << Y_AXIS_SHIFT;
-
-    let last_key_state = ui.input.controllers[channel].last_key_state;
-    ui.input.controllers[channel].last_key_state = keys;
-
-    if hotkey_pressed(profile, joystick, controller) {
-        handle_hotkeys(keys, last_key_state);
-        InputData {
-            data: 0,
-            pak_change_pressed: keys & (1 << B_BUTTON) != 0,
+        if hotkey_pressed(profile, joystick, controller) {
+            handle_hotkeys(keys, last_key_state);
+            InputData {
+                data: 0,
+                pak_change_pressed: keys & (1 << B_BUTTON) != 0,
+            }
+        } else {
+            let key = profile.keys[HOTKEY];
+            InputData {
+                data: keys,
+                pak_change_pressed: key.enabled
+                    && unsafe { *ui.input.keyboard_state.offset(key.id as isize) },
+            }
         }
     } else {
-        let key = profile.keys[HOTKEY];
         InputData {
-            data: keys,
-            pak_change_pressed: key.enabled
-                && unsafe { *ui.input.keyboard_state.offset(key.id as isize) },
+            data: 0,
+            pak_change_pressed: false,
         }
     }
 }
@@ -1048,14 +1045,13 @@ pub fn init(ui: &mut ui::Ui) {
                 }
             }
 
-            if joystick_id != 0 {
-                let profile = ui
+            if joystick_id != 0
+                && let Some(profile) = ui
                     .config
                     .input
                     .input_profiles
                     .get(&ui.config.input.input_profile_binding[i])
-                    .unwrap();
-
+            {
                 if !profile.dinput {
                     let gamepad = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick_id) };
                     if gamepad.is_null() {
