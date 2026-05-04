@@ -463,6 +463,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 
     let profile_name = &ui.config.input.input_profile_binding[channel];
     let Some(profile) = ui.config.input.input_profiles.get(profile_name) else {
+        eprintln!("Invalid profile name: {profile_name}");
         return InputData {
             data: 0,
             pak_change_pressed: false,
@@ -546,6 +547,8 @@ pub fn assign_controller(ui: &mut ui::Ui, controller: i32, port: usize) {
         if !path.is_null() {
             ui.config.input.controller_assignment[port - 1] =
                 Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string() });
+        } else {
+            eprintln!("Invalid controller path for controller {controller}");
         }
     } else {
         eprintln!("Invalid controller number")

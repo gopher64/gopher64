@@ -92,6 +92,8 @@ pub fn create_savestate(device: &device::Device) {
                 eprintln!("Error writing savestate: {}", e);
             }
         });
+    } else {
+        eprintln!("Error compressing savestate");
     }
     ui::video::onscreen_message(
         &format!(

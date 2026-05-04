@@ -141,6 +141,8 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                     local_servers.push((server.0.into(), server.1.into()));
                 }
             }
+        } else {
+            eprintln!("Error creating netplay broadcast socket");
         }
 
         let response = task.await;
