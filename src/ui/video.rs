@@ -150,6 +150,8 @@ pub fn close(ui: &ui::Ui) {
     unsafe {
         rdp_close();
         sdl3_sys::video::SDL_DestroyWindow(ui.video.window);
+        sdl3_ttf_sys::ttf::TTF_Quit();
+        sdl3_sys::init::SDL_Quit();
     }
 }
 

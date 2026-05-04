@@ -268,10 +268,10 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
     app.on_controller_window_created(move || {
         weak_app
             .upgrade_in_event_loop(move |handle| {
-                let game_ui = ui::Ui::new();
-                let mut controller_names = ui::input::get_controller_names(&game_ui);
+                let config = ui::config::Config::new();
+                let mut controller_names = ui::input::get_controller_names();
                 controller_names.insert(0, "None".into());
-                let mut controller_paths = ui::input::get_controller_paths(&game_ui);
+                let mut controller_paths = ui::input::get_controller_paths();
                 controller_paths.insert(0, None);
                 handle.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(
                     slint::VecModel::from(
@@ -282,7 +282,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
                     ),
                 )));
                 let selected_controllers = slint::VecModel::default();
-                for selected in game_ui.config.input.controller_assignment.iter() {
+                for selected in config.input.controller_assignment.iter() {
                     let selected_index = controller_paths
                         .iter()
                         .position(|path| selected == path)

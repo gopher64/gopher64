@@ -261,7 +261,7 @@ async fn main() -> std::io::Result<()> {
             return Err(Error::other("Port must be between 1 and 4"));
         }
         if args.list_controllers {
-            let controllers = ui::input::get_controller_names(&ui);
+            let controllers = ui::input::get_controller_names();
             for (i, controller) in controllers.iter().enumerate() {
                 println!("Controller {i}: {controller}");
             }
@@ -280,7 +280,7 @@ async fn main() -> std::io::Result<()> {
             let Some(port) = args.port else {
                 return Err(Error::other("Must specify port number"));
             };
-            ui::input::assign_controller(&mut ui, assign_controller, port);
+            ui::input::assign_controller(&mut ui.config, assign_controller, port);
         }
         if let Some(profile) = args.bind_input_profile {
             let Some(port) = args.port else {

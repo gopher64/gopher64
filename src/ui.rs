@@ -38,7 +38,6 @@ pub struct Audio {
 }
 
 pub struct Input {
-    pub joysticks: Vec<sdl3_sys::joystick::SDL_JoystickID>,
     pub keyboard_state: *const bool,
     pub controllers: [input::Controllers; 4],
 }
@@ -77,23 +76,11 @@ pub struct Ui {
     pub config: config::Config,
     pub game_id: String,
     pub game_hash: String,
-    pub with_sdl: bool,
     pub audio: Audio,
     pub input: Input,
     pub storage: Storage,
     pub video: Video,
     pub usb: Usb,
-}
-
-impl Drop for Ui {
-    fn drop(&mut self) {
-        if self.with_sdl {
-            unsafe {
-                sdl3_ttf_sys::ttf::TTF_Quit();
-                sdl3_sys::init::SDL_Quit();
-            }
-        }
-    }
 }
 
 pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
@@ -141,7 +128,7 @@ pub fn get_dirs() -> Dirs {
 }
 
 impl Ui {
-    fn construct_ui(joysticks: Vec<sdl3_sys::everything::SDL_JoystickID>, with_sdl: bool) -> Ui {
+    pub fn new() -> Ui {
         let dirs = get_dirs();
 
         let (fps_tx, fps_rx) = tokio::sync::mpsc::channel(1000);
@@ -179,7 +166,6 @@ impl Ui {
                     },
                 ],
                 keyboard_state: std::ptr::null_mut(),
-                joysticks,
             },
             storage: Storage {
                 save_state_slot: 0,
@@ -241,26 +227,6 @@ impl Ui {
                 cart_rx: None,
             },
             dirs,
-            with_sdl,
         }
-    }
-
-    pub fn default() -> Ui {
-        Self::construct_ui(vec![], false)
-    }
-
-    pub fn new() -> Ui {
-        sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
-        let mut num_joysticks = 0;
-        let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
-        if joysticks.is_null() {
-            panic!("Could not get joystick list");
-        }
-        let mut joystick_vec = vec![];
-        for i in 0..num_joysticks {
-            joystick_vec.push(unsafe { *joysticks.add(i as usize) });
-        }
-        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) }
-        Self::construct_ui(joystick_vec, true)
     }
 }
