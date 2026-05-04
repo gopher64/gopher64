@@ -235,15 +235,13 @@ async fn main() -> std::io::Result<()> {
                 if device.ui.config.input.transfer_pak[i]
                     && !device.ui.config.input.gb_ram_path[i].is_empty()
                     && !device.transferpaks[i].cart.ram.is_empty()
-                {
-                    if let Err(e) = tokio::fs::write(
+                    && let Err(e) = tokio::fs::write(
                         &device.ui.config.input.gb_ram_path[i],
                         &device.transferpaks[i].cart.ram,
                     )
                     .await
-                    {
-                        eprintln!("Error writing GB RAM: {}", e);
-                    }
+                {
+                    eprintln!("Error writing GB RAM: {}", e);
                 }
             }
         }
