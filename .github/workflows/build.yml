@@ -65,9 +65,9 @@ jobs:
             matrix.llvm }}.tar.xz
       - name: Build
         run: |
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo build --profile=release-with-debug -v --target=${{ matrix.target }}
           mkdir output
-          cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
+          cp target/${{ matrix.target }}/release-with-debug/gopher64 output/gopher64-${{ matrix.arch }}
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
@@ -123,9 +123,9 @@ jobs:
             }}.exe
       - name: Build
         run: |
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo build --profile=release-with-debug -v --target=${{ matrix.target }}
           mkdir output
-          cp target/${{ matrix.target }}/release/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
+          cp target/${{ matrix.target }}/release-with-debug/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
         env:
           CC: clang-cl
           CXX: clang-cl
@@ -202,23 +202,23 @@ jobs:
         run: |
           cargo install cargo-bundle
           brew install molten-vk
-          cargo build --release --no-default-features -v --target=${{ matrix.target }}
-          mv target/${{ matrix.target }}/release/gopher64 target/${{ matrix.target }}/release/gopher64-cli
-          cargo bundle --release --target=${{ matrix.target }} --format osx
-          cp target/${{ matrix.target }}/release/gopher64-cli target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
+          cargo build --profile=release-with-debug --no-default-features -v --target=${{ matrix.target }}
+          mv target/${{ matrix.target }}/release-with-debug/gopher64 target/${{ matrix.target }}/release-with-debug/gopher64-cli
+          cargo bundle --profile=release-with-debug --target=${{ matrix.target }} --format osx
+          cp target/${{ matrix.target }}/release-with-debug/gopher64-cli target/${{ matrix.target }}/release-with-debug/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
           install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
-            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
+            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release-with-debug/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
           install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
-            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
+            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release-with-debug/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
           install_name_tool -change /opt/homebrew/opt/libpng/lib/libpng16.16.dylib \
-            @executable_path/../Frameworks/libpng16.16.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
+            @executable_path/../Frameworks/libpng16.16.dylib target/${{ matrix.target }}/release-with-debug/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
           MACOSX_DEPLOYMENT_TARGET: "15.0"
       - name: Sign Bundle Dev
         if: ${{ github.ref_type != 'tag' }}
         run: |
-          codesign -f --entitlements data/macos/entitlements_dev.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          codesign -f --entitlements data/macos/entitlements_dev.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/release-with-debug/bundle/osx/Gopher64.app
       - name: Import Codesign Certs
         if: ${{ github.ref_type == 'tag' }}
         uses: apple-actions/import-codesign-certs@v7
@@ -240,7 +240,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: gopher64-${{ matrix.arch }}
-          path: target/${{ matrix.target }}/release/bundle/osx
+          path: target/${{ matrix.target }}/release-with-debug/bundle/osx
       - name: Setup butler
         if: ${{ github.ref_type == 'tag' }}
         uses: remarkablegames/setup-butler@v3
