@@ -345,18 +345,21 @@ pub fn get_controller_names() -> Vec<String> {
     let mut controllers: Vec<String> = vec![];
 
     let mut num_joysticks = 0;
-    let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
-    if !joysticks.is_null() {
-        for i in 0..num_joysticks {
-            let name =
-                unsafe { sdl3_sys::joystick::SDL_GetJoystickNameForID(*joysticks.add(i as usize)) };
-            controllers.push(if name.is_null() {
-                "Unknown controller".to_string()
-            } else {
-                unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
-            });
-        }
-        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) }
+    let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
+    let joysticks = if !sdl_joysticks.is_null() {
+        let parts = unsafe { std::slice::from_raw_parts(sdl_joysticks, num_joysticks as usize) };
+        unsafe { sdl3_sys::stdinc::SDL_free(sdl_joysticks as *mut std::ffi::c_void) };
+        parts
+    } else {
+        &vec![]
+    };
+    for joystick in joysticks {
+        let name = unsafe { sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick) };
+        controllers.push(if name.is_null() {
+            "Unknown controller".to_string()
+        } else {
+            unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
+        });
     }
 
     controllers
@@ -367,18 +370,21 @@ pub fn get_controller_paths() -> Vec<Option<String>> {
     let mut controller_paths: Vec<Option<String>> = vec![];
 
     let mut num_joysticks = 0;
-    let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
-    if !joysticks.is_null() {
-        for i in 0..num_joysticks {
-            let path =
-                unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joysticks.add(i as usize)) };
-            controller_paths.push(if path.is_null() {
-                None
-            } else {
-                Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string())
-            });
-        }
-        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) }
+    let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
+    let joysticks = if !sdl_joysticks.is_null() {
+        let parts = unsafe { std::slice::from_raw_parts(sdl_joysticks, num_joysticks as usize) };
+        unsafe { sdl3_sys::stdinc::SDL_free(sdl_joysticks as *mut std::ffi::c_void) };
+        parts
+    } else {
+        &vec![]
+    };
+    for joystick in joysticks {
+        let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
+        controller_paths.push(if path.is_null() {
+            None
+        } else {
+            Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string())
+        });
     }
 
     controller_paths
@@ -567,19 +573,23 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 
 pub fn assign_controller(config: &mut ui::config::Config, controller: i32, port: usize) {
     let mut num_joysticks = 0;
-    let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
-
-    if !joysticks.is_null() && controller < num_joysticks {
-        let path = unsafe {
-            sdl3_sys::joystick::SDL_GetJoystickPathForID(*joysticks.add(controller as usize))
-        };
+    let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
+    let joysticks = if !sdl_joysticks.is_null() {
+        let parts = unsafe { std::slice::from_raw_parts(sdl_joysticks, num_joysticks as usize) };
+        unsafe { sdl3_sys::stdinc::SDL_free(sdl_joysticks as *mut std::ffi::c_void) };
+        parts
+    } else {
+        &vec![]
+    };
+    if controller < num_joysticks {
+        let path =
+            unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(joysticks[controller as usize]) };
         if !path.is_null() {
             config.input.controller_assignment[port - 1] =
                 Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string() });
         } else {
             eprintln!("Invalid controller path for controller {controller}");
         }
-        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) }
     } else {
         eprintln!("Invalid controller number")
     }
@@ -640,24 +650,26 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
     let mut open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad> = Vec::new();
 
     let mut num_joysticks = 0;
-    let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
-    if !joysticks.is_null() {
-        for i in 0..num_joysticks {
-            if !dinput {
-                let controller =
-                    unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(*joysticks.add(i as usize)) };
-                if !controller.is_null() {
-                    open_controllers.push(controller);
-                }
-            } else {
-                let joystick =
-                    unsafe { sdl3_sys::joystick::SDL_OpenJoystick(*joysticks.add(i as usize)) };
-                if !joystick.is_null() {
-                    open_joysticks.push(joystick);
-                }
+    let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
+    let joysticks = if !sdl_joysticks.is_null() {
+        let parts = unsafe { std::slice::from_raw_parts(sdl_joysticks, num_joysticks as usize) };
+        unsafe { sdl3_sys::stdinc::SDL_free(sdl_joysticks as *mut std::ffi::c_void) };
+        parts
+    } else {
+        &vec![]
+    };
+    for joystick in joysticks {
+        if !dinput {
+            let controller = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(*joystick) };
+            if !controller.is_null() {
+                open_controllers.push(controller);
+            }
+        } else {
+            let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(*joystick) };
+            if !joystick.is_null() {
+                open_joysticks.push(joystick);
             }
         }
-        unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) }
     }
 
     let title = std::ffi::CString::new("configure input profile").unwrap();
@@ -1090,29 +1102,26 @@ pub fn init(ui: &mut ui::Ui) {
             let mut joystick_id = sdl3_sys::everything::SDL_JoystickID(0);
 
             let mut num_joysticks = 0;
-            let joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
-            if !joysticks.is_null() {
-                for i in 0..num_joysticks {
-                    let path = unsafe {
-                        sdl3_sys::joystick::SDL_GetJoystickPathForID(*joysticks.add(i as usize))
-                    };
-                    if !path.is_null()
-                        && unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }
-                            == controller_assignment
-                        && unsafe {
-                            sdl3_sys::joystick::SDL_GetJoystickFromID(*joysticks.add(i as usize))
-                        }
-                        .is_null()
-                        && unsafe {
-                            sdl3_sys::gamepad::SDL_GetGamepadFromID(*joysticks.add(i as usize))
-                        }
-                        .is_null()
-                    {
-                        joystick_id = unsafe { *joysticks.add(i as usize) };
-                        break;
-                    }
+            let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
+            let joysticks = if !sdl_joysticks.is_null() {
+                let parts =
+                    unsafe { std::slice::from_raw_parts(sdl_joysticks, num_joysticks as usize) };
+                unsafe { sdl3_sys::stdinc::SDL_free(sdl_joysticks as *mut std::ffi::c_void) };
+                parts
+            } else {
+                &vec![]
+            };
+            for joystick in joysticks {
+                let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
+                if !path.is_null()
+                    && unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }
+                        == controller_assignment
+                    && unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(*joystick) }.is_null()
+                    && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(*joystick) }.is_null()
+                {
+                    joystick_id = *joystick;
+                    break;
                 }
-                unsafe { sdl3_sys::stdinc::SDL_free(joysticks as *mut std::ffi::c_void) }
             }
 
             if joystick_id != 0
