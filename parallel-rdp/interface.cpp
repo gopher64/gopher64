@@ -407,6 +407,8 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
 }
 
 void rdp_close() {
+  display_fps = false;
+
   messages = std::queue<Message>();
   achievement_challenge_indicator_image = Vulkan::ImageHandle();
   achievement_progress_indicator_image = Vulkan::ImageHandle();
@@ -917,6 +919,10 @@ uint64_t rdp_process_commands() {
 
 static void rdp_set_fps_callback(void *userdata) {
   FPS_DATA *data = (FPS_DATA *)userdata;
+  if (!wsi) {
+    delete data;
+    return;
+  }
   fps_image = create_message_image(
       wsi->get_device(), 0, achievement_challenge_indicator_font,
       std::format("FPS: {} VI/S: {}", data->fps, data->vis).c_str());
