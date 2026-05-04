@@ -269,6 +269,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
         weak_app
             .upgrade_in_event_loop(move |handle| {
                 let config = ui::config::Config::new();
+                ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
                 let mut controller_names = ui::input::get_controller_names();
                 controller_names.insert(0, "None".into());
                 let mut controller_paths = ui::input::get_controller_paths();
@@ -292,6 +293,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
                 handle.set_selected_controller(slint::ModelRc::from(std::rc::Rc::new(
                     selected_controllers,
                 )));
+                unsafe { sdl3_sys::init::SDL_Quit() };
             })
             .unwrap();
     });
