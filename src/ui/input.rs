@@ -456,6 +456,16 @@ fn handle_hotkeys(keys: u32, last_key_state: u32) {
         };
         unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
     }
+    if keys & (1 << Z_TRIG) != 0 && last_key_state & (1 << Z_TRIG) == 0 {
+        let mut event = sdl3_sys::events::SDL_Event {
+            user: sdl3_sys::events::SDL_UserEvent {
+                r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
+                code: 4, //fast forward
+                ..Default::default()
+            },
+        };
+        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
+    }
 }
 
 pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {

@@ -58,6 +58,7 @@ enum user_event_codes {
   USER_EVENT_SAVE_STATE = 1,
   USER_EVENT_LOAD_STATE = 2,
   USER_EVENT_EXIT_GAME = 3,
+  USER_EVENT_FAST_FORWARD = 4,
 };
 
 typedef struct {
@@ -156,7 +157,10 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       break;
     case SDL_SCANCODE_F:
       if (event->key.mod & SDL_KMOD_ALT) {
-        callback.enable_speedlimiter = !callback.enable_speedlimiter;
+        SDL_zero(user_event);
+        user_event.type = SDL_EVENT_USER;
+        user_event.user.code = USER_EVENT_FAST_FORWARD;
+        SDL_PushEvent(&user_event);
       }
       break;
     case SDL_SCANCODE_P:
@@ -244,6 +248,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       break;
     case USER_EVENT_EXIT_GAME:
       callback.emu_running = false;
+      break;
+    case USER_EVENT_FAST_FORWARD:
+      callback.enable_speedlimiter = !callback.enable_speedlimiter;
       break;
     default:
       break;
