@@ -1055,9 +1055,10 @@ fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
     let mut num_joysticks = 0;
     let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
     if !sdl_joysticks.is_null() {
-        let parts = unsafe { std::slice::from_raw_parts(sdl_joysticks, num_joysticks as usize) };
+        let parts =
+            unsafe { std::slice::from_raw_parts(sdl_joysticks, num_joysticks as usize) }.to_vec();
         unsafe { sdl3_sys::stdinc::SDL_free(sdl_joysticks as *mut std::ffi::c_void) };
-        parts.to_vec()
+        parts
     } else {
         vec![]
     }
