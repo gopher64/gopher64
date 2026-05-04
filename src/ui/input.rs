@@ -427,34 +427,48 @@ fn handle_joystick_events(ui: &mut ui::Ui) {
 
 fn handle_hotkeys(keys: u32, last_key_state: u32) {
     if keys & (1 << L_TRIG) != 0 && last_key_state & (1 << L_TRIG) == 0 {
-        let mut event = sdl3_sys::events::SDL_Event {
-            user: sdl3_sys::events::SDL_UserEvent {
-                r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
-                code: 1, //save state
-                ..Default::default()
-            },
+        unsafe {
+            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
+                user: sdl3_sys::events::SDL_UserEvent {
+                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
+                    code: 1, //save state
+                    ..Default::default()
+                },
+            })
         };
-        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
     }
     if keys & (1 << R_TRIG) != 0 && last_key_state & (1 << R_TRIG) == 0 {
-        let mut event = sdl3_sys::events::SDL_Event {
-            user: sdl3_sys::events::SDL_UserEvent {
-                r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
-                code: 2, //load state
-                ..Default::default()
-            },
+        unsafe {
+            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
+                user: sdl3_sys::events::SDL_UserEvent {
+                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
+                    code: 2, //load state
+                    ..Default::default()
+                },
+            })
         };
-        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
     }
     if keys & (1 << START_BUTTON) != 0 && last_key_state & (1 << START_BUTTON) == 0 {
-        let mut event = sdl3_sys::events::SDL_Event {
-            user: sdl3_sys::events::SDL_UserEvent {
-                r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
-                code: 3, //exit game
-                ..Default::default()
-            },
+        unsafe {
+            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
+                user: sdl3_sys::events::SDL_UserEvent {
+                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
+                    code: 3, //exit game
+                    ..Default::default()
+                },
+            })
         };
-        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
+    }
+    if keys & (1 << Z_TRIG) != 0 && last_key_state & (1 << Z_TRIG) == 0 {
+        unsafe {
+            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
+                user: sdl3_sys::events::SDL_UserEvent {
+                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
+                    code: 4, //fast forward
+                    ..Default::default()
+                },
+            })
+        };
     }
 }
 
