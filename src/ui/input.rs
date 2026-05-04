@@ -1060,6 +1060,7 @@ fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
         unsafe { sdl3_sys::stdinc::SDL_free(sdl_joysticks as *mut std::ffi::c_void) };
         parts
     } else {
+        eprintln!("Could not get joysticks");
         vec![]
     }
 }
