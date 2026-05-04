@@ -227,7 +227,7 @@ fn write_mbc5(
     } else if address < 0x6000 {
         cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0xa000 {
-        println!("Unknown MBC5 write address {address:x}");
+        eprintln!("Unknown MBC5 write address {address:x}");
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
             return;

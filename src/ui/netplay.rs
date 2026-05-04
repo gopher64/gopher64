@@ -121,9 +121,12 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
             && let Ok(_) = broadcast_sock.set_broadcast(true)
         {
             let data: [u8; 1] = [1];
-            let _ = broadcast_sock
+            if let Err(e) = broadcast_sock
                 .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
-                .await;
+                .await
+            {
+                eprintln!("Error sending broadcast: {}", e);
+            }
             let mut buffer = [0; 1024];
             if let Ok(Ok(result)) = tokio::time::timeout(
                 std::time::Duration::from_millis(200),
@@ -1126,7 +1129,7 @@ fn setup_wait_window(
                         }
                     }
                     _ => {
-                        println!("Unknown netplay message type: {}", response.message_type);
+                        eprintln!("Unknown netplay message type: {}", response.message_type);
                     }
                 },
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {

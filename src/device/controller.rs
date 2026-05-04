@@ -95,7 +95,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.pif.channels[channel].rx_buf.unwrap(),
             channel,
         ),
-        _ => println!("unknown controller command {cmd}"),
+        _ => eprintln!("unknown controller command {cmd}"),
     }
 }
 
