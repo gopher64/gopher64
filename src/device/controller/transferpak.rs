@@ -61,7 +61,7 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
             );
         }
         _ => {
-            println!("unknown transfer pak read {:x}", address >> 12);
+            eprintln!("unknown transfer pak read {:x}", address >> 12);
         }
     }
 }
@@ -84,7 +84,7 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
                     }
                     pak.enabled = true;
                 }
-                _ => println!("unknown transfer pak value"),
+                _ => eprintln!("unknown transfer pak value"),
             }
             return;
         }
@@ -127,7 +127,7 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
             );
         }
         _ => {
-            println!("unknown transfer pak write {:x}", address >> 12);
+            eprintln!("unknown transfer pak write {:x}", address >> 12);
         }
     }
 }

@@ -1126,7 +1126,7 @@ fn setup_wait_window(
                         }
                     }
                     _ => {
-                        println!("Unknown netplay message type: {}", response.message_type);
+                        eprintln!("Unknown netplay message type: {}", response.message_type);
                     }
                 },
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {

@@ -73,14 +73,14 @@ pub fn init(
                         data,
                     })
                 } else {
-                    println!("Could not parse data for: {}", cheat_setting.0);
+                    eprintln!("Could not parse data for: {}", cheat_setting.0);
                 };
             }
             if !decoded_cheat.is_empty() {
                 device.cheats.cheats.push(decoded_cheat);
             }
         } else {
-            println!("Could not find cheat: {}", cheat_setting.0);
+            eprintln!("Could not find cheat: {}", cheat_setting.0);
         }
     }
 

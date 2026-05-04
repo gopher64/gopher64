@@ -548,7 +548,7 @@ pub fn assign_controller(ui: &mut ui::Ui, controller: i32, port: usize) {
                 Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string() });
         }
     } else {
-        println!("Invalid controller number")
+        eprintln!("Invalid controller number")
     }
 }
 
@@ -556,7 +556,7 @@ pub fn bind_input_profile(ui: &mut ui::Ui, profile: String, port: usize) {
     if ui.config.input.input_profiles.contains_key(&profile) {
         ui.config.input.input_profile_binding[port - 1] = profile;
     } else {
-        println!("Invalid profile name")
+        eprintln!("Invalid profile name")
     }
 }
 
@@ -595,11 +595,11 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
     ui::ttf_init();
 
     if profile == "default" {
-        println!("Profile name cannot be default");
+        eprintln!("Profile name cannot be default");
         return;
     }
     if profile.is_empty() {
-        println!("Profile name cannot be empty");
+        eprintln!("Profile name cannot be empty");
         return;
     }
     let mut open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick> = Vec::new();
@@ -1069,7 +1069,7 @@ pub fn init(ui: &mut ui::Ui) {
                 if !profile.dinput {
                     let gamepad = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick_id) };
                     if gamepad.is_null() {
-                        println!("could not connect gamepad: {}", u32::from(joystick_id))
+                        eprintln!("could not connect gamepad: {}", u32::from(joystick_id))
                     } else {
                         ui.input.controllers[i].game_controller = gamepad;
                         ui.input.controllers[i].guid =
@@ -1077,7 +1077,7 @@ pub fn init(ui: &mut ui::Ui) {
                         let properties =
                             unsafe { sdl3_sys::gamepad::SDL_GetGamepadProperties(gamepad) };
                         if properties == 0 {
-                            println!("could not get gamepad properties");
+                            eprintln!("could not get gamepad properties");
                         }
                         ui.input.controllers[i].rumble = unsafe {
                             sdl3_sys::properties::SDL_GetBooleanProperty(
@@ -1090,7 +1090,7 @@ pub fn init(ui: &mut ui::Ui) {
                 } else {
                     let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) };
                     if joystick.is_null() {
-                        println!("could not connect joystick: {}", u32::from(joystick_id))
+                        eprintln!("could not connect joystick: {}", u32::from(joystick_id))
                     } else {
                         ui.input.controllers[i].joystick = joystick;
                         ui.input.controllers[i].guid =
@@ -1098,7 +1098,7 @@ pub fn init(ui: &mut ui::Ui) {
                         let properties =
                             unsafe { sdl3_sys::joystick::SDL_GetJoystickProperties(joystick) };
                         if properties == 0 {
-                            println!("could not get joystick properties");
+                            eprintln!("could not get joystick properties");
                         }
                         ui.input.controllers[i].rumble = unsafe {
                             sdl3_sys::properties::SDL_GetBooleanProperty(
@@ -1110,7 +1110,7 @@ pub fn init(ui: &mut ui::Ui) {
                     }
                 }
             } else {
-                println!("Could not bind assigned controller");
+                eprintln!("Could not bind assigned controller");
             }
         }
     }
