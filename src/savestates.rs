@@ -76,32 +76,38 @@ pub fn create_savestate(device: &device::Device) {
     let mut ra_state: Vec<u8> = vec![0; retroachievements::state_size()];
     retroachievements::save_state(ra_state.as_mut_ptr(), ra_state.len());
 
-    let data: &[(&[u8], &str)] = &[
-        (&postcard::to_stdvec(device).unwrap(), "device"),
-        (
-            &postcard::to_stdvec(&device.ui.storage.saves).unwrap(),
-            "saves",
-        ),
-        (&rdp_state, "rdp_state"),
-        (&ra_state, "ra_state"),
-    ];
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
-    if let Ok(compressed_file) = ui::storage::compress_file(data) {
+
+    if let Ok(device_data) = postcard::to_stdvec(device)
+        && let Ok(saves_data) = postcard::to_stdvec(&device.ui.storage.saves)
+        && let Ok(compressed_file) = ui::storage::compress_file(&[
+            (&device_data, "device"),
+            (&saves_data, "saves"),
+            (&rdp_state, "rdp_state"),
+            (&ra_state, "ra_state"),
+        ])
+    {
         tokio::spawn(async move {
             if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
                 eprintln!("Error writing savestate: {}", e);
             }
         });
+        ui::video::onscreen_message(
+            &format!(
+                "Savestate created in slot {}",
+                device.ui.storage.save_state_slot
+            ),
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+        );
     } else {
-        eprintln!("Error compressing savestate");
+        ui::video::onscreen_message(
+            &format!(
+                "Failed to create savestate in slot {}",
+                device.ui.storage.save_state_slot
+            ),
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+        );
     }
-    ui::video::onscreen_message(
-        &format!(
-            "Savestate created in slot {}",
-            device.ui.storage.save_state_slot
-        ),
-        ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-    );
 }
 
 pub fn load_savestate(device: &mut device::Device) {

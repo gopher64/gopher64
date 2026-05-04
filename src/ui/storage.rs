@@ -278,12 +278,10 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
 
             let mut compressed_romsave = Vec::new();
             if !ui.storage.saves.romsave.data.is_empty()
-                && let Ok(file_data) = compress_file(&[(
-                    &postcard::to_stdvec(&ui.storage.saves.romsave.data).unwrap(),
-                    "save",
-                )])
+                && let Ok(file_data) = postcard::to_stdvec(&ui.storage.saves.romsave.data)
+                && let Ok(compressed_file_data) = compress_file(&[(&file_data, "save")])
             {
-                compressed_romsave = file_data;
+                compressed_romsave = compressed_file_data;
             }
             netplay::send_save(
                 netplay.as_mut().unwrap(),
@@ -471,44 +469,45 @@ pub fn schedule_save(device: &mut device::Device, save_type: SaveTypes) {
 }
 
 fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
-    let path: &std::path::Path;
-    let data: &Vec<u8>;
-    let rom_save_data: Vec<u8>;
+    let save_path: std::path::PathBuf;
+    let save_data: Vec<u8>;
     match save_type {
         SaveTypes::Eeprom4k | SaveTypes::Eeprom16k => {
-            path = ui.storage.paths.eep_file_path.as_ref();
-            data = ui.storage.saves.eeprom.data.as_ref();
+            save_path = ui.storage.paths.eep_file_path.clone();
+            save_data = ui.storage.saves.eeprom.data.clone();
             ui.storage.saves.eeprom.write_pending = false;
         }
         SaveTypes::Sram => {
-            path = ui.storage.paths.sra_file_path.as_ref();
-            data = ui.storage.saves.sram.data.as_ref();
+            save_path = ui.storage.paths.sra_file_path.clone();
+            save_data = ui.storage.saves.sram.data.clone();
             ui.storage.saves.sram.write_pending = false;
         }
         SaveTypes::Flash => {
-            path = ui.storage.paths.fla_file_path.as_ref();
-            data = ui.storage.saves.flash.data.as_ref();
+            save_path = ui.storage.paths.fla_file_path.clone();
+            save_data = ui.storage.saves.flash.data.clone();
             ui.storage.saves.flash.write_pending = false;
         }
         SaveTypes::Mempak => {
-            path = ui.storage.paths.pak_file_path.as_ref();
-            data = ui.storage.saves.mempak.data.as_ref();
+            save_path = ui.storage.paths.pak_file_path.clone();
+            save_data = ui.storage.saves.mempak.data.clone();
             ui.storage.saves.mempak.write_pending = false;
         }
         SaveTypes::Sdcard => {
-            path = ui.storage.paths.sdcard_file_path.as_ref();
-            data = ui.storage.saves.sdcard.data.as_ref();
+            save_path = ui.storage.paths.sdcard_file_path.clone();
+            save_data = ui.storage.saves.sdcard.data.clone();
             ui.storage.saves.sdcard.write_pending = false;
         }
         SaveTypes::Romsave => {
-            path = ui.storage.paths.romsave_file_path.as_ref();
-            rom_save_data = postcard::to_stdvec(&ui.storage.saves.romsave.data).unwrap();
-            data = rom_save_data.as_ref();
+            save_path = ui.storage.paths.romsave_file_path.clone();
             ui.storage.saves.romsave.write_pending = false;
+            if let Ok(rom_save) = postcard::to_stdvec(&ui.storage.saves.romsave.data) {
+                save_data = rom_save;
+            } else {
+                eprintln!("Error serializing rom save data");
+                return;
+            };
         }
     }
-    let save_data = data.clone();
-    let save_path = path.to_path_buf();
     tokio::spawn(async move {
         if let Err(e) = tokio::fs::write(save_path, save_data).await {
             eprintln!("Error writing save: {}", e);
