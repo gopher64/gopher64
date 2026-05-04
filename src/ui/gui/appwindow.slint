@@ -41,6 +41,7 @@ export component AppWindow inherits Window {
     callback ra_games_clicked;
     callback ra_show_profile_clicked;
     callback ra_toggled(bool,bool,bool,bool);
+    callback controller_window_created;
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
     in-out property ra_username <=> RAData.ra_username;
@@ -65,7 +66,6 @@ export component AppWindow inherits Window {
     in-out property rom_dir <=> SettingsData.rom_dir;
     in-out property emulate_vru <=> ControllerData.emulate_vru;
     in-out property controller_enabled <=> ControllerData.controller_enabled;
-    in-out property controller_changed <=> ControllerData.controller_changed;
     in-out property transferpak <=> ControllerData.transferpak;
     in-out property gb_rom_paths <=> ControllerData.gb_rom_paths;
     in-out property gb_ram_paths <=> ControllerData.gb_ram_paths;
@@ -118,6 +118,9 @@ export component AppWindow inherits Window {
             }
             transferpak_toggled(player,enabled) => {
                 transferpak_toggled(player,enabled);
+            }
+            controller_window_created => {
+                controller_window_created();
             }
         }
         if(side-bar.current-item == 2): Netplay {

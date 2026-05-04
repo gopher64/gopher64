@@ -53,18 +53,13 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-fn run_with_path(
-    weak: slint::Weak<AppWindow>,
-    path: std::path::PathBuf,
-    controller_paths: &[Option<String>],
-) {
-    let controller_paths = controller_paths.to_owned();
+fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
     let weak2 = weak.clone();
     weak.upgrade_in_event_loop(move |handle| {
         if handle.get_game_running() {
             return;
         }
-        save_settings(&handle, &controller_paths);
+        save_settings(&handle);
 
         run_rom(
             path,
@@ -87,23 +82,18 @@ fn run_with_path(
     .unwrap();
 }
 
-fn file_dropped(app: &AppWindow, controller_paths: &[Option<String>]) {
+fn file_dropped(app: &AppWindow) {
     let weak = app.as_weak();
-    let controller_paths = controller_paths.to_owned();
     app.window()
         .on_winit_window_event(move |_winit_window, event| {
             if let slint::winit_030::winit::event::WindowEvent::DroppedFile(path) = event {
-                run_with_path(weak.clone(), path.to_path_buf(), &controller_paths);
+                run_with_path(weak.clone(), path.to_path_buf());
             }
             slint::winit_030::EventResult::Propagate
         });
 }
 
-fn local_game_window(
-    app: &AppWindow,
-    config: &ui::config::Config,
-    controller_paths: &[Option<String>],
-) {
+fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     let dirs = ui::get_dirs();
 
     app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
@@ -128,26 +118,18 @@ fn local_game_window(
     )));
 
     let weak = app.as_weak();
-    let owned_controller_paths = controller_paths.to_owned();
     app.on_open_rom_button_clicked(move || {
-        let controller_paths = owned_controller_paths.clone();
         weak.upgrade_in_event_loop(move |handle| {
-            save_settings(&handle, &controller_paths);
+            save_settings(&handle);
             open_rom(&handle)
         })
         .unwrap();
     });
 
     let weak = app.as_weak();
-    let owned_controller_paths = controller_paths.to_owned();
     app.on_recent_rom_button_clicked(move |rom| {
-        let controller_paths = owned_controller_paths.clone();
         weak.upgrade_in_event_loop(move |handle| {
-            run_with_path(
-                handle.as_weak(),
-                std::path::PathBuf::from(rom.to_string()),
-                &controller_paths,
-            );
+            run_with_path(handle.as_weak(), std::path::PathBuf::from(rom.to_string()));
         })
         .unwrap();
     });
@@ -158,7 +140,7 @@ fn local_game_window(
             eprintln!("Error opening saves folder: {}", e);
         }
     });
-    file_dropped(app, controller_paths);
+    file_dropped(app);
 }
 
 fn input_profiles(config: &ui::config::Config) -> Vec<String> {
@@ -247,12 +229,7 @@ fn clear_gb_paths(weak: &slint::Weak<AppWindow>, player: i32) {
     .unwrap();
 }
 
-fn controller_window(
-    app: &AppWindow,
-    config: &ui::config::Config,
-    controller_names: &[String],
-    controller_paths: &[Option<String>],
-) {
+fn controller_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_emulate_vru(config.input.emulate_vru);
 
     app.set_controller_enabled(slint::ModelRc::from(std::rc::Rc::new(
@@ -287,28 +264,37 @@ fn controller_window(
 
     update_input_profiles(&app.as_weak(), config);
 
-    app.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(
-        slint::VecModel::from(
-            controller_names
-                .iter()
-                .map(|x| x.into())
-                .collect::<Vec<slint::SharedString>>(),
-        ),
-    )));
-
-    let controller_changed = slint::VecModel::default();
-    let selected_controllers = slint::VecModel::default();
-    for selected in config.input.controller_assignment.iter() {
-        let selected_index = controller_paths
-            .iter()
-            .position(|path| selected == path)
-            .unwrap_or(0) as i32;
-        selected_controllers.push(selected_index);
-        controller_changed.push(false);
-    }
-    app.set_selected_controller(slint::ModelRc::from(std::rc::Rc::new(selected_controllers)));
-
-    app.set_controller_changed(slint::ModelRc::from(std::rc::Rc::new(controller_changed)));
+    let weak_app = app.as_weak();
+    app.on_controller_window_created(move || {
+        weak_app
+            .upgrade_in_event_loop(move |handle| {
+                let game_ui = ui::Ui::new();
+                let mut controller_names = ui::input::get_controller_names(&game_ui);
+                controller_names.insert(0, "None".into());
+                let mut controller_paths = ui::input::get_controller_paths(&game_ui);
+                controller_paths.insert(0, None);
+                handle.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(
+                    slint::VecModel::from(
+                        controller_names
+                            .iter()
+                            .map(|x| x.into())
+                            .collect::<Vec<slint::SharedString>>(),
+                    ),
+                )));
+                let selected_controllers = slint::VecModel::default();
+                for selected in game_ui.config.input.controller_assignment.iter() {
+                    let selected_index = controller_paths
+                        .iter()
+                        .position(|path| selected == path)
+                        .unwrap_or(0) as i32;
+                    selected_controllers.push(selected_index);
+                }
+                handle.set_selected_controller(slint::ModelRc::from(std::rc::Rc::new(
+                    selected_controllers,
+                )));
+            })
+            .unwrap();
+    });
 
     let weak_app = app.as_weak();
     app.on_input_profile_button_clicked(move || {
@@ -411,7 +397,7 @@ fn controller_window(
     });
 }
 
-pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
+pub fn save_settings(app: &AppWindow) {
     let mut config = ui::config::Config::new();
     config.video.integer_scaling = app.get_integer_scaling();
     config.video.fullscreen = app.get_fullscreen();
@@ -439,13 +425,6 @@ pub fn save_settings(app: &AppWindow, controller_paths: &[Option<String>]) {
             .row_data(input_profile_binding as usize)
             .unwrap()
             .to_string();
-    }
-
-    for (i, selected_controller) in app.get_selected_controller().iter().enumerate() {
-        if app.get_controller_changed().row_data(i).unwrap_or(false) {
-            config.input.controller_assignment[i] =
-                controller_paths[selected_controller as usize].clone();
-        }
     }
 }
 
@@ -493,21 +472,16 @@ pub fn app_window() {
     let app = AppWindow::new().unwrap();
     about_window(&app);
     ui::retroachievements::ra_window(&app);
-    let mut controller_paths;
     {
-        let game_ui = ui::Ui::new();
-        let mut controller_names = ui::input::get_controller_names(&game_ui);
-        controller_names.insert(0, "None".into());
-        controller_paths = ui::input::get_controller_paths(&game_ui);
-        controller_paths.insert(0, None);
-        settings_window(&app, &game_ui.config);
-        controller_window(&app, &game_ui.config, &controller_names, &controller_paths);
-        local_game_window(&app, &game_ui.config, &controller_paths);
+        let config = ui::config::Config::new();
+        settings_window(&app, &config);
+        controller_window(&app, &config);
+        local_game_window(&app, &config);
     }
-    ui::netplay::netplay_window(&app, &controller_paths);
+    ui::netplay::netplay_window(&app);
     ui::cheats::cheats_window(&app);
     app.run().unwrap();
-    save_settings(&app, &controller_paths);
+    save_settings(&app);
 }
 
 pub fn run_rom(
