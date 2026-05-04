@@ -407,6 +407,8 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
 }
 
 void rdp_close() {
+  display_fps = false;
+
   messages = std::queue<Message>();
   achievement_challenge_indicator_image = Vulkan::ImageHandle();
   achievement_progress_indicator_image = Vulkan::ImageHandle();
