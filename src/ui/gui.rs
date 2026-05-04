@@ -41,6 +41,7 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
             {
                 github_version
             } else {
+                eprintln!("Error getting latest version from GitHub");
                 semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
             };
             let current_version = semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
