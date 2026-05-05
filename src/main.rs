@@ -249,10 +249,10 @@ async fn main() -> std::io::Result<()> {
             ui::usb::close(shutdown_tx);
         }
     } else if std::env::args().count() > 1 {
-        let mut ui = ui::Ui::new();
+        let mut config = ui::config::Config::new();
 
         if args.clear_input_bindings {
-            ui::input::clear_bindings(&mut ui);
+            ui::input::clear_bindings(&mut config);
             return Ok(());
         }
         if let Some(port) = args.port
@@ -269,7 +269,7 @@ async fn main() -> std::io::Result<()> {
         }
         if let Some(profile) = args.configure_input_profile {
             ui::input::configure_input_profile(
-                &mut ui,
+                &mut config,
                 profile,
                 args.use_dinput,
                 args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
@@ -280,13 +280,13 @@ async fn main() -> std::io::Result<()> {
             let Some(port) = args.port else {
                 return Err(Error::other("Must specify port number"));
             };
-            ui::input::assign_controller(&mut ui.config, assign_controller, port);
+            ui::input::assign_controller(&mut config, assign_controller, port);
         }
         if let Some(profile) = args.bind_input_profile {
             let Some(port) = args.port else {
                 return Err(Error::other("Must specify port number"));
             };
-            ui::input::bind_input_profile(&mut ui, profile, port);
+            ui::input::bind_input_profile(&mut config, profile, port);
         }
     } else {
         #[cfg(feature = "gui")]

@@ -569,18 +569,18 @@ pub fn assign_controller(config: &mut ui::config::Config, controller: i32, port:
     }
 }
 
-pub fn bind_input_profile(ui: &mut ui::Ui, profile: String, port: usize) {
-    if ui.config.input.input_profiles.contains_key(&profile) {
-        ui.config.input.input_profile_binding[port - 1] = profile;
+pub fn bind_input_profile(config: &mut ui::config::Config, profile: String, port: usize) {
+    if config.input.input_profiles.contains_key(&profile) {
+        config.input.input_profile_binding[port - 1] = profile;
     } else {
         eprintln!("Invalid profile name")
     }
 }
 
-pub fn clear_bindings(ui: &mut ui::Ui) {
+pub fn clear_bindings(config: &mut ui::config::Config) {
     for i in 0..4 {
-        ui.config.input.controller_assignment[i] = None;
-        ui.config.input.input_profile_binding[i] = "default".to_string();
+        config.input.controller_assignment[i] = None;
+        config.input.input_profile_binding[i] = "default".to_string();
     }
 }
 
@@ -604,12 +604,18 @@ fn close_input_profile_window(
         sdl3_ttf_sys::ttf::TTF_DestroyRendererTextEngine(text_engine);
         sdl3_sys::render::SDL_DestroyRenderer(renderer);
         sdl3_sys::video::SDL_DestroyWindow(window);
+        sdl3_ttf_sys::ttf::TTF_Quit();
+        sdl3_sys::init::SDL_Quit();
     }
 }
 
-pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, deadzone: i32) {
+pub fn configure_input_profile(
+    config: &mut ui::config::Config,
+    profile: String,
+    dinput: bool,
+    deadzone: i32,
+) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
-    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
     ui::ttf_init();
 
     if profile == "default" {
@@ -848,7 +854,7 @@ pub fn configure_input_profile(ui: &mut ui::Ui, profile: String, dinput: bool, d
         dinput,
         deadzone,
     };
-    ui.config.input.input_profiles.insert(profile, new_profile);
+    config.input.input_profiles.insert(profile, new_profile);
 }
 
 pub fn get_default_profile() -> ui::config::InputProfile {
@@ -1052,6 +1058,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 }
 
 fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
     let mut num_joysticks = 0;
     let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
     if !sdl_joysticks.is_null() {
