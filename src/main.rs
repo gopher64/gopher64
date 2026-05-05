@@ -260,13 +260,6 @@ async fn main() -> std::io::Result<()> {
         {
             return Err(Error::other("Port must be between 1 and 4"));
         }
-        if args.list_controllers {
-            let controllers = ui::input::get_controller_names();
-            for (i, controller) in controllers.iter().enumerate() {
-                println!("Controller {i}: {controller}");
-            }
-            return Ok(());
-        }
         if let Some(profile) = args.configure_input_profile {
             ui::input::configure_input_profile(
                 &mut config,
@@ -276,18 +269,26 @@ async fn main() -> std::io::Result<()> {
             );
             return Ok(());
         }
-        if let Some(assign_controller) = args.assign_controller {
-            let Some(port) = args.port else {
-                return Err(Error::other("Must specify port number"));
-            };
-            ui::input::assign_controller(&mut config, assign_controller - 1, port);
+        if args.list_controllers {
+            let controllers = ui::input::get_controller_names();
+            for (i, controller) in controllers.iter().enumerate() {
+                println!("Controller {i}: {controller}");
+            }
+        } else {
+            if let Some(assign_controller) = args.assign_controller {
+                let Some(port) = args.port else {
+                    return Err(Error::other("Must specify port number"));
+                };
+                ui::input::assign_controller(&mut config, assign_controller - 1, port);
+            }
+            if let Some(profile) = args.bind_input_profile {
+                let Some(port) = args.port else {
+                    return Err(Error::other("Must specify port number"));
+                };
+                ui::input::bind_input_profile(&mut config, profile, port);
+            }
         }
-        if let Some(profile) = args.bind_input_profile {
-            let Some(port) = args.port else {
-                return Err(Error::other("Must specify port number"));
-            };
-            ui::input::bind_input_profile(&mut config, profile, port);
-        }
+        unsafe { sdl3_sys::init::SDL_Quit() };
     } else {
         #[cfg(feature = "gui")]
         {
