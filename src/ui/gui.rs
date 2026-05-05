@@ -257,8 +257,10 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
         slint::VecModel::from(vec![false, false, false, false]),
     )));
 
+    let controller_assignment = config.input.controller_assignment.clone();
     let weak_app = app.as_weak();
     app.on_controller_window_created(move || {
+        let controller_assignment = controller_assignment.clone();
         weak_app
             .upgrade_in_event_loop(move |handle| {
                 let controller_names = ui::input::get_controller_names();
@@ -281,8 +283,16 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
                     ),
                 )));
 
+                let selected_controllers = slint::VecModel::default();
+                for selected in controller_assignment.iter() {
+                    let selected_index = controller_paths
+                        .iter()
+                        .position(|path| selected.as_ref().unwrap_or(&String::new()) == path)
+                        .unwrap_or(0) as i32;
+                    selected_controllers.push(selected_index);
+                }
                 handle.set_selected_controller(slint::ModelRc::from(std::rc::Rc::new(
-                    slint::VecModel::from(vec![0, 0, 0, 0]),
+                    selected_controllers,
                 )));
             })
             .unwrap();
