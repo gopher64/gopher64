@@ -358,18 +358,18 @@ pub fn get_controller_names() -> Vec<String> {
 }
 
 #[cfg(feature = "gui")]
-pub fn get_controller_paths() -> Vec<Option<String>> {
-    let mut controller_paths: Vec<Option<String>> = vec![];
+pub fn get_controller_paths() -> Vec<String> {
+    let mut controller_paths: Vec<String> = vec![];
 
     for joystick in get_joysticks().iter() {
         let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
         controller_paths.push(if path.is_null() {
-            None
+            String::new()
         } else {
-            Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string())
+            unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string()
         });
     }
-    controller_paths.insert(0, None);
+    controller_paths.insert(0, String::new());
 
     controller_paths
 }

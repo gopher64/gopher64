@@ -261,9 +261,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
     app.on_controller_window_created(move || {
         weak_app
             .upgrade_in_event_loop(move |handle| {
-                let config = ui::config::Config::new();
                 let controller_names = ui::input::get_controller_names();
-                let controller_paths = ui::input::get_controller_paths();
                 handle.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(
                     slint::VecModel::from(
                         controller_names
@@ -272,16 +270,19 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
                             .collect::<Vec<slint::SharedString>>(),
                     ),
                 )));
-                let selected_controllers = slint::VecModel::default();
-                for selected in config.input.controller_assignment.iter() {
-                    let selected_index = controller_paths
-                        .iter()
-                        .position(|path| selected == path)
-                        .unwrap_or(0) as i32;
-                    selected_controllers.push(selected_index);
-                }
+
+                let controller_paths = ui::input::get_controller_paths();
+                handle.set_controller_paths(slint::ModelRc::from(std::rc::Rc::new(
+                    slint::VecModel::from(
+                        controller_paths
+                            .iter()
+                            .map(|x| x.into())
+                            .collect::<Vec<slint::SharedString>>(),
+                    ),
+                )));
+
                 handle.set_selected_controller(slint::ModelRc::from(std::rc::Rc::new(
-                    selected_controllers,
+                    slint::VecModel::from(vec![0, 0, 0, 0]),
                 )));
             })
             .unwrap();
@@ -418,11 +419,18 @@ pub fn save_settings(app: &AppWindow) {
             .to_string();
     }
 
-    let joystick_paths = ui::input::get_controller_paths();
     for (i, selected_controller) in app.get_selected_controller().iter().enumerate() {
         if app.get_controller_changed().row_data(i).unwrap_or(false) {
-            config.input.controller_assignment[i] =
-                joystick_paths[selected_controller as usize].clone();
+            let controller_path = app
+                .get_controller_paths()
+                .row_data(selected_controller as usize)
+                .unwrap()
+                .to_string();
+            if controller_path.is_empty() {
+                config.input.controller_assignment[i] = None;
+            } else {
+                config.input.controller_assignment[i] = Some(controller_path);
+            }
         }
     }
 }
