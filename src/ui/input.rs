@@ -557,7 +557,9 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 
 pub fn assign_controller(config: &mut ui::config::Config, controller: i32, port: usize) {
     let joysticks = get_joysticks();
-    if controller >= 0 && controller < joysticks.len() as i32 {
+    if controller < 0 {
+        config.input.controller_assignment[port - 1] = None;
+    } else if controller < joysticks.len() as i32 {
         let path =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(joysticks[controller as usize]) };
         if !path.is_null() {
