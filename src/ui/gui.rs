@@ -491,8 +491,8 @@ pub fn app_window() {
     ui::netplay::netplay_window(&app);
     ui::cheats::cheats_window(&app);
     app.run().unwrap();
-    unsafe { sdl3_sys::init::SDL_Quit() };
     save_settings(&app);
+    unsafe { sdl3_sys::init::SDL_Quit() };
 }
 
 pub fn run_rom(
