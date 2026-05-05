@@ -352,6 +352,7 @@ pub fn get_controller_names() -> Vec<String> {
             unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
         });
     }
+    controllers.insert(0, "None".into());
 
     controllers
 }
@@ -368,6 +369,7 @@ pub fn get_controller_paths() -> Vec<Option<String>> {
             Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string())
         });
     }
+    controller_paths.insert(0, None);
 
     controller_paths
 }
@@ -555,7 +557,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 
 pub fn assign_controller(config: &mut ui::config::Config, controller: i32, port: usize) {
     let joysticks = get_joysticks();
-    if controller < joysticks.len() as i32 {
+    if controller > 0 && controller < joysticks.len() as i32 {
         let path =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(joysticks[controller as usize]) };
         if !path.is_null() {

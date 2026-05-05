@@ -280,7 +280,7 @@ async fn main() -> std::io::Result<()> {
             let Some(port) = args.port else {
                 return Err(Error::other("Must specify port number"));
             };
-            ui::input::assign_controller(&mut config, assign_controller, port);
+            ui::input::assign_controller(&mut config, assign_controller - 1, port);
         }
         if let Some(profile) = args.bind_input_profile {
             let Some(port) = args.port else {

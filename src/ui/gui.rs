@@ -269,10 +269,8 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
         weak_app
             .upgrade_in_event_loop(move |handle| {
                 let config = ui::config::Config::new();
-                let mut controller_names = ui::input::get_controller_names();
-                controller_names.insert(0, "None".into());
-                let mut controller_paths = ui::input::get_controller_paths();
-                controller_paths.insert(0, None);
+                let controller_names = ui::input::get_controller_names();
+                let controller_paths = ui::input::get_controller_paths();
                 handle.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(
                     slint::VecModel::from(
                         controller_names
@@ -425,6 +423,12 @@ pub fn save_settings(app: &AppWindow) {
             .row_data(input_profile_binding as usize)
             .unwrap()
             .to_string();
+    }
+
+    let joystick_paths = ui::input::get_controller_paths();
+    for (i, selected_controller) in app.get_selected_controller().iter().enumerate() {
+        config.input.controller_assignment[i] =
+            joystick_paths[selected_controller as usize].clone();
     }
 }
 
