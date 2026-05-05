@@ -264,6 +264,10 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
 
     update_input_profiles(&app.as_weak(), config);
 
+    app.set_controller_changed(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(vec![false, false, false, false]),
+    )));
+
     let weak_app = app.as_weak();
     app.on_controller_window_created(move || {
         weak_app
@@ -427,8 +431,10 @@ pub fn save_settings(app: &AppWindow) {
 
     let joystick_paths = ui::input::get_controller_paths();
     for (i, selected_controller) in app.get_selected_controller().iter().enumerate() {
-        config.input.controller_assignment[i] =
-            joystick_paths[selected_controller as usize].clone();
+        if app.get_controller_changed().row_data(i).unwrap_or(false) {
+            config.input.controller_assignment[i] =
+                joystick_paths[selected_controller as usize].clone();
+        }
     }
 }
 
