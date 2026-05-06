@@ -418,6 +418,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
 
 pub fn save_settings(app: &AppWindow) {
     let mut config = ui::config::Config::new();
+    config.rom_dir = app.get_rom_dir().to_string().into();
     config.video.integer_scaling = app.get_integer_scaling();
     config.video.ssaa = app.get_ssaa();
     config.video.fullscreen = app.get_fullscreen();
