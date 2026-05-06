@@ -618,6 +618,7 @@ pub fn configure_input_profile(
     deadzone: i32,
 ) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
     ui::ttf_init();
 
     if profile == "default" {
@@ -1060,7 +1061,6 @@ pub fn get_default_profile() -> ui::config::InputProfile {
 }
 
 fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
-    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
     let mut num_joysticks = 0;
     let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
@@ -1076,6 +1076,8 @@ fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
 }
 
 pub fn init(ui: &mut ui::Ui) {
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+
     ui.input.keyboard_state =
         unsafe { sdl3_sys::keyboard::SDL_GetKeyboardState(std::ptr::null_mut()) };
     if ui.input.keyboard_state.is_null() {
