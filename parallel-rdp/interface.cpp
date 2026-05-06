@@ -519,8 +519,8 @@ static uint32_t pop_message_callback(void *userdata, SDL_TimerID timerID,
 static void render_frame(Vulkan::Device &device) {
   RDP::ScanoutOptions options = {};
   options.persist_frame_on_invalid_input = true;
-  options.blend_previous_frame = true;
-  options.upscale_deinterlacing = false;
+  options.blend_previous_frame = !gfx_info.ssaa;
+  options.upscale_deinterlacing = gfx_info.ssaa;
   if (gfx_info.ssaa) {
     switch (gfx_info.upscale) {
     case 2:
