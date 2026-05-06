@@ -515,7 +515,6 @@ pub fn app_window() {
     ui::cheats::cheats_window(&app);
     app.run().unwrap();
     save_settings(&app);
-    unsafe { sdl3_sys::init::SDL_Quit() };
 }
 
 pub fn run_rom(
