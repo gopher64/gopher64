@@ -218,7 +218,7 @@ jobs:
       - name: Sign Bundle Dev
         if: ${{ github.ref_type != 'tag' }}
         run: |
-          codesign -f --entitlements data/macos/entitlements_dev.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          codesign -f --entitlements data/macos/entitlements_dev.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/release-with-debug/bundle/osx/Gopher64.app
       - name: Import Codesign Certs
         if: ${{ github.ref_type == 'tag' }}
         uses: apple-actions/import-codesign-certs@v7
