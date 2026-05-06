@@ -153,6 +153,7 @@ fn input_profiles(config: &ui::config::Config) -> Vec<String> {
 
 fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_integer_scaling(config.video.integer_scaling);
+    app.set_ssaa(config.video.ssaa);
     app.set_fullscreen(config.video.fullscreen);
     app.set_widescreen(config.video.widescreen);
     app.set_vsync(config.video.vsync);
@@ -418,6 +419,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
 pub fn save_settings(app: &AppWindow) {
     let mut config = ui::config::Config::new();
     config.video.integer_scaling = app.get_integer_scaling();
+    config.video.ssaa = app.get_ssaa();
     config.video.fullscreen = app.get_fullscreen();
     config.video.widescreen = app.get_widescreen();
     config.video.vsync = app.get_vsync();

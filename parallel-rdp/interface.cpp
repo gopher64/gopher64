@@ -298,6 +298,8 @@ void rdp_new_processor(GFX_INFO _gfx_info) {
   } else if (gfx_info.upscale == 8) {
     flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
     flags |= RDP::COMMAND_PROCESSOR_FLAG_UPSCALING_8X_BIT;
+  } else {
+    gfx_info.upscale = 1;
   }
 
   processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0,
@@ -519,6 +521,22 @@ static void render_frame(Vulkan::Device &device) {
   options.persist_frame_on_invalid_input = true;
   options.blend_previous_frame = true;
   options.upscale_deinterlacing = false;
+  if (gfx_info.ssaa) {
+    switch (gfx_info.upscale) {
+    case 2:
+      options.downscale_steps = 1;
+      break;
+    case 4:
+      options.downscale_steps = 2;
+      break;
+    case 8:
+      options.downscale_steps = 3;
+      break;
+    default:
+      options.downscale_steps = 0;
+      break;
+    }
+  }
 
   if (crop_letterbox && gfx_info.widescreen) {
     options.crop_rect.enable = true;

@@ -6,6 +6,7 @@ import { Page } from "page.slint";
 
 export global SettingsData {
     in-out property <bool> integer_scaling;
+    in-out property <bool> ssaa;
     in-out property <bool> fullscreen;
     in-out property <bool> widescreen;
     in-out property <bool> vsync;
@@ -34,6 +35,17 @@ export component Settings inherits Page {
                 current-index: SettingsData.resolution;
                 selected => {
                     SettingsData.resolution = self.current-index;
+                }
+            }
+        }
+
+        HorizontalBox {
+            alignment: start;
+            Switch {
+                text: @tr("SSAA downscaling");
+                checked: SettingsData.ssaa;
+                toggled => {
+                    SettingsData.ssaa = self.checked;
                 }
             }
         }

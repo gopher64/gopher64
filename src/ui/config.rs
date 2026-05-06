@@ -47,6 +47,7 @@ pub struct Input {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Video {
     pub upscale: u32,
+    pub ssaa: bool,
     pub integer_scaling: bool,
     pub fullscreen: bool,
     pub widescreen: bool,
@@ -156,6 +157,7 @@ impl Config {
             },
             video: Video {
                 upscale: 1,
+                ssaa: false,
                 integer_scaling: false,
                 fullscreen: false,
                 widescreen: false,
