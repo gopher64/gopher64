@@ -220,6 +220,8 @@ fn clear_gb_paths(weak: &slint::Weak<AppWindow>, player: i32) {
 }
 
 fn controller_window(app: &AppWindow, config: &ui::config::Config) {
+    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+
     app.set_emulate_vru(config.input.emulate_vru);
 
     app.set_controller_enabled(slint::ModelRc::from(std::rc::Rc::new(
