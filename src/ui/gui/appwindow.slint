@@ -41,6 +41,7 @@ export component AppWindow inherits Window {
     callback ra_games_clicked;
     callback ra_show_profile_clicked;
     callback ra_toggled(bool,bool,bool,bool);
+    callback controller_window_created;
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
     in-out property ra_username <=> RAData.ra_username;
@@ -72,10 +73,10 @@ export component AppWindow inherits Window {
     in-out property selected_profile_binding <=> ControllerData.selected_profile_binding;
     in-out property input_profiles <=> ControllerData.input_profiles;
     in-out property controller_names <=> ControllerData.controller_names;
+    in-out property controller_paths <=> ControllerData.controller_paths;
     in-out property selected_controller <=> ControllerData.selected_controller;
     in-out property game_running <=> State.game_running;
     in-out property recent_roms <=> State.recent_roms;
-    in-out property blank_profiles <=> ControllerData.blank_profiles;
     in-out property cheat_game_name <=> CheatsData.cheat_game_name;
     in-out property cheat_game_crc <=> CheatsData.cheat_game_crc;
     in-out property cheats <=> CheatsData.cheats;
@@ -118,6 +119,9 @@ export component AppWindow inherits Window {
             }
             transferpak_toggled(player,enabled) => {
                 transferpak_toggled(player,enabled);
+            }
+            controller_window_created => {
+                controller_window_created();
             }
         }
         if(side-bar.current-item == 2): Netplay {

@@ -14,15 +14,20 @@ export global ControllerData {
     in-out property <[int]> selected_profile_binding: [-1, -1, -1, -1];
     in-out property <[string]> input_profiles;
     in-out property <[string]> controller_names;
+    in-out property <[string]> controller_paths;
     in-out property <[int]> selected_controller;
     in-out property <[bool]> controller_changed;
-    in-out property <bool> blank_profiles;
 }
 
 export component ControllerConfig inherits Page {
     callback input_profile_button_clicked;
     callback transferpak_toggled(int,bool);
+    callback controller_window_created;
     title: @tr("Controller Configuration");
+
+    init => {
+        controller_window_created();
+    }
 
     VerticalBox {
         alignment: start;
@@ -92,7 +97,7 @@ export component ControllerConfig inherits Page {
                 }
             }
 
-            if !ControllerData.blank_profiles: GroupBox {
+            GroupBox {
                 title: @tr("Profile");
                 horizontal-stretch: 0.25;
                 VerticalLayout {

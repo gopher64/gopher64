@@ -207,7 +207,7 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
 pub struct Device {
     #[serde(skip)]
     pub netplay: Option<netplay::Netplay>,
-    #[serde(skip, default = "ui::Ui::default")]
+    #[serde(skip, default = "ui::Ui::new")]
     pub ui: ui::Ui,
     pub byte_swap: usize,
     pub save_state: bool,

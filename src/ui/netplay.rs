@@ -1208,17 +1208,15 @@ pub fn setup_join_window(
     join_window.show().unwrap();
 }
 
-pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
+pub fn netplay_window(app: &AppWindow) {
     let weak_create = app.as_weak();
     let weak_app = app.as_weak();
-    let controller_paths_create = controller_paths.to_owned();
     app.on_create_session_button_clicked(move || {
-        let controller_paths = controller_paths_create.clone();
         let weak_app = weak_app.clone();
         weak_create
             .upgrade_in_event_loop(move |handle| {
                 let create_window = NetplayCreate::new().unwrap();
-                save_settings(&handle, &controller_paths);
+                save_settings(&handle);
                 setup_create_window(
                     &create_window,
                     ui::GameSettings {
@@ -1242,14 +1240,12 @@ pub fn netplay_window(app: &AppWindow, controller_paths: &[Option<String>]) {
 
     let weak_join = app.as_weak();
     let weak_app = app.as_weak();
-    let controller_paths_join = controller_paths.to_owned();
     app.on_join_session_button_clicked(move || {
-        let controller_paths = controller_paths_join.clone();
         let weak_app = weak_app.clone();
         weak_join
             .upgrade_in_event_loop(move |handle| {
                 let join_window = NetplayJoin::new().unwrap();
-                save_settings(&handle, &controller_paths);
+                save_settings(&handle);
                 setup_join_window(
                     &join_window,
                     handle.get_rom_dir(),
