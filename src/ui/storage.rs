@@ -343,7 +343,7 @@ pub fn decompress_file(input: &[u8], name: &str) -> Result<Vec<u8>, zip::result:
     {
         if let Ok(mut reader) = zip::ZipArchive::new(std::io::Cursor::new(input))
             && let Ok(mut file) = reader.by_name(name)
-            && let Ok(_) = file.read_to_end(&mut decompressed_file)
+            && file.read_to_end(&mut decompressed_file).is_ok()
         {
             return Ok(decompressed_file);
         }

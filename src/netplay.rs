@@ -182,7 +182,7 @@ fn request_input(netplay: &Netplay, channel: usize) {
 
 fn process_incoming(netplay: &mut Netplay) {
     let mut buf: [u8; 1024] = [0; 1024];
-    while let Ok(_incoming) = netplay.udp_socket.recv(&mut buf) {
+    while netplay.udp_socket.recv(&mut buf).is_ok() {
         match buf[0] {
             UDP_RECEIVE_KEY_INFO | UDP_RECEIVE_KEY_INFO_GRATUITOUS => {
                 let player = buf[1] as usize;
