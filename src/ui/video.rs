@@ -29,6 +29,7 @@ fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
         },
         integer_scaling: device.ui.config.video.integer_scaling,
         upscale: device.ui.config.video.upscale,
+        ssaa: device.ui.config.video.ssaa,
         crt: device.ui.config.video.crt,
     }
 }
@@ -49,7 +50,7 @@ pub fn init(device: &mut device::Device) {
 
     let window_width;
     let window_height;
-    let scale = if device.ui.config.video.upscale > 1 {
+    let scale = if device.ui.config.video.upscale > 1 && !device.ui.config.video.ssaa {
         device.ui.config.video.upscale as i32
     } else {
         2

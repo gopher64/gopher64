@@ -21,6 +21,7 @@ typedef struct {
   bool vsync;
   bool integer_scaling;
   uint32_t upscale;
+  bool ssaa;
   bool crt;
 } GFX_INFO;
 
