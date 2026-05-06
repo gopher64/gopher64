@@ -267,6 +267,8 @@ async fn main() -> std::io::Result<()> {
                 args.use_dinput,
                 args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
             );
+
+            ui::sdl_close();
             return Ok(());
         }
         if args.list_controllers {
@@ -288,7 +290,6 @@ async fn main() -> std::io::Result<()> {
                 ui::input::bind_input_profile(&mut config, profile, port);
             }
         }
-        unsafe { sdl3_sys::init::SDL_Quit() };
     } else {
         #[cfg(feature = "gui")]
         {
@@ -298,5 +299,6 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
+    ui::sdl_close();
     Ok(())
 }

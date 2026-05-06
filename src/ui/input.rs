@@ -608,8 +608,6 @@ fn close_input_profile_window(
         sdl3_ttf_sys::ttf::TTF_DestroyRendererTextEngine(text_engine);
         sdl3_sys::render::SDL_DestroyRenderer(renderer);
         sdl3_sys::video::SDL_DestroyWindow(window);
-        sdl3_ttf_sys::ttf::TTF_Quit();
-        sdl3_sys::init::SDL_Quit();
     }
 }
 
