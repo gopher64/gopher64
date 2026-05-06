@@ -267,10 +267,8 @@ async fn main() -> std::io::Result<()> {
                 args.use_dinput,
                 args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
             );
-            unsafe {
-                sdl3_ttf_sys::ttf::TTF_Quit();
-                sdl3_sys::init::SDL_Quit();
-            }
+
+            ui::sdl_close();
             return Ok(());
         }
         if args.list_controllers {
@@ -301,9 +299,6 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    unsafe {
-        sdl3_ttf_sys::ttf::TTF_Quit();
-        sdl3_sys::init::SDL_Quit();
-    }
+    ui::sdl_close();
     Ok(())
 }

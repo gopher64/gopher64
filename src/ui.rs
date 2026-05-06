@@ -108,6 +108,13 @@ pub fn ttf_init() {
     }
 }
 
+pub fn sdl_close() {
+    unsafe {
+        sdl3_ttf_sys::ttf::TTF_Quit();
+        sdl3_sys::init::SDL_Quit();
+    }
+}
+
 pub fn get_dirs() -> Dirs {
     let exe_path = std::env::current_exe().unwrap();
     let portable_dir = exe_path.parent();
