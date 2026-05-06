@@ -118,7 +118,7 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
 
         if let Ok(broadcast_sock) =
             tokio::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0)).await
-            && let Ok(_) = broadcast_sock.set_broadcast(true)
+            && broadcast_sock.set_broadcast(true).is_ok()
         {
             let data: [u8; 1] = [1];
             if let Err(e) = broadcast_sock
@@ -177,10 +177,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
     weak: slint::Weak<T>,
     rom_dir: slint::SharedString,
 ) {
-    let select_rom = if !rom_dir.is_empty()
-        && let Ok(exists) = std::fs::exists(&rom_dir)
-        && exists
-    {
+    let select_rom = if !rom_dir.is_empty() && std::fs::exists(&rom_dir).unwrap_or(false) {
         rfd::AsyncFileDialog::new().set_directory(rom_dir)
     } else {
         rfd::AsyncFileDialog::new()
