@@ -263,6 +263,14 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
         let controller_assignment = config_controller_assignment.clone();
         weak_app
             .upgrade_in_event_loop(move |handle| {
+                let mut current_selected_paths = vec![None; 4];
+                for (i, selected_controller) in handle.get_selected_controller().iter().enumerate()
+                {
+                    current_selected_paths[i] = handle
+                        .get_controller_paths()
+                        .row_data(selected_controller as usize);
+                }
+
                 let controller_names = ui::input::get_controller_names();
                 handle.set_controller_names(slint::ModelRc::from(std::rc::Rc::new(
                     slint::VecModel::from(
@@ -284,12 +292,18 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
                 )));
 
                 let selected_controllers = slint::VecModel::default();
-                for assigned_path in controller_assignment.iter() {
+                for i in 0..4 {
+                    let assigned_path =
+                        if let Some(current_selected_path) = &current_selected_paths[i] {
+                            current_selected_path.to_string()
+                        } else if let Some(config_assigned_path) = &controller_assignment[i] {
+                            config_assigned_path.to_string()
+                        } else {
+                            String::new()
+                        };
                     let selected_index = controller_paths
                         .iter()
-                        .position(|controller_path| {
-                            assigned_path.as_ref().unwrap_or(&String::new()) == controller_path
-                        })
+                        .position(|controller_path| assigned_path == *controller_path)
                         .unwrap_or(0) as i32;
                     selected_controllers.push(selected_index);
                 }
