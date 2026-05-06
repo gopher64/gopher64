@@ -282,12 +282,14 @@ async fn main() -> std::io::Result<()> {
             } else {
                 if let Some(assign_controller) = args.assign_controller {
                     let Some(port) = args.port else {
+                        ui::sdl_close();
                         return Err(Error::other("Must specify port number"));
                     };
                     ui::input::assign_controller(&mut config, assign_controller - 1, port);
                 }
                 if let Some(profile) = args.bind_input_profile {
                     let Some(port) = args.port else {
+                        ui::sdl_close();
                         return Err(Error::other("Must specify port number"));
                     };
                     ui::input::bind_input_profile(&mut config, profile, port);
