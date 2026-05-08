@@ -10,6 +10,9 @@ include!(concat!(env!("OUT_DIR"), "/simd_bindings.rs"));
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
+const N64_EXTENSIONS_UNCOMPRESSED: [&str; 8] =
+    ["n64", "v64", "z64", "bin", "N64", "V64", "Z64", "BIN"];
+
 use rand::{Rng, SeedableRng};
 
 use crate::{cheats, netplay, retroachievements, ui};
@@ -152,7 +155,7 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
         for i in 0..archive.len() {
             let mut file = archive.by_index(i).unwrap();
             if let Some(extension) = file.enclosed_name().unwrap().extension()
-                && ui::N64_EXTENSIONS_UNCOMPRESSED.contains(&extension.to_str().unwrap())
+                && N64_EXTENSIONS_UNCOMPRESSED.contains(&extension.to_str().unwrap())
             {
                 file.read_to_end(&mut contents)
                     .expect("could not read zip file");
@@ -174,7 +177,7 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
                     let name = entry.name().to_ascii_lowercase();
                     if !found
                         && let Some(extension) = std::path::PathBuf::from(name).extension()
-                        && ui::N64_EXTENSIONS_UNCOMPRESSED.contains(&extension.to_str().unwrap())
+                        && N64_EXTENSIONS_UNCOMPRESSED.contains(&extension.to_str().unwrap())
                     {
                         reader
                             .read_to_end(&mut contents)

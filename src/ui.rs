@@ -15,9 +15,6 @@ pub mod video;
 #[cfg(feature = "gui")]
 pub mod vru;
 
-pub const N64_EXTENSIONS_UNCOMPRESSED: [&str; 8] =
-    ["n64", "v64", "z64", "bin", "N64", "V64", "Z64", "BIN"];
-
 pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
     reqwest::Client::builder()
         .user_agent(format!(
