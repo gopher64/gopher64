@@ -15,7 +15,7 @@ const PI_BSD_DOM2_LAT_REG: usize = 9;
 const PI_BSD_DOM2_PWD_REG: usize = 10;
 const PI_BSD_DOM2_PGS_REG: usize = 11;
 const PI_BSD_DOM2_RLS_REG: usize = 12;
-//const UNKNOWN_REG: u32 = 13; //LibDragon
+//const UNKNOWN_REG: usize = 13; //LibDragon
 pub const PI_REGS_COUNT: usize = 14;
 
 /* PI_STATUS - read */
