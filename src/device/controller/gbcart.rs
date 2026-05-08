@@ -222,16 +222,14 @@ fn read_mbc3(
             );
         } else if cart.cart_type == CartType::MBC3RamBattRtc {
             if cart.latch {
-                pif_ram[data..data + size].copy_from_slice(
-                    &cart.rtc_regs_latch
-                        [cart.ram_bank as usize - 0x8..cart.ram_bank as usize - 0x8 + size],
-                );
+                for i in 0..size {
+                    pif_ram[data + i] = cart.rtc_regs_latch[cart.ram_bank as usize - 0x8];
+                }
             } else {
                 update_rtc_regs(cart, now);
-                pif_ram[data..data + size].copy_from_slice(
-                    &cart.rtc_regs
-                        [cart.ram_bank as usize - 0x8..cart.ram_bank as usize - 0x8 + size],
-                );
+                for i in 0..size {
+                    pif_ram[data + i] = cart.rtc_regs[cart.ram_bank as usize - 0x8];
+                }
             }
         }
     } else {
