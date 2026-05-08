@@ -78,7 +78,7 @@ pub fn cheats_window(app: &AppWindow) {
                     let message_dialog = ErrorDialog::new().unwrap();
                     let weak_dialog = message_dialog.as_weak();
                     message_dialog.on_close_clicked(move || {
-                        weak_dialog.unwrap().window().hide().unwrap();
+                        weak_dialog.unwrap().hide().unwrap();
                     });
                     message_dialog.set_text("Could not read ROM".into());
                     message_dialog.show().unwrap();
