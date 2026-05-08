@@ -327,10 +327,10 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
             let weak_app = weak_app.clone();
             weak_dialog
                 .upgrade_in_event_loop(move |handle| {
-                    handle.hide().unwrap();
                     let profile_name = handle.get_profile_name();
                     let dinput = handle.get_dinput();
                     let deadzone = handle.get_deadzone();
+                    handle.hide().unwrap();
 
                     tokio::spawn(async move {
                         let cli_path = std::env::current_exe()

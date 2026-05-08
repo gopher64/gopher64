@@ -1078,7 +1078,6 @@ fn setup_wait_window(
                     "reply_begin_game" => {
                         if response.accept.unwrap() == 0 {
                             weak.upgrade_in_event_loop(move |handle| {
-                                handle.hide().unwrap();
                                 let _ = netplay_write_sender.send(None);
 
                                 let mut player_number = 4;
@@ -1107,6 +1106,7 @@ fn setup_wait_window(
                                     ra_settings,
                                     weak_app,
                                 );
+                                handle.hide().unwrap();
                             })
                             .unwrap();
                             return;
