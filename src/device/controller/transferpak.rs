@@ -52,7 +52,7 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
             }
         }
         0xC..=0xF => {
-            pak.cart.current_time = (device.vi.frame_time * device.vi.vi_counter as f64) as i64;
+            pak.cart.current_time = device.vi.elapsed_time as i64;
             device::controller::gbcart::read(
                 &mut device.pif.ram,
                 &mut pak.cart,
@@ -119,7 +119,7 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
             }
         }
         0xC..=0xF => {
-            pak.cart.current_time = (device.vi.frame_time * device.vi.vi_counter as f64) as i64;
+            pak.cart.current_time = device.vi.elapsed_time as i64;
             device::controller::gbcart::write(
                 &device.pif.ram,
                 &mut pak.cart,

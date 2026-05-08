@@ -494,6 +494,7 @@ impl Device {
                 vi_counter: 0,
                 min_wait_time: std::time::Duration::from_secs(1),
                 frame_time: 0.0,
+                elapsed_time: 0.0,
                 limit_freq: 2,
                 limit_freq_check: std::time::Instant::now(),
             },
