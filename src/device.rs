@@ -174,9 +174,8 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
         archive
             .for_each_entries(
                 &mut |entry: &sevenz_rust2::ArchiveEntry, reader: &mut dyn std::io::Read| {
-                    let name = entry.name().to_ascii_lowercase();
                     if !found
-                        && let Some(extension) = std::path::PathBuf::from(name).extension()
+                        && let Some(extension) = std::path::PathBuf::from(entry.name()).extension()
                         && N64_EXTENSIONS_UNCOMPRESSED.contains(&extension.to_str().unwrap())
                     {
                         reader
