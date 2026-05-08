@@ -56,7 +56,7 @@ pub fn check_relative_idle_loop(device: &mut device::Device, opcode: u32) {
             device::memory::AccessSize::Word,
         ) == 0
     {
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] = device.cpu.next_event_count
+        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG] = device.cpu.next_event_count
     }
 }
 
@@ -68,7 +68,7 @@ fn check_absolute_idle_loop(device: &mut device::Device, target: u64) {
             device::memory::AccessSize::Word,
         ) == 0
     {
-        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] = device.cpu.next_event_count
+        device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG] = device.cpu.next_event_count
     }
 }
 
@@ -647,17 +647,17 @@ pub fn cache(device: &mut device::Device, opcode: u32) {
                 valid = 1
             }
             device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize],
+                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
                 valid << 7,
                 0x80,
             );
             device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize],
+                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
                 0,
                 0x40,
             );
             device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize],
+                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
                 (device.memory.icache[icache_line].tag >> 4) as u64,
                 0xFFFFF00,
             )
@@ -665,10 +665,9 @@ pub fn cache(device: &mut device::Device, opcode: u32) {
         0x08 => {
             //icache store tag
             device.memory.icache[icache_line].valid =
-                (device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize] & 0x80) >> 7 != 0;
+                (device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] & 0x80) >> 7 != 0;
             device.memory.icache[icache_line].tag =
-                ((device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize] & 0xFFFFF00) << 4)
-                    as u32
+                ((device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] & 0xFFFFF00) << 4) as u32
         }
         0x10 => {
             //icache hit invalidate
@@ -704,17 +703,17 @@ pub fn cache(device: &mut device::Device, opcode: u32) {
                 dirty = 1
             }
             device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize],
+                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
                 valid << 7,
                 0x80,
             );
             device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize],
+                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
                 dirty << 6,
                 0x40,
             );
             device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize],
+                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
                 (device.memory.dcache[dcache_line].tag >> 4) as u64,
                 0xFFFFF00,
             )
@@ -722,12 +721,11 @@ pub fn cache(device: &mut device::Device, opcode: u32) {
         0x09 => {
             //dcache index store tag
             device.memory.dcache[dcache_line].valid =
-                (device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize] & 0x80) >> 7 != 0;
+                (device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] & 0x80) >> 7 != 0;
             device.memory.dcache[dcache_line].dirty =
-                (device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize] & 0x40) >> 6 != 0;
+                (device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] & 0x40) >> 6 != 0;
             device.memory.dcache[dcache_line].tag =
-                ((device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG as usize] & 0xFFFFF00) << 4)
-                    as u32
+                ((device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] & 0xFFFFF00) << 4) as u32
         }
         0x0D => {
             //dcache create dirty exclusive
@@ -787,7 +785,7 @@ pub fn ll(device: &mut device::Device, opcode: u32) {
         cached,
     ) as i32);
     device.cpu.llbit = true;
-    device.cpu.cop0.regs[device::cop0::COP0_LLADDR_REG as usize] = phys_address >> 4
+    device.cpu.cop0.regs[device::cop0::COP0_LLADDR_REG] = phys_address >> 4
 }
 
 pub fn lld(device: &mut device::Device, opcode: u32) {
@@ -816,7 +814,7 @@ pub fn lld(device: &mut device::Device, opcode: u32) {
     device.cpu.gpr[rt(opcode) as usize] = ((w[0] as u64) << 32) | (w[1]) as u64;
 
     device.cpu.llbit = true;
-    device.cpu.cop0.regs[device::cop0::COP0_LLADDR_REG as usize] = phys_address >> 4
+    device.cpu.cop0.regs[device::cop0::COP0_LLADDR_REG] = phys_address >> 4
 }
 
 pub fn ld(device: &mut device::Device, opcode: u32) {

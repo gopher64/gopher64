@@ -300,8 +300,7 @@ pub fn run(device: &mut device::Device) {
             State::Exception => device.cpu.branch_state.state = State::Step,
         }
         device::cop0::add_cycles(device, 1);
-        if device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] > device.cpu.next_event_count
-        {
+        if device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG] > device.cpu.next_event_count {
             device::events::trigger_event(device)
         }
     }

@@ -15,10 +15,10 @@ fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
         DMEM: device.rsp.mem.as_mut_ptr(),
         RDRAM_SIZE: device.rdram.size,
-        DPC_CURRENT_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG as usize],
-        DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG as usize],
-        DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG as usize],
-        DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG as usize],
+        DPC_CURRENT_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG],
+        DPC_START_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_START_REG],
+        DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG],
+        DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG],
         PAL: device.cart.pal,
         widescreen: device.ui.config.video.widescreen,
         fullscreen: device.ui.video.fullscreen,
@@ -205,9 +205,8 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
             device.load_state = true;
         }
         if callback.reset_game {
-            device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |=
-                device::cop0::COP0_CAUSE_IP4;
-            device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
+            device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] |= device::cop0::COP0_CAUSE_IP4;
+            device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] &=
                 !device::cop0::COP0_CAUSE_EXCCODE_MASK;
 
             device::events::create_event(

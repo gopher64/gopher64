@@ -34,22 +34,22 @@ pub fn read(device: &mut device::Device, index: u64) {
     if index > 31 {
         return;
     }
-    device.cpu.cop0.regs[device::cop0::COP0_PAGEMASK_REG as usize] =
+    device.cpu.cop0.regs[device::cop0::COP0_PAGEMASK_REG] =
         device.cpu.cop0.tlb_entries[index as usize].mask << 13;
 
-    device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] =
+    device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG] =
         ((device.cpu.cop0.tlb_entries[index as usize].region as u64) << 62)
             | (device.cpu.cop0.tlb_entries[index as usize].vpn2 << 13)
             | (device.cpu.cop0.tlb_entries[index as usize].asid) as u64;
 
-    device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG as usize] =
+    device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG] =
         (device.cpu.cop0.tlb_entries[index as usize].pfn_even << 6)
             | (device.cpu.cop0.tlb_entries[index as usize].c_even << 3) as u64
             | (device.cpu.cop0.tlb_entries[index as usize].d_even << 2) as u64
             | (device.cpu.cop0.tlb_entries[index as usize].v_even << 1) as u64
             | (device.cpu.cop0.tlb_entries[index as usize].g) as u64;
 
-    device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG as usize] =
+    device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG] =
         (device.cpu.cop0.tlb_entries[index as usize].pfn_odd << 6)
             | (device.cpu.cop0.tlb_entries[index as usize].c_odd << 3) as u64
             | (device.cpu.cop0.tlb_entries[index as usize].d_odd << 2) as u64
@@ -64,37 +64,37 @@ pub fn write(device: &mut device::Device, index: u64) {
     tlb_unmap(device, index);
 
     device.cpu.cop0.tlb_entries[index as usize].g = (device.cpu.cop0.regs
-        [device::cop0::COP0_ENTRYLO0_REG as usize]
-        & device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG as usize]
+        [device::cop0::COP0_ENTRYLO0_REG]
+        & device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG]
         & 1) as u8;
 
     device.cpu.cop0.tlb_entries[index as usize].pfn_even =
-        (device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG as usize] >> 6) & 0xFFFFF;
+        (device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG] >> 6) & 0xFFFFF;
     device.cpu.cop0.tlb_entries[index as usize].pfn_odd =
-        (device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG as usize] >> 6) & 0xFFFFF;
+        (device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG] >> 6) & 0xFFFFF;
     device.cpu.cop0.tlb_entries[index as usize].c_even =
-        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG as usize] >> 3) & 7) as u8;
+        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG] >> 3) & 7) as u8;
     device.cpu.cop0.tlb_entries[index as usize].c_odd =
-        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG as usize] >> 3) & 7) as u8;
+        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG] >> 3) & 7) as u8;
     device.cpu.cop0.tlb_entries[index as usize].d_even =
-        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG as usize] >> 2) & 1) as u8;
+        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG] >> 2) & 1) as u8;
     device.cpu.cop0.tlb_entries[index as usize].d_odd =
-        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG as usize] >> 2) & 1) as u8;
+        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG] >> 2) & 1) as u8;
     device.cpu.cop0.tlb_entries[index as usize].v_even =
-        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG as usize] >> 1) & 1) as u8;
+        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO0_REG] >> 1) & 1) as u8;
     device.cpu.cop0.tlb_entries[index as usize].v_odd =
-        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG as usize] >> 1) & 1) as u8;
+        ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYLO1_REG] >> 1) & 1) as u8;
     device.cpu.cop0.tlb_entries[index as usize].asid =
-        device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] as u8;
+        device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG] as u8;
 
     device.cpu.cop0.tlb_entries[index as usize].mask =
-        (device.cpu.cop0.regs[device::cop0::COP0_PAGEMASK_REG as usize] >> 13) & 0xFFF;
+        (device.cpu.cop0.regs[device::cop0::COP0_PAGEMASK_REG] >> 13) & 0xFFF;
 
     device.cpu.cop0.tlb_entries[index as usize].vpn2 =
-        (device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] >> 13) & 0x7FFFFFF;
+        (device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG] >> 13) & 0x7FFFFFF;
 
     device.cpu.cop0.tlb_entries[index as usize].region =
-        (device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] >> 62) as u8;
+        (device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG] >> 62) as u8;
 
     device.cpu.cop0.tlb_entries[index as usize].mask &= 0b101010101010;
     device.cpu.cop0.tlb_entries[index as usize].mask |=
@@ -125,22 +125,20 @@ pub fn write(device: &mut device::Device, index: u64) {
 }
 
 pub fn probe(device: &mut device::Device) {
-    device.cpu.cop0.regs[device::cop0::COP0_INDEX_REG as usize] = 0x80000000; // set probe failure
+    device.cpu.cop0.regs[device::cop0::COP0_INDEX_REG] = 0x80000000; // set probe failure
     for (pos, e) in device.cpu.cop0.tlb_entries.iter().enumerate() {
         if e.vpn2 & !e.mask
-            != ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] >> 13) & 0x7FFFFFF)
-                & !e.mask
+            != ((device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG] >> 13) & 0x7FFFFFF) & !e.mask
         {
             continue;
         }
-        if e.region != (device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] >> 62) as u8 {
+        if e.region != (device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG] >> 62) as u8 {
             continue;
         }
-        if e.g == 0 && e.asid != device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG as usize] as u8
-        {
+        if e.g == 0 && e.asid != device.cpu.cop0.regs[device::cop0::COP0_ENTRYHI_REG] as u8 {
             continue;
         }
-        device.cpu.cop0.regs[device::cop0::COP0_INDEX_REG as usize] = pos as u64;
+        device.cpu.cop0.regs[device::cop0::COP0_INDEX_REG] = pos as u64;
         break;
     }
 }

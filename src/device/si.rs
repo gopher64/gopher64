@@ -2,13 +2,13 @@ use crate::device;
 use crate::ui;
 use rand::Rng;
 
-const SI_DRAM_ADDR_REG: u32 = 0;
-const SI_PIF_ADDR_RD64B_REG: u32 = 1;
-//const SI_R2_REG: u32 = 2;
-//const SI_R3_REG: u32 = 3;
-const SI_PIF_ADDR_WR64B_REG: u32 = 4;
-//const SI_R5_REG: u32 = 5;
-pub const SI_STATUS_REG: u32 = 6;
+const SI_DRAM_ADDR_REG: usize = 0;
+const SI_PIF_ADDR_RD64B_REG: usize = 1;
+//const SI_R2_REG: usize = 2;
+//const SI_R3_REG: usize = 3;
+const SI_PIF_ADDR_WR64B_REG: usize = 4;
+//const SI_R5_REG: usize = 5;
+pub const SI_STATUS_REG: usize = 6;
 pub const SI_REGS_COUNT: usize = 7;
 
 pub const SI_STATUS_DMA_BUSY: u32 = 1 << 0;
@@ -47,7 +47,7 @@ fn dma_read(device: &mut device::Device) {
 
     let duration = device::pif::update_pif_ram(device);
 
-    device.si.regs[SI_STATUS_REG as usize] |= SI_STATUS_DMA_BUSY;
+    device.si.regs[SI_STATUS_REG] |= SI_STATUS_DMA_BUSY;
 
     let length = duration + randomize_interrupt_time(&mut device.rng);
 
@@ -59,7 +59,7 @@ fn dma_write(device: &mut device::Device) {
 
     copy_pif_rdram(device);
 
-    device.si.regs[SI_STATUS_REG as usize] |= SI_STATUS_DMA_BUSY;
+    device.si.regs[SI_STATUS_REG] |= SI_STATUS_DMA_BUSY;
 
     let length = 6000 + randomize_interrupt_time(&mut device.rng); //based on https://github.com/rasky/n64-systembench
 
@@ -68,7 +68,7 @@ fn dma_write(device: &mut device::Device) {
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         SI_STATUS_REG => {
             device.si.regs[reg as usize] &= !SI_STATUS_INTERRUPT;
             device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_SI)
@@ -81,7 +81,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 
 //rdram is in native endian format, and pif memory is in big endian format
 fn copy_pif_rdram(device: &mut device::Device) {
-    let dram_addr = device.si.regs[SI_DRAM_ADDR_REG as usize] as usize & device::rdram::RDRAM_MASK;
+    let dram_addr = device.si.regs[SI_DRAM_ADDR_REG] as usize & device::rdram::RDRAM_MASK;
     if device.si.dma_dir == DmaDir::Write {
         let mut i = 0;
         while i < device::pif::PIF_RAM_SIZE {
@@ -125,8 +125,8 @@ pub fn dma_event(device: &mut device::Device) {
         panic!("si dma unknown")
     }
     device.si.dma_dir = DmaDir::None;
-    device.si.regs[SI_STATUS_REG as usize] &= !(SI_STATUS_DMA_BUSY | SI_STATUS_IO_BUSY);
-    device.si.regs[SI_STATUS_REG as usize] |= SI_STATUS_INTERRUPT;
+    device.si.regs[SI_STATUS_REG] &= !(SI_STATUS_DMA_BUSY | SI_STATUS_IO_BUSY);
+    device.si.regs[SI_STATUS_REG] |= SI_STATUS_INTERRUPT;
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_SI)
 }

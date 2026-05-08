@@ -1,19 +1,19 @@
 use crate::{cheats, device, netplay, retroachievements, ui};
 
-const VI_STATUS_REG: u32 = 0;
-const VI_ORIGIN_REG: u32 = 1;
-//const VI_WIDTH_REG: u32 = 2;
-//const VI_V_INTR_REG: u32 = 3;
-const VI_CURRENT_REG: u32 = 4;
-//const VI_BURST_REG: u32 = 5;
-const VI_V_SYNC_REG: u32 = 6;
-const VI_H_SYNC_REG: u32 = 7;
-//const VI_LEAP_REG: u32 = 8;
-//const VI_H_START_REG: u32 = 9;
-//const VI_V_START_REG: u32 = 10;
-//const VI_V_BURST_REG: u32 = 11;
-//const VI_X_SCALE_REG: u32 = 12;
-//const VI_Y_SCALE_REG: u32 = 13;
+const VI_STATUS_REG: usize = 0;
+const VI_ORIGIN_REG: usize = 1;
+//const VI_WIDTH_REG: usize = 2;
+//const VI_V_INTR_REG: usize = 3;
+const VI_CURRENT_REG: usize = 4;
+//const VI_BURST_REG: usize = 5;
+const VI_V_SYNC_REG: usize = 6;
+const VI_H_SYNC_REG: usize = 7;
+//const VI_LEAP_REG: usize = 8;
+//const VI_H_START_REG: usize = 9;
+//const VI_V_START_REG: usize = 10;
+//const VI_V_BURST_REG: usize = 11;
+//const VI_X_SCALE_REG: usize = 12;
+//const VI_Y_SCALE_REG: usize = 13;
 pub const VI_REGS_COUNT: usize = 14;
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -39,13 +39,12 @@ const MAX_LIMIT_FREQ: u64 = 3;
 
 pub fn set_expected_refresh_rate(device: &mut device::Device) {
     let expected_refresh_rate = device.vi.clock as f64
-        / (device.vi.regs[VI_V_SYNC_REG as usize] + 1) as f64
-        / ((device.vi.regs[VI_H_SYNC_REG as usize] & 0xFFF) + 1) as f64
+        / (device.vi.regs[VI_V_SYNC_REG] + 1) as f64
+        / ((device.vi.regs[VI_H_SYNC_REG] & 0xFFF) + 1) as f64
         * 2.0;
     device.vi.frame_time = 1.0 / expected_refresh_rate;
     device.vi.delay = (device.cpu.clock_rate as f64 / expected_refresh_rate) as u64;
-    device.vi.count_per_scanline =
-        device.vi.delay / (device.vi.regs[VI_V_SYNC_REG as usize] + 1) as u64;
+    device.vi.count_per_scanline = device.vi.delay / (device.vi.regs[VI_V_SYNC_REG] + 1) as u64;
 
     reset_pace_deadline(device);
 }
@@ -62,19 +61,19 @@ fn set_vertical_interrupt(device: &mut device::Device) {
 
 fn set_current_line(device: &mut device::Device) {
     if let Some(next_vi) = device::events::get_event(device, device::events::EVENT_TYPE_VI) {
-        device.vi.regs[VI_CURRENT_REG as usize] = ((device.vi.delay.saturating_sub(
-            next_vi.count - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize],
-        )) / device.vi.count_per_scanline) as u32;
+        device.vi.regs[VI_CURRENT_REG] =
+            ((device.vi.delay.saturating_sub(
+                next_vi.count - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG],
+            )) / device.vi.count_per_scanline) as u32;
 
         // wrap around VI_CURRENT_REG if needed
-        if device.vi.regs[VI_CURRENT_REG as usize] >= device.vi.regs[VI_V_SYNC_REG as usize] {
-            device.vi.regs[VI_CURRENT_REG as usize] -= device.vi.regs[VI_V_SYNC_REG as usize]
+        if device.vi.regs[VI_CURRENT_REG] >= device.vi.regs[VI_V_SYNC_REG] {
+            device.vi.regs[VI_CURRENT_REG] -= device.vi.regs[VI_V_SYNC_REG]
         }
     }
     /* update current field */
-    device.vi.regs[VI_CURRENT_REG as usize] =
-        (device.vi.regs[VI_CURRENT_REG as usize] & !1) | device.vi.field;
-    ui::video::set_register(VI_CURRENT_REG, device.vi.regs[VI_CURRENT_REG as usize])
+    device.vi.regs[VI_CURRENT_REG] = (device.vi.regs[VI_CURRENT_REG] & !1) | device.vi.field;
+    ui::video::set_register(VI_CURRENT_REG as u32, device.vi.regs[VI_CURRENT_REG])
 }
 
 pub fn read_regs(
@@ -83,7 +82,7 @@ pub fn read_regs(
     _access_size: device::memory::AccessSize,
 ) -> u32 {
     let reg = (address & 0xFFFF) >> 2;
-    if reg as u32 == VI_CURRENT_REG {
+    if reg as usize == VI_CURRENT_REG {
         set_current_line(device)
     }
     device::cop0::add_cycles(device, 20);
@@ -92,7 +91,7 @@ pub fn read_regs(
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         VI_CURRENT_REG => device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_VI),
         VI_V_SYNC_REG => {
             if device.vi.regs[reg as usize] != value & mask {
@@ -162,7 +161,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
 
     /* toggle vi field if in interlaced mode */
-    device.vi.field ^= (device.vi.regs[VI_STATUS_REG as usize] >> 6) & 0x1;
+    device.vi.field ^= (device.vi.regs[VI_STATUS_REG] >> 6) & 0x1;
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_VI);
 

@@ -26,7 +26,7 @@ pub struct Event {
 pub fn create_event(device: &mut device::Device, name: usize, when: u64) {
     device.cpu.events[name] = Event {
         enabled: true,
-        count: device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize] + when,
+        count: device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG] + when,
     };
     set_next_event(device);
 }

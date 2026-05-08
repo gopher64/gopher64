@@ -1,18 +1,18 @@
 use crate::device;
 use crate::ui;
 
-const SP_MEM_ADDR_REG: u32 = 0;
-const SP_DRAM_ADDR_REG: u32 = 1;
-const SP_RD_LEN_REG: u32 = 2;
-const SP_WR_LEN_REG: u32 = 3;
-pub const SP_STATUS_REG: u32 = 4;
-const SP_DMA_FULL_REG: u32 = 5;
-const SP_DMA_BUSY_REG: u32 = 6;
-const SP_SEMAPHORE_REG: u32 = 7;
+const SP_MEM_ADDR_REG: usize = 0;
+const SP_DRAM_ADDR_REG: usize = 1;
+const SP_RD_LEN_REG: usize = 2;
+const SP_WR_LEN_REG: usize = 3;
+pub const SP_STATUS_REG: usize = 4;
+const SP_DMA_FULL_REG: usize = 5;
+const SP_DMA_BUSY_REG: usize = 6;
+const SP_SEMAPHORE_REG: usize = 7;
 pub const SP_REGS_COUNT: usize = 8;
 
-pub const SP_PC_REG: u32 = 0;
-//const SP_IBIST_REG: u32 = 1;
+pub const SP_PC_REG: usize = 0;
+//const SP_IBIST_REG: usize = 1;
 pub const SP_REGS2_COUNT: usize = 2;
 
 /* SP_STATUS - read */
@@ -204,10 +204,10 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
             j += 1;
         }
     }
-    device.rsp.regs[SP_MEM_ADDR_REG as usize] = (mem_addr & 0xfff) + (dma.memaddr & 0x1000);
-    device.rsp.regs[SP_DRAM_ADDR_REG as usize] = dram_addr;
-    device.rsp.regs[SP_RD_LEN_REG as usize] = 0xff8;
-    device.rsp.regs[SP_WR_LEN_REG as usize] = 0xff8;
+    device.rsp.regs[SP_MEM_ADDR_REG] = (mem_addr & 0xfff) + (dma.memaddr & 0x1000);
+    device.rsp.regs[SP_DRAM_ADDR_REG] = dram_addr;
+    device.rsp.regs[SP_RD_LEN_REG] = 0xff8;
+    device.rsp.regs[SP_WR_LEN_REG] = 0xff8;
 
     device::events::create_event(
         device,
@@ -217,52 +217,52 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
 }
 
 fn fifo_push(device: &mut device::Device, dir: DmaDir) {
-    if device.rsp.regs[SP_DMA_FULL_REG as usize] != 0 {
+    if device.rsp.regs[SP_DMA_FULL_REG] != 0 {
         panic!("RSP DMA already full")
     }
 
     device.rsp.cpu.sync_point = true;
 
-    if device.rsp.regs[SP_DMA_BUSY_REG as usize] != 0 {
+    if device.rsp.regs[SP_DMA_BUSY_REG] != 0 {
         device.rsp.fifo[1].dir = dir;
         if dir == DmaDir::Read {
-            device.rsp.fifo[1].length = device.rsp.regs[SP_WR_LEN_REG as usize]
+            device.rsp.fifo[1].length = device.rsp.regs[SP_WR_LEN_REG]
         } else {
-            device.rsp.fifo[1].length = device.rsp.regs[SP_RD_LEN_REG as usize]
+            device.rsp.fifo[1].length = device.rsp.regs[SP_RD_LEN_REG]
         }
-        device.rsp.fifo[1].memaddr = device.rsp.regs[SP_MEM_ADDR_REG as usize];
-        device.rsp.fifo[1].dramaddr = device.rsp.regs[SP_DRAM_ADDR_REG as usize];
-        device.rsp.regs[SP_DMA_FULL_REG as usize] = 1;
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_DMA_FULL
+        device.rsp.fifo[1].memaddr = device.rsp.regs[SP_MEM_ADDR_REG];
+        device.rsp.fifo[1].dramaddr = device.rsp.regs[SP_DRAM_ADDR_REG];
+        device.rsp.regs[SP_DMA_FULL_REG] = 1;
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_DMA_FULL
     } else {
         device.rsp.fifo[0].dir = dir;
         if dir == DmaDir::Read {
-            device.rsp.fifo[0].length = device.rsp.regs[SP_WR_LEN_REG as usize]
+            device.rsp.fifo[0].length = device.rsp.regs[SP_WR_LEN_REG]
         } else {
-            device.rsp.fifo[0].length = device.rsp.regs[SP_RD_LEN_REG as usize]
+            device.rsp.fifo[0].length = device.rsp.regs[SP_RD_LEN_REG]
         }
-        device.rsp.fifo[0].memaddr = device.rsp.regs[SP_MEM_ADDR_REG as usize];
-        device.rsp.fifo[0].dramaddr = device.rsp.regs[SP_DRAM_ADDR_REG as usize];
-        device.rsp.regs[SP_DMA_BUSY_REG as usize] = 1;
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_DMA_BUSY;
+        device.rsp.fifo[0].memaddr = device.rsp.regs[SP_MEM_ADDR_REG];
+        device.rsp.fifo[0].dramaddr = device.rsp.regs[SP_DRAM_ADDR_REG];
+        device.rsp.regs[SP_DMA_BUSY_REG] = 1;
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_DMA_BUSY;
 
         do_dma(device, device.rsp.fifo[0])
     }
 }
 
 pub fn fifo_pop(device: &mut device::Device) {
-    if device.rsp.regs[SP_DMA_FULL_REG as usize] != 0 {
+    if device.rsp.regs[SP_DMA_FULL_REG] != 0 {
         device.rsp.fifo[0].dir = device.rsp.fifo[1].dir;
         device.rsp.fifo[0].length = device.rsp.fifo[1].length;
         device.rsp.fifo[0].memaddr = device.rsp.fifo[1].memaddr;
         device.rsp.fifo[0].dramaddr = device.rsp.fifo[1].dramaddr;
-        device.rsp.regs[SP_DMA_FULL_REG as usize] = 0;
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_DMA_FULL;
+        device.rsp.regs[SP_DMA_FULL_REG] = 0;
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_DMA_FULL;
 
         do_dma(device, device.rsp.fifo[0])
     } else {
-        device.rsp.regs[SP_DMA_BUSY_REG as usize] = 0;
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_DMA_BUSY;
+        device.rsp.regs[SP_DMA_BUSY_REG] = 0;
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_DMA_BUSY;
         if device.rsp.run_after_dma {
             device.rsp.run_after_dma = false;
             do_task(device);
@@ -279,7 +279,7 @@ pub fn read_regs(
         device::cop0::add_cycles(device, 20);
     }
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         SP_STATUS_REG => {
             let value = device.rsp.regs[reg as usize]
                 & (SP_STATUS_SIG0
@@ -311,7 +311,7 @@ pub fn read_regs(
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         SP_STATUS_REG => update_sp_status(device, value),
         SP_RD_LEN_REG => {
             device::memory::masked_write_32(&mut device.rsp.regs[reg as usize], value, mask);
@@ -339,7 +339,7 @@ pub fn read_regs2(
 
 pub fn write_regs2(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         SP_PC_REG => {
             device::memory::masked_write_32(
                 &mut device.rsp.regs2[reg as usize],
@@ -352,20 +352,20 @@ pub fn write_regs2(device: &mut device::Device, address: u64, value: u32, mask: 
 }
 
 fn update_sp_status(device: &mut device::Device, w: u32) {
-    let was_halted = device.rsp.regs[SP_STATUS_REG as usize] & SP_STATUS_HALT != 0;
+    let was_halted = device.rsp.regs[SP_STATUS_REG] & SP_STATUS_HALT != 0;
 
     /* clear / set halt */
     if w & SP_CLR_HALT != 0 && w & SP_SET_HALT == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_HALT
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_HALT
     }
     if w & SP_SET_HALT != 0 && w & SP_CLR_HALT == 0 {
         device::events::remove_event(device, device::events::EVENT_TYPE_SP);
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_HALT
     }
 
     /* clear broke */
     if w & SP_CLR_BROKE != 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_BROKE
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_BROKE
     }
 
     /* clear SP interrupt */
@@ -379,85 +379,85 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
 
     /* clear / set single step */
     if w & SP_CLR_SSTEP != 0 && w & SP_SET_SSTEP == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SSTEP
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_SSTEP
     }
     if w & SP_SET_SSTEP != 0 && w & SP_CLR_SSTEP == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SSTEP
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_SSTEP
     }
 
     /* clear / set interrupt on break */
     if w & SP_CLR_INTR_BREAK != 0 && w & SP_SET_INTR_BREAK == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_INTR_BREAK
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_INTR_BREAK
     }
     if w & SP_SET_INTR_BREAK != 0 && w & SP_CLR_INTR_BREAK == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_INTR_BREAK
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_INTR_BREAK
     }
 
     /* clear / set signal 0 */
     if w & SP_CLR_SIG0 != 0 && w & SP_SET_SIG0 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SIG0
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_SIG0
     }
     if w & SP_SET_SIG0 != 0 && w & SP_CLR_SIG0 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SIG0
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_SIG0
     }
 
     /* clear / set signal 1 */
     if w & SP_CLR_SIG1 != 0 && w & SP_SET_SIG1 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SIG1
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_SIG1
     }
     if w & SP_SET_SIG1 != 0 && w & SP_CLR_SIG1 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SIG1
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_SIG1
     }
 
     /* clear / set signal 2 */
     if w & SP_CLR_SIG2 != 0 && w & SP_SET_SIG2 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SIG2
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_SIG2
     }
     if w & SP_SET_SIG2 != 0 && w & SP_CLR_SIG2 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SIG2
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_SIG2
     }
 
     /* clear / set signal 3 */
     if w & SP_CLR_SIG3 != 0 && w & SP_SET_SIG3 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SIG3
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_SIG3
     }
     if w & SP_SET_SIG3 != 0 && w & SP_CLR_SIG3 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SIG3
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_SIG3
     }
 
     /* clear / set signal 4 */
     if w & SP_CLR_SIG4 != 0 && w & SP_SET_SIG4 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SIG4
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_SIG4
     }
     if w & SP_SET_SIG4 != 0 && w & SP_CLR_SIG4 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SIG4
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_SIG4
     }
 
     /* clear / set signal 5 */
     if w & SP_CLR_SIG5 != 0 && w & SP_SET_SIG5 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SIG5
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_SIG5
     }
     if w & SP_SET_SIG5 != 0 && w & SP_CLR_SIG5 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SIG5
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_SIG5
     }
 
     /* clear / set signal 6 */
     if w & SP_CLR_SIG6 != 0 && w & SP_SET_SIG6 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SIG6
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_SIG6
     }
     if w & SP_SET_SIG6 != 0 && w & SP_CLR_SIG6 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SIG6
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_SIG6
     }
 
     /* clear / set signal 7 */
     if w & SP_CLR_SIG7 != 0 && w & SP_SET_SIG7 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] &= !SP_STATUS_SIG7
+        device.rsp.regs[SP_STATUS_REG] &= !SP_STATUS_SIG7
     }
     if w & SP_SET_SIG7 != 0 && w & SP_CLR_SIG7 == 0 {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_SIG7
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_SIG7
     }
 
-    if device.rsp.regs[SP_STATUS_REG as usize] & SP_STATUS_HALT == 0 && was_halted {
+    if device.rsp.regs[SP_STATUS_REG] & SP_STATUS_HALT == 0 && was_halted {
         device.rsp.cpu.broken = false;
         device.rsp.cpu.halted = false;
         do_task(device);
@@ -468,7 +468,7 @@ fn do_task(device: &mut device::Device) {
     device.rsp.cpu.sync_point = false;
     device.rsp.last_status_value = 0;
     device.rdp.last_status_value = 0;
-    if device.rsp.regs[SP_DMA_BUSY_REG as usize] == 1 {
+    if device.rsp.regs[SP_DMA_BUSY_REG] == 1 {
         device.rsp.run_after_dma = true
     } else {
         let timer = device::rsp_cpu::run(device);
@@ -479,21 +479,21 @@ fn do_task(device: &mut device::Device) {
 
 pub fn rsp_event(device: &mut device::Device) {
     if device.rsp.cpu.broken {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT | SP_STATUS_BROKE;
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_HALT | SP_STATUS_BROKE;
 
-        if device.rsp.regs[SP_STATUS_REG as usize] & SP_STATUS_INTR_BREAK != 0 {
+        if device.rsp.regs[SP_STATUS_REG] & SP_STATUS_INTR_BREAK != 0 {
             device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_SP)
         }
         return;
     }
     if device.rsp.cpu.halted {
-        device.rsp.regs[SP_STATUS_REG as usize] |= SP_STATUS_HALT;
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_HALT;
         return;
     }
     do_task(device)
 }
 
 pub fn init(device: &mut device::Device) {
-    device.rsp.regs[SP_STATUS_REG as usize] = 1;
+    device.rsp.regs[SP_STATUS_REG] = 1;
     device::rsp_cpu::init(device);
 }

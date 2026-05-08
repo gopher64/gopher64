@@ -3,13 +3,13 @@ use crate::ui;
 
 pub const SDCARD_SIZE: usize = 0x4000000;
 
-const SC64_SCR_REG: u32 = 0;
-const SC64_DATA0_REG: u32 = 1;
-const SC64_DATA1_REG: u32 = 2;
-const SC64_IDENTIFIER_REG: u32 = 3;
-const SC64_KEY_REG: u32 = 4;
-//const SC64_IRQ_REG: u32 = 5;
-//const SC64_AUX_REG: u32 = 6;
+const SC64_SCR_REG: usize = 0;
+const SC64_DATA0_REG: usize = 1;
+const SC64_DATA1_REG: usize = 2;
+const SC64_IDENTIFIER_REG: usize = 3;
+const SC64_KEY_REG: usize = 4;
+//const SC64_IRQ_REG: usize = 5;
+//const SC64_AUX_REG: usize = 6;
 pub const SC64_REGS_COUNT: usize = 7;
 
 pub const SC64_BOOTLOADER_SWITCH: u32 = 0;
@@ -49,7 +49,7 @@ pub fn read_regs(
         return 0;
     }
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         SC64_SCR_REG | SC64_DATA0_REG | SC64_DATA1_REG => device.cart.sc64.regs[reg as usize],
         SC64_IDENTIFIER_REG => 0x53437632,
         _ => panic!("unknown read reg {reg} address {address:#x}"),
@@ -58,12 +58,12 @@ pub fn read_regs(
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         SC64_KEY_REG => {
             device::memory::masked_write_32(&mut device.cart.sc64.regs[reg as usize], value, mask);
-            if device.cart.sc64.regs[SC64_KEY_REG as usize] == 0x4F434B5F {
+            if device.cart.sc64.regs[SC64_KEY_REG] == 0x4F434B5F {
                 device.cart.sc64.regs_locked = false;
-            } else if device.cart.sc64.regs[SC64_KEY_REG as usize] == 0xFFFFFFFF {
+            } else if device.cart.sc64.regs[SC64_KEY_REG] == 0xFFFFFFFF {
                 device.cart.sc64.regs_locked = true;
             }
         }
@@ -81,22 +81,22 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                 match char::from_u32(value & mask).unwrap() {
                     'V' => {
                         // get version
-                        device.cart.sc64.regs[SC64_DATA0_REG as usize] = (2 << 16) | 20;
-                        device.cart.sc64.regs[SC64_DATA1_REG as usize] = 2;
+                        device.cart.sc64.regs[SC64_DATA0_REG] = (2 << 16) | 20;
+                        device.cart.sc64.regs[SC64_DATA1_REG] = 2;
                     }
                     'c' => {
                         // get config
-                        device.cart.sc64.regs[SC64_DATA1_REG as usize] = device.cart.sc64.cfg
-                            [device.cart.sc64.regs[SC64_DATA0_REG as usize] as usize]
+                        device.cart.sc64.regs[SC64_DATA1_REG] =
+                            device.cart.sc64.cfg[device.cart.sc64.regs[SC64_DATA0_REG] as usize]
                     }
                     'C' => {
                         // set config
-                        if device.cart.sc64.regs[SC64_DATA0_REG as usize] == SC64_SAVE_TYPE {
+                        if device.cart.sc64.regs[SC64_DATA0_REG] == SC64_SAVE_TYPE {
                             // if save type is being written, we are probably booting a game using the flash cart menu
                             // we shouldn't write saves to disk in this case (they are written to the SD card)
                             device.ui.storage.saves.write_to_disk = false;
                             device.ui.storage.save_type =
-                                match device.cart.sc64.regs[SC64_DATA1_REG as usize] {
+                                match device.cart.sc64.regs[SC64_DATA1_REG] {
                                     0 => {
                                         vec![]
                                     }
@@ -115,20 +115,20 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                     _ => {
                                         panic!(
                                             "unknown sc64 save type: {}",
-                                            device.cart.sc64.regs[SC64_DATA1_REG as usize]
+                                            device.cart.sc64.regs[SC64_DATA1_REG]
                                         )
                                     }
                                 }
                         }
                         std::mem::swap(
                             &mut device.cart.sc64.cfg
-                                [device.cart.sc64.regs[SC64_DATA0_REG as usize] as usize],
-                            &mut device.cart.sc64.regs[SC64_DATA1_REG as usize],
+                                [device.cart.sc64.regs[SC64_DATA0_REG] as usize],
+                            &mut device.cart.sc64.regs[SC64_DATA1_REG],
                         );
                     }
                     'i' => {
                         // sd card operation
-                        match device.cart.sc64.regs[SC64_DATA1_REG as usize] {
+                        match device.cart.sc64.regs[SC64_DATA1_REG] {
                             0 => { //Init SD card
                             }
                             1 => { //Deinit SD card
@@ -136,23 +136,21 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                             _ => {
                                 panic!(
                                     "unknown sc64 sd card operation: {}",
-                                    device.cart.sc64.regs[SC64_DATA1_REG as usize]
+                                    device.cart.sc64.regs[SC64_DATA1_REG]
                                 )
                             }
                         }
                     }
                     'I' => {
                         // set sd sector
-                        device.cart.sc64.sector = device.cart.sc64.regs[SC64_DATA0_REG as usize];
+                        device.cart.sc64.sector = device.cart.sc64.regs[SC64_DATA0_REG];
                     }
                     's' => {
                         format_sdcard(device);
                         // read sd card
-                        let address =
-                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
+                        let address = device.cart.sc64.regs[SC64_DATA0_REG] as u64 & 0x1FFFFFFF;
                         let offset = (device.cart.sc64.sector * 512) as usize;
-                        let length =
-                            (device.cart.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
+                        let length = (device.cart.sc64.regs[SC64_DATA1_REG] * 512) as usize;
                         let mut i = 0;
 
                         while i < length {
@@ -182,11 +180,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     'S' => {
                         format_sdcard(device);
                         // write sd card
-                        let address =
-                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
+                        let address = device.cart.sc64.regs[SC64_DATA0_REG] as u64 & 0x1FFFFFFF;
                         let offset = (device.cart.sc64.sector * 512) as usize;
-                        let length =
-                            (device.cart.sc64.regs[SC64_DATA1_REG as usize] * 512) as usize;
+                        let length = (device.cart.sc64.regs[SC64_DATA1_REG] * 512) as usize;
                         let mut i = 0;
 
                         while i < length {
@@ -211,16 +207,15 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         ui::storage::schedule_save(device, ui::storage::SaveTypes::Sdcard);
                     }
                     'U' => {
-                        device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0;
+                        device.cart.sc64.regs[SC64_DATA0_REG] = 0;
                     }
                     'u' => {
                         // used to notify the game that there is data to read
                         if let Some(cart_rx) = device.ui.usb.cart_rx.as_mut() {
                             match cart_rx.try_recv() {
                                 Ok(data) => {
-                                    device.cart.sc64.regs[SC64_DATA0_REG as usize] =
-                                        data.data_type & 0xFF; // read_status/type
-                                    device.cart.sc64.regs[SC64_DATA1_REG as usize] =
+                                    device.cart.sc64.regs[SC64_DATA0_REG] = data.data_type & 0xFF; // read_status/type
+                                    device.cart.sc64.regs[SC64_DATA1_REG] =
                                         data.data_size & 0xFFFFFF; // length
                                     device.cart.sc64.usb_buffer = data.data; // store the data to be read
                                 }
@@ -230,23 +225,21 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                             panic!("cart_rx lagged: {err}");
                                         }
                                         _ => {
-                                            device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0; // read_status/type
-                                            device.cart.sc64.regs[SC64_DATA1_REG as usize] = 0; // length
+                                            device.cart.sc64.regs[SC64_DATA0_REG] = 0; // read_status/type
+                                            device.cart.sc64.regs[SC64_DATA1_REG] = 0; // length
                                         }
                                     }
                                 }
                             }
                         } else {
-                            device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0; // read_status/type
-                            device.cart.sc64.regs[SC64_DATA1_REG as usize] = 0; // length
+                            device.cart.sc64.regs[SC64_DATA0_REG] = 0; // read_status/type
+                            device.cart.sc64.regs[SC64_DATA1_REG] = 0; // length
                         }
                     }
                     'M' => {
                         // Send data from from flashcart to USB
-                        let address =
-                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
-                        let length =
-                            device.cart.sc64.regs[SC64_DATA1_REG as usize] as usize & 0xFFFFFF;
+                        let address = device.cart.sc64.regs[SC64_DATA0_REG] as u64 & 0x1FFFFFFF;
+                        let length = device.cart.sc64.regs[SC64_DATA1_REG] as usize & 0xFFFFFF;
 
                         if let Some(usb_tx) = device.ui.usb.usb_tx.as_mut() {
                             let mut usb_buffer = vec![0; length];
@@ -297,18 +290,16 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                 usb_tx,
                                 ui::usb::UsbData {
                                     data: usb_buffer,
-                                    data_type: device.cart.sc64.regs[SC64_DATA1_REG as usize] >> 24,
-                                    data_size: device.cart.sc64.regs[SC64_DATA1_REG as usize]
-                                        & 0xFFFFFF,
+                                    data_type: device.cart.sc64.regs[SC64_DATA1_REG] >> 24,
+                                    data_size: device.cart.sc64.regs[SC64_DATA1_REG] & 0xFFFFFF,
                                 },
                             );
                         }
                     }
                     'm' => {
                         // Receive data from USB to flashcart
-                        let address =
-                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64 & 0x1FFFFFFF;
-                        let length = device.cart.sc64.regs[SC64_DATA1_REG as usize] as usize;
+                        let address = device.cart.sc64.regs[SC64_DATA0_REG] as u64 & 0x1FFFFFFF;
+                        let length = device.cart.sc64.regs[SC64_DATA1_REG] as usize;
 
                         let mut i = 0;
 
@@ -338,11 +329,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     }
                     'w' => {
                         // SD card writeback pending
-                        device.cart.sc64.regs[SC64_DATA0_REG as usize] = 0;
+                        device.cart.sc64.regs[SC64_DATA0_REG] = 0;
                     }
                     'W' => {
                         let writeback_sectors_address =
-                            device.cart.sc64.regs[SC64_DATA0_REG as usize] as u64;
+                            device.cart.sc64.regs[SC64_DATA0_REG] as u64;
                         for i in 0..256 {
                             device.cart.sc64.writeback_sector[i] = device::memory::data_read(
                                 device,
