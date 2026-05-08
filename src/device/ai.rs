@@ -6,14 +6,14 @@ const AI_LEN_REG: u32 = 1;
 pub const AI_STATUS_REG: u32 = 3;
 const AI_DACRATE_REG: u32 = 4;
 // const AI_BITRATE_REG: u32 = 5;
-pub const AI_REGS_COUNT: u32 = 6;
+pub const AI_REGS_COUNT: usize = 6;
 
 pub const AI_STATUS_BUSY: u32 = 0x40000000;
 const AI_STATUS_FULL: u32 = 0x80000000;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Ai {
-    pub regs: [u32; AI_REGS_COUNT as usize],
+    pub regs: [u32; AI_REGS_COUNT],
     pub fifo: [AiDma; 2],
     pub last_read: u64,
     pub delayed_carry: bool,

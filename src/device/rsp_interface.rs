@@ -9,11 +9,11 @@ pub const SP_STATUS_REG: u32 = 4;
 const SP_DMA_FULL_REG: u32 = 5;
 const SP_DMA_BUSY_REG: u32 = 6;
 const SP_SEMAPHORE_REG: u32 = 7;
-pub const SP_REGS_COUNT: u32 = 8;
+pub const SP_REGS_COUNT: usize = 8;
 
 pub const SP_PC_REG: u32 = 0;
 //const SP_IBIST_REG: u32 = 1;
-pub const SP_REGS2_COUNT: u32 = 2;
+pub const SP_REGS2_COUNT: usize = 2;
 
 /* SP_STATUS - read */
 pub const SP_STATUS_HALT: u32 = 1 << 0;
@@ -79,8 +79,8 @@ pub struct RspDma {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Rsp {
     pub cpu: device::rsp_cpu::Cpu,
-    pub regs: [u32; SP_REGS_COUNT as usize],
-    pub regs2: [u32; SP_REGS2_COUNT as usize],
+    pub regs: [u32; SP_REGS_COUNT],
+    pub regs2: [u32; SP_REGS2_COUNT],
     #[serde(with = "serde_big_array::BigArray")]
     pub mem: [u8; 0x2000],
     pub fifo: [RspDma; 2],

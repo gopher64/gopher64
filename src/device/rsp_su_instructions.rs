@@ -598,7 +598,7 @@ pub fn bgezal(device: &mut device::Device, opcode: u32) {
 
 pub fn mfc0(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.cycle_counter += 2;
-    if rd(opcode) < device::rsp_interface::SP_REGS_COUNT {
+    if rd(opcode) < device::rsp_interface::SP_REGS_COUNT as u32 {
         device.rsp.cpu.gpr[rt(opcode) as usize] = device::rsp_interface::read_regs(
             device,
             (rd(opcode) << 2) as u64,
@@ -607,14 +607,14 @@ pub fn mfc0(device: &mut device::Device, opcode: u32) {
     } else {
         device.rsp.cpu.gpr[rt(opcode) as usize] = device::rdp::read_regs_dpc(
             device,
-            ((rd(opcode) - device::rsp_interface::SP_REGS_COUNT) << 2) as u64,
+            ((rd(opcode) - device::rsp_interface::SP_REGS_COUNT as u32) << 2) as u64,
             device::memory::AccessSize::Word,
         )
     }
 }
 
 pub fn mtc0(device: &mut device::Device, opcode: u32) {
-    if rd(opcode) < device::rsp_interface::SP_REGS_COUNT {
+    if rd(opcode) < device::rsp_interface::SP_REGS_COUNT as u32 {
         device::rsp_interface::write_regs(
             device,
             (rd(opcode) << 2) as u64,
@@ -624,7 +624,7 @@ pub fn mtc0(device: &mut device::Device, opcode: u32) {
     } else {
         device::rdp::write_regs_dpc(
             device,
-            ((rd(opcode) - device::rsp_interface::SP_REGS_COUNT) << 2) as u64,
+            ((rd(opcode) - device::rsp_interface::SP_REGS_COUNT as u32) << 2) as u64,
             device.rsp.cpu.gpr[rt(opcode) as usize],
             0xFFFFFFFF,
         )

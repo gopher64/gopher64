@@ -32,7 +32,7 @@ pub const COP0_TAGLO_REG: u32 = 28;
 //const COP0_TAGHI_REG: u32 = 29;
 pub const COP0_ERROREPC_REG: u32 = 30;
 //const COP0_UNUSED_31: u32 = 31;
-pub const COP0_REGS_COUNT: u32 = 32;
+pub const COP0_REGS_COUNT: usize = 32;
 
 pub const COP0_STATUS_IE: u64 = 1 << 0;
 pub const COP0_STATUS_EXL: u64 = 1 << 1;
@@ -94,8 +94,8 @@ const COP0_TAGLO_REG_MASK: u64 = 0b00001111111111111111111111000000;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cop0 {
     pub reg_latch: u64,
-    pub regs: [u64; COP0_REGS_COUNT as usize],
-    pub reg_write_masks: [u64; COP0_REGS_COUNT as usize],
+    pub regs: [u64; COP0_REGS_COUNT],
+    pub reg_write_masks: [u64; COP0_REGS_COUNT],
     #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip, default = "savestates::default_instructions")]

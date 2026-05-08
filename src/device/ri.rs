@@ -8,11 +8,11 @@ pub const RI_REFRESH_REG: u32 = 4;
 //const RI_LATENCY_REG: u32 = 5;
 //const RI_ERROR_REG: u32 = 6;
 //const RI_WERROR_REG: u32 = 7;
-pub const RI_REGS_COUNT: u32 = 8;
+pub const RI_REGS_COUNT: usize = 8;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Ri {
-    pub regs: [u32; RI_REGS_COUNT as usize],
+    pub regs: [u32; RI_REGS_COUNT],
     pub ram_init: bool,
 }
 

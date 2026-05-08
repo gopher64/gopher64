@@ -14,11 +14,11 @@ const VI_H_SYNC_REG: u32 = 7;
 //const VI_V_BURST_REG: u32 = 11;
 //const VI_X_SCALE_REG: u32 = 12;
 //const VI_Y_SCALE_REG: u32 = 13;
-pub const VI_REGS_COUNT: u32 = 14;
+pub const VI_REGS_COUNT: usize = 14;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Vi {
-    pub regs: [u32; VI_REGS_COUNT as usize],
+    pub regs: [u32; VI_REGS_COUNT],
     pub clock: u64,
     pub delay: u64,
     pub field: u32,

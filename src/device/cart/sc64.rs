@@ -10,12 +10,12 @@ const SC64_IDENTIFIER_REG: u32 = 3;
 const SC64_KEY_REG: u32 = 4;
 //const SC64_IRQ_REG: u32 = 5;
 //const SC64_AUX_REG: u32 = 6;
-pub const SC64_REGS_COUNT: u32 = 7;
+pub const SC64_REGS_COUNT: usize = 7;
 
 pub const SC64_BOOTLOADER_SWITCH: u32 = 0;
 pub const SC64_ROM_WRITE_ENABLE: u32 = 1;
 pub const SC64_SAVE_TYPE: u32 = 6;
-pub const SC64_CFG_COUNT: u32 = 15;
+pub const SC64_CFG_COUNT: usize = 15;
 
 const SC64_BUFFER_MASK: usize = 0x1FFF;
 const SC64_EEPROM_MASK: usize = 0xFFF;
@@ -23,9 +23,9 @@ const SC64_EEPROM_MASK: usize = 0xFFF;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Sc64 {
     pub buffer: Vec<u8>,
-    pub regs: [u32; SC64_REGS_COUNT as usize],
+    pub regs: [u32; SC64_REGS_COUNT],
     pub regs_locked: bool,
-    pub cfg: [u32; SC64_CFG_COUNT as usize],
+    pub cfg: [u32; SC64_CFG_COUNT],
     pub sector: u32,
     pub writeback_sector: Vec<u32>,
     pub usb_buffer: Vec<u8>,

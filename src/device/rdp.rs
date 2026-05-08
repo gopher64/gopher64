@@ -8,13 +8,13 @@ const DPC_CLOCK_REG: u32 = 4;
 const DPC_BUFBUSY_REG: u32 = 5;
 const DPC_PIPEBUSY_REG: u32 = 6;
 const DPC_TMEM_REG: u32 = 7;
-pub const DPC_REGS_COUNT: u32 = 8;
+pub const DPC_REGS_COUNT: usize = 8;
 
 //const DPS_TBIST_REG: u32 = 0;
 //const DPS_TEST_MODE_REG: u32 = 1;
 //const DPS_BUFTEST_ADDR_REG: u32 = 2;
 //const DPS_BUFTEST_DATA_REG: u32 = 3;
-pub const DPS_REGS_COUNT: u32 = 4;
+pub const DPS_REGS_COUNT: usize = 4;
 
 /* DPC status - read */
 const DPC_STATUS_XBUS_DMEM_DMA: u32 = 1 << 0;
@@ -42,8 +42,8 @@ const DPC_CLR_CLOCK_CTR: u32 = 1 << 9;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Rdp {
-    pub regs_dpc: [u32; DPC_REGS_COUNT as usize],
-    pub regs_dps: [u32; DPS_REGS_COUNT as usize],
+    pub regs_dpc: [u32; DPC_REGS_COUNT],
+    pub regs_dps: [u32; DPS_REGS_COUNT],
     pub wait_frozen: bool,
     pub last_status_value: u32,
 }

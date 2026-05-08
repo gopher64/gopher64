@@ -16,7 +16,7 @@ const PI_BSD_DOM2_PWD_REG: u32 = 10;
 const PI_BSD_DOM2_PGS_REG: u32 = 11;
 const PI_BSD_DOM2_RLS_REG: u32 = 12;
 //const UNKNOWN_REG: u32 = 13; //LibDragon
-pub const PI_REGS_COUNT: u32 = 14;
+pub const PI_REGS_COUNT: usize = 14;
 
 /* PI_STATUS - read */
 const PI_STATUS_DMA_BUSY: u32 = 1 << 0;
@@ -30,7 +30,7 @@ const PI_STATUS_CLR_INTR: u32 = 1 << 1;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Pi {
-    pub regs: [u32; PI_REGS_COUNT as usize],
+    pub regs: [u32; PI_REGS_COUNT],
 }
 
 struct PiHandler {

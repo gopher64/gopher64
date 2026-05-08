@@ -9,7 +9,7 @@ const SI_PIF_ADDR_RD64B_REG: u32 = 1;
 const SI_PIF_ADDR_WR64B_REG: u32 = 4;
 //const SI_R5_REG: u32 = 5;
 pub const SI_STATUS_REG: u32 = 6;
-pub const SI_REGS_COUNT: u32 = 7;
+pub const SI_REGS_COUNT: usize = 7;
 
 pub const SI_STATUS_DMA_BUSY: u32 = 1 << 0;
 pub const SI_STATUS_IO_BUSY: u32 = 1 << 1;
@@ -25,7 +25,7 @@ pub enum DmaDir {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Si {
-    pub regs: [u32; SI_REGS_COUNT as usize],
+    pub regs: [u32; SI_REGS_COUNT],
     pub dma_dir: DmaDir,
 }
 

@@ -252,8 +252,8 @@ impl Device {
             load_state: false,
             cpu: cpu::Cpu {
                 cop0: cop0::Cop0 {
-                    regs: [0; cop0::COP0_REGS_COUNT as usize],
-                    reg_write_masks: [0; cop0::COP0_REGS_COUNT as usize],
+                    regs: [0; cop0::COP0_REGS_COUNT],
+                    reg_write_masks: [0; cop0::COP0_REGS_COUNT],
                     reg_latch: 0,
                     is_event: false,
                     instrs: [cop0::reserved; 32],
@@ -357,9 +357,9 @@ impl Device {
                 rtc_timestamp: 0,
                 rtc: cart::AfRtc { control: 0x0200 },
                 sc64: cart::sc64::Sc64 {
-                    regs: [0; cart::sc64::SC64_REGS_COUNT as usize],
+                    regs: [0; cart::sc64::SC64_REGS_COUNT],
                     regs_locked: true,
-                    cfg: [0; cart::sc64::SC64_CFG_COUNT as usize],
+                    cfg: [0; cart::sc64::SC64_CFG_COUNT],
                     sector: 0,
                     buffer: vec![0; 8192],
                     writeback_sector: vec![0; 256],
@@ -395,7 +395,7 @@ impl Device {
             rdram: rdram::Rdram {
                 mem: vec![],
                 size: 0x800000,
-                regs: [[0; rdram::RDRAM_REGS_COUNT as usize]; 4],
+                regs: [[0; rdram::RDRAM_REGS_COUNT]; 4],
             },
             rsp: rsp_interface::Rsp {
                 cpu: rsp_cpu::Cpu {
@@ -440,8 +440,8 @@ impl Device {
                     instrs: [rsp_su_instructions::reserved; 64],
                     vec_instrs: [rsp_vu_instructions::reserved; 64],
                 },
-                regs: [0; rsp_interface::SP_REGS_COUNT as usize],
-                regs2: [0; rsp_interface::SP_REGS2_COUNT as usize],
+                regs: [0; rsp_interface::SP_REGS_COUNT],
+                regs2: [0; rsp_interface::SP_REGS2_COUNT],
                 mem: [0; 0x2000],
                 last_status_value: 0,
                 run_after_dma: false,
@@ -453,19 +453,19 @@ impl Device {
                 }; 2],
             },
             rdp: rdp::Rdp {
-                regs_dpc: [0; rdp::DPC_REGS_COUNT as usize],
-                regs_dps: [0; rdp::DPS_REGS_COUNT as usize],
+                regs_dpc: [0; rdp::DPC_REGS_COUNT],
+                regs_dps: [0; rdp::DPS_REGS_COUNT],
                 wait_frozen: false,
                 last_status_value: 0,
             },
             mi: mi::Mi {
-                regs: [0; mi::MI_REGS_COUNT as usize],
+                regs: [0; mi::MI_REGS_COUNT],
             },
             pi: pi::Pi {
-                regs: [0; pi::PI_REGS_COUNT as usize],
+                regs: [0; pi::PI_REGS_COUNT],
             },
             ai: ai::Ai {
-                regs: [0; ai::AI_REGS_COUNT as usize],
+                regs: [0; ai::AI_REGS_COUNT],
                 last_read: 0,
                 freq: 33600,
                 delayed_carry: false,
@@ -476,15 +476,15 @@ impl Device {
                 }; 2],
             },
             si: si::Si {
-                regs: [0; si::SI_REGS_COUNT as usize],
+                regs: [0; si::SI_REGS_COUNT],
                 dma_dir: si::DmaDir::None,
             },
             ri: ri::Ri {
-                regs: [0; ri::RI_REGS_COUNT as usize],
+                regs: [0; ri::RI_REGS_COUNT],
                 ram_init: false,
             },
             vi: vi::Vi {
-                regs: [0; vi::VI_REGS_COUNT as usize],
+                regs: [0; vi::VI_REGS_COUNT],
                 clock: 0,
                 field: 0,
                 delay: 0,

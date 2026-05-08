@@ -13,7 +13,7 @@ const RDRAM_MODE_REG: u32 = 3;
 //const RDRAM_MIN_INTERVAL_REG: u32 = 7;
 //const RDRAM_ADDR_SELECT_REG: u32 = 8;
 //const RDRAM_DEVICE_MANUF_REG: u32 = 9;
-pub const RDRAM_REGS_COUNT: u32 = 10;
+pub const RDRAM_REGS_COUNT: usize = 10;
 
 pub const RDRAM_MASK: usize = 0xFFFFFF;
 
@@ -21,7 +21,7 @@ pub const RDRAM_MASK: usize = 0xFFFFFF;
 pub struct Rdram {
     pub mem: Vec<u8>,
     pub size: u32,
-    pub regs: [[u32; RDRAM_REGS_COUNT as usize]; 4],
+    pub regs: [[u32; RDRAM_REGS_COUNT]; 4],
 }
 
 pub fn read_mem_fast(

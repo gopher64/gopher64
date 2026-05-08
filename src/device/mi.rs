@@ -4,7 +4,7 @@ pub const MI_INIT_MODE_REG: u32 = 0;
 const MI_VERSION_REG: u32 = 1;
 pub const MI_INTR_REG: u32 = 2;
 pub const MI_INTR_MASK_REG: u32 = 3;
-pub const MI_REGS_COUNT: u32 = 4;
+pub const MI_REGS_COUNT: usize = 4;
 
 /* read */
 pub const MI_INTR_SP: u32 = 1 << 0;
@@ -46,7 +46,7 @@ pub const MI_INIT_LENGTH_MASK: u32 = 0b1111111;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Mi {
-    pub regs: [u32; MI_REGS_COUNT as usize],
+    pub regs: [u32; MI_REGS_COUNT],
 }
 
 pub fn read_regs(
