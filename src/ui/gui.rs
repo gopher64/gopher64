@@ -630,7 +630,7 @@ fn open_rom(app: &AppWindow) {
         rfd::AsyncFileDialog::new()
     }
     .set_title("Select ROM")
-    .add_filter("ROM files", &ui::gui::N64_EXTENSIONS)
+    .add_filter("ROM files", &N64_EXTENSIONS)
     .pick_file();
 
     let overclock = app.get_overclock_n64_cpu();
