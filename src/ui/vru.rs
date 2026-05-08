@@ -14,7 +14,7 @@ pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {
 
     vru_dialog.on_vru_button_clicked(move |chosen_word| {
         tx.try_send(chosen_word.to_string()).unwrap();
-        vru_dialog_weak.unwrap().window().hide().unwrap();
+        vru_dialog_weak.unwrap().hide().unwrap();
     });
 
     vru_dialog.set_words(slint::ModelRc::from(std::rc::Rc::new(

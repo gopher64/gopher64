@@ -219,7 +219,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
                     let message_dialog = ErrorDialog::new().unwrap();
                     let weak_dialog = message_dialog.as_weak();
                     message_dialog.on_close_clicked(move || {
-                        weak_dialog.unwrap().window().hide().unwrap();
+                        weak_dialog.unwrap().hide().unwrap();
                     });
                     message_dialog.set_text("Could not read ROM".into());
                     message_dialog.show().unwrap();
@@ -244,7 +244,7 @@ fn show_custom_url_dialog(weak: slint::Weak<NetplayCreate>, server_url: slint::S
             handle.set_custom_server_url(server_url.clone());
         })
         .unwrap();
-        weak_dialog.unwrap().window().hide().unwrap();
+        weak_dialog.unwrap().hide().unwrap();
     });
     url_dialog.show().unwrap();
 }
@@ -313,7 +313,7 @@ pub fn setup_create_window(
                     let response = task.await;
                     weak_dialog
                         .upgrade_in_event_loop(move |handle| {
-                            handle.window().hide().unwrap();
+                            handle.hide().unwrap();
                         })
                         .unwrap();
                     if let Ok(response) = response
@@ -445,7 +445,7 @@ fn show_netplay_error(message: String) {
     let message_dialog = ErrorDialog::new().unwrap();
     let weak_dialog = message_dialog.as_weak();
     message_dialog.on_close_clicked(move || {
-        weak_dialog.unwrap().window().hide().unwrap();
+        weak_dialog.unwrap().hide().unwrap();
     });
     message_dialog.set_text(message.into());
     message_dialog.show().unwrap();
@@ -717,7 +717,7 @@ fn create_session(
                             handle.get_peer_addr(),
                             weak_app,
                         );
-                        handle.window().hide().unwrap();
+                        handle.hide().unwrap();
                     })
                     .unwrap();
                 } else {
@@ -840,7 +840,7 @@ fn join_session(
                             handle.get_peer_addr(),
                             weak_app,
                         );
-                        handle.window().hide().unwrap();
+                        handle.hide().unwrap();
                     })
                     .unwrap();
                 } else {
@@ -1078,7 +1078,7 @@ fn setup_wait_window(
                     "reply_begin_game" => {
                         if response.accept.unwrap() == 0 {
                             weak.upgrade_in_event_loop(move |handle| {
-                                handle.window().hide().unwrap();
+                                handle.hide().unwrap();
                                 let _ = netplay_write_sender.send(None);
 
                                 let mut player_number = 4;
