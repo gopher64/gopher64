@@ -54,10 +54,11 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
         0xC..=0xF => {
             device::controller::gbcart::read(
                 &mut device.pif.ram,
-                &pak.cart,
+                &mut pak.cart,
                 0x4000 * pak.bank + (address & 0x7fff) - 0x4000,
                 data,
                 size,
+                (device.vi.frame_time * device.vi.vi_counter as f64) as i64,
             );
         }
         _ => {
@@ -124,6 +125,7 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
                 0x4000 * pak.bank + (address & 0x7fff) - 0x4000,
                 data,
                 size,
+                (device.vi.frame_time * device.vi.vi_counter as f64) as i64,
             );
         }
         _ => {

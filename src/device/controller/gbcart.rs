@@ -1,10 +1,10 @@
 use crate::device;
 
-//const MBC3_RTC_SECONDS: u8 = 0;
-//const MBC3_RTC_MINUTES: u8 = 1;
-//const MBC3_RTC_HOURS: u8 = 2;
-//const MBC3_RTC_DAYS_L: u8 = 3;
-//const MBC3_RTC_DAYS_H: u8 = 4;
+const MBC3_RTC_SECONDS: usize = 0;
+const MBC3_RTC_MINUTES: usize = 1;
+const MBC3_RTC_HOURS: usize = 2;
+const MBC3_RTC_DAYS_L: usize = 3;
+const MBC3_RTC_DAYS_H: usize = 4;
 const MBC3_RTC_REGS_COUNT: usize = 5;
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -21,6 +21,7 @@ pub struct GbCart {
     pub latch: bool,
     pub rtc_regs: [u8; MBC3_RTC_REGS_COUNT],
     pub rtc_regs_latch: [u8; MBC3_RTC_REGS_COUNT],
+    pub last_time: i64,
 }
 
 #[derive(Default, Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -31,6 +32,46 @@ pub enum CartType {
     MBC3RamBatt,
     MBC3RamBattRtc,
     MBC5RamBatt,
+}
+
+fn update_rtc_regs(cart: &mut device::controller::gbcart::GbCart, now: i64) {
+    let mut diff = now - cart.last_time;
+    cart.last_time = now;
+
+    cart.rtc_regs[MBC3_RTC_SECONDS] += (diff % 60) as u8;
+    if cart.rtc_regs[MBC3_RTC_SECONDS] >= 60 {
+        cart.rtc_regs[MBC3_RTC_SECONDS] -= 60;
+        cart.rtc_regs[MBC3_RTC_MINUTES] += 1;
+    }
+    diff /= 60;
+
+    cart.rtc_regs[MBC3_RTC_MINUTES] += (diff % 60) as u8;
+    if cart.rtc_regs[MBC3_RTC_MINUTES] >= 60 {
+        cart.rtc_regs[MBC3_RTC_MINUTES] -= 60;
+        cart.rtc_regs[MBC3_RTC_HOURS] += 1;
+    }
+    diff /= 60;
+
+    cart.rtc_regs[MBC3_RTC_HOURS] += (diff % 24) as u8;
+    if cart.rtc_regs[MBC3_RTC_HOURS] >= 24 {
+        cart.rtc_regs[MBC3_RTC_HOURS] -= 24;
+        cart.rtc_regs[MBC3_RTC_DAYS_L] += 1;
+    }
+    diff /= 24;
+
+    /* update days counter */
+    let days = (((cart.rtc_regs[MBC3_RTC_DAYS_H] & 0x01) << 8) as i64
+        | cart.rtc_regs[MBC3_RTC_DAYS_L] as i64)
+        + diff;
+
+    cart.rtc_regs[MBC3_RTC_DAYS_L] = (days & 0xff) as u8;
+    cart.rtc_regs[MBC3_RTC_DAYS_H] =
+        ((cart.rtc_regs[MBC3_RTC_DAYS_H] & !0x01) as i64 | (days & 0x100)) as u8;
+
+    /* set carry bit if days overflow */
+    if days > 511 {
+        cart.rtc_regs[MBC3_RTC_DAYS_H] |= 0x80;
+    }
 }
 
 fn write_mbc1(
@@ -110,6 +151,7 @@ fn write_mbc3(
     address: u16,
     data: usize,
     size: usize,
+    now: i64,
 ) {
     let value = pif_ram[data + size - 1];
     if address < 0x2000 {
@@ -125,7 +167,7 @@ fn write_mbc3(
     } else if address < 0x8000 {
         if cart.cart_type == CartType::MBC3RamBattRtc {
             if !cart.latch && (value & 0x1) != 0 {
-                // update_rtc_regs
+                update_rtc_regs(cart, now);
                 cart.rtc_regs_latch = cart.rtc_regs;
             }
             cart.latch = (value & 0x1) != 0;
@@ -148,10 +190,11 @@ fn write_mbc3(
 
 fn read_mbc3(
     pif_ram: &mut [u8],
-    cart: &device::controller::gbcart::GbCart,
+    cart: &mut device::controller::gbcart::GbCart,
     address: u16,
     data: usize,
     size: usize,
+    now: i64,
 ) {
     if address < 0x4000 {
         let banked_address = address & 0x3FFF;
@@ -182,7 +225,7 @@ fn read_mbc3(
                         [cart.ram_bank as usize - 0x8..cart.ram_bank as usize - 0x8 + size],
                 );
             } else {
-                // update_rtc_regs
+                update_rtc_regs(cart, now);
                 pif_ram[data..data + size].copy_from_slice(
                     &cart.rtc_regs
                         [cart.ram_bank as usize - 0x8..cart.ram_bank as usize - 0x8 + size],
@@ -260,10 +303,11 @@ fn read_mbc5(
 
 pub fn read(
     pif_ram: &mut [u8],
-    cart: &device::controller::gbcart::GbCart,
+    cart: &mut device::controller::gbcart::GbCart,
     address: u16,
     data: usize,
     size: usize,
+    now: i64,
 ) {
     if !cart.enabled {
         for i in 0..size {
@@ -273,8 +317,8 @@ pub fn read(
     }
     match cart.cart_type {
         CartType::MBC1RamBatt => read_mbc1(pif_ram, cart, address, data, size),
-        CartType::MBC3RamBatt => read_mbc3(pif_ram, cart, address, data, size),
-        CartType::MBC3RamBattRtc => read_mbc3(pif_ram, cart, address, data, size),
+        CartType::MBC3RamBatt => read_mbc3(pif_ram, cart, address, data, size, now),
+        CartType::MBC3RamBattRtc => read_mbc3(pif_ram, cart, address, data, size, now),
         CartType::MBC5RamBatt => read_mbc5(pif_ram, cart, address, data, size),
         _ => panic!("Unsupported cart type"),
     }
@@ -286,14 +330,15 @@ pub fn write(
     address: u16,
     data: usize,
     size: usize,
+    now: i64,
 ) {
     if !cart.enabled {
         return;
     }
     match cart.cart_type {
         CartType::MBC1RamBatt => write_mbc1(pif_ram, cart, address, data, size),
-        CartType::MBC3RamBatt => write_mbc3(pif_ram, cart, address, data, size),
-        CartType::MBC3RamBattRtc => write_mbc3(pif_ram, cart, address, data, size),
+        CartType::MBC3RamBatt => write_mbc3(pif_ram, cart, address, data, size, now),
+        CartType::MBC3RamBattRtc => write_mbc3(pif_ram, cart, address, data, size, now),
         CartType::MBC5RamBatt => write_mbc5(pif_ram, cart, address, data, size),
         _ => panic!("Unsupported cart type"),
     }
