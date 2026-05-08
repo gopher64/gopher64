@@ -125,6 +125,7 @@ fn write_mbc3(
     } else if address < 0x8000 {
         if cart.cart_type == CartType::MBC3RamBattRtc {
             if !cart.latch && (value & 0x1) != 0 {
+                // update_rtc_regs
                 cart.rtc_regs_latch = cart.rtc_regs;
             }
             cart.latch = (value & 0x1) != 0;
@@ -181,6 +182,7 @@ fn read_mbc3(
                         [cart.ram_bank as usize - 0x8..cart.ram_bank as usize - 0x8 + size],
                 );
             } else {
+                // update_rtc_regs
                 pif_ram[data..data + size].copy_from_slice(
                     &cart.rtc_regs
                         [cart.ram_bank as usize - 0x8..cart.ram_bank as usize - 0x8 + size],

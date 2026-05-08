@@ -176,7 +176,7 @@ pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
         rdp_new_processor(gfx_info);
         rdp_load_state(rdp_state);
         for reg in 0..device::vi::VI_REGS_COUNT {
-            rdp_set_vi_register(reg as u32, device.vi.regs[reg as usize])
+            rdp_set_vi_register(reg as u32, device.vi.regs[reg])
         }
     }
 }
