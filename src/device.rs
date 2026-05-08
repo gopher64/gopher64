@@ -157,7 +157,8 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
                 .extension()
                 .unwrap()
                 .to_ascii_lowercase();
-            if extension == "z64" || extension == "n64" || extension == "v64" {
+            if extension == "z64" || extension == "n64" || extension == "v64" || extension == "bin"
+            {
                 file.read_to_end(&mut contents)
                     .expect("could not read zip file");
                 break;
@@ -177,7 +178,10 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
                 &mut |entry: &sevenz_rust2::ArchiveEntry, reader: &mut dyn std::io::Read| {
                     let name = entry.name().to_ascii_lowercase();
                     if !found
-                        && (name.ends_with("z64") || name.ends_with("n64") || name.ends_with("v64"))
+                        && (name.ends_with("z64")
+                            || name.ends_with("n64")
+                            || name.ends_with("v64")
+                            || name.ends_with("bin"))
                     {
                         reader
                             .read_to_end(&mut contents)
