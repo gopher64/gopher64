@@ -55,7 +55,7 @@ pub fn init_game_audio(device: &mut device::Device) {
     } {
         panic!("Could not initialize audio stream");
     }
-    if device.ai.regs[device::ai::AI_STATUS_REG as usize] & device::ai::AI_STATUS_BUSY != 0 {
+    if device.ai.regs[device::ai::AI_STATUS_REG] & device::ai::AI_STATUS_BUSY != 0 {
         resume_game_audio(&mut device.ui);
     } else {
         pause_game_audio(&mut device.ui);

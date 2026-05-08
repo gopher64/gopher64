@@ -3,17 +3,17 @@ use crate::retroachievements;
 use crate::ui;
 use std::alloc::{Layout, alloc_zeroed};
 
-//const RDRAM_CONFIG_REG: u32 = 0;
-//const RDRAM_DEVICE_ID_REG: u32 = 1;
-//const RDRAM_DELAY_REG: u32 = 2;
-const RDRAM_MODE_REG: u32 = 3;
-//const RDRAM_REF_INTERVAL_REG: u32 = 4;
-//const RDRAM_REF_ROW_REG: u32 = 5;
-//const RDRAM_RAS_INTERVAL_REG: u32 = 6;
-//const RDRAM_MIN_INTERVAL_REG: u32 = 7;
-//const RDRAM_ADDR_SELECT_REG: u32 = 8;
-//const RDRAM_DEVICE_MANUF_REG: u32 = 9;
-pub const RDRAM_REGS_COUNT: u32 = 10;
+//const RDRAM_CONFIG_REG: usize = 0;
+//const RDRAM_DEVICE_ID_REG: usize = 1;
+//const RDRAM_DELAY_REG: usize = 2;
+const RDRAM_MODE_REG: usize = 3;
+//const RDRAM_REF_INTERVAL_REG: usize = 4;
+//const RDRAM_REF_ROW_REG: usize = 5;
+//const RDRAM_RAS_INTERVAL_REG: usize = 6;
+//const RDRAM_MIN_INTERVAL_REG: usize = 7;
+//const RDRAM_ADDR_SELECT_REG: usize = 8;
+//const RDRAM_DEVICE_MANUF_REG: usize = 9;
+pub const RDRAM_REGS_COUNT: usize = 10;
 
 pub const RDRAM_MASK: usize = 0xFFFFFF;
 
@@ -21,7 +21,7 @@ pub const RDRAM_MASK: usize = 0xFFFFFF;
 pub struct Rdram {
     pub mem: Vec<u8>,
     pub size: u32,
-    pub regs: [[u32; RDRAM_REGS_COUNT as usize]; 4],
+    pub regs: [[u32; RDRAM_REGS_COUNT]; 4],
 }
 
 pub fn read_mem_fast(
@@ -91,9 +91,8 @@ pub fn write_mem_repeat(device: &mut device::Device, address: u64, value: u32, m
         panic!("RDRAM write_mem_repeat called with mask {:#x}", mask);
     }
 
-    let repeat_length = (device.mi.regs[device::mi::MI_INIT_MODE_REG as usize]
-        & device::mi::MI_INIT_LENGTH_MASK)
-        + 1;
+    let repeat_length =
+        (device.mi.regs[device::mi::MI_INIT_MODE_REG] & device::mi::MI_INIT_LENGTH_MASK) + 1;
 
     if !repeat_length.is_multiple_of(4) {
         panic!(
@@ -113,7 +112,7 @@ pub fn write_mem_repeat(device: &mut device::Device, address: u64, value: u32, m
             .copy_from_slice(&value.to_ne_bytes());
     }
 
-    device.mi.regs[device::mi::MI_INIT_MODE_REG as usize] &= !device::mi::MI_INIT_MODE;
+    device.mi.regs[device::mi::MI_INIT_MODE_REG] &= !device::mi::MI_INIT_MODE;
     for i in 0..(0x3F00000 >> 16) {
         device.memory.memory_map_write[i] = device::rdram::write_mem;
     }
@@ -127,7 +126,7 @@ pub fn read_regs(
     device::cop0::add_cycles(device, 20);
     let chip_id = (address >> 13) & 3;
     let reg = (address & 0x3FF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         RDRAM_MODE_REG => device.pi.regs[reg as usize] ^ 0xc0c0c0c0,
         0x80 => 0x00000000, //Row, needed for libdragon
         _ => device.rdram.regs[chip_id as usize][reg as usize],
@@ -169,8 +168,8 @@ pub fn init(device: &mut device::Device) {
         .unwrap_or(&mut [0; 4])
         .copy_from_slice(&device.rdram.size.to_ne_bytes());
 
-    device.ri.regs[device::ri::RI_MODE_REG as usize] = 0x0e;
-    device.ri.regs[device::ri::RI_CONFIG_REG as usize] = 0x40;
+    device.ri.regs[device::ri::RI_MODE_REG] = 0x0e;
+    device.ri.regs[device::ri::RI_CONFIG_REG] = 0x40;
 }
 
 pub fn rdram_calculate_cycles(length: u64) -> u64 {

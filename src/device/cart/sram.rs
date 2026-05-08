@@ -131,7 +131,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
         write_mem_flash(device, address, value, mask)
     }
 
-    device.pi.regs[device::pi::PI_STATUS_REG as usize] |= device::pi::PI_STATUS_IO_BUSY;
+    device.pi.regs[device::pi::PI_STATUS_REG] |= device::pi::PI_STATUS_IO_BUSY;
 
     let cycles = device::pi::calculate_cycles(device, 2, 4);
     device::events::create_event(device, device::events::EVENT_TYPE_PI, cycles);

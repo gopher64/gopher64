@@ -1,19 +1,19 @@
 use crate::{device, ui};
 
-const AI_DRAM_ADDR_REG: u32 = 0;
-const AI_LEN_REG: u32 = 1;
-// const AI_CONTROL_REG: u32 = 2;
-pub const AI_STATUS_REG: u32 = 3;
-const AI_DACRATE_REG: u32 = 4;
-// const AI_BITRATE_REG: u32 = 5;
-pub const AI_REGS_COUNT: u32 = 6;
+const AI_DRAM_ADDR_REG: usize = 0;
+const AI_LEN_REG: usize = 1;
+// const AI_CONTROL_REG: usize = 2;
+pub const AI_STATUS_REG: usize = 3;
+const AI_DACRATE_REG: usize = 4;
+// const AI_BITRATE_REG: usize = 5;
+pub const AI_REGS_COUNT: usize = 6;
 
 pub const AI_STATUS_BUSY: u32 = 0x40000000;
 const AI_STATUS_FULL: u32 = 0x80000000;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Ai {
-    pub regs: [u32; AI_REGS_COUNT as usize],
+    pub regs: [u32; AI_REGS_COUNT],
     pub fifo: [AiDma; 2],
     pub last_read: u64,
     pub delayed_carry: bool,
@@ -38,7 +38,7 @@ fn get_remaining_dma_length(device: &device::Device) -> u64 {
     }
 
     let remaining_dma_duration =
-        next_ai_event.unwrap().count - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG as usize];
+        next_ai_event.unwrap().count - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG];
 
     let dma_length = remaining_dma_duration * device.ai.fifo[0].length / device.ai.fifo[0].duration;
     dma_length & !7
@@ -46,7 +46,7 @@ fn get_remaining_dma_length(device: &device::Device) -> u64 {
 
 fn get_dma_duration(device: &device::Device) -> u64 {
     let bytes_per_sample = 4; /* XXX: assume 16bit stereo - should depends on bitrate instead */
-    let length = (device.ai.regs[AI_LEN_REG as usize] & !7) as u64;
+    let length = (device.ai.regs[AI_LEN_REG] & !7) as u64;
 
     (length * device.cpu.clock_rate) / (bytes_per_sample * device.ai.freq)
 }
@@ -73,18 +73,18 @@ fn do_dma(device: &mut device::Device) {
 fn fifo_push(device: &mut device::Device) {
     let duration = get_dma_duration(device);
 
-    if (device.ai.regs[AI_STATUS_REG as usize] & AI_STATUS_BUSY) != 0 {
+    if (device.ai.regs[AI_STATUS_REG] & AI_STATUS_BUSY) != 0 {
         device.ai.fifo[1].address =
-            device.ai.regs[AI_DRAM_ADDR_REG as usize] as u64 & device::rdram::RDRAM_MASK as u64;
-        device.ai.fifo[1].length = (device.ai.regs[AI_LEN_REG as usize] & !7) as u64;
+            device.ai.regs[AI_DRAM_ADDR_REG] as u64 & device::rdram::RDRAM_MASK as u64;
+        device.ai.fifo[1].length = (device.ai.regs[AI_LEN_REG] & !7) as u64;
         device.ai.fifo[1].duration = duration;
-        device.ai.regs[AI_STATUS_REG as usize] |= AI_STATUS_FULL;
+        device.ai.regs[AI_STATUS_REG] |= AI_STATUS_FULL;
     } else {
         device.ai.fifo[0].address =
-            device.ai.regs[AI_DRAM_ADDR_REG as usize] as u64 & device::rdram::RDRAM_MASK as u64;
-        device.ai.fifo[0].length = (device.ai.regs[AI_LEN_REG as usize] & !7) as u64;
+            device.ai.regs[AI_DRAM_ADDR_REG] as u64 & device::rdram::RDRAM_MASK as u64;
+        device.ai.fifo[0].length = (device.ai.regs[AI_LEN_REG] & !7) as u64;
         device.ai.fifo[0].duration = duration;
-        device.ai.regs[AI_STATUS_REG as usize] |= AI_STATUS_BUSY;
+        device.ai.regs[AI_STATUS_REG] |= AI_STATUS_BUSY;
 
         do_dma(device);
         ui::audio::resume_game_audio(&mut device.ui);
@@ -92,15 +92,15 @@ fn fifo_push(device: &mut device::Device) {
 }
 
 fn fifo_pop(device: &mut device::Device) {
-    if device.ai.regs[AI_STATUS_REG as usize] & AI_STATUS_FULL != 0 {
+    if device.ai.regs[AI_STATUS_REG] & AI_STATUS_FULL != 0 {
         device.ai.fifo[0].address = device.ai.fifo[1].address;
         device.ai.fifo[0].length = device.ai.fifo[1].length;
         device.ai.fifo[0].duration = device.ai.fifo[1].duration;
-        device.ai.regs[AI_STATUS_REG as usize] &= !AI_STATUS_FULL;
+        device.ai.regs[AI_STATUS_REG] &= !AI_STATUS_FULL;
 
         do_dma(device);
     } else {
-        device.ai.regs[AI_STATUS_REG as usize] &= !AI_STATUS_BUSY;
+        device.ai.regs[AI_STATUS_REG] &= !AI_STATUS_BUSY;
         device.ai.delayed_carry = false;
         ui::audio::pause_game_audio(&mut device.ui);
     }
@@ -112,7 +112,7 @@ pub fn read_regs(
     _access_size: device::memory::AccessSize,
 ) -> u32 {
     let reg = (address & 0xFFFF) >> 2;
-    let return_value = match reg as u32 {
+    let return_value = match reg as usize {
         AI_LEN_REG => {
             let value = get_remaining_dma_length(device);
             if value < device.ai.last_read {
@@ -136,7 +136,7 @@ pub fn read_regs(
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         AI_LEN_REG => {
             device::memory::masked_write_32(&mut device.ai.regs[reg as usize], value, mask);
             if device.ai.regs[reg as usize] != 0 {

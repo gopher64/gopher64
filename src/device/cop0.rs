@@ -1,38 +1,38 @@
 use crate::{device, savestates};
 
-pub const COP0_INDEX_REG: u32 = 0;
-const COP0_RANDOM_REG: u32 = 1;
-pub const COP0_ENTRYLO0_REG: u32 = 2;
-pub const COP0_ENTRYLO1_REG: u32 = 3;
-pub const COP0_CONTEXT_REG: u32 = 4;
-pub const COP0_PAGEMASK_REG: u32 = 5;
-const COP0_WIRED_REG: u32 = 6;
-//const COP0_UNUSED_7: u32 = 7;
-pub const COP0_BADVADDR_REG: u32 = 8;
-pub const COP0_COUNT_REG: u32 = 9;
-pub const COP0_ENTRYHI_REG: u32 = 10;
-const COP0_COMPARE_REG: u32 = 11;
-pub const COP0_STATUS_REG: u32 = 12;
-pub const COP0_CAUSE_REG: u32 = 13;
-pub const COP0_EPC_REG: u32 = 14;
-const COP0_PREVID_REG: u32 = 15;
-const COP0_CONFIG_REG: u32 = 16;
-pub const COP0_LLADDR_REG: u32 = 17;
-//const COP0_WATCHLO_REG: u32 = 18;
-//const COP0_WATCHHI_REG: u32 = 19;
-pub const COP0_XCONTEXT_REG: u32 = 20;
-//const COP0_UNUSED_21: u32 = 21;
-//const COP0_UNUSED_22: u32 = 22;
-//const COP0_UNUSED_23: u32 = 23;
-//const COP0_UNUSED_24: u32 = 24;
-//const COP0_UNUSED_25: u32 = 25;
-//const COP0_PARITYERR_REG: u32 = 26;
-//const COP0_CACHEERR_REG: u32 = 27;
-pub const COP0_TAGLO_REG: u32 = 28;
-//const COP0_TAGHI_REG: u32 = 29;
-pub const COP0_ERROREPC_REG: u32 = 30;
-//const COP0_UNUSED_31: u32 = 31;
-pub const COP0_REGS_COUNT: u32 = 32;
+pub const COP0_INDEX_REG: usize = 0;
+const COP0_RANDOM_REG: usize = 1;
+pub const COP0_ENTRYLO0_REG: usize = 2;
+pub const COP0_ENTRYLO1_REG: usize = 3;
+pub const COP0_CONTEXT_REG: usize = 4;
+pub const COP0_PAGEMASK_REG: usize = 5;
+const COP0_WIRED_REG: usize = 6;
+//const COP0_UNUSED_7: usize = 7;
+pub const COP0_BADVADDR_REG: usize = 8;
+pub const COP0_COUNT_REG: usize = 9;
+pub const COP0_ENTRYHI_REG: usize = 10;
+const COP0_COMPARE_REG: usize = 11;
+pub const COP0_STATUS_REG: usize = 12;
+pub const COP0_CAUSE_REG: usize = 13;
+pub const COP0_EPC_REG: usize = 14;
+const COP0_PREVID_REG: usize = 15;
+const COP0_CONFIG_REG: usize = 16;
+pub const COP0_LLADDR_REG: usize = 17;
+//const COP0_WATCHLO_REG: usize = 18;
+//const COP0_WATCHHI_REG: usize = 19;
+pub const COP0_XCONTEXT_REG: usize = 20;
+//const COP0_UNUSED_21: usize = 21;
+//const COP0_UNUSED_22: usize = 22;
+//const COP0_UNUSED_23: usize = 23;
+//const COP0_UNUSED_24: usize = 24;
+//const COP0_UNUSED_25: usize = 25;
+//const COP0_PARITYERR_REG: usize = 26;
+//const COP0_CACHEERR_REG: usize = 27;
+pub const COP0_TAGLO_REG: usize = 28;
+//const COP0_TAGHI_REG: usize = 29;
+pub const COP0_ERROREPC_REG: usize = 30;
+//const COP0_UNUSED_31: usize = 31;
+pub const COP0_REGS_COUNT: usize = 32;
 
 pub const COP0_STATUS_IE: u64 = 1 << 0;
 pub const COP0_STATUS_EXL: u64 = 1 << 1;
@@ -94,8 +94,8 @@ const COP0_TAGLO_REG_MASK: u64 = 0b00001111111111111111111111000000;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cop0 {
     pub reg_latch: u64,
-    pub regs: [u64; COP0_REGS_COUNT as usize],
-    pub reg_write_masks: [u64; COP0_REGS_COUNT as usize],
+    pub regs: [u64; COP0_REGS_COUNT],
+    pub reg_write_masks: [u64; COP0_REGS_COUNT],
     #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip, default = "savestates::default_instructions")]
@@ -136,11 +136,11 @@ fn dmtc0(device: &mut device::Device, opcode: u32) {
 }
 
 fn tlbr(device: &mut device::Device, _opcode: u32) {
-    device::tlb::read(device, device.cpu.cop0.regs[COP0_INDEX_REG as usize])
+    device::tlb::read(device, device.cpu.cop0.regs[COP0_INDEX_REG])
 }
 
 fn tlbwi(device: &mut device::Device, _opcode: u32) {
-    device::tlb::write(device, device.cpu.cop0.regs[COP0_INDEX_REG as usize])
+    device::tlb::write(device, device.cpu.cop0.regs[COP0_INDEX_REG])
 }
 
 fn tlbwr(device: &mut device::Device, _opcode: u32) {
@@ -153,12 +153,12 @@ fn tlbp(device: &mut device::Device, _opcode: u32) {
 }
 
 fn eret(device: &mut device::Device, _opcode: u32) {
-    if device.cpu.cop0.regs[COP0_STATUS_REG as usize] & COP0_STATUS_ERL != 0 {
-        device.cpu.pc = device.cpu.cop0.regs[COP0_ERROREPC_REG as usize];
-        device.cpu.cop0.regs[COP0_STATUS_REG as usize] &= !COP0_STATUS_ERL
+    if device.cpu.cop0.regs[COP0_STATUS_REG] & COP0_STATUS_ERL != 0 {
+        device.cpu.pc = device.cpu.cop0.regs[COP0_ERROREPC_REG];
+        device.cpu.cop0.regs[COP0_STATUS_REG] &= !COP0_STATUS_ERL
     } else {
-        device.cpu.pc = device.cpu.cop0.regs[COP0_EPC_REG as usize];
-        device.cpu.cop0.regs[COP0_STATUS_REG as usize] &= !COP0_STATUS_EXL
+        device.cpu.pc = device.cpu.cop0.regs[COP0_EPC_REG];
+        device.cpu.cop0.regs[COP0_STATUS_REG] &= !COP0_STATUS_EXL
     }
     device.cpu.branch_state.state = device::cpu::State::Exception;
     device.cpu.llbit = false;
@@ -184,7 +184,7 @@ pub fn reserved(device: &mut device::Device, _opcode: u32) {
 pub fn emux_xdetect(_device: &mut device::Device, _opcode: u32) {}
 
 fn get_control_registers(device: &device::Device, index: u32) -> u64 {
-    match index {
+    match index as usize {
         COP0_COUNT_REG => device.cpu.cop0.regs[index as usize] >> 1,
         COP0_RANDOM_REG => set_random_register(device),
         7 | 21 | 22 | 23 | 24 | 25 | 31 => device.cpu.cop0.reg_latch,
@@ -194,22 +194,18 @@ fn get_control_registers(device: &device::Device, index: u32) -> u64 {
 
 fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64) {
     device.cpu.cop0.reg_latch = data;
-    match index {
+    match index as usize {
         COP0_COUNT_REG => {
             data &= 0xFFFFFFFF;
             data <<= 1;
-            device::events::translate_events(
-                device,
-                device.cpu.cop0.regs[COP0_COUNT_REG as usize],
-                data,
-            );
-            device.cpu.cop0.regs[COP0_COUNT_REG as usize] = data;
+            device::events::translate_events(device, device.cpu.cop0.regs[COP0_COUNT_REG], data);
+            device.cpu.cop0.regs[COP0_COUNT_REG] = data;
             return;
         }
-        COP0_WIRED_REG => device.cpu.cop0.regs[COP0_RANDOM_REG as usize] = 31,
+        COP0_WIRED_REG => device.cpu.cop0.regs[COP0_RANDOM_REG] = 31,
         COP0_COMPARE_REG => {
             data &= 0xFFFFFFFF;
-            let current_count = (device.cpu.cop0.regs[COP0_COUNT_REG as usize] >> 1) & 0xFFFFFFFF;
+            let current_count = (device.cpu.cop0.regs[COP0_COUNT_REG] >> 1) & 0xFFFFFFFF;
             let mut compare_event_diff = (data as u32).wrapping_sub(current_count as u32);
 
             if compare_event_diff == 0 {
@@ -221,7 +217,7 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
                 device::events::EVENT_TYPE_COMPARE,
                 (compare_event_diff as u64) << 1,
             );
-            device.cpu.cop0.regs[COP0_CAUSE_REG as usize] &= !COP0_CAUSE_IP7;
+            device.cpu.cop0.regs[COP0_CAUSE_REG] &= !COP0_CAUSE_IP7;
         }
         COP0_STATUS_REG
             if data & COP0_STATUS_FR != device.cpu.cop0.regs[index as usize] & COP0_STATUS_FR =>
@@ -239,9 +235,8 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
 }
 
 pub fn compare_event(device: &mut device::Device) {
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] |= device::cop0::COP0_CAUSE_IP7;
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG as usize] &=
-        !device::cop0::COP0_CAUSE_EXCCODE_MASK;
+    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] |= device::cop0::COP0_CAUSE_IP7;
+    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] &= !device::cop0::COP0_CAUSE_EXCCODE_MASK;
 
     device::events::create_event_at(
         device,
@@ -252,17 +247,17 @@ pub fn compare_event(device: &mut device::Device) {
 }
 
 fn set_random_register(device: &device::Device) -> u64 {
-    if device.cpu.cop0.regs[COP0_WIRED_REG as usize] > 31 {
-        (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize]) & 0x3F
+    if device.cpu.cop0.regs[COP0_WIRED_REG] > 31 {
+        (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG]) & 0x3F
     } else {
-        (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG as usize])
-            % (32 - device.cpu.cop0.regs[COP0_WIRED_REG as usize])
-            + device.cpu.cop0.regs[COP0_WIRED_REG as usize]
+        (u64::MAX - device.cpu.cop0.regs[COP0_COUNT_REG])
+            % (32 - device.cpu.cop0.regs[COP0_WIRED_REG])
+            + device.cpu.cop0.regs[COP0_WIRED_REG]
     }
 }
 
 pub fn add_cycles(device: &mut device::Device, cycles: u64) {
-    device.cpu.cop0.regs[COP0_COUNT_REG as usize] += cycles // COUNT_REG is shifted right 1 bit when read by MFC0
+    device.cpu.cop0.regs[COP0_COUNT_REG] += cycles // COUNT_REG is shifted right 1 bit when read by MFC0
 }
 
 pub fn map_instructions(device: &mut device::Device) {
@@ -376,14 +371,14 @@ pub fn init(device: &mut device::Device) {
     map_instructions(device);
 
     // taken from VR4300 manual
-    device.cpu.cop0.regs[COP0_RANDOM_REG as usize] = 0b00000000000000000000000000011111;
-    device.cpu.cop0.regs[COP0_CONFIG_REG as usize] = 0b01110000000001101110010001100000;
-    device.cpu.cop0.regs[COP0_STATUS_REG as usize] = 0b00000000010000000000000000000100;
-    device.cpu.cop0.regs[COP0_PREVID_REG as usize] = 0b00000000000000000000101100100010;
-    device.cpu.cop0.regs[COP0_EPC_REG as usize] = 0b11111111111111111111111111111111;
-    device.cpu.cop0.regs[COP0_ERROREPC_REG as usize] = 0b11111111111111111111111111111111;
-    device.cpu.cop0.regs[COP0_BADVADDR_REG as usize] = 0xFFFFFFFF;
-    device.cpu.cop0.regs[COP0_CONTEXT_REG as usize] = 0x7FFFF0;
+    device.cpu.cop0.regs[COP0_RANDOM_REG] = 0b00000000000000000000000000011111;
+    device.cpu.cop0.regs[COP0_CONFIG_REG] = 0b01110000000001101110010001100000;
+    device.cpu.cop0.regs[COP0_STATUS_REG] = 0b00000000010000000000000000000100;
+    device.cpu.cop0.regs[COP0_PREVID_REG] = 0b00000000000000000000101100100010;
+    device.cpu.cop0.regs[COP0_EPC_REG] = 0b11111111111111111111111111111111;
+    device.cpu.cop0.regs[COP0_ERROREPC_REG] = 0b11111111111111111111111111111111;
+    device.cpu.cop0.regs[COP0_BADVADDR_REG] = 0xFFFFFFFF;
+    device.cpu.cop0.regs[COP0_CONTEXT_REG] = 0x7FFFF0;
 
     device::events::create_event(device, device::events::EVENT_TYPE_COMPARE, u32::MAX as u64)
 }

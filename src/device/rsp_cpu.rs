@@ -132,48 +132,47 @@ pub fn run(device: &mut device::Device) -> u64 {
         device.rsp.cpu.gpr[0] = 0; // gpr 0 is read only
 
         let instruction = device.rsp.cpu.instructions
-            [(device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] / 4) as usize];
+            [(device.rsp.regs2[device::rsp_interface::SP_PC_REG] / 4) as usize];
         (instruction.func)(device, instruction.opcode);
 
         match device.rsp.cpu.branch_state.state {
             device::cpu::State::Step => {
-                device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 4;
+                device.rsp.regs2[device::rsp_interface::SP_PC_REG] += 4;
                 if device.rsp.cpu.broken {
                     break;
                 }
             }
             device::cpu::State::Take => {
-                device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 4;
+                device.rsp.regs2[device::rsp_interface::SP_PC_REG] += 4;
                 device.rsp.cpu.branch_state.state = device::cpu::State::DelaySlotTaken
             }
             device::cpu::State::NotTaken => {
-                device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 4;
+                device.rsp.regs2[device::rsp_interface::SP_PC_REG] += 4;
                 device.rsp.cpu.branch_state.state = device::cpu::State::DelaySlotNotTaken
             }
             device::cpu::State::DelaySlotTaken => {
-                device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] =
-                    device.rsp.cpu.branch_state.pc;
+                device.rsp.regs2[device::rsp_interface::SP_PC_REG] = device.rsp.cpu.branch_state.pc;
                 device.rsp.cpu.branch_state.state = device::cpu::State::Step;
                 if device.rsp.cpu.broken {
                     break;
                 }
             }
             device::cpu::State::DelaySlotNotTaken => {
-                device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 4;
+                device.rsp.regs2[device::rsp_interface::SP_PC_REG] += 4;
                 device.rsp.cpu.branch_state.state = device::cpu::State::Step;
                 if device.rsp.cpu.broken {
                     break;
                 }
             }
             device::cpu::State::Discard => {
-                device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] += 8;
+                device.rsp.regs2[device::rsp_interface::SP_PC_REG] += 8;
                 device.rsp.cpu.branch_state.state = device::cpu::State::Step
             }
             device::cpu::State::Exception => {
                 device.rsp.cpu.branch_state.state = device::cpu::State::Step
             }
         }
-        device.rsp.regs2[device::rsp_interface::SP_PC_REG as usize] &= 0xFFC;
+        device.rsp.regs2[device::rsp_interface::SP_PC_REG] &= 0xFFC;
 
         if device.rsp.cpu.instruction_type == device.rsp.cpu.last_instruction_type {
             device.rsp.cpu.cycle_counter += 1;

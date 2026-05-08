@@ -2,21 +2,21 @@ use crate::device;
 use crate::ui;
 use rand::Rng;
 
-const PI_DRAM_ADDR_REG: u32 = 0;
-const PI_CART_ADDR_REG: u32 = 1;
-const PI_RD_LEN_REG: u32 = 2;
-const PI_WR_LEN_REG: u32 = 3;
-pub const PI_STATUS_REG: u32 = 4;
-const PI_BSD_DOM1_LAT_REG: u32 = 5;
-const PI_BSD_DOM1_PWD_REG: u32 = 6;
-const PI_BSD_DOM1_PGS_REG: u32 = 7;
-const PI_BSD_DOM1_RLS_REG: u32 = 8;
-const PI_BSD_DOM2_LAT_REG: u32 = 9;
-const PI_BSD_DOM2_PWD_REG: u32 = 10;
-const PI_BSD_DOM2_PGS_REG: u32 = 11;
-const PI_BSD_DOM2_RLS_REG: u32 = 12;
-//const UNKNOWN_REG: u32 = 13; //LibDragon
-pub const PI_REGS_COUNT: u32 = 14;
+const PI_DRAM_ADDR_REG: usize = 0;
+const PI_CART_ADDR_REG: usize = 1;
+const PI_RD_LEN_REG: usize = 2;
+const PI_WR_LEN_REG: usize = 3;
+pub const PI_STATUS_REG: usize = 4;
+const PI_BSD_DOM1_LAT_REG: usize = 5;
+const PI_BSD_DOM1_PWD_REG: usize = 6;
+const PI_BSD_DOM1_PGS_REG: usize = 7;
+const PI_BSD_DOM1_RLS_REG: usize = 8;
+const PI_BSD_DOM2_LAT_REG: usize = 9;
+const PI_BSD_DOM2_PWD_REG: usize = 10;
+const PI_BSD_DOM2_PGS_REG: usize = 11;
+const PI_BSD_DOM2_RLS_REG: usize = 12;
+//const UNKNOWN_REG: usize = 13; //LibDragon
+pub const PI_REGS_COUNT: usize = 14;
 
 /* PI_STATUS - read */
 const PI_STATUS_DMA_BUSY: u32 = 1 << 0;
@@ -30,7 +30,7 @@ const PI_STATUS_CLR_INTR: u32 = 1 << 1;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Pi {
-    pub regs: [u32; PI_REGS_COUNT as usize],
+    pub regs: [u32; PI_REGS_COUNT],
 }
 
 struct PiHandler {
@@ -45,7 +45,7 @@ pub fn read_regs(
 ) -> u32 {
     device::cop0::add_cycles(device, 20);
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         PI_WR_LEN_REG | PI_RD_LEN_REG => 0x7F,
         PI_CART_ADDR_REG => device.pi.regs[reg as usize] & 0xFFFFFFFE,
         PI_DRAM_ADDR_REG => device.pi.regs[reg as usize] & 0xFFFFFE,
@@ -54,11 +54,11 @@ pub fn read_regs(
 }
 
 fn dma_read(device: &mut device::Device) {
-    let handler = get_handler(device.pi.regs[PI_CART_ADDR_REG as usize]);
+    let handler = get_handler(device.pi.regs[PI_CART_ADDR_REG]);
 
-    let cart_addr = device.pi.regs[PI_CART_ADDR_REG as usize] & !1;
-    let dram_addr = device.pi.regs[PI_DRAM_ADDR_REG as usize] & 0xFFFFFE;
-    let mut length = (device.pi.regs[PI_RD_LEN_REG as usize] & 0xFFFFFF) + 1;
+    let cart_addr = device.pi.regs[PI_CART_ADDR_REG] & !1;
+    let dram_addr = device.pi.regs[PI_DRAM_ADDR_REG] & 0xFFFFFE;
+    let mut length = (device.pi.regs[PI_RD_LEN_REG] & 0xFFFFFF) + 1;
 
     /* PI seems to treat the first 128 bytes differently, see https://n64brew.dev/wiki/Peripheral_Interface#Unaligned_DMA_transfer */
     if length >= 0x7f && (length & 1) != 0 {
@@ -70,20 +70,18 @@ fn dma_read(device: &mut device::Device) {
     device::events::create_event(device, device::events::EVENT_TYPE_PI, cycles);
 
     /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */
-    device.pi.regs[PI_DRAM_ADDR_REG as usize] =
-        (device.pi.regs[PI_DRAM_ADDR_REG as usize] + length + 7) & !7;
-    device.pi.regs[PI_CART_ADDR_REG as usize] =
-        (device.pi.regs[PI_CART_ADDR_REG as usize] + length + 1) & !1;
+    device.pi.regs[PI_DRAM_ADDR_REG] = (device.pi.regs[PI_DRAM_ADDR_REG] + length + 7) & !7;
+    device.pi.regs[PI_CART_ADDR_REG] = (device.pi.regs[PI_CART_ADDR_REG] + length + 1) & !1;
 
-    device.pi.regs[PI_STATUS_REG as usize] |= PI_STATUS_DMA_BUSY
+    device.pi.regs[PI_STATUS_REG] |= PI_STATUS_DMA_BUSY
 }
 
 fn dma_write(device: &mut device::Device) {
-    let handler = get_handler(device.pi.regs[PI_CART_ADDR_REG as usize]);
+    let handler = get_handler(device.pi.regs[PI_CART_ADDR_REG]);
 
-    let cart_addr = device.pi.regs[PI_CART_ADDR_REG as usize] & !1;
-    let dram_addr = device.pi.regs[PI_DRAM_ADDR_REG as usize] & 0xFFFFFE;
-    let mut length = (device.pi.regs[PI_WR_LEN_REG as usize] & 0xFFFFFF) + 1;
+    let cart_addr = device.pi.regs[PI_CART_ADDR_REG] & !1;
+    let dram_addr = device.pi.regs[PI_DRAM_ADDR_REG] & 0xFFFFFE;
+    let mut length = (device.pi.regs[PI_WR_LEN_REG] & 0xFFFFFF) + 1;
 
     /* PI seems to treat the first 128 bytes differently, see https://n64brew.dev/wiki/Peripheral_Interface#Unaligned_DMA_transfer */
     if length >= 0x7f && (length & 1) != 0 {
@@ -101,12 +99,10 @@ fn dma_write(device: &mut device::Device) {
     device::events::create_event(device, device::events::EVENT_TYPE_PI, cycles);
 
     /* Update PI_DRAM_ADDR_REG and PI_CART_ADDR_REG */
-    device.pi.regs[PI_DRAM_ADDR_REG as usize] =
-        (device.pi.regs[PI_DRAM_ADDR_REG as usize] + length + 7) & !7;
-    device.pi.regs[PI_CART_ADDR_REG as usize] =
-        (device.pi.regs[PI_CART_ADDR_REG as usize] + length + 1) & !1;
+    device.pi.regs[PI_DRAM_ADDR_REG] = (device.pi.regs[PI_DRAM_ADDR_REG] + length + 7) & !7;
+    device.pi.regs[PI_CART_ADDR_REG] = (device.pi.regs[PI_CART_ADDR_REG] + length + 1) & !1;
 
-    device.pi.regs[PI_STATUS_REG as usize] |= PI_STATUS_DMA_BUSY
+    device.pi.regs[PI_STATUS_REG] |= PI_STATUS_DMA_BUSY
 }
 
 fn get_handler(address: u32) -> PiHandler {
@@ -138,7 +134,7 @@ fn get_handler(address: u32) -> PiHandler {
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
-    match reg as u32 {
+    match reg as usize {
         PI_RD_LEN_REG => {
             device::memory::masked_write_32(&mut device.pi.regs[reg as usize], value, mask);
             device::pi::dma_read(device)
@@ -153,7 +149,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                 device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_PI);
             }
             if value & mask & PI_STATUS_RESET != 0 {
-                device.pi.regs[PI_STATUS_REG as usize] = 0
+                device.pi.regs[PI_STATUS_REG] = 0
             }
         }
         PI_BSD_DOM1_LAT_REG | PI_BSD_DOM1_PWD_REG | PI_BSD_DOM2_LAT_REG | PI_BSD_DOM2_PWD_REG => {
@@ -179,15 +175,15 @@ pub fn calculate_cycles(device: &mut device::Device, domain: i32, length: u32) -
     let page_size_base: f64 = 2.0;
 
     if domain == 1 {
-        latency = (device.pi.regs[PI_BSD_DOM1_LAT_REG as usize] + 1) as f64;
-        pulse_width = (device.pi.regs[PI_BSD_DOM1_PWD_REG as usize] + 1) as f64;
-        release = (device.pi.regs[PI_BSD_DOM1_RLS_REG as usize] + 1) as f64;
-        page_size = page_size_base.powf((device.pi.regs[PI_BSD_DOM1_PGS_REG as usize] + 2) as f64);
+        latency = (device.pi.regs[PI_BSD_DOM1_LAT_REG] + 1) as f64;
+        pulse_width = (device.pi.regs[PI_BSD_DOM1_PWD_REG] + 1) as f64;
+        release = (device.pi.regs[PI_BSD_DOM1_RLS_REG] + 1) as f64;
+        page_size = page_size_base.powf((device.pi.regs[PI_BSD_DOM1_PGS_REG] + 2) as f64);
     } else if domain == 2 {
-        latency = (device.pi.regs[PI_BSD_DOM2_LAT_REG as usize] + 1) as f64;
-        pulse_width = (device.pi.regs[PI_BSD_DOM2_PWD_REG as usize] + 1) as f64;
-        release = (device.pi.regs[PI_BSD_DOM2_RLS_REG as usize] + 1) as f64;
-        page_size = page_size_base.powf((device.pi.regs[PI_BSD_DOM2_PGS_REG as usize] + 2) as f64);
+        latency = (device.pi.regs[PI_BSD_DOM2_LAT_REG] + 1) as f64;
+        pulse_width = (device.pi.regs[PI_BSD_DOM2_PWD_REG] + 1) as f64;
+        release = (device.pi.regs[PI_BSD_DOM2_RLS_REG] + 1) as f64;
+        page_size = page_size_base.powf((device.pi.regs[PI_BSD_DOM2_PGS_REG] + 2) as f64);
     } else {
         panic!("unknown pi dma")
     }
@@ -201,8 +197,8 @@ pub fn calculate_cycles(device: &mut device::Device, domain: i32, length: u32) -
 }
 
 pub fn dma_event(device: &mut device::Device) {
-    device.pi.regs[PI_STATUS_REG as usize] &= !(PI_STATUS_DMA_BUSY | PI_STATUS_IO_BUSY);
-    device.pi.regs[PI_STATUS_REG as usize] |= PI_STATUS_INTERRUPT;
+    device.pi.regs[PI_STATUS_REG] &= !(PI_STATUS_DMA_BUSY | PI_STATUS_IO_BUSY);
+    device.pi.regs[PI_STATUS_REG] |= PI_STATUS_INTERRUPT;
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_PI)
 }

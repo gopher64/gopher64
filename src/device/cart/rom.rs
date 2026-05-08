@@ -42,7 +42,7 @@ pub fn read_mem(
     device::cop0::add_cycles(device, cycles);
 
     // well known cart ROM oddity, if a read is perfomed while PI_STATUS_IO_BUSY is set, the latched value is returned rather than the data at the specified address
-    if device.pi.regs[device::pi::PI_STATUS_REG as usize] & device::pi::PI_STATUS_IO_BUSY != 0 {
+    if device.pi.regs[device::pi::PI_STATUS_REG] & device::pi::PI_STATUS_IO_BUSY != 0 {
         device.cart.latch
     } else {
         let masked_address = address as usize & CART_MASK;
@@ -69,7 +69,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
 
     device.cart.latch = value & mask;
 
-    device.pi.regs[device::pi::PI_STATUS_REG as usize] |= device::pi::PI_STATUS_IO_BUSY;
+    device.pi.regs[device::pi::PI_STATUS_REG] |= device::pi::PI_STATUS_IO_BUSY;
 
     let cycles = device::pi::calculate_cycles(device, 1, 4);
     device::events::create_event(device, device::events::EVENT_TYPE_PI, cycles);
