@@ -5,6 +5,9 @@ use slint::winit_030::WinitWindowAccessor;
 
 slint::include_modules!();
 
+pub const N64_EXTENSIONS_UNCOMPRESSED: [&str; 8] =
+    ["n64", "v64", "z64", "bin", "N64", "V64", "Z64", "BIN"];
+
 pub const N64_EXTENSIONS: [&str; 12] = [
     "n64", "v64", "z64", "7z", "zip", "bin", "N64", "V64", "Z64", "7Z", "ZIP", "BIN",
 ];

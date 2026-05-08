@@ -152,7 +152,7 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
         for i in 0..archive.len() {
             let mut file = archive.by_index(i).unwrap();
             if let Some(extension) = file.enclosed_name().unwrap().extension()
-                && ui::gui::N64_EXTENSIONS.contains(&extension.to_str().unwrap())
+                && ui::gui::N64_EXTENSIONS_UNCOMPRESSED.contains(&extension.to_str().unwrap())
             {
                 file.read_to_end(&mut contents)
                     .expect("could not read zip file");
@@ -174,7 +174,8 @@ pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
                     let name = entry.name().to_ascii_lowercase();
                     if !found
                         && let Some(extension) = std::path::PathBuf::from(name).extension()
-                        && ui::gui::N64_EXTENSIONS.contains(&extension.to_str().unwrap())
+                        && ui::gui::N64_EXTENSIONS_UNCOMPRESSED
+                            .contains(&extension.to_str().unwrap())
                     {
                         reader
                             .read_to_end(&mut contents)
