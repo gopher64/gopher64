@@ -29,6 +29,7 @@ pub struct Vi {
     pub vi_counter: u64,
     pub min_wait_time: std::time::Duration,
     pub frame_time: f64,
+    pub elapsed_time: f64,
     pub limit_freq: u64,
     #[serde(skip)]
     #[serde(default = "std::time::Instant::now")]
@@ -146,6 +147,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     ui::video::update_screen();
     device.vi.vi_counter += 1;
+    device.vi.elapsed_time += device.vi.frame_time;
 
     if device.netplay.is_none() && paused {
         if retroachievements::get_hardcore() {

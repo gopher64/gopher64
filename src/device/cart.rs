@@ -147,8 +147,7 @@ fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, 
 }
 
 fn time2data(device: &mut device::Device, offset: usize) {
-    let timestamp =
-        device.cart.rtc_timestamp + (device.vi.frame_time * device.vi.vi_counter as f64) as i64;
+    let timestamp = device.cart.rtc_timestamp + device.vi.elapsed_time as i64;
     let now = chrono::DateTime::from_timestamp(timestamp, 0).unwrap();
 
     device.pif.ram[offset] = byte2bcd(now.second());
