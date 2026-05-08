@@ -5,13 +5,6 @@ use slint::winit_030::WinitWindowAccessor;
 
 slint::include_modules!();
 
-pub const N64_EXTENSIONS_UNCOMPRESSED: [&str; 8] =
-    ["n64", "v64", "z64", "bin", "N64", "V64", "Z64", "BIN"];
-
-pub const N64_EXTENSIONS: [&str; 12] = [
-    "n64", "v64", "z64", "7z", "zip", "bin", "N64", "V64", "Z64", "7Z", "ZIP", "BIN",
-];
-
 #[derive(serde::Deserialize)]
 struct GithubData {
     tag_name: String,
@@ -633,7 +626,7 @@ fn open_rom(app: &AppWindow) {
         rfd::AsyncFileDialog::new()
     }
     .set_title("Select ROM")
-    .add_filter("ROM files", &N64_EXTENSIONS)
+    .add_filter("ROM files", &ui::N64_EXTENSIONS)
     .pick_file();
 
     let overclock = app.get_overclock_n64_cpu();

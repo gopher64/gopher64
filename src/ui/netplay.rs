@@ -183,7 +183,7 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
         rfd::AsyncFileDialog::new()
     }
     .set_title("Select ROM")
-    .add_filter("ROM files", &ui::gui::N64_EXTENSIONS)
+    .add_filter("ROM files", &ui::N64_EXTENSIONS)
     .pick_file();
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
