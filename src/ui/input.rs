@@ -756,7 +756,7 @@ pub fn configure_input_profile(
                 font,
             );
             let mut event: sdl3_sys::events::SDL_Event = Default::default();
-            while unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
+            while !key_set && unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
                 if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
                     close_input_profile_window(
                         open_joysticks,
