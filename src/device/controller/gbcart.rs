@@ -155,8 +155,8 @@ fn update_rtc_regs(cart: &mut device::controller::gbcart::GbCart, timestamp: i64
             + diff;
 
         cart.rtc_regs[MBC3_RTC_DAYS_L] = (days & 0xff) as u8;
-        cart.rtc_regs[MBC3_RTC_DAYS_H] =
-            ((cart.rtc_regs[MBC3_RTC_DAYS_H] & !0x01) as i64 | (days & 0x100)) as u8;
+        cart.rtc_regs[MBC3_RTC_DAYS_H] &= !0x01;
+        cart.rtc_regs[MBC3_RTC_DAYS_H] |= ((days >> 8) & 1) as u8;
 
         /* set carry bit if days overflow */
         if days > 511 {
