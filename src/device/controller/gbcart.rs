@@ -63,6 +63,8 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
         }
     }
 
+    gb_cart.last_time = gb_cart.rtc_timestamp;
+
     gb_cart.rtc_regs[MBC3_RTC_SECONDS] =
         u32::from_le_bytes(ram[offset..offset + 4].try_into().unwrap()) as u8;
     gb_cart.rtc_regs[MBC3_RTC_MINUTES] =
