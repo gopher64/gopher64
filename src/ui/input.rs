@@ -741,6 +741,7 @@ pub fn configure_input_profile(
 
     for (key, value) in key_labels.iter() {
         unsafe {
+            sdl3_sys::events::SDL_PumpEvents();
             sdl3_sys::events::SDL_FlushEvents(
                 u32::from(sdl3_sys::events::SDL_EVENT_FIRST),
                 u32::from(sdl3_sys::events::SDL_EVENT_LAST),
