@@ -148,6 +148,12 @@ fn input_profiles(config: &ui::config::Config) -> Vec<String> {
     for key in config.input.input_profiles.keys() {
         profiles.push(key.clone())
     }
+
+    // make sure default profile is always first
+    if let Some(pos) = profiles.iter().position(|x| x == "default") {
+        let default_profile = profiles.remove(pos);
+        profiles.insert(0, default_profile);
+    }
     profiles
 }
 
