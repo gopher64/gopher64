@@ -22,6 +22,7 @@ pub struct GbCart {
     pub latch: bool,
     pub rtc_regs: [u8; MBC3_RTC_REGS_COUNT],
     pub rtc_regs_latch: [u8; MBC3_RTC_REGS_COUNT],
+    pub rtc_timestamp: i64,
     pub last_time: i64,
 }
 
@@ -43,10 +44,14 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
         44 => {
             offset = ram.len() - 44;
             gb_cart.ram = ram[..ram.len() - 44].to_vec();
+            gb_cart.rtc_timestamp =
+                i32::from_le_bytes(ram[offset + 40..offset + 44].try_into().unwrap()) as i64;
         }
         48 => {
             offset = ram.len() - 48;
             gb_cart.ram = ram[..ram.len() - 48].to_vec();
+            gb_cart.rtc_timestamp =
+                i64::from_le_bytes(ram[offset + 40..offset + 48].try_into().unwrap());
         }
         _ => {
             gb_cart.ram = ram.to_vec();
@@ -108,7 +113,8 @@ pub fn save(
             f.write_all(&(gb_cart.rtc_regs_latch[MBC3_RTC_DAYS_H] as u32).to_le_bytes())
                 .unwrap();
 
-            f.write_all(&elapsed_time.to_le_bytes()).unwrap();
+            let timestamp = gb_cart.rtc_timestamp.saturating_add(elapsed_time);
+            f.write_all(&timestamp.to_le_bytes()).unwrap();
         }
     } else {
         eprintln!("Error saving TransferPak RAM to {ram_path}");
