@@ -751,8 +751,7 @@ pub fn configure_input_profile(
                 text_engine,
                 font,
             );
-            std::thread::sleep(std::time::Duration::from_millis(100));
-            while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
+            while unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
                 if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
                     close_input_profile_window(
                         open_joysticks,
