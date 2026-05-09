@@ -229,7 +229,8 @@ fn set_buttons_from_joystick(
     if profile_joystick_axis.enabled {
         let axis_position =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile_joystick_axis.id) };
-        if axis_position as isize * profile_joystick_axis.axis as isize > 0
+        if (axis_position as isize * profile_joystick_axis.axis as isize > 0
+            || profile_joystick_axis.initial_state != 0)
             && axis_position.abs_diff(profile_joystick_axis.initial_state) > (u16::MAX / 4)
         {
             *keys |= 1 << i;
@@ -335,7 +336,8 @@ fn hotkey_pressed(
     } else if joystick_axis.enabled && !joystick.is_null() {
         let axis_position =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, joystick_axis.id) };
-        pressed = axis_position as isize * joystick_axis.axis as isize > 0
+        pressed = (axis_position as isize * joystick_axis.axis as isize > 0
+            || joystick_axis.initial_state != 0)
             && axis_position.abs_diff(joystick_axis.initial_state) > (u16::MAX / 4)
     }
     pressed
