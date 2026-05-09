@@ -740,8 +740,12 @@ pub fn configure_input_profile(
     };
 
     for (key, value) in key_labels.iter() {
-        let mut event: sdl3_sys::events::SDL_Event = Default::default();
-        while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {} // clear events
+        unsafe {
+            sdl3_sys::events::SDL_FlushEvents(
+                u32::from(sdl3_sys::events::SDL_EVENT_FIRST),
+                u32::from(sdl3_sys::events::SDL_EVENT_LAST),
+            );
+        }
 
         let mut key_set = false;
         while !key_set {
@@ -751,6 +755,7 @@ pub fn configure_input_profile(
                 text_engine,
                 font,
             );
+            let mut event: sdl3_sys::events::SDL_Event = Default::default();
             while unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
                 if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
                     close_input_profile_window(
