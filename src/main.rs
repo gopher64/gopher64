@@ -236,7 +236,7 @@ async fn main() -> std::io::Result<()> {
                     && !device.transferpaks[i].cart.ram.is_empty()
                 {
                     device::controller::gbcart::save(
-                        &device.transferpaks[i].cart,
+                        &mut device.transferpaks[i].cart,
                         device.vi.elapsed_time as i64,
                         &device.ui.config.input.gb_ram_path[i],
                     );

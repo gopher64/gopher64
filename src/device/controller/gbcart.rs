@@ -83,10 +83,12 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
 }
 
 pub fn save(
-    gb_cart: &device::controller::gbcart::GbCart,
+    gb_cart: &mut device::controller::gbcart::GbCart,
     elapsed_time: i64,
     ram_path: &std::string::String,
 ) {
+    update_rtc_regs(gb_cart, elapsed_time);
+
     if let Ok(mut f) = std::fs::File::create(ram_path) {
         f.write_all(&gb_cart.ram).unwrap();
 
