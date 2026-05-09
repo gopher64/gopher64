@@ -22,7 +22,7 @@ pub struct GbCart {
     pub latch: bool,
     pub rtc_regs: [u8; MBC3_RTC_REGS_COUNT],
     pub rtc_regs_latch: [u8; MBC3_RTC_REGS_COUNT],
-    pub last_timestamp: i64,
+    pub last_elapsed_time: i64,
 }
 
 #[derive(Default, Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -121,8 +121,8 @@ pub fn save(
 }
 
 fn update_rtc_regs(cart: &mut device::controller::gbcart::GbCart, elapsed_time: i64) {
-    let mut diff = elapsed_time - cart.last_timestamp;
-    cart.last_timestamp = elapsed_time;
+    let mut diff = elapsed_time - cart.last_elapsed_time;
+    cart.last_elapsed_time = elapsed_time;
 
     if diff > 0 {
         cart.rtc_regs[MBC3_RTC_SECONDS] += (diff % 60) as u8;
