@@ -22,7 +22,6 @@ pub struct GbCart {
     pub latch: bool,
     pub rtc_regs: [u8; MBC3_RTC_REGS_COUNT],
     pub rtc_regs_latch: [u8; MBC3_RTC_REGS_COUNT],
-    pub rtc_timestamp: i64,
     pub last_time: i64,
 }
 
@@ -43,18 +42,10 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
     match remainder {
         44 => {
             offset = ram.len() - 44;
-
-            gb_cart.rtc_timestamp =
-                i32::from_le_bytes(ram[offset + 40..offset + 44].try_into().unwrap()) as i64;
-
             gb_cart.ram = ram[..ram.len() - 44].to_vec();
         }
         48 => {
             offset = ram.len() - 48;
-
-            gb_cart.rtc_timestamp =
-                i64::from_le_bytes(ram[offset + 40..offset + 48].try_into().unwrap());
-
             gb_cart.ram = ram[..ram.len() - 48].to_vec();
         }
         _ => {
@@ -62,14 +53,6 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
             return;
         }
     }
-
-    let now = chrono::Local::now().naive_local().and_utc().timestamp();
-    if gb_cart.rtc_timestamp > now {
-        eprintln!("GB RTC timestamp is in the future, setting to now");
-        gb_cart.rtc_timestamp = now;
-    }
-
-    gb_cart.last_time = gb_cart.rtc_timestamp;
 
     gb_cart.rtc_regs[MBC3_RTC_SECONDS] =
         u32::from_le_bytes(ram[offset..offset + 4].try_into().unwrap()) as u8;
@@ -125,8 +108,7 @@ pub fn save(
             f.write_all(&(gb_cart.rtc_regs_latch[MBC3_RTC_DAYS_H] as u32).to_le_bytes())
                 .unwrap();
 
-            let timestamp = gb_cart.rtc_timestamp + elapsed_time;
-            f.write_all(&timestamp.to_le_bytes()).unwrap();
+            f.write_all(&elapsed_time.to_le_bytes()).unwrap();
         }
     } else {
         eprintln!("Error saving TransferPak RAM to {ram_path}");
@@ -416,22 +398,8 @@ pub fn read(
     }
     match cart.cart_type {
         CartType::MBC1RamBatt => read_mbc1(pif_ram, cart, address, data, size),
-        CartType::MBC3RamBatt => read_mbc3(
-            pif_ram,
-            cart,
-            address,
-            data,
-            size,
-            cart.rtc_timestamp + elapsed_time,
-        ),
-        CartType::MBC3RamBattRtc => read_mbc3(
-            pif_ram,
-            cart,
-            address,
-            data,
-            size,
-            cart.rtc_timestamp + elapsed_time,
-        ),
+        CartType::MBC3RamBatt => read_mbc3(pif_ram, cart, address, data, size, elapsed_time),
+        CartType::MBC3RamBattRtc => read_mbc3(pif_ram, cart, address, data, size, elapsed_time),
         CartType::MBC5RamBatt => read_mbc5(pif_ram, cart, address, data, size),
         _ => panic!("Unsupported cart type"),
     }
@@ -450,22 +418,8 @@ pub fn write(
     }
     match cart.cart_type {
         CartType::MBC1RamBatt => write_mbc1(pif_ram, cart, address, data, size),
-        CartType::MBC3RamBatt => write_mbc3(
-            pif_ram,
-            cart,
-            address,
-            data,
-            size,
-            cart.rtc_timestamp + elapsed_time,
-        ),
-        CartType::MBC3RamBattRtc => write_mbc3(
-            pif_ram,
-            cart,
-            address,
-            data,
-            size,
-            cart.rtc_timestamp + elapsed_time,
-        ),
+        CartType::MBC3RamBatt => write_mbc3(pif_ram, cart, address, data, size, elapsed_time),
+        CartType::MBC3RamBattRtc => write_mbc3(pif_ram, cart, address, data, size, elapsed_time),
         CartType::MBC5RamBatt => write_mbc5(pif_ram, cart, address, data, size),
         _ => panic!("Unsupported cart type"),
     }
