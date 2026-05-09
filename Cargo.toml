@@ -39,7 +39,7 @@ reqwest = { version = "0.13", features = ["json", "query"] }
 sdl3-sys = { version = "0.6", features = ["build-from-source-static"] }
 sdl3-ttf-sys = { version = "0.6", features = ["build-from-source-static", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
 
-[target.'cfg(linux)'.dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
 sdl3-sys = { version = "0.6", features = ["build-from-source"] }
 sdl3-ttf-sys = { version = "0.6", features = ["build-from-source", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
 
