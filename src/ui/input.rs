@@ -230,7 +230,7 @@ fn set_buttons_from_joystick(
         let axis_position =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile_joystick_axis.id) };
         if axis_position as isize * profile_joystick_axis.axis as isize > 0
-            && axis_position.saturating_abs() > i16::MAX / 2
+            && axis_position.abs_diff(profile_joystick_axis.initial_state) > (u16::MAX / 4)
         {
             *keys |= 1 << i;
         }
@@ -336,7 +336,7 @@ fn hotkey_pressed(
         let axis_position =
             unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, joystick_axis.id) };
         pressed = axis_position as isize * joystick_axis.axis as isize > 0
-            && axis_position.saturating_abs() > i16::MAX / 2
+            && axis_position.abs_diff(joystick_axis.initial_state) > (u16::MAX / 4)
     }
     pressed
 }
@@ -824,23 +824,24 @@ pub fn configure_input_profile(
                             &mut initial_state,
                         )
                     };
+                    initial_state = if has_initial_state {
+                        if initial_state < i16::MIN / 2 {
+                            i16::MIN
+                        } else if initial_state > i16::MAX / 2 {
+                            i16::MAX
+                        } else {
+                            0
+                        }
+                    } else {
+                        0
+                    };
 
-                    if axis_value.saturating_abs() > (i16::MAX as i32 * 3 / 4) as i16 {
+                    if axis_value.abs_diff(initial_state) > (u16::MAX / 4) {
                         let result = ui::config::InputControllerAxis {
                             enabled: true,
                             id: axis as i32,
                             axis: axis_value / axis_value.saturating_abs(),
-                            initial_state: if has_initial_state {
-                                if initial_state < i16::MIN / 2 {
-                                    i16::MIN
-                                } else if initial_state > i16::MAX / 2 {
-                                    i16::MAX
-                                } else {
-                                    0
-                                }
-                            } else {
-                                0
-                            },
+                            initial_state,
                         };
                         if result != last_joystick_axis_result {
                             new_joystick_axis[*value] = result;
