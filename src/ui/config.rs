@@ -11,6 +11,7 @@ pub struct InputControllerAxis {
     pub enabled: bool,
     pub id: i32,
     pub axis: i16,
+    pub initial_state: i16,
 }
 
 #[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
