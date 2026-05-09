@@ -182,8 +182,7 @@ async fn main() -> std::io::Result<()> {
                     && let Ok(rom) = std::fs::read(&device.ui.config.input.gb_rom_path[i])
                     && let Ok(ram) = std::fs::read(&device.ui.config.input.gb_ram_path[i])
                 {
-                    device.transferpaks[i].cart.rom = rom;
-                    device.transferpaks[i].cart.ram = ram;
+                    device::controller::gbcart::init(&mut device.transferpaks[i].cart, &rom, &ram);
                 }
             }
 
@@ -235,13 +234,12 @@ async fn main() -> std::io::Result<()> {
                 if device.ui.config.input.transfer_pak[i]
                     && !device.ui.config.input.gb_ram_path[i].is_empty()
                     && !device.transferpaks[i].cart.ram.is_empty()
-                    && let Err(e) = tokio::fs::write(
-                        &device.ui.config.input.gb_ram_path[i],
-                        &device.transferpaks[i].cart.ram,
-                    )
-                    .await
                 {
-                    eprintln!("Error writing GB RAM: {}", e);
+                    device::controller::gbcart::save(
+                        &device.transferpaks[i].cart,
+                        device.vi.elapsed_time as i64,
+                        &device.ui.config.input.gb_ram_path[i],
+                    );
                 }
             }
         }
