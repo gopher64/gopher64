@@ -83,6 +83,16 @@ pub struct Ui {
     pub usb: Usb,
 }
 
+pub fn sdl_hints() {
+    unsafe {
+        let hint = std::ffi::CString::new("1").unwrap();
+        sdl3_sys::everything::SDL_SetHint(
+            sdl3_sys::everything::SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,
+            hint.as_ptr(),
+        );
+    }
+}
+
 pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
     unsafe {
         if sdl3_sys::init::SDL_WasInit(flag) == 0 && !sdl3_sys::init::SDL_InitSubSystem(flag) {
