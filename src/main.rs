@@ -240,7 +240,10 @@ async fn main() -> std::io::Result<()> {
                 {
                     device::controller::gbcart::save(
                         &mut device.transferpaks[i].cart,
-                        device.vi.elapsed_time as i64,
+                        device
+                            .cart
+                            .rtc_timestamp
+                            .saturating_add(device.vi.elapsed_time as i64),
                         &device.ui.config.input.gb_ram_path[i],
                     );
                 }

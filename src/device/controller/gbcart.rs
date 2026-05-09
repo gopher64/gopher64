@@ -22,8 +22,7 @@ pub struct GbCart {
     pub latch: bool,
     pub rtc_regs: [u8; MBC3_RTC_REGS_COUNT],
     pub rtc_regs_latch: [u8; MBC3_RTC_REGS_COUNT],
-    pub rtc_timestamp: i64,
-    pub last_time: i64,
+    pub last_timestamp: i64,
 }
 
 #[derive(Default, Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -43,13 +42,13 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
         44 => {
             offset = ram.len() - 44;
             gb_cart.ram = ram[..ram.len() - 44].to_vec();
-            gb_cart.rtc_timestamp =
+            gb_cart.last_timestamp =
                 i32::from_le_bytes(ram[offset + 40..offset + 44].try_into().unwrap()) as i64;
         }
         48 => {
             offset = ram.len() - 48;
             gb_cart.ram = ram[..ram.len() - 48].to_vec();
-            gb_cart.rtc_timestamp =
+            gb_cart.last_timestamp =
                 i64::from_le_bytes(ram[offset + 40..offset + 48].try_into().unwrap());
         }
         _ => {
@@ -83,10 +82,10 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
 
 pub fn save(
     gb_cart: &mut device::controller::gbcart::GbCart,
-    elapsed_time: i64,
+    timestamp: i64,
     ram_path: &std::string::String,
 ) {
-    update_rtc_regs(gb_cart, elapsed_time);
+    update_rtc_regs(gb_cart, timestamp);
 
     if let Ok(file) = std::fs::File::create(ram_path) {
         let mut f = std::io::BufWriter::new(file);
@@ -115,8 +114,7 @@ pub fn save(
             f.write_all(&(gb_cart.rtc_regs_latch[MBC3_RTC_DAYS_H] as u32).to_le_bytes())
                 .unwrap();
 
-            let timestamp = gb_cart.rtc_timestamp.saturating_add(elapsed_time);
-            f.write_all(&timestamp.to_le_bytes()).unwrap();
+            f.write_all(&gb_cart.last_timestamp.to_le_bytes()).unwrap();
 
             f.flush().unwrap();
         }
@@ -125,9 +123,9 @@ pub fn save(
     }
 }
 
-fn update_rtc_regs(cart: &mut device::controller::gbcart::GbCart, elapsed_time: i64) {
-    let mut diff = elapsed_time - cart.last_time;
-    cart.last_time = elapsed_time;
+fn update_rtc_regs(cart: &mut device::controller::gbcart::GbCart, timestamp: i64) {
+    let mut diff = timestamp - cart.last_timestamp;
+    cart.last_timestamp = timestamp;
 
     if diff > 0 {
         cart.rtc_regs[MBC3_RTC_SECONDS] += (diff % 60) as u8;
@@ -244,7 +242,7 @@ fn write_mbc3(
     address: u16,
     data: usize,
     size: usize,
-    elapsed_time: i64,
+    timestamp: i64,
 ) {
     let value = pif_ram[data + size - 1];
     if address < 0x2000 {
@@ -260,7 +258,7 @@ fn write_mbc3(
     } else if address < 0x8000 {
         if cart.cart_type == CartType::MBC3RamBattRtc {
             if !cart.latch && (value & 0x1) != 0 {
-                update_rtc_regs(cart, elapsed_time);
+                update_rtc_regs(cart, timestamp);
                 cart.rtc_regs_latch = cart.rtc_regs;
             }
             cart.latch = (value & 0x1) != 0;
@@ -287,7 +285,7 @@ fn read_mbc3(
     address: u16,
     data: usize,
     size: usize,
-    elapsed_time: i64,
+    timestamp: i64,
 ) {
     if address < 0x4000 {
         let banked_address = address & 0x3FFF;
@@ -317,7 +315,7 @@ fn read_mbc3(
                     pif_ram[data + i] = cart.rtc_regs_latch[cart.ram_bank as usize - 0x8];
                 }
             } else {
-                update_rtc_regs(cart, elapsed_time);
+                update_rtc_regs(cart, timestamp);
                 for i in 0..size {
                     pif_ram[data + i] = cart.rtc_regs[cart.ram_bank as usize - 0x8];
                 }
@@ -398,7 +396,7 @@ pub fn read(
     address: u16,
     data: usize,
     size: usize,
-    elapsed_time: i64,
+    timestamp: i64,
 ) {
     if !cart.enabled {
         for i in 0..size {
@@ -408,8 +406,8 @@ pub fn read(
     }
     match cart.cart_type {
         CartType::MBC1RamBatt => read_mbc1(pif_ram, cart, address, data, size),
-        CartType::MBC3RamBatt => read_mbc3(pif_ram, cart, address, data, size, elapsed_time),
-        CartType::MBC3RamBattRtc => read_mbc3(pif_ram, cart, address, data, size, elapsed_time),
+        CartType::MBC3RamBatt => read_mbc3(pif_ram, cart, address, data, size, timestamp),
+        CartType::MBC3RamBattRtc => read_mbc3(pif_ram, cart, address, data, size, timestamp),
         CartType::MBC5RamBatt => read_mbc5(pif_ram, cart, address, data, size),
         _ => panic!("Unsupported cart type"),
     }
@@ -421,15 +419,15 @@ pub fn write(
     address: u16,
     data: usize,
     size: usize,
-    elapsed_time: i64,
+    timestamp: i64,
 ) {
     if !cart.enabled {
         return;
     }
     match cart.cart_type {
         CartType::MBC1RamBatt => write_mbc1(pif_ram, cart, address, data, size),
-        CartType::MBC3RamBatt => write_mbc3(pif_ram, cart, address, data, size, elapsed_time),
-        CartType::MBC3RamBattRtc => write_mbc3(pif_ram, cart, address, data, size, elapsed_time),
+        CartType::MBC3RamBatt => write_mbc3(pif_ram, cart, address, data, size, timestamp),
+        CartType::MBC3RamBattRtc => write_mbc3(pif_ram, cart, address, data, size, timestamp),
         CartType::MBC5RamBatt => write_mbc5(pif_ram, cart, address, data, size),
         _ => panic!("Unsupported cart type"),
     }
