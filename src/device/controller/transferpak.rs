@@ -58,10 +58,7 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
                 0x4000 * pak.bank + (address & 0x7fff) - 0x4000,
                 data,
                 size,
-                device
-                    .cart
-                    .rtc_timestamp
-                    .saturating_add(device.vi.elapsed_time as i64),
+                device.vi.elapsed_time as i64,
             );
         }
         _ => {
@@ -128,10 +125,7 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
                 0x4000 * pak.bank + (address & 0x7fff) - 0x4000,
                 data,
                 size,
-                device
-                    .cart
-                    .rtc_timestamp
-                    .saturating_add(device.vi.elapsed_time as i64),
+                device.vi.elapsed_time as i64,
             );
         }
         _ => {
