@@ -97,11 +97,6 @@ pub fn init(device: &mut device::Device) {
     }
     unsafe {
         sdl3_sys::everything::SDL_HideCursor();
-        let hint = std::ffi::CString::new("1").unwrap();
-        sdl3_sys::everything::SDL_SetHint(
-            sdl3_sys::everything::SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,
-            hint.as_ptr(),
-        );
     }
 
     let gfx_info = build_gfx_info(device);

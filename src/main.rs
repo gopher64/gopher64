@@ -121,6 +121,9 @@ async fn main() -> std::io::Result<()> {
     std::fs::create_dir_all(dirs.cache_dir)?;
     std::fs::create_dir_all(dirs.data_dir.join("saves"))?;
     std::fs::create_dir_all(dirs.data_dir.join("states"))?;
+
+    ui::sdl_hints();
+
     let args = Args::parse();
     if let Some(game) = args.game {
         let file_path = std::path::Path::new(&game);
