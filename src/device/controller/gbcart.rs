@@ -88,7 +88,8 @@ pub fn save(
 ) {
     update_rtc_regs(gb_cart, elapsed_time);
 
-    if let Ok(mut f) = std::fs::File::create(ram_path) {
+    if let Ok(file) = std::fs::File::create(ram_path) {
+        let mut f = std::io::BufWriter::new(file);
         f.write_all(&gb_cart.ram).unwrap();
 
         if gb_cart.cart_type == CartType::MBC3RamBattRtc {
@@ -116,6 +117,8 @@ pub fn save(
 
             let timestamp = gb_cart.rtc_timestamp.saturating_add(elapsed_time);
             f.write_all(&timestamp.to_le_bytes()).unwrap();
+
+            f.flush().unwrap();
         }
     } else {
         eprintln!("Error saving TransferPak RAM to {ram_path}");
