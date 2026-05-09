@@ -123,9 +123,9 @@ pub fn save(
     }
 }
 
-fn update_rtc_regs(cart: &mut device::controller::gbcart::GbCart, now: i64) {
-    let mut diff = now - cart.last_time;
-    cart.last_time = now;
+fn update_rtc_regs(cart: &mut device::controller::gbcart::GbCart, elapsed_time: i64) {
+    let mut diff = elapsed_time - cart.last_time;
+    cart.last_time = elapsed_time;
 
     if diff > 0 {
         cart.rtc_regs[MBC3_RTC_SECONDS] += (diff % 60) as u8;
@@ -242,7 +242,7 @@ fn write_mbc3(
     address: u16,
     data: usize,
     size: usize,
-    now: i64,
+    elapsed_time: i64,
 ) {
     let value = pif_ram[data + size - 1];
     if address < 0x2000 {
@@ -258,7 +258,7 @@ fn write_mbc3(
     } else if address < 0x8000 {
         if cart.cart_type == CartType::MBC3RamBattRtc {
             if !cart.latch && (value & 0x1) != 0 {
-                update_rtc_regs(cart, now);
+                update_rtc_regs(cart, elapsed_time);
                 cart.rtc_regs_latch = cart.rtc_regs;
             }
             cart.latch = (value & 0x1) != 0;
@@ -285,7 +285,7 @@ fn read_mbc3(
     address: u16,
     data: usize,
     size: usize,
-    now: i64,
+    elapsed_time: i64,
 ) {
     if address < 0x4000 {
         let banked_address = address & 0x3FFF;
@@ -315,7 +315,7 @@ fn read_mbc3(
                     pif_ram[data + i] = cart.rtc_regs_latch[cart.ram_bank as usize - 0x8];
                 }
             } else {
-                update_rtc_regs(cart, now);
+                update_rtc_regs(cart, elapsed_time);
                 for i in 0..size {
                     pif_ram[data + i] = cart.rtc_regs[cart.ram_bank as usize - 0x8];
                 }
