@@ -122,6 +122,8 @@ pub fn save(
             let timestamp = gb_cart.rtc_timestamp + elapsed_time;
             f.write_all(&timestamp.to_le_bytes()).unwrap();
         }
+    } else {
+        eprintln!("Error saving TransferPak RAM to {ram_path}");
     }
 }
 
