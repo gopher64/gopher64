@@ -750,7 +750,7 @@ pub fn configure_input_profile(
                 font,
             );
             std::thread::sleep(std::time::Duration::from_millis(100));
-            while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
+            while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } && !key_set {
                 if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
                     close_input_profile_window(
                         open_joysticks,
@@ -843,7 +843,9 @@ pub fn configure_input_profile(
                             axis: axis_value / axis_value.saturating_abs(),
                             initial_state,
                         };
-                        if result != last_joystick_axis_result {
+                        let same_trigger = last_joystick_axis_result.id == result.id
+                            && last_joystick_axis_result.initial_state != 0;
+                        if result != last_joystick_axis_result && !same_trigger {
                             new_joystick_axis[*value] = result;
                             last_joystick_axis_result = result;
                             key_set = true
