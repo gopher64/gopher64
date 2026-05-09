@@ -38,9 +38,8 @@ pub enum CartType {
 
 pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &[u8]) {
     gb_cart.rom = rom.to_vec();
-    let remainder = ram.len() % 8192;
     let offset;
-    match remainder {
+    match ram.len() % 8192 {
         44 => {
             offset = ram.len() - 44;
             gb_cart.ram = ram[..ram.len() - 44].to_vec();
