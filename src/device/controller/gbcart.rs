@@ -37,21 +37,20 @@ pub enum CartType {
 
 pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &[u8]) {
     gb_cart.rom = rom.to_vec();
-    let offset;
-    match ram.len() % 8192 {
+    let offset = match ram.len() % 8192 {
         44 => {
-            offset = ram.len() - 44;
             gb_cart.ram = ram[..ram.len() - 44].to_vec();
+            ram.len() - 44
         }
         48 => {
-            offset = ram.len() - 48;
             gb_cart.ram = ram[..ram.len() - 48].to_vec();
+            ram.len() - 48
         }
         _ => {
             gb_cart.ram = ram.to_vec();
             return;
         }
-    }
+    };
 
     gb_cart.rtc_regs[MBC3_RTC_SECONDS] =
         u32::from_le_bytes(ram[offset..offset + 4].try_into().unwrap()) as u8;
