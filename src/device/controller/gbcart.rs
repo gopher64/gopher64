@@ -63,6 +63,12 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
         }
     }
 
+    let now = chrono::Local::now().naive_local().and_utc().timestamp();
+    if gb_cart.rtc_timestamp > now {
+        eprintln!("GB RTC timestamp is in the future, setting to now");
+        gb_cart.rtc_timestamp = now;
+    }
+
     gb_cart.last_time = gb_cart.rtc_timestamp;
 
     gb_cart.rtc_regs[MBC3_RTC_SECONDS] =
