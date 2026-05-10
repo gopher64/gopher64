@@ -15,6 +15,7 @@ export global RAData {
     in-out property <string> ra_username;
     in-out property <string> ra_password;
     in-out property <string> current_user_message;
+    out property <string> not_logged_in:  @tr("Not currently logged in");
 }
 
 export component RetroAchievements inherits Page {
@@ -37,7 +38,7 @@ export component RetroAchievements inherits Page {
                         RAData.ra_username = "";
                         username_widget.text = "";
                         password_widget.text = "";
-                        RAData.current_user_message = "Not currently logged in";
+                        RAData.current_user_message = RAData.not_logged_in;
                         RAData.ra_show_profile = false;
                     }
                     ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard);

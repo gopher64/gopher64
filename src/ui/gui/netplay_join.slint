@@ -44,7 +44,7 @@ export component NetplayJoin inherits Window {
                 }
 
                 LineEdit {
-                    placeholder-text: @tr("example.com:45000");
+                    placeholder-text: "example.com:45000";
                     text: NetplayData.custom_server_url;
                     edited(text) => {
                         NetplayData.custom_server_url = text;
@@ -70,11 +70,11 @@ export component NetplayJoin inherits Window {
         }
         StandardTableView {
             columns: [
-                { title: "Server" },
-                { title: "Session Name" },
-                { title: "Game Name" },
-                { title: "Password" },
-                { title: "Cheats" }
+                { title: @tr("Server") },
+                { title: @tr("Session Name") },
+                { title: @tr("Game Name") },
+                { title: @tr("Password") },
+                { title: @tr("Cheats") }
             ];
             rows: NetplayData.sessions;
             current-row: NetplayData.current_session;

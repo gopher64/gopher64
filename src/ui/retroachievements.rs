@@ -27,7 +27,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
         retroachievements::login_token_user(app.get_ra_username().to_string(), token, tx);
         set_current_user_message(app, rx);
     } else {
-        app.set_ra_current_user_message("Not currently logged in".into());
+        app.set_ra_current_user_message(app.get_ra_not_logged_in());
     }
 
     let weak_app2 = app.as_weak();
