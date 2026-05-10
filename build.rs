@@ -5,7 +5,8 @@ fn main() {
 
     #[cfg(feature = "gui")]
     {
-        let slint_config = slint_build::CompilerConfiguration::new();
+        let slint_config = slint_build::CompilerConfiguration::new()
+            .with_bundled_translations("data/translations");
         slint_build::compile_with_config("src/ui/gui/appwindow.slint", slint_config).unwrap();
     }
 

@@ -1,0 +1,544 @@
+# gopher64 - Spanish Translation
+msgid ""
+msgstr ""
+"Project-Id-Version: gopher64\n"
+"POT-Creation-Date: 2026-05-10 13:12+0000\n"
+"PO-Revision-Date: 2026-05-10 15:15+0000\n"
+"Last-Translator: Gemini\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/ui/gui/about_page.slint:17
+msgctxt "NewVersionButton"
+msgid "New version available! Click here to download"
+msgstr "¡Nueva versión disponible! Haz clic aquí para descargar"
+
+#: src/ui/gui/about_page.slint:33
+msgctxt "About"
+msgid "About"
+msgstr "Acerca de"
+
+#: src/ui/gui/about_page.slint:40
+msgctxt "About"
+msgid "Wiki"
+msgstr "Wiki"
+
+#: src/ui/gui/about_page.slint:50
+msgctxt "About"
+msgid "Discord Server"
+msgstr "Servidor de Discord"
+
+#: src/ui/gui/about_page.slint:60
+msgctxt "About"
+msgid "Source Code"
+msgstr "Código fuente"
+
+#: src/ui/gui/about_page.slint:70
+msgctxt "About"
+msgid "Donate (via Patreon)"
+msgstr "Donar (vía Patreon)"
+
+#: src/ui/gui/about_page.slint:77
+msgctxt "About"
+msgid "Donate (via GitHub)"
+msgstr "Donar (vía GitHub)"
+
+#: src/ui/gui/cheat_page.slint:15
+msgctxt "Cheats"
+msgid "Cheats"
+msgstr "Trucos"
+
+#: src/ui/gui/cheat_page.slint:25
+msgctxt "Cheats"
+msgid "Select ROM"
+msgstr "Seleccionar ROM"
+
+#: src/ui/gui/cheat_page.slint:41
+msgctxt "Cheats"
+msgid "Clear Cheats For All ROMs"
+msgstr "Borrar trucos de todas las ROM"
+
+#: src/ui/gui/cheat_page.slint:86
+msgctxt "Cheats"
+msgid "No Cheats Available"
+msgstr "No hay trucos disponibles"
+
+#: src/ui/gui/controller_page.slint:26
+msgctxt "ControllerConfig"
+msgid "Controller Configuration"
+msgstr "Configuración del mando"
+
+#: src/ui/gui/controller_page.slint:37
+msgctxt "ControllerConfig"
+msgid "Configure Input Profile"
+msgstr "Configurar perfil de entrada"
+
+#: src/ui/gui/controller_page.slint:49
+msgctxt "ControllerConfig"
+msgid "Port"
+msgstr "Puerto"
+
+#: src/ui/gui/controller_page.slint:60
+msgctxt "ControllerConfig"
+msgid "Enabled"
+msgstr "Activado"
+
+#: src/ui/gui/controller_page.slint:73
+msgctxt "ControllerConfig"
+msgid "Emulate VRU"
+msgstr "Emular VRU"
+
+#: src/ui/gui/controller_page.slint:87
+msgctxt "ControllerConfig"
+msgid "Transfer Pak"
+msgstr "Transfer Pak"
+
+#: src/ui/gui/controller_page.slint:101
+msgctxt "ControllerConfig"
+msgid "Profile"
+msgstr "Perfil"
+
+#: src/ui/gui/controller_page.slint:117
+msgctxt "ControllerConfig"
+msgid "Controller"
+msgstr "Mando"
+
+#: src/ui/gui/input_profile.slint:10
+msgctxt "InputProfileDialog"
+msgid "Create/Modify Input Profile"
+msgstr "Crear/Modificar perfil de entrada"
+
+#: src/ui/gui/input_profile.slint:18
+msgctxt "InputProfileDialog"
+msgid "Enter profile name to create or modify"
+msgstr "Introduce el nombre del perfil para crear o modificar"
+
+#: src/ui/gui/input_profile.slint:29
+msgctxt "InputProfileDialog"
+msgid "Deadzone Percentage"
+msgstr "Porcentaje de zona muerta"
+
+#: src/ui/gui/input_profile.slint:51
+msgctxt "InputProfileDialog"
+msgid "Use DirectInput"
+msgstr "Usar DirectInput"
+
+#: src/ui/gui/input_profile.slint:61
+msgctxt "InputProfileDialog"
+msgid "Start Profile Creation Wizard"
+msgstr "Iniciar asistente de creación de perfil"
+
+#: src/ui/gui/localgame_page.slint:18
+msgctxt "LocalGame"
+msgid "Local Game"
+msgstr "Juego local"
+
+#: src/ui/gui/localgame_page.slint:25
+msgctxt "LocalGame"
+msgid "Open ROM"
+msgstr "Abrir ROM"
+
+#: src/ui/gui/localgame_page.slint:36
+msgctxt "LocalGame"
+msgid "Open Saves Folder"
+msgstr "Abrir carpeta de guardados"
+
+#: src/ui/gui/localgame_page.slint:53
+msgctxt "LocalGame"
+msgid "Recent ROMs"
+msgstr "ROM recientes"
+
+#: src/ui/gui/netplay_page.slint:33
+msgctxt "Netplay"
+msgid "Netplay"
+msgstr "Netplay"
+
+#: src/ui/gui/netplay_page.slint:40
+msgctxt "Netplay"
+msgid "Create Session"
+msgstr "Crear sesión"
+
+#: src/ui/gui/netplay_page.slint:50
+msgctxt "Netplay"
+msgid "Join Session"
+msgstr "Unirse a sesión"
+
+#: src/ui/gui/netplay_page.slint:64
+msgctxt "Netplay"
+msgid "Netplay Discord Channel"
+msgstr "Canal de Discord de Netplay"
+
+#: src/ui/gui/netplay_page.slint:71
+msgctxt "Netplay"
+msgid "Provide Feedback"
+msgstr "Enviar comentarios"
+
+#: src/ui/gui/netplay_page.slint:82
+msgctxt "CustomNetplayServer"
+msgid "Custom Netplay Server"
+msgstr "Servidor Netplay personalizado"
+
+#: src/ui/gui/settings_page.slint:22
+msgctxt "Settings"
+msgid "Settings"
+msgstr "Ajustes"
+
+#: src/ui/gui/settings_page.slint:29
+msgctxt "Settings"
+msgid "Resolution:"
+msgstr "Resolución:"
+
+#: src/ui/gui/settings_page.slint:45
+msgctxt "Settings"
+msgid "SSAA downscaling"
+msgstr "Reducción de escala SSAA"
+
+#: src/ui/gui/settings_page.slint:56
+msgctxt "Settings"
+msgid "Integer Scaling"
+msgstr "Escalado de enteros"
+
+#: src/ui/gui/settings_page.slint:67
+msgctxt "Settings"
+msgid "Fullscreen"
+msgstr "Pantalla completa"
+
+#: src/ui/gui/settings_page.slint:78
+msgctxt "Settings"
+msgid "Widescreen (stretch)"
+msgstr "Pantalla ancha (estirado)"
+
+#: src/ui/gui/settings_page.slint:89
+msgctxt "Settings"
+msgid "VSync"
+msgstr "Sincronización vertical (VSync)"
+
+#: src/ui/gui/settings_page.slint:100
+msgctxt "Settings"
+msgid "Apply CRT shader"
+msgstr "Aplicar sombreador CRT"
+
+#: src/ui/gui/settings_page.slint:115
+msgctxt "Settings"
+msgid "Overclock N64 CPU (may cause bugs)"
+msgstr "Overclock CPU N64 (puede causar errores)"
+
+#: src/ui/gui/settings_page.slint:126
+msgctxt "Settings"
+msgid "Disable Expansion Pak"
+msgstr "Desactivar Expansion Pak"
+
+#: src/ui/gui/settings_page.slint:137
+msgctxt "Settings"
+msgid "Emulate UNFLoader"
+msgstr "Emular UNFLoader"
+
+#: src/ui/gui/vru_dialog.slint:7
+msgctxt "VruDialog"
+msgid "What Would You Like To Say?"
+msgstr "¿Qué te gustaría decir?"
+
+#: src/ui/gui/appwindow.slint:94
+msgctxt "Menu"
+msgid "Local Game"
+msgstr "Juego local"
+
+#: src/ui/gui/appwindow.slint:95
+msgctxt "Menu"
+msgid "Controller Config"
+msgstr "Config. del mando"
+
+#: src/ui/gui/appwindow.slint:96
+msgctxt "Menu"
+msgid "Netplay"
+msgstr "Netplay"
+
+#: src/ui/gui/appwindow.slint:97
+msgctxt "Menu"
+msgid "Cheats"
+msgstr "Trucos"
+
+#: src/ui/gui/appwindow.slint:98
+msgctxt "Menu"
+msgid "RetroAchievements"
+msgstr "RetroAchievements"
+
+#: src/ui/gui/appwindow.slint:99
+msgctxt "Menu"
+msgid "Settings"
+msgstr "Ajustes"
+
+#: src/ui/gui/appwindow.slint:100
+msgctxt "Menu"
+msgid "About"
+msgstr "Acerca de"
+
+#: src/ui/gui/appwindow.slint:194
+msgctxt "ErrorDialog"
+msgid "Error"
+msgstr "Error"
+
+#: src/ui/gui/netplay_create.slint:5
+msgctxt "NetplayCreate"
+msgid "Netplay: Create Session"
+msgstr "Netplay: Crear sesión"
+
+#: src/ui/gui/netplay_create.slint:24
+msgctxt "NetplayCreate"
+msgid "Session Name:"
+msgstr "Nombre de la sesión:"
+
+#: src/ui/gui/netplay_create.slint:28
+msgctxt "NetplayCreate"
+msgid "Enter session name"
+msgstr "Introduce el nombre de la sesión"
+
+#: src/ui/gui/netplay_create.slint:37
+msgctxt "NetplayCreate"
+msgid "Password (Optional):"
+msgstr "Contraseña (Opcional):"
+
+#: src/ui/gui/netplay_create.slint:41
+msgctxt "NetplayCreate"
+msgid "Enter session password"
+msgstr "Introduce la contraseña"
+
+#: src/ui/gui/netplay_create.slint:51
+msgctxt "NetplayCreate"
+msgid "Player Name:"
+msgstr "Nombre del jugador:"
+
+#: src/ui/gui/netplay_create.slint:55
+msgctxt "NetplayCreate"
+msgid "Enter player name"
+msgstr "Introduce tu nombre"
+
+#: src/ui/gui/netplay_create.slint:64
+msgctxt "NetplayCreate"
+msgid "Server:"
+msgstr "Servidor:"
+
+#: src/ui/gui/netplay_create.slint:82
+msgctxt "NetplayCreate"
+msgid "Select ROM"
+msgstr "Seleccionar ROM"
+
+#: src/ui/gui/netplay_create.slint:97
+msgctxt "NetplayCreate"
+msgid ""
+"This game has cheats enabled. Cheats will be synchronized with other players."
+msgstr ""
+"Este juego tiene trucos activados.\n"
+"Los trucos se sincronizarán con los otros jugadores."
+
+#: src/ui/gui/netplay_create.slint:103
+msgctxt "NetplayCreate"
+msgid "Create Session"
+msgstr "Crear sesión"
+
+#: src/ui/gui/netplay_create.slint:126
+msgctxt "DispatcherDialog"
+msgid "Creating Server"
+msgstr "Creando servidor"
+
+#: src/ui/gui/netplay_create.slint:128
+msgctxt "DispatcherDialog"
+msgid "Creating server, please wait...This may take about 30 seconds."
+msgstr "Creando servidor, espera... Puede tardar unos 30 segundos."
+
+#: src/ui/gui/netplay_join.slint:5
+msgctxt "NetplayJoin"
+msgid "Netplay: Join Session"
+msgstr "Netplay: Unirse a la sesión"
+
+#: src/ui/gui/netplay_join.slint:30
+msgctxt "NetplayJoin"
+msgid "Player Name (required):"
+msgstr "Nombre de jugador (requerido):"
+
+#: src/ui/gui/netplay_join.slint:34
+msgctxt "NetplayJoin"
+msgid "Enter player name"
+msgstr "Introduce tu nombre"
+
+#: src/ui/gui/netplay_join.slint:43
+msgctxt "NetplayJoin"
+msgid "Custom Server URL (optional):"
+msgstr "URL de servidor personalizado (opcional):"
+
+#: src/ui/gui/netplay_join.slint:57
+msgctxt "NetplayJoin"
+msgid "Refreshing session list, please wait..."
+msgstr "Actualizando lista de sesiones, espera..."
+
+#: src/ui/gui/netplay_join.slint:62
+msgctxt "NetplayJoin"
+msgid "Click on a session below to select it"
+msgstr "Haz clic en una sesión para seleccionarla"
+
+#: src/ui/gui/netplay_join.slint:67
+msgctxt "NetplayJoin"
+msgid ""
+"No sessions available. Please refresh to check again."
+msgstr ""
+"No hay sesiones disponibles.\n"
+"Refresca para comprobar de nuevo."
+
+#: src/ui/gui/netplay_join.slint:73
+msgctxt "NetplayJoin"
+msgid "Server"
+msgstr "Servidor"
+
+#: src/ui/gui/netplay_join.slint:74
+msgctxt "NetplayJoin"
+msgid "Session Name"
+msgstr "Nombre de la sesión"
+
+#: src/ui/gui/netplay_join.slint:75
+msgctxt "NetplayJoin"
+msgid "Game Name"
+msgstr "Nombre del juego"
+
+#: src/ui/gui/netplay_join.slint:76
+msgctxt "NetplayJoin"
+msgid "Password"
+msgstr "Contraseña"
+
+#: src/ui/gui/netplay_join.slint:77
+msgctxt "NetplayJoin"
+msgid "Cheats"
+msgstr "Trucos"
+
+#: src/ui/gui/netplay_join.slint:91
+msgctxt "NetplayJoin"
+msgid "Refresh Session List"
+msgstr "Actualizar lista"
+
+#: src/ui/gui/netplay_join.slint:105
+msgctxt "NetplayJoin"
+msgid "Password (if required)"
+msgstr "Contraseña (si es necesaria)"
+
+#: src/ui/gui/netplay_join.slint:112
+msgctxt "NetplayJoin"
+msgid "Select ROM"
+msgstr "Seleccionar ROM"
+
+#: src/ui/gui/netplay_join.slint:125
+msgctxt "NetplayJoin"
+msgid "Join Session"
+msgstr "Unirse a la sesión"
+
+#: src/ui/gui/netplay_wait.slint:14
+msgctxt "NetplayWait"
+msgid "Netplay: Waiting Room"
+msgstr "Netplay: Sala de espera"
+
+#: src/ui/gui/netplay_wait.slint:31
+msgctxt "NetplayWait"
+msgid "Session Name: "
+msgstr "Nombre de sesión: "
+
+#: src/ui/gui/netplay_wait.slint:37
+msgctxt "NetplayWait"
+msgid "Game Name: "
+msgstr "Nombre del juego: "
+
+#: src/ui/gui/netplay_wait.slint:43
+msgctxt "NetplayWait"
+msgid "Ping: "
+msgstr "Latencia (Ping): "
+
+#: src/ui/gui/netplay_wait.slint:50
+msgctxt "NetplayWait"
+msgid "Player 1: "
+msgstr "Jugador 1: "
+
+#: src/ui/gui/netplay_wait.slint:54
+msgctxt "NetplayWait"
+msgid "Player 2: "
+msgstr "Jugador 2: "
+
+#: src/ui/gui/netplay_wait.slint:60
+msgctxt "NetplayWait"
+msgid "Player 3: "
+msgstr "Jugador 3: "
+
+#: src/ui/gui/netplay_wait.slint:64
+msgctxt "NetplayWait"
+msgid "Player 4: "
+msgstr "Jugador 4: "
+
+#: src/ui/gui/netplay_wait.slint:76
+msgctxt "NetplayWait"
+msgid "Enter chat message"
+msgstr "Escribe un mensaje"
+
+#: src/ui/gui/netplay_wait.slint:87
+msgctxt "NetplayWait"
+msgid "Send Message"
+msgstr "Enviar mensaje"
+
+#: src/ui/gui/netplay_wait.slint:102
+msgctxt "NetplayWait"
+msgid "Start Game"
+msgstr "Iniciar juego"
+
+#: src/ui/gui/retroachievements_page.slint:18
+msgctxt "RAData"
+msgid "Not currently logged in"
+msgstr "Sesión no iniciada"
+
+#: src/ui/gui/retroachievements_page.slint:26
+msgctxt "RetroAchievements"
+msgid "RetroAchievements"
+msgstr "RetroAchievements"
+
+#: src/ui/gui/retroachievements_page.slint:33
+msgctxt "RetroAchievements"
+msgid "Enabled"
+msgstr "Activado"
+
+#: src/ui/gui/retroachievements_page.slint:51
+msgctxt "RetroAchievements"
+msgid "Hardcore mode"
+msgstr "Modo Hardcore"
+
+#: src/ui/gui/retroachievements_page.slint:63
+msgctxt "RetroAchievements"
+msgid "Challenge Indicators"
+msgstr "Indicadores de desafío"
+
+#: src/ui/gui/retroachievements_page.slint:75
+msgctxt "RetroAchievements"
+msgid "Leaderboard Trackers"
+msgstr "Seguimiento de clasificación"
+
+#: src/ui/gui/retroachievements_page.slint:92
+msgctxt "RetroAchievements"
+msgid "View Profile"
+msgstr "Ver perfil"
+
+#: src/ui/gui/retroachievements_page.slint:102
+msgctxt "RetroAchievements"
+msgid "Username"
+msgstr "Usuario"
+
+#: src/ui/gui/retroachievements_page.slint:112
+msgctxt "RetroAchievements"
+msgid "Password"
+msgstr "Contraseña"
+
+#: src/ui/gui/retroachievements_page.slint:121
+msgctxt "RetroAchievements"
+msgid "Login"
+msgstr "Entrar"
+
+#: src/ui/gui/retroachievements_page.slint:137
+msgctxt "RetroAchievements"
+msgid "View Supported Games"
+msgstr "Ver juegos compatibles"

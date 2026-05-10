@@ -4,11 +4,11 @@ permissions:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     tags:
       - "v*"
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   merge_group:
 
 env:
@@ -41,7 +41,8 @@ jobs:
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
-        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
+        run:
+          echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
           -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install SDL Dependencies
         # https://wiki.libsdl.org/SDL3/README-linux#build-dependencies
@@ -60,7 +61,8 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: ${{ env.LLVM_VERSION }}
-          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
+          force-url:
+            https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
             env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-${{
             matrix.llvm }}.tar.xz
       - name: Build
@@ -118,7 +120,8 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: ${{ env.LLVM_VERSION }}
-          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
+          force-url:
+            https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
             env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-${{ matrix.llvm
             }}.exe
       - name: Build
@@ -189,13 +192,15 @@ jobs:
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
-        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
+        run:
+          echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
           -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: ${{ env.LLVM_VERSION }}
-          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
+          force-url:
+            https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
             env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-macOS-${{
             matrix.llvm }}.tar.xz
       - name: Build

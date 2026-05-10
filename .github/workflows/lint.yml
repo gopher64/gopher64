@@ -2,9 +2,9 @@ name: Rust-lint
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   merge_group:
 
 permissions:
@@ -24,7 +24,8 @@ jobs:
         with:
           components: clippy, rustfmt
       - name: Set LLVM_VERSION
-        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
+        run:
+          echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
           -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install SDL Dependencies
         # https://wiki.libsdl.org/SDL3/README-linux#build-dependencies
@@ -43,11 +44,15 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: ${{ env.LLVM_VERSION }}
-          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
+          force-url:
+            https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
             env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz
       - name: Rustfmt Check
         uses: actions-rust-lang/rustfmt@v1
       - name: Lint
         run: |
+          cargo install slint-tr-extractor
           cargo clippy -- -Dwarnings
           cargo clippy --no-default-features -- -Dwarnings
+          find -name \*.slint | xargs slint-tr-extractor -o /tmp/translations.pot
+          diff -I '^"POT-Creation-Date:' /tmp/translations.pot data/translations/gopher64.pot
