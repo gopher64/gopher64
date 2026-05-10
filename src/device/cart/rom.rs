@@ -6,22 +6,14 @@ use sha2::{Digest, Sha256};
 pub const CART_MASK: usize = 0xFFFFFFF;
 
 fn read_cart_word(device: &device::Device, address: usize) -> u32 {
-    let mut data: [u8; 4] = [0; 4];
-    for i in 0..4 {
-        if let Some(value) = device
-            .ui
-            .storage
-            .saves
-            .romsave
-            .data
-            .get(&(address as u32 + i))
-        {
-            data[i as usize] = *value;
-        } else {
-            data[i as usize] = *device.cart.rom.get(address + i as usize).unwrap_or(&0);
-        }
-    }
-    u32::from_be_bytes(data)
+    let romsave = &device.ui.storage.saves.romsave.data;
+    let rom = &device.cart.rom;
+    u32::from_be_bytes(std::array::from_fn(|i| {
+        romsave
+            .get(&(address as u32 + i as u32))
+            .copied()
+            .unwrap_or_else(|| *rom.get(address + i).unwrap_or(&0))
+    }))
 }
 
 pub fn read_mem_fast(
