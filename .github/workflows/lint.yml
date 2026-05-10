@@ -2,9 +2,9 @@ name: Rust-lint
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   merge_group:
 
 permissions:
@@ -24,7 +24,8 @@ jobs:
         with:
           components: clippy, rustfmt
       - name: Set LLVM_VERSION
-        run: echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
+        run:
+          echo "LLVM_VERSION=$(rustc --version --verbose | grep "LLVM version" | cut
           -d':' -f2 | xargs)" >> $GITHUB_ENV
       - name: Install SDL Dependencies
         # https://wiki.libsdl.org/SDL3/README-linux#build-dependencies
@@ -37,17 +38,21 @@ jobs:
             libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev
             libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev
             libudev-dev libthai-dev libpipewire-0.3-dev libwayland-dev
-            libdecor-0-dev liburing-dev libfreetype-dev libfontconfig-dev
+            libdecor-0-dev liburing-dev libfreetype-dev libfontconfig-dev gettext
           version: lint-1.0
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
           version: ${{ env.LLVM_VERSION }}
-          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
+          force-url:
+            https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
             env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz
       - name: Rustfmt Check
         uses: actions-rust-lang/rustfmt@v1
       - name: Lint
         run: |
+          cargo install slint-tr-extractor
           cargo clippy -- -Dwarnings
           cargo clippy --no-default-features -- -Dwarnings
+          find -name \*.slint | xargs slint-tr-extractor -o /tmp/translations.pot
+          msgcmp --use-untranslated /tmp/translations.pot data/translations/gopher64.pot
