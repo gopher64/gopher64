@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-05-10 13:23+0000\n"
+"POT-Creation-Date: 2026-05-10 18:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -435,37 +435,37 @@ msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:31
 msgctxt "NetplayWait"
-msgid "Session Name: "
+msgid "Session Name:"
 msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:37
 msgctxt "NetplayWait"
-msgid "Game Name: "
+msgid "Game Name:"
 msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:43
 msgctxt "NetplayWait"
-msgid "Ping: "
+msgid "Ping:"
 msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:50
 msgctxt "NetplayWait"
-msgid "Player 1: "
+msgid "Player 1:"
 msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:54
 msgctxt "NetplayWait"
-msgid "Player 2: "
+msgid "Player 2:"
 msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:60
 msgctxt "NetplayWait"
-msgid "Player 3: "
+msgid "Player 3:"
 msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:64
 msgctxt "NetplayWait"
-msgid "Player 4: "
+msgid "Player 4:"
 msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:76

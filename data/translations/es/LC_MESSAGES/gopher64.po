@@ -438,38 +438,38 @@ msgstr "Netplay: Sala de espera"
 
 #: src/ui/gui/netplay_wait.slint:31
 msgctxt "NetplayWait"
-msgid "Session Name: "
-msgstr "Nombre de sesión: "
+msgid "Session Name:"
+msgstr "Nombre de sesión:"
 
 #: src/ui/gui/netplay_wait.slint:37
 msgctxt "NetplayWait"
-msgid "Game Name: "
-msgstr "Nombre del juego: "
+msgid "Game Name:"
+msgstr "Nombre del juego:"
 
 #: src/ui/gui/netplay_wait.slint:43
 msgctxt "NetplayWait"
-msgid "Ping: "
-msgstr "Latencia (Ping): "
+msgid "Ping:"
+msgstr "Latencia (Ping):"
 
 #: src/ui/gui/netplay_wait.slint:50
 msgctxt "NetplayWait"
-msgid "Player 1: "
-msgstr "Jugador 1: "
+msgid "Player 1:"
+msgstr "Jugador 1:"
 
 #: src/ui/gui/netplay_wait.slint:54
 msgctxt "NetplayWait"
-msgid "Player 2: "
-msgstr "Jugador 2: "
+msgid "Player 2:"
+msgstr "Jugador 2:"
 
 #: src/ui/gui/netplay_wait.slint:60
 msgctxt "NetplayWait"
-msgid "Player 3: "
-msgstr "Jugador 3: "
+msgid "Player 3:"
+msgstr "Jugador 3:"
 
 #: src/ui/gui/netplay_wait.slint:64
 msgctxt "NetplayWait"
-msgid "Player 4: "
-msgstr "Jugador 4: "
+msgid "Player 4:"
+msgstr "Jugador 4:"
 
 #: src/ui/gui/netplay_wait.slint:76
 msgctxt "NetplayWait"
