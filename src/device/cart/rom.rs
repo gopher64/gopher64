@@ -10,7 +10,7 @@ fn read_cart_word(device: &device::Device, address: usize) -> u32 {
     let rom = &device.cart.rom;
     u32::from_be_bytes(std::array::from_fn(|i| {
         romsave
-            .get(&(address as u32 + i as u32))
+            .get(&((address + i) as u32))
             .copied()
             .unwrap_or_else(|| *rom.get(address + i).unwrap_or(&0))
     }))
