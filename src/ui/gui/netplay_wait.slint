@@ -28,40 +28,40 @@ export component NetplayWait inherits Window {
 
     VerticalBox {
         Text {
-            text: @tr("Session Name: ") + NetplayData.session_name;
+            text: @tr("Session Name:") + " " + NetplayData.session_name;
             font-size: 15px;
             horizontal-alignment: center;
         }
 
         Text {
-            text: @tr("Game Name: ") + NetplayData.game_name;
+            text: @tr("Game Name:") + " " + NetplayData.game_name;
             font-size: 15px;
             horizontal-alignment: center;
         }
 
         Text {
-            text: @tr("Ping: ") + NetplayWaitData.ping;
+            text: @tr("Ping:") + " " + NetplayWaitData.ping;
             horizontal-alignment: center;
         }
 
         GridBox {
             Row {
                 Text {
-                    text: @tr("Player 1: ") + players[0];
+                    text: @tr("Player 1:") + " " + players[0];
                 }
 
                 Text {
-                    text: @tr("Player 2: ") + players[1];
+                    text: @tr("Player 2:") + " " + players[1];
                 }
             }
 
             Row {
                 Text {
-                    text: @tr("Player 3: ") + players[2];
+                    text: @tr("Player 3:") + " " + players[2];
                 }
 
                 Text {
-                    text: @tr("Player 4: ") + players[3];
+                    text: @tr("Player 4:") + " " + players[3];
                 }
             }
         }
