@@ -6,22 +6,14 @@ use sha2::{Digest, Sha256};
 pub const CART_MASK: usize = 0xFFFFFFF;
 
 fn read_cart_word(device: &device::Device, address: usize) -> u32 {
-    let mut data: [u8; 4] = [0; 4];
-    for i in 0..4 {
-        if let Some(value) = device
-            .ui
-            .storage
-            .saves
-            .romsave
-            .data
-            .get(&(address as u32 + i))
-        {
-            data[i as usize] = *value;
-        } else {
-            data[i as usize] = *device.cart.rom.get(address + i as usize).unwrap_or(&0);
-        }
-    }
-    u32::from_be_bytes(data)
+    let romsave = &device.ui.storage.saves.romsave.data;
+    let rom = &device.cart.rom;
+    u32::from_be_bytes(std::array::from_fn(|i| {
+        romsave
+            .get(&((address + i) as u32))
+            .copied()
+            .unwrap_or_else(|| *rom.get(address + i).unwrap_or(&0))
+    }))
 }
 
 pub fn read_mem_fast(
@@ -113,19 +105,15 @@ pub fn dma_write(
     let mut i = dram_addr;
     let mut j = cart_addr;
     while i < dram_addr + length {
-        if let Some(value) = device.ui.storage.saves.romsave.data.get(&j) {
-            *device
-                .rdram
-                .mem
-                .get_mut(i as usize ^ device.byte_swap)
-                .unwrap_or(&mut 0) = *value;
+        *device
+            .rdram
+            .mem
+            .get_mut(i as usize ^ device.byte_swap)
+            .unwrap_or(&mut 0) = if let Some(value) = device.ui.storage.saves.romsave.data.get(&j) {
+            *value
         } else {
-            *device
-                .rdram
-                .mem
-                .get_mut(i as usize ^ device.byte_swap)
-                .unwrap_or(&mut 0) = *device.cart.rom.get(j as usize).unwrap_or(&0);
-        }
+            *device.cart.rom.get(j as usize).unwrap_or(&0)
+        };
         i += 1;
         j += 1;
     }
