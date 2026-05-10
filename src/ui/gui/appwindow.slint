@@ -54,6 +54,7 @@ export component AppWindow inherits Window {
     in-out property ra_challenge <=> RAData.challenge;
     in-out property ra_leaderboard <=> RAData.leaderboard;
     in-out property ra_softcore_only <=> RAData.ra_softcore_only;
+    out property ra_not_logged_in <=> RAData.not_logged_in;
     in-out property integer_scaling <=> SettingsData.integer_scaling;
     in-out property ssaa <=> SettingsData.ssaa;
     in-out property fullscreen <=> SettingsData.fullscreen;
@@ -83,12 +84,12 @@ export component AppWindow inherits Window {
     in-out property cheats <=> CheatsData.cheats;
     preferred-width: 700px;
     preferred-height: 500px;
-    title: @tr("Gopher64");
+    title: "Gopher64";
     icon: @image-url("../../../data/icon/gopher64.png");
 
     HorizontalLayout {
         side-bar := SideBar {
-            title: @tr("Gopher64");
+            title: "Gopher64";
             model: [
                 @tr("Menu" => "Local Game"),
                 @tr("Menu" => "Controller Config"),
