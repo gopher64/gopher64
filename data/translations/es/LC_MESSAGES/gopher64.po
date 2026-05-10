@@ -332,8 +332,7 @@ msgctxt "NetplayCreate"
 msgid ""
 "This game has cheats enabled. Cheats will be synchronized with other players."
 msgstr ""
-"Este juego tiene trucos activados.\n"
-"Los trucos se sincronizarán con los otros jugadores."
+"Este juego tiene trucos activados. Los trucos se sincronizarán con los otros jugadores."
 
 #: src/ui/gui/netplay_create.slint:103
 msgctxt "NetplayCreate"
@@ -385,8 +384,7 @@ msgctxt "NetplayJoin"
 msgid ""
 "No sessions available. Please refresh to check again."
 msgstr ""
-"No hay sesiones disponibles.\n"
-"Refresca para comprobar de nuevo."
+"No hay sesiones disponibles. Refresca para comprobar de nuevo."
 
 #: src/ui/gui/netplay_join.slint:73
 msgctxt "NetplayJoin"
