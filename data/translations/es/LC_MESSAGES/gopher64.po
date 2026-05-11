@@ -3,10 +3,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
 "POT-Creation-Date: 2026-05-10 13:12+0000\n"
-"PO-Revision-Date: 2026-05-10 15:15+0000\n"
+"PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: Gemini\n"
-"Language-Team: Spanish\n"
-"Language: es\n"
+"Language-Team: Spanish (Spain)\n"
+"Language: es_ES\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -15,7 +15,7 @@ msgstr ""
 #: src/ui/gui/about_page.slint:17
 msgctxt "NewVersionButton"
 msgid "New version available! Click here to download"
-msgstr "¡Nueva versión disponible! Haz clic aquí para descargar"
+msgstr "¡Nueva versión disponible! Pulsa aquí para descargar"
 
 #: src/ui/gui/about_page.slint:33
 msgctxt "About"
@@ -40,12 +40,12 @@ msgstr "Código fuente"
 #: src/ui/gui/about_page.slint:70
 msgctxt "About"
 msgid "Donate (via Patreon)"
-msgstr "Donar (vía Patreon)"
+msgstr "Donar (a través de Patreon)"
 
 #: src/ui/gui/about_page.slint:77
 msgctxt "About"
 msgid "Donate (via GitHub)"
-msgstr "Donar (vía GitHub)"
+msgstr "Donar (a través de GitHub)"
 
 #: src/ui/gui/cheat_page.slint:15
 msgctxt "Cheats"
@@ -60,7 +60,7 @@ msgstr "Seleccionar ROM"
 #: src/ui/gui/cheat_page.slint:41
 msgctxt "Cheats"
 msgid "Clear Cheats For All ROMs"
-msgstr "Borrar trucos de todas las ROM"
+msgstr "Borrar trucos de todas las ROMs"
 
 #: src/ui/gui/cheat_page.slint:86
 msgctxt "Cheats"
@@ -150,7 +150,7 @@ msgstr "Abrir carpeta de guardados"
 #: src/ui/gui/localgame_page.slint:53
 msgctxt "LocalGame"
 msgid "Recent ROMs"
-msgstr "ROM recientes"
+msgstr "ROMs recientes"
 
 #: src/ui/gui/netplay_page.slint:33
 msgctxt "Netplay"
@@ -165,7 +165,7 @@ msgstr "Crear sesión"
 #: src/ui/gui/netplay_page.slint:50
 msgctxt "Netplay"
 msgid "Join Session"
-msgstr "Unirse a sesión"
+msgstr "Unirse a la sesión"
 
 #: src/ui/gui/netplay_page.slint:64
 msgctxt "Netplay"
@@ -180,7 +180,7 @@ msgstr "Enviar comentarios"
 #: src/ui/gui/netplay_page.slint:82
 msgctxt "CustomNetplayServer"
 msgid "Custom Netplay Server"
-msgstr "Servidor Netplay personalizado"
+msgstr "Servidor de Netplay personalizado"
 
 #: src/ui/gui/settings_page.slint:22
 msgctxt "Settings"
@@ -200,7 +200,7 @@ msgstr "Reducción de escala SSAA"
 #: src/ui/gui/settings_page.slint:56
 msgctxt "Settings"
 msgid "Integer Scaling"
-msgstr "Escalado de enteros"
+msgstr "Escalado por enteros"
 
 #: src/ui/gui/settings_page.slint:67
 msgctxt "Settings"
@@ -377,14 +377,14 @@ msgstr "Actualizando lista de sesiones, espera..."
 #: src/ui/gui/netplay_join.slint:62
 msgctxt "NetplayJoin"
 msgid "Click on a session below to select it"
-msgstr "Haz clic en una sesión para seleccionarla"
+msgstr "Pulsa una sesión para seleccionarla"
 
 #: src/ui/gui/netplay_join.slint:67
 msgctxt "NetplayJoin"
 msgid ""
 "No sessions available. Please refresh to check again."
 msgstr ""
-"No hay sesiones disponibles. Refresca para comprobar de nuevo."
+"No hay sesiones disponibles. Actualiza para comprobar de nuevo."
 
 #: src/ui/gui/netplay_join.slint:73
 msgctxt "NetplayJoin"
@@ -439,7 +439,7 @@ msgstr "Netplay: Sala de espera"
 #: src/ui/gui/netplay_wait.slint:31
 msgctxt "NetplayWait"
 msgid "Session Name:"
-msgstr "Nombre de sesión:"
+msgstr "Nombre de la sesión:"
 
 #: src/ui/gui/netplay_wait.slint:37
 msgctxt "NetplayWait"
@@ -474,7 +474,7 @@ msgstr "Jugador 4:"
 #: src/ui/gui/netplay_wait.slint:76
 msgctxt "NetplayWait"
 msgid "Enter chat message"
-msgstr "Escribe un mensaje"
+msgstr "Escribe un mensaje en el chat"
 
 #: src/ui/gui/netplay_wait.slint:87
 msgctxt "NetplayWait"
@@ -514,7 +514,7 @@ msgstr "Indicadores de desafío"
 #: src/ui/gui/retroachievements_page.slint:75
 msgctxt "RetroAchievements"
 msgid "Leaderboard Trackers"
-msgstr "Seguimiento de clasificación"
+msgstr "Indicadores de tabla de clasificación"
 
 #: src/ui/gui/retroachievements_page.slint:92
 msgctxt "RetroAchievements"
