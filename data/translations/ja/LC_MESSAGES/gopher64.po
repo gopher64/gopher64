@@ -1,0 +1,542 @@
+# gopher64 - Japanese Translation
+msgid ""
+msgstr ""
+"Project-Id-Version: gopher64\n"
+"POT-Creation-Date: 2026-05-10 18:36+0000\n"
+"PO-Revision-Date: 2026-05-11 12:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/ui/gui/about_page.slint:17
+msgctxt "NewVersionButton"
+msgid "New version available! Click here to download"
+msgstr "新しいバージョンがあります。クリックしてダウンロード"
+
+#: src/ui/gui/about_page.slint:33
+msgctxt "About"
+msgid "About"
+msgstr "バージョン情報"
+
+#: src/ui/gui/about_page.slint:40
+msgctxt "About"
+msgid "Wiki"
+msgstr "Wiki"
+
+#: src/ui/gui/about_page.slint:50
+msgctxt "About"
+msgid "Discord Server"
+msgstr "Discordサーバー"
+
+#: src/ui/gui/about_page.slint:60
+msgctxt "About"
+msgid "Source Code"
+msgstr "ソースコード"
+
+#: src/ui/gui/about_page.slint:70
+msgctxt "About"
+msgid "Donate (via Patreon)"
+msgstr "Patreonで寄付"
+
+#: src/ui/gui/about_page.slint:77
+msgctxt "About"
+msgid "Donate (via GitHub)"
+msgstr "GitHubで寄付"
+
+#: src/ui/gui/cheat_page.slint:15
+msgctxt "Cheats"
+msgid "Cheats"
+msgstr "チート"
+
+#: src/ui/gui/cheat_page.slint:25
+msgctxt "Cheats"
+msgid "Select ROM"
+msgstr "ROMを選択"
+
+#: src/ui/gui/cheat_page.slint:41
+msgctxt "Cheats"
+msgid "Clear Cheats For All ROMs"
+msgstr "すべてのROMのチートをクリア"
+
+#: src/ui/gui/cheat_page.slint:86
+msgctxt "Cheats"
+msgid "No Cheats Available"
+msgstr "利用できるチートはありません"
+
+#: src/ui/gui/controller_page.slint:26
+msgctxt "ControllerConfig"
+msgid "Controller Configuration"
+msgstr "コントローラー設定"
+
+#: src/ui/gui/controller_page.slint:37
+msgctxt "ControllerConfig"
+msgid "Configure Input Profile"
+msgstr "入力プロファイルを設定"
+
+#: src/ui/gui/controller_page.slint:49
+msgctxt "ControllerConfig"
+msgid "Port"
+msgstr "ポート"
+
+#: src/ui/gui/controller_page.slint:60
+msgctxt "ControllerConfig"
+msgid "Enabled"
+msgstr "有効"
+
+#: src/ui/gui/controller_page.slint:73
+msgctxt "ControllerConfig"
+msgid "Emulate VRU"
+msgstr "VRUをエミュレート"
+
+#: src/ui/gui/controller_page.slint:87
+msgctxt "ControllerConfig"
+msgid "Transfer Pak"
+msgstr "Transfer Pak"
+
+#: src/ui/gui/controller_page.slint:101
+msgctxt "ControllerConfig"
+msgid "Profile"
+msgstr "プロファイル"
+
+#: src/ui/gui/controller_page.slint:117
+msgctxt "ControllerConfig"
+msgid "Controller"
+msgstr "コントローラー"
+
+#: src/ui/gui/input_profile.slint:10
+msgctxt "InputProfileDialog"
+msgid "Create/Modify Input Profile"
+msgstr "入力プロファイルの作成／変更"
+
+#: src/ui/gui/input_profile.slint:18
+msgctxt "InputProfileDialog"
+msgid "Enter profile name to create or modify"
+msgstr "作成または変更するプロファイル名を入力"
+
+#: src/ui/gui/input_profile.slint:29
+msgctxt "InputProfileDialog"
+msgid "Deadzone Percentage"
+msgstr "デッドゾーン（％）"
+
+#: src/ui/gui/input_profile.slint:51
+msgctxt "InputProfileDialog"
+msgid "Use DirectInput"
+msgstr "DirectInputを使用"
+
+#: src/ui/gui/input_profile.slint:61
+msgctxt "InputProfileDialog"
+msgid "Start Profile Creation Wizard"
+msgstr "プロファイル作成ウィザードを開始"
+
+#: src/ui/gui/localgame_page.slint:18
+msgctxt "LocalGame"
+msgid "Local Game"
+msgstr "ローカルゲーム"
+
+#: src/ui/gui/localgame_page.slint:25
+msgctxt "LocalGame"
+msgid "Open ROM"
+msgstr "ROMを開く"
+
+#: src/ui/gui/localgame_page.slint:36
+msgctxt "LocalGame"
+msgid "Open Saves Folder"
+msgstr "セーブフォルダーを開く"
+
+#: src/ui/gui/localgame_page.slint:53
+msgctxt "LocalGame"
+msgid "Recent ROMs"
+msgstr "最近使ったROM"
+
+#: src/ui/gui/netplay_page.slint:33
+msgctxt "Netplay"
+msgid "Netplay"
+msgstr "ネットプレイ"
+
+#: src/ui/gui/netplay_page.slint:40
+msgctxt "Netplay"
+msgid "Create Session"
+msgstr "セッションを作成"
+
+#: src/ui/gui/netplay_page.slint:50
+msgctxt "Netplay"
+msgid "Join Session"
+msgstr "セッションに参加"
+
+#: src/ui/gui/netplay_page.slint:64
+msgctxt "Netplay"
+msgid "Netplay Discord Channel"
+msgstr "ネットプレイ用Discordチャンネル"
+
+#: src/ui/gui/netplay_page.slint:71
+msgctxt "Netplay"
+msgid "Provide Feedback"
+msgstr "フィードバックを送る"
+
+#: src/ui/gui/netplay_page.slint:82
+msgctxt "CustomNetplayServer"
+msgid "Custom Netplay Server"
+msgstr "カスタムネットプレイサーバー"
+
+#: src/ui/gui/settings_page.slint:22
+msgctxt "Settings"
+msgid "Settings"
+msgstr "設定"
+
+#: src/ui/gui/settings_page.slint:29
+msgctxt "Settings"
+msgid "Resolution:"
+msgstr "解像度："
+
+#: src/ui/gui/settings_page.slint:45
+msgctxt "Settings"
+msgid "SSAA downscaling"
+msgstr "SSAAダウンスケール"
+
+#: src/ui/gui/settings_page.slint:56
+msgctxt "Settings"
+msgid "Integer Scaling"
+msgstr "整数倍スケーリング"
+
+#: src/ui/gui/settings_page.slint:67
+msgctxt "Settings"
+msgid "Fullscreen"
+msgstr "全画面表示"
+
+#: src/ui/gui/settings_page.slint:78
+msgctxt "Settings"
+msgid "Widescreen (stretch)"
+msgstr "ワイド画面（伸ばす）"
+
+#: src/ui/gui/settings_page.slint:89
+msgctxt "Settings"
+msgid "VSync"
+msgstr "垂直同期（VSync）"
+
+#: src/ui/gui/settings_page.slint:100
+msgctxt "Settings"
+msgid "Apply CRT shader"
+msgstr "CRTシェーダーを適用"
+
+#: src/ui/gui/settings_page.slint:115
+msgctxt "Settings"
+msgid "Overclock N64 CPU (may cause bugs)"
+msgstr "N64のCPUをオーバークロック（不具合の原因になることがあります）"
+
+#: src/ui/gui/settings_page.slint:126
+msgctxt "Settings"
+msgid "Disable Expansion Pak"
+msgstr "拡張パックを無効にする"
+
+#: src/ui/gui/settings_page.slint:137
+msgctxt "Settings"
+msgid "Emulate UNFLoader"
+msgstr "UNFLoaderをエミュレート"
+
+#: src/ui/gui/vru_dialog.slint:7
+msgctxt "VruDialog"
+msgid "What Would You Like To Say?"
+msgstr "何と言いますか？"
+
+#: src/ui/gui/appwindow.slint:94
+msgctxt "Menu"
+msgid "Local Game"
+msgstr "ローカルゲーム"
+
+#: src/ui/gui/appwindow.slint:95
+msgctxt "Menu"
+msgid "Controller Config"
+msgstr "コントローラー設定"
+
+#: src/ui/gui/appwindow.slint:96
+msgctxt "Menu"
+msgid "Netplay"
+msgstr "ネットプレイ"
+
+#: src/ui/gui/appwindow.slint:97
+msgctxt "Menu"
+msgid "Cheats"
+msgstr "チート"
+
+#: src/ui/gui/appwindow.slint:98
+msgctxt "Menu"
+msgid "RetroAchievements"
+msgstr "RetroAchievements"
+
+#: src/ui/gui/appwindow.slint:99
+msgctxt "Menu"
+msgid "Settings"
+msgstr "設定"
+
+#: src/ui/gui/appwindow.slint:100
+msgctxt "Menu"
+msgid "About"
+msgstr "バージョン情報"
+
+#: src/ui/gui/appwindow.slint:194
+msgctxt "ErrorDialog"
+msgid "Error"
+msgstr "エラー"
+
+#: src/ui/gui/netplay_create.slint:5
+msgctxt "NetplayCreate"
+msgid "Netplay: Create Session"
+msgstr "ネットプレイ：セッション作成"
+
+#: src/ui/gui/netplay_create.slint:24
+msgctxt "NetplayCreate"
+msgid "Session Name:"
+msgstr "セッション名："
+
+#: src/ui/gui/netplay_create.slint:28
+msgctxt "NetplayCreate"
+msgid "Enter session name"
+msgstr "セッション名を入力"
+
+#: src/ui/gui/netplay_create.slint:37
+msgctxt "NetplayCreate"
+msgid "Password (Optional):"
+msgstr "パスワード（任意）："
+
+#: src/ui/gui/netplay_create.slint:41
+msgctxt "NetplayCreate"
+msgid "Enter session password"
+msgstr "セッションのパスワードを入力"
+
+#: src/ui/gui/netplay_create.slint:51
+msgctxt "NetplayCreate"
+msgid "Player Name:"
+msgstr "プレイヤー名："
+
+#: src/ui/gui/netplay_create.slint:55
+msgctxt "NetplayCreate"
+msgid "Enter player name"
+msgstr "プレイヤー名を入力"
+
+#: src/ui/gui/netplay_create.slint:64
+msgctxt "NetplayCreate"
+msgid "Server:"
+msgstr "サーバー："
+
+#: src/ui/gui/netplay_create.slint:82
+msgctxt "NetplayCreate"
+msgid "Select ROM"
+msgstr "ROMを選択"
+
+#: src/ui/gui/netplay_create.slint:97
+msgctxt "NetplayCreate"
+msgid ""
+"This game has cheats enabled. Cheats will be synchronized with other players."
+msgstr ""
+"このゲームではチートが有効です。チートは他のプレイヤーと同期されます。"
+
+#: src/ui/gui/netplay_create.slint:103
+msgctxt "NetplayCreate"
+msgid "Create Session"
+msgstr "セッションを作成"
+
+#: src/ui/gui/netplay_create.slint:126
+msgctxt "DispatcherDialog"
+msgid "Creating Server"
+msgstr "サーバーを作成中"
+
+#: src/ui/gui/netplay_create.slint:128
+msgctxt "DispatcherDialog"
+msgid "Creating server, please wait...This may take about 30 seconds."
+msgstr ""
+"サーバーを作成しています。しばらくお待ちください… 最大約30秒かかることがあります。"
+
+#: src/ui/gui/netplay_join.slint:5
+msgctxt "NetplayJoin"
+msgid "Netplay: Join Session"
+msgstr "ネットプレイ：セッションに参加"
+
+#: src/ui/gui/netplay_join.slint:30
+msgctxt "NetplayJoin"
+msgid "Player Name (required):"
+msgstr "プレイヤー名（必須）："
+
+#: src/ui/gui/netplay_join.slint:34
+msgctxt "NetplayJoin"
+msgid "Enter player name"
+msgstr "プレイヤー名を入力"
+
+#: src/ui/gui/netplay_join.slint:43
+msgctxt "NetplayJoin"
+msgid "Custom Server URL (optional):"
+msgstr "カスタムサーバーURL（任意）："
+
+#: src/ui/gui/netplay_join.slint:57
+msgctxt "NetplayJoin"
+msgid "Refreshing session list, please wait..."
+msgstr "セッション一覧を更新しています。しばらくお待ちください…"
+
+#: src/ui/gui/netplay_join.slint:62
+msgctxt "NetplayJoin"
+msgid "Click on a session below to select it"
+msgstr "下の一覧からセッションをクリックして選択"
+
+#: src/ui/gui/netplay_join.slint:67
+msgctxt "NetplayJoin"
+msgid "No sessions available. Please refresh to check again."
+msgstr ""
+"利用できるセッションがありません。更新して再度確認してください。"
+
+#: src/ui/gui/netplay_join.slint:73
+msgctxt "NetplayJoin"
+msgid "Server"
+msgstr "サーバー"
+
+#: src/ui/gui/netplay_join.slint:74
+msgctxt "NetplayJoin"
+msgid "Session Name"
+msgstr "セッション名"
+
+#: src/ui/gui/netplay_join.slint:75
+msgctxt "NetplayJoin"
+msgid "Game Name"
+msgstr "ゲーム名"
+
+#: src/ui/gui/netplay_join.slint:76
+msgctxt "NetplayJoin"
+msgid "Password"
+msgstr "パスワード"
+
+#: src/ui/gui/netplay_join.slint:77
+msgctxt "NetplayJoin"
+msgid "Cheats"
+msgstr "チート"
+
+#: src/ui/gui/netplay_join.slint:91
+msgctxt "NetplayJoin"
+msgid "Refresh Session List"
+msgstr "セッション一覧を更新"
+
+#: src/ui/gui/netplay_join.slint:105
+msgctxt "NetplayJoin"
+msgid "Password (if required)"
+msgstr "パスワード（必要な場合）"
+
+#: src/ui/gui/netplay_join.slint:112
+msgctxt "NetplayJoin"
+msgid "Select ROM"
+msgstr "ROMを選択"
+
+#: src/ui/gui/netplay_join.slint:125
+msgctxt "NetplayJoin"
+msgid "Join Session"
+msgstr "セッションに参加"
+
+#: src/ui/gui/netplay_wait.slint:14
+msgctxt "NetplayWait"
+msgid "Netplay: Waiting Room"
+msgstr "ネットプレイ：待機室"
+
+#: src/ui/gui/netplay_wait.slint:31
+msgctxt "NetplayWait"
+msgid "Session Name:"
+msgstr "セッション名："
+
+#: src/ui/gui/netplay_wait.slint:37
+msgctxt "NetplayWait"
+msgid "Game Name:"
+msgstr "ゲーム名："
+
+#: src/ui/gui/netplay_wait.slint:43
+msgctxt "NetplayWait"
+msgid "Ping:"
+msgstr "Ping："
+
+#: src/ui/gui/netplay_wait.slint:50
+msgctxt "NetplayWait"
+msgid "Player 1:"
+msgstr "プレイヤー1："
+
+#: src/ui/gui/netplay_wait.slint:54
+msgctxt "NetplayWait"
+msgid "Player 2:"
+msgstr "プレイヤー2："
+
+#: src/ui/gui/netplay_wait.slint:60
+msgctxt "NetplayWait"
+msgid "Player 3:"
+msgstr "プレイヤー3："
+
+#: src/ui/gui/netplay_wait.slint:64
+msgctxt "NetplayWait"
+msgid "Player 4:"
+msgstr "プレイヤー4："
+
+#: src/ui/gui/netplay_wait.slint:76
+msgctxt "NetplayWait"
+msgid "Enter chat message"
+msgstr "チャットメッセージを入力"
+
+#: src/ui/gui/netplay_wait.slint:87
+msgctxt "NetplayWait"
+msgid "Send Message"
+msgstr "送信"
+
+#: src/ui/gui/netplay_wait.slint:102
+msgctxt "NetplayWait"
+msgid "Start Game"
+msgstr "ゲーム開始"
+
+#: src/ui/gui/retroachievements_page.slint:18
+msgctxt "RAData"
+msgid "Not currently logged in"
+msgstr "ログインしていません"
+
+#: src/ui/gui/retroachievements_page.slint:26
+msgctxt "RetroAchievements"
+msgid "RetroAchievements"
+msgstr "RetroAchievements"
+
+#: src/ui/gui/retroachievements_page.slint:33
+msgctxt "RetroAchievements"
+msgid "Enabled"
+msgstr "有効"
+
+#: src/ui/gui/retroachievements_page.slint:51
+msgctxt "RetroAchievements"
+msgid "Hardcore mode"
+msgstr "ハードコアモード"
+
+#: src/ui/gui/retroachievements_page.slint:63
+msgctxt "RetroAchievements"
+msgid "Challenge Indicators"
+msgstr "チャレンジ表示"
+
+#: src/ui/gui/retroachievements_page.slint:75
+msgctxt "RetroAchievements"
+msgid "Leaderboard Trackers"
+msgstr "リーダーボード追跡"
+
+#: src/ui/gui/retroachievements_page.slint:92
+msgctxt "RetroAchievements"
+msgid "View Profile"
+msgstr "プロフィールを表示"
+
+#: src/ui/gui/retroachievements_page.slint:102
+msgctxt "RetroAchievements"
+msgid "Username"
+msgstr "ユーザー名"
+
+#: src/ui/gui/retroachievements_page.slint:112
+msgctxt "RetroAchievements"
+msgid "Password"
+msgstr "パスワード"
+
+#: src/ui/gui/retroachievements_page.slint:121
+msgctxt "RetroAchievements"
+msgid "Login"
+msgstr "ログイン"
+
+#: src/ui/gui/retroachievements_page.slint:137
+msgctxt "RetroAchievements"
+msgid "View Supported Games"
+msgstr "対応ゲームを表示"

@@ -2,6 +2,7 @@ fn main() {
     println!("cargo::rerun-if-changed=parallel-rdp");
     println!("cargo::rerun-if-changed=retroachievements");
     println!("cargo::rerun-if-changed=src/compat");
+    println!("cargo::rerun-if-changed=data/translations");
 
     #[cfg(feature = "gui")]
     {
