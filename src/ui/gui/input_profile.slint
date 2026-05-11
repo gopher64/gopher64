@@ -16,7 +16,7 @@ export component InputProfileDialog inherits Window {
         HorizontalBox {
             LineEdit {
                 placeholder-text: @tr("Enter profile name to create or modify");
-                preferred-width: 300px;
+                preferred-width: 400px;
                 edited(text) => {
                     InputProfileData.profile_name = text;
                 }
