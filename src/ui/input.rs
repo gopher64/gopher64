@@ -781,15 +781,19 @@ pub fn configure_input_profile(
                         key_set = true
                     }
                 } else if event.event_type() == sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN {
-                    new_controller_buttons[*value] = ui::config::InputKeyButton {
-                        enabled: true,
-                        id: i32::from(unsafe { event.gbutton.button }),
-                    };
-                    key_set = true
+                    if !open_controllers.is_empty() {
+                        new_controller_buttons[*value] = ui::config::InputKeyButton {
+                            enabled: true,
+                            id: i32::from(unsafe { event.gbutton.button }),
+                        };
+                        key_set = true
+                    }
                 } else if event.event_type() == sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION {
                     let axis_value = unsafe { event.gaxis.value };
                     let axis = unsafe { event.gaxis.axis };
-                    if axis_value.saturating_abs() > (i16::MAX as i32 * 3 / 4) as i16 {
+                    if !open_controllers.is_empty()
+                        && axis_value.saturating_abs() > (i16::MAX as i32 * 3 / 4) as i16
+                    {
                         let result = ui::config::InputControllerAxis {
                             enabled: true,
                             id: axis as i32,
@@ -803,15 +807,17 @@ pub fn configure_input_profile(
                         }
                     }
                 } else if event.event_type() == sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN {
-                    new_joystick_buttons[*value] = ui::config::InputKeyButton {
-                        enabled: true,
-                        id: i32::from(unsafe { event.jbutton.button }),
-                    };
-                    key_set = true
+                    if !open_joysticks.is_empty() {
+                        new_joystick_buttons[*value] = ui::config::InputKeyButton {
+                            enabled: true,
+                            id: i32::from(unsafe { event.jbutton.button }),
+                        };
+                        key_set = true
+                    }
                 } else if event.event_type() == sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION {
                     let state = unsafe { event.jhat.value };
                     let hat = unsafe { event.jhat.hat };
-                    if state != sdl3_sys::joystick::SDL_HAT_CENTERED {
+                    if !open_joysticks.is_empty() && state != sdl3_sys::joystick::SDL_HAT_CENTERED {
                         new_joystick_hat[*value] = ui::config::InputJoystickHat {
                             enabled: true,
                             id: hat as i32,
@@ -843,7 +849,9 @@ pub fn configure_input_profile(
                         0
                     };
 
-                    if axis_value.abs_diff(initial_state) > (u16::MAX / 4) {
+                    if !open_joysticks.is_empty()
+                        && axis_value.abs_diff(initial_state) > (u16::MAX / 4)
+                    {
                         let result = ui::config::InputControllerAxis {
                             enabled: true,
                             id: axis as i32,
