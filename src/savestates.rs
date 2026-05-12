@@ -126,6 +126,7 @@ pub fn load_savestate(device: &mut device::Device) {
             && let Ok(ra_state) = ui::storage::decompress_file(savestate, "ra_state")
             && let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes)
             && let Ok(saves) = postcard::from_bytes(&save_bytes)
+            && device.rdram.size == state.rdram.size
         {
             device.ui.storage.saves = saves;
 
@@ -139,7 +140,10 @@ pub fn load_savestate(device: &mut device::Device) {
             device.memory = state.memory;
             device.rsp = state.rsp;
             device.rdp = state.rdp;
-            device.rdram = state.rdram;
+
+            device.rdram.mem.clone_from(&state.rdram.mem);
+            device.rdram.regs = state.rdram.regs;
+
             device.mi = state.mi;
             device.pi = state.pi;
             device.vi = state.vi;
