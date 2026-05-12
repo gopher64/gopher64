@@ -8,6 +8,7 @@ mod device;
 mod netplay;
 mod retroachievements;
 mod savestates;
+mod tas;
 mod ui;
 use clap::Parser;
 use std::io::Error;
@@ -111,6 +112,8 @@ struct Args {
         help = "Enable Leaderboard Trackers for RetroAchievements"
     )]
     ra_leaderboard: bool,
+    #[arg(long = "tas", value_name = "TAS_FILE", help = "Load a TAS file")]
+    tas: Option<String>,
 }
 
 #[tokio::main(worker_threads = 4)]
@@ -193,7 +196,9 @@ async fn main() -> std::io::Result<()> {
                 (shutdown_tx, device.ui.usb) = ui::usb::init();
             }
 
-            if let Some(username) = args.ra_username {
+            if let Some(tas_file) = args.tas {
+                device.ui.input.tas = tas::load_tas(tas_file).into();
+            } else if let Some(username) = args.ra_username {
                 retroachievements::init_client(
                     if cfg!(ra_hardcore_enabled) {
                         args.ra_hardcore

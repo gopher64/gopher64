@@ -541,7 +541,12 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     let last_key_state = ui.input.controllers[channel].last_key_state;
     ui.input.controllers[channel].last_key_state = keys;
 
-    if hotkey_pressed(profile, joystick, controller) {
+    if !ui.input.tas.is_empty() {
+        InputData {
+            data: ui.input.tas.pop_front().unwrap_or(0),
+            pak_change_pressed: false,
+        }
+    } else if hotkey_pressed(profile, joystick, controller) {
         handle_hotkeys(keys, last_key_state);
         InputData {
             data: 0,

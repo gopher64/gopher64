@@ -84,10 +84,12 @@ pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::Gam
     cpu::init(device);
 
     ui::storage::init(&mut device.ui, &device.cart.rom);
-    ui::storage::load_saves(&mut device.ui, &mut device.netplay);
+    if device.ui.input.tas.is_empty() {
+        ui::storage::load_saves(&mut device.ui, &mut device.netplay);
+    }
     ui::storage::format_saves(device);
 
-    if !retroachievements::get_hardcore() {
+    if !retroachievements::get_hardcore() && device.ui.input.tas.is_empty() {
         cheats::init(device, game_settings.cheats);
     }
 
@@ -95,7 +97,9 @@ pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::Gam
 
     retroachievements::unload_game();
 
-    ui::storage::write_saves(device);
+    if device.ui.input.tas.is_empty() {
+        ui::storage::write_saves(device);
+    }
     ui::input::close(&mut device.ui);
     ui::audio::close(&mut device.ui);
     ui::video::close(&device.ui);

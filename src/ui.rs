@@ -40,6 +40,7 @@ pub struct Audio {
 pub struct Input {
     pub keyboard_state: *const bool,
     pub controllers: [input::Controllers; 4],
+    pub tas: std::collections::VecDeque<u32>,
 }
 
 pub struct Storage {
@@ -183,6 +184,7 @@ impl Ui {
                     },
                 ],
                 keyboard_state: std::ptr::null_mut(),
+                tas: std::collections::VecDeque::new(),
             },
             storage: Storage {
                 save_state_slot: 0,
