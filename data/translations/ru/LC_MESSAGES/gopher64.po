@@ -265,7 +265,7 @@ msgstr "Читы"
 #: src/ui/gui/appwindow.slint:98
 msgctxt "Menu"
 msgid "RetroAchievements"
-msgstr "Ретро-достижения"
+msgstr "RetroAchievements"
 
 #: src/ui/gui/appwindow.slint:99
 msgctxt "Menu"
@@ -494,7 +494,7 @@ msgstr "В данный момент не выполнен вход"
 #: src/ui/gui/retroachievements_page.slint:26
 msgctxt "RetroAchievements"
 msgid "RetroAchievements"
-msgstr "Ретро-достижения"
+msgstr "RetroAchievements"
 
 #: src/ui/gui/retroachievements_page.slint:33
 msgctxt "RetroAchievements"
