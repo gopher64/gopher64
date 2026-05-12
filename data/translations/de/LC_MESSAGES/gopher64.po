@@ -95,7 +95,7 @@ msgstr "VRU emulieren"
 #: src/ui/gui/controller_page.slint:87
 msgctxt "ControllerConfig"
 msgid "Transfer Pak"
-msgstr "Pak übertragen"
+msgstr "Transfer Pak"
 
 #: src/ui/gui/controller_page.slint:101
 msgctxt "ControllerConfig"
