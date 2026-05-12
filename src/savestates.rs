@@ -221,6 +221,7 @@ pub fn load_savestate(device: &mut device::Device) {
             ui::audio::init_game_audio(device);
             ui::video::load_state(device, rdp_state.as_ptr());
 
+            retroachievements::set_dmem(device.rdram.mem.as_ptr(), device.rdram.size as usize);
             if !ra_state.is_empty() {
                 retroachievements::load_state(ra_state.as_ptr(), ra_state.len());
             } else {
