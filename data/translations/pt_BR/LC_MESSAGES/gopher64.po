@@ -455,18 +455,18 @@ msgstr "Jogador 1"
 
 #: src/ui/gui/netplay_wait.slint:54
 msgctxt "NetplayWait"
-msgid "Jogador 2:"
-msgstr ""
+msgid "Player 2:"
+msgstr "Jogador 2:"
 
 #: src/ui/gui/netplay_wait.slint:60
 msgctxt "NetplayWait"
-msgid "Jogador 3:"
-msgstr ""
+msgid "Player 3:"
+msgstr "Jogador 3:"
 
 #: src/ui/gui/netplay_wait.slint:64
 msgctxt "NetplayWait"
-msgid "Jogador 4:"
-msgstr ""
+msgid "Player 4:"
+msgstr "Jogador 4:"
 
 #: src/ui/gui/netplay_wait.slint:76
 msgctxt "NetplayWait"
