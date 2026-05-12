@@ -245,7 +245,7 @@ msgstr "O que você quer falar?"
 #: src/ui/gui/appwindow.slint:94
 msgctxt "Menu"
 msgid "Local Game"
-msgstr Jogo Local"
+msgstr "Jogo Local"
 
 #: src/ui/gui/appwindow.slint:95
 msgctxt "Menu"
