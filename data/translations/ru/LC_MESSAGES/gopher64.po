@@ -1,0 +1,542 @@
+# gopher64 - Russian Translation
+msgid ""
+msgstr ""
+"Project-Id-Version: gopher64\n"
+"POT-Creation-Date: 2026-05-10 18:36+0000\n"
+"PO-Revision-Date: 2026-05-11 12:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/ui/gui/about_page.slint:17
+msgctxt "NewVersionButton"
+msgid "New version available! Click here to download"
+msgstr "Доступна новая версия! Нажмите здесь для загрузки"
+
+#: src/ui/gui/about_page.slint:33
+msgctxt "About"
+msgid "About"
+msgstr "О программе"
+
+#: src/ui/gui/about_page.slint:40
+msgctxt "About"
+msgid "Wiki"
+msgstr "Вики"
+
+#: src/ui/gui/about_page.slint:50
+msgctxt "About"
+msgid "Discord Server"
+msgstr "Сервер Discord"
+
+#: src/ui/gui/about_page.slint:60
+msgctxt "About"
+msgid "Source Code"
+msgstr "Исходный код"
+
+#: src/ui/gui/about_page.slint:70
+msgctxt "About"
+msgid "Donate (via Patreon)"
+msgstr "Пожертвовать (через Patreon)"
+
+#: src/ui/gui/about_page.slint:77
+msgctxt "About"
+msgid "Donate (via GitHub)"
+msgstr "Пожертвовать (через GitHub)"
+
+#: src/ui/gui/cheat_page.slint:15
+msgctxt "Cheats"
+msgid "Cheats"
+msgstr "Читы"
+
+#: src/ui/gui/cheat_page.slint:25
+msgctxt "Cheats"
+msgid "Select ROM"
+msgstr "Выбрать ROM"
+
+#: src/ui/gui/cheat_page.slint:41
+msgctxt "Cheats"
+msgid "Clear Cheats For All ROMs"
+msgstr "Очистить читы для всех ROMов"
+
+#: src/ui/gui/cheat_page.slint:86
+msgctxt "Cheats"
+msgid "No Cheats Available"
+msgstr "Читы недоступны"
+
+#: src/ui/gui/controller_page.slint:26
+msgctxt "ControllerConfig"
+msgid "Controller Configuration"
+msgstr "Настройка контроллера"
+
+#: src/ui/gui/controller_page.slint:37
+msgctxt "ControllerConfig"
+msgid "Configure Input Profile"
+msgstr "Настроить профиль ввода"
+
+#: src/ui/gui/controller_page.slint:49
+msgctxt "ControllerConfig"
+msgid "Port"
+msgstr "Порт"
+
+#: src/ui/gui/controller_page.slint:60
+msgctxt "ControllerConfig"
+msgid "Enabled"
+msgstr "Включено"
+
+#: src/ui/gui/controller_page.slint:73
+msgctxt "ControllerConfig"
+msgid "Emulate VRU"
+msgstr "Эмулировать VRU"
+
+#: src/ui/gui/controller_page.slint:87
+msgctxt "ControllerConfig"
+msgid "Transfer Pak"
+msgstr "Transfer Pak"
+
+#: src/ui/gui/controller_page.slint:101
+msgctxt "ControllerConfig"
+msgid "Profile"
+msgstr "Профиль"
+
+#: src/ui/gui/controller_page.slint:117
+msgctxt "ControllerConfig"
+msgid "Controller"
+msgstr "Контроллер"
+
+#: src/ui/gui/input_profile.slint:10
+msgctxt "InputProfileDialog"
+msgid "Create/Modify Input Profile"
+msgstr "Создать/изменить профиль ввода"
+
+#: src/ui/gui/input_profile.slint:18
+msgctxt "InputProfileDialog"
+msgid "Enter profile name to create or modify"
+msgstr "Введите имя профиля для создания или изменения"
+
+#: src/ui/gui/input_profile.slint:29
+msgctxt "InputProfileDialog"
+msgid "Deadzone Percentage"
+msgstr "Процент мёртвой зоны"
+
+#: src/ui/gui/input_profile.slint:51
+msgctxt "InputProfileDialog"
+msgid "Use DirectInput"
+msgstr "Использовать DirectInput"
+
+#: src/ui/gui/input_profile.slint:61
+msgctxt "InputProfileDialog"
+msgid "Start Profile Creation Wizard"
+msgstr "Запустить мастер создания профиля"
+
+#: src/ui/gui/localgame_page.slint:18
+msgctxt "LocalGame"
+msgid "Local Game"
+msgstr "Локальная игра"
+
+#: src/ui/gui/localgame_page.slint:25
+msgctxt "LocalGame"
+msgid "Open ROM"
+msgstr "Открыть ROM"
+
+#: src/ui/gui/localgame_page.slint:36
+msgctxt "LocalGame"
+msgid "Open Saves Folder"
+msgstr "Открыть папку сохранений"
+
+#: src/ui/gui/localgame_page.slint:53
+msgctxt "LocalGame"
+msgid "Recent ROMs"
+msgstr "Недавние ROMы"
+
+#: src/ui/gui/netplay_page.slint:33
+msgctxt "Netplay"
+msgid "Netplay"
+msgstr "Сетевая игра"
+
+#: src/ui/gui/netplay_page.slint:40
+msgctxt "Netplay"
+msgid "Create Session"
+msgstr "Создать сессию"
+
+#: src/ui/gui/netplay_page.slint:50
+msgctxt "Netplay"
+msgid "Join Session"
+msgstr "Присоединиться к сессии"
+
+#: src/ui/gui/netplay_page.slint:64
+msgctxt "Netplay"
+msgid "Netplay Discord Channel"
+msgstr "Канал Discord для сетевой игры"
+
+#: src/ui/gui/netplay_page.slint:71
+msgctxt "Netplay"
+msgid "Provide Feedback"
+msgstr "Оставить отзыв"
+
+#: src/ui/gui/netplay_page.slint:82
+msgctxt "CustomNetplayServer"
+msgid "Custom Netplay Server"
+msgstr "Пользовательский сервер сетевой игры"
+
+#: src/ui/gui/settings_page.slint:22
+msgctxt "Settings"
+msgid "Settings"
+msgstr "Настройки"
+
+#: src/ui/gui/settings_page.slint:29
+msgctxt "Settings"
+msgid "Resolution:"
+msgstr "Разрешение:"
+
+#: src/ui/gui/settings_page.slint:45
+msgctxt "Settings"
+msgid "SSAA downscaling"
+msgstr "SSAA даунскейлинг"
+
+#: src/ui/gui/settings_page.slint:56
+msgctxt "Settings"
+msgid "Integer Scaling"
+msgstr "Целочисленное масштабирование"
+
+#: src/ui/gui/settings_page.slint:67
+msgctxt "Settings"
+msgid "Fullscreen"
+msgstr "Полноэкранный режим"
+
+#: src/ui/gui/settings_page.slint:78
+msgctxt "Settings"
+msgid "Widescreen (stretch)"
+msgstr "Широкоэкранный режим (растянуто)"
+
+#: src/ui/gui/settings_page.slint:89
+msgctxt "Settings"
+msgid "VSync"
+msgstr "Вертикальная синхронизация"
+
+#: src/ui/gui/settings_page.slint:100
+msgctxt "Settings"
+msgid "Apply CRT shader"
+msgstr "Применить шейдер ЭЛТ"
+
+#: src/ui/gui/settings_page.slint:115
+msgctxt "Settings"
+msgid "Overclock N64 CPU (may cause bugs)"
+msgstr "Разгон процессора N64 (может вызвать ошибки)"
+
+#: src/ui/gui/settings_page.slint:126
+msgctxt "Settings"
+msgid "Disable Expansion Pak"
+msgstr "Отключить Expansion Pak"
+
+#: src/ui/gui/settings_page.slint:137
+msgctxt "Settings"
+msgid "Emulate UNFLoader"
+msgstr "Эмулировать UNFLoader"
+
+#: src/ui/gui/vru_dialog.slint:7
+msgctxt "VruDialog"
+msgid "What Would You Like To Say?"
+msgstr "Что вы хотите сказать?"
+
+#: src/ui/gui/appwindow.slint:94
+msgctxt "Menu"
+msgid "Local Game"
+msgstr "Локальная игра"
+
+#: src/ui/gui/appwindow.slint:95
+msgctxt "Menu"
+msgid "Controller Config"
+msgstr "Настройка контроллера"
+
+#: src/ui/gui/appwindow.slint:96
+msgctxt "Menu"
+msgid "Netplay"
+msgstr "Сетевая игра"
+
+#: src/ui/gui/appwindow.slint:97
+msgctxt "Menu"
+msgid "Cheats"
+msgstr "Читы"
+
+#: src/ui/gui/appwindow.slint:98
+msgctxt "Menu"
+msgid "RetroAchievements"
+msgstr "Ретро-достижения"
+
+#: src/ui/gui/appwindow.slint:99
+msgctxt "Menu"
+msgid "Settings"
+msgstr "Настройки"
+
+#: src/ui/gui/appwindow.slint:100
+msgctxt "Menu"
+msgid "About"
+msgstr "О программе"
+
+#: src/ui/gui/appwindow.slint:194
+msgctxt "ErrorDialog"
+msgid "Error"
+msgstr "Ошибка"
+
+#: src/ui/gui/netplay_create.slint:5
+msgctxt "NetplayCreate"
+msgid "Netplay: Create Session"
+msgstr "Сетевая игра: Создать сессию"
+
+#: src/ui/gui/netplay_create.slint:24
+msgctxt "NetplayCreate"
+msgid "Session Name:"
+msgstr "Имя сессии:"
+
+#: src/ui/gui/netplay_create.slint:28
+msgctxt "NetplayCreate"
+msgid "Enter session name"
+msgstr "Введите имя сессии"
+
+#: src/ui/gui/netplay_create.slint:37
+msgctxt "NetplayCreate"
+msgid "Password (Optional):"
+msgstr "Пароль (необязательно):"
+
+#: src/ui/gui/netplay_create.slint:41
+msgctxt "NetplayCreate"
+msgid "Enter session password"
+msgstr "Введите пароль сессии"
+
+#: src/ui/gui/netplay_create.slint:51
+msgctxt "NetplayCreate"
+msgid "Player Name:"
+msgstr "Имя игрока:"
+
+#: src/ui/gui/netplay_create.slint:55
+msgctxt "NetplayCreate"
+msgid "Enter player name"
+msgstr "Введите имя игрока"
+
+#: src/ui/gui/netplay_create.slint:64
+msgctxt "NetplayCreate"
+msgid "Server:"
+msgstr "Сервер:"
+
+#: src/ui/gui/netplay_create.slint:82
+msgctxt "NetplayCreate"
+msgid "Select ROM"
+msgstr "Выбрать ROM"
+
+#: src/ui/gui/netplay_create.slint:97
+msgctxt "NetplayCreate"
+msgid ""
+"This game has cheats enabled. Cheats will be synchronized with other players."
+msgstr ""
+"Для этой игры включены читы. Читы будут синхронизированы с другими игроками."
+
+#: src/ui/gui/netplay_create.slint:103
+msgctxt "NetplayCreate"
+msgid "Create Session"
+msgstr "Создать сессию"
+
+#: src/ui/gui/netplay_create.slint:126
+msgctxt "DispatcherDialog"
+msgid "Creating Server"
+msgstr "Создание сервера"
+
+#: src/ui/gui/netplay_create.slint:128
+msgctxt "DispatcherDialog"
+msgid "Creating server, please wait...This may take about 30 seconds."
+msgstr ""
+"Создание сервера, пожалуйста, подождите... Это может занять около 30 секунд."
+
+#: src/ui/gui/netplay_join.slint:5
+msgctxt "NetplayJoin"
+msgid "Netplay: Join Session"
+msgstr "Сетевая игра: Присоединиться к сессии"
+
+#: src/ui/gui/netplay_join.slint:30
+msgctxt "NetplayJoin"
+msgid "Player Name (required):"
+msgstr "Имя игрока (обязательно):"
+
+#: src/ui/gui/netplay_join.slint:34
+msgctxt "NetplayJoin"
+msgid "Enter player name"
+msgstr "Введите имя игрока"
+
+#: src/ui/gui/netplay_join.slint:43
+msgctxt "NetplayJoin"
+msgid "Custom Server URL (optional):"
+msgstr "URL пользовательского сервера (необязательно):"
+
+#: src/ui/gui/netplay_join.slint:57
+msgctxt "NetplayJoin"
+msgid "Refreshing session list, please wait..."
+msgstr "Обновление списка сессий, пожалуйста, подождите..."
+
+#: src/ui/gui/netplay_join.slint:62
+msgctxt "NetplayJoin"
+msgid "Click on a session below to select it"
+msgstr "Нажмите на сессию ниже, чтобы выбрать её"
+
+#: src/ui/gui/netplay_join.slint:67
+msgctxt "NetplayJoin"
+msgid "No sessions available. Please refresh to check again."
+msgstr ""
+"Нет доступных сессий. Пожалуйста, обновите, чтобы проверить снова."
+
+#: src/ui/gui/netplay_join.slint:73
+msgctxt "NetplayJoin"
+msgid "Server"
+msgstr "Сервер"
+
+#: src/ui/gui/netplay_join.slint:74
+msgctxt "NetplayJoin"
+msgid "Session Name"
+msgstr "Имя сессии"
+
+#: src/ui/gui/netplay_join.slint:75
+msgctxt "NetplayJoin"
+msgid "Game Name"
+msgstr "Название игры"
+
+#: src/ui/gui/netplay_join.slint:76
+msgctxt "NetplayJoin"
+msgid "Password"
+msgstr "Пароль"
+
+#: src/ui/gui/netplay_join.slint:77
+msgctxt "NetplayJoin"
+msgid "Cheats"
+msgstr "Читы"
+
+#: src/ui/gui/netplay_join.slint:91
+msgctxt "NetplayJoin"
+msgid "Refresh Session List"
+msgstr "Обновить список сессий"
+
+#: src/ui/gui/netplay_join.slint:105
+msgctxt "NetplayJoin"
+msgid "Password (if required)"
+msgstr "Пароль (если требуется)"
+
+#: src/ui/gui/netplay_join.slint:112
+msgctxt "NetplayJoin"
+msgid "Select ROM"
+msgstr "Выбрать ROM"
+
+#: src/ui/gui/netplay_join.slint:125
+msgctxt "NetplayJoin"
+msgid "Join Session"
+msgstr "Присоединиться к сессии"
+
+#: src/ui/gui/netplay_wait.slint:14
+msgctxt "NetplayWait"
+msgid "Netplay: Waiting Room"
+msgstr "Сетевая игра: Комната ожидания"
+
+#: src/ui/gui/netplay_wait.slint:31
+msgctxt "NetplayWait"
+msgid "Session Name:"
+msgstr "Имя сессии:"
+
+#: src/ui/gui/netplay_wait.slint:37
+msgctxt "NetplayWait"
+msgid "Game Name:"
+msgstr "Название игры:"
+
+#: src/ui/gui/netplay_wait.slint:43
+msgctxt "NetplayWait"
+msgid "Ping:"
+msgstr "Пинг:"
+
+#: src/ui/gui/netplay_wait.slint:50
+msgctxt "NetplayWait"
+msgid "Player 1:"
+msgstr "Игрок 1:"
+
+#: src/ui/gui/netplay_wait.slint:54
+msgctxt "NetplayWait"
+msgid "Player 2:"
+msgstr "Игрок 2:"
+
+#: src/ui/gui/netplay_wait.slint:60
+msgctxt "NetplayWait"
+msgid "Player 3:"
+msgstr "Игрок 3:"
+
+#: src/ui/gui/netplay_wait.slint:64
+msgctxt "NetplayWait"
+msgid "Player 4:"
+msgstr "Игрок 4:"
+
+#: src/ui/gui/netplay_wait.slint:76
+msgctxt "NetplayWait"
+msgid "Enter chat message"
+msgstr "Введите сообщение чата"
+
+#: src/ui/gui/netplay_wait.slint:87
+msgctxt "NetplayWait"
+msgid "Send Message"
+msgstr "Отправить сообщение"
+
+#: src/ui/gui/netplay_wait.slint:102
+msgctxt "NetplayWait"
+msgid "Start Game"
+msgstr "Начать игру"
+
+#: src/ui/gui/retroachievements_page.slint:18
+msgctxt "RAData"
+msgid "Not currently logged in"
+msgstr "В данный момент не выполнен вход"
+
+#: src/ui/gui/retroachievements_page.slint:26
+msgctxt "RetroAchievements"
+msgid "RetroAchievements"
+msgstr "Ретро-достижения"
+
+#: src/ui/gui/retroachievements_page.slint:33
+msgctxt "RetroAchievements"
+msgid "Enabled"
+msgstr "Включено"
+
+#: src/ui/gui/retroachievements_page.slint:51
+msgctxt "RetroAchievements"
+msgid "Hardcore mode"
+msgstr "Хардкорный режим"
+
+#: src/ui/gui/retroachievements_page.slint:63
+msgctxt "RetroAchievements"
+msgid "Challenge Indicators"
+msgstr "Индикаторы испытаний"
+
+#: src/ui/gui/retroachievements_page.slint:75
+msgctxt "RetroAchievements"
+msgid "Leaderboard Trackers"
+msgstr "Трекеры таблицы лидеров"
+
+#: src/ui/gui/retroachievements_page.slint:92
+msgctxt "RetroAchievements"
+msgid "View Profile"
+msgstr "Просмотреть профиль"
+
+#: src/ui/gui/retroachievements_page.slint:102
+msgctxt "RetroAchievements"
+msgid "Username"
+msgstr "Имя пользователя"
+
+#: src/ui/gui/retroachievements_page.slint:112
+msgctxt "RetroAchievements"
+msgid "Password"
+msgstr "Пароль"
+
+#: src/ui/gui/retroachievements_page.slint:121
+msgctxt "RetroAchievements"
+msgid "Login"
+msgstr "Войти"
+
+#: src/ui/gui/retroachievements_page.slint:137
+msgctxt "RetroAchievements"
+msgid "View Supported Games"
+msgstr "Просмотреть поддерживаемые игры"
