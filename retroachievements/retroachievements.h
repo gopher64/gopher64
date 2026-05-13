@@ -8,7 +8,7 @@ void ra_welcome();
 bool ra_get_hardcore();
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata);
 void ra_unload_game();
-void ra_set_dmem(const uint8_t *dmem, size_t dmem_size);
+void ra_set_rdram(const uint8_t *rdram, size_t rdram_size);
 void ra_do_frame();
 void ra_do_idle();
 void ra_http_callback(const char *content, size_t content_size, int status_code,

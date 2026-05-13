@@ -33,7 +33,7 @@ pub fn read_mem(
     let cycles = device::pi::calculate_cycles(device, 1, 4);
     device::cop0::add_cycles(device, cycles);
 
-    // well known cart ROM oddity, if a read is perfomed while PI_STATUS_IO_BUSY is set, the latched value is returned rather than the data at the specified address
+    // well known cart ROM oddity, if a read is performed while PI_STATUS_IO_BUSY is set, the latched value is returned rather than the data at the specified address
     if device.pi.regs[device::pi::PI_STATUS_REG] & device::pi::PI_STATUS_IO_BUSY != 0 {
         device.cart.latch
     } else {

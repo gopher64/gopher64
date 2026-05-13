@@ -149,8 +149,8 @@ pub fn welcome() {
     unsafe { ra_welcome() };
 }
 
-pub fn set_dmem(dmem: *const u8, dmem_size: usize) {
-    unsafe { ra_set_dmem(dmem, dmem_size) };
+pub fn set_rdram(rdram: *const u8, rdram_size: usize) {
+    unsafe { ra_set_rdram(rdram, rdram_size) };
 }
 
 pub fn do_frame() {
