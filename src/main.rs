@@ -197,7 +197,7 @@ async fn main() -> std::io::Result<()> {
             }
 
             if let Some(tas_file) = args.tas {
-                device.ui.input.tas = tas::load_tas(tas_file).into();
+                device.ui.input.tas = tas::load_m64(tas_file).into();
             } else if let Some(username) = args.ra_username {
                 retroachievements::init_client(
                     if cfg!(ra_hardcore_enabled) {
