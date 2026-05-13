@@ -200,15 +200,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
             device.load_state = true;
         }
         if callback.reset_game {
-            device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] |= device::cop0::COP0_CAUSE_IP4;
-            device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] &=
-                !device::cop0::COP0_CAUSE_EXCCODE_MASK;
-
-            device::events::create_event(
-                device,
-                device::events::EVENT_TYPE_NMI,
-                device.cpu.clock_rate, // 1 second
-            );
+            device::pif::signal_reset(device);
         }
         if device.vi.enable_speed_limiter != callback.enable_speedlimiter {
             speed_limiter_toggled = true;

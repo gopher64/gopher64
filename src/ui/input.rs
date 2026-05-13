@@ -23,6 +23,8 @@ const AXIS_DOWN: usize = 17;
 const HOTKEY: usize = 18;
 pub const PROFILE_SIZE: usize = 19;
 
+const RESERVED_1: usize = 14;
+const RESERVED_2: usize = 15;
 pub const X_AXIS_SHIFT: usize = 16;
 pub const Y_AXIS_SHIFT: usize = 24;
 
@@ -40,6 +42,7 @@ pub struct Controllers {
 
 pub struct InputData {
     pub data: u32,
+    pub reset: bool,
     pub pak_change_pressed: bool,
 }
 
@@ -484,6 +487,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
         eprintln!("Invalid profile name: {profile_name}");
         return InputData {
             data: 0,
+            reset: false,
             pak_change_pressed: false,
         };
     };
@@ -542,20 +546,32 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     ui.input.controllers[channel].last_key_state = keys;
 
     if !ui.input.tas.is_empty() {
-        InputData {
-            data: ui.input.tas.pop_front().unwrap_or(0),
-            pak_change_pressed: false,
+        keys = ui.input.tas.pop_front().unwrap_or(0);
+        if keys & (1 << RESERVED_1) != 0 && keys & (1 << RESERVED_2) != 0 {
+            InputData {
+                data: 0,
+                reset: true,
+                pak_change_pressed: false,
+            }
+        } else {
+            InputData {
+                data: keys,
+                reset: false,
+                pak_change_pressed: false,
+            }
         }
     } else if hotkey_pressed(profile, joystick, controller) {
         handle_hotkeys(keys, last_key_state);
         InputData {
             data: 0,
+            reset: false,
             pak_change_pressed: keys & (1 << B_BUTTON) != 0,
         }
     } else {
         let key = profile.keys[HOTKEY];
         InputData {
             data: keys,
+            reset: false,
             pak_change_pressed: key.enabled
                 && unsafe { *ui.input.keyboard_state.offset(key.id as isize) },
         }

@@ -164,6 +164,7 @@ pub fn get_input(device: &mut device::Device, channel: usize) -> ui::input::Inpu
     netplay.player_data[channel].count = netplay.player_data[channel].count.wrapping_add(1);
     ui::input::InputData {
         data: input.as_ref().unwrap().input,
+        reset: false,
         pak_change_pressed: input.as_ref().unwrap().plugin != 0,
     }
 }

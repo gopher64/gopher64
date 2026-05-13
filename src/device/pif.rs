@@ -94,6 +94,17 @@ fn process_channel(device: &mut device::Device, channel: usize) -> usize {
     1
 }
 
+pub fn signal_reset(device: &mut device::Device) {
+    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] |= device::cop0::COP0_CAUSE_IP4;
+    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] &= !device::cop0::COP0_CAUSE_EXCCODE_MASK;
+
+    device::events::create_event(
+        device,
+        device::events::EVENT_TYPE_NMI,
+        device.cpu.clock_rate, // 1 second
+    );
+}
+
 pub fn update_pif_ram(device: &mut device::Device) -> u64 {
     let mut active_channels = 0;
     for k in 0..PIF_CHANNELS_COUNT {

@@ -66,6 +66,10 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 ui::input::get(&mut device.ui, channel)
             };
 
+            if input.reset {
+                device::pif::signal_reset(device);
+            }
+
             device.pif.ram[offset..offset + 4].copy_from_slice(&input.data.to_ne_bytes());
             if input.pak_change_pressed {
                 // pak change button pressed
