@@ -2,20 +2,20 @@ use std::ops::Neg;
 
 use crate::ui;
 
-pub const R_DPAD: usize = 0;
-pub const L_DPAD: usize = 1;
-pub const D_DPAD: usize = 2;
-pub const U_DPAD: usize = 3;
-pub const START_BUTTON: usize = 4;
-pub const Z_TRIG: usize = 5;
-pub const B_BUTTON: usize = 6;
-pub const A_BUTTON: usize = 7;
-pub const R_CBUTTON: usize = 8;
-pub const L_CBUTTON: usize = 9;
-pub const D_CBUTTON: usize = 10;
-pub const U_CBUTTON: usize = 11;
-pub const R_TRIG: usize = 12;
-pub const L_TRIG: usize = 13;
+const R_DPAD: usize = 0;
+const L_DPAD: usize = 1;
+const D_DPAD: usize = 2;
+const U_DPAD: usize = 3;
+const START_BUTTON: usize = 4;
+const Z_TRIG: usize = 5;
+const B_BUTTON: usize = 6;
+const A_BUTTON: usize = 7;
+const R_CBUTTON: usize = 8;
+const L_CBUTTON: usize = 9;
+const D_CBUTTON: usize = 10;
+const U_CBUTTON: usize = 11;
+const R_TRIG: usize = 12;
+const L_TRIG: usize = 13;
 const AXIS_LEFT: usize = 14;
 const AXIS_RIGHT: usize = 15;
 const AXIS_UP: usize = 16;
@@ -25,8 +25,9 @@ pub const PROFILE_SIZE: usize = 19;
 
 const RESERVED_1: usize = 14;
 const RESERVED_2: usize = 15;
-pub const X_AXIS_SHIFT: usize = 16;
-pub const Y_AXIS_SHIFT: usize = 24;
+
+const X_AXIS_SHIFT: usize = 16;
+const Y_AXIS_SHIFT: usize = 24;
 
 const MAX_AXIS_VALUE: f64 = 85.0;
 
