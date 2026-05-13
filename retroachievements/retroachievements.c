@@ -16,18 +16,18 @@ void store_retroachievements_credentials(const char *username,
 void notify_load_game(void *userdata);
 
 static rc_client_t *g_client = NULL;
-static const uint8_t *g_dmem = NULL;
-static size_t g_dmem_size = 0;
+static const uint8_t *g_rdram = NULL;
+static size_t g_rdram_size = 0;
 static bool g_challenge = false;
 static bool g_leaderboard = false;
 static rc_client_leaderboard_list_t *g_leaderboard_list = NULL;
 
 static uint32_t read_memory(uint32_t address, uint8_t *buffer,
                             uint32_t num_bytes, rc_client_t *client) {
-  if (address + num_bytes > g_dmem_size)
+  if (address + num_bytes > g_rdram_size)
     memset(buffer, 0, num_bytes);
   else
-    memcpy(buffer, &g_dmem[address], num_bytes);
+    memcpy(buffer, &g_rdram[address], num_bytes);
   return num_bytes;
 }
 
@@ -177,9 +177,9 @@ void ra_unload_game() {
   rc_client_unload_game(g_client);
 }
 
-void ra_set_dmem(const uint8_t *dmem, size_t dmem_size) {
-  g_dmem = dmem;
-  g_dmem_size = dmem_size;
+void ra_set_rdram(const uint8_t *rdram, size_t rdram_size) {
+  g_rdram = rdram;
+  g_rdram_size = rdram_size;
 }
 
 static void leaderboard_submitted(const rc_client_leaderboard_t *leaderboard) {
@@ -316,8 +316,8 @@ void ra_init_client(bool hardcore, bool challenge, bool leaderboard) {
   // Create the client instance (using a global variable simplifies this
   // example)
   g_client = rc_client_create(read_memory, server_call);
-  g_dmem = NULL;
-  g_dmem_size = 0;
+  g_rdram = NULL;
+  g_rdram_size = 0;
 
   // Provide a logging function to simplify debugging
   rc_client_enable_logging(g_client, RC_CLIENT_LOG_LEVEL_WARN, log_message);
