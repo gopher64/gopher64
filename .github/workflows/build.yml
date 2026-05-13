@@ -255,3 +255,22 @@ jobs:
           butler push target/${{ matrix.target }}/release/bundle/osx/Gopher64.app loganmc10/gopher64:${{ matrix.arch }} --userversion ${GITHUB_REF_NAME#v}
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+
+  collect-artifacts:
+    name: Collect release artifacts
+    needs: [build-linux, build-windows, build-macos]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all workflow artifacts
+        uses: actions/download-artifact@v8
+        with:
+          skip-decompress: true
+          path: release-artifacts
+      - name: Add files to release
+        uses: softprops/action-gh-release@v3
+        with:
+          draft: true
+          files: release-artifacts/*
