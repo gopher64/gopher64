@@ -12,8 +12,6 @@ mod ui;
 use clap::Parser;
 use std::io::Error;
 
-use discord_rich_presence::DiscordIpc;
-
 /// N64 emulator
 #[derive(Parser, Debug)]
 #[command(author, version=env!("GIT_DESCRIBE"), about, long_about = None, arg_required_else_help = if cfg!(feature = "gui") { false } else { true })]
@@ -223,48 +221,17 @@ async fn main() -> std::io::Result<()> {
         }
 
         let mut discord_handle = None;
-        let (watch_tx, mut watch_rx) = tokio::sync::watch::channel(());
+        let (discord_watch_tx, discord_watch_rx) = tokio::sync::watch::channel(());
         let (game_title, game_image_url) =
             retroachievements::load_game(&rom_contents, rom_contents.len()).await;
         if let Some(game_title) = game_title
             && let Some(game_image_url) = game_image_url
         {
-            discord_handle = Some(tokio::spawn(async move {
-                let mut client =
-                    discord_rich_presence::DiscordIpcClient::new("1395482226463870986");
-
-                if let Err(e) = client.connect() {
-                    eprintln!("Failed to connect to Discord: {e}");
-                }
-                loop {
-                    tokio::select! {
-                        _ = watch_rx.changed() => {
-                            if let Err(e) = client.clear_activity() {
-                                eprintln!("Failed to clear Discord activity: {e}");
-                            }
-                            if let Err(e) = client.close() {
-                                eprintln!("Failed to close Discord: {e}");
-                            }
-                            return;
-                        }
-                        _ = tokio::time::sleep(std::time::Duration::from_secs(10)) => {
-                            if let Some(rich_presence) = retroachievements::get_rich_presence()
-                                && let Err(e) = client.set_activity(
-                                    discord_rich_presence::activity::Activity::new()
-                                        .details(game_title.clone())
-                                        .state(rich_presence)
-                                        .assets(
-                                            discord_rich_presence::activity::Assets::new()
-                                                .small_image(game_image_url.clone()),
-                                        ),
-                                )
-                            {
-                                eprintln!("Failed to set Discord activity: {e}");
-                            }
-                        }
-                    }
-                }
-            }));
+            discord_handle = Some(retroachievements::init_rich_presence(
+                discord_watch_rx,
+                game_title,
+                game_image_url,
+            ));
         }
 
         device::run_game(
@@ -277,11 +244,12 @@ async fn main() -> std::io::Result<()> {
                 load_savestate_slot: args.load_state,
             },
         );
-        retroachievements::shutdown_client();
-        watch_tx.send(()).unwrap();
+
         if let Some(discord_handle) = discord_handle {
+            discord_watch_tx.send(()).unwrap();
             discord_handle.await.unwrap();
         }
+        retroachievements::shutdown_client();
 
         if device.netplay.is_some() {
             netplay::close(&mut device);

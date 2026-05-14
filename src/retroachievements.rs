@@ -2,6 +2,8 @@ include!(concat!(env!("OUT_DIR"), "/retroachievements_bindings.rs"));
 
 use crate::ui;
 
+use discord_rich_presence::DiscordIpc;
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct RAConfig {
     pub username: String,
@@ -274,4 +276,46 @@ pub fn save_state(state: *mut u8, state_size: usize) {
 
 pub fn load_state(state: *const u8, state_size: usize) {
     unsafe { ra_load_state(state, state_size) };
+}
+
+pub fn init_rich_presence(
+    mut discord_watch_rx: tokio::sync::watch::Receiver<()>,
+    game_title: String,
+    game_image_url: String,
+) -> tokio::task::JoinHandle<()> {
+    tokio::spawn(async move {
+        let mut client = discord_rich_presence::DiscordIpcClient::new("1395482226463870986");
+
+        if let Err(e) = client.connect() {
+            eprintln!("Failed to connect to Discord: {e}");
+        }
+        loop {
+            tokio::select! {
+                _ = discord_watch_rx.changed() => {
+                    if let Err(e) = client.clear_activity() {
+                        eprintln!("Failed to clear Discord activity: {e}");
+                    }
+                    if let Err(e) = client.close() {
+                        eprintln!("Failed to close Discord: {e}");
+                    }
+                    return;
+                }
+                _ = tokio::time::sleep(std::time::Duration::from_secs(10)) => {
+                    if let Some(rich_presence) = get_rich_presence()
+                        && let Err(e) = client.set_activity(
+                            discord_rich_presence::activity::Activity::new()
+                                .details(game_title.clone())
+                                .state(rich_presence)
+                                .assets(
+                                    discord_rich_presence::activity::Assets::new()
+                                        .small_image(game_image_url.clone()),
+                                ),
+                        )
+                    {
+                        eprintln!("Failed to set Discord activity: {e}");
+                    }
+                }
+            }
+        }
+    })
 }
