@@ -140,8 +140,10 @@ pub extern "C" fn rust_server_call(
 pub async fn load_game(
     rom: &[u8],
     rom_size: usize,
-    discord_watch_rx: tokio::sync::watch::Receiver<()>,
-) -> Option<tokio::task::JoinHandle<()>> {
+) -> (
+    Option<tokio::sync::watch::Sender<()>>,
+    Option<tokio::task::JoinHandle<()>>,
+) {
     let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
     unsafe {
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
@@ -152,19 +154,23 @@ pub async fn load_game(
     let mut c_image_url: *const i8 = std::ptr::null_mut();
     unsafe { ra_get_game_info(&mut c_title, &mut c_image_url) };
     if c_title.is_null() || c_image_url.is_null() {
-        None
+        (None, None)
     } else {
-        Some(init_rich_presence(
-            discord_watch_rx,
-            unsafe { std::ffi::CStr::from_ptr(c_title) }
-                .to_str()
-                .unwrap()
-                .to_string(),
-            unsafe { std::ffi::CStr::from_ptr(c_image_url) }
-                .to_str()
-                .unwrap()
-                .to_string(),
-        ))
+        let (discord_watch_tx, discord_watch_rx) = tokio::sync::watch::channel(());
+        (
+            Some(discord_watch_tx),
+            Some(init_rich_presence(
+                discord_watch_rx,
+                unsafe { std::ffi::CStr::from_ptr(c_title) }
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                unsafe { std::ffi::CStr::from_ptr(c_image_url) }
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )),
+        )
     }
 }
 
@@ -210,8 +216,10 @@ pub async fn shutdown_client(
     discord_watch_tx: Option<tokio::sync::watch::Sender<()>>,
     discord_handle: Option<tokio::task::JoinHandle<()>>,
 ) {
-    if let Some(discord_handle) = discord_handle {
-        discord_watch_tx.unwrap().send(()).unwrap();
+    if let Some(discord_handle) = discord_handle
+        && let Some(discord_watch_tx) = discord_watch_tx
+    {
+        discord_watch_tx.send(()).unwrap();
         discord_handle.await.unwrap();
     }
     unsafe { ra_shutdown_client() };

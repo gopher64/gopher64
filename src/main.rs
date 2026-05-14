@@ -220,9 +220,8 @@ async fn main() -> std::io::Result<()> {
             }
         }
 
-        let (discord_watch_tx, discord_watch_rx) = tokio::sync::watch::channel(());
-        let discord_handle =
-            retroachievements::load_game(&rom_contents, rom_contents.len(), discord_watch_rx).await;
+        let (discord_watch_tx, discord_handle) =
+            retroachievements::load_game(&rom_contents, rom_contents.len()).await;
 
         device::run_game(
             &mut device,
@@ -235,7 +234,7 @@ async fn main() -> std::io::Result<()> {
             },
         );
 
-        retroachievements::shutdown_client(Some(discord_watch_tx), discord_handle).await;
+        retroachievements::shutdown_client(discord_watch_tx, discord_handle).await;
 
         if device.netplay.is_some() {
             netplay::close(&mut device);
