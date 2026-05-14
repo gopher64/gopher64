@@ -146,6 +146,9 @@ void ra_welcome() {
   }
 
   const rc_client_game_t *game = rc_client_get_game_info(g_client);
+  if (!game) {
+    return;
+  }
 
   rc_client_user_game_summary_t summary;
   rc_client_get_user_game_summary(g_client, &summary);
@@ -167,6 +170,11 @@ void ra_welcome() {
 
 void ra_get_game_info(const char **game_title, const char **game_image_url) {
   const rc_client_game_t *game = rc_client_get_game_info(g_client);
+  if (!game) {
+    *game_title = NULL;
+    *game_image_url = NULL;
+    return;
+  }
   *game_title = game->title;
   *game_image_url = game->badge_url;
 }
