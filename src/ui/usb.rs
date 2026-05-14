@@ -145,23 +145,23 @@ pub fn init() -> (
     let usb_tx_clone = usb_tx.clone();
     let cart_rx_clone = cart_rx.resubscribe();
     let handle = tokio::spawn(async move {
-        let listener = tokio::net::TcpListener::bind("localhost:64000")
-            .await
-            .unwrap();
-
-        loop {
-            tokio::select! {
-                res = listener.accept() => {
-                    if let Ok((c,_)) = res {
-                        handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone()).await;
-                    } else {
+        if let Ok(listener) = tokio::net::TcpListener::bind("localhost:48646").await {
+            loop {
+                tokio::select! {
+                    res = listener.accept() => {
+                        if let Ok((c,_)) = res {
+                            handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone()).await;
+                        } else {
+                            break;
+                        }
+                    }
+                    _ = shutdown_rx.changed() => {
                         break;
                     }
                 }
-                _ = shutdown_rx.changed() => {
-                    break;
-                }
             }
+        } else {
+            eprintln!("Could not bind to port 48646");
         }
     });
     (
