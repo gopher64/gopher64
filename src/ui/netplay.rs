@@ -1227,6 +1227,7 @@ pub fn netplay_window(app: &AppWindow) {
                         hardcore: handle.get_ra_hardcore(),
                         challenge: handle.get_ra_challenge(),
                         leaderboard: handle.get_ra_leaderboard(),
+                        rich_presence: handle.get_ra_rich_presence(),
                     },
                     handle.get_rom_dir(),
                     weak_app,
@@ -1251,6 +1252,7 @@ pub fn netplay_window(app: &AppWindow) {
                         hardcore: handle.get_ra_hardcore(),
                         challenge: handle.get_ra_challenge(),
                         leaderboard: handle.get_ra_leaderboard(),
+                        rich_presence: handle.get_ra_rich_presence(),
                     },
                     weak_app,
                 );

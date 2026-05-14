@@ -128,9 +128,9 @@ static void load_game_callback(int result, const char *error_message,
   notify_load_game(userdata);
 }
 
-void ra_welcome() {
+const char *ra_welcome() {
   if (!g_client)
-    return;
+    return NULL;
 
   char buffer[512];
 
@@ -140,7 +140,7 @@ void ra_welcome() {
     rdp_onscreen_message(buffer, MESSAGE_LONG);
     free(error_message);
     rc_client_set_userdata(g_client, NULL);
-    return;
+    return NULL;
   }
 
   const rc_client_game_t *game = rc_client_get_game_info(g_client);
@@ -161,6 +161,8 @@ void ra_welcome() {
              "Game has no achievements");
   }
   rdp_onscreen_message(buffer, MESSAGE_LONG);
+
+  return game->title;
 }
 
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {

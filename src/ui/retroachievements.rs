@@ -13,6 +13,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
         app.set_ra_hardcore(result.hardcore);
         app.set_ra_challenge(result.challenge);
         app.set_ra_leaderboard(result.leaderboard);
+        app.set_ra_rich_presence(result.rich_presence);
         token = result.token;
     } else {
         app.set_ra_hardcore(true);
@@ -46,14 +47,36 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
             .unwrap();
     });
 
-    app.on_ra_toggled(move |enabled, hardcore, challenge, leaderboard| {
-        let file_path = ui::get_dirs().config_dir.join("retroachievements.json");
-        let raconfig = if let Ok(ra_config) = std::fs::read(&file_path)
-            && let Ok(result) =
-                serde_json::from_slice::<retroachievements::RAConfig>(ra_config.as_ref())
-        {
-            if !enabled {
-                retroachievements::logout_user();
+    app.on_ra_toggled(
+        move |enabled, hardcore, challenge, leaderboard, rich_presence| {
+            let file_path = ui::get_dirs().config_dir.join("retroachievements.json");
+            let raconfig = if let Ok(ra_config) = std::fs::read(&file_path)
+                && let Ok(result) =
+                    serde_json::from_slice::<retroachievements::RAConfig>(ra_config.as_ref())
+            {
+                if !enabled {
+                    retroachievements::logout_user();
+                    retroachievements::RAConfig {
+                        username: String::new(),
+                        token: String::new(),
+                        enabled,
+                        hardcore,
+                        challenge,
+                        leaderboard,
+                        rich_presence,
+                    }
+                } else {
+                    retroachievements::RAConfig {
+                        username: result.username,
+                        token: result.token,
+                        enabled,
+                        hardcore,
+                        challenge,
+                        leaderboard,
+                        rich_presence,
+                    }
+                }
+            } else {
                 retroachievements::RAConfig {
                     username: String::new(),
                     token: String::new(),
@@ -61,33 +84,16 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
                     hardcore,
                     challenge,
                     leaderboard,
+                    rich_presence,
                 }
-            } else {
-                retroachievements::RAConfig {
-                    username: result.username,
-                    token: result.token,
-                    enabled,
-                    hardcore,
-                    challenge,
-                    leaderboard,
-                }
+            };
+            if let Ok(f) = std::fs::File::create(&file_path)
+                && let Err(e) = serde_json::to_writer_pretty(f, &raconfig)
+            {
+                eprintln!("Error writing RA config: {}", e);
             }
-        } else {
-            retroachievements::RAConfig {
-                username: String::new(),
-                token: String::new(),
-                enabled,
-                hardcore,
-                challenge,
-                leaderboard,
-            }
-        };
-        if let Ok(f) = std::fs::File::create(&file_path)
-            && let Err(e) = serde_json::to_writer_pretty(f, &raconfig)
-        {
-            eprintln!("Error writing RA config: {}", e);
-        }
-    });
+        },
+    );
 
     app.on_ra_games_clicked(move || {
         if let Err(e) =

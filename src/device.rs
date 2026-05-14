@@ -69,7 +69,7 @@ pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::Gam
     ui::input::init(&mut device.ui);
 
     // must be after video init
-    retroachievements::welcome();
+    device.ui.discord.game_title = retroachievements::welcome();
 
     mi::init(device);
     pif::init(device);

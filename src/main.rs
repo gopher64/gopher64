@@ -12,6 +12,8 @@ mod ui;
 use clap::Parser;
 use std::io::Error;
 
+use discord_rich_presence::DiscordIpc;
+
 /// N64 emulator
 #[derive(Parser, Debug)]
 #[command(author, version=env!("GIT_DESCRIBE"), about, long_about = None, arg_required_else_help = if cfg!(feature = "gui") { false } else { true })]
@@ -111,6 +113,8 @@ struct Args {
         help = "Enable Leaderboard Trackers for RetroAchievements"
     )]
     ra_leaderboard: bool,
+    #[arg(long = "discord-rich-presence", help = "Enable Discord Rich Presence")]
+    discord_rich_presence: bool,
 }
 
 #[tokio::main(worker_threads = 4)]
@@ -217,6 +221,11 @@ async fn main() -> std::io::Result<()> {
             }
         }
 
+        if args.discord_rich_presence {
+            if let Err(e) = device.ui.discord.client.connect() {
+                eprintln!("Failed to connect to Discord: {e}");
+            }
+        }
         retroachievements::load_game(&rom_contents, rom_contents.len()).await;
         device::run_game(
             &mut device,
@@ -229,6 +238,14 @@ async fn main() -> std::io::Result<()> {
             },
         );
         retroachievements::shutdown_client();
+        if args.discord_rich_presence {
+            if let Err(e) = device.ui.discord.client.clear_activity() {
+                eprintln!("Failed to clear Discord activity: {e}");
+            }
+            if let Err(e) = device.ui.discord.client.close() {
+                eprintln!("Failed to close Discord: {e}");
+            }
+        }
 
         if device.netplay.is_some() {
             netplay::close(&mut device);

@@ -71,6 +71,11 @@ pub struct GameSettings {
     pub load_savestate_slot: Option<u32>,
 }
 
+pub struct DiscordRichPresence {
+    pub client: discord_rich_presence::DiscordIpcClient,
+    pub game_title: Option<String>,
+}
+
 pub struct Ui {
     pub dirs: Dirs,
     pub config: config::Config,
@@ -81,6 +86,7 @@ pub struct Ui {
     pub storage: Storage,
     pub video: Video,
     pub usb: Usb,
+    pub discord: DiscordRichPresence,
 }
 
 pub fn sdl_hints() {
@@ -151,6 +157,10 @@ impl Ui {
         let (fps_tx, fps_rx) = tokio::sync::mpsc::channel(1000);
         let (vis_tx, vis_rx) = tokio::sync::mpsc::channel(1000);
         Ui {
+            discord: DiscordRichPresence {
+                client: discord_rich_presence::DiscordIpcClient::new("1395482226463870986"),
+                game_title: None,
+            },
             input: Input {
                 controllers: [
                     input::Controllers {

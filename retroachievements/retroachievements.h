@@ -4,7 +4,7 @@
 
 void ra_init_client(bool hardcore, bool challenge, bool leaderboard);
 void ra_shutdown_client();
-void ra_welcome();
+const char *ra_welcome();
 bool ra_get_hardcore();
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata);
 void ra_unload_game();

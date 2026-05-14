@@ -10,6 +10,7 @@ pub struct RAConfig {
     pub hardcore: bool,
     pub challenge: bool,
     pub leaderboard: bool,
+    pub rich_presence: bool,
 }
 
 #[unsafe(no_mangle)]
@@ -42,6 +43,7 @@ pub extern "C" fn store_retroachievements_credentials(
             hardcore: result.hardcore,
             challenge: result.challenge,
             leaderboard: result.leaderboard,
+            rich_presence: result.rich_presence,
         }
     } else {
         RAConfig {
@@ -51,6 +53,7 @@ pub extern "C" fn store_retroachievements_credentials(
             hardcore: false,
             challenge: false,
             leaderboard: false,
+            rich_presence: false,
         }
     };
     let f = std::fs::File::create(&file_path).unwrap();
@@ -145,8 +148,18 @@ pub fn unload_game() {
     unsafe { ra_unload_game() };
 }
 
-pub fn welcome() {
-    unsafe { ra_welcome() };
+pub fn welcome() -> Option<String> {
+    let c_title = unsafe { ra_welcome() };
+    if c_title.is_null() {
+        None
+    } else {
+        Some(
+            unsafe { std::ffi::CStr::from_ptr(c_title) }
+                .to_str()
+                .unwrap()
+                .to_string(),
+        )
+    }
 }
 
 pub fn set_rdram(rdram: *const u8, rdram_size: usize) {
