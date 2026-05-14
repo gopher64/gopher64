@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-05-10 18:36+0000\n"
+"POT-Creation-Date: 2026-05-14 13:42+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -105,31 +105,6 @@ msgstr ""
 #: src/ui/gui/controller_page.slint:117
 msgctxt "ControllerConfig"
 msgid "Controller"
-msgstr ""
-
-#: src/ui/gui/input_profile.slint:10
-msgctxt "InputProfileDialog"
-msgid "Create/Modify Input Profile"
-msgstr ""
-
-#: src/ui/gui/input_profile.slint:18
-msgctxt "InputProfileDialog"
-msgid "Enter profile name to create or modify"
-msgstr ""
-
-#: src/ui/gui/input_profile.slint:29
-msgctxt "InputProfileDialog"
-msgid "Deadzone Percentage"
-msgstr ""
-
-#: src/ui/gui/input_profile.slint:51
-msgctxt "InputProfileDialog"
-msgid "Use DirectInput"
-msgstr ""
-
-#: src/ui/gui/input_profile.slint:61
-msgctxt "InputProfileDialog"
-msgid "Start Profile Creation Wizard"
 msgstr ""
 
 #: src/ui/gui/localgame_page.slint:18
@@ -242,42 +217,42 @@ msgctxt "VruDialog"
 msgid "What Would You Like To Say?"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:94
+#: src/ui/gui/appwindow.slint:95
 msgctxt "Menu"
 msgid "Local Game"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:95
+#: src/ui/gui/appwindow.slint:96
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:96
+#: src/ui/gui/appwindow.slint:97
 msgctxt "Menu"
 msgid "Netplay"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:97
+#: src/ui/gui/appwindow.slint:98
 msgctxt "Menu"
 msgid "Cheats"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:98
+#: src/ui/gui/appwindow.slint:99
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:99
+#: src/ui/gui/appwindow.slint:100
 msgctxt "Menu"
 msgid "Settings"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:100
+#: src/ui/gui/appwindow.slint:101
 msgctxt "Menu"
 msgid "About"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:194
+#: src/ui/gui/appwindow.slint:195
 msgctxt "ErrorDialog"
 msgid "Error"
 msgstr ""
@@ -428,6 +403,66 @@ msgctxt "NetplayJoin"
 msgid "Join Session"
 msgstr ""
 
+#: src/ui/gui/retroachievements_page.slint:19
+msgctxt "RAData"
+msgid "Not currently logged in"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:27
+msgctxt "RetroAchievements"
+msgid "RetroAchievements"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:34
+msgctxt "RetroAchievements"
+msgid "Enabled"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:52
+msgctxt "RetroAchievements"
+msgid "Hardcore mode"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:64
+msgctxt "RetroAchievements"
+msgid "Challenge Indicators"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:76
+msgctxt "RetroAchievements"
+msgid "Leaderboard Trackers"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:88
+msgctxt "RetroAchievements"
+msgid "Discord Rich Presence"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:105
+msgctxt "RetroAchievements"
+msgid "View Profile"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:115
+msgctxt "RetroAchievements"
+msgid "Username"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:125
+msgctxt "RetroAchievements"
+msgid "Password"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:134
+msgctxt "RetroAchievements"
+msgid "Login"
+msgstr ""
+
+#: src/ui/gui/retroachievements_page.slint:150
+msgctxt "RetroAchievements"
+msgid "View Supported Games"
+msgstr ""
+
 #: src/ui/gui/netplay_wait.slint:14
 msgctxt "NetplayWait"
 msgid "Netplay: Waiting Room"
@@ -483,57 +518,27 @@ msgctxt "NetplayWait"
 msgid "Start Game"
 msgstr ""
 
-#: src/ui/gui/retroachievements_page.slint:18
-msgctxt "RAData"
-msgid "Not currently logged in"
+#: src/ui/gui/input_profile.slint:10
+msgctxt "InputProfileDialog"
+msgid "Create/Modify Input Profile"
 msgstr ""
 
-#: src/ui/gui/retroachievements_page.slint:26
-msgctxt "RetroAchievements"
-msgid "RetroAchievements"
+#: src/ui/gui/input_profile.slint:18
+msgctxt "InputProfileDialog"
+msgid "Enter profile name to create or modify"
 msgstr ""
 
-#: src/ui/gui/retroachievements_page.slint:33
-msgctxt "RetroAchievements"
-msgid "Enabled"
+#: src/ui/gui/input_profile.slint:29
+msgctxt "InputProfileDialog"
+msgid "Deadzone Percentage"
 msgstr ""
 
-#: src/ui/gui/retroachievements_page.slint:51
-msgctxt "RetroAchievements"
-msgid "Hardcore mode"
+#: src/ui/gui/input_profile.slint:51
+msgctxt "InputProfileDialog"
+msgid "Use DirectInput"
 msgstr ""
 
-#: src/ui/gui/retroachievements_page.slint:63
-msgctxt "RetroAchievements"
-msgid "Challenge Indicators"
-msgstr ""
-
-#: src/ui/gui/retroachievements_page.slint:75
-msgctxt "RetroAchievements"
-msgid "Leaderboard Trackers"
-msgstr ""
-
-#: src/ui/gui/retroachievements_page.slint:92
-msgctxt "RetroAchievements"
-msgid "View Profile"
-msgstr ""
-
-#: src/ui/gui/retroachievements_page.slint:102
-msgctxt "RetroAchievements"
-msgid "Username"
-msgstr ""
-
-#: src/ui/gui/retroachievements_page.slint:112
-msgctxt "RetroAchievements"
-msgid "Password"
-msgstr ""
-
-#: src/ui/gui/retroachievements_page.slint:121
-msgctxt "RetroAchievements"
-msgid "Login"
-msgstr ""
-
-#: src/ui/gui/retroachievements_page.slint:137
-msgctxt "RetroAchievements"
-msgid "View Supported Games"
+#: src/ui/gui/input_profile.slint:61
+msgctxt "InputProfileDialog"
+msgid "Start Profile Creation Wizard"
 msgstr ""

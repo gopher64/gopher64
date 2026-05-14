@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-05-10 18:36+0000\n"
+"POT-Creation-Date: 2026-05-14 13:42+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
@@ -106,31 +106,6 @@ msgstr "プロファイル"
 msgctxt "ControllerConfig"
 msgid "Controller"
 msgstr "コントローラー"
-
-#: src/ui/gui/input_profile.slint:10
-msgctxt "InputProfileDialog"
-msgid "Create/Modify Input Profile"
-msgstr "入力プロファイルの作成／変更"
-
-#: src/ui/gui/input_profile.slint:18
-msgctxt "InputProfileDialog"
-msgid "Enter profile name to create or modify"
-msgstr "作成または変更するプロファイル名を入力"
-
-#: src/ui/gui/input_profile.slint:29
-msgctxt "InputProfileDialog"
-msgid "Deadzone Percentage"
-msgstr "デッドゾーン（％）"
-
-#: src/ui/gui/input_profile.slint:51
-msgctxt "InputProfileDialog"
-msgid "Use DirectInput"
-msgstr "DirectInputを使用"
-
-#: src/ui/gui/input_profile.slint:61
-msgctxt "InputProfileDialog"
-msgid "Start Profile Creation Wizard"
-msgstr "プロファイル作成ウィザードを開始"
 
 #: src/ui/gui/localgame_page.slint:18
 msgctxt "LocalGame"
@@ -242,42 +217,42 @@ msgctxt "VruDialog"
 msgid "What Would You Like To Say?"
 msgstr "何と言いますか？"
 
-#: src/ui/gui/appwindow.slint:94
+#: src/ui/gui/appwindow.slint:95
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "ローカルゲーム"
 
-#: src/ui/gui/appwindow.slint:95
+#: src/ui/gui/appwindow.slint:96
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "コントローラー設定"
 
-#: src/ui/gui/appwindow.slint:96
+#: src/ui/gui/appwindow.slint:97
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "ネットプレイ"
 
-#: src/ui/gui/appwindow.slint:97
+#: src/ui/gui/appwindow.slint:98
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "チート"
 
-#: src/ui/gui/appwindow.slint:98
+#: src/ui/gui/appwindow.slint:99
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:99
+#: src/ui/gui/appwindow.slint:100
 msgctxt "Menu"
 msgid "Settings"
 msgstr "設定"
 
-#: src/ui/gui/appwindow.slint:100
+#: src/ui/gui/appwindow.slint:101
 msgctxt "Menu"
 msgid "About"
 msgstr "バージョン情報"
 
-#: src/ui/gui/appwindow.slint:194
+#: src/ui/gui/appwindow.slint:195
 msgctxt "ErrorDialog"
 msgid "Error"
 msgstr "エラー"
@@ -331,8 +306,7 @@ msgstr "ROMを選択"
 msgctxt "NetplayCreate"
 msgid ""
 "This game has cheats enabled. Cheats will be synchronized with other players."
-msgstr ""
-"このゲームではチートが有効です。チートは他のプレイヤーと同期されます。"
+msgstr "このゲームではチートが有効です。チートは他のプレイヤーと同期されます。"
 
 #: src/ui/gui/netplay_create.slint:103
 msgctxt "NetplayCreate"
@@ -348,7 +322,8 @@ msgstr "サーバーを作成中"
 msgctxt "DispatcherDialog"
 msgid "Creating server, please wait...This may take about 30 seconds."
 msgstr ""
-"サーバーを作成しています。しばらくお待ちください… 最大約30秒かかることがあります。"
+"サーバーを作成しています。しばらくお待ちください… 最大約30秒かかることがあり"
+"ます。"
 
 #: src/ui/gui/netplay_join.slint:5
 msgctxt "NetplayJoin"
@@ -383,8 +358,7 @@ msgstr "下の一覧からセッションをクリックして選択"
 #: src/ui/gui/netplay_join.slint:67
 msgctxt "NetplayJoin"
 msgid "No sessions available. Please refresh to check again."
-msgstr ""
-"利用できるセッションがありません。更新して再度確認してください。"
+msgstr "利用できるセッションがありません。更新して再度確認してください。"
 
 #: src/ui/gui/netplay_join.slint:73
 msgctxt "NetplayJoin"
@@ -430,6 +404,66 @@ msgstr "ROMを選択"
 msgctxt "NetplayJoin"
 msgid "Join Session"
 msgstr "セッションに参加"
+
+#: src/ui/gui/retroachievements_page.slint:19
+msgctxt "RAData"
+msgid "Not currently logged in"
+msgstr "ログインしていません"
+
+#: src/ui/gui/retroachievements_page.slint:27
+msgctxt "RetroAchievements"
+msgid "RetroAchievements"
+msgstr "RetroAchievements"
+
+#: src/ui/gui/retroachievements_page.slint:34
+msgctxt "RetroAchievements"
+msgid "Enabled"
+msgstr "有効"
+
+#: src/ui/gui/retroachievements_page.slint:52
+msgctxt "RetroAchievements"
+msgid "Hardcore mode"
+msgstr "ハードコアモード"
+
+#: src/ui/gui/retroachievements_page.slint:64
+msgctxt "RetroAchievements"
+msgid "Challenge Indicators"
+msgstr "チャレンジ表示"
+
+#: src/ui/gui/retroachievements_page.slint:76
+msgctxt "RetroAchievements"
+msgid "Leaderboard Trackers"
+msgstr "リーダーボード追跡"
+
+#: src/ui/gui/retroachievements_page.slint:88
+msgctxt "RetroAchievements"
+msgid "Discord Rich Presence"
+msgstr "Discord のリッチプレゼンス"
+
+#: src/ui/gui/retroachievements_page.slint:105
+msgctxt "RetroAchievements"
+msgid "View Profile"
+msgstr "プロフィールを表示"
+
+#: src/ui/gui/retroachievements_page.slint:115
+msgctxt "RetroAchievements"
+msgid "Username"
+msgstr "ユーザー名"
+
+#: src/ui/gui/retroachievements_page.slint:125
+msgctxt "RetroAchievements"
+msgid "Password"
+msgstr "パスワード"
+
+#: src/ui/gui/retroachievements_page.slint:134
+msgctxt "RetroAchievements"
+msgid "Login"
+msgstr "ログイン"
+
+#: src/ui/gui/retroachievements_page.slint:150
+msgctxt "RetroAchievements"
+msgid "View Supported Games"
+msgstr "対応ゲームを表示"
 
 #: src/ui/gui/netplay_wait.slint:14
 msgctxt "NetplayWait"
@@ -486,57 +520,27 @@ msgctxt "NetplayWait"
 msgid "Start Game"
 msgstr "ゲーム開始"
 
-#: src/ui/gui/retroachievements_page.slint:18
-msgctxt "RAData"
-msgid "Not currently logged in"
-msgstr "ログインしていません"
+#: src/ui/gui/input_profile.slint:10
+msgctxt "InputProfileDialog"
+msgid "Create/Modify Input Profile"
+msgstr "入力プロファイルの作成／変更"
 
-#: src/ui/gui/retroachievements_page.slint:26
-msgctxt "RetroAchievements"
-msgid "RetroAchievements"
-msgstr "RetroAchievements"
+#: src/ui/gui/input_profile.slint:18
+msgctxt "InputProfileDialog"
+msgid "Enter profile name to create or modify"
+msgstr "作成または変更するプロファイル名を入力"
 
-#: src/ui/gui/retroachievements_page.slint:33
-msgctxt "RetroAchievements"
-msgid "Enabled"
-msgstr "有効"
+#: src/ui/gui/input_profile.slint:29
+msgctxt "InputProfileDialog"
+msgid "Deadzone Percentage"
+msgstr "デッドゾーン（％）"
 
-#: src/ui/gui/retroachievements_page.slint:51
-msgctxt "RetroAchievements"
-msgid "Hardcore mode"
-msgstr "ハードコアモード"
+#: src/ui/gui/input_profile.slint:51
+msgctxt "InputProfileDialog"
+msgid "Use DirectInput"
+msgstr "DirectInputを使用"
 
-#: src/ui/gui/retroachievements_page.slint:63
-msgctxt "RetroAchievements"
-msgid "Challenge Indicators"
-msgstr "チャレンジ表示"
-
-#: src/ui/gui/retroachievements_page.slint:75
-msgctxt "RetroAchievements"
-msgid "Leaderboard Trackers"
-msgstr "リーダーボード追跡"
-
-#: src/ui/gui/retroachievements_page.slint:92
-msgctxt "RetroAchievements"
-msgid "View Profile"
-msgstr "プロフィールを表示"
-
-#: src/ui/gui/retroachievements_page.slint:102
-msgctxt "RetroAchievements"
-msgid "Username"
-msgstr "ユーザー名"
-
-#: src/ui/gui/retroachievements_page.slint:112
-msgctxt "RetroAchievements"
-msgid "Password"
-msgstr "パスワード"
-
-#: src/ui/gui/retroachievements_page.slint:121
-msgctxt "RetroAchievements"
-msgid "Login"
-msgstr "ログイン"
-
-#: src/ui/gui/retroachievements_page.slint:137
-msgctxt "RetroAchievements"
-msgid "View Supported Games"
-msgstr "対応ゲームを表示"
+#: src/ui/gui/input_profile.slint:61
+msgctxt "InputProfileDialog"
+msgid "Start Profile Creation Wizard"
+msgstr "プロファイル作成ウィザードを開始"
