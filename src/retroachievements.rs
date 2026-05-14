@@ -302,6 +302,12 @@ pub fn init_rich_presence(
 ) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
         let mut client = discord_rich_presence::DiscordIpcClient::new("1395482226463870986");
+        let timestamps = discord_rich_presence::activity::Timestamps::new().start(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64,
+        );
 
         if let Err(e) = client.connect() {
             eprintln!("Failed to connect to Discord: {e}");
@@ -327,7 +333,7 @@ pub fn init_rich_presence(
                                 .assets(
                                     discord_rich_presence::activity::Assets::new()
                                         .small_image(game_image_url.clone()),
-                                ),
+                                ).timestamps(timestamps.clone()),
                         )
                     {
                         eprintln!("Failed to set Discord activity: {e}");

@@ -507,7 +507,11 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                     {
                         let (mut write, mut read) = socket.split();
 
-                        let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+                        let now_utc = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_millis()
+                            .to_string();
                         let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
                         let request_rooms = NetplayMessage {
                             message_type: "request_get_rooms".to_string(),
@@ -623,7 +627,11 @@ fn create_session(
     weak: slint::Weak<NetplayCreate>,
 ) {
     tokio::spawn(async move {
-        let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+        let now_utc = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            .to_string();
         let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
         let mut features = std::collections::HashMap::new();
 
@@ -757,7 +765,11 @@ fn join_session(
     weak: slint::Weak<NetplayJoin>,
 ) {
     tokio::spawn(async move {
-        let now_utc = chrono::Utc::now().timestamp_millis().to_string();
+        let now_utc = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            .to_string();
         let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
 
         let join_room = NetplayMessage {
