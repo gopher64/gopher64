@@ -76,7 +76,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     device::events::create_event(
                         device,
                         device::events::EVENT_TYPE_PAK,
-                        device.cpu.clock_rate, // 1 second
+                        device.cpu.clock_rate / 2, // 500ms
                     )
                 }
             }
