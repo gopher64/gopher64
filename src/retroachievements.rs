@@ -151,8 +151,8 @@ pub async fn load_game(
         ra_load_game(rom.as_ptr(), rom_size, tx_ptr);
     };
     rx.await.unwrap();
-    let mut c_title: *const i8 = std::ptr::null_mut();
-    let mut c_image_url: *const i8 = std::ptr::null_mut();
+    let mut c_title = std::ptr::null();
+    let mut c_image_url = std::ptr::null();
     unsafe { ra_get_game_info(&mut c_title, &mut c_image_url) };
     if !discord_rich_presence || c_title.is_null() || c_image_url.is_null() {
         (None, None)
