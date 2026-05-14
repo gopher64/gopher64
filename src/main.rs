@@ -220,19 +220,9 @@ async fn main() -> std::io::Result<()> {
             }
         }
 
-        let mut discord_handle = None;
         let (discord_watch_tx, discord_watch_rx) = tokio::sync::watch::channel(());
-        let (game_title, game_image_url) =
-            retroachievements::load_game(&rom_contents, rom_contents.len()).await;
-        if let Some(game_title) = game_title
-            && let Some(game_image_url) = game_image_url
-        {
-            discord_handle = Some(retroachievements::init_rich_presence(
-                discord_watch_rx,
-                game_title,
-                game_image_url,
-            ));
-        }
+        let discord_handle =
+            retroachievements::load_game(&rom_contents, rom_contents.len(), discord_watch_rx).await;
 
         device::run_game(
             &mut device,
@@ -245,11 +235,7 @@ async fn main() -> std::io::Result<()> {
             },
         );
 
-        if let Some(discord_handle) = discord_handle {
-            discord_watch_tx.send(()).unwrap();
-            discord_handle.await.unwrap();
-        }
-        retroachievements::shutdown_client();
+        retroachievements::shutdown_client(Some(discord_watch_tx), discord_handle).await;
 
         if device.netplay.is_some() {
             netplay::close(&mut device);
@@ -323,7 +309,7 @@ async fn main() -> std::io::Result<()> {
         {
             retroachievements::init_client(false, false, false);
             ui::gui::app_window();
-            retroachievements::shutdown_client();
+            retroachievements::shutdown_client(None, None).await;
         }
     }
 
