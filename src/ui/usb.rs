@@ -174,8 +174,14 @@ pub fn init() -> (
     )
 }
 
-pub fn close(shutdown_tx: &tokio::sync::watch::Sender<()>) {
+pub async fn close(
+    shutdown_tx: &tokio::sync::watch::Sender<()>,
+    usb_handle: Option<tokio::task::JoinHandle<()>>,
+) {
     let _ = shutdown_tx.send(());
+    if let Some(handle) = usb_handle {
+        handle.await.unwrap();
+    }
 }
 
 pub fn send_to_usb(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, buffer: UsbData) {

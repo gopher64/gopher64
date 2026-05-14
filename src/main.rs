@@ -268,10 +268,7 @@ async fn main() -> std::io::Result<()> {
             }
         }
         if let Some(shutdown_tx) = &shutdown_tx {
-            ui::usb::close(shutdown_tx);
-            if let Some(handle) = usb_handle {
-                handle.await.unwrap();
-            }
+            ui::usb::close(shutdown_tx, usb_handle).await;
         }
     } else if std::env::args().count() > 1 {
         let mut config = ui::config::Config::new();
