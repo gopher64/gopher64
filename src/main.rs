@@ -176,6 +176,7 @@ async fn main() -> std::io::Result<()> {
         };
 
         let mut shutdown_tx = None;
+        let mut usb_handle = None;
 
         if let Some(peer_addr) = args.netplay_peer_addr
             && let Some(player_number) = args.netplay_player_number
@@ -194,7 +195,7 @@ async fn main() -> std::io::Result<()> {
             }
 
             if device.ui.config.emulation.usb {
-                (shutdown_tx, device.ui.usb) = ui::usb::init();
+                (shutdown_tx, usb_handle, device.ui.usb) = ui::usb::init();
             }
 
             if let Some(username) = args.ra_username {
@@ -221,12 +222,51 @@ async fn main() -> std::io::Result<()> {
             }
         }
 
-        if args.discord_rich_presence {
-            if let Err(e) = device.ui.discord.client.connect() {
-                eprintln!("Failed to connect to Discord: {e}");
-            }
+        let mut discord_handle = None;
+        let (watch_tx, mut watch_rx) = tokio::sync::watch::channel(());
+        let (game_title, game_image_url) =
+            retroachievements::load_game(&rom_contents, rom_contents.len()).await;
+        if let Some(game_title) = game_title
+            && let Some(game_image_url) = game_image_url
+        {
+            discord_handle = Some(tokio::spawn(async move {
+                let mut client =
+                    discord_rich_presence::DiscordIpcClient::new("1395482226463870986");
+
+                if let Err(e) = client.connect() {
+                    eprintln!("Failed to connect to Discord: {e}");
+                }
+                loop {
+                    tokio::select! {
+                        _ = watch_rx.changed() => {
+                            if let Err(e) = client.clear_activity() {
+                                eprintln!("Failed to clear Discord activity: {e}");
+                            }
+                            if let Err(e) = client.close() {
+                                eprintln!("Failed to close Discord: {e}");
+                            }
+                            return;
+                        }
+                        _ = tokio::time::sleep(std::time::Duration::from_secs(10)) => {
+                            if let Some(rich_presence) = retroachievements::get_rich_presence()
+                                && let Err(e) = client.set_activity(
+                                    discord_rich_presence::activity::Activity::new()
+                                        .details(game_title.clone())
+                                        .state(rich_presence)
+                                        .assets(
+                                            discord_rich_presence::activity::Assets::new()
+                                                .small_image(game_image_url.clone()),
+                                        ),
+                                )
+                            {
+                                eprintln!("Failed to set Discord activity: {e}");
+                            }
+                        }
+                    }
+                }
+            }));
         }
-        retroachievements::load_game(&rom_contents, rom_contents.len()).await;
+
         device::run_game(
             &mut device,
             &rom_contents,
@@ -238,13 +278,9 @@ async fn main() -> std::io::Result<()> {
             },
         );
         retroachievements::shutdown_client();
-        if args.discord_rich_presence {
-            if let Err(e) = device.ui.discord.client.clear_activity() {
-                eprintln!("Failed to clear Discord activity: {e}");
-            }
-            if let Err(e) = device.ui.discord.client.close() {
-                eprintln!("Failed to close Discord: {e}");
-            }
+        watch_tx.send(()).unwrap();
+        if let Some(discord_handle) = discord_handle {
+            discord_handle.await.unwrap();
         }
 
         if device.netplay.is_some() {
@@ -265,6 +301,9 @@ async fn main() -> std::io::Result<()> {
         }
         if let Some(shutdown_tx) = &shutdown_tx {
             ui::usb::close(shutdown_tx);
+            if let Some(handle) = usb_handle {
+                handle.await.unwrap();
+            }
         }
     } else if std::env::args().count() > 1 {
         let mut config = ui::config::Config::new();

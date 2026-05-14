@@ -4,7 +4,7 @@
 
 void ra_init_client(bool hardcore, bool challenge, bool leaderboard);
 void ra_shutdown_client();
-const char *ra_welcome();
+void ra_welcome();
 bool ra_get_hardcore();
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata);
 void ra_unload_game();
@@ -22,6 +22,9 @@ const char *ra_get_token();
 size_t ra_state_size();
 void ra_save_state(uint8_t *state, size_t state_size);
 void ra_load_state(const uint8_t *state, size_t state_size);
+
+const char *ra_get_rich_presence();
+void ra_get_game_info(const char **game_title, const char **game_image_url);
 
 #ifdef __cplusplus
 extern "C" {

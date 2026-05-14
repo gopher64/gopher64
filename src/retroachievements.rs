@@ -135,26 +135,51 @@ pub extern "C" fn rust_server_call(
     });
 }
 
-pub async fn load_game(rom: &[u8], rom_size: usize) {
+pub async fn load_game(rom: &[u8], rom_size: usize) -> (Option<String>, Option<String>) {
     let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
     unsafe {
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
         ra_load_game(rom.as_ptr(), rom_size, tx_ptr);
     };
     rx.await.unwrap();
+    let mut c_title: *const i8 = std::ptr::null_mut();
+    let mut c_image_url: *const i8 = std::ptr::null_mut();
+    unsafe { ra_get_game_info(&mut c_title, &mut c_image_url) };
+    if c_title.is_null() || c_image_url.is_null() {
+        (None, None)
+    } else {
+        (
+            Some(
+                unsafe { std::ffi::CStr::from_ptr(c_title) }
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            ),
+            Some(
+                unsafe { std::ffi::CStr::from_ptr(c_image_url) }
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            ),
+        )
+    }
 }
 
 pub fn unload_game() {
     unsafe { ra_unload_game() };
 }
 
-pub fn welcome() -> Option<String> {
-    let c_title = unsafe { ra_welcome() };
-    if c_title.is_null() {
+pub fn welcome() {
+    unsafe { ra_welcome() };
+}
+
+pub fn get_rich_presence() -> Option<String> {
+    let c_rich_presence = unsafe { ra_get_rich_presence() };
+    if c_rich_presence.is_null() {
         None
     } else {
         Some(
-            unsafe { std::ffi::CStr::from_ptr(c_title) }
+            unsafe { std::ffi::CStr::from_ptr(c_rich_presence) }
                 .to_str()
                 .unwrap()
                 .to_string(),
