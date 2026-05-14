@@ -127,7 +127,11 @@ async fn handle_connection(
     }
 }
 
-pub fn init() -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
+pub fn init() -> (
+    Option<tokio::sync::watch::Sender<()>>,
+    Option<tokio::task::JoinHandle<()>>,
+    ui::Usb,
+) {
     let (shutdown_tx, mut shutdown_rx) = tokio::sync::watch::channel(());
     let (usb_tx, usb_rx): (
         tokio::sync::broadcast::Sender<UsbData>,
@@ -140,7 +144,7 @@ pub fn init() -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
 
     let usb_tx_clone = usb_tx.clone();
     let cart_rx_clone = cart_rx.resubscribe();
-    tokio::spawn(async move {
+    let handle = tokio::spawn(async move {
         let listener = tokio::net::TcpListener::bind("localhost:64000")
             .await
             .unwrap();
@@ -162,6 +166,7 @@ pub fn init() -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
     });
     (
         Some(shutdown_tx),
+        Some(handle),
         ui::Usb {
             usb_tx: Some(usb_tx_clone),
             cart_rx: Some(cart_rx_clone),
@@ -169,8 +174,14 @@ pub fn init() -> (Option<tokio::sync::watch::Sender<()>>, ui::Usb) {
     )
 }
 
-pub fn close(shutdown_tx: &tokio::sync::watch::Sender<()>) {
+pub async fn close(
+    shutdown_tx: &tokio::sync::watch::Sender<()>,
+    usb_handle: Option<tokio::task::JoinHandle<()>>,
+) {
     let _ = shutdown_tx.send(());
+    if let Some(handle) = usb_handle {
+        handle.await.unwrap();
+    }
 }
 
 pub fn send_to_usb(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, buffer: UsbData) {

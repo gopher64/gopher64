@@ -25,6 +25,7 @@ pub struct RASettings {
     pub hardcore: bool,
     pub challenge: bool,
     pub leaderboard: bool,
+    pub rich_presence: bool,
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
@@ -75,6 +76,7 @@ fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
                 hardcore: handle.get_ra_hardcore(),
                 challenge: handle.get_ra_challenge(),
                 leaderboard: handle.get_ra_leaderboard(),
+                rich_presence: handle.get_ra_rich_presence(),
             },
             weak2,
         );
@@ -586,6 +588,9 @@ pub fn run_rom(
             if ra_settings.leaderboard {
                 command.args(["--ra-leaderboard"]);
             }
+            if ra_settings.rich_presence {
+                command.args(["--discord-rich-presence"]);
+            }
         }
 
         let success = command
@@ -645,6 +650,7 @@ fn open_rom(app: &AppWindow) {
     let ra_hardcore = app.get_ra_hardcore();
     let ra_challenge = app.get_ra_challenge();
     let ra_leaderboard = app.get_ra_leaderboard();
+    let ra_rich_presence = app.get_ra_rich_presence();
 
     let weak = app.as_weak();
     tokio::spawn(async move {
@@ -663,6 +669,7 @@ fn open_rom(app: &AppWindow) {
                     hardcore: ra_hardcore,
                     challenge: ra_challenge,
                     leaderboard: ra_leaderboard,
+                    rich_presence: ra_rich_presence,
                 },
                 weak,
             );

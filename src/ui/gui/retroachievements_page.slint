@@ -9,6 +9,7 @@ export global RAData {
     in-out property <bool> hardcore;
     in-out property <bool> challenge;
     in-out property <bool> leaderboard;
+    in-out property <bool> rich_presence;
     in-out property <bool> ra_logging_in;
     in-out property <bool> ra_show_profile;
     in-out property <bool> ra_softcore_only;
@@ -20,7 +21,7 @@ export global RAData {
 
 export component RetroAchievements inherits Page {
     callback ra_button_clicked(string);
-    callback ra_toggled(bool,bool,bool,bool);
+    callback ra_toggled(bool,bool,bool,bool,bool);
     callback ra_games_clicked;
     callback ra_show_profile_clicked;
     title: @tr("RetroAchievements");
@@ -41,7 +42,7 @@ export component RetroAchievements inherits Page {
                         RAData.current_user_message = RAData.not_logged_in;
                         RAData.ra_show_profile = false;
                     }
-                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard);
+                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
                 }
             }
         }
@@ -53,7 +54,7 @@ export component RetroAchievements inherits Page {
                 enabled: RAData.enabled;
                 toggled => {
                     RAData.hardcore = self.checked;
-                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard);
+                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
                 }
             }
         }
@@ -65,7 +66,7 @@ export component RetroAchievements inherits Page {
                 enabled: RAData.enabled;
                 toggled => {
                     RAData.challenge = self.checked;
-                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard);
+                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
                 }
             }
         }
@@ -77,7 +78,19 @@ export component RetroAchievements inherits Page {
                 enabled: RAData.enabled;
                 toggled => {
                     RAData.leaderboard = self.checked;
-                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard);
+                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+                }
+            }
+        }
+        HorizontalBox {
+            alignment: start;
+            Switch {
+                text: @tr("Discord Rich Presence");
+                checked: RAData.rich_presence;
+                enabled: RAData.enabled;
+                toggled => {
+                    RAData.rich_presence = self.checked;
+                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
                 }
             }
         }

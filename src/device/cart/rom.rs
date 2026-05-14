@@ -122,8 +122,10 @@ pub fn dma_write(
 }
 
 pub fn init(device: &mut device::Device, rom_file: &[u8]) {
-    let now: chrono::DateTime<chrono::Local> = chrono::Local::now();
-    device.cart.rtc_timestamp = now.naive_local().and_utc().timestamp();
+    device.cart.rtc_timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
     if let Some(netplay) = &mut device.netplay {
         if netplay.player_number == 0 {
             netplay::send_rtc(netplay, device.cart.rtc_timestamp);

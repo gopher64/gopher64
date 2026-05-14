@@ -2,6 +2,8 @@ include!(concat!(env!("OUT_DIR"), "/retroachievements_bindings.rs"));
 
 use crate::ui;
 
+use discord_rich_presence::DiscordIpc;
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct RAConfig {
     pub username: String,
@@ -10,6 +12,7 @@ pub struct RAConfig {
     pub hardcore: bool,
     pub challenge: bool,
     pub leaderboard: bool,
+    pub rich_presence: bool,
 }
 
 #[unsafe(no_mangle)]
@@ -42,6 +45,7 @@ pub extern "C" fn store_retroachievements_credentials(
             hardcore: result.hardcore,
             challenge: result.challenge,
             leaderboard: result.leaderboard,
+            rich_presence: result.rich_presence,
         }
     } else {
         RAConfig {
@@ -51,6 +55,7 @@ pub extern "C" fn store_retroachievements_credentials(
             hardcore: false,
             challenge: false,
             leaderboard: false,
+            rich_presence: false,
         }
     };
     let f = std::fs::File::create(&file_path).unwrap();
@@ -132,13 +137,42 @@ pub extern "C" fn rust_server_call(
     });
 }
 
-pub async fn load_game(rom: &[u8], rom_size: usize) {
+pub async fn load_game(
+    rom: &[u8],
+    rom_size: usize,
+    discord_rich_presence: bool,
+) -> (
+    Option<tokio::sync::watch::Sender<()>>,
+    Option<tokio::task::JoinHandle<()>>,
+) {
     let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
     unsafe {
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
         ra_load_game(rom.as_ptr(), rom_size, tx_ptr);
     };
     rx.await.unwrap();
+    let mut c_title = std::ptr::null();
+    let mut c_image_url = std::ptr::null();
+    unsafe { ra_get_game_info(&mut c_title, &mut c_image_url) };
+    if !discord_rich_presence || c_title.is_null() || c_image_url.is_null() {
+        (None, None)
+    } else {
+        let (discord_watch_tx, discord_watch_rx) = tokio::sync::watch::channel(());
+        (
+            Some(discord_watch_tx),
+            Some(init_rich_presence(
+                discord_watch_rx,
+                unsafe { std::ffi::CStr::from_ptr(c_title) }
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                unsafe { std::ffi::CStr::from_ptr(c_image_url) }
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            )),
+        )
+    }
 }
 
 pub fn unload_game() {
@@ -147,6 +181,20 @@ pub fn unload_game() {
 
 pub fn welcome() {
     unsafe { ra_welcome() };
+}
+
+pub fn get_rich_presence() -> Option<String> {
+    let c_rich_presence = unsafe { ra_get_rich_presence() };
+    if c_rich_presence.is_null() {
+        None
+    } else {
+        Some(
+            unsafe { std::ffi::CStr::from_ptr(c_rich_presence) }
+                .to_str()
+                .unwrap()
+                .to_string(),
+        )
+    }
 }
 
 pub fn set_rdram(rdram: *const u8, rdram_size: usize) {
@@ -165,7 +213,16 @@ pub fn init_client(hardcore: bool, challenge: bool, leaderboard: bool) {
     unsafe { ra_init_client(hardcore, challenge, leaderboard) };
 }
 
-pub fn shutdown_client() {
+pub async fn shutdown_client(
+    discord_watch_tx: Option<tokio::sync::watch::Sender<()>>,
+    discord_handle: Option<tokio::task::JoinHandle<()>>,
+) {
+    if let Some(discord_handle) = discord_handle
+        && let Some(discord_watch_tx) = discord_watch_tx
+    {
+        let _ = discord_watch_tx.send(());
+        discord_handle.await.unwrap();
+    }
     unsafe { ra_shutdown_client() };
 }
 
@@ -236,4 +293,53 @@ pub fn save_state(state: *mut u8, state_size: usize) {
 
 pub fn load_state(state: *const u8, state_size: usize) {
     unsafe { ra_load_state(state, state_size) };
+}
+
+pub fn init_rich_presence(
+    mut discord_watch_rx: tokio::sync::watch::Receiver<()>,
+    game_title: String,
+    game_image_url: String,
+) -> tokio::task::JoinHandle<()> {
+    tokio::spawn(async move {
+        let mut client = discord_rich_presence::DiscordIpcClient::new("1395482226463870986");
+        let timestamps = discord_rich_presence::activity::Timestamps::new().start(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64,
+        );
+
+        if let Err(e) = client.connect() {
+            eprintln!("Failed to connect to Discord: {e}");
+            return;
+        }
+        loop {
+            tokio::select! {
+                _ = discord_watch_rx.changed() => {
+                    if let Err(e) = client.clear_activity() {
+                        eprintln!("Failed to clear Discord activity: {e}");
+                    }
+                    if let Err(e) = client.close() {
+                        eprintln!("Failed to close Discord: {e}");
+                    }
+                    return;
+                }
+                _ = tokio::time::sleep(std::time::Duration::from_secs(10)) => {
+                    if let Some(rich_presence) = get_rich_presence()
+                        && let Err(e) = client.set_activity(
+                            discord_rich_presence::activity::Activity::new()
+                                .details(game_title.clone())
+                                .state(rich_presence)
+                                .assets(
+                                    discord_rich_presence::activity::Assets::new()
+                                        .small_image(game_image_url.clone()),
+                                ).timestamps(timestamps.clone()),
+                        )
+                    {
+                        eprintln!("Failed to set Discord activity: {e}");
+                    }
+                }
+            }
+        }
+    })
 }

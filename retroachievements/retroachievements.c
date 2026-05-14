@@ -22,6 +22,8 @@ static bool g_challenge = false;
 static bool g_leaderboard = false;
 static rc_client_leaderboard_list_t *g_leaderboard_list = NULL;
 
+static char g_rich_presence_buffer[512];
+
 static uint32_t read_memory(uint32_t address, uint8_t *buffer,
                             uint32_t num_bytes, rc_client_t *client) {
   if (address + num_bytes > g_rdram_size)
@@ -144,6 +146,9 @@ void ra_welcome() {
   }
 
   const rc_client_game_t *game = rc_client_get_game_info(g_client);
+  if (!game) {
+    return;
+  }
 
   rc_client_user_game_summary_t summary;
   rc_client_get_user_game_summary(g_client, &summary);
@@ -161,6 +166,17 @@ void ra_welcome() {
              "Game has no achievements");
   }
   rdp_onscreen_message(buffer, MESSAGE_LONG);
+}
+
+void ra_get_game_info(const char **game_title, const char **game_image_url) {
+  const rc_client_game_t *game = rc_client_get_game_info(g_client);
+  if (!game) {
+    *game_title = NULL;
+    *game_image_url = NULL;
+    return;
+  }
+  *game_title = game->title;
+  *game_image_url = game->badge_url;
 }
 
 void ra_load_game(const uint8_t *rom, size_t rom_size, void *userdata) {
@@ -343,6 +359,15 @@ void ra_shutdown_client() {
 void ra_do_frame() { rc_client_do_frame(g_client); }
 
 void ra_do_idle() { rc_client_idle(g_client); }
+
+const char *ra_get_rich_presence() {
+  size_t size = rc_client_get_rich_presence_message(
+      g_client, g_rich_presence_buffer, sizeof(g_rich_presence_buffer));
+  if (size == 0) {
+    return NULL;
+  }
+  return g_rich_presence_buffer;
+}
 
 size_t ra_state_size() { return rc_client_progress_size(g_client); }
 

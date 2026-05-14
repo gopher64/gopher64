@@ -111,6 +111,8 @@ struct Args {
         help = "Enable Leaderboard Trackers for RetroAchievements"
     )]
     ra_leaderboard: bool,
+    #[arg(long = "discord-rich-presence", help = "Enable Discord Rich Presence")]
+    discord_rich_presence: bool,
 }
 
 #[tokio::main(worker_threads = 4)]
@@ -172,6 +174,7 @@ async fn main() -> std::io::Result<()> {
         };
 
         let mut shutdown_tx = None;
+        let mut usb_handle = None;
 
         if let Some(peer_addr) = args.netplay_peer_addr
             && let Some(player_number) = args.netplay_player_number
@@ -190,7 +193,7 @@ async fn main() -> std::io::Result<()> {
             }
 
             if device.ui.config.emulation.usb {
-                (shutdown_tx, device.ui.usb) = ui::usb::init();
+                (shutdown_tx, usb_handle, device.ui.usb) = ui::usb::init();
             }
 
             if let Some(username) = args.ra_username {
@@ -217,7 +220,13 @@ async fn main() -> std::io::Result<()> {
             }
         }
 
-        retroachievements::load_game(&rom_contents, rom_contents.len()).await;
+        let (discord_watch_tx, discord_handle) = retroachievements::load_game(
+            &rom_contents,
+            rom_contents.len(),
+            args.discord_rich_presence,
+        )
+        .await;
+
         device::run_game(
             &mut device,
             &rom_contents,
@@ -228,7 +237,8 @@ async fn main() -> std::io::Result<()> {
                 load_savestate_slot: args.load_state,
             },
         );
-        retroachievements::shutdown_client();
+
+        retroachievements::shutdown_client(discord_watch_tx, discord_handle).await;
 
         if device.netplay.is_some() {
             netplay::close(&mut device);
@@ -247,7 +257,7 @@ async fn main() -> std::io::Result<()> {
             }
         }
         if let Some(shutdown_tx) = &shutdown_tx {
-            ui::usb::close(shutdown_tx);
+            ui::usb::close(shutdown_tx, usb_handle).await;
         }
     } else if std::env::args().count() > 1 {
         let mut config = ui::config::Config::new();
@@ -302,7 +312,7 @@ async fn main() -> std::io::Result<()> {
         {
             retroachievements::init_client(false, false, false);
             ui::gui::app_window();
-            retroachievements::shutdown_client();
+            retroachievements::shutdown_client(None, None).await;
         }
     }
 
