@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-05-14 13:42+0000\n"
+"POT-Creation-Date: 2026-05-14 14:53+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,6 +45,46 @@ msgstr ""
 #: src/ui/gui/about_page.slint:77
 msgctxt "About"
 msgid "Donate (via GitHub)"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:95
+msgctxt "Menu"
+msgid "Local Game"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:96
+msgctxt "Menu"
+msgid "Controller Config"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:97
+msgctxt "Menu"
+msgid "Netplay"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:98
+msgctxt "Menu"
+msgid "Cheats"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:99
+msgctxt "Menu"
+msgid "RetroAchievements"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:100
+msgctxt "Menu"
+msgid "Settings"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:101
+msgctxt "Menu"
+msgid "About"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:195
+msgctxt "ErrorDialog"
+msgid "Error"
 msgstr ""
 
 #: src/ui/gui/cheat_page.slint:15
@@ -107,6 +147,31 @@ msgctxt "ControllerConfig"
 msgid "Controller"
 msgstr ""
 
+#: src/ui/gui/input_profile.slint:10
+msgctxt "InputProfileDialog"
+msgid "Create/Modify Input Profile"
+msgstr ""
+
+#: src/ui/gui/input_profile.slint:18
+msgctxt "InputProfileDialog"
+msgid "Enter profile name to create or modify"
+msgstr ""
+
+#: src/ui/gui/input_profile.slint:29
+msgctxt "InputProfileDialog"
+msgid "Deadzone Percentage"
+msgstr ""
+
+#: src/ui/gui/input_profile.slint:51
+msgctxt "InputProfileDialog"
+msgid "Use DirectInput"
+msgstr ""
+
+#: src/ui/gui/input_profile.slint:61
+msgctxt "InputProfileDialog"
+msgid "Start Profile Creation Wizard"
+msgstr ""
+
 #: src/ui/gui/localgame_page.slint:18
 msgctxt "LocalGame"
 msgid "Local Game"
@@ -125,136 +190,6 @@ msgstr ""
 #: src/ui/gui/localgame_page.slint:53
 msgctxt "LocalGame"
 msgid "Recent ROMs"
-msgstr ""
-
-#: src/ui/gui/netplay_page.slint:33
-msgctxt "Netplay"
-msgid "Netplay"
-msgstr ""
-
-#: src/ui/gui/netplay_page.slint:40
-msgctxt "Netplay"
-msgid "Create Session"
-msgstr ""
-
-#: src/ui/gui/netplay_page.slint:50
-msgctxt "Netplay"
-msgid "Join Session"
-msgstr ""
-
-#: src/ui/gui/netplay_page.slint:64
-msgctxt "Netplay"
-msgid "Netplay Discord Channel"
-msgstr ""
-
-#: src/ui/gui/netplay_page.slint:71
-msgctxt "Netplay"
-msgid "Provide Feedback"
-msgstr ""
-
-#: src/ui/gui/netplay_page.slint:82
-msgctxt "CustomNetplayServer"
-msgid "Custom Netplay Server"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:22
-msgctxt "Settings"
-msgid "Settings"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:29
-msgctxt "Settings"
-msgid "Resolution:"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:45
-msgctxt "Settings"
-msgid "SSAA downscaling"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:56
-msgctxt "Settings"
-msgid "Integer Scaling"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:67
-msgctxt "Settings"
-msgid "Fullscreen"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:78
-msgctxt "Settings"
-msgid "Widescreen (stretch)"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:89
-msgctxt "Settings"
-msgid "VSync"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:100
-msgctxt "Settings"
-msgid "Apply CRT shader"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:115
-msgctxt "Settings"
-msgid "Overclock N64 CPU (may cause bugs)"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:126
-msgctxt "Settings"
-msgid "Disable Expansion Pak"
-msgstr ""
-
-#: src/ui/gui/settings_page.slint:137
-msgctxt "Settings"
-msgid "Emulate UNFLoader"
-msgstr ""
-
-#: src/ui/gui/vru_dialog.slint:7
-msgctxt "VruDialog"
-msgid "What Would You Like To Say?"
-msgstr ""
-
-#: src/ui/gui/appwindow.slint:95
-msgctxt "Menu"
-msgid "Local Game"
-msgstr ""
-
-#: src/ui/gui/appwindow.slint:96
-msgctxt "Menu"
-msgid "Controller Config"
-msgstr ""
-
-#: src/ui/gui/appwindow.slint:97
-msgctxt "Menu"
-msgid "Netplay"
-msgstr ""
-
-#: src/ui/gui/appwindow.slint:98
-msgctxt "Menu"
-msgid "Cheats"
-msgstr ""
-
-#: src/ui/gui/appwindow.slint:99
-msgctxt "Menu"
-msgid "RetroAchievements"
-msgstr ""
-
-#: src/ui/gui/appwindow.slint:100
-msgctxt "Menu"
-msgid "Settings"
-msgstr ""
-
-#: src/ui/gui/appwindow.slint:101
-msgctxt "Menu"
-msgid "About"
-msgstr ""
-
-#: src/ui/gui/appwindow.slint:195
-msgctxt "ErrorDialog"
-msgid "Error"
 msgstr ""
 
 #: src/ui/gui/netplay_create.slint:5
@@ -403,6 +338,91 @@ msgctxt "NetplayJoin"
 msgid "Join Session"
 msgstr ""
 
+#: src/ui/gui/netplay_page.slint:33
+msgctxt "Netplay"
+msgid "Netplay"
+msgstr ""
+
+#: src/ui/gui/netplay_page.slint:40
+msgctxt "Netplay"
+msgid "Create Session"
+msgstr ""
+
+#: src/ui/gui/netplay_page.slint:50
+msgctxt "Netplay"
+msgid "Join Session"
+msgstr ""
+
+#: src/ui/gui/netplay_page.slint:64
+msgctxt "Netplay"
+msgid "Netplay Discord Channel"
+msgstr ""
+
+#: src/ui/gui/netplay_page.slint:71
+msgctxt "Netplay"
+msgid "Provide Feedback"
+msgstr ""
+
+#: src/ui/gui/netplay_page.slint:82
+msgctxt "CustomNetplayServer"
+msgid "Custom Netplay Server"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:14
+msgctxt "NetplayWait"
+msgid "Netplay: Waiting Room"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:31
+msgctxt "NetplayWait"
+msgid "Session Name:"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:37
+msgctxt "NetplayWait"
+msgid "Game Name:"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:43
+msgctxt "NetplayWait"
+msgid "Ping:"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:50
+msgctxt "NetplayWait"
+msgid "Player 1:"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:54
+msgctxt "NetplayWait"
+msgid "Player 2:"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:60
+msgctxt "NetplayWait"
+msgid "Player 3:"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:64
+msgctxt "NetplayWait"
+msgid "Player 4:"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:76
+msgctxt "NetplayWait"
+msgid "Enter chat message"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:87
+msgctxt "NetplayWait"
+msgid "Send Message"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:102
+msgctxt "NetplayWait"
+msgid "Start Game"
+msgstr ""
+
 #: src/ui/gui/retroachievements_page.slint:19
 msgctxt "RAData"
 msgid "Not currently logged in"
@@ -463,82 +483,62 @@ msgctxt "RetroAchievements"
 msgid "View Supported Games"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:14
-msgctxt "NetplayWait"
-msgid "Netplay: Waiting Room"
+#: src/ui/gui/settings_page.slint:22
+msgctxt "Settings"
+msgid "Settings"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:31
-msgctxt "NetplayWait"
-msgid "Session Name:"
+#: src/ui/gui/settings_page.slint:29
+msgctxt "Settings"
+msgid "Resolution:"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:37
-msgctxt "NetplayWait"
-msgid "Game Name:"
+#: src/ui/gui/settings_page.slint:45
+msgctxt "Settings"
+msgid "SSAA downscaling"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:43
-msgctxt "NetplayWait"
-msgid "Ping:"
+#: src/ui/gui/settings_page.slint:56
+msgctxt "Settings"
+msgid "Integer Scaling"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:50
-msgctxt "NetplayWait"
-msgid "Player 1:"
+#: src/ui/gui/settings_page.slint:67
+msgctxt "Settings"
+msgid "Fullscreen"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:54
-msgctxt "NetplayWait"
-msgid "Player 2:"
+#: src/ui/gui/settings_page.slint:78
+msgctxt "Settings"
+msgid "Widescreen (stretch)"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:60
-msgctxt "NetplayWait"
-msgid "Player 3:"
+#: src/ui/gui/settings_page.slint:89
+msgctxt "Settings"
+msgid "VSync"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:64
-msgctxt "NetplayWait"
-msgid "Player 4:"
+#: src/ui/gui/settings_page.slint:100
+msgctxt "Settings"
+msgid "Apply CRT shader"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:76
-msgctxt "NetplayWait"
-msgid "Enter chat message"
+#: src/ui/gui/settings_page.slint:115
+msgctxt "Settings"
+msgid "Overclock N64 CPU (may cause bugs)"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:87
-msgctxt "NetplayWait"
-msgid "Send Message"
+#: src/ui/gui/settings_page.slint:126
+msgctxt "Settings"
+msgid "Disable Expansion Pak"
 msgstr ""
 
-#: src/ui/gui/netplay_wait.slint:102
-msgctxt "NetplayWait"
-msgid "Start Game"
+#: src/ui/gui/settings_page.slint:137
+msgctxt "Settings"
+msgid "Emulate UNFLoader"
 msgstr ""
 
-#: src/ui/gui/input_profile.slint:10
-msgctxt "InputProfileDialog"
-msgid "Create/Modify Input Profile"
-msgstr ""
-
-#: src/ui/gui/input_profile.slint:18
-msgctxt "InputProfileDialog"
-msgid "Enter profile name to create or modify"
-msgstr ""
-
-#: src/ui/gui/input_profile.slint:29
-msgctxt "InputProfileDialog"
-msgid "Deadzone Percentage"
-msgstr ""
-
-#: src/ui/gui/input_profile.slint:51
-msgctxt "InputProfileDialog"
-msgid "Use DirectInput"
-msgstr ""
-
-#: src/ui/gui/input_profile.slint:61
-msgctxt "InputProfileDialog"
-msgid "Start Profile Creation Wizard"
+#: src/ui/gui/vru_dialog.slint:7
+msgctxt "VruDialog"
+msgid "What Would You Like To Say?"
 msgstr ""
