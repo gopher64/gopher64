@@ -220,8 +220,12 @@ async fn main() -> std::io::Result<()> {
             }
         }
 
-        let (discord_watch_tx, discord_handle) =
-            retroachievements::load_game(&rom_contents, rom_contents.len()).await;
+        let (discord_watch_tx, discord_handle) = retroachievements::load_game(
+            &rom_contents,
+            rom_contents.len(),
+            args.discord_rich_presence,
+        )
+        .await;
 
         device::run_game(
             &mut device,

@@ -140,6 +140,7 @@ pub extern "C" fn rust_server_call(
 pub async fn load_game(
     rom: &[u8],
     rom_size: usize,
+    discord_rich_presence: bool,
 ) -> (
     Option<tokio::sync::watch::Sender<()>>,
     Option<tokio::task::JoinHandle<()>>,
@@ -153,7 +154,7 @@ pub async fn load_game(
     let mut c_title: *const i8 = std::ptr::null_mut();
     let mut c_image_url: *const i8 = std::ptr::null_mut();
     unsafe { ra_get_game_info(&mut c_title, &mut c_image_url) };
-    if c_title.is_null() || c_image_url.is_null() {
+    if !discord_rich_presence || c_title.is_null() || c_image_url.is_null() {
         (None, None)
     } else {
         let (discord_watch_tx, discord_watch_rx) = tokio::sync::watch::channel(());
@@ -219,7 +220,7 @@ pub async fn shutdown_client(
     if let Some(discord_handle) = discord_handle
         && let Some(discord_watch_tx) = discord_watch_tx
     {
-        discord_watch_tx.send(()).unwrap();
+        let _ = discord_watch_tx.send(());
         discord_handle.await.unwrap();
     }
     unsafe { ra_shutdown_client() };
@@ -304,6 +305,7 @@ pub fn init_rich_presence(
 
         if let Err(e) = client.connect() {
             eprintln!("Failed to connect to Discord: {e}");
+            return;
         }
         loop {
             tokio::select! {
