@@ -219,7 +219,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     if device.ui.storage.save_state_slot != callback.save_state_slot {
         onscreen_message(
             &format!("Switching savestate slot to {}", callback.save_state_slot),
-            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+            ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
         );
         device.ui.storage.save_state_slot = callback.save_state_slot;
         device

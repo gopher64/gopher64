@@ -97,7 +97,7 @@ pub fn create_savestate(device: &device::Device) {
                 "Savestate created in slot {}",
                 device.ui.storage.save_state_slot
             ),
-            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+            ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
         );
     } else {
         ui::video::onscreen_message(
@@ -237,7 +237,7 @@ pub fn load_savestate(device: &mut device::Device) {
                     "Savestate loaded from slot {}",
                     device.ui.storage.save_state_slot
                 ),
-                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+                ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
             );
         } else {
             ui::video::onscreen_message(
