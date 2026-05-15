@@ -130,9 +130,12 @@ static void load_game_callback(int result, const char *error_message,
   notify_load_game(userdata);
 }
 
-void ra_welcome() {
-  if (!g_client)
+void ra_welcome(const char **game_title, const char **game_image_url) {
+  if (!g_client) {
+    *game_title = NULL;
+    *game_image_url = NULL;
     return;
+  }
 
   char buffer[512];
 
@@ -142,11 +145,16 @@ void ra_welcome() {
     rdp_onscreen_message(buffer, MESSAGE_LONG);
     free(error_message);
     rc_client_set_userdata(g_client, NULL);
+
+    *game_title = NULL;
+    *game_image_url = NULL;
     return;
   }
 
   const rc_client_game_t *game = rc_client_get_game_info(g_client);
   if (!game) {
+    *game_title = NULL;
+    *game_image_url = NULL;
     return;
   }
 
@@ -166,15 +174,7 @@ void ra_welcome() {
              "Game has no achievements");
   }
   rdp_onscreen_message(buffer, MESSAGE_LONG);
-}
 
-void ra_get_game_info(const char **game_title, const char **game_image_url) {
-  const rc_client_game_t *game = rc_client_get_game_info(g_client);
-  if (!game) {
-    *game_title = NULL;
-    *game_image_url = NULL;
-    return;
-  }
   *game_title = game->title;
   *game_image_url = game->badge_url;
 }

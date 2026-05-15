@@ -47,7 +47,12 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::GameSettings) {
+pub async fn run_game(
+    device: &mut Device,
+    rom_contents: &[u8],
+    game_settings: ui::GameSettings,
+    discord_rich_presence: bool,
+) {
     device.cpu.overclock = game_settings.overclock;
     if game_settings.disable_expansion_pak {
         device.rdram.size = 0x400000;
@@ -69,7 +74,8 @@ pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::Gam
     ui::input::init(&mut device.ui);
 
     // must be after video init
-    retroachievements::welcome();
+    let (discord_watch_tx, discord_handle) =
+        retroachievements::load_game(rom_contents, rom_contents.len(), discord_rich_presence).await;
 
     mi::init(device);
     pif::init(device);
@@ -93,7 +99,7 @@ pub fn run_game(device: &mut Device, rom_contents: &[u8], game_settings: ui::Gam
 
     cpu::run(device);
 
-    retroachievements::unload_game();
+    retroachievements::unload_game(discord_watch_tx, discord_handle).await;
 
     ui::storage::write_saves(device);
     ui::input::close(&mut device.ui);

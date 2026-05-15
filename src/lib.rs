@@ -216,13 +216,6 @@ pub async fn run() -> std::io::Result<()> {
             }
         }
 
-        let (discord_watch_tx, discord_handle) = retroachievements::load_game(
-            &rom_contents,
-            rom_contents.len(),
-            args.discord_rich_presence,
-        )
-        .await;
-
         device::run_game(
             &mut device,
             &rom_contents,
@@ -232,9 +225,11 @@ pub async fn run() -> std::io::Result<()> {
                 cheats,
                 load_savestate_slot: args.load_state,
             },
-        );
+            args.discord_rich_presence,
+        )
+        .await;
 
-        retroachievements::shutdown_client(discord_watch_tx, discord_handle).await;
+        retroachievements::shutdown_client();
 
         if device.netplay.is_some() {
             netplay::close(&mut device);
@@ -308,7 +303,7 @@ pub async fn run() -> std::io::Result<()> {
         {
             retroachievements::init_client(false, false, false);
             ui::gui::app_window();
-            retroachievements::shutdown_client(None, None).await;
+            retroachievements::shutdown_client();
         }
     }
 
