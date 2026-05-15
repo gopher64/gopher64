@@ -9,6 +9,7 @@ default = ["gui"]
 gui = ["dep:rfd", "dep:slint", "dep:slint-build"]
 
 [lib]
+name = "gopher"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
