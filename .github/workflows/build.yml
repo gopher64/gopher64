@@ -211,12 +211,6 @@ jobs:
           mv target/${{ matrix.target }}/release/gopher64 target/${{ matrix.target }}/release/gopher64-cli
           cargo bundle --release --target=${{ matrix.target }} --format osx
           cp target/${{ matrix.target }}/release/gopher64-cli target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
-          install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
-            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
-          install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
-            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
-          install_name_tool -change /opt/homebrew/opt/libpng/lib/libpng16.16.dylib \
-            @executable_path/../Frameworks/libpng16.16.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
           MACOSX_DEPLOYMENT_TARGET: "15.0"
@@ -233,8 +227,6 @@ jobs:
       - name: Sign Bundle Release
         if: ${{ github.ref_type == 'tag' }}
         run: |
-          codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libpng16.16.dylib
-          codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
           codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libMoltenVK.dylib
           codesign -f --entitlements data/macos/entitlements_child.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
           codesign -f --entitlements data/macos/entitlements_prod.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
