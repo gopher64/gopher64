@@ -55,7 +55,7 @@ jobs:
             libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev
             libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev
             libudev-dev libthai-dev libpipewire-0.3-dev libwayland-dev
-            libdecor-0-dev liburing-dev libfreetype-dev libfontconfig-dev
+            libdecor-0-dev liburing-dev libfontconfig-dev
           version: ${{ matrix.target }}-1.0
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
@@ -247,6 +247,36 @@ jobs:
           butler push target/${{ matrix.target }}/release/bundle/osx/Gopher64.app loganmc10/gopher64:${{ matrix.arch }} --userversion ${GITHUB_REF_NAME#v}
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+
+  build-android:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: aarch64-linux-android
+            ndk-version: r27d
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+          rustflags: ""
+          cache: ${{ github.ref_type != 'tag' }}
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: ${{ matrix.ndk-version }}
+      - name: Build
+        run: |
+          cargo install cargo-ndk
+          cargo ndk -t ${{ matrix.target }} build --lib --no-default-features
+        env:
+          LIBCLANG_PATH: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/musl/lib
 
   collect-artifacts:
     name: Collect release artifacts
