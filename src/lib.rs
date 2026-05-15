@@ -132,6 +132,23 @@ pub async fn run() -> std::io::Result<()> {
             )));
         };
 
+        let cheats = if let Some(cheats_file) = args.cheats {
+            if let Ok(data) = std::fs::read(cheats_file)
+                && let Ok(cheats) = serde_json::from_slice(&data)
+            {
+                cheats
+            } else {
+                return Err(Error::other("Could not read cheats file"));
+            }
+        } else {
+            let game_crc = ui::storage::get_game_crc(&rom_contents);
+            ui::config::Cheats::new()
+                .cheats
+                .get(&game_crc)
+                .cloned()
+                .unwrap_or_default()
+        };
+
         if let Some(slot) = args.load_state
             && slot > 9
         {
@@ -155,22 +172,6 @@ pub async fn run() -> std::io::Result<()> {
         let disable_expansion_pak = args
             .disable_expansion_pak
             .unwrap_or(device.ui.config.emulation.disable_expansion_pak);
-        let cheats = if let Some(cheats_file) = args.cheats {
-            if let Ok(data) = std::fs::read(cheats_file)
-                && let Ok(cheats) = serde_json::from_slice(&data)
-            {
-                cheats
-            } else {
-                return Err(Error::other("Could not read cheats file"));
-            }
-        } else {
-            let game_crc = ui::storage::get_game_crc(&rom_contents);
-            ui::config::Cheats::new()
-                .cheats
-                .get(&game_crc)
-                .cloned()
-                .unwrap_or_default()
-        };
 
         let mut shutdown_tx = None;
         let mut usb_handle = None;
