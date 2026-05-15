@@ -204,7 +204,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
           std::format("Challenge indicators: {}",
                       display_challenge_indicator ? "ON" : "OFF")
               .c_str(),
-          MESSAGE_SHORT);
+          MESSAGE_VERY_SHORT);
       break;
     case SDL_SCANCODE_F12:
       callback.reset_game = true;
