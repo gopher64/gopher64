@@ -40,7 +40,7 @@ jobs:
             libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev
             libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev
             libudev-dev libthai-dev libpipewire-0.3-dev libwayland-dev
-            libdecor-0-dev liburing-dev libfreetype-dev libfontconfig-dev gettext
+            libdecor-0-dev liburing-dev gettext
           version: lint-1.0
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
