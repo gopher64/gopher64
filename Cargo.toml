@@ -9,7 +9,7 @@ default = ["gui"]
 gui = ["dep:rfd", "dep:slint", "dep:slint-build"]
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "lib"]
 
 [dependencies]
 dirs = "6.0"
