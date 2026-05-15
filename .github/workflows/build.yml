@@ -286,7 +286,7 @@ jobs:
           ndk-version: ${{ matrix.ndk-version }}
       - name: Build
         run: |
-          cargo binstall cargo-ndk
+          cargo install cargo-ndk
           cargo ndk -t ${{ matrix.target }} build --lib --no-default-features
         env:
           ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
