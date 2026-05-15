@@ -5,5 +5,5 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[tokio::main(worker_threads = 4)]
 async fn main() -> std::io::Result<()> {
-    gopher::run().await
+    gopher64::run().await
 }
