@@ -174,7 +174,6 @@ fn main() {
         .allowlist_function("ra_state_size")
         .allowlist_function("ra_save_state")
         .allowlist_function("ra_load_state")
-        .allowlist_function("ra_get_game_info")
         .allowlist_function("ra_get_rich_presence");
 
     if cfg!(feature = "gui") {

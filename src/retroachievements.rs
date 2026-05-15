@@ -151,9 +151,11 @@ pub async fn load_game(
         ra_load_game(rom.as_ptr(), rom_size, tx_ptr);
     };
     rx.await.unwrap();
+
     let mut c_title = std::ptr::null();
     let mut c_image_url = std::ptr::null();
-    unsafe { ra_get_game_info(&mut c_title, &mut c_image_url) };
+    unsafe { ra_welcome(&mut c_title, &mut c_image_url) };
+
     if !discord_rich_presence || c_title.is_null() || c_image_url.is_null() {
         (None, None)
     } else {
@@ -175,12 +177,17 @@ pub async fn load_game(
     }
 }
 
-pub fn unload_game() {
+pub async fn unload_game(
+    discord_watch_tx: Option<tokio::sync::watch::Sender<()>>,
+    discord_handle: Option<tokio::task::JoinHandle<()>>,
+) {
+    if let Some(discord_handle) = discord_handle
+        && let Some(discord_watch_tx) = discord_watch_tx
+    {
+        let _ = discord_watch_tx.send(());
+        discord_handle.await.unwrap();
+    }
     unsafe { ra_unload_game() };
-}
-
-pub fn welcome() {
-    unsafe { ra_welcome() };
 }
 
 pub fn get_rich_presence() -> Option<String> {
@@ -213,16 +220,7 @@ pub fn init_client(hardcore: bool, challenge: bool, leaderboard: bool) {
     unsafe { ra_init_client(hardcore, challenge, leaderboard) };
 }
 
-pub async fn shutdown_client(
-    discord_watch_tx: Option<tokio::sync::watch::Sender<()>>,
-    discord_handle: Option<tokio::task::JoinHandle<()>>,
-) {
-    if let Some(discord_handle) = discord_handle
-        && let Some(discord_watch_tx) = discord_watch_tx
-    {
-        let _ = discord_watch_tx.send(());
-        discord_handle.await.unwrap();
-    }
+pub async fn shutdown_client() {
     unsafe { ra_shutdown_client() };
 }
 
