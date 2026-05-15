@@ -289,7 +289,6 @@ jobs:
           cargo install cargo-ndk
           cargo ndk -t ${{ matrix.target }} build --lib --no-default-features
         env:
-          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
           LIBCLANG_PATH: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/musl/lib
 
   collect-artifacts:
