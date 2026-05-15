@@ -75,8 +75,7 @@ pub async fn run_game(
 
     // must be after video init
     let (discord_watch_tx, discord_handle) =
-        retroachievements::load_game(rom_contents, rom_contents.len(), discord_rich_presence)
-            .await;
+        retroachievements::load_game(rom_contents, rom_contents.len(), discord_rich_presence).await;
 
     mi::init(device);
     pif::init(device);
