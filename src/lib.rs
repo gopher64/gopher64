@@ -229,7 +229,7 @@ pub async fn run() -> std::io::Result<()> {
         )
         .await;
 
-        retroachievements::shutdown_client().await;
+        retroachievements::shutdown_client();
 
         if device.netplay.is_some() {
             netplay::close(&mut device);
@@ -303,7 +303,7 @@ pub async fn run() -> std::io::Result<()> {
         {
             retroachievements::init_client(false, false, false);
             ui::gui::app_window();
-            retroachievements::shutdown_client().await;
+            retroachievements::shutdown_client();
         }
     }
 

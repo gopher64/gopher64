@@ -220,7 +220,7 @@ pub fn init_client(hardcore: bool, challenge: bool, leaderboard: bool) {
     unsafe { ra_init_client(hardcore, challenge, leaderboard) };
 }
 
-pub async fn shutdown_client() {
+pub fn shutdown_client() {
     unsafe { ra_shutdown_client() };
 }
 
