@@ -211,12 +211,6 @@ jobs:
           mv target/${{ matrix.target }}/release/gopher64 target/${{ matrix.target }}/release/gopher64-cli
           cargo bundle --release --target=${{ matrix.target }} --format osx
           cp target/${{ matrix.target }}/release/gopher64-cli target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
-          install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
-            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64
-          install_name_tool -change /opt/homebrew/opt/freetype/lib/libfreetype.6.dylib \
-            @executable_path/../Frameworks/libfreetype.6.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
-          install_name_tool -change /opt/homebrew/opt/libpng/lib/libpng16.16.dylib \
-            @executable_path/../Frameworks/libpng16.16.dylib target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libfreetype.6.dylib
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
           MACOSX_DEPLOYMENT_TARGET: "15.0"

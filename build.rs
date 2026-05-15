@@ -135,9 +135,6 @@ fn main() {
             .compile()
             .unwrap();
     } else if os == "macos" {
-        println!("cargo:rustc-link-search=native=/opt/homebrew/opt/freetype/lib");
-        println!("cargo:rustc-link-lib=dylib=freetype");
-
         let output = std::process::Command::new("clang")
             .args(["--print-runtime-dir"])
             .output()
@@ -147,9 +144,6 @@ fn main() {
 
         println!("cargo:rustc-link-search=native={}", runtime_dir);
         println!("cargo:rustc-link-lib=static=clang_rt.osx");
-    }
-    if cfg!(not(feature = "gui")) && os == "linux" {
-        println!("cargo:rustc-link-lib=dylib=freetype");
     }
 
     volk_build.flag("-flto=thin");
