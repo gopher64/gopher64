@@ -70,3 +70,17 @@ category = "public.app-category.games"
 icon = ["data/icon/gopher64_128x128.png","data/icon/gopher64_256x256.png","data/icon/gopher64_512x512.png"]
 osx_frameworks = ["/opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib"]
 osx_minimum_system_version = "15.0"
+
+[package.metadata.android]
+package = "io.github.gopher64.gopher64"
+build_targets = ["aarch64-linux-android"]
+apk_name = "Gopher64"
+
+[package.metadata.android.sdk]
+min_sdk_version = 34
+target_sdk_version = 36
+
+[[package.metadata.android.uses_feature]]
+name = "android.hardware.vulkan.version"
+required = true
+version = 0x401000
