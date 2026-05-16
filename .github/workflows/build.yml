@@ -256,7 +256,7 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: aarch64-linux-android
-            ndk-version: r27d
+            ndk-version: 27.3.13750724
     steps:
       - uses: actions/checkout@v6
         with:
@@ -270,13 +270,13 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: build-tools;37.0.0 ndk;27.3.13750724
+          packages: build-tools;37.0.0 platforms;android-30 ndk;${{ matrix.ndk-version }}
       - name: Build
         run: |
           cargo install cargo-apk
           cargo apk build --target aarch64-linux-android --lib
         env:
-          LIBCLANG_PATH: $HOME/Android/Sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/musl/lib
+          LIBCLANG_PATH: $HOME/Android/Sdk/ndk/${{ matrix.ndk-version }}/toolchains/llvm/prebuilt/linux-x86_64/musl/lib
 
   collect-artifacts:
     name: Collect release artifacts
