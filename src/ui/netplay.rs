@@ -1,3 +1,4 @@
+#[cfg(not(target_os = "android"))]
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{
@@ -47,9 +48,13 @@ pub struct NetplayMessage {
 trait NetplayPages {
     fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>);
     fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>);
+    #[cfg(not(target_os = "android"))]
     fn set_game_name(&self, game_name: slint::SharedString);
+    #[cfg(not(target_os = "android"))]
     fn set_game_hash(&self, game_hash: slint::SharedString);
+    #[cfg(not(target_os = "android"))]
     fn set_game_cheats(&self, game_cheats: slint::SharedString);
+    #[cfg(not(target_os = "android"))]
     fn set_rom_path(&self, rom_path: slint::SharedString);
     fn set_peer_addr(&self, peer_addr: slint::SharedString);
     fn refresh_sessions(&self) {
@@ -277,11 +282,14 @@ pub fn setup_create_window(
         })
         .unwrap();
     });
-    let weak = create_window.as_weak();
+
     #[cfg(not(target_os = "android"))]
-    create_window.on_select_rom(move |rom_dir| {
-        select_rom(weak.clone(), rom_dir);
-    });
+    {
+        let weak = create_window.as_weak();
+        create_window.on_select_rom(move |rom_dir| {
+            select_rom(weak.clone(), rom_dir);
+        });
+    }
 
     let weak = create_window.as_weak();
     create_window.on_create_session(
@@ -1177,11 +1185,14 @@ pub fn setup_join_window(
     join_window.set_pending_refresh(true);
     join_window.set_rom_dir(rom_dir);
     populate_server_names(join_window.as_weak());
-    let weak = join_window.as_weak();
+
     #[cfg(not(target_os = "android"))]
-    join_window.on_select_rom(move |rom_dir| {
-        select_rom(weak.clone(), rom_dir);
-    });
+    {
+        let weak = join_window.as_weak();
+        join_window.on_select_rom(move |rom_dir| {
+            select_rom(weak.clone(), rom_dir);
+        });
+    }
 
     let sender = netplay_write_sender.clone();
     join_window.window().on_close_requested(move || {
