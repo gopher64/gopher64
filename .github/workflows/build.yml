@@ -276,7 +276,7 @@ jobs:
           cargo install cargo-apk
           cargo apk build --target aarch64-linux-android --lib
         env:
-          LIBCLANG_PATH: $HOME/Android/Sdk/ndk/${{ matrix.ndk-version }}/toolchains/llvm/prebuilt/linux-x86_64/musl/lib
+          LIBCLANG_PATH: ${{ env.ANDROID_HOME }}/ndk/${{ matrix.ndk-version }}/toolchains/llvm/prebuilt/linux-x86_64/musl/lib
 
   collect-artifacts:
     name: Collect release artifacts
