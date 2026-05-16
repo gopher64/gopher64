@@ -69,15 +69,19 @@ impl NetplayPages for NetplayCreate {
     fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>) {
         self.set_server_urls(urls);
     }
+    #[cfg(not(target_os = "android"))]
     fn set_game_name(&self, game_name: slint::SharedString) {
         self.set_game_name(game_name);
     }
+    #[cfg(not(target_os = "android"))]
     fn set_game_hash(&self, game_hash: slint::SharedString) {
         self.set_game_hash(game_hash);
     }
+    #[cfg(not(target_os = "android"))]
     fn set_game_cheats(&self, game_cheats: slint::SharedString) {
         self.set_game_cheats(game_cheats);
     }
+    #[cfg(not(target_os = "android"))]
     fn set_rom_path(&self, rom_path: slint::SharedString) {
         self.set_rom_path(rom_path);
     }
@@ -96,15 +100,19 @@ impl NetplayPages for NetplayJoin {
     fn refresh_sessions(&self) {
         self.invoke_refresh_session();
     }
+    #[cfg(not(target_os = "android"))]
     fn set_game_name(&self, game_name: slint::SharedString) {
         self.set_game_name(game_name);
     }
+    #[cfg(not(target_os = "android"))]
     fn set_game_hash(&self, game_hash: slint::SharedString) {
         self.set_game_hash(game_hash);
     }
+    #[cfg(not(target_os = "android"))]
     fn set_game_cheats(&self, game_cheats: slint::SharedString) {
         self.set_game_cheats(game_cheats);
     }
+    #[cfg(not(target_os = "android"))]
     fn set_rom_path(&self, rom_path: slint::SharedString) {
         self.set_rom_path(rom_path);
     }
