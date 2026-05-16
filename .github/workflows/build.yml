@@ -267,16 +267,16 @@ jobs:
           target: ${{ matrix.target }}
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
-      - uses: nttld/setup-ndk@v1
-        id: setup-ndk
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
         with:
-          ndk-version: ${{ matrix.ndk-version }}
+          packages: build-tools;37.0.0 ndk;27.3.13750724
       - name: Build
         run: |
-          cargo install cargo-ndk
-          cargo ndk -t ${{ matrix.target }} build --lib --no-default-features
+          cargo install cargo-apk
+          cargo apk build --target aarch64-linux-android --lib
         env:
-          LIBCLANG_PATH: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/musl/lib
+          LIBCLANG_PATH: $HOME/Android/Sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/musl/lib
 
   collect-artifacts:
     name: Collect release artifacts
