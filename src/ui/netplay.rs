@@ -173,6 +173,7 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
     });
 }
 
+#[cfg(not(target_os = "android"))]
 fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
     weak: slint::Weak<T>,
     rom_dir: slint::SharedString,
@@ -277,6 +278,7 @@ pub fn setup_create_window(
         .unwrap();
     });
     let weak = create_window.as_weak();
+    #[cfg(not(target_os = "android"))]
     create_window.on_select_rom(move |rom_dir| {
         select_rom(weak.clone(), rom_dir);
     });
@@ -1176,6 +1178,7 @@ pub fn setup_join_window(
     join_window.set_rom_dir(rom_dir);
     populate_server_names(join_window.as_weak());
     let weak = join_window.as_weak();
+    #[cfg(not(target_os = "android"))]
     join_window.on_select_rom(move |rom_dir| {
         select_rom(weak.clone(), rom_dir);
     });

@@ -7,6 +7,7 @@ use slint::ComponentHandle;
 
 pub fn cheats_window(app: &AppWindow) {
     let weak = app.as_weak();
+    #[cfg(not(target_os = "android"))]
     app.on_cheats_select_rom_clicked(move |rom_dir| {
         let select_rom = if !rom_dir.is_empty() && std::fs::exists(&rom_dir).unwrap_or(false) {
             rfd::AsyncFileDialog::new().set_directory(rom_dir)

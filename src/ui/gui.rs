@@ -1,6 +1,7 @@
 use crate::retroachievements;
 use crate::ui;
 use slint::Model;
+#[cfg(not(target_os = "android"))]
 use slint::winit_030::WinitWindowAccessor;
 
 slint::include_modules!();
@@ -84,6 +85,7 @@ fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
     .unwrap();
 }
 
+#[cfg(not(target_os = "android"))]
 fn file_dropped(app: &AppWindow) {
     let weak = app.as_weak();
     app.window()
@@ -120,6 +122,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     )));
 
     let weak = app.as_weak();
+    #[cfg(not(target_os = "android"))]
     app.on_open_rom_button_clicked(move || {
         weak.upgrade_in_event_loop(move |handle| {
             save_settings(&handle);
@@ -142,6 +145,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
             eprintln!("Error opening saves folder: {}", e);
         }
     });
+    #[cfg(not(target_os = "android"))]
     file_dropped(app);
 }
 
@@ -373,6 +377,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
         dialog.show().unwrap();
     });
     let weak_app2 = app.as_weak();
+    #[cfg(not(target_os = "android"))]
     app.on_transferpak_toggled(move |player, enabled| {
         if enabled {
             let select_gb_rom = rfd::AsyncFileDialog::new()
@@ -633,6 +638,7 @@ pub fn run_rom(
     });
 }
 
+#[cfg(not(target_os = "android"))]
 fn open_rom(app: &AppWindow) {
     let rom_dir = app.get_rom_dir();
     let select_rom = if !rom_dir.is_empty() && std::fs::exists(&rom_dir).unwrap_or(false) {

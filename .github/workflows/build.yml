@@ -270,7 +270,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: build-tools;37.0.0 platforms;android-30 ndk;${{ matrix.ndk-version }}
+          packages: build-tools;37.0.0 platforms;android-30 platforms;android-36 ndk;${{ matrix.ndk-version }}
       - name: Build
         run: |
           cargo install cargo-apk
