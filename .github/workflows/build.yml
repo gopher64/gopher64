@@ -14,8 +14,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RA_HARDCORE: ${{ github.ref_type == 'tag' && 'true' || 'false' }}
-  CARGO_PROFILE: ${{ github.ref_type == 'tag' && 'release' || 'dev' }}
-  CARGO_BUILD_TARGET: ${{ github.ref_type == 'tag' && 'release' || 'debug' }}
+  BUILD_PROFILE: ${{ github.ref_type == 'tag' && 'release' || 'dev' }}
+  BUILD_TARGET: ${{ github.ref_type == 'tag' && 'release' || 'debug' }}
 
 jobs:
   build-linux:
