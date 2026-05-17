@@ -75,11 +75,11 @@ osx_minimum_system_version = "15.0"
 [package.metadata.android]
 package = "io.github.gopher64.gopher64"
 build_targets = ["aarch64-linux-android"]
-apk_name = "Gopher64"
 resources = "data/android/res"
 
 [package.metadata.android.application]
 icon = "@mipmap/ic_launcher"
+label = "Gopher64"
 
 [package.metadata.android.sdk]
 min_sdk_version = 34
