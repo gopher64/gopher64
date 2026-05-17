@@ -78,7 +78,7 @@ apk_name = "Gopher64"
 
 [package.metadata.android.sdk]
 min_sdk_version = 34
-target_sdk_version = 36
+target_sdk_version = 35
 
 [[package.metadata.android.uses_feature]]
 name = "android.hardware.vulkan.version"
