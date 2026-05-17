@@ -317,7 +317,8 @@ pub async fn run() -> std::io::Result<()> {
 
 #[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
-fn android_main(app: slint::android::AndroidApp) {
+#[tokio::main(worker_threads = 4)]
+async fn android_main(app: slint::android::AndroidApp) {
     slint::android::init(app).unwrap();
 
     ui::gui::app_window();
