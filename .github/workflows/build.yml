@@ -14,6 +14,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RA_HARDCORE: ${{ github.ref_type == 'tag' && 'true' || 'false' }}
+  BUILD_PROFILE: ${{ github.ref_type == 'tag' && 'release' || 'dev' }}
+  BUILD_DIR: ${{ github.ref_type == 'tag' && 'release' || 'debug' }}
 
 jobs:
   build-linux:
@@ -67,9 +69,9 @@ jobs:
             matrix.llvm }}.tar.xz
       - name: Build
         run: |
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo build --profile ${{ env.BUILD_PROFILE }} -v --target=${{ matrix.target }}
           mkdir output
-          cp target/${{ matrix.target }}/release/gopher64 output/gopher64-${{ matrix.arch }}
+          cp target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64 output/gopher64-${{ matrix.arch }}
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
@@ -126,9 +128,9 @@ jobs:
             }}.exe
       - name: Build
         run: |
-          cargo build --release -v --target=${{ matrix.target }}
+          cargo build --profile ${{ env.BUILD_PROFILE }} -v --target=${{ matrix.target }}
           mkdir output
-          cp target/${{ matrix.target }}/release/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
+          cp target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64.exe output/gopher64-${{ matrix.arch }}.exe
         env:
           CC: clang-cl
           CXX: clang-cl
@@ -207,17 +209,17 @@ jobs:
         run: |
           cargo install cargo-bundle
           brew install molten-vk
-          cargo build --release --no-default-features -v --target=${{ matrix.target }}
-          mv target/${{ matrix.target }}/release/gopher64 target/${{ matrix.target }}/release/gopher64-cli
-          cargo bundle --release --target=${{ matrix.target }} --format osx
-          cp target/${{ matrix.target }}/release/gopher64-cli target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
+          cargo build --profile ${{ env.BUILD_PROFILE }} --no-default-features -v --target=${{ matrix.target }}
+          mv target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64 target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64-cli
+          cargo bundle --profile ${{ env.BUILD_PROFILE }} --target=${{ matrix.target }} --format osx
+          cp target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64-cli target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
         env:
           NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
           MACOSX_DEPLOYMENT_TARGET: "15.0"
       - name: Sign Bundle Dev
         if: ${{ github.ref_type != 'tag' }}
         run: |
-          codesign -f --entitlements data/macos/entitlements_dev.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          codesign -f --entitlements data/macos/entitlements_dev.plist --deep --timestamp --options runtime -s - target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app
       - name: Import Codesign Certs
         if: ${{ github.ref_type == 'tag' }}
         uses: apple-actions/import-codesign-certs@v7
@@ -227,24 +229,24 @@ jobs:
       - name: Sign Bundle Release
         if: ${{ github.ref_type == 'tag' }}
         run: |
-          codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/Frameworks/libMoltenVK.dylib
-          codesign -f --entitlements data/macos/entitlements_child.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
-          codesign -f --entitlements data/macos/entitlements_prod.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
-          zip -r gopher64-${{ matrix.arch }}.zip target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          codesign -f --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app/Contents/Frameworks/libMoltenVK.dylib
+          codesign -f --entitlements data/macos/entitlements_child.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
+          codesign -f --entitlements data/macos/entitlements_prod.plist --timestamp --options runtime -s "${{ secrets.APPLE_DEVELOPER_ID }}" target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app
+          zip -r gopher64-${{ matrix.arch }}.zip target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app
           xcrun notarytool submit --wait --apple-id "${{ secrets.APPLE_ID }}" --team-id "${{ secrets.APPLE_DEVELOPER_ID }}" --password "${{ secrets.APPLE_APP_PASSWORD }}" gopher64-${{ matrix.arch }}.zip
-          xcrun stapler staple target/${{ matrix.target }}/release/bundle/osx/Gopher64.app
+          xcrun stapler staple target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app
       - name: Upload file
         uses: actions/upload-artifact@v7
         with:
           name: gopher64-${{ matrix.arch }}
-          path: target/${{ matrix.target }}/release/bundle/osx
+          path: target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx
       - name: Setup butler
         if: ${{ github.ref_type == 'tag' }}
         uses: remarkablegames/setup-butler@v3
       - name: Upload to itch.io
         if: ${{ github.ref_type == 'tag' }}
         run: |
-          butler push target/${{ matrix.target }}/release/bundle/osx/Gopher64.app loganmc10/gopher64:${{ matrix.arch }} --userversion ${GITHUB_REF_NAME#v}
+          butler push target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app loganmc10/gopher64:${{ matrix.arch }} --userversion ${GITHUB_REF_NAME#v}
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
 
@@ -270,7 +272,7 @@ jobs:
         run: |
           cargo install cargo-apk cargo-ndk
           source <(cargo ndk-env --target ${{ matrix.target }})
-          cargo apk build --target ${{ matrix.target }} --lib
+          cargo apk build --profile ${{ env.BUILD_PROFILE }} --target ${{ matrix.target }} --lib
 
   collect-artifacts:
     name: Collect release artifacts
