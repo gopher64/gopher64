@@ -14,6 +14,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RA_HARDCORE: ${{ github.ref_type == 'tag' && 'true' || 'false' }}
+  NETPLAY_ID: ${{ github.ref_type == 'tag' && secrets.NETPLAY_ID || 'dev' }}
   BUILD_PROFILE: ${{ github.ref_type == 'tag' && 'release' || 'dev' }}
   BUILD_DIR: ${{ github.ref_type == 'tag' && 'release' || 'debug' }}
 
@@ -72,8 +73,6 @@ jobs:
           cargo build --profile ${{ env.BUILD_PROFILE }} -v --target=${{ matrix.target }}
           mkdir output
           cp target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64 output/gopher64-${{ matrix.arch }}
-        env:
-          NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload file
         uses: actions/upload-artifact@v7
         with:
@@ -134,7 +133,6 @@ jobs:
         env:
           CC: clang-cl
           CXX: clang-cl
-          NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
       - name: Upload unsigned artifact
         id: upload-unsigned-artifact
         uses: actions/upload-artifact@v7
@@ -214,7 +212,6 @@ jobs:
           cargo bundle --profile ${{ env.BUILD_PROFILE }} --target=${{ matrix.target }} --format osx
           cp target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64-cli target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
         env:
-          NETPLAY_ID: ${{ secrets.NETPLAY_ID }}
           MACOSX_DEPLOYMENT_TARGET: "15.0"
       - name: Sign Bundle Dev
         if: ${{ github.ref_type != 'tag' }}
