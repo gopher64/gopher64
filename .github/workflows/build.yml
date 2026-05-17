@@ -266,10 +266,6 @@ jobs:
           target: ${{ matrix.target }}
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: build-tools;37.0.0 platforms;android-35
       - name: Build
         run: |
           cargo install cargo-apk cargo-ndk
