@@ -261,6 +261,7 @@ pub fn onscreen_message(message: &str, milliseconds: MESSAGE_LENGTH) {
 pub fn draw_text(
     text: &str,
     renderer: *mut sdl3_sys::render::SDL_Renderer,
+    image_texture: *mut sdl3_sys::render::SDL_Texture,
     text_engine: *mut sdl3_ttf_sys::ttf::TTF_TextEngine,
     font: *mut sdl3_ttf_sys::ttf::TTF_Font,
 ) {
@@ -272,7 +273,18 @@ pub fn draw_text(
         let ttf_text = sdl3_ttf_sys::ttf::TTF_CreateText(text_engine, font, c_text.as_ptr(), 0);
 
         sdl3_sys::everything::SDL_RenderClear(renderer);
-        sdl3_ttf_sys::ttf::TTF_DrawRendererText(ttf_text, 20.0, h as f32 / 2.0);
+        let rect = sdl3_sys::rect::SDL_FRect {
+            x: 0.0,
+            y: 0.0,
+            w: w as f32,
+            h: (h - sdl3_ttf_sys::ttf::TTF_GetFontHeight(font)) as f32,
+        };
+        sdl3_sys::render::SDL_RenderTexture(renderer, image_texture, std::ptr::null(), &rect);
+        sdl3_ttf_sys::ttf::TTF_DrawRendererText(
+            ttf_text,
+            20.0,
+            (h - sdl3_ttf_sys::ttf::TTF_GetFontHeight(font)) as f32,
+        );
         sdl3_sys::render::SDL_RenderPresent(renderer);
         sdl3_ttf_sys::ttf::TTF_DestroyText(ttf_text);
     }

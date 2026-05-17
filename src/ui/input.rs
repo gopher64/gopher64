@@ -596,6 +596,7 @@ fn close_input_profile_window(
     renderer: *mut sdl3_sys::render::SDL_Renderer,
     text_engine: *mut sdl3_ttf_sys::ttf::TTF_TextEngine,
     font: *mut sdl3_ttf_sys::ttf::TTF_Font,
+    texture: *mut sdl3_sys::render::SDL_Texture,
     window: *mut sdl3_sys::video::SDL_Window,
 ) {
     for joystick in open_joysticks {
@@ -606,6 +607,7 @@ fn close_input_profile_window(
     }
 
     unsafe {
+        sdl3_sys::render::SDL_DestroyTexture(texture);
         sdl3_ttf_sys::ttf::TTF_CloseFont(font);
         sdl3_ttf_sys::ttf::TTF_DestroyRendererTextEngine(text_engine);
         sdl3_sys::render::SDL_DestroyRenderer(renderer);
@@ -726,6 +728,15 @@ pub fn configure_input_profile(
         initial_state: 0,
     };
 
+    let image_bytes = include_bytes!("../../data/controller.png");
+    let image = unsafe {
+        sdl3_image_sys::image::IMG_LoadPNG_IO(sdl3_sys::everything::SDL_IOFromConstMem(
+            image_bytes.as_ptr() as *const std::ffi::c_void,
+            image_bytes.len(),
+        ))
+    };
+    let image_texture = unsafe { sdl3_sys::render::SDL_CreateTextureFromSurface(renderer, image) };
+    unsafe { sdl3_sys::surface::SDL_DestroySurface(image) };
     let text_engine = unsafe { sdl3_ttf_sys::ttf::TTF_CreateRendererTextEngine(renderer) };
     let font = unsafe {
         let font_bytes = include_bytes!("../../data/RobotoMono-Regular.ttf");
@@ -753,6 +764,7 @@ pub fn configure_input_profile(
             ui::video::draw_text(
                 format!("Select binding for: {key}").as_str(),
                 renderer,
+                image_texture,
                 text_engine,
                 font,
             );
@@ -765,6 +777,7 @@ pub fn configure_input_profile(
                         renderer,
                         text_engine,
                         font,
+                        image_texture,
                         window,
                     );
                     return;
@@ -869,7 +882,13 @@ pub fn configure_input_profile(
                 }
             }
         }
-        ui::video::draw_text("Binding set, please wait...", renderer, text_engine, font);
+        ui::video::draw_text(
+            "Binding set, please wait...",
+            renderer,
+            image_texture,
+            text_engine,
+            font,
+        );
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
@@ -879,6 +898,7 @@ pub fn configure_input_profile(
         renderer,
         text_engine,
         font,
+        image_texture,
         window,
     );
 
