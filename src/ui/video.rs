@@ -102,7 +102,7 @@ pub fn init(device: &mut device::Device) {
     let gfx_info = build_gfx_info(device);
 
     unsafe {
-        let font_bytes = include_bytes!("../../data/RobotoMono-Regular.ttf");
+        let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
         rdp_init(
             device.ui.video.window as *mut std::ffi::c_void,
             gfx_info,

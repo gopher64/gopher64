@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Switch, ComboBox, Button, HorizontalBox, VerticalBox, GroupBox } from "std-widgets.slint";
+import { Switch, ComboBox, Button, VerticalBox, GroupBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 import { State } from "localgame_page.slint";
 
@@ -19,9 +19,146 @@ export global ControllerData {
     in-out property <[bool]> controller_changed;
 }
 
+component ControllerPortLabel inherits Text {
+    width: 36px;
+    vertical-alignment: center;
+    horizontal-alignment: center;
+    font-weight: 600;
+}
+
+component ControllerFieldHeader inherits Text {
+    horizontal-alignment: center;
+    vertical-alignment: center;
+    font-size: 13px;
+}
+
+component ControllerFieldCell inherits HorizontalLayout {
+    min-height: 32px;
+    alignment: center;
+
+    @children
+}
+
+component ControllerSettingsGrid inherits GridLayout {
+    callback transferpak_toggled(int, bool);
+
+    spacing: 6px;
+
+    ControllerFieldHeader {
+        row: 0;
+        col: 1;
+        text: @tr("Enabled");
+    }
+
+    ControllerFieldHeader {
+        row: 0;
+        col: 2;
+        text: @tr("Emulate VRU");
+    }
+
+    ControllerFieldHeader {
+        row: 0;
+        col: 3;
+        text: @tr("Transfer Pak");
+    }
+
+    ControllerFieldHeader {
+        row: 0;
+        col: 4;
+        text: @tr("Profile");
+    }
+
+    for player[index] in [0, 1, 2, 3]: ControllerPortLabel {
+        row: index + 1;
+        col: 0;
+        text: index + 1;
+    }
+
+    for player[index] in [0, 1, 2, 3]: ControllerFieldCell {
+        row: index + 1;
+        col: 1;
+
+        Switch {
+            checked: ControllerData.controller_enabled[index];
+            toggled => {
+                ControllerData.controller_enabled[index] = self.checked;
+            }
+        }
+    }
+
+    for player[index] in [0, 1, 2, 3]: ControllerFieldCell {
+        row: index + 1;
+        col: 2;
+
+        Switch {
+            enabled: index == 3;
+            checked: index == 3 && ControllerData.emulate_vru;
+            toggled => {
+                ControllerData.emulate_vru = self.checked;
+            }
+        }
+    }
+
+    for player[index] in [0, 1, 2, 3]: ControllerFieldCell {
+        row: index + 1;
+        col: 3;
+
+        Switch {
+            checked: ControllerData.transferpak[index];
+            toggled => {
+                ControllerData.transferpak[index] = self.checked;
+                root.transferpak_toggled(index, self.checked);
+            }
+        }
+    }
+
+    for player[index] in [0, 1, 2, 3]: ControllerFieldCell {
+        row: index + 1;
+        col: 4;
+
+        ComboBox {
+            horizontal-stretch: 0;
+            min-width: self.preferred-width > 150px ? self.preferred-width : 150px;
+            model: ControllerData.input_profiles;
+            current-index: ControllerData.selected_profile_binding[index];
+            selected => {
+                ControllerData.selected_profile_binding[index] = self.current-index;
+            }
+        }
+    }
+}
+
+component ControllerAssignmentGrid inherits GridLayout {
+    spacing: 6px;
+
+    for player[index] in [0, 1, 2, 3]: ControllerPortLabel {
+        row: index;
+        col: 0;
+        text: index + 1;
+    }
+
+    for player[index] in [0, 1, 2, 3]: HorizontalLayout {
+        row: index;
+        col: 1;
+        min-height: 32px;
+        alignment: start;
+
+        ComboBox {
+            horizontal-stretch: 0;
+            min-width: self.preferred-width > 300px ? self.preferred-width : 300px;
+            model: ControllerData.controller_names;
+            current-index: ControllerData.selected_controller[index];
+            selected => {
+                ControllerData.selected_controller[index] = self.current-index;
+                ControllerData.controller_changed[index] = true;
+            }
+        }
+    }
+}
+
 export component ControllerConfig inherits Page {
     callback input_profile_button_clicked;
-    callback transferpak_toggled(int,bool);
+    callback transferpak_toggled(int, bool);
     callback controller_window_created;
     title: @tr("Controller Configuration");
 
@@ -30,105 +167,31 @@ export component ControllerConfig inherits Page {
     }
 
     VerticalBox {
+        spacing: 8px;
         alignment: start;
-        HorizontalBox {
-            alignment: start;
-            Button {
-                text: @tr("Configure Input Profile");
-                enabled: !State.game_running;
-                clicked => {
-                    input_profile_button_clicked();
+
+        Button {
+            text: @tr("Configure Input Profile");
+            enabled: !State.game_running;
+            clicked => {
+                input_profile_button_clicked();
+            }
+        }
+
+        GroupBox {
+            title: @tr("Controller Settings");
+
+            ControllerSettingsGrid {
+                transferpak_toggled(index, enabled) => {
+                    root.transferpak_toggled(index, enabled);
                 }
             }
         }
 
-        Rectangle { }
+        GroupBox {
+            title: @tr("Controller Assignment");
 
-        HorizontalBox {
-            GroupBox {
-                title: @tr("Port");
-                VerticalLayout {
-                    alignment: space-between;
-                    for player in [0, 1, 2, 3]: Text {
-                        text: player + 1;
-                        vertical-alignment: center;
-                    }
-                }
-            }
-
-            GroupBox {
-                title: @tr("Enabled");
-                VerticalLayout {
-                    alignment: space-between;
-                    for player in [0, 1, 2, 3]: Switch {
-                        checked: ControllerData.controller_enabled[player];
-                        toggled => {
-                            ControllerData.controller_enabled[player] = self.checked;
-                        }
-                    }
-                }
-            }
-
-            GroupBox {
-                title: @tr("Emulate VRU");
-                VerticalLayout {
-                    alignment: space-between;
-                    for valid in [false, false, false, true]: Switch {
-                        enabled: valid;
-                        checked: valid && ControllerData.emulate_vru;
-                        toggled => {
-                            ControllerData.emulate_vru = self.checked;
-                        }
-                    }
-                }
-            }
-
-            GroupBox {
-                title: @tr("Transfer Pak");
-                VerticalLayout {
-                    alignment: space-between;
-                    for player in [0, 1, 2, 3]: Switch {
-                        checked: ControllerData.transferpak[player];
-                        toggled => {
-                            ControllerData.transferpak[player] = self.checked;
-                            transferpak_toggled(player,self.checked);
-                        }
-                    }
-                }
-            }
-
-            GroupBox {
-                title: @tr("Profile");
-                horizontal-stretch: 0.25;
-                VerticalLayout {
-                    alignment: space-between;
-                    for player in [0, 1, 2, 3]: ComboBox {
-                        model: ControllerData.input_profiles;
-                        min-width: self.preferred-width > 150px ? self.preferred-width : 150px;
-                        current-index: ControllerData.selected_profile_binding[player];
-                        selected => {
-                            ControllerData.selected_profile_binding[player] = self.current-index;
-                        }
-                    }
-                }
-            }
-
-            GroupBox {
-                title: @tr("Controller");
-                horizontal-stretch: 0.75;
-                VerticalLayout {
-                    alignment: space-between;
-                    for player in [0, 1, 2, 3]: ComboBox {
-                        model: ControllerData.controller_names;
-                        min-width: self.preferred-width > 300px ? self.preferred-width : 300px;
-                        current-index: ControllerData.selected_controller[player];
-                        selected => {
-                            ControllerData.selected_controller[player] = self.current-index;
-                            ControllerData.controller_changed[player] = true;
-                        }
-                    }
-                }
-            }
+            ControllerAssignmentGrid { }
         }
     }
 }

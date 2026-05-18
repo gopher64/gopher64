@@ -3,6 +3,7 @@ fn main() {
     println!("cargo::rerun-if-changed=retroachievements");
     println!("cargo::rerun-if-changed=src/compat");
     println!("cargo::rerun-if-changed=data/translations");
+    println!("cargo::rerun-if-changed=data/ui");
 
     #[cfg(feature = "gui")]
     {
