@@ -114,11 +114,6 @@ msgstr "Ingeschakeld"
 
 #: src/ui/gui/controller_page.slint:56
 msgctxt "ControllerSettingsGrid"
-msgid "Emulate VRU"
-msgstr "VRU emuleren"
-
-#: src/ui/gui/controller_page.slint:62
-msgctxt "ControllerSettingsGrid"
 msgid "Transfer Pak"
 msgstr "Transfer Pak"
 
@@ -536,10 +531,15 @@ msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "Expansion Pak uitschakelen"
 
-#: src/ui/gui/settings_page.slint:137
+#: src/ui/gui/settings_page.slint:138
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
 msgstr "UNFLoader emuleren"
+
+#: src/ui/gui/settings_page.slint:149
+msgctxt "Settings"
+msgid "Emulate VRU"
+msgstr "VRU emuleren"
 
 #: src/ui/gui/vru_dialog.slint:7
 msgctxt "VruDialog"

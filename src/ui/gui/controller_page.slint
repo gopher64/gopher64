@@ -6,7 +6,6 @@ import { Page } from "page.slint";
 import { State } from "localgame_page.slint";
 
 export global ControllerData {
-    in-out property <bool> emulate_vru;
     in-out property <[bool]> controller_enabled;
     in-out property <[bool]> transferpak;
     in-out property <[string]> gb_rom_paths;
@@ -20,6 +19,7 @@ export global ControllerData {
 }
 
 component ControllerPortLabel inherits Text {
+    height: 32px;
     width: 36px;
     vertical-alignment: center;
     horizontal-alignment: center;
@@ -27,130 +27,120 @@ component ControllerPortLabel inherits Text {
 }
 
 component ControllerFieldHeader inherits Text {
-    horizontal-alignment: center;
+    height: 28px;
+    horizontal-alignment: left;
     vertical-alignment: center;
     font-size: 13px;
 }
 
-component ControllerFieldCell inherits HorizontalLayout {
-    min-height: 32px;
-    alignment: center;
-
-    @children
-}
-
-component ControllerSettingsGrid inherits GridLayout {
+component ControllerSettingsGrid inherits VerticalLayout {
     callback transferpak_toggled(int, bool);
 
     spacing: 6px;
+    alignment: start;
 
-    ControllerFieldHeader {
-        row: 0;
-        col: 1;
-        text: @tr("Enabled");
-    }
+    HorizontalLayout {
+        spacing: 12px;
+        alignment: start;
 
-    ControllerFieldHeader {
-        row: 0;
-        col: 2;
-        text: @tr("Emulate VRU");
-    }
+        Rectangle {
+            width: 36px;
+            height: 28px;
+        }
 
-    ControllerFieldHeader {
-        row: 0;
-        col: 3;
-        text: @tr("Transfer Pak");
-    }
+        ControllerFieldHeader {
+            min-width: 96px;
+            text: @tr("ControllerSettingsGrid" => "Enabled");
+        }
 
-    ControllerFieldHeader {
-        row: 0;
-        col: 4;
-        text: @tr("Profile");
-    }
+        ControllerFieldHeader {
+            min-width: 100px;
+            text: @tr("ControllerSettingsGrid" => "Transfer Pak");
+        }
 
-    for player[index] in [0, 1, 2, 3]: ControllerPortLabel {
-        row: index + 1;
-        col: 0;
-        text: index + 1;
-    }
-
-    for player[index] in [0, 1, 2, 3]: ControllerFieldCell {
-        row: index + 1;
-        col: 1;
-
-        Switch {
-            checked: ControllerData.controller_enabled[index];
-            toggled => {
-                ControllerData.controller_enabled[index] = self.checked;
-            }
+        ControllerFieldHeader {
+            min-width: 150px;
+            text: @tr("ControllerSettingsGrid" => "Profile");
         }
     }
 
-    for player[index] in [0, 1, 2, 3]: ControllerFieldCell {
-        row: index + 1;
-        col: 2;
+    for player[index] in [0, 1, 2, 3]: HorizontalLayout {
+        spacing: 12px;
+        alignment: start;
 
-        Switch {
-            enabled: index == 3;
-            checked: index == 3 && ControllerData.emulate_vru;
-            toggled => {
-                ControllerData.emulate_vru = self.checked;
+        ControllerPortLabel {
+            text: index + 1;
+        }
+
+        HorizontalLayout {
+            min-width: 96px;
+            height: 32px;
+            alignment: start;
+
+            Switch {
+                checked: ControllerData.controller_enabled[index];
+                toggled => {
+                    ControllerData.controller_enabled[index] = self.checked;
+                }
             }
         }
-    }
 
-    for player[index] in [0, 1, 2, 3]: ControllerFieldCell {
-        row: index + 1;
-        col: 3;
+        HorizontalLayout {
+            min-width: 100px;
+            height: 32px;
+            alignment: start;
 
-        Switch {
-            checked: ControllerData.transferpak[index];
-            toggled => {
-                ControllerData.transferpak[index] = self.checked;
-                root.transferpak_toggled(index, self.checked);
+            Switch {
+                checked: ControllerData.transferpak[index];
+                toggled => {
+                    ControllerData.transferpak[index] = self.checked;
+                    root.transferpak_toggled(index, self.checked);
+                }
             }
         }
-    }
 
-    for player[index] in [0, 1, 2, 3]: ControllerFieldCell {
-        row: index + 1;
-        col: 4;
+        HorizontalLayout {
+            min-width: 150px;
+            height: 32px;
+            alignment: start;
 
-        ComboBox {
-            horizontal-stretch: 0;
-            min-width: self.preferred-width > 150px ? self.preferred-width : 150px;
-            model: ControllerData.input_profiles;
-            current-index: ControllerData.selected_profile_binding[index];
-            selected => {
-                ControllerData.selected_profile_binding[index] = self.current-index;
+            ComboBox {
+                horizontal-stretch: 0;
+                min-width: self.preferred-width > 150px ? self.preferred-width : 150px;
+                model: ControllerData.input_profiles;
+                current-index: ControllerData.selected_profile_binding[index];
+                selected => {
+                    ControllerData.selected_profile_binding[index] = self.current-index;
+                }
             }
         }
     }
 }
 
-component ControllerAssignmentGrid inherits GridLayout {
+component ControllerAssignmentGrid inherits VerticalLayout {
     spacing: 6px;
-
-    for player[index] in [0, 1, 2, 3]: ControllerPortLabel {
-        row: index;
-        col: 0;
-        text: index + 1;
-    }
+    alignment: start;
 
     for player[index] in [0, 1, 2, 3]: HorizontalLayout {
-        row: index;
-        col: 1;
-        min-height: 32px;
+        spacing: 8px;
         alignment: start;
 
-        ComboBox {
-            horizontal-stretch: 0;
-            min-width: self.preferred-width > 300px ? self.preferred-width : 300px;
-            model: ControllerData.controller_names;
-            current-index: ControllerData.selected_controller[index];
-            selected => {
-                ControllerData.selected_controller[index] = self.current-index;
-                ControllerData.controller_changed[index] = true;
+        ControllerPortLabel {
+            text: index + 1;
+        }
+
+        HorizontalLayout {
+            alignment: start;
+
+            ComboBox {
+                horizontal-stretch: 0;
+                min-width: self.preferred-width > 300px ? self.preferred-width : 300px;
+                model: ControllerData.controller_names;
+                current-index: ControllerData.selected_controller[index];
+                selected => {
+                    ControllerData.selected_controller[index] = self.current-index;
+                    ControllerData.controller_changed[index] = true;
+                }
             }
         }
     }
