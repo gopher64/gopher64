@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-05-14 14:53+0000\n"
+"POT-Creation-Date: 2026-05-18 19:50+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: French (France)\n"
@@ -47,42 +47,42 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Faire un don (via GitHub)"
 
-#: src/ui/gui/appwindow.slint:95
+#: src/ui/gui/appwindow.slint:103
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Jeu local"
 
-#: src/ui/gui/appwindow.slint:96
+#: src/ui/gui/appwindow.slint:107
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Configuration manette"
 
-#: src/ui/gui/appwindow.slint:97
+#: src/ui/gui/appwindow.slint:111
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/appwindow.slint:98
+#: src/ui/gui/appwindow.slint:115
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Triche"
 
-#: src/ui/gui/appwindow.slint:99
+#: src/ui/gui/appwindow.slint:119
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:100
+#: src/ui/gui/appwindow.slint:123
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Paramètres"
 
-#: src/ui/gui/appwindow.slint:101
+#: src/ui/gui/appwindow.slint:127
 msgctxt "Menu"
 msgid "About"
 msgstr "À propos"
 
-#: src/ui/gui/appwindow.slint:195
+#: src/ui/gui/appwindow.slint:248
 msgctxt "ErrorDialog"
 msgid "Error"
 msgstr "Erreur"
@@ -107,45 +107,45 @@ msgctxt "Cheats"
 msgid "No Cheats Available"
 msgstr "Aucune triche disponible"
 
-#: src/ui/gui/controller_page.slint:26
+#: src/ui/gui/controller_page.slint:50
+msgctxt "ControllerSettingsGrid"
+msgid "Enabled"
+msgstr "Activé"
+
+#: src/ui/gui/controller_page.slint:56
+msgctxt "ControllerSettingsGrid"
+msgid "Emulate VRU"
+msgstr "Émuler le VRU"
+
+#: src/ui/gui/controller_page.slint:62
+msgctxt "ControllerSettingsGrid"
+msgid "Transfer Pak"
+msgstr "Transfer Pak"
+
+#: src/ui/gui/controller_page.slint:68
+msgctxt "ControllerSettingsGrid"
+msgid "Profile"
+msgstr "Profil"
+
+#: src/ui/gui/controller_page.slint:163
 msgctxt "ControllerConfig"
 msgid "Controller Configuration"
 msgstr "Configuration de la manette"
 
-#: src/ui/gui/controller_page.slint:37
+#: src/ui/gui/controller_page.slint:174
 msgctxt "ControllerConfig"
 msgid "Configure Input Profile"
 msgstr "Configurer le profil d'entrée"
 
-#: src/ui/gui/controller_page.slint:49
+#: src/ui/gui/controller_page.slint:182
 msgctxt "ControllerConfig"
-msgid "Port"
-msgstr "Port"
+msgid "Controller Settings"
+msgstr "Paramètres de la manette"
 
-#: src/ui/gui/controller_page.slint:60
+#: src/ui/gui/controller_page.slint:192
 msgctxt "ControllerConfig"
-msgid "Enabled"
-msgstr "Activé"
-
-#: src/ui/gui/controller_page.slint:73
-msgctxt "ControllerConfig"
-msgid "Emulate VRU"
-msgstr "Émuler le VRU"
-
-#: src/ui/gui/controller_page.slint:87
-msgctxt "ControllerConfig"
-msgid "Transfer Pak"
-msgstr "Transfer Pak"
-
-#: src/ui/gui/controller_page.slint:101
-msgctxt "ControllerConfig"
-msgid "Profile"
-msgstr "Profil"
-
-#: src/ui/gui/controller_page.slint:117
-msgctxt "ControllerConfig"
-msgid "Controller"
-msgstr "Manette"
+msgid "Controller Assignment"
+msgstr "Attribution de la manette"
 
 #: src/ui/gui/input_profile.slint:10
 msgctxt "InputProfileDialog"
@@ -547,3 +547,11 @@ msgstr "Émuler UNFLoader"
 msgctxt "VruDialog"
 msgid "What Would You Like To Say?"
 msgstr "Que souhaitez-vous dire ?"
+
+#~ msgctxt "ControllerConfig"
+#~ msgid "Port"
+#~ msgstr "Port"
+
+#~ msgctxt "ControllerConfig"
+#~ msgid "Controller"
+#~ msgstr "Manette"

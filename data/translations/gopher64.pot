@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-05-14 14:53+0000\n"
+"POT-Creation-Date: 2026-05-18 19:50+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,42 +47,42 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:95
+#: src/ui/gui/appwindow.slint:103
 msgctxt "Menu"
 msgid "Local Game"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:96
+#: src/ui/gui/appwindow.slint:107
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:97
+#: src/ui/gui/appwindow.slint:111
 msgctxt "Menu"
 msgid "Netplay"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:98
+#: src/ui/gui/appwindow.slint:115
 msgctxt "Menu"
 msgid "Cheats"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:99
+#: src/ui/gui/appwindow.slint:119
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:100
+#: src/ui/gui/appwindow.slint:123
 msgctxt "Menu"
 msgid "Settings"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:101
+#: src/ui/gui/appwindow.slint:127
 msgctxt "Menu"
 msgid "About"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:195
+#: src/ui/gui/appwindow.slint:248
 msgctxt "ErrorDialog"
 msgid "Error"
 msgstr ""
@@ -107,44 +107,44 @@ msgctxt "Cheats"
 msgid "No Cheats Available"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:26
+#: src/ui/gui/controller_page.slint:50
+msgctxt "ControllerSettingsGrid"
+msgid "Enabled"
+msgstr ""
+
+#: src/ui/gui/controller_page.slint:56
+msgctxt "ControllerSettingsGrid"
+msgid "Emulate VRU"
+msgstr ""
+
+#: src/ui/gui/controller_page.slint:62
+msgctxt "ControllerSettingsGrid"
+msgid "Transfer Pak"
+msgstr ""
+
+#: src/ui/gui/controller_page.slint:68
+msgctxt "ControllerSettingsGrid"
+msgid "Profile"
+msgstr ""
+
+#: src/ui/gui/controller_page.slint:163
 msgctxt "ControllerConfig"
 msgid "Controller Configuration"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:37
+#: src/ui/gui/controller_page.slint:174
 msgctxt "ControllerConfig"
 msgid "Configure Input Profile"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:49
+#: src/ui/gui/controller_page.slint:182
 msgctxt "ControllerConfig"
-msgid "Port"
+msgid "Controller Settings"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:60
+#: src/ui/gui/controller_page.slint:192
 msgctxt "ControllerConfig"
-msgid "Enabled"
-msgstr ""
-
-#: src/ui/gui/controller_page.slint:73
-msgctxt "ControllerConfig"
-msgid "Emulate VRU"
-msgstr ""
-
-#: src/ui/gui/controller_page.slint:87
-msgctxt "ControllerConfig"
-msgid "Transfer Pak"
-msgstr ""
-
-#: src/ui/gui/controller_page.slint:101
-msgctxt "ControllerConfig"
-msgid "Profile"
-msgstr ""
-
-#: src/ui/gui/controller_page.slint:117
-msgctxt "ControllerConfig"
-msgid "Controller"
+msgid "Controller Assignment"
 msgstr ""
 
 #: src/ui/gui/input_profile.slint:10
