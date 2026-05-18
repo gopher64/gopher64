@@ -12,7 +12,6 @@ gui = ["dep:rfd", "dep:slint", "dep:slint-build"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-dirs = "6.0"
 zip = "8.0"
 sevenz-rust2 = "0.21"
 chrono = "0.4"
@@ -43,6 +42,7 @@ discord-rich-presence = "1.1"
 [target.'cfg(not(target_os = "android"))'.dependencies]
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "unstable-winit-030", "backend-winit", "renderer-femtovg-wgpu", "accessibility"], optional = true }
 rfd = {version = "0.17", optional = true }
+dirs = "6.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "backend-android-activity-06", "accessibility"], optional = true }

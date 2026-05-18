@@ -15,6 +15,10 @@ pub mod video;
 #[cfg(feature = "gui")]
 pub mod vru;
 
+#[cfg(target_os = "android")]
+pub static ANDROID_APP: std::sync::OnceLock<slint::android::AndroidApp> =
+    std::sync::OnceLock::new();
+
 pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
     reqwest::Client::builder()
         .user_agent(format!(
@@ -125,6 +129,7 @@ pub fn sdl_close() {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 pub fn get_dirs() -> Dirs {
     let exe_path = std::env::current_exe().unwrap();
     let portable_dir = exe_path.parent();
@@ -141,6 +146,19 @@ pub fn get_dirs() -> Dirs {
             data_dir: dirs::data_dir().unwrap().join("gopher64"),
             cache_dir: dirs::cache_dir().unwrap().join("gopher64"),
         }
+    }
+}
+
+#[cfg(target_os = "android")]
+pub fn get_dirs() -> Dirs {
+    if let Some(android_app) = ANDROID_APP.get() {
+        Dirs {
+            config_dir: android_app.internal_data_path().unwrap().join("config"),
+            data_dir: android_app.external_data_path().unwrap().join("data"),
+            cache_dir: android_app.internal_data_path().unwrap().join("cache"),
+        }
+    } else {
+        panic!("Android app not initialized");
     }
 }
 

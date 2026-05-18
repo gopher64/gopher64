@@ -319,7 +319,16 @@ pub async fn run() -> std::io::Result<()> {
 #[unsafe(no_mangle)]
 #[tokio::main(worker_threads = 4)]
 async fn android_main(app: slint::android::AndroidApp) {
-    slint::android::init(app).unwrap();
+    slint::android::init(app.clone()).unwrap();
+
+    ui::ANDROID_APP.set(app).unwrap();
+
+    let dirs = ui::get_dirs();
+
+    std::fs::create_dir_all(dirs.config_dir).unwrap();
+    std::fs::create_dir_all(dirs.cache_dir).unwrap();
+    std::fs::create_dir_all(dirs.data_dir.join("saves")).unwrap();
+    std::fs::create_dir_all(dirs.data_dir.join("states")).unwrap();
 
     ui::gui::app_window();
 }
