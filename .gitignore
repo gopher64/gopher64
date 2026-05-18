@@ -13,3 +13,5 @@ target/
 # Added by cargo
 
 /target
+
+data/android/java/
