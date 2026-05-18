@@ -359,6 +359,7 @@ pub fn get_controller_names() -> Vec<String> {
     controllers
 }
 
+#[cfg(not(target_os = "android"))]
 #[cfg(feature = "gui")]
 pub fn get_controller_paths() -> Vec<String> {
     let mut controller_paths: Vec<String> = vec![];
