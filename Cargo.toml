@@ -50,7 +50,6 @@ slint = { version = "1.16", default-features = false, features = ["compat-1-2", 
 [build-dependencies]
 winresource = "0.1"
 bindgen = "0.72"
-sdl3-src = "3"
 slint-build = { version = "1.12", optional = true }
 cc = { version = "1.2", features = ["parallel"] }
 
@@ -78,7 +77,6 @@ use_aapt2 = true
 package = "io.github.gopher64.gopher64"
 build_targets = ["aarch64-linux-android"]
 resources = "data/android/res"
-java_sources = "data/android/java"
 
 [[package.metadata.android.application.activity]]
 name = "android.app.NativeActivity"
