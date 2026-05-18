@@ -12,7 +12,6 @@ gui = ["dep:rfd", "dep:slint", "dep:slint-build"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-dirs = "6.0"
 zip = "8.0"
 sevenz-rust2 = "0.21"
 chrono = "0.4"
@@ -43,6 +42,7 @@ discord-rich-presence = "1.1"
 [target.'cfg(not(target_os = "android"))'.dependencies]
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "unstable-winit-030", "backend-winit", "renderer-femtovg-wgpu", "accessibility"], optional = true }
 rfd = {version = "0.17", optional = true }
+dirs = "6.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "backend-android-activity-06", "accessibility"], optional = true }
@@ -73,9 +73,21 @@ osx_frameworks = ["/opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib"]
 osx_minimum_system_version = "15.0"
 
 [package.metadata.android]
+use_aapt2 = true
 package = "io.github.gopher64.gopher64"
 build_targets = ["aarch64-linux-android"]
 resources = "data/android/res"
+
+[[package.metadata.android.application.activity]]
+name = "android.app.NativeActivity"
+
+[[package.metadata.android.application.activity.intent_filter]]
+actions = ["android.intent.action.MAIN"]
+categories = ["android.intent.category.LAUNCHER"]
+
+[[package.metadata.android.application.activity.meta_data]]
+name = "android.app.lib_name"
+value = "gopher64"
 
 [package.metadata.android.application]
 icon = "@mipmap/ic_launcher"
