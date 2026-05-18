@@ -316,6 +316,23 @@ pub async fn run() -> std::io::Result<()> {
 }
 
 #[cfg(target_os = "android")]
+unsafe extern "C" {
+    fn JNI_OnLoad(vm: *mut std::ffi::c_void, reserved: *mut std::ffi::c_void) -> i32;
+}
+
+#[cfg(target_os = "android")]
+#[unsafe(no_mangle)]
+fn android_on_create(state: &slint::android::android_activity::OnCreateState) {
+    unsafe {
+        JNI_OnLoad(state.vm_as_ptr(), std::ptr::null_mut());
+    }
+
+    unsafe {
+        sdl3_sys::main::SDL_SetMainReady();
+    }
+}
+
+#[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
 #[tokio::main(worker_threads = 4)]
 async fn android_main(app: slint::android::AndroidApp) {
