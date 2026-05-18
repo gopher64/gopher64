@@ -74,6 +74,7 @@ osx_frameworks = ["/opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib"]
 osx_minimum_system_version = "15.0"
 
 [package.metadata.android]
+use_aapt2 = true
 package = "io.github.gopher64.gopher64"
 build_targets = ["aarch64-linux-android"]
 resources = "data/android/res"
