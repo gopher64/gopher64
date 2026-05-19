@@ -2266,6 +2266,7 @@ dependencies = [
  "encoding_rs",
  "fatfs",
  "futures",
+ "jni 0.22.4",
  "mimalloc",
  "postcard",
  "rand 0.10.1",
