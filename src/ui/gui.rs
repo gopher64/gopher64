@@ -139,7 +139,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
 
     let saves_path = dirs.data_dir.join("saves");
     app.on_saves_folder_button_clicked(move || {
-        open_uri(saves_path.to_str().unwrap());
+        open_uri(&format!("file://{}", saves_path.to_str().unwrap()));
     });
     #[cfg(not(target_os = "android"))]
     file_dropped(app);
