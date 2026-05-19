@@ -139,7 +139,6 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     file_dropped(app);
 }
 
-#[cfg(not(target_os = "android"))]
 fn input_profiles(config: &ui::config::Config) -> Vec<String> {
     let mut profiles = vec![];
     for key in config.input.input_profiles.keys() {
@@ -178,7 +177,6 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     }
 }
 
-#[cfg(not(target_os = "android"))]
 fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
     let profiles = input_profiles(config);
     let config_bindings = config.input.input_profile_binding.clone();
@@ -224,8 +222,8 @@ fn clear_gb_paths(weak: &slint::Weak<AppWindow>, player: i32) {
     .unwrap();
 }
 
-#[cfg(not(target_os = "android"))]
 fn controller_window(app: &AppWindow, config: &ui::config::Config) {
+    #[cfg(not(target_os = "android"))]
     ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
 
     app.set_emulate_vru(config.input.emulate_vru);
@@ -510,7 +508,6 @@ pub fn app_window() {
     {
         let config = ui::config::Config::new();
         settings_window(&app, &config);
-        #[cfg(not(target_os = "android"))]
         controller_window(&app, &config);
         local_game_window(&app, &config);
     }
