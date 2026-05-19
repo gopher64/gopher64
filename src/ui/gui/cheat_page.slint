@@ -48,9 +48,10 @@ export component Cheats inherits Page {
         Rectangle { }
 
         if CheatsData.cheats.length > 0:ListView {
-            preferred-height: 500px;
-            preferred-width: 520px;
+            preferred-height: root.height;
+            horizontal-stretch: 1;
             for data in CheatsData.cheats: VerticalBox {
+                width: parent.width;
                 Text {
                     text: data.cheat_name;
                     font-size: 16px;

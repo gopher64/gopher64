@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Switch, ComboBox, Button, VerticalBox, GroupBox } from "std-widgets.slint";
+import { Switch, ComboBox, Button, HorizontalBox, VerticalBox, GroupBox } from "std-widgets.slint";
 import { Page } from "page.slint";
 import { State } from "localgame_page.slint";
 
@@ -164,11 +164,15 @@ export component ControllerConfig inherits Page {
         spacing: 8px;
         alignment: start;
 
-        Button {
-            text: @tr("Configure Input Profile");
-            enabled: !State.game_running;
-            clicked => {
-                input_profile_button_clicked();
+        HorizontalBox {
+            alignment: start;
+
+            Button {
+                text: @tr("Configure Input Profile");
+                enabled: !State.game_running;
+                clicked => {
+                    input_profile_button_clicked();
+                }
             }
         }
 
