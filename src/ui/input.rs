@@ -362,7 +362,7 @@ pub fn get_controller_names() -> Vec<String> {
 
 #[cfg(target_os = "android")]
 pub fn get_controller_names() -> Vec<String> {
-    let mut controllers: Vec<String> = ui::android_input::list_controllers()
+    let mut controllers: Vec<String> = ui::android::list_controllers()
         .into_iter()
         .map(|c| c.name)
         .collect();
@@ -391,7 +391,7 @@ pub fn get_controller_paths() -> Vec<String> {
 #[cfg(target_os = "android")]
 #[cfg(feature = "gui")]
 pub fn get_controller_paths() -> Vec<String> {
-    let mut controller_paths: Vec<String> = ui::android_input::list_controllers()
+    let mut controller_paths: Vec<String> = ui::android::list_controllers()
         .into_iter()
         .map(|c| c.descriptor)
         .collect();

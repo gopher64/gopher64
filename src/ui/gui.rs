@@ -46,10 +46,16 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-pub fn open_uri(path: &str) {
-    if let Err(e) = robius_open::Uri::new(path).open() {
-        eprintln!("Error opening path: {:?}", e);
+#[cfg(not(target_os = "android"))]
+pub fn open_uri(path: impl AsRef<std::ffi::OsStr>) {
+    if let Err(e) = open::that_detached(path) {
+        eprintln!("Error opening path: {}", e);
     }
+}
+
+#[cfg(target_os = "android")]
+pub fn open_uri(path: impl AsRef<std::ffi::OsStr>) {
+    ui::android::open_uri(path.as_ref().to_str().unwrap())
 }
 
 fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
@@ -88,8 +94,6 @@ fn file_dropped(app: &AppWindow) {
 }
 
 fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
-    let dirs = ui::get_dirs();
-
     app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
             config
@@ -131,12 +135,15 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
         .unwrap();
     });
 
-    let saves_path = dirs.data_dir.join("saves");
-    app.on_saves_folder_button_clicked(move || {
-        open_uri(saves_path.to_str().unwrap());
-    });
     #[cfg(not(target_os = "android"))]
-    file_dropped(app);
+    {
+        let saves_path = ui::get_dirs().data_dir.join("saves");
+        app.on_saves_folder_button_clicked(move || {
+            open_uri(&saves_path);
+        });
+
+        file_dropped(app);
+    }
 }
 
 fn input_profiles(config: &ui::config::Config) -> Vec<String> {
@@ -501,8 +508,9 @@ fn about_window(app: &AppWindow) {
     }
 }
 
-pub fn app_window() {
+pub fn app_window(is_android: bool) {
     let app = AppWindow::new().unwrap();
+    app.set_is_android(is_android);
     about_window(&app);
     ui::retroachievements::ra_window(&app);
     {

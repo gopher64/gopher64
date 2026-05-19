@@ -6,7 +6,7 @@ rust-version = "1.95.0"
 
 [features]
 default = ["gui"]
-gui = ["dep:rfd", "dep:slint", "dep:robius-open", "dep:slint-build"]
+gui = ["dep:rfd", "dep:slint", "dep:open", "dep:slint-build"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -19,7 +19,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde-big-array = "0.5"
 sha2 = "0.11"
-robius-open = { version = "0.1", default-features = false, optional = true }
 sdl3-sys = { version = "0.6", features = ["build-from-source-static"] }
 sdl3-ttf-sys = { version = "0.6", features = ["build-static-vendored", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
 sdl3-image-sys = { version = "0.6", features = ["build-static-vendored"] }
@@ -43,6 +42,7 @@ discord-rich-presence = "1.1"
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "unstable-winit-030", "backend-winit", "renderer-femtovg-wgpu", "accessibility"], optional = true }
 rfd = {version = "0.17", optional = true }
 dirs = "6.0"
+open = { version = "5.3", optional = true }
 
 [target.'cfg(target_os = "android")'.dependencies]
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "backend-android-activity-06", "accessibility"], optional = true }
@@ -74,21 +74,9 @@ osx_frameworks = ["/opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib"]
 osx_minimum_system_version = "15.0"
 
 [package.metadata.android]
-use_aapt2 = true
 package = "io.github.gopher64.gopher64"
 build_targets = ["aarch64-linux-android"]
 resources = "data/android/res"
-
-[[package.metadata.android.application.activity]]
-name = "android.app.NativeActivity"
-
-[[package.metadata.android.application.activity.intent_filter]]
-actions = ["android.intent.action.MAIN"]
-categories = ["android.intent.category.LAUNCHER"]
-
-[[package.metadata.android.application.activity.meta_data]]
-name = "android.app.lib_name"
-value = "gopher64"
 
 [package.metadata.android.application]
 icon = "@mipmap/ic_launcher"

@@ -1,4 +1,42 @@
+use jni::objects::JString;
+use jni::refs::Global;
 use jni::{Env, JavaVM, bind_java_type};
+
+use crate::ui;
+
+bind_java_type! {
+    AndroidActivity => "android.app.Activity",
+    type_map = {
+        AndroidIntent => "android.content.Intent",
+    },
+    methods {
+        fn start_activity(intent: AndroidIntent) -> (),
+    },
+}
+
+bind_java_type! {
+    AndroidIntent => "android.content.Intent",
+    type_map = {
+        AndroidUri => "android.net.Uri",
+    },
+    fields {
+        #[allow(non_snake_case)]
+        static ACTION_VIEW: JString,
+    },
+    constructors {
+        fn new(action: JString),
+    },
+    methods {
+        fn set_data(uri: AndroidUri) -> AndroidIntent,
+    },
+}
+
+bind_java_type! {
+    AndroidUri => "android.net.Uri",
+    methods {
+        static fn parse(uri_string: JString) -> AndroidUri,
+    },
+}
 
 bind_java_type! {
     pub AndroidInputDevice => "android.view.InputDevice",
@@ -30,7 +68,7 @@ pub struct ControllerInfo {
 
 /// Lists connected gamepads and joysticks using the Android framework.
 pub fn list_controllers() -> Vec<ControllerInfo> {
-    let Some(app) = crate::ui::ANDROID_APP.get() else {
+    let Some(app) = ui::ANDROID_APP.get() else {
         eprintln!("Android app not initialized; cannot list controllers");
         return Vec::new();
     };
@@ -103,4 +141,39 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
     }
 
     Ok(controllers)
+}
+
+/// Opens a URI in the user's default app via [`Intent::ACTION_VIEW`](https://developer.android.com/reference/android/content/Intent#ACTION_VIEW).
+pub fn open_uri(path: &str) {
+    let Some(app) = ui::ANDROID_APP.get() else {
+        eprintln!("Android app not initialized; cannot open URI");
+        return;
+    };
+
+    let path = path.to_string();
+    app.clone().run_on_java_main_thread(Box::new(move || {
+        let vm = unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) };
+        if let Err(err) = vm.attach_current_thread(|env| open_uri_on_java_main(env, &app, &path)) {
+            eprintln!("JNI error while opening URI: {err:?}");
+        }
+    }));
+}
+
+fn open_uri_on_java_main(
+    env: &mut Env<'_>,
+    app: &slint::android::AndroidApp,
+    path: &str,
+) -> jni::errors::Result<()> {
+    let activity_ptr = app.activity_as_ptr().cast();
+    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&activity_ptr)? };
+
+    let uri_string = JString::from_str(env, path.to_string())?;
+    let uri = AndroidUri::parse(env, &uri_string)?;
+
+    let action_view = AndroidIntent::ACTION_VIEW(env)?;
+    let intent = AndroidIntent::new(env, &action_view)?;
+    intent.set_data(env, &uri)?;
+
+    activity.as_ref().start_activity(env, &intent)?;
+    Ok(())
 }
