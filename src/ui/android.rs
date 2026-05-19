@@ -104,3 +104,5 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
 
     Ok(controllers)
 }
+
+pub fn open_uri(_path: &str) {}

@@ -46,10 +46,16 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
+#[cfg(not(target_os = "android"))]
 pub fn open_uri(path: &str) {
-    if let Err(e) = robius_open::Uri::new(path).open() {
-        eprintln!("Error opening path: {:?}", e);
+    if let Err(e) = open::that_detached(path) {
+        eprintln!("Error opening path: {}", e);
     }
+}
+
+#[cfg(target_os = "android")]
+pub fn open_uri(path: &str) {
+    ui::android::open_uri(path)
 }
 
 fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {

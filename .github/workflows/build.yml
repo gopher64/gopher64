@@ -267,9 +267,9 @@ jobs:
           cache: ${{ github.ref_type != 'tag' }}
       - name: Build
         run: |
-          cargo install cargo-apk2 cargo-ndk
+          cargo install cargo-apk cargo-ndk
           source <(cargo ndk-env --target ${{ matrix.target }})
-          cargo apk2 build --profile ${{ env.BUILD_PROFILE }} --target ${{ matrix.target }} --lib
+          cargo apk build --profile ${{ env.BUILD_PROFILE }} --target ${{ matrix.target }} --lib
 
   collect-artifacts:
     name: Collect release artifacts
