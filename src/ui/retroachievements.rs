@@ -100,7 +100,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
     });
 
     app.on_ra_show_profile_clicked(move || {
-        ui::gui::open_uri(format!(
+        ui::gui::open_uri(&format!(
             "https://retroachievements.org/user/{}",
             retroachievements::get_username().unwrap_or_default()
         ));
