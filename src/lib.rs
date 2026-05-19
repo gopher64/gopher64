@@ -293,7 +293,7 @@ pub async fn run() -> std::io::Result<()> {
         #[cfg(feature = "gui")]
         {
             retroachievements::init_client(false, false, false);
-            ui::gui::app_window();
+            ui::gui::app_window(false);
             retroachievements::shutdown_client();
         }
     }
@@ -317,5 +317,5 @@ async fn android_main(app: slint::android::AndroidApp) {
     std::fs::create_dir_all(dirs.data_dir.join("saves")).unwrap();
     std::fs::create_dir_all(dirs.data_dir.join("states")).unwrap();
 
-    ui::gui::app_window();
+    ui::gui::app_window(true);
 }

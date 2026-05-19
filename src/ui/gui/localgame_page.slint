@@ -7,6 +7,7 @@ import { AboutData, NewVersionButton } from "about_page.slint";
 
 export global State {
     in-out property <bool> game_running;
+    in-out property <bool> is_android;
     in-out property <[{a:string, b:string}]> recent_roms;
 }
 
@@ -30,7 +31,7 @@ export component LocalGame inherits Page {
             }
         }
 
-        HorizontalBox {
+        if !State.is_android:HorizontalBox {
             alignment: center;
             Button {
                 text: @tr("Open Saves Folder");
