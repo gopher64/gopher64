@@ -86,10 +86,6 @@ const char *ra_get_username() {
   const rc_client_user_t *user = rc_client_get_user_info(g_client);
   return user ? user->username : NULL;
 }
-const char *ra_get_token() {
-  const rc_client_user_t *user = rc_client_get_user_info(g_client);
-  return user ? user->token : NULL;
-}
 
 void ra_logout_user() { rc_client_logout(g_client); }
 

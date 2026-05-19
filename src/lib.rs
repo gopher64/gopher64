@@ -81,44 +81,20 @@ struct Args {
     )]
     ra_username: Option<String>,
     #[arg(
-        long = "ra-token",
-        value_name = "TOKEN",
-        help = "Token for RetroAchievements",
-        hide = true
-    )]
-    ra_token: Option<String>,
-    #[arg(
         long = "ra-password",
         value_name = "PASSWORD",
         help = "Password for RetroAchievements"
     )]
     ra_password: Option<String>,
-    #[arg(
-        long = "ra-hardcore",
-        help = "Enable Hardcore mode for RetroAchievements"
-    )]
-    ra_hardcore: bool,
-    #[arg(
-        long = "ra-challenge",
-        help = "Enable Challenge Indicators for RetroAchievements"
-    )]
-    ra_challenge: bool,
-    #[arg(
-        long = "ra-leaderboard",
-        help = "Enable Leaderboard Trackers for RetroAchievements"
-    )]
-    ra_leaderboard: bool,
-    #[arg(long = "discord-rich-presence", help = "Enable Discord Rich Presence")]
-    discord_rich_presence: bool,
 }
 
 pub async fn run() -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
-    std::fs::create_dir_all(dirs.config_dir)?;
-    std::fs::create_dir_all(dirs.cache_dir)?;
-    std::fs::create_dir_all(dirs.data_dir.join("saves"))?;
-    std::fs::create_dir_all(dirs.data_dir.join("states"))?;
+    std::fs::create_dir_all(&dirs.config_dir)?;
+    std::fs::create_dir_all(&dirs.cache_dir)?;
+    std::fs::create_dir_all(&dirs.data_dir.join("saves"))?;
+    std::fs::create_dir_all(&dirs.data_dir.join("states"))?;
 
     ui::sdl_hints();
 
@@ -176,10 +152,11 @@ pub async fn run() -> std::io::Result<()> {
         let mut shutdown_tx = None;
         let mut usb_handle = None;
 
-        if let Some(peer_addr) = args.netplay_peer_addr
+        let rich_presence = if let Some(peer_addr) = args.netplay_peer_addr
             && let Some(player_number) = args.netplay_player_number
         {
             device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
+            false
         } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
@@ -196,29 +173,39 @@ pub async fn run() -> std::io::Result<()> {
                 (shutdown_tx, usb_handle, device.ui.usb) = ui::usb::init();
             }
 
-            if let Some(username) = args.ra_username {
+            let file_path = dirs.config_dir.join("retroachievements.json");
+            if let ra_config = std::fs::read(&file_path).unwrap_or_default()
+                && let ra_config =
+                    serde_json::from_slice::<retroachievements::RAConfig>(ra_config.as_ref())
+                        .unwrap_or_default()
+                && (ra_config.enabled || args.ra_username.is_some())
+            {
+                let username = args.ra_username.unwrap_or(ra_config.username);
                 retroachievements::init_client(
                     if cfg!(ra_hardcore_enabled) {
-                        args.ra_hardcore
+                        ra_config.hardcore
                     } else {
                         false
                     },
-                    args.ra_challenge,
-                    args.ra_leaderboard,
+                    ra_config.challenge,
+                    ra_config.leaderboard,
                 );
 
                 let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
                 if let Some(password) = args.ra_password {
                     retroachievements::login_user(username, password, tx);
-                } else if let Some(token) = args.ra_token {
-                    retroachievements::login_token_user(username, token, tx);
+                } else if !ra_config.token.is_empty() {
+                    retroachievements::login_token_user(username, ra_config.token, tx);
                 } else {
                     tx.send(false).unwrap();
                 }
 
                 rx.await.unwrap();
+                ra_config.rich_presence
+            } else {
+                false
             }
-        }
+        };
 
         device::run_game(
             &mut device,
@@ -229,7 +216,7 @@ pub async fn run() -> std::io::Result<()> {
                 cheats,
                 load_savestate_slot: args.load_state,
             },
-            args.discord_rich_presence,
+            rich_presence,
         )
         .await;
 
@@ -325,10 +312,10 @@ async fn android_main(app: slint::android::AndroidApp) {
 
     let dirs = ui::get_dirs();
 
-    std::fs::create_dir_all(dirs.config_dir).unwrap();
-    std::fs::create_dir_all(dirs.cache_dir).unwrap();
-    std::fs::create_dir_all(dirs.data_dir.join("saves")).unwrap();
-    std::fs::create_dir_all(dirs.data_dir.join("states")).unwrap();
+    std::fs::create_dir_all(&dirs.config_dir).unwrap();
+    std::fs::create_dir_all(&dirs.cache_dir).unwrap();
+    std::fs::create_dir_all(&dirs.data_dir.join("saves")).unwrap();
+    std::fs::create_dir_all(&dirs.data_dir.join("states")).unwrap();
 
     ui::gui::app_window();
 }

@@ -180,8 +180,7 @@ fn main() {
     if cfg!(feature = "gui") {
         retroachievements_builder = retroachievements_builder
             .allowlist_function("ra_logout_user")
-            .allowlist_function("ra_get_username")
-            .allowlist_function("ra_get_token");
+            .allowlist_function("ra_get_username");
     }
 
     let retroachievements_bindings = retroachievements_builder

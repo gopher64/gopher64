@@ -1,4 +1,3 @@
-use crate::retroachievements;
 use crate::ui;
 use slint::Model;
 #[cfg(not(target_os = "android"))]
@@ -19,15 +18,6 @@ struct GithubData {
 pub struct NetplayDevice {
     pub peer_addr: std::net::SocketAddr,
     pub player_number: u8,
-}
-
-#[derive(Clone)]
-pub struct RASettings {
-    pub enabled: bool,
-    pub hardcore: bool,
-    pub challenge: bool,
-    pub leaderboard: bool,
-    pub rich_presence: bool,
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
@@ -73,13 +63,6 @@ fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
                 load_savestate_slot: None,
             },
             None,
-            RASettings {
-                enabled: handle.get_ra_enabled(),
-                hardcore: handle.get_ra_hardcore(),
-                challenge: handle.get_ra_challenge(),
-                leaderboard: handle.get_ra_leaderboard(),
-                rich_presence: handle.get_ra_rich_presence(),
-            },
             weak2,
         );
     })
@@ -550,7 +533,6 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<NetplayDevice>,
-    ra_settings: RASettings,
     weak: slint::Weak<AppWindow>,
 ) {
     tokio::spawn(async move {
@@ -587,26 +569,6 @@ pub fn run_rom(
                 "--cheats",
                 cheats_path.to_str().unwrap(),
             ]);
-        }
-        if ra_settings.enabled {
-            command.args([
-                "--ra-username",
-                &retroachievements::get_username().unwrap_or("unknown".into()),
-                "--ra-token",
-                &retroachievements::get_token().unwrap_or("unknown".into()),
-            ]);
-            if ra_settings.hardcore {
-                command.args(["--ra-hardcore"]);
-            }
-            if ra_settings.challenge {
-                command.args(["--ra-challenge"]);
-            }
-            if ra_settings.leaderboard {
-                command.args(["--ra-leaderboard"]);
-            }
-            if ra_settings.rich_presence {
-                command.args(["--discord-rich-presence"]);
-            }
         }
 
         let success = command
@@ -663,11 +625,6 @@ fn open_rom(app: &AppWindow) {
 
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
-    let ra_enabled = app.get_ra_enabled();
-    let ra_hardcore = app.get_ra_hardcore();
-    let ra_challenge = app.get_ra_challenge();
-    let ra_leaderboard = app.get_ra_leaderboard();
-    let ra_rich_presence = app.get_ra_rich_presence();
 
     let weak = app.as_weak();
     tokio::spawn(async move {
@@ -681,13 +638,6 @@ fn open_rom(app: &AppWindow) {
                     load_savestate_slot: None,
                 },
                 None,
-                RASettings {
-                    enabled: ra_enabled,
-                    hardcore: ra_hardcore,
-                    challenge: ra_challenge,
-                    leaderboard: ra_leaderboard,
-                    rich_presence: ra_rich_presence,
-                },
                 weak,
             );
         }
