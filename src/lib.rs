@@ -93,8 +93,8 @@ pub async fn run() -> std::io::Result<()> {
 
     std::fs::create_dir_all(&dirs.config_dir)?;
     std::fs::create_dir_all(&dirs.cache_dir)?;
-    std::fs::create_dir_all(&dirs.data_dir.join("saves"))?;
-    std::fs::create_dir_all(&dirs.data_dir.join("states"))?;
+    std::fs::create_dir_all(dirs.data_dir.join("saves"))?;
+    std::fs::create_dir_all(dirs.data_dir.join("states"))?;
 
     ui::sdl_hints();
 
@@ -314,8 +314,8 @@ async fn android_main(app: slint::android::AndroidApp) {
 
     std::fs::create_dir_all(&dirs.config_dir).unwrap();
     std::fs::create_dir_all(&dirs.cache_dir).unwrap();
-    std::fs::create_dir_all(&dirs.data_dir.join("saves")).unwrap();
-    std::fs::create_dir_all(&dirs.data_dir.join("states")).unwrap();
+    std::fs::create_dir_all(dirs.data_dir.join("saves")).unwrap();
+    std::fs::create_dir_all(dirs.data_dir.join("states")).unwrap();
 
     ui::gui::app_window();
 }
