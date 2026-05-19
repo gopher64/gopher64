@@ -343,6 +343,7 @@ fn hotkey_pressed(
     pressed
 }
 
+#[cfg(not(target_os = "android"))]
 pub fn get_controller_names() -> Vec<String> {
     let mut controllers: Vec<String> = vec![];
 
@@ -357,6 +358,11 @@ pub fn get_controller_names() -> Vec<String> {
     controllers.insert(0, "None".into());
 
     controllers
+}
+
+#[cfg(target_os = "android")]
+pub fn get_controller_names() -> Vec<String> {
+    vec![]
 }
 
 #[cfg(not(target_os = "android"))]
@@ -375,6 +381,12 @@ pub fn get_controller_paths() -> Vec<String> {
     controller_paths.insert(0, String::new());
 
     controller_paths
+}
+
+#[cfg(target_os = "android")]
+#[cfg(feature = "gui")]
+pub fn get_controller_paths() -> Vec<String> {
+    vec![]
 }
 
 fn handle_joystick_events(ui: &mut ui::Ui) {
