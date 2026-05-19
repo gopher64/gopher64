@@ -4,15 +4,18 @@ bind_java_type! {
     pub AndroidInputDevice => "android.view.InputDevice",
     fields {
         #[allow(non_snake_case)]
-        static SOURCE_GAMEPAD: jint,
-        #[allow(non_snake_case)]
         static SOURCE_JOYSTICK: jint,
+        #[allow(non_snake_case)]
+        static SOURCE_GAMEPAD: jint,
     },
     methods {
         static fn get_device_ids() -> jint[],
         static fn get_device(device_id: jint) -> AndroidInputDevice,
+        fn supports_source(source: jint) -> jboolean,
         fn is_virtual() -> jboolean,
-        fn get_sources() -> jint,
+        fn is_external() -> jboolean,
+        fn get_vendor_id() -> jint,
+        fn get_product_id() -> jint,
         fn get_name() -> JString,
         fn get_descriptor() -> JString,
     },
@@ -65,8 +68,19 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
             continue;
         }
 
-        let sources = device.get_sources(env)?;
-        if sources & source_gamepad == 0 && sources & source_joystick == 0 {
+        if !device.is_external(env)? {
+            continue;
+        }
+
+        if !device.supports_source(env, source_gamepad & source_joystick)? {
+            continue;
+        }
+
+        if device.get_vendor_id(env)? == 0 {
+            continue;
+        }
+
+        if device.get_product_id(env)? == 0 {
             continue;
         }
 
