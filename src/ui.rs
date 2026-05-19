@@ -1,11 +1,11 @@
+#[cfg(target_os = "android")]
+pub mod android_input;
 pub mod audio;
 #[cfg(feature = "gui")]
 pub mod cheats;
 pub mod config;
 #[cfg(feature = "gui")]
 pub mod gui;
-#[cfg(target_os = "android")]
-pub mod android_input;
 pub mod input;
 #[cfg(feature = "gui")]
 pub mod netplay;
