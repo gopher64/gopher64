@@ -362,7 +362,7 @@ pub fn get_controller_names() -> Vec<String> {
 
 #[cfg(target_os = "android")]
 pub fn get_controller_names() -> Vec<String> {
-    vec![]
+    vec!["None".into()]
 }
 
 #[cfg(not(target_os = "android"))]
@@ -386,7 +386,7 @@ pub fn get_controller_paths() -> Vec<String> {
 #[cfg(target_os = "android")]
 #[cfg(feature = "gui")]
 pub fn get_controller_paths() -> Vec<String> {
-    vec![]
+    vec![String::new()]
 }
 
 fn handle_joystick_events(ui: &mut ui::Ui) {
