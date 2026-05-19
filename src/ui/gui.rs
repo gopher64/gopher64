@@ -46,15 +46,11 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-#[cfg(not(target_os = "android"))]
-pub fn open_uri(path: impl AsRef<std::ffi::OsStr>) {
-    if let Err(e) = open::that_detached(path) {
-        eprintln!("Error opening path: {}", e);
+pub fn open_uri(path: &str) {
+    if let Err(e) = robius_open::Uri::new(path).open() {
+        eprintln!("Error opening path: {:?}", e);
     }
 }
-
-#[cfg(target_os = "android")]
-pub fn open_uri(_path: impl AsRef<std::ffi::OsStr>) {}
 
 fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
     let weak2 = weak.clone();
@@ -137,7 +133,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
 
     let saves_path = dirs.data_dir.join("saves");
     app.on_saves_folder_button_clicked(move || {
-        open_uri(&saves_path);
+        open_uri(saves_path.to_str().unwrap());
     });
     #[cfg(not(target_os = "android"))]
     file_dropped(app);
