@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-05-18 20:04+0000\n"
+"POT-Creation-Date: 2026-05-19 06:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -107,37 +107,37 @@ msgctxt "Cheats"
 msgid "No Cheats Available"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:49
+#: src/ui/gui/controller_page.slint:80
 msgctxt "ControllerSettingsGrid"
 msgid "Enabled"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:55
+#: src/ui/gui/controller_page.slint:93
 msgctxt "ControllerSettingsGrid"
 msgid "Transfer Pak"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:61
+#: src/ui/gui/controller_page.slint:107
 msgctxt "ControllerSettingsGrid"
 msgid "Profile"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:143
+#: src/ui/gui/controller_page.slint:157
 msgctxt "ControllerConfig"
 msgid "Controller Configuration"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:154
+#: src/ui/gui/controller_page.slint:168
 msgctxt "ControllerConfig"
 msgid "Configure Input Profile"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:162
+#: src/ui/gui/controller_page.slint:176
 msgctxt "ControllerConfig"
 msgid "Controller Settings"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:172
+#: src/ui/gui/controller_page.slint:186
 msgctxt "ControllerConfig"
 msgid "Controller Assignment"
 msgstr ""

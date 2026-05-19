@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-05-18 19:50+0000\n"
+"POT-Creation-Date: 2026-05-19 06:44+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: French (France)\n"
@@ -107,37 +107,37 @@ msgctxt "Cheats"
 msgid "No Cheats Available"
 msgstr "Aucune triche disponible"
 
-#: src/ui/gui/controller_page.slint:50
+#: src/ui/gui/controller_page.slint:80
 msgctxt "ControllerSettingsGrid"
 msgid "Enabled"
 msgstr "Activé"
 
-#: src/ui/gui/controller_page.slint:56
+#: src/ui/gui/controller_page.slint:93
 msgctxt "ControllerSettingsGrid"
 msgid "Transfer Pak"
 msgstr "Transfer Pak"
 
-#: src/ui/gui/controller_page.slint:68
+#: src/ui/gui/controller_page.slint:107
 msgctxt "ControllerSettingsGrid"
 msgid "Profile"
 msgstr "Profil"
 
-#: src/ui/gui/controller_page.slint:163
+#: src/ui/gui/controller_page.slint:157
 msgctxt "ControllerConfig"
 msgid "Controller Configuration"
 msgstr "Configuration de la manette"
 
-#: src/ui/gui/controller_page.slint:174
+#: src/ui/gui/controller_page.slint:168
 msgctxt "ControllerConfig"
 msgid "Configure Input Profile"
 msgstr "Configurer le profil d'entrée"
 
-#: src/ui/gui/controller_page.slint:182
+#: src/ui/gui/controller_page.slint:176
 msgctxt "ControllerConfig"
 msgid "Controller Settings"
 msgstr "Paramètres de la manette"
 
-#: src/ui/gui/controller_page.slint:192
+#: src/ui/gui/controller_page.slint:186
 msgctxt "ControllerConfig"
 msgid "Controller Assignment"
 msgstr "Attribution de la manette"
@@ -483,52 +483,52 @@ msgctxt "RetroAchievements"
 msgid "View Supported Games"
 msgstr "Voir les jeux pris en charge"
 
-#: src/ui/gui/settings_page.slint:22
+#: src/ui/gui/settings_page.slint:23
 msgctxt "Settings"
 msgid "Settings"
 msgstr "Paramètres"
 
-#: src/ui/gui/settings_page.slint:29
+#: src/ui/gui/settings_page.slint:30
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr "Résolution :"
 
-#: src/ui/gui/settings_page.slint:45
+#: src/ui/gui/settings_page.slint:46
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr "Réduction SSAA"
 
-#: src/ui/gui/settings_page.slint:56
+#: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr "Mise à l'échelle par entiers"
 
-#: src/ui/gui/settings_page.slint:67
+#: src/ui/gui/settings_page.slint:68
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr "Plein écran"
 
-#: src/ui/gui/settings_page.slint:78
+#: src/ui/gui/settings_page.slint:79
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr "Écran large (étiré)"
 
-#: src/ui/gui/settings_page.slint:89
+#: src/ui/gui/settings_page.slint:90
 msgctxt "Settings"
 msgid "VSync"
 msgstr "Synchro verticale"
 
-#: src/ui/gui/settings_page.slint:100
+#: src/ui/gui/settings_page.slint:101
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr "Appliquer le filtre CRT"
 
-#: src/ui/gui/settings_page.slint:115
+#: src/ui/gui/settings_page.slint:116
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr "Surcharger le CPU N64 (risque de bugs)"
 
-#: src/ui/gui/settings_page.slint:126
+#: src/ui/gui/settings_page.slint:127
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "Désactiver l'Expansion Pak"

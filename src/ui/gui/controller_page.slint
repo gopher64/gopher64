@@ -33,50 +33,53 @@ component ControllerFieldHeader inherits Text {
     font-size: 13px;
 }
 
-component ControllerSettingsGrid inherits VerticalLayout {
-    callback transferpak_toggled(int, bool);
-
+component ControllerSettingsColumn inherits VerticalLayout {
+    in property <string> title;
+    in property <length> content-min-width: 0px;
     spacing: 6px;
     alignment: start;
+    horizontal-stretch: 0;
+    min-width: content-min-width > header.preferred-width ? content-min-width : header.preferred-width;
 
-    HorizontalLayout {
-        spacing: 12px;
+    header := ControllerFieldHeader {
+        text: root.title;
+    }
+
+    @children
+}
+
+component ControllerSettingsCell inherits HorizontalLayout {
+    height: 32px;
+    alignment: start;
+
+    @children
+}
+
+component ControllerSettingsGrid inherits HorizontalLayout {
+    callback transferpak_toggled(int, bool);
+
+    spacing: 12px;
+    alignment: start;
+
+    VerticalLayout {
+        spacing: 6px;
         alignment: start;
+        horizontal-stretch: 0;
 
         Rectangle {
             width: 36px;
             height: 28px;
         }
 
-        ControllerFieldHeader {
-            min-width: 96px;
-            text: @tr("ControllerSettingsGrid" => "Enabled");
-        }
-
-        ControllerFieldHeader {
-            min-width: 100px;
-            text: @tr("ControllerSettingsGrid" => "Transfer Pak");
-        }
-
-        ControllerFieldHeader {
-            min-width: 150px;
-            text: @tr("ControllerSettingsGrid" => "Profile");
+        for player[index] in [0, 1, 2, 3]: ControllerPortLabel {
+            text: index + 1;
         }
     }
 
-    for player[index] in [0, 1, 2, 3]: HorizontalLayout {
-        spacing: 12px;
-        alignment: start;
+    ControllerSettingsColumn {
+        title: @tr("ControllerSettingsGrid" => "Enabled");
 
-        ControllerPortLabel {
-            text: index + 1;
-        }
-
-        HorizontalLayout {
-            min-width: 96px;
-            height: 32px;
-            alignment: start;
-
+        for player[index] in [0, 1, 2, 3]: ControllerSettingsCell {
             Switch {
                 checked: ControllerData.controller_enabled[index];
                 toggled => {
@@ -84,12 +87,12 @@ component ControllerSettingsGrid inherits VerticalLayout {
                 }
             }
         }
+    }
 
-        HorizontalLayout {
-            min-width: 100px;
-            height: 32px;
-            alignment: start;
+    ControllerSettingsColumn {
+        title: @tr("ControllerSettingsGrid" => "Transfer Pak");
 
+        for player[index] in [0, 1, 2, 3]: ControllerSettingsCell {
             Switch {
                 checked: ControllerData.transferpak[index];
                 toggled => {
@@ -98,12 +101,13 @@ component ControllerSettingsGrid inherits VerticalLayout {
                 }
             }
         }
+    }
 
-        HorizontalLayout {
-            min-width: 150px;
-            height: 32px;
-            alignment: start;
+    ControllerSettingsColumn {
+        title: @tr("ControllerSettingsGrid" => "Profile");
+        content-min-width: 150px;
 
+        for player[index] in [0, 1, 2, 3]: ControllerSettingsCell {
             ComboBox {
                 horizontal-stretch: 0;
                 min-width: self.preferred-width > 150px ? self.preferred-width : 150px;
