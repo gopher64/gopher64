@@ -29,68 +29,59 @@ export component RetroAchievements inherits Page {
     VerticalBox {
         alignment: start;
         HorizontalBox {
-            alignment: start;
-            Switch {
-                text: @tr("Enabled");
-                checked: RAData.enabled;
-                toggled => {
-                    RAData.enabled = self.checked;
-                    if (!RAData.enabled) {
-                        RAData.ra_username = "";
-                        username_widget.text = "";
-                        password_widget.text = "";
-                        RAData.current_user_message = RAData.not_logged_in;
-                        RAData.ra_show_profile = false;
+            alignment: center;
+            VerticalBox {
+                alignment: start;
+                Switch {
+                    text: @tr("Enabled");
+                    checked: RAData.enabled;
+                    toggled => {
+                        RAData.enabled = self.checked;
+                        if (!RAData.enabled) {
+                            RAData.ra_username = "";
+                            username_widget.text = "";
+                            password_widget.text = "";
+                            RAData.current_user_message = RAData.not_logged_in;
+                            RAData.ra_show_profile = false;
+                        }
+                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
                     }
-                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
                 }
-            }
-        }
-        if !RAData.ra_softcore_only:HorizontalBox {
-            alignment: start;
-            Switch {
-                text: @tr("Hardcore mode");
-                checked: RAData.hardcore;
-                enabled: RAData.enabled;
-                toggled => {
-                    RAData.hardcore = self.checked;
-                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+                if !RAData.ra_softcore_only: Switch {
+                    text: @tr("Hardcore mode");
+                    checked: RAData.hardcore;
+                    enabled: RAData.enabled;
+                    toggled => {
+                        RAData.hardcore = self.checked;
+                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+                    }
                 }
-            }
-        }
-        HorizontalBox {
-            alignment: start;
-            Switch {
-                text: @tr("Challenge Indicators");
-                checked: RAData.challenge;
-                enabled: RAData.enabled;
-                toggled => {
-                    RAData.challenge = self.checked;
-                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+                Switch {
+                    text: @tr("Challenge Indicators");
+                    checked: RAData.challenge;
+                    enabled: RAData.enabled;
+                    toggled => {
+                        RAData.challenge = self.checked;
+                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+                    }
                 }
-            }
-        }
-        HorizontalBox {
-            alignment: start;
-            Switch {
-                text: @tr("Leaderboard Trackers");
-                checked: RAData.leaderboard;
-                enabled: RAData.enabled;
-                toggled => {
-                    RAData.leaderboard = self.checked;
-                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+                Switch {
+                    text: @tr("Leaderboard Trackers");
+                    checked: RAData.leaderboard;
+                    enabled: RAData.enabled;
+                    toggled => {
+                        RAData.leaderboard = self.checked;
+                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+                    }
                 }
-            }
-        }
-        HorizontalBox {
-            alignment: start;
-            Switch {
-                text: @tr("Discord Rich Presence");
-                checked: RAData.rich_presence;
-                enabled: RAData.enabled;
-                toggled => {
-                    RAData.rich_presence = self.checked;
-                    ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+                Switch {
+                    text: @tr("Discord Rich Presence");
+                    checked: RAData.rich_presence;
+                    enabled: RAData.enabled;
+                    toggled => {
+                        RAData.rich_presence = self.checked;
+                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+                    }
                 }
             }
         }
