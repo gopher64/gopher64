@@ -4,7 +4,7 @@ use crate::ui;
 
 use discord_rich_presence::DiscordIpc;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Default)]
 pub struct RAConfig {
     pub username: String,
     pub token: String,
@@ -259,21 +259,6 @@ pub fn get_username() -> Option<String> {
     } else {
         Some(
             unsafe { std::ffi::CStr::from_ptr(c_username) }
-                .to_str()
-                .unwrap()
-                .to_string(),
-        )
-    }
-}
-
-#[cfg(feature = "gui")]
-pub fn get_token() -> Option<String> {
-    let c_token = unsafe { ra_get_token() };
-    if c_token.is_null() {
-        None
-    } else {
-        Some(
-            unsafe { std::ffi::CStr::from_ptr(c_token) }
                 .to_str()
                 .unwrap()
                 .to_string(),

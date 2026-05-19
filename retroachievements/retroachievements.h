@@ -18,7 +18,6 @@ void ra_login_user(const char *username, const char *password, void *userdata);
 void ra_login_token_user(const char *username, const char *token,
                          void *userdata);
 const char *ra_get_username();
-const char *ra_get_token();
 size_t ra_state_size();
 void ra_save_state(uint8_t *state, size_t state_size);
 void ra_load_state(const uint8_t *state, size_t state_size);
