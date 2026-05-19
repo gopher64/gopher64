@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-05-14 14:53+0000\n"
+"POT-Creation-Date: 2026-05-19 06:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,42 +47,42 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:95
+#: src/ui/gui/appwindow.slint:103
 msgctxt "Menu"
 msgid "Local Game"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:96
+#: src/ui/gui/appwindow.slint:107
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:97
+#: src/ui/gui/appwindow.slint:111
 msgctxt "Menu"
 msgid "Netplay"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:98
+#: src/ui/gui/appwindow.slint:115
 msgctxt "Menu"
 msgid "Cheats"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:99
+#: src/ui/gui/appwindow.slint:119
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:100
+#: src/ui/gui/appwindow.slint:123
 msgctxt "Menu"
 msgid "Settings"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:101
+#: src/ui/gui/appwindow.slint:127
 msgctxt "Menu"
 msgid "About"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:195
+#: src/ui/gui/appwindow.slint:248
 msgctxt "ErrorDialog"
 msgid "Error"
 msgstr ""
@@ -107,44 +107,39 @@ msgctxt "Cheats"
 msgid "No Cheats Available"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:26
+#: src/ui/gui/controller_page.slint:80
+msgctxt "ControllerSettingsGrid"
+msgid "Enabled"
+msgstr ""
+
+#: src/ui/gui/controller_page.slint:93
+msgctxt "ControllerSettingsGrid"
+msgid "Transfer Pak"
+msgstr ""
+
+#: src/ui/gui/controller_page.slint:107
+msgctxt "ControllerSettingsGrid"
+msgid "Profile"
+msgstr ""
+
+#: src/ui/gui/controller_page.slint:157
 msgctxt "ControllerConfig"
 msgid "Controller Configuration"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:37
+#: src/ui/gui/controller_page.slint:168
 msgctxt "ControllerConfig"
 msgid "Configure Input Profile"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:49
+#: src/ui/gui/controller_page.slint:176
 msgctxt "ControllerConfig"
-msgid "Port"
+msgid "Controller Settings"
 msgstr ""
 
-#: src/ui/gui/controller_page.slint:60
+#: src/ui/gui/controller_page.slint:186
 msgctxt "ControllerConfig"
-msgid "Enabled"
-msgstr ""
-
-#: src/ui/gui/controller_page.slint:73
-msgctxt "ControllerConfig"
-msgid "Emulate VRU"
-msgstr ""
-
-#: src/ui/gui/controller_page.slint:87
-msgctxt "ControllerConfig"
-msgid "Transfer Pak"
-msgstr ""
-
-#: src/ui/gui/controller_page.slint:101
-msgctxt "ControllerConfig"
-msgid "Profile"
-msgstr ""
-
-#: src/ui/gui/controller_page.slint:117
-msgctxt "ControllerConfig"
-msgid "Controller"
+msgid "Controller Assignment"
 msgstr ""
 
 #: src/ui/gui/input_profile.slint:10
@@ -483,59 +478,64 @@ msgctxt "RetroAchievements"
 msgid "View Supported Games"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:22
+#: src/ui/gui/settings_page.slint:23
 msgctxt "Settings"
 msgid "Settings"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:29
+#: src/ui/gui/settings_page.slint:30
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:45
+#: src/ui/gui/settings_page.slint:46
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:56
+#: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:67
+#: src/ui/gui/settings_page.slint:68
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:78
+#: src/ui/gui/settings_page.slint:79
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:89
+#: src/ui/gui/settings_page.slint:90
 msgctxt "Settings"
 msgid "VSync"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:100
+#: src/ui/gui/settings_page.slint:101
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:115
+#: src/ui/gui/settings_page.slint:116
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:126
+#: src/ui/gui/settings_page.slint:127
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr ""
 
-#: src/ui/gui/settings_page.slint:137
+#: src/ui/gui/settings_page.slint:138
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
+msgstr ""
+
+#: src/ui/gui/settings_page.slint:149
+msgctxt "Settings"
+msgid "Emulate VRU"
 msgstr ""
 
 #: src/ui/gui/vru_dialog.slint:7

@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Switch, GridBox, ListView, ScrollView, HorizontalBox, VerticalBox, Palette } from "std-widgets.slint";
+import { ScrollView, HorizontalBox, VerticalBox } from "std-widgets.slint";
 
 export component Page inherits VerticalBox {
     in property <string> title: "title";
@@ -15,9 +15,17 @@ export component Page inherits VerticalBox {
             text <=> root.title;
         }
 
-        // Spacer
         Rectangle { }
     }
 
-    @children
+    ScrollView {
+        vertical-stretch: 1;
+
+        VerticalBox {
+            padding: 8px;
+            alignment: start;
+
+            @children
+        }
+    }
 }

@@ -729,7 +729,7 @@ pub fn configure_input_profile(
         initial_state: 0,
     };
 
-    let image_bytes = include_bytes!("../../data/controller.png");
+    let image_bytes = include_bytes!("../../data/ui/controller.png");
     let image = unsafe {
         sdl3_image_sys::image::IMG_LoadPNG_IO(sdl3_sys::everything::SDL_IOFromConstMem(
             image_bytes.as_ptr() as *const std::ffi::c_void,
@@ -740,7 +740,7 @@ pub fn configure_input_profile(
     unsafe { sdl3_sys::surface::SDL_DestroySurface(image) };
     let text_engine = unsafe { sdl3_ttf_sys::ttf::TTF_CreateRendererTextEngine(renderer) };
     let font = unsafe {
-        let font_bytes = include_bytes!("../../data/RobotoMono-Regular.ttf");
+        let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
         sdl3_ttf_sys::ttf::TTF_OpenFontIO(
             sdl3_sys::everything::SDL_IOFromConstMem(
                 font_bytes.as_ptr() as *const std::ffi::c_void,

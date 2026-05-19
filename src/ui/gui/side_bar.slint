@@ -1,19 +1,79 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { HorizontalBox, VerticalBox, Palette } from "std-widgets.slint";
+import { Palette } from "std-widgets.slint";
+
+export struct SideBarEntry {
+    icon: image,
+    label: string,
+}
+
+component SideBarButton inherits Rectangle {
+    in property <bool> selected;
+    in property <bool> has-focus;
+    in property <image> icon;
+
+    callback clicked <=> touch.clicked;
+
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+
+    highlight := Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: parent.border-radius;
+        background: Palette.control-background;
+        opacity: 0;
+
+        animate opacity { duration: 150ms; }
+    }
+
+    icon-display := Image {
+        source: root.icon;
+        width: 24px;
+        height: 24px;
+        colorize: Palette.foreground;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+
+        animate colorize { duration: 150ms; }
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+    }
+
+    states [
+        selected when root.selected: {
+            highlight.opacity: 1;
+            highlight.background: Palette.accent-background;
+            icon-display.colorize: Palette.accent-foreground;
+        }
+        pressed when touch.pressed && !root.selected: {
+            highlight.opacity: 0.55;
+        }
+        hover when touch.has-hover && !root.selected: {
+            highlight.opacity: 0.4;
+        }
+        focused when root.has-focus && !root.selected: {
+            highlight.opacity: 0.4;
+        }
+    ]
+}
 
 component SideBarItem inherits Rectangle {
     in property <int> tab-index;
     in property <bool> selected;
     in property <bool> has-focus;
-    in-out property <string> text <=> label.text;
+    in property <image> icon;
+    in property <string> label;
 
-    callback clicked <=> touch.clicked;
+    callback clicked <=> button.clicked;
 
-    min-height: l.preferred-height;
     accessible-role: tab;
-    accessible-label: root.text;
+    accessible-label: root.label;
     accessible-item-index: root.tab-index;
     accessible-item-selectable: true;
     accessible-item-selected: root.selected;
@@ -21,124 +81,128 @@ component SideBarItem inherits Rectangle {
         self.clicked();
     }
 
-    states [
-        pressed when touch.pressed: {
-            state.opacity: 0.8;
-        }
-        hover when touch.has-hover: {
-            state.opacity: 0.6;
-        }
-        selected when root.selected: {
-            state.opacity: 1;
-        }
-        focused when root.has-focus: {
-            state.opacity: 0.8;
-        }
-    ]
-
-    state := Rectangle {
-        opacity: 0;
-        background: Palette.background;
-
-        animate opacity { duration: 150ms; }
-    }
-
-    l := HorizontalBox {
-        y: (parent.height - self.height) / 2;
-        spacing: 0px;
-
-        label := Text {
-            vertical-alignment: center;
-            accessible-role: none;
-        }
-    }
-
-    touch := TouchArea {
-        width: 100%;
-        height: 100%;
+    button := SideBarButton {
+        icon: root.icon;
+        selected: root.selected;
+        has-focus: root.has-focus;
     }
 }
 
 export component SideBar inherits Rectangle {
-    in property <[string]> model: [];
-    in property <string> title <=> label.text;
-    out property <int> current-item: 0;
-    out property <int> current-focused: fs.has-focus ? fs.focused-tab : -1; // The currently focused tab
+    in property <[SideBarEntry]> model: [];
+    in property <string> title: "Gopher64";
+    in property <bool> portrait;
+    in-out property <int> current-item: 0;
+    out property <int> current-focused: fs.has-focus ? fs.focused-tab : -1;
 
-    width: 180px;
     forward-focus: fs;
 
     Rectangle {
+        width: 100%;
+        height: 100%;
         background: Palette.background.darker(0.2);
     }
 
-    VerticalBox {
-        padding-left: 0px;
-        padding-right: 0px;
-        alignment: start;
-
-        label := Text {
-            font-size: 16px;
-            horizontal-alignment: center;
+    fs := FocusScope {
+        key-pressed(event) => {
+            if (event.text == "\n") {
+                root.current-item = root.current-focused;
+                return accept;
+            }
+            if (root.portrait) {
+                if (event.text == Key.LeftArrow) {
+                    self.focused-tab = Math.max(self.focused-tab - 1, 0);
+                    return accept;
+                }
+                if (event.text == Key.RightArrow) {
+                    self.focused-tab = Math.min(self.focused-tab + 1, root.model.length - 1);
+                    return accept;
+                }
+            } else {
+                if (event.text == Key.UpArrow) {
+                    self.focused-tab = Math.max(self.focused-tab - 1, 0);
+                    return accept;
+                }
+                if (event.text == Key.DownArrow) {
+                    self.focused-tab = Math.min(self.focused-tab + 1, root.model.length - 1);
+                    return accept;
+                }
+            }
+            return reject;
         }
 
-        navigation := VerticalLayout {
-            alignment: start;
-            vertical-stretch: 0;
-            accessible-role: tab-list;
-            accessible-delegate-focus: root.current-focused >= 0 ? root.current-focused : root.current-item;
-            accessible-label: root.title;
-            accessible-item-count: root.model.length;
-
-            fs := FocusScope {
-                key-pressed(event) => {
-                    if (event.text == "\n") {
-                        root.current-item = root.current-focused;
-                        return accept;
-                    }
-                    if (event.text == Key.UpArrow) {
-                        self.focused-tab = Math.max(self.focused-tab - 1, 0);
-                        return accept;
-                    }
-                    if (event.text == Key.DownArrow) {
-                        self.focused-tab = Math.min(self.focused-tab + 1, root.model.length - 1);
-                        return accept;
-                    }
-                    return reject;
-                }
-
-                key-released(event) => {
-                    if (event.text == " ") {
-                        root.current-item = root.current-focused;
-                        return accept;
-                    }
-                    return reject;
-                }
-
-                property <int> focused-tab: 0;
-
-                x: 0;
-                width: 0; // Do not react on clicks
+        key-released(event) => {
+            if (event.text == " ") {
+                root.current-item = root.current-focused;
+                return accept;
             }
+            return reject;
+        }
 
-            for item[index] in root.model: SideBarItem {
+        property <int> focused-tab: 0;
+
+        width: 0;
+        height: 0;
+    }
+
+    // Bottom bar in portrait: icons in a row, centered vertically in the bar.
+    portrait-strip := HorizontalLayout {
+        visible: root.portrait;
+        width: 100%;
+        height: 100%;
+        padding: 4px;
+        spacing: 4px;
+        alignment: space-evenly;
+
+        accessible-role: tab-list;
+        accessible-delegate-focus: root.current-focused >= 0 ? root.current-focused : root.current-item;
+        accessible-label: root.title;
+        accessible-item-count: root.model.length;
+
+        for item[index] in root.model: VerticalLayout {
+            alignment: center;
+
+            SideBarItem {
                 clicked => {
                     root.current-item = index;
                 }
 
                 tab-index: index;
                 has-focus: index == root.current-focused;
-                text: item;
+                icon: item.icon;
+                label: item.label;
                 selected: index == root.current-item;
             }
         }
+    }
 
-        VerticalLayout {
-            bottom := VerticalBox {
-                padding-top: 0px;
-                padding-bottom: 0px;
+    // Left rail in landscape: icons in a column, centered horizontally in the bar.
+    landscape-strip := VerticalLayout {
+        visible: !root.portrait;
+        width: 100%;
+        height: 100%;
+        padding: 4px;
+        spacing: 4px;
+        alignment: space-evenly;
 
-                @children
+        accessible-role: tab-list;
+        accessible-delegate-focus: root.current-focused >= 0 ? root.current-focused : root.current-item;
+        accessible-label: root.title;
+        accessible-item-count: root.model.length;
+
+        for item[index] in root.model: HorizontalLayout {
+            alignment: center;
+
+            SideBarItem {
+                clicked => {
+                    root.current-item = index;
+                }
+
+                tab-index: index;
+                has-focus: index == root.current-focused;
+                icon: item.icon;
+                label: item.label;
+                selected: index == root.current-item;
             }
         }
     }

@@ -66,8 +66,8 @@ export component AppWindow inherits Window {
     in-out property disable_expansion_pak <=> SettingsData.disable_expansion_pak;
     in-out property resolution <=> SettingsData.resolution;
     in-out property emulate_usb <=> SettingsData.emulate_usb;
+    in-out property emulate_vru <=> SettingsData.emulate_vru;
     in-out property rom_dir <=> SettingsData.rom_dir;
-    in-out property emulate_vru <=> ControllerData.emulate_vru;
     in-out property controller_enabled <=> ControllerData.controller_enabled;
     in-out property controller_changed <=> ControllerData.controller_changed;
     in-out property transferpak <=> ControllerData.transferpak;
@@ -83,26 +83,66 @@ export component AppWindow inherits Window {
     in-out property cheat_game_name <=> CheatsData.cheat_game_name;
     in-out property cheat_game_crc <=> CheatsData.cheat_game_crc;
     in-out property cheats <=> CheatsData.cheats;
-    preferred-width: 700px;
-    preferred-height: 500px;
+
+    private property <bool> is-portrait: root.width < root.height;
+    private property <length> bar-thickness: 56px;
+
+    min-width: 320px;
+    min-height: 240px;
+    preferred-width: 600px;
+    preferred-height: 600px;
     title: "Gopher64";
     icon: @image-url("../../../data/icon/gopher64.png");
 
-    HorizontalLayout {
-        side-bar := SideBar {
-            title: "Gopher64";
-            model: [
-                @tr("Menu" => "Local Game"),
-                @tr("Menu" => "Controller Config"),
-                @tr("Menu" => "Netplay"),
-                @tr("Menu" => "Cheats"),
-                @tr("Menu" => "RetroAchievements"),
-                @tr("Menu" => "Settings"),
-                @tr("Menu" => "About")
-            ];
-        }
+    side-bar := SideBar {
+        portrait: root.is-portrait;
+        title: "Gopher64";
+        model: [
+            {
+                icon: @image-url("../../../data/ui/icons/local_game.svg"),
+                label: @tr("Menu" => "Local Game"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/controller.svg"),
+                label: @tr("Menu" => "Controller Config"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/netplay.svg"),
+                label: @tr("Menu" => "Netplay"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/cheats.svg"),
+                label: @tr("Menu" => "Cheats"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/achievements.svg"),
+                label: @tr("Menu" => "RetroAchievements"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/settings.svg"),
+                label: @tr("Menu" => "Settings"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/about.svg"),
+                label: @tr("Menu" => "About"),
+            },
+        ];
+        x: 0;
+        y: root.is-portrait ? parent.height - root.bar-thickness : 0;
+        width: root.is-portrait ? parent.width : root.bar-thickness;
+        height: root.is-portrait ? root.bar-thickness : parent.height;
+    }
+
+    content-area := Rectangle {
+        clip: true;
+        x: root.is-portrait ? 0 : root.bar-thickness;
+        y: 0;
+        width: root.is-portrait ? parent.width : parent.width - root.bar-thickness;
+        height: root.is-portrait ? parent.height - root.bar-thickness : parent.height;
 
         if(side-bar.current-item == 0): LocalGame {
+            width: 100%;
+            height: 100%;
             open_rom_button_clicked => {
                 open_rom_button_clicked();
             }
@@ -117,6 +157,8 @@ export component AppWindow inherits Window {
             }
         }
         if(side-bar.current-item == 1): ControllerConfig {
+            width: 100%;
+            height: 100%;
             input_profile_button_clicked => {
                 input_profile_button_clicked();
             }
@@ -128,6 +170,8 @@ export component AppWindow inherits Window {
             }
         }
         if(side-bar.current-item == 2): Netplay {
+            width: 100%;
+            height: 100%;
             create_session_button_clicked => {
                 create_session_button_clicked();
             }
@@ -142,6 +186,8 @@ export component AppWindow inherits Window {
             }
         }
         if(side-bar.current-item == 3): Cheats {
+            width: 100%;
+            height: 100%;
             cheats_select_rom_clicked(rom_dir) => {
                 cheats_select_rom_clicked(rom_dir);
             }
@@ -153,6 +199,8 @@ export component AppWindow inherits Window {
             }
         }
         if(side-bar.current-item == 4): RetroAchievements {
+            width: 100%;
+            height: 100%;
             ra_button_clicked(password) => {
                 ra_button_clicked(password);
             }
@@ -166,8 +214,13 @@ export component AppWindow inherits Window {
                 ra_show_profile_clicked();
             }
          }
-        if(side-bar.current-item == 5): Settings { }
+        if(side-bar.current-item == 5): Settings {
+            width: 100%;
+            height: 100%;
+        }
         if(side-bar.current-item == 6): About {
+            width: 100%;
+            height: 100%;
             wiki_button_clicked => {
                 wiki_button_clicked();
             }
