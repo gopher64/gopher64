@@ -96,20 +96,14 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
     );
 
     app.on_ra_games_clicked(move || {
-        if let Err(e) =
-            open::that_detached("https://retroachievements.org/system/2-nintendo-64/games")
-        {
-            eprintln!("Error opening games: {}", e);
-        }
+        ui::gui::open_uri("https://retroachievements.org/system/2-nintendo-64/games");
     });
 
     app.on_ra_show_profile_clicked(move || {
-        if let Err(e) = open::that_detached(format!(
+        ui::gui::open_uri(format!(
             "https://retroachievements.org/user/{}",
             retroachievements::get_username().unwrap_or_default()
-        )) {
-            eprintln!("Error opening profile: {}", e);
-        }
+        ));
     });
 }
 
