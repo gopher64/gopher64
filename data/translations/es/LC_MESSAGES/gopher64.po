@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-05-19 06:44+0000\n"
+"POT-Creation-Date: 2026-05-19 09:43+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: Gemini\n"
 "Language-Team: Spanish (Spain)\n"
@@ -102,7 +102,7 @@ msgctxt "Cheats"
 msgid "Clear Cheats For All ROMs"
 msgstr "Borrar trucos de todas las ROMs"
 
-#: src/ui/gui/cheat_page.slint:86
+#: src/ui/gui/cheat_page.slint:87
 msgctxt "Cheats"
 msgid "No Cheats Available"
 msgstr "No hay trucos disponibles"
@@ -127,17 +127,17 @@ msgctxt "ControllerConfig"
 msgid "Controller Configuration"
 msgstr "Configuración del mando"
 
-#: src/ui/gui/controller_page.slint:168
+#: src/ui/gui/controller_page.slint:171
 msgctxt "ControllerConfig"
 msgid "Configure Input Profile"
 msgstr "Configurar perfil de entrada"
 
-#: src/ui/gui/controller_page.slint:176
+#: src/ui/gui/controller_page.slint:180
 msgctxt "ControllerConfig"
 msgid "Controller Settings"
 msgstr "Ajustes del mando"
 
-#: src/ui/gui/controller_page.slint:186
+#: src/ui/gui/controller_page.slint:190
 msgctxt "ControllerConfig"
 msgid "Controller Assignment"
 msgstr "Asignación del mando"
@@ -430,52 +430,52 @@ msgctxt "RetroAchievements"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/retroachievements_page.slint:34
+#: src/ui/gui/retroachievements_page.slint:36
 msgctxt "RetroAchievements"
 msgid "Enabled"
 msgstr "Activado"
 
-#: src/ui/gui/retroachievements_page.slint:52
+#: src/ui/gui/retroachievements_page.slint:51
 msgctxt "RetroAchievements"
 msgid "Hardcore mode"
 msgstr "Modo Hardcore"
 
-#: src/ui/gui/retroachievements_page.slint:64
+#: src/ui/gui/retroachievements_page.slint:60
 msgctxt "RetroAchievements"
 msgid "Challenge Indicators"
 msgstr "Indicadores de desafío"
 
-#: src/ui/gui/retroachievements_page.slint:76
+#: src/ui/gui/retroachievements_page.slint:69
 msgctxt "RetroAchievements"
 msgid "Leaderboard Trackers"
 msgstr "Indicadores de tabla de clasificación"
 
-#: src/ui/gui/retroachievements_page.slint:88
+#: src/ui/gui/retroachievements_page.slint:78
 msgctxt "RetroAchievements"
 msgid "Discord Rich Presence"
 msgstr "Rich Presence en Discord"
 
-#: src/ui/gui/retroachievements_page.slint:105
+#: src/ui/gui/retroachievements_page.slint:96
 msgctxt "RetroAchievements"
 msgid "View Profile"
 msgstr "Ver perfil"
 
-#: src/ui/gui/retroachievements_page.slint:115
+#: src/ui/gui/retroachievements_page.slint:106
 msgctxt "RetroAchievements"
 msgid "Username"
 msgstr "Usuario"
 
-#: src/ui/gui/retroachievements_page.slint:125
+#: src/ui/gui/retroachievements_page.slint:116
 msgctxt "RetroAchievements"
 msgid "Password"
 msgstr "Contraseña"
 
-#: src/ui/gui/retroachievements_page.slint:134
+#: src/ui/gui/retroachievements_page.slint:125
 msgctxt "RetroAchievements"
 msgid "Login"
 msgstr "Entrar"
 
-#: src/ui/gui/retroachievements_page.slint:150
+#: src/ui/gui/retroachievements_page.slint:141
 msgctxt "RetroAchievements"
 msgid "View Supported Games"
 msgstr "Ver juegos compatibles"
@@ -485,57 +485,57 @@ msgctxt "Settings"
 msgid "Settings"
 msgstr "Ajustes"
 
-#: src/ui/gui/settings_page.slint:30
+#: src/ui/gui/settings_page.slint:34
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr "Resolución:"
 
-#: src/ui/gui/settings_page.slint:46
+#: src/ui/gui/settings_page.slint:48
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr "Reducción de escala SSAA"
 
-#: src/ui/gui/settings_page.slint:57
+#: src/ui/gui/settings_page.slint:56
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr "Escalado por enteros"
 
-#: src/ui/gui/settings_page.slint:68
+#: src/ui/gui/settings_page.slint:64
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr "Pantalla completa"
 
-#: src/ui/gui/settings_page.slint:79
+#: src/ui/gui/settings_page.slint:72
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr "Pantalla ancha (estirado)"
 
-#: src/ui/gui/settings_page.slint:90
+#: src/ui/gui/settings_page.slint:80
 msgctxt "Settings"
 msgid "VSync"
 msgstr "Sincronización vertical (VSync)"
 
-#: src/ui/gui/settings_page.slint:101
+#: src/ui/gui/settings_page.slint:88
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr "Aplicar sombreador CRT"
 
-#: src/ui/gui/settings_page.slint:116
+#: src/ui/gui/settings_page.slint:100
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr "Overclock CPU N64 (puede causar errores)"
 
-#: src/ui/gui/settings_page.slint:127
+#: src/ui/gui/settings_page.slint:108
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "Desactivar Expansion Pak"
 
-#: src/ui/gui/settings_page.slint:138
+#: src/ui/gui/settings_page.slint:116
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
 msgstr "Emular UNFLoader"
 
-#: src/ui/gui/settings_page.slint:149
+#: src/ui/gui/settings_page.slint:124
 msgctxt "Settings"
 msgid "Emulate VRU"
 msgstr "Emular VRU"
