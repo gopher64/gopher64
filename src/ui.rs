@@ -1,3 +1,5 @@
+#[cfg(target_os = "android")]
+pub mod android_input;
 pub mod audio;
 #[cfg(feature = "gui")]
 pub mod cheats;
