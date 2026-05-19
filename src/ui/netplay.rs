@@ -3,7 +3,7 @@ use crate::device;
 use crate::ui;
 use crate::ui::gui::{
     AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, NetplayCreate, NetplayDevice,
-    NetplayJoin, NetplayWait, run_rom, save_settings,
+    NetplayJoin, NetplayWait, open_uri, run_rom, save_settings,
 };
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
@@ -1265,14 +1265,9 @@ pub fn netplay_window(app: &AppWindow) {
     });
 
     app.on_netplay_discord_button_clicked(move || {
-        if let Err(e) = open::that_detached("https://discord.gg/JyW6ZgBUyS") {
-            eprintln!("Error opening Discord: {}", e);
-        }
+        open_uri("https://discord.gg/JyW6ZgBUyS");
     });
     app.on_netplay_feedback_button_clicked(move || {
-        if let Err(e) = open::that_detached("https://github.com/gopher64/gopher64/discussions/453")
-        {
-            eprintln!("Error opening feedback: {}", e);
-        }
+        open_uri("https://github.com/gopher64/gopher64/discussions/453");
     });
 }
