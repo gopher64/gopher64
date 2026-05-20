@@ -47,7 +47,6 @@ open = { version = "5.3", optional = true }
 [target.'cfg(target_os = "android")'.dependencies]
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "backend-android-activity-06", "accessibility"], optional = true }
 jni = "0.22"
-ndk-context = "0.1"
 
 [build-dependencies]
 winresource = "0.1"

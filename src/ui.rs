@@ -128,32 +128,29 @@ pub fn sdl_close() {
     }
 }
 
-#[cfg(not(target_os = "android"))]
 pub fn get_dirs() -> Dirs {
-    let exe_path = std::env::current_exe().unwrap();
-    let portable_dir = exe_path.parent();
-    let portable = portable_dir.unwrap().join("portable.txt").exists();
-    if portable {
-        Dirs {
-            config_dir: portable_dir.unwrap().join("portable_data").join("config"),
-            data_dir: portable_dir.unwrap().join("portable_data").join("data"),
-            cache_dir: portable_dir.unwrap().join("portable_data").join("cache"),
-        }
-    } else {
-        Dirs {
-            config_dir: dirs::config_dir().unwrap().join("gopher64"),
-            data_dir: dirs::data_dir().unwrap().join("gopher64"),
-            cache_dir: dirs::cache_dir().unwrap().join("gopher64"),
+    #[cfg(not(target_os = "android"))]
+    {
+        let exe_path = std::env::current_exe().unwrap();
+        let portable_dir = exe_path.parent();
+        let portable = portable_dir.unwrap().join("portable.txt").exists();
+        if portable {
+            Dirs {
+                config_dir: portable_dir.unwrap().join("portable_data").join("config"),
+                data_dir: portable_dir.unwrap().join("portable_data").join("data"),
+                cache_dir: portable_dir.unwrap().join("portable_data").join("cache"),
+            }
+        } else {
+            Dirs {
+                config_dir: dirs::config_dir().unwrap().join("gopher64"),
+                data_dir: dirs::data_dir().unwrap().join("gopher64"),
+                cache_dir: dirs::cache_dir().unwrap().join("gopher64"),
+            }
         }
     }
-}
-
-#[cfg(target_os = "android")]
-pub fn get_dirs() -> Dirs {
-    if let Some(android_dirs) = android::DIRS.get() {
-        android_dirs.clone()
-    } else {
-        panic!("Android app not initialized");
+    #[cfg(target_os = "android")]
+    {
+        android::get_dirs()
     }
 }
 

@@ -1,4 +1,4 @@
-import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Button } from "std-widgets.slint";
+import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Button, ScrollView } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 
 export component NetplayJoin inherits Window {
@@ -22,116 +22,129 @@ export component NetplayJoin inherits Window {
     callback select_rom(string);
     callback join_session(string, string, string, string, int);
     preferred-width: 700px;
+    preferred-height: 450px;
 
     VerticalBox {
-        HorizontalBox {
+        vertical-stretch: 1;
+        padding-left: root.safe-area-insets.left;
+        padding-top: root.safe-area-insets.top;
+        padding-right: root.safe-area-insets.right;
+        padding-bottom: root.safe-area-insets.bottom;
+        ScrollView {
+            mouse-drag-pan-enabled: true;
+            vertical-stretch: 1;
             VerticalBox {
-                Text {
-                    text: @tr("Player Name (required):");
-                }
+                alignment: start;
+                HorizontalBox {
+                    VerticalBox {
+                        Text {
+                            text: @tr("Player Name (required):");
+                        }
 
-                LineEdit {
-                    placeholder-text: @tr("Enter player name");
-                    edited(text) => {
-                        NetplayData.player_name = text;
+                        LineEdit {
+                            placeholder-text: @tr("Enter player name");
+                            edited(text) => {
+                                NetplayData.player_name = text;
+                            }
+                        }
+                    }
+
+                    VerticalBox {
+                        Text {
+                            text: @tr("Custom Server URL (optional):");
+                        }
+
+                        LineEdit {
+                            placeholder-text: "example.com:45000";
+                            text: NetplayData.custom_server_url;
+                            edited(text) => {
+                                NetplayData.custom_server_url = text;
+                            }
+                        }
                     }
                 }
-            }
 
-            VerticalBox {
-                Text {
-                    text: @tr("Custom Server URL (optional):");
+                if NetplayData.pending_refresh: Text {
+                    text: @tr("Refreshing session list, please wait...");
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
                 }
-
-                LineEdit {
-                    placeholder-text: "example.com:45000";
-                    text: NetplayData.custom_server_url;
-                    edited(text) => {
-                        NetplayData.custom_server_url = text;
+                if !NetplayData.pending_refresh && NetplayData.sessions.length > 0: Text {
+                    text: @tr("Click on a session below to select it");
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                if !NetplayData.pending_refresh && NetplayData.sessions.length == 0: Text {
+                    text: @tr("No sessions available. Please refresh to check again.");
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                StandardTableView {
+                    columns: [
+                    { title: @tr("Server") },
+                    { title: @tr("Session Name") },
+                    { title: @tr("Game Name") },
+                    { title: @tr("Password") },
+                    { title: @tr("Cheats") }
+                    ];
+                    rows: NetplayData.sessions;
+                    current-row: NetplayData.current_session;
+                    current-row-changed(current-row) => {
+                        NetplayData.current_session = current-row;
                     }
                 }
-            }
-        }
 
-        if NetplayData.pending_refresh: Text {
-            text: @tr("Refreshing session list, please wait...");
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
-        if !NetplayData.pending_refresh && NetplayData.sessions.length > 0: Text {
-            text: @tr("Click on a session below to select it");
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
-        if !NetplayData.pending_refresh && NetplayData.sessions.length == 0: Text {
-            text: @tr("No sessions available. Please refresh to check again.");
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
-        StandardTableView {
-            columns: [
-                { title: @tr("Server") },
-                { title: @tr("Session Name") },
-                { title: @tr("Game Name") },
-                { title: @tr("Password") },
-                { title: @tr("Cheats") }
-            ];
-            rows: NetplayData.sessions;
-            current-row: NetplayData.current_session;
-            current-row-changed(current-row) => {
-                NetplayData.current_session = current-row;
-            }
-        }
+                HorizontalBox {
+                    Rectangle { }
 
-        HorizontalBox {
-            Rectangle { }
-
-            Button {
-                enabled: !NetplayData.pending_refresh;
-                text: @tr("Refresh Session List");
-                clicked => {
-                    NetplayData.pending_refresh = true;
-                    NetplayData.current_session = -1;
-                    NetplayData.sessions = [];
-                    NetplayData.room_urls = [];
-                    NetplayData.room_ports = [];
-                    refresh_session();
+                    Button {
+                        enabled: !NetplayData.pending_refresh;
+                        text: @tr("Refresh Session List");
+                        clicked => {
+                            NetplayData.pending_refresh = true;
+                            NetplayData.current_session = -1;
+                            NetplayData.sessions = [];
+                            NetplayData.room_urls = [];
+                            NetplayData.room_ports = [];
+                            refresh_session();
+                        }
+                    }
                 }
-            }
-        }
 
-        HorizontalBox {
-            LineEdit {
-                placeholder-text: @tr("Password (if required)");
-                edited(text) => {
-                    NetplayData.password = text;
-                }
-            }
+                HorizontalBox {
+                    LineEdit {
+                        placeholder-text: @tr("Password (if required)");
+                        edited(text) => {
+                            NetplayData.password = text;
+                        }
+                    }
 
-            if NetplayData.game_name == "": Button {
-                text: @tr("Select ROM");
-                clicked => {
-                    select_rom(NetplayData.rom_dir);
-                }
-            }
-            if NetplayData.game_name != "": Button {
-                text: NetplayData.game_name;
-                clicked => {
-                    select_rom(NetplayData.rom_dir);
-                }
-            }
+                    if NetplayData.game_name == "": Button {
+                        text: @tr("Select ROM");
+                        clicked => {
+                            select_rom(NetplayData.rom_dir);
+                        }
+                    }
+                    if NetplayData.game_name != "": Button {
+                        text: NetplayData.game_name;
+                        clicked => {
+                            select_rom(NetplayData.rom_dir);
+                        }
+                    }
 
-            Button {
-                text: @tr("Join Session");
-                enabled: NetplayData.player_name != "" && NetplayData.current_session >= 0 && NetplayData.game_name != "" && !NetplayData.pending_session;
-                clicked => {
-                    NetplayData.pending_session = true;
-                    join_session(
-                    NetplayData.player_name,
-                    NetplayData.game_hash,
-                    NetplayData.password,
-                    NetplayData.room_urls[NetplayData.current_session],
-                    NetplayData.room_ports[NetplayData.current_session]);
+                    Button {
+                        text: @tr("Join Session");
+                        enabled: NetplayData.player_name != "" && NetplayData.current_session >= 0 && NetplayData.game_name != "" && !NetplayData.pending_session;
+                        clicked => {
+                            NetplayData.pending_session = true;
+                            join_session(
+                            NetplayData.player_name,
+                            NetplayData.game_hash,
+                            NetplayData.password,
+                            NetplayData.room_urls[NetplayData.current_session],
+                            NetplayData.room_ports[NetplayData.current_session]);
+                        }
+                    }
                 }
             }
         }

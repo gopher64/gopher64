@@ -105,34 +105,34 @@ export component AppWindow inherits Window {
         portrait: root.is-portrait;
         title: "Gopher64";
         model: [
-            {
-                icon: @image-url("../../../data/ui/icons/local_game.svg"),
-                label: @tr("Menu" => "Local Game"),
-            },
-            {
-                icon: @image-url("../../../data/ui/icons/controller.svg"),
-                label: @tr("Menu" => "Controller Config"),
-            },
-            {
-                icon: @image-url("../../../data/ui/icons/netplay.svg"),
-                label: @tr("Menu" => "Netplay"),
-            },
-            {
-                icon: @image-url("../../../data/ui/icons/cheats.svg"),
-                label: @tr("Menu" => "Cheats"),
-            },
-            {
-                icon: @image-url("../../../data/ui/icons/achievements.svg"),
-                label: @tr("Menu" => "RetroAchievements"),
-            },
-            {
-                icon: @image-url("../../../data/ui/icons/settings.svg"),
-                label: @tr("Menu" => "Settings"),
-            },
-            {
-                icon: @image-url("../../../data/ui/icons/about.svg"),
-                label: @tr("Menu" => "About"),
-            },
+        {
+            icon: @image-url("../../../data/ui/icons/local_game.svg"),
+            label: @tr("Menu" => "Local Game"),
+        },
+        {
+            icon: @image-url("../../../data/ui/icons/controller.svg"),
+            label: @tr("Menu" => "Controller Config"),
+        },
+        {
+            icon: @image-url("../../../data/ui/icons/netplay.svg"),
+            label: @tr("Menu" => "Netplay"),
+        },
+        {
+            icon: @image-url("../../../data/ui/icons/cheats.svg"),
+            label: @tr("Menu" => "Cheats"),
+        },
+        {
+            icon: @image-url("../../../data/ui/icons/achievements.svg"),
+            label: @tr("Menu" => "RetroAchievements"),
+        },
+        {
+            icon: @image-url("../../../data/ui/icons/settings.svg"),
+            label: @tr("Menu" => "Settings"),
+        },
+        {
+            icon: @image-url("../../../data/ui/icons/about.svg"),
+            label: @tr("Menu" => "About"),
+        },
         ];
         x: root.safe-left;
         y: root.is-portrait ? parent.height - root.bar-thickness - root.safe-bottom : root.safe-top;

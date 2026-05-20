@@ -2249,7 +2249,6 @@ dependencies = [
  "futures",
  "jni 0.22.4",
  "mimalloc",
- "ndk-context",
  "open",
  "postcard",
  "rand 0.10.1",

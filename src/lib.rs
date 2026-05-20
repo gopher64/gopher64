@@ -311,13 +311,7 @@ pub async fn run() -> std::io::Result<()> {
 async fn android_main(app: slint::android::AndroidApp) {
     slint::android::init(app.clone()).unwrap();
 
-    if let Err(_) = android::DIRS.set(ui::Dirs {
-        config_dir: app.internal_data_path().unwrap().join("config"),
-        data_dir: app.external_data_path().unwrap().join("data"),
-        cache_dir: app.internal_data_path().unwrap().join("cache"),
-    }) {
-        println!("Android dirs already set");
-    }
+    *android::ANDROID_APP.lock().unwrap() = Some(app);
 
     let dirs = ui::get_dirs();
 
@@ -327,4 +321,5 @@ async fn android_main(app: slint::android::AndroidApp) {
     std::fs::create_dir_all(dirs.data_dir.join("states")).unwrap();
 
     ui::gui::app_window(true);
+    *android::ANDROID_APP.lock().unwrap() = None;
 }
