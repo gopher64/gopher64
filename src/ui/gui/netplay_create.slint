@@ -1,8 +1,10 @@
-import { LineEdit, HorizontalBox, VerticalBox, Button, ComboBox } from "std-widgets.slint";
+import { LineEdit, HorizontalBox, VerticalBox, Button, ComboBox, ScrollView } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 
 export component NetplayCreate inherits Window {
     title: @tr("Netplay: Create Session");
+    preferred-width: 425px;
+    preferred-height: 425px;
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
     in-out property custom_server_url <=> NetplayData.custom_server_url;
@@ -18,115 +20,123 @@ export component NetplayCreate inherits Window {
     callback create_session(string, string, string, string, string, string, string);
 
     VerticalBox {
+        vertical-stretch: 1;
         padding-left: root.safe-area-insets.left;
         padding-top: root.safe-area-insets.top;
         padding-right: root.safe-area-insets.right;
         padding-bottom: root.safe-area-insets.bottom;
-        HorizontalBox {
+        ScrollView {
+            mouse-drag-pan-enabled: true;
+            vertical-stretch: 1;
             VerticalBox {
-                Text {
-                    text: @tr("Session Name:");
-                }
+                alignment: start;
+                HorizontalBox {
+                    VerticalBox {
+                        Text {
+                            text: @tr("Session Name:");
+                        }
 
-                LineEdit {
-                    placeholder-text: @tr("Enter session name");
-                    edited(text) => {
-                        NetplayData.session_name = text;
+                        LineEdit {
+                            placeholder-text: @tr("Enter session name");
+                            edited(text) => {
+                                NetplayData.session_name = text;
+                            }
+                        }
                     }
-                }
-            }
 
-            VerticalBox {
-                Text {
-                    text: @tr("Password (Optional):");
-                }
+                    VerticalBox {
+                        Text {
+                            text: @tr("Password (Optional):");
+                        }
 
-                LineEdit {
-                    placeholder-text: @tr("Enter session password");
-                    edited(text) => {
-                        NetplayData.password = text;
-                    }
-                }
-            }
-        }
-
-        VerticalBox {
-            Text {
-                text: @tr("Player Name:");
-            }
-
-            LineEdit {
-                placeholder-text: @tr("Enter player name");
-                edited(text) => {
-                    NetplayData.player_name = text;
-                }
-            }
-        }
-
-        VerticalBox {
-            Text {
-                text: @tr("Server:");
-            }
-
-            HorizontalBox {
-                server := ComboBox {
-                    model: NetplayData.server_names;
-                    selected => {
-                        if (self.current-index >= 0) {
-                            if (self.current-value == "Custom") {
-                                get_custom_url();
+                        LineEdit {
+                            placeholder-text: @tr("Enter session password");
+                            edited(text) => {
+                                NetplayData.password = text;
                             }
                         }
                     }
                 }
-            }
-        }
 
-        HorizontalBox {
-            alignment: center;
-            if NetplayData.game_name == "": Button {
-                text: @tr("Select ROM");
-                clicked => {
-                    select_rom(NetplayData.rom_dir);
+                VerticalBox {
+                    Text {
+                        text: @tr("Player Name:");
+                    }
+
+                    LineEdit {
+                        placeholder-text: @tr("Enter player name");
+                        edited(text) => {
+                            NetplayData.player_name = text;
+                        }
+                    }
                 }
-            }
-            if NetplayData.game_name != "": Button {
-                text: NetplayData.game_name;
-                clicked => {
-                    select_rom(NetplayData.rom_dir);
+
+                VerticalBox {
+                    Text {
+                        text: @tr("Server:");
+                    }
+
+                    HorizontalBox {
+                        server := ComboBox {
+                            model: NetplayData.server_names;
+                            selected => {
+                                if (self.current-index >= 0) {
+                                    if (self.current-value == "Custom") {
+                                        get_custom_url();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-        }
 
-        Rectangle { }
-
-        if NetplayData.game_cheats != "":Text {
-            text: @tr("This game has cheats enabled. Cheats will be synchronized with other players.");
-        }
-        Rectangle { }
-
-        Button {
-            property <string> server_url;
-            text: @tr("Create Session");
-            enabled: NetplayData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
-            clicked => {
-                NetplayData.pending_session = true;
-                if (server.current-value == "Custom") {
-                    server_url = "ws://" + NetplayData.custom_server_url;
-                } else {
-                    server_url = NetplayData.server_urls[server.current-index];
+                HorizontalBox {
+                    alignment: center;
+                    if NetplayData.game_name == "": Button {
+                        text: @tr("Select ROM");
+                        clicked => {
+                            select_rom(NetplayData.rom_dir);
+                        }
+                    }
+                    if NetplayData.game_name != "": Button {
+                        text: NetplayData.game_name;
+                        clicked => {
+                            select_rom(NetplayData.rom_dir);
+                        }
+                    }
                 }
-                create_session(
-                    server_url,
-                    NetplayData.session_name,
-                    NetplayData.player_name,
-                    NetplayData.game_name,
-                    NetplayData.game_hash,
-                    NetplayData.game_cheats,
-                    NetplayData.password);
+
+                Rectangle { }
+
+                if NetplayData.game_cheats != "":Text {
+                    text: @tr("This game has cheats enabled. Cheats will be synchronized with other players.");
+                }
+                Rectangle { }
+
+                Button {
+                    property <string> server_url;
+                    text: @tr("Create Session");
+                    enabled: NetplayData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
+                    clicked => {
+                        NetplayData.pending_session = true;
+                        if (server.current-value == "Custom") {
+                            server_url = "ws://" + NetplayData.custom_server_url;
+                        } else {
+                            server_url = NetplayData.server_urls[server.current-index];
+                        }
+                        create_session(
+                        server_url,
+                        NetplayData.session_name,
+                        NetplayData.player_name,
+                        NetplayData.game_name,
+                        NetplayData.game_hash,
+                        NetplayData.game_cheats,
+                        NetplayData.password);
+                    }
+                }
+                Rectangle { }
             }
         }
-        Rectangle { }
     }
 }
 

@@ -46,20 +46,20 @@ component SideBarButton inherits Rectangle {
     }
 
     states [
-        selected when root.selected: {
-            highlight.opacity: 1;
-            highlight.background: Palette.accent-background;
-            icon-display.colorize: Palette.accent-foreground;
-        }
-        pressed when touch.pressed && !root.selected: {
-            highlight.opacity: 0.55;
-        }
-        hover when touch.has-hover && !root.selected: {
-            highlight.opacity: 0.4;
-        }
-        focused when root.has-focus && !root.selected: {
-            highlight.opacity: 0.4;
-        }
+    selected when root.selected: {
+        highlight.opacity: 1;
+        highlight.background: Palette.accent-background;
+        icon-display.colorize: Palette.accent-foreground;
+    }
+    pressed when touch.pressed && !root.selected: {
+        highlight.opacity: 0.55;
+    }
+    hover when touch.has-hover && !root.selected: {
+        highlight.opacity: 0.4;
+    }
+    focused when root.has-focus && !root.selected: {
+        highlight.opacity: 0.4;
+    }
     ]
 }
 
