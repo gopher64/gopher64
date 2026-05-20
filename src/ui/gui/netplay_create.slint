@@ -78,16 +78,19 @@ export component NetplayCreate inherits Window {
             }
         }
 
-        if NetplayData.game_name == "": Button {
-            text: @tr("Select ROM");
-            clicked => {
-                select_rom(NetplayData.rom_dir);
+        HorizontalBox {
+            alignment: center;
+            if NetplayData.game_name == "": Button {
+                text: @tr("Select ROM");
+                clicked => {
+                    select_rom(NetplayData.rom_dir);
+                }
             }
-        }
-        if NetplayData.game_name != "": Button {
-            text: NetplayData.game_name;
-            clicked => {
-                select_rom(NetplayData.rom_dir);
+            if NetplayData.game_name != "": Button {
+                text: NetplayData.game_name;
+                clicked => {
+                    select_rom(NetplayData.rom_dir);
+                }
             }
         }
 
