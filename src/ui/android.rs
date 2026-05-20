@@ -74,17 +74,12 @@ pub struct ControllerInfo {
 
 /// Lists connected gamepads and joysticks using the Android framework.
 pub fn list_controllers() -> Vec<ControllerInfo> {
-    let app = if let Ok(app) = ANDROID_APP.lock() {
-        app
-    } else {
-        println!("Android app not initialized");
-        return Vec::new();
-    };
-
-    let vm = if let Some(app) = app.as_ref() {
+    let vm = if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
     } else {
-        println!("Android app not initialized");
+        eprintln!("Android app not initialized");
         return Vec::new();
     };
 
@@ -164,16 +159,12 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
 pub fn open_uri(path: &str) {
     let path = path.to_string();
 
-    let app = if let Ok(app) = ANDROID_APP.lock() {
-        app
-    } else {
-        println!("Android app not initialized");
-        return;
-    };
-    let vm = if let Some(app) = app.as_ref() {
+    let vm = if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
     } else {
-        println!("Android app not initialized");
+        eprintln!("Android app not initialized");
         return;
     };
     if let Err(err) = vm.attach_current_thread(|env| open_uri_on_jvm(env, &path)) {
@@ -182,28 +173,23 @@ pub fn open_uri(path: &str) {
 }
 
 fn open_uri_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<()> {
-    let app = if let Ok(app) = ANDROID_APP.lock() {
-        app
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+
+        let uri_string = JString::from_str(env, path.to_string())?;
+        let uri = AndroidUri::parse(env, &uri_string)?;
+
+        let action_view = AndroidIntent::ACTION_VIEW(env)?;
+        let intent = AndroidIntent::new(env, &action_view)?.set_data(env, &uri)?;
+
+        activity.as_ref().start_activity(env, &intent)?;
+        Ok(())
     } else {
-        println!("Android app not initialized");
-        return Err(jni::errors::Error::UninitializedJavaVM);
-    };
-    let raw_activity_global = if let Some(app) = app.as_ref() {
-        app.activity_as_ptr() as jni::sys::jobject
-    } else {
-        println!("Android app not initialized");
-        return Err(jni::errors::Error::UninitializedJavaVM);
-    };
-    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
-
-    let uri_string = JString::from_str(env, path.to_string())?;
-    let uri = AndroidUri::parse(env, &uri_string)?;
-
-    let action_view = AndroidIntent::ACTION_VIEW(env)?;
-    let intent = AndroidIntent::new(env, &action_view)?.set_data(env, &uri)?;
-
-    activity.as_ref().start_activity(env, &intent)?;
-    Ok(())
+        Err(jni::errors::Error::UninitializedJavaVM)
+    }
 }
 
 pub async fn select_rom(_rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
@@ -219,12 +205,9 @@ pub async fn select_gb_ram(_player: i32) -> Option<std::path::PathBuf> {
 }
 
 pub fn get_dirs() -> ui::Dirs {
-    let app = if let Ok(app) = ANDROID_APP.lock() {
-        app
-    } else {
-        panic!("Android app not initialized");
-    };
-    if let Some(app) = app.as_ref() {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         ui::Dirs {
             config_dir: app.internal_data_path().unwrap().join("config"),
             data_dir: app.external_data_path().unwrap().join("data"),
