@@ -27,6 +27,7 @@ export component NetplayWait inherits Window {
     callback begin_game;
 
     VerticalBox {
+        vertical-stretch: 1;
         padding-left: root.safe-area-insets.left;
         padding-top: root.safe-area-insets.top;
         padding-right: root.safe-area-insets.right;
@@ -71,6 +72,7 @@ export component NetplayWait inherits Window {
         }
 
         TextEdit {
+            vertical-stretch: 1;
             read-only: true;
             text: NetplayWaitData.chat_text;
         }
@@ -109,6 +111,9 @@ export component NetplayWait inherits Window {
                 NetplayWaitData.can_start = false;
                 begin_game();
             }
+        }
+        Rectangle {
+            vertical-stretch: 0;
         }
     }
 }
