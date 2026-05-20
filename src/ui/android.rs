@@ -3,10 +3,12 @@ use jni::refs::Global;
 use jni::{Env, JavaVM, bind_java_type};
 
 use crate::ui;
-pub static DIRS: std::sync::OnceLock<ui::Dirs> = std::sync::OnceLock::new();
+
+pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
+    std::sync::Mutex::new(None);
 
 bind_java_type! {
-    AndroidContext => "android.content.Context",
+    AndroidActivity => "android.app.Activity",
     type_map = {
         AndroidIntent => "android.content.Intent",
     },
@@ -72,9 +74,19 @@ pub struct ControllerInfo {
 
 /// Lists connected gamepads and joysticks using the Android framework.
 pub fn list_controllers() -> Vec<ControllerInfo> {
-    let ctx = ndk_context::android_context();
+    let app = if let Ok(app) = ANDROID_APP.lock() {
+        app
+    } else {
+        println!("Android app not initialized");
+        return Vec::new();
+    };
 
-    let vm = unsafe { JavaVM::from_raw(ctx.vm().cast()) };
+    let vm = if let Some(app) = app.as_ref() {
+        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
+    } else {
+        println!("Android app not initialized");
+        return Vec::new();
+    };
 
     match vm.attach_current_thread(list_controllers_on_jvm) {
         Ok(controllers) => controllers,
@@ -150,34 +162,47 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
 
 /// Opens a URI in the user's default app via [`Intent::ACTION_VIEW`](https://developer.android.com/reference/android/content/Intent#ACTION_VIEW).
 pub fn open_uri(path: &str) {
-    let ctx = ndk_context::android_context();
-
     let path = path.to_string();
 
-    let vm = unsafe { JavaVM::from_raw(ctx.vm().cast()) };
-    if let Err(err) = vm.attach_current_thread(|env| open_uri_on_jvm(env, ctx.context(), &path)) {
+    let app = if let Ok(app) = ANDROID_APP.lock() {
+        app
+    } else {
+        println!("Android app not initialized");
+        return;
+    };
+    let vm = if let Some(app) = app.as_ref() {
+        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
+    } else {
+        println!("Android app not initialized");
+        return;
+    };
+    if let Err(err) = vm.attach_current_thread(|env| open_uri_on_jvm(env, &path)) {
         eprintln!("JNI error while opening URI: {err:?}");
     }
 }
 
-fn open_uri_on_jvm(
-    env: &mut Env<'_>,
-    context: *mut std::ffi::c_void,
-    path: &str,
-) -> jni::errors::Result<()> {
-    let context_ptr = context.cast();
-    let context = unsafe { env.as_cast_raw::<Global<AndroidContext>>(&context_ptr)? };
+fn open_uri_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<()> {
+    let app = if let Ok(app) = ANDROID_APP.lock() {
+        app
+    } else {
+        println!("Android app not initialized");
+        return Err(jni::errors::Error::UninitializedJavaVM);
+    };
+    let raw_activity_global = if let Some(app) = app.as_ref() {
+        app.activity_as_ptr() as jni::sys::jobject
+    } else {
+        println!("Android app not initialized");
+        return Err(jni::errors::Error::UninitializedJavaVM);
+    };
+    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
     let uri_string = JString::from_str(env, path.to_string())?;
     let uri = AndroidUri::parse(env, &uri_string)?;
 
     let action_view = AndroidIntent::ACTION_VIEW(env)?;
-    let flag = AndroidIntent::FLAG_ACTIVITY_NEW_TASK(env)?;
-    let intent = AndroidIntent::new(env, &action_view)?
-        .set_data(env, &uri)?
-        .add_flags(env, flag)?;
+    let intent = AndroidIntent::new(env, &action_view)?.set_data(env, &uri)?;
 
-    context.as_ref().start_activity(env, &intent)?;
+    activity.as_ref().start_activity(env, &intent)?;
     Ok(())
 }
 
@@ -191,4 +216,21 @@ pub async fn select_gb_rom(_player: i32) -> Option<std::path::PathBuf> {
 
 pub async fn select_gb_ram(_player: i32) -> Option<std::path::PathBuf> {
     None
+}
+
+pub fn get_dirs() -> ui::Dirs {
+    let app = if let Ok(app) = ANDROID_APP.lock() {
+        app
+    } else {
+        panic!("Android app not initialized");
+    };
+    if let Some(app) = app.as_ref() {
+        ui::Dirs {
+            config_dir: app.internal_data_path().unwrap().join("config"),
+            data_dir: app.external_data_path().unwrap().join("data"),
+            cache_dir: app.internal_data_path().unwrap().join("cache"),
+        }
+    } else {
+        panic!("Android app not initialized");
+    }
 }
