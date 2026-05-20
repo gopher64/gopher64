@@ -87,6 +87,12 @@ export component AppWindow inherits Window {
 
     private property <bool> is-portrait: root.width < root.height;
     private property <length> bar-thickness: 56px;
+    private property <length> safe-left: root.safe-area-insets.left;
+    private property <length> safe-top: root.safe-area-insets.top;
+    private property <length> safe-right: root.safe-area-insets.right;
+    private property <length> safe-bottom: root.safe-area-insets.bottom;
+    private property <length> safe-width: root.width - root.safe-left - root.safe-right;
+    private property <length> safe-height: root.height - root.safe-top - root.safe-bottom;
 
     min-width: 320px;
     min-height: 240px;
@@ -128,18 +134,18 @@ export component AppWindow inherits Window {
                 label: @tr("Menu" => "About"),
             },
         ];
-        x: 0;
-        y: root.is-portrait ? parent.height - root.bar-thickness : 0;
-        width: root.is-portrait ? parent.width : root.bar-thickness;
-        height: root.is-portrait ? root.bar-thickness : parent.height;
+        x: root.safe-left;
+        y: root.is-portrait ? parent.height - root.bar-thickness - root.safe-bottom : root.safe-top;
+        width: root.is-portrait ? root.safe-width : root.bar-thickness;
+        height: root.is-portrait ? root.bar-thickness : root.safe-height;
     }
 
     content-area := Rectangle {
         clip: true;
-        x: root.is-portrait ? 0 : root.bar-thickness;
-        y: 0;
-        width: root.is-portrait ? parent.width : parent.width - root.bar-thickness;
-        height: root.is-portrait ? parent.height - root.bar-thickness : parent.height;
+        x: root.is-portrait ? root.safe-left : root.safe-left + root.bar-thickness;
+        y: root.safe-top;
+        width: root.is-portrait ? root.safe-width : root.safe-width - root.bar-thickness;
+        height: root.is-portrait ? root.safe-height - root.bar-thickness : root.safe-height;
 
         if(side-bar.current-item == 0): LocalGame {
             width: 100%;
