@@ -27,6 +27,10 @@ export component NetplayWait inherits Window {
     callback begin_game;
 
     VerticalBox {
+        padding-left: root.safe-area-insets.left;
+        padding-top: root.safe-area-insets.top;
+        padding-right: root.safe-area-insets.right;
+        padding-bottom: root.safe-area-insets.bottom;
         Text {
             text: @tr("Session Name:") + " " + NetplayData.session_name;
             font-size: 15px;

@@ -82,9 +82,15 @@ export component CustomNetplayServer inherits Dialog {
     title: @tr("Custom Netplay Server");
     preferred-width: 400px;
     callback ok_clicked(string);
-    server_url := LineEdit {
-        text: NetplayData.custom_server_url;
-        placeholder-text: "example.com:45000";
+    VerticalBox {
+        padding-left: root.safe-area-insets.left;
+        padding-top: root.safe-area-insets.top;
+        padding-right: root.safe-area-insets.right;
+        padding-bottom: root.safe-area-insets.bottom;
+        server_url := LineEdit {
+            text: NetplayData.custom_server_url;
+            placeholder-text: "example.com:45000";
+        }
     }
 
     StandardButton {

@@ -18,6 +18,10 @@ export component NetplayCreate inherits Window {
     callback create_session(string, string, string, string, string, string, string);
 
     VerticalBox {
+        padding-left: root.safe-area-insets.left;
+        padding-top: root.safe-area-insets.top;
+        padding-right: root.safe-area-insets.right;
+        padding-bottom: root.safe-area-insets.bottom;
         HorizontalBox {
             VerticalBox {
                 Text {
@@ -127,7 +131,13 @@ export component NetplayCreate inherits Window {
 
 export component DispatcherDialog inherits Dialog {
     title: @tr("Creating Server");
-    Text {
-        text: @tr("Creating server, please wait...This may take about 30 seconds.");
+    VerticalBox {
+        padding-left: root.safe-area-insets.left;
+        padding-top: root.safe-area-insets.top;
+        padding-right: root.safe-area-insets.right;
+        padding-bottom: root.safe-area-insets.bottom;
+        Text {
+            text: @tr("Creating server, please wait...This may take about 30 seconds.");
+        }
     }
 }
