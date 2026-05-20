@@ -83,17 +83,21 @@ export component CustomNetplayServer inherits Dialog {
     preferred-width: 400px;
     callback ok_clicked(string);
     VerticalBox {
+        alignment: start;
+        vertical-stretch: 1;
         padding-left: root.safe-area-insets.left;
         padding-top: root.safe-area-insets.top;
         padding-right: root.safe-area-insets.right;
         padding-bottom: root.safe-area-insets.bottom;
         server_url := LineEdit {
+            vertical-stretch: 0;
             text: NetplayData.custom_server_url;
             placeholder-text: "example.com:45000";
         }
     }
 
     StandardButton {
+        vertical-stretch: 0;
         kind: ok;
         clicked => {
             NetplayData.custom_server_url = server_url.text;
