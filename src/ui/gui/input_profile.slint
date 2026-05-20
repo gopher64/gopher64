@@ -13,8 +13,13 @@ export component InputProfileDialog inherits Window {
     in-out property profile_name <=> InputProfileData.profile_name;
     in-out property deadzone <=> InputProfileData.deadzone;
     VerticalBox {
+        alignment: start;
+
         HorizontalBox {
+            alignment: center;
+            vertical-stretch: 0;
             LineEdit {
+                vertical-stretch: 0;
                 placeholder-text: @tr("Enter profile name to create or modify");
                 preferred-width: 400px;
                 edited(text) => {
@@ -24,6 +29,7 @@ export component InputProfileDialog inherits Window {
         }
 
         HorizontalBox {
+            vertical-stretch: 0;
             alignment: center;
             Text {
                 text: @tr("Deadzone Percentage");
@@ -46,6 +52,7 @@ export component InputProfileDialog inherits Window {
         }
 
         HorizontalBox {
+            vertical-stretch: 0;
             alignment: center;
             Switch {
                 text: @tr("Use DirectInput");
@@ -57,13 +64,20 @@ export component InputProfileDialog inherits Window {
         }
 
         HorizontalBox {
+            alignment: center;
+            vertical-stretch: 0;
             Button {
+                vertical-stretch: 0;
                 text: @tr("Start Profile Creation Wizard");
                 enabled: InputProfileData.profile_name != "" && InputProfileData.profile_name != "default";
                 clicked => {
                     profile_creation_button_clicked();
                 }
             }
+        }
+
+        Rectangle {
+            vertical-stretch: 1;
         }
     }
 }
