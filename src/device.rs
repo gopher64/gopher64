@@ -149,7 +149,7 @@ fn swap_rom(contents: Vec<u8>) -> Option<Vec<u8>> {
     }
 }
 
-pub fn get_rom_contents(file_path: &std::path::Path) -> Option<Vec<u8>> {
+pub fn get_rom_contents(file_path: &std::path::PathBuf) -> Option<Vec<u8>> {
     let mut contents = vec![];
     if file_path
         .extension()

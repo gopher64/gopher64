@@ -115,17 +115,14 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
         ),
     )));
 
-    #[cfg(not(target_os = "android"))]
-    {
-        let weak = app.as_weak();
-        app.on_open_rom_button_clicked(move || {
-            weak.upgrade_in_event_loop(move |handle| {
-                save_settings(&handle);
-                open_rom(&handle)
-            })
-            .unwrap();
-        });
-    }
+    let weak = app.as_weak();
+    app.on_open_rom_button_clicked(move || {
+        weak.upgrade_in_event_loop(move |handle| {
+            save_settings(&handle);
+            open_rom(&handle)
+        })
+        .unwrap();
+    });
 
     let weak = app.as_weak();
     app.on_recent_rom_button_clicked(move |rom| {
@@ -216,7 +213,6 @@ fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Con
     .unwrap();
 }
 
-#[cfg(not(target_os = "android"))]
 fn clear_gb_paths(weak: &slint::Weak<AppWindow>, player: i32) {
     weak.upgrade_in_event_loop(move |handle| {
         let rom_paths = handle.get_gb_rom_paths();
@@ -376,61 +372,49 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
         dialog.show().unwrap();
     });
 
-    #[cfg(not(target_os = "android"))]
-    {
-        let weak_app2 = app.as_weak();
-        app.on_transferpak_toggled(move |player, enabled| {
-            if enabled {
-                let select_gb_rom = rfd::AsyncFileDialog::new()
-                    .set_title(format!("GB ROM P{}", player + 1))
-                    .add_filter("GB ROM files", &["gb", "gbc", "GB", "GBC"])
-                    .pick_file();
+    let weak_app2 = app.as_weak();
+    app.on_transferpak_toggled(move |player, enabled| {
+        if enabled {
+            let select_gb_rom = select_gb_rom(player);
 
-                let weak_app3 = weak_app2.clone();
-                tokio::spawn(async move {
-                    if let Some(gb_rom) = select_gb_rom.await {
-                        let weak_app4 = weak_app3.clone();
-                        weak_app3
-                            .upgrade_in_event_loop(move |_handle| {
-                                let select_gb_ram = rfd::AsyncFileDialog::new()
-                                    .set_title(format!("GB RAM P{}", player + 1))
-                                    .add_filter(
-                                        "GB RAM files",
-                                        &["sav", "ram", "srm", "SAV", "RAM", "SRM"],
-                                    )
-                                    .pick_file();
+            let weak_app3 = weak_app2.clone();
+            tokio::spawn(async move {
+                if let Some(gb_rom) = select_gb_rom.await {
+                    let weak_app4 = weak_app3.clone();
+                    weak_app3
+                        .upgrade_in_event_loop(move |_handle| {
+                            let select_gb_ram = select_gb_ram(player);
 
-                                tokio::spawn(async move {
-                                    if let Some(gb_ram) = select_gb_ram.await {
-                                        weak_app4
-                                            .upgrade_in_event_loop(move |handle| {
-                                                let rom_paths = handle.get_gb_rom_paths();
-                                                let ram_paths = handle.get_gb_ram_paths();
-                                                rom_paths.set_row_data(
-                                                    player as usize,
-                                                    gb_rom.path().to_str().unwrap().into(),
-                                                );
-                                                ram_paths.set_row_data(
-                                                    player as usize,
-                                                    gb_ram.path().to_str().unwrap().into(),
-                                                );
-                                                handle.set_gb_rom_paths(rom_paths);
-                                                handle.set_gb_ram_paths(ram_paths);
-                                            })
-                                            .unwrap();
-                                    } else {
-                                        clear_gb_paths(&weak_app4, player);
-                                    }
-                                });
-                            })
-                            .unwrap();
-                    } else {
-                        clear_gb_paths(&weak_app3, player);
-                    }
-                });
-            }
-        });
-    }
+                            tokio::spawn(async move {
+                                if let Some(gb_ram) = select_gb_ram.await {
+                                    weak_app4
+                                        .upgrade_in_event_loop(move |handle| {
+                                            let rom_paths = handle.get_gb_rom_paths();
+                                            let ram_paths = handle.get_gb_ram_paths();
+                                            rom_paths.set_row_data(
+                                                player as usize,
+                                                gb_rom.to_str().unwrap().into(),
+                                            );
+                                            ram_paths.set_row_data(
+                                                player as usize,
+                                                gb_ram.to_str().unwrap().into(),
+                                            );
+                                            handle.set_gb_rom_paths(rom_paths);
+                                            handle.set_gb_ram_paths(ram_paths);
+                                        })
+                                        .unwrap();
+                                } else {
+                                    clear_gb_paths(&weak_app4, player);
+                                }
+                            });
+                        })
+                        .unwrap();
+                } else {
+                    clear_gb_paths(&weak_app3, player);
+                }
+            });
+        }
+    });
 }
 
 pub fn save_settings(app: &AppWindow) {
@@ -614,17 +598,60 @@ pub fn run_rom(
     });
 }
 
-#[cfg(not(target_os = "android"))]
-fn open_rom(app: &AppWindow) {
-    let rom_dir = app.get_rom_dir();
-    let select_rom = if !rom_dir.is_empty() && std::fs::exists(&rom_dir).unwrap_or(false) {
-        rfd::AsyncFileDialog::new().set_directory(rom_dir)
-    } else {
-        rfd::AsyncFileDialog::new()
+pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
+    #[cfg(not(target_os = "android"))]
+    {
+        if !rom_dir.is_empty() && std::fs::exists(&rom_dir).unwrap_or(false) {
+            rfd::AsyncFileDialog::new().set_directory(rom_dir)
+        } else {
+            rfd::AsyncFileDialog::new()
+        }
+        .set_title("Select ROM")
+        .add_filter("ROM files", &N64_EXTENSIONS)
+        .pick_file()
+        .await
+        .map(|file| file.path().to_path_buf())
     }
-    .set_title("Select ROM")
-    .add_filter("ROM files", &N64_EXTENSIONS)
-    .pick_file();
+    #[cfg(target_os = "android")]
+    {
+        ui::android::select_rom(rom_dir).await
+    }
+}
+
+pub async fn select_gb_rom(player: i32) -> Option<std::path::PathBuf> {
+    #[cfg(not(target_os = "android"))]
+    {
+        rfd::AsyncFileDialog::new()
+            .set_title(format!("GB ROM P{}", player + 1))
+            .add_filter("GB ROM files", &["gb", "gbc", "GB", "GBC"])
+            .pick_file()
+            .await
+            .map(|file| file.path().to_path_buf())
+    }
+    #[cfg(target_os = "android")]
+    {
+        ui::android::select_gb_rom(player).await
+    }
+}
+
+pub async fn select_gb_ram(player: i32) -> Option<std::path::PathBuf> {
+    #[cfg(not(target_os = "android"))]
+    {
+        rfd::AsyncFileDialog::new()
+            .set_title(format!("GB RAM P{}", player + 1))
+            .add_filter("GB RAM files", &["sav", "ram", "srm", "SAV", "RAM", "SRM"])
+            .pick_file()
+            .await
+            .map(|file| file.path().to_path_buf())
+    }
+    #[cfg(target_os = "android")]
+    {
+        ui::android::select_gb_ram(player).await
+    }
+}
+
+fn open_rom(app: &AppWindow) {
+    let select_rom = select_rom(app.get_rom_dir());
 
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
@@ -633,7 +660,7 @@ fn open_rom(app: &AppWindow) {
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
             run_rom(
-                file.path().to_path_buf(),
+                file,
                 ui::GameSettings {
                     overclock,
                     disable_expansion_pak,
