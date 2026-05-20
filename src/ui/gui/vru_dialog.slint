@@ -11,6 +11,7 @@ export component VruDialog inherits Window {
     in-out property words <=> VruData.words;
 
     ScrollView {
+        mouse-drag-pan-enabled: true;
         VerticalBox {
             padding-bottom: 40px;
             for word[i] in words: Button {
