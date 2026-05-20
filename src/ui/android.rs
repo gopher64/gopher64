@@ -6,7 +6,7 @@ use crate::ui;
 pub static DIRS: std::sync::OnceLock<ui::Dirs> = std::sync::OnceLock::new();
 
 bind_java_type! {
-    AndroidActivity => "android.app.Activity",
+    AndroidContext => "android.content.Context",
     type_map = {
         AndroidIntent => "android.content.Intent",
     },
@@ -23,12 +23,15 @@ bind_java_type! {
     fields {
         #[allow(non_snake_case)]
         static ACTION_VIEW: JString,
+        #[allow(non_snake_case)]
+        static FLAG_ACTIVITY_NEW_TASK: jint,
     },
     constructors {
         fn new(action: JString),
     },
     methods {
         fn set_data(uri: AndroidUri) -> AndroidIntent,
+        fn add_flags(flags: jint) -> AndroidIntent,
     },
 }
 
@@ -158,16 +161,18 @@ fn open_uri_on_jvm(
     context: *mut std::ffi::c_void,
     path: &str,
 ) -> jni::errors::Result<()> {
-    let activity_ptr = context.cast();
-    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&activity_ptr)? };
+    let context_ptr = context.cast();
+    let context = unsafe { env.as_cast_raw::<Global<AndroidContext>>(&context_ptr)? };
 
     let uri_string = JString::from_str(env, path.to_string())?;
     let uri = AndroidUri::parse(env, &uri_string)?;
 
     let action_view = AndroidIntent::ACTION_VIEW(env)?;
-    let intent = AndroidIntent::new(env, &action_view)?;
-    intent.set_data(env, &uri)?;
+    let flag = AndroidIntent::FLAG_ACTIVITY_NEW_TASK(env)?;
+    let intent = AndroidIntent::new(env, &action_view)?
+        .set_data(env, &uri)?
+        .add_flags(env, flag)?;
 
-    activity.as_ref().start_activity(env, &intent)?;
+    context.as_ref().start_activity(env, &intent)?;
     Ok(())
 }
