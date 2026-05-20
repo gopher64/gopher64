@@ -9,6 +9,9 @@ mod ui;
 use clap::Parser;
 use std::io::Error;
 
+#[cfg(target_os = "android")]
+use ui::android;
+
 /// N64 emulator
 #[derive(Parser, Debug)]
 #[command(author, version=env!("GIT_DESCRIBE"), about, long_about = None, arg_required_else_help = if cfg!(feature = "gui") { false } else { true })]
@@ -308,7 +311,13 @@ pub async fn run() -> std::io::Result<()> {
 async fn android_main(app: slint::android::AndroidApp) {
     slint::android::init(app.clone()).unwrap();
 
-    ui::ANDROID_APP.set(app).unwrap();
+    if let Err(_) = android::DIRS.set(ui::Dirs {
+        config_dir: app.internal_data_path().unwrap().join("config"),
+        data_dir: app.external_data_path().unwrap().join("data"),
+        cache_dir: app.internal_data_path().unwrap().join("cache"),
+    }) {
+        println!("Android dirs already set");
+    }
 
     let dirs = ui::get_dirs();
 
