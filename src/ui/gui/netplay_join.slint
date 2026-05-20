@@ -22,7 +22,7 @@ export component NetplayJoin inherits Window {
     callback select_rom(string);
     callback join_session(string, string, string, string, int);
     preferred-width: 700px;
-    preferred-height: 450px;
+    preferred-height: 475px;
 
     VerticalBox {
         vertical-stretch: 1;
@@ -112,37 +112,49 @@ export component NetplayJoin inherits Window {
                 }
 
                 HorizontalBox {
-                    LineEdit {
-                        placeholder-text: @tr("Password (if required)");
-                        edited(text) => {
-                            NetplayData.password = text;
+                    VerticalBox {
+                        LineEdit {
+                            horizontal-stretch: 0;
+                            min-width: 200px;
+                            placeholder-text: @tr("Password (if required)");
+                            edited(text) => {
+                                NetplayData.password = text;
+                            }
                         }
                     }
 
-                    if NetplayData.game_name == "": Button {
-                        text: @tr("Select ROM");
-                        clicked => {
-                            select_rom(NetplayData.rom_dir);
-                        }
-                    }
-                    if NetplayData.game_name != "": Button {
-                        text: NetplayData.game_name;
-                        clicked => {
-                            select_rom(NetplayData.rom_dir);
-                        }
+                    Rectangle {
+                        horizontal-stretch: 1;
                     }
 
-                    Button {
-                        text: @tr("Join Session");
-                        enabled: NetplayData.player_name != "" && NetplayData.current_session >= 0 && NetplayData.game_name != "" && !NetplayData.pending_session;
-                        clicked => {
-                            NetplayData.pending_session = true;
-                            join_session(
-                            NetplayData.player_name,
-                            NetplayData.game_hash,
-                            NetplayData.password,
-                            NetplayData.room_urls[NetplayData.current_session],
-                            NetplayData.room_ports[NetplayData.current_session]);
+                    HorizontalBox {
+                        horizontal-stretch: 0;
+                        alignment: end;
+                        if NetplayData.game_name == "": Button {
+                            text: @tr("Select ROM");
+                            clicked => {
+                                select_rom(NetplayData.rom_dir);
+                            }
+                        }
+                        if NetplayData.game_name != "": Button {
+                            text: NetplayData.game_name;
+                            clicked => {
+                                select_rom(NetplayData.rom_dir);
+                            }
+                        }
+
+                        Button {
+                            text: @tr("Join Session");
+                            enabled: NetplayData.player_name != "" && NetplayData.current_session >= 0 && NetplayData.game_name != "" && !NetplayData.pending_session;
+                            clicked => {
+                                NetplayData.pending_session = true;
+                                join_session(
+                                NetplayData.player_name,
+                                NetplayData.game_hash,
+                                NetplayData.password,
+                                NetplayData.room_urls[NetplayData.current_session],
+                                NetplayData.room_ports[NetplayData.current_session]);
+                            }
                         }
                     }
                 }
