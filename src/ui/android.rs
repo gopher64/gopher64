@@ -111,7 +111,11 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
             continue;
         }
 
-        if !device.supports_source(env, source_gamepad & source_joystick)? {
+        if !device.supports_source(env, source_gamepad)? {
+            continue;
+        }
+
+        if !device.supports_source(env, source_joystick)? {
             continue;
         }
 
