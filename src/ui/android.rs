@@ -148,14 +148,12 @@ pub fn open_uri(path: &str) {
     let path = path.to_string();
 
     let vm = unsafe { JavaVM::from_raw(ctx.vm().cast()) };
-    if let Err(err) =
-        vm.attach_current_thread(|env| open_uri_on_java_main(env, ctx.context(), &path))
-    {
+    if let Err(err) = vm.attach_current_thread(|env| open_uri_on_jvm(env, ctx.context(), &path)) {
         eprintln!("JNI error while opening URI: {err:?}");
     }
 }
 
-fn open_uri_on_java_main(
+fn open_uri_on_jvm(
     env: &mut Env<'_>,
     context: *mut std::ffi::c_void,
     path: &str,
