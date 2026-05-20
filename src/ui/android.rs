@@ -3,9 +3,10 @@ use jni::refs::Global;
 use jni::{Env, JavaVM, bind_java_type};
 
 use crate::ui;
+pub static DIRS: std::sync::OnceLock<ui::Dirs> = std::sync::OnceLock::new();
 
 bind_java_type! {
-    AndroidActivity => "android.app.Activity",
+    AndroidContext => "android.content.Context",
     type_map = {
         AndroidIntent => "android.content.Intent",
     },
@@ -22,12 +23,15 @@ bind_java_type! {
     fields {
         #[allow(non_snake_case)]
         static ACTION_VIEW: JString,
+        #[allow(non_snake_case)]
+        static FLAG_ACTIVITY_NEW_TASK: jint,
     },
     constructors {
         fn new(action: JString),
     },
     methods {
         fn set_data(uri: AndroidUri) -> AndroidIntent,
+        fn add_flags(flags: jint) -> AndroidIntent,
     },
 }
 
@@ -68,12 +72,9 @@ pub struct ControllerInfo {
 
 /// Lists connected gamepads and joysticks using the Android framework.
 pub fn list_controllers() -> Vec<ControllerInfo> {
-    let Some(app) = ui::ANDROID_APP.get() else {
-        eprintln!("Android app not initialized; cannot list controllers");
-        return Vec::new();
-    };
+    let ctx = ndk_context::android_context();
 
-    let vm = unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) };
+    let vm = unsafe { JavaVM::from_raw(ctx.vm().cast()) };
 
     match vm.attach_current_thread(list_controllers_on_jvm) {
         Ok(controllers) => controllers,
@@ -145,35 +146,33 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
 
 /// Opens a URI in the user's default app via [`Intent::ACTION_VIEW`](https://developer.android.com/reference/android/content/Intent#ACTION_VIEW).
 pub fn open_uri(path: &str) {
-    let Some(app) = ui::ANDROID_APP.get() else {
-        eprintln!("Android app not initialized; cannot open URI");
-        return;
-    };
+    let ctx = ndk_context::android_context();
 
     let path = path.to_string();
-    app.clone().run_on_java_main_thread(Box::new(move || {
-        let vm = unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) };
-        if let Err(err) = vm.attach_current_thread(|env| open_uri_on_java_main(env, &app, &path)) {
-            eprintln!("JNI error while opening URI: {err:?}");
-        }
-    }));
+
+    let vm = unsafe { JavaVM::from_raw(ctx.vm().cast()) };
+    if let Err(err) = vm.attach_current_thread(|env| open_uri_on_jvm(env, ctx.context(), &path)) {
+        eprintln!("JNI error while opening URI: {err:?}");
+    }
 }
 
-fn open_uri_on_java_main(
+fn open_uri_on_jvm(
     env: &mut Env<'_>,
-    app: &slint::android::AndroidApp,
+    context: *mut std::ffi::c_void,
     path: &str,
 ) -> jni::errors::Result<()> {
-    let activity_ptr = app.activity_as_ptr().cast();
-    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&activity_ptr)? };
+    let context_ptr = context.cast();
+    let context = unsafe { env.as_cast_raw::<Global<AndroidContext>>(&context_ptr)? };
 
     let uri_string = JString::from_str(env, path.to_string())?;
     let uri = AndroidUri::parse(env, &uri_string)?;
 
     let action_view = AndroidIntent::ACTION_VIEW(env)?;
-    let intent = AndroidIntent::new(env, &action_view)?;
-    intent.set_data(env, &uri)?;
+    let flag = AndroidIntent::FLAG_ACTIVITY_NEW_TASK(env)?;
+    let intent = AndroidIntent::new(env, &action_view)?
+        .set_data(env, &uri)?
+        .add_flags(env, flag)?;
 
-    activity.as_ref().start_activity(env, &intent)?;
+    context.as_ref().start_activity(env, &intent)?;
     Ok(())
 }
