@@ -103,8 +103,8 @@ pub async fn run() -> std::io::Result<()> {
 
     let args = Args::parse();
     if let Some(game) = args.game {
-        let file_path = std::path::Path::new(&game);
-        let Some(rom_contents) = device::get_rom_contents(file_path) else {
+        let file_path = std::path::Path::new(&game).to_path_buf();
+        let Some(rom_contents) = device::get_rom_contents(&file_path) else {
             return Err(Error::other(format!(
                 "Could not read ROM file: {}",
                 file_path.display()

@@ -111,7 +111,11 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
             continue;
         }
 
-        if !device.supports_source(env, source_gamepad & source_joystick)? {
+        if !device.supports_source(env, source_gamepad)? {
+            continue;
+        }
+
+        if !device.supports_source(env, source_joystick)? {
             continue;
         }
 
@@ -175,4 +179,16 @@ fn open_uri_on_jvm(
 
     context.as_ref().start_activity(env, &intent)?;
     Ok(())
+}
+
+pub async fn select_rom(_rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
+    None
+}
+
+pub async fn select_gb_rom(_player: i32) -> Option<std::path::PathBuf> {
+    None
+}
+
+pub async fn select_gb_ram(_player: i32) -> Option<std::path::PathBuf> {
+    None
 }
