@@ -48,6 +48,7 @@ export component Cheats inherits Page {
         Rectangle { }
 
         if CheatsData.cheats.length > 0:ListView {
+            mouse-drag-pan-enabled: true;
             preferred-height: root.height;
             horizontal-stretch: 1;
             for data in CheatsData.cheats: VerticalBox {
