@@ -271,13 +271,11 @@ jobs:
         with:
           packages: "platforms;android-${{ matrix.platform }} ndk;${{ matrix.ndk }}"
       - name: Build
+        working-directory: android-project
         run: |
           cargo install cargo-ndk
-          cargo ndk --link-libcxx-shared -P ${{ matrix.platform }} -t arm64-v8a -t x86_64 -o ${{ github.workspace }}/android-project/app/src/main/jniLibs build --profile ${{ env.BUILD_PROFILE }} --lib
-          cd android-project
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
         env:
-          CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/android-project/android.toolchain.cmake
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ matrix.ndk }}
 
   collect-artifacts:
