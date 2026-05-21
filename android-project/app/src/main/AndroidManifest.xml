@@ -7,6 +7,15 @@
 
     <application
         android:icon="@mipmap/ic_launcher"
-        android:label="Gopher64" />
+        android:label="Gopher64">
+        <activity android:configChanges="orientation|keyboardHidden|screenSize"
+            android:name="io.github.gopher64.gopher64.SlintActivity" android:exported="true">
+            <meta-data android:name="android.app.lib_name" android:value="gopher64" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
 
 </manifest>
