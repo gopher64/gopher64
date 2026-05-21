@@ -1,5 +1,5 @@
 use crate::device;
-#[cfg(feature = "gui")]
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 use crate::ui;
 use std::collections::HashMap;
 
