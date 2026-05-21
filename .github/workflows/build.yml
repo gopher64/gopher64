@@ -269,6 +269,7 @@ jobs:
         run: |
           cargo install cargo-ndk
           cargo ndk build --profile ${{ env.BUILD_PROFILE }} --target ${{ matrix.target }} --lib
+          cp target/${{ matrix.target }}/${{ env.BUILD_DIR }}/libgopher64.so android-project/app/src/main/jniLibs/arm64-v8a/libgopher64.so
           cd android-project
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
 
