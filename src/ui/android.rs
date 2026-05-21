@@ -5,6 +5,8 @@ use jni::{Env, EnvUnowned, JavaVM, bind_java_type};
 
 use crate::ui;
 
+pub const REQUEST_SELECT_ROM: jint = 1;
+
 pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
     std::sync::Mutex::new(None);
 
@@ -15,6 +17,11 @@ bind_java_type! {
     },
     methods {
         fn start_activity(intent: AndroidIntent) -> (),
+        fn start_activity_for_result(intent: AndroidIntent, request_code: jint) -> (),
+    },
+    fields {
+        #[allow(non_snake_case)]
+        static RESULT_OK: jint,
     },
 }
 
@@ -27,6 +34,10 @@ bind_java_type! {
         #[allow(non_snake_case)]
         static ACTION_VIEW: JString,
         #[allow(non_snake_case)]
+        static ACTION_OPEN_DOCUMENT: JString,
+        #[allow(non_snake_case)]
+        static CATEGORY_OPENABLE: JString,
+        #[allow(non_snake_case)]
         static FLAG_ACTIVITY_NEW_TASK: jint,
     },
     constructors {
@@ -34,7 +45,10 @@ bind_java_type! {
     },
     methods {
         fn set_data(uri: AndroidUri) -> AndroidIntent,
+        fn set_type(r#type: JString) -> AndroidIntent,
+        fn add_category(category: JString) -> AndroidIntent,
         fn add_flags(flags: jint) -> AndroidIntent,
+        fn get_data() -> AndroidUri,
     },
 }
 
@@ -42,6 +56,7 @@ bind_java_type! {
     AndroidUri => "android.net.Uri",
     methods {
         static fn parse(uri_string: JString) -> AndroidUri,
+        fn to_string() -> JString,
     },
 }
 
@@ -194,7 +209,39 @@ fn open_uri_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<()> {
 }
 
 pub async fn select_rom(_rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
+    let vm = if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
+    } else {
+        eprintln!("Android app not initialized");
+        return None;
+    };
+    if let Err(err) = vm.attach_current_thread(|env| select_rom_on_jvm(env)) {
+        eprintln!("JNI error while opening URI: {err:?}");
+    }
     None
+}
+
+fn select_rom_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<()> {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+
+        let action = AndroidIntent::ACTION_OPEN_DOCUMENT(env)?;
+        let category = AndroidIntent::CATEGORY_OPENABLE(env)?;
+        let mime_type = JString::from_str(env, "*/*")?;
+        let intent = AndroidIntent::new(env, &action)?
+            .set_type(env, &mime_type)?
+            .add_category(env, &category)?;
+
+        activity.start_activity_for_result(env, &intent, REQUEST_SELECT_ROM)?;
+        Ok(())
+    } else {
+        Err(jni::errors::Error::UninitializedJavaVM)
+    }
 }
 
 pub async fn select_gb_rom(_player: i32) -> Option<std::path::PathBuf> {
@@ -227,13 +274,27 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
     _class: JClass<'caller>,
     request_code: jint,
     result_code: jint,
-    _intent_data: JObject<'caller>,
+    intent_data: JObject<'caller>,
 ) {
-    let outcome = unowned_env.with_env(|_env| -> Result<_, jni::errors::Error> {
-        println!(
-            "Rust received Request Code: {}, Result Code: {}",
-            request_code, result_code
-        );
+    let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
+        if result_code != AndroidActivity::RESULT_OK(env)? {
+            return Ok(()); // user cancelled
+        }
+        if intent_data.is_null() {
+            return Ok(());
+        }
+        let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
+        match request_code {
+            REQUEST_SELECT_ROM => {
+                let uri = result_intent.as_ref().get_data(env)?;
+                if uri.is_null() {
+                    return Ok(());
+                }
+                let path = uri.to_string(env)?;
+                println!("Selected ROM: {path}");
+            }
+            _ => {}
+        }
         Ok(())
     });
     outcome.resolve::<jni::errors::ThrowRuntimeExAndDefault>()
