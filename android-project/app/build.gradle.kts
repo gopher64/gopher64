@@ -51,6 +51,7 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     val toolchainPath = "$rootDir/android.toolchain.cmake"
     environment("CMAKE_TOOLCHAIN_FILE", toolchainPath)
 
+    var minSdk = android.defaultConfig.minSdk
     var ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath
     environment("ANDROID_NDK_HOME", "$ndkDir")
     environment("LIBCLANG_PATH", "$ndkDir/toolchains/llvm/prebuilt/linux-x86_64/musl/lib")
@@ -61,7 +62,7 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     commandLine(
         "cargo", "ndk",
         "--link-libcxx-shared",
-        "-P", "34",
+        "-P", "$minSdk",
         "-t", "arm64-v8a",
         "-t", "x86_64",
         "-o", "$rootDir/app/src/main/jniLibs",
