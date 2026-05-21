@@ -48,6 +48,12 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     workingDir = rootDir.parentFile
     val toolchainPath = "$rootDir/android.toolchain.cmake"
     environment("CMAKE_TOOLCHAIN_FILE", toolchainPath)
+    val ndkHome = providers.environmentVariable("ANDROID_NDK_HOME").orNull
+    environment("LIBCLANG_PATH", "$ndkHome/toolchains/llvm/prebuilt/linux-x86_64/musl/lib")
+
+    val jniLibsFolder = layout.projectDirectory.dir("$rootDir/app/src/main/jniLibs")
+    project.delete(jniLibsFolder)
+
     commandLine(
         "cargo", "ndk",
         "--link-libcxx-shared",
