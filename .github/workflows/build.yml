@@ -264,6 +264,10 @@ jobs:
           target: x86_64-linux-android,aarch64-linux-android
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platforms;android-35
       - name: Build
         run: |
           cargo install cargo-ndk
