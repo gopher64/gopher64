@@ -267,11 +267,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: platforms;android-35
+          packages: platforms;android-36
       - name: Build
         run: |
           cargo install cargo-ndk
-          cargo ndk -t x86_64 -t arm64-v8a build --profile ${{ env.BUILD_PROFILE }} --lib
+          cargo ndk -P 36 -t x86_64 -t arm64-v8a build --profile ${{ env.BUILD_PROFILE }} --lib
           mkdir -p android-project/app/src/main/jniLibs/arm64-v8a
           mkdir -p android-project/app/src/main/jniLibs/x86_64
           cp target/aarch64-linux-android/${{ env.BUILD_DIR }}/libgopher64.so android-project/app/src/main/jniLibs/arm64-v8a/libgopher64.so
