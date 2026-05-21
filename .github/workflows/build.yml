@@ -280,7 +280,7 @@ jobs:
           cd android-project
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
         env:
-          CMAKE_TOOLCHAIN_FILE: android-project/android.toolchain.cmake
+          CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/android-project/android.toolchain.cmake
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.3.13750724
           ANDROID_PLATFORM: "35"
 
