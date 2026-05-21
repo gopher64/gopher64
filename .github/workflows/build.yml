@@ -275,8 +275,6 @@ jobs:
         run: |
           cargo install cargo-ndk
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ matrix.ndk }}
 
   collect-artifacts:
     name: Collect release artifacts

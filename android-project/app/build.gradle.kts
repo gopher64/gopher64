@@ -10,6 +10,8 @@ android {
         }
     }
 
+    ndkVersion = "27.3.13750724"
+
     defaultConfig {
         applicationId = "io.github.gopher64.gopher64"
         minSdk = 34
@@ -48,8 +50,10 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     workingDir = rootDir.parentFile
     val toolchainPath = "$rootDir/android.toolchain.cmake"
     environment("CMAKE_TOOLCHAIN_FILE", toolchainPath)
-    val ndkHome = providers.environmentVariable("ANDROID_NDK_HOME").orNull
-    environment("LIBCLANG_PATH", "$ndkHome/toolchains/llvm/prebuilt/linux-x86_64/musl/lib")
+
+    var ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath
+    environment("ANDROID_NDK_HOME", "$ndkDir")
+    environment("LIBCLANG_PATH", "$ndkDir/toolchains/llvm/prebuilt/linux-x86_64/musl/lib")
 
     val jniLibsFolder = layout.projectDirectory.dir("$rootDir/app/src/main/jniLibs")
     project.delete(jniLibsFolder)
