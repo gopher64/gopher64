@@ -273,11 +273,7 @@ jobs:
       - name: Build
         run: |
           cargo install cargo-ndk
-          cargo ndk -P ${{ matrix.platform }} -t arm64-v8a -t x86_64 build --profile ${{ env.BUILD_PROFILE }} --lib
-          mkdir -p android-project/app/src/main/jniLibs/arm64-v8a
-          mkdir -p android-project/app/src/main/jniLibs/x86_64
-          cp target/aarch64-linux-android/${{ env.BUILD_DIR }}/libgopher64.so android-project/app/src/main/jniLibs/arm64-v8a/libgopher64.so
-          cp target/x86_64-linux-android/${{ env.BUILD_DIR }}/libgopher64.so android-project/app/src/main/jniLibs/x86_64/libgopher64.so
+          cargo ndk -P ${{ matrix.platform }} -t arm64-v8a -t x86_64 -o ${{ github.workspace }}/android-project/app/src/main/jniLibs build --profile ${{ env.BUILD_PROFILE }} --lib
           cd android-project
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
         env:
