@@ -254,6 +254,8 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
+            platform: 35
+            ndk: 27.3.13750724
     steps:
       - uses: actions/checkout@v6
         with:
@@ -267,16 +269,16 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: "platforms;android-35 ndk;27.3.13750724"
+          packages: "platforms;android-${{ matrix.platform }} ndk;${{ matrix.ndk }}"
       - name: Build
         run: |
           cargo install cargo-ndk
-          cargo ndk -P 35 -t arm64-v8a -t x86_64 build --profile ${{ env.BUILD_PROFILE }} --lib
+          cargo ndk -P ${{ matrix.platform }} -t arm64-v8a -t x86_64 build --profile ${{ env.BUILD_PROFILE }} --lib
           cd android-project
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
         env:
           CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/android-project/android.toolchain.cmake
-          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.3.13750724
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ matrix.ndk }}
           CARGO_NDK_OUTPUT_PATH: ${{ github.workspace }}/android-project/app/src/main/jniLibs
 
   collect-artifacts:
