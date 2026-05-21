@@ -254,7 +254,6 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            target: aarch64-linux-android
     steps:
       - uses: actions/checkout@v6
         with:
@@ -262,14 +261,17 @@ jobs:
           fetch-depth: 0
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          target: ${{ matrix.target }}
+          target: x86_64-linux-android,aarch64-linux-android
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
       - name: Build
         run: |
           cargo install cargo-ndk
-          cargo ndk build --profile ${{ env.BUILD_PROFILE }} --target ${{ matrix.target }} --lib
-          cp target/${{ matrix.target }}/${{ env.BUILD_DIR }}/libgopher64.so android-project/app/src/main/jniLibs/arm64-v8a/libgopher64.so
+          cargo ndk -t x86_64 -t arm64-v8a build --profile ${{ env.BUILD_PROFILE }} --lib
+          mkdir -p android-project/app/src/main/jniLibs/arm64-v8a
+          mkdir -p android-project/app/src/main/jniLibs/x86_64
+          cp target/aarch64-linux-android/${{ env.BUILD_DIR }}/libgopher64.so android-project/app/src/main/jniLibs/arm64-v8a/libgopher64.so
+          cp target/x86_64-linux-android/${{ env.BUILD_DIR }}/libgopher64.so android-project/app/src/main/jniLibs/x86_64/libgopher64.so
           cd android-project
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
 
