@@ -14,7 +14,7 @@ pub mod retroachievements;
 pub mod storage;
 pub mod usb;
 pub mod video;
-#[cfg(feature = "gui")]
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 pub mod vru;
 
 pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
