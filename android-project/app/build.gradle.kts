@@ -57,7 +57,7 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     commandLine(
         "cargo", "ndk",
         "--link-libcxx-shared",
-        "-P", "35",
+        "-P", "34",
         "-t", "arm64-v8a",
         "-t", "x86_64",
         "-o", "$rootDir/app/src/main/jniLibs",
