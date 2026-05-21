@@ -36,6 +36,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    packaging {
+        jniLibs {
+            excludes.add("lib/**/libsevenz_rust2*.so")
+        }
+    }
 }
 
 dependencies {

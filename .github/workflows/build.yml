@@ -273,7 +273,7 @@ jobs:
       - name: Build
         run: |
           cargo install cargo-ndk
-          cargo ndk -P ${{ matrix.platform }} -t arm64-v8a -t x86_64 -o ${{ github.workspace }}/android-project/app/src/main/jniLibs build --profile ${{ env.BUILD_PROFILE }} --lib
+          cargo ndk --link-libcxx-shared -P ${{ matrix.platform }} -t arm64-v8a -t x86_64 -o ${{ github.workspace }}/android-project/app/src/main/jniLibs build --profile ${{ env.BUILD_PROFILE }} --lib
           cd android-project
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
         env:
