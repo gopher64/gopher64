@@ -232,6 +232,7 @@ pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathB
     };
     if let Err(err) = vm.attach_current_thread(|env| select_rom_on_jvm(env, rom_dir.to_string())) {
         eprintln!("JNI error while opening URI: {err:?}");
+        return None;
     }
     let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
     if let Ok(mut tx_lock) = SELECT_ROM_TX.lock() {
