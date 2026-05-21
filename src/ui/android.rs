@@ -234,7 +234,12 @@ pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathB
         eprintln!("JNI error while opening URI: {err:?}");
     }
     let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
-    SELECT_ROM_TX.lock().unwrap().replace(tx);
+    if let Ok(mut tx_lock) = SELECT_ROM_TX.lock() {
+        tx_lock.replace(tx);
+    } else {
+        eprintln!("Error locking SELECT_ROM_TX");
+        return None;
+    }
     rx.await.unwrap_or(None)
 }
 
@@ -298,9 +303,19 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
 ) {
     let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
         if result_code != AndroidActivity::RESULT_OK(env)? {
+            if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
+                && let Some(tx) = tx_lock.take()
+            {
+                let _ = tx.send(None);
+            }
             return Ok(()); // user cancelled
         }
         if intent_data.is_null() {
+            if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
+                && let Some(tx) = tx_lock.take()
+            {
+                let _ = tx.send(None);
+            }
             return Ok(());
         }
         let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
@@ -308,12 +323,18 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
             REQUEST_SELECT_ROM => {
                 let uri = result_intent.as_ref().get_data(env)?;
                 if uri.is_null() {
+                    if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
+                        && let Some(tx) = tx_lock.take()
+                    {
+                        let _ = tx.send(None);
+                    }
                     return Ok(());
                 }
                 let path = uri.to_string(env)?;
-                if let Some(tx) = SELECT_ROM_TX.lock().unwrap().take() {
-                    tx.send(Some(std::path::PathBuf::from(path.to_string())))
-                        .unwrap();
+                if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
+                    && let Some(tx) = tx_lock.take()
+                {
+                    let _ = tx.send(Some(std::path::PathBuf::from(path.to_string())));
                 }
             }
             _ => {}
