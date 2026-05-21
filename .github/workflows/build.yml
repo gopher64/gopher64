@@ -267,7 +267,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: platforms;android-35
+          packages: "platforms;android-35 ndk;27.3.13750724"
       - name: Build
         run: |
           cargo install cargo-ndk
