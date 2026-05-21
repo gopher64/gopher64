@@ -1,6 +1,7 @@
-use jni::objects::JString;
+use jni::objects::{JClass, JObject, JString};
 use jni::refs::Global;
-use jni::{Env, JavaVM, bind_java_type};
+use jni::sys::jint;
+use jni::{Env, EnvUnowned, JavaVM, bind_java_type};
 
 use crate::ui;
 
@@ -216,4 +217,24 @@ pub fn get_dirs() -> ui::Dirs {
     } else {
         panic!("Android app not initialized");
     }
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnActivityResult<
+    'caller,
+>(
+    mut unowned_env: EnvUnowned<'caller>,
+    _class: JClass<'caller>,
+    request_code: jint,
+    result_code: jint,
+    _intent_data: JObject<'caller>,
+) {
+    let outcome = unowned_env.with_env(|_env| -> Result<_, jni::errors::Error> {
+        println!(
+            "Rust received Request Code: {}, Result Code: {}",
+            request_code, result_code
+        );
+        Ok(())
+    });
+    outcome.resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
