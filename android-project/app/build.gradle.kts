@@ -44,7 +44,7 @@ android {
 }
 
 val ndkBuild = tasks.register<Exec>("ndkBuild") {
-    val isRelease = gradle.startParameter.taskNames.any { it.contains("Release") }
+    val isRelease = gradle.startParameter.taskNames.any { it.endsWith("Release", ignoreCase = true) }
     workingDir = rootDir.parentFile
     val toolchainPath = "$rootDir/android.toolchain.cmake"
     environment("CMAKE_TOOLCHAIN_FILE", toolchainPath)
