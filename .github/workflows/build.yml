@@ -272,15 +272,12 @@ jobs:
         run: |
           cargo install cargo-ndk
           cargo ndk -P 35 -t arm64-v8a -t x86_64 build --profile ${{ env.BUILD_PROFILE }} --lib
-          mkdir -p android-project/app/src/main/jniLibs/arm64-v8a
-          mkdir -p android-project/app/src/main/jniLibs/x86_64
-          cp target/aarch64-linux-android/${{ env.BUILD_DIR }}/libgopher64.so android-project/app/src/main/jniLibs/arm64-v8a/libgopher64.so
-          cp target/x86_64-linux-android/${{ env.BUILD_DIR }}/libgopher64.so android-project/app/src/main/jniLibs/x86_64/libgopher64.so
           cd android-project
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
         env:
           CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/android-project/android.toolchain.cmake
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.3.13750724
+          CARGO_NDK_OUTPUT_PATH: ${{ github.workspace }}/android-project/app/src/main/jniLibs
 
   collect-artifacts:
     name: Collect release artifacts
