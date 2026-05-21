@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature android:name="android.hardware.vulkan.version" android:required="true"
+        android:version="0x00401000" />
+
+    <application
+        android:icon="@mipmap/ic_launcher"
+        android:label="Gopher64">
+        <activity android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:name=".SlintActivity" android:exported="true">
+            <meta-data android:name="android.app.lib_name" android:value="gopher64" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

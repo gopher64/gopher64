@@ -254,7 +254,8 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            target: aarch64-linux-android
+            platform: 34
+            ndk: 27.3.13750724
     steps:
       - uses: actions/checkout@v6
         with:
@@ -262,14 +263,18 @@ jobs:
           fetch-depth: 0
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          target: ${{ matrix.target }}
+          target: x86_64-linux-android,aarch64-linux-android
           rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platforms;android-${{ matrix.platform }} ndk;${{ matrix.ndk }}"
       - name: Build
+        working-directory: android-project
         run: |
-          cargo install cargo-apk cargo-ndk
-          source <(cargo ndk-env --target ${{ matrix.target }})
-          cargo apk build --profile ${{ env.BUILD_PROFILE }} --target ${{ matrix.target }} --lib
+          cargo install cargo-ndk
+          ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
 
   collect-artifacts:
     name: Collect release artifacts
