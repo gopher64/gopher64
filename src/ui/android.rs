@@ -10,6 +10,18 @@ pub const REQUEST_SELECT_ROM: jint = 1;
 pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
     std::sync::Mutex::new(None);
 
+pub static SELECT_ROM_TX: std::sync::Mutex<
+    Option<tokio::sync::oneshot::Sender<Option<std::path::PathBuf>>>,
+> = std::sync::Mutex::new(None);
+
+bind_java_type! {
+    DocumentsContract => "android.provider.DocumentsContract",
+    fields {
+        #[allow(non_snake_case)]
+        static EXTRA_INITIAL_URI: JString,
+    },
+}
+
 bind_java_type! {
     AndroidActivity => "android.app.Activity",
     type_map = {
@@ -49,6 +61,7 @@ bind_java_type! {
         fn add_category(category: JString) -> AndroidIntent,
         fn add_flags(flags: jint) -> AndroidIntent,
         fn get_data() -> AndroidUri,
+        fn put_extra(extra: JString, value: JString) -> AndroidIntent,
     },
 }
 
@@ -208,7 +221,7 @@ fn open_uri_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<()> {
     }
 }
 
-pub async fn select_rom(_rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
+pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
     let vm = if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
     {
@@ -217,13 +230,23 @@ pub async fn select_rom(_rom_dir: slint::SharedString) -> Option<std::path::Path
         eprintln!("Android app not initialized");
         return None;
     };
-    if let Err(err) = vm.attach_current_thread(|env| select_rom_on_jvm(env)) {
+    if let Err(err) = vm.attach_current_thread(|env| select_rom_on_jvm(env, rom_dir.to_string())) {
         eprintln!("JNI error while opening URI: {err:?}");
     }
-    None
+    let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
+    SELECT_ROM_TX.lock().unwrap().replace(tx);
+    rx.await.unwrap_or(None)
 }
 
-fn select_rom_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<()> {
+pub async fn select_gb_rom(_player: i32) -> Option<std::path::PathBuf> {
+    select_rom(slint::SharedString::new()).await
+}
+
+pub async fn select_gb_ram(_player: i32) -> Option<std::path::PathBuf> {
+    select_rom(slint::SharedString::new()).await
+}
+
+fn select_rom_on_jvm(env: &mut Env<'_>, rom_dir: String) -> jni::errors::Result<()> {
     if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
     {
@@ -233,23 +256,20 @@ fn select_rom_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<()> {
         let action = AndroidIntent::ACTION_OPEN_DOCUMENT(env)?;
         let category = AndroidIntent::CATEGORY_OPENABLE(env)?;
         let mime_type = JString::from_str(env, "*/*")?;
-        let intent = AndroidIntent::new(env, &action)?
+        let mut intent = AndroidIntent::new(env, &action)?
             .set_type(env, &mime_type)?
             .add_category(env, &category)?;
+        if !rom_dir.is_empty() {
+            let start_dir = JString::from_str(env, rom_dir)?;
+            let extra_initial_uri = DocumentsContract::EXTRA_INITIAL_URI(env)?;
+            intent = intent.put_extra(env, &extra_initial_uri, &start_dir)?;
+        }
 
         activity.start_activity_for_result(env, &intent, REQUEST_SELECT_ROM)?;
         Ok(())
     } else {
         Err(jni::errors::Error::UninitializedJavaVM)
     }
-}
-
-pub async fn select_gb_rom(_player: i32) -> Option<std::path::PathBuf> {
-    None
-}
-
-pub async fn select_gb_ram(_player: i32) -> Option<std::path::PathBuf> {
-    None
 }
 
 pub fn get_dirs() -> ui::Dirs {
@@ -291,7 +311,10 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                     return Ok(());
                 }
                 let path = uri.to_string(env)?;
-                println!("Selected ROM: {path}");
+                if let Some(tx) = SELECT_ROM_TX.lock().unwrap().take() {
+                    tx.send(Some(std::path::PathBuf::from(path.to_string())))
+                        .unwrap();
+                }
             }
             _ => {}
         }
