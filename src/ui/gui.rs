@@ -95,11 +95,11 @@ fn file_dropped(app: &AppWindow) {
         });
 }
 
-fn file_exists(path: &str) -> bool {
+fn rom_exists(path: &str) -> bool {
     #[cfg(not(target_os = "android"))]
     return std::fs::exists(path).unwrap_or(false);
     #[cfg(target_os = "android")]
-    return android::file_exists(path);
+    return android::rom_exists(path);
 }
 
 fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
@@ -108,7 +108,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
             config
                 .recent_roms
                 .iter()
-                .filter(|x| file_exists(x))
+                .filter(|x| rom_exists(x))
                 .map(|x| {
                     (
                         x.into(),
@@ -594,7 +594,7 @@ pub fn run_rom(
                 for rom in handle.get_recent_roms().iter() {
                     if rom.0 != file_path.to_str().unwrap()
                         && recent_roms.row_count() < 5
-                        && file_exists(&rom.0)
+                        && rom_exists(&rom.0)
                     {
                         recent_roms.push(rom);
                     }
@@ -610,7 +610,7 @@ pub fn run_rom(
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
     #[cfg(not(target_os = "android"))]
     {
-        if !rom_dir.is_empty() && file_exists(&rom_dir) {
+        if !rom_dir.is_empty() && std::fs::exists(&rom_dir).unwrap_or(false) {
             rfd::AsyncFileDialog::new().set_directory(rom_dir)
         } else {
             rfd::AsyncFileDialog::new()

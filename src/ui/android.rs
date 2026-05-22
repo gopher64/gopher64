@@ -312,7 +312,7 @@ pub fn get_dirs() -> ui::Dirs {
     }
 }
 
-pub fn file_exists(path: &str) -> bool {
+pub fn rom_exists(path: &str) -> bool {
     let path = path.to_string();
 
     let vm = if let Ok(app) = ANDROID_APP.lock()
@@ -323,14 +323,14 @@ pub fn file_exists(path: &str) -> bool {
         eprintln!("Android app not initialized");
         return false;
     };
-    if let Err(err) = vm.attach_current_thread(|env| file_exists_on_jvm(env, path)) {
+    if let Err(err) = vm.attach_current_thread(|env| rom_exists_on_jvm(env, path)) {
         eprintln!("JNI error while opening URI: {err:?}");
         return false;
     }
     true
 }
 
-fn file_exists_on_jvm(env: &mut Env<'_>, path: String) -> jni::errors::Result<()> {
+fn rom_exists_on_jvm(env: &mut Env<'_>, path: String) -> jni::errors::Result<()> {
     if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
     {
