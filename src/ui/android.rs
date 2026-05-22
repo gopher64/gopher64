@@ -69,12 +69,21 @@ bind_java_type! {
 }
 
 bind_java_type! {
+    ParcelFileDescriptor => "android.os.ParcelFileDescriptor",
+    methods {
+        fn close() -> (),
+    },
+}
+
+bind_java_type! {
     AndroidContentResolver => "android.content.ContentResolver",
     type_map = {
         AndroidUri => "android.net.Uri",
+        ParcelFileDescriptor => "android.os.ParcelFileDescriptor",
     },
     methods {
         fn take_persistable_uri_permission(uri: AndroidUri, flags: jint) -> (),
+        fn open_file_descriptor(uri: AndroidUri, mode: JString) -> ParcelFileDescriptor,
     },
 }
 
@@ -160,11 +169,9 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
             continue;
         }
 
-        if !device.supports_source(env, source_gamepad)? {
-            continue;
-        }
-
-        if !device.supports_source(env, source_joystick)? {
+        let supports_gamepad = device.supports_source(env, source_gamepad)?;
+        let supports_joystick = device.supports_source(env, source_joystick)?;
+        if !supports_gamepad && !supports_joystick {
             continue;
         }
 
@@ -221,7 +228,7 @@ fn open_uri_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<()> {
         let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
         let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
-        let uri_string = JString::from_str(env, path.to_string())?;
+        let uri_string = JString::from_str(env, path)?;
         let uri = AndroidUri::parse(env, &uri_string)?;
 
         let action_view = AndroidIntent::ACTION_VIEW(env)?;
@@ -302,6 +309,50 @@ pub fn get_dirs() -> ui::Dirs {
         }
     } else {
         panic!("Android app not initialized");
+    }
+}
+
+pub fn rom_exists(path: &str) -> bool {
+    let path = path.to_string();
+
+    let vm = if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
+    } else {
+        eprintln!("Android app not initialized");
+        return false;
+    };
+    if let Err(err) = vm.attach_current_thread(|env| rom_exists_on_jvm(env, path)) {
+        eprintln!("JNI error while opening URI: {err:?}");
+        return false;
+    }
+    true
+}
+
+fn rom_exists_on_jvm(env: &mut Env<'_>, path: String) -> jni::errors::Result<()> {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+        let path = JString::from_str(env, path)?;
+        let mode = JString::from_str(env, "r")?;
+        let uri = AndroidUri::parse(env, &path)?;
+
+        let content_resolver = activity.as_ref().get_content_resolver(env)?;
+        let parcel_file_descriptor = content_resolver.open_file_descriptor(env, &uri, &mode);
+        if let Ok(descriptor) = parcel_file_descriptor
+            && !descriptor.is_null()
+        {
+            descriptor.close(env)?;
+            return Ok(());
+        } else {
+            return Err(jni::errors::Error::ObjectFreed);
+        }
+    } else {
+        eprintln!("Android app not initialized");
+        return Err(jni::errors::Error::UninitializedJavaVM);
     }
 }
 
