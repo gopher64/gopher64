@@ -124,23 +124,29 @@ pub struct ControllerInfo {
     pub descriptor: String,
 }
 
-/// Lists connected gamepads and joysticks using the Android framework.
-pub fn list_controllers() -> Vec<ControllerInfo> {
-    let vm = if let Ok(app) = ANDROID_APP.lock()
+fn get_vm() -> Option<JavaVM> {
+    if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
     {
-        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
+        Some(unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) })
+    } else {
+        None
+    }
+}
+
+/// Lists connected gamepads and joysticks using the Android framework.
+pub fn list_controllers() -> Vec<ControllerInfo> {
+    if let Some(vm) = get_vm() {
+        match vm.attach_current_thread(list_controllers_on_jvm) {
+            Ok(controllers) => controllers,
+            Err(err) => {
+                eprintln!("JNI error while listing controllers: {err:?}");
+                Vec::new()
+            }
+        }
     } else {
         eprintln!("Android app not initialized");
-        return Vec::new();
-    };
-
-    match vm.attach_current_thread(list_controllers_on_jvm) {
-        Ok(controllers) => controllers,
-        Err(err) => {
-            eprintln!("JNI error while listing controllers: {err:?}");
-            Vec::new()
-        }
+        Vec::new()
     }
 }
 
@@ -207,18 +213,11 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
 
 /// Opens a URI in the user's default app via [`Intent::ACTION_VIEW`](https://developer.android.com/reference/android/content/Intent#ACTION_VIEW).
 pub fn open_uri(path: &str) {
-    let path = path.to_string();
-
-    let vm = if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
-        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
-    } else {
-        eprintln!("Android app not initialized");
-        return;
-    };
-    if let Err(err) = vm.attach_current_thread(|env| open_uri_on_jvm(env, &path)) {
-        eprintln!("JNI error while opening URI: {err:?}");
+    if let Some(vm) = get_vm() {
+        let path = path.to_string();
+        if let Err(err) = vm.attach_current_thread(|env| open_uri_on_jvm(env, &path)) {
+            eprintln!("JNI error while opening URI: {err:?}");
+        }
     }
 }
 
@@ -243,26 +242,25 @@ fn open_uri_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<()> {
 }
 
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
-    let vm = if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
-        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
+    if let Some(vm) = get_vm() {
+        if let Err(err) =
+            vm.attach_current_thread(|env| select_rom_on_jvm(env, rom_dir.to_string()))
+        {
+            eprintln!("JNI error while opening URI: {err:?}");
+            return None;
+        }
+        let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
+        if let Ok(mut tx_lock) = SELECT_ROM_TX.lock() {
+            tx_lock.replace(tx);
+        } else {
+            eprintln!("Error locking SELECT_ROM_TX");
+            return None;
+        }
+        rx.await.unwrap_or(None)
     } else {
         eprintln!("Android app not initialized");
-        return None;
-    };
-    if let Err(err) = vm.attach_current_thread(|env| select_rom_on_jvm(env, rom_dir.to_string())) {
-        eprintln!("JNI error while opening URI: {err:?}");
-        return None;
+        None
     }
-    let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
-    if let Ok(mut tx_lock) = SELECT_ROM_TX.lock() {
-        tx_lock.replace(tx);
-    } else {
-        eprintln!("Error locking SELECT_ROM_TX");
-        return None;
-    }
-    rx.await.unwrap_or(None)
 }
 
 pub async fn select_gb_rom(_player: i32) -> Option<std::path::PathBuf> {
@@ -329,66 +327,22 @@ pub fn get_controller_paths() -> Vec<String> {
 }
 
 pub fn rom_exists(path: &str) -> bool {
-    let path = path.to_string();
-
-    let vm = if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
-        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
-    } else {
-        eprintln!("Android app not initialized");
-        return false;
-    };
-    if let Err(err) = vm.attach_current_thread(|env| rom_exists_on_jvm(env, path)) {
-        eprintln!("JNI error while opening URI: {err:?}");
-        return false;
-    }
-    true
-}
-
-fn rom_exists_on_jvm(env: &mut Env<'_>, path: String) -> jni::errors::Result<()> {
-    if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
-        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
-        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
-        let path = JString::from_str(env, path)?;
-        let mode = JString::from_str(env, "r")?;
-        let uri = AndroidUri::parse(env, &path)?;
-
-        let content_resolver = activity.as_ref().get_content_resolver(env)?;
-        let parcel_file_descriptor = content_resolver.open_file_descriptor(env, &uri, &mode);
-        if let Ok(descriptor) = parcel_file_descriptor
-            && !descriptor.is_null()
-        {
-            descriptor.close(env)?;
-            return Ok(());
-        } else {
-            return Err(jni::errors::Error::ObjectFreed);
-        }
-    } else {
-        eprintln!("Android app not initialized");
-        return Err(jni::errors::Error::UninitializedJavaVM);
-    }
+    get_file_from_uri(&std::path::PathBuf::from(path)).is_some()
 }
 
 pub fn get_file_from_uri(path: &std::path::PathBuf) -> Option<std::fs::File> {
-    let path = path.to_str().unwrap().into();
-
-    let vm = if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
-        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
+    if let Some(vm) = get_vm() {
+        let path = path.to_str().unwrap().into();
+        match vm.attach_current_thread(|env| get_file_from_uri_on_jvm(env, path)) {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("JNI error while opening URI: {err:?}");
+                return None;
+            }
+        }
     } else {
         eprintln!("Android app not initialized");
-        return None;
-    };
-    match vm.attach_current_thread(|env| get_file_from_uri_on_jvm(env, path)) {
-        Ok(file) => file,
-        Err(err) => {
-            eprintln!("JNI error while opening URI: {err:?}");
-            return None;
-        }
+        None
     }
 }
 
@@ -436,13 +390,9 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
     let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
         if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
             && let Some(tx) = tx_lock.take()
+            && result_code == AndroidActivity::RESULT_OK(env)?
+            && !intent_data.is_null()
         {
-            if result_code != AndroidActivity::RESULT_OK(env)? {
-                return Ok(()); // user cancelled
-            }
-            if intent_data.is_null() {
-                return Ok(());
-            }
             let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
             match request_code {
                 REQUEST_SELECT_ROM => {
