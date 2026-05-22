@@ -343,60 +343,49 @@ fn hotkey_pressed(
     pressed
 }
 
-#[cfg(not(target_os = "android"))]
 pub fn get_controller_names() -> Vec<String> {
-    let mut controllers: Vec<String> = vec![];
+    #[cfg(target_os = "android")]
+    return ui::android::get_controller_names();
 
-    for joystick in get_joysticks().iter() {
-        let name = unsafe { sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick) };
-        controllers.push(if name.is_null() {
-            "Unknown controller".to_string()
-        } else {
-            unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
-        });
+    #[cfg(not(target_os = "android"))]
+    {
+        let mut controllers: Vec<String> = vec![];
+
+        for joystick in get_joysticks().iter() {
+            let name = unsafe { sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick) };
+            controllers.push(if name.is_null() {
+                "Unknown controller".to_string()
+            } else {
+                unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
+            });
+        }
+        controllers.insert(0, "None".into());
+
+        controllers
     }
-    controllers.insert(0, "None".into());
-
-    controllers
 }
 
-#[cfg(target_os = "android")]
-pub fn get_controller_names() -> Vec<String> {
-    let mut controllers: Vec<String> = ui::android::list_controllers()
-        .into_iter()
-        .map(|c| c.name)
-        .collect();
-    controllers.insert(0, "None".into());
-    controllers
-}
-
-#[cfg(not(target_os = "android"))]
 #[cfg(feature = "gui")]
 pub fn get_controller_paths() -> Vec<String> {
-    let mut controller_paths: Vec<String> = vec![];
+    #[cfg(target_os = "android")]
+    return ui::android::get_controller_paths();
 
-    for joystick in get_joysticks().iter() {
-        let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
-        controller_paths.push(if path.is_null() {
-            String::new()
-        } else {
-            unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string()
-        });
+    #[cfg(not(target_os = "android"))]
+    {
+        let mut controller_paths: Vec<String> = vec![];
+
+        for joystick in get_joysticks().iter() {
+            let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
+            controller_paths.push(if path.is_null() {
+                String::new()
+            } else {
+                unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string()
+            });
+        }
+        controller_paths.insert(0, String::new());
+
+        controller_paths
     }
-    controller_paths.insert(0, String::new());
-
-    controller_paths
-}
-
-#[cfg(target_os = "android")]
-#[cfg(feature = "gui")]
-pub fn get_controller_paths() -> Vec<String> {
-    let mut controller_paths: Vec<String> = ui::android::list_controllers()
-        .into_iter()
-        .map(|c| c.descriptor)
-        .collect();
-    controller_paths.insert(0, String::new());
-    controller_paths
 }
 
 fn handle_joystick_events(ui: &mut ui::Ui) {

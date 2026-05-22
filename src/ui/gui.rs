@@ -48,16 +48,14 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
     });
 }
 
-#[cfg(not(target_os = "android"))]
 pub fn open_uri(path: impl AsRef<std::ffi::OsStr>) {
+    #[cfg(target_os = "android")]
+    return ui::android::open_uri(path.as_ref().to_str().unwrap());
+
+    #[cfg(not(target_os = "android"))]
     if let Err(e) = open::that_detached(path) {
         eprintln!("Error opening path: {}", e);
     }
-}
-
-#[cfg(target_os = "android")]
-pub fn open_uri(path: impl AsRef<std::ffi::OsStr>) {
-    ui::android::open_uri(path.as_ref().to_str().unwrap())
 }
 
 fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
@@ -608,6 +606,9 @@ pub fn run_rom(
 }
 
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
+    #[cfg(target_os = "android")]
+    return ui::android::select_rom(rom_dir).await;
+
     #[cfg(not(target_os = "android"))]
     {
         if !rom_dir.is_empty() && std::fs::exists(&rom_dir).unwrap_or(false) {
@@ -621,13 +622,12 @@ pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathB
         .await
         .map(|file| file.path().to_path_buf())
     }
-    #[cfg(target_os = "android")]
-    {
-        ui::android::select_rom(rom_dir).await
-    }
 }
 
 pub async fn select_gb_rom(player: i32) -> Option<std::path::PathBuf> {
+    #[cfg(target_os = "android")]
+    return ui::android::select_gb_rom(player).await;
+
     #[cfg(not(target_os = "android"))]
     {
         rfd::AsyncFileDialog::new()
@@ -637,13 +637,12 @@ pub async fn select_gb_rom(player: i32) -> Option<std::path::PathBuf> {
             .await
             .map(|file| file.path().to_path_buf())
     }
-    #[cfg(target_os = "android")]
-    {
-        ui::android::select_gb_rom(player).await
-    }
 }
 
 pub async fn select_gb_ram(player: i32) -> Option<std::path::PathBuf> {
+    #[cfg(target_os = "android")]
+    return ui::android::select_gb_ram(player).await;
+
     #[cfg(not(target_os = "android"))]
     {
         rfd::AsyncFileDialog::new()
@@ -652,10 +651,6 @@ pub async fn select_gb_ram(player: i32) -> Option<std::path::PathBuf> {
             .pick_file()
             .await
             .map(|file| file.path().to_path_buf())
-    }
-    #[cfg(target_os = "android")]
-    {
-        ui::android::select_gb_ram(player).await
     }
 }
 
