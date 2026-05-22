@@ -80,6 +80,9 @@ pub fn save(
     elapsed_time: i64,
     ram_path: &std::string::String,
 ) {
+    if cfg!(target_os = "android") {
+        return;
+    }
     update_rtc_regs(gb_cart, elapsed_time);
 
     if let Ok(file) = std::fs::File::create(ram_path) {

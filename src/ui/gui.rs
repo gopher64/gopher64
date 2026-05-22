@@ -1,4 +1,6 @@
 use crate::ui;
+#[cfg(target_os = "android")]
+use crate::ui::android;
 use slint::Model;
 #[cfg(not(target_os = "android"))]
 use slint::winit_030::WinitWindowAccessor;
@@ -93,13 +95,20 @@ fn file_dropped(app: &AppWindow) {
         });
 }
 
+fn file_exists(path: &str) -> bool {
+    #[cfg(not(target_os = "android"))]
+    return std::fs::exists(path).unwrap_or(false);
+    #[cfg(target_os = "android")]
+    return android::file_exists(path);
+}
+
 fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
             config
                 .recent_roms
                 .iter()
-                .filter(|x| std::fs::exists(x).unwrap_or(false))
+                .filter(|x| file_exists(x))
                 .map(|x| {
                     (
                         x.into(),
@@ -585,7 +594,7 @@ pub fn run_rom(
                 for rom in handle.get_recent_roms().iter() {
                     if rom.0 != file_path.to_str().unwrap()
                         && recent_roms.row_count() < 5
-                        && std::fs::exists(&rom.0).unwrap_or(false)
+                        && file_exists(&rom.0)
                     {
                         recent_roms.push(rom);
                     }
@@ -601,7 +610,7 @@ pub fn run_rom(
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
     #[cfg(not(target_os = "android"))]
     {
-        if !rom_dir.is_empty() && std::fs::exists(&rom_dir).unwrap_or(false) {
+        if !rom_dir.is_empty() && file_exists(&rom_dir) {
             rfd::AsyncFileDialog::new().set_directory(rom_dir)
         } else {
             rfd::AsyncFileDialog::new()
