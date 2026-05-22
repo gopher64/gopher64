@@ -26,10 +26,12 @@ bind_java_type! {
     AndroidActivity => "android.app.Activity",
     type_map = {
         AndroidIntent => "android.content.Intent",
+        AndroidContentResolver => "android.content.ContentResolver",
     },
     methods {
         fn start_activity(intent: AndroidIntent) -> (),
         fn start_activity_for_result(intent: AndroidIntent, request_code: jint) -> (),
+        fn get_content_resolver() -> AndroidContentResolver,
     },
     fields {
         #[allow(non_snake_case)]
@@ -51,6 +53,8 @@ bind_java_type! {
         static CATEGORY_OPENABLE: JString,
         #[allow(non_snake_case)]
         static FLAG_ACTIVITY_NEW_TASK: jint,
+        #[allow(non_snake_case)]
+        static FLAG_GRANT_READ_URI_PERMISSION: jint,
     },
     constructors {
         fn new(action: JString),
@@ -59,9 +63,18 @@ bind_java_type! {
         fn set_data(uri: AndroidUri) -> AndroidIntent,
         fn set_type(r#type: JString) -> AndroidIntent,
         fn add_category(category: JString) -> AndroidIntent,
-        fn add_flags(flags: jint) -> AndroidIntent,
         fn get_data() -> AndroidUri,
         fn put_extra(extra: JString, value: JString) -> AndroidIntent,
+    },
+}
+
+bind_java_type! {
+    AndroidContentResolver => "android.content.ContentResolver",
+    type_map = {
+        AndroidUri => "android.net.Uri",
+    },
+    methods {
+        fn take_persistable_uri_permission(uri: AndroidUri, flags: jint) -> (),
     },
 }
 
@@ -303,42 +316,45 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
     intent_data: JObject<'caller>,
 ) {
     let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
-        if result_code != AndroidActivity::RESULT_OK(env)? {
-            if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
-                && let Some(tx) = tx_lock.take()
-            {
-                let _ = tx.send(None);
+        if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
+            && let Some(tx) = tx_lock.take()
+        {
+            if result_code != AndroidActivity::RESULT_OK(env)? {
+                return Ok(()); // user cancelled
             }
-            return Ok(()); // user cancelled
-        }
-        if intent_data.is_null() {
-            if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
-                && let Some(tx) = tx_lock.take()
-            {
-                let _ = tx.send(None);
+            if intent_data.is_null() {
+                return Ok(());
             }
-            return Ok(());
-        }
-        let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
-        match request_code {
-            REQUEST_SELECT_ROM => {
-                let uri = result_intent.as_ref().get_data(env)?;
-                if uri.is_null() {
-                    if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
-                        && let Some(tx) = tx_lock.take()
-                    {
-                        let _ = tx.send(None);
+            let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
+            match request_code {
+                REQUEST_SELECT_ROM => {
+                    let uri = result_intent.as_ref().get_data(env)?;
+                    if uri.is_null() {
+                        return Ok(());
                     }
-                    return Ok(());
+
+                    if let Ok(app) = ANDROID_APP.lock()
+                        && let Some(app) = app.as_ref()
+                    {
+                        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+                        let activity = unsafe {
+                            env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)?
+                        };
+
+                        let content_resolver = activity.as_ref().get_content_resolver(env)?;
+                        let take_flags = AndroidIntent::FLAG_GRANT_READ_URI_PERMISSION(env)?;
+                        content_resolver.take_persistable_uri_permission(env, &uri, take_flags)?;
+
+                        let path = uri.to_string(env)?;
+
+                        let _ = tx.send(Some(std::path::PathBuf::from(path.to_string())));
+                    } else {
+                        eprintln!("Android app not initialized");
+                        return Ok(());
+                    }
                 }
-                let path = uri.to_string(env)?;
-                if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
-                    && let Some(tx) = tx_lock.take()
-                {
-                    let _ = tx.send(Some(std::path::PathBuf::from(path.to_string())));
-                }
+                _ => {}
             }
-            _ => {}
         }
         Ok(())
     });
