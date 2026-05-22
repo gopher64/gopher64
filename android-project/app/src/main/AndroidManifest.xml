@@ -5,6 +5,8 @@
     <uses-feature android:name="android.hardware.vulkan.version" android:required="true"
         android:version="0x00401000" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:icon="@mipmap/ic_launcher"
         android:label="Gopher64">
