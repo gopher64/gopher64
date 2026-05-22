@@ -312,6 +312,21 @@ pub fn get_dirs() -> ui::Dirs {
     }
 }
 
+pub fn get_controller_names() -> Vec<String> {
+    let mut controllers: Vec<String> = list_controllers().into_iter().map(|c| c.name).collect();
+    controllers.insert(0, "None".into());
+    controllers
+}
+
+pub fn get_controller_paths() -> Vec<String> {
+    let mut controller_paths: Vec<String> = list_controllers()
+        .into_iter()
+        .map(|c| c.descriptor)
+        .collect();
+    controller_paths.insert(0, String::new());
+    controller_paths
+}
+
 pub fn rom_exists(path: &str) -> bool {
     let path = path.to_string();
 

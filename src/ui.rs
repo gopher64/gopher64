@@ -129,6 +129,9 @@ pub fn sdl_close() {
 }
 
 pub fn get_dirs() -> Dirs {
+    #[cfg(target_os = "android")]
+    return android::get_dirs();
+
     #[cfg(not(target_os = "android"))]
     {
         let exe_path = std::env::current_exe().unwrap();
@@ -147,10 +150,6 @@ pub fn get_dirs() -> Dirs {
                 cache_dir: dirs::cache_dir().unwrap().join("gopher64"),
             }
         }
-    }
-    #[cfg(target_os = "android")]
-    {
-        android::get_dirs()
     }
 }
 
