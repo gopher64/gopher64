@@ -77,7 +77,7 @@ export component Netplay inherits Page {
     }
 }
 
-export component CustomNetplayServer inherits Dialog {
+export component CustomNetplayServer inherits Window {
     in-out property custom_server_url <=> NetplayData.custom_server_url;
     title: @tr("Custom Netplay Server");
     preferred-width: 400px;
@@ -94,14 +94,16 @@ export component CustomNetplayServer inherits Dialog {
             text: NetplayData.custom_server_url;
             placeholder-text: "example.com:45000";
         }
-    }
 
-    StandardButton {
-        vertical-stretch: 0;
-        kind: ok;
-        clicked => {
-            NetplayData.custom_server_url = server_url.text;
-            ok_clicked(NetplayData.custom_server_url);
+        HorizontalBox {
+            alignment: end;
+            StandardButton {
+                kind: ok;
+                clicked => {
+                    NetplayData.custom_server_url = server_url.text;
+                    ok_clicked(NetplayData.custom_server_url);
+                }
+            }
         }
     }
 }

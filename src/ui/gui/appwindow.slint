@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { StandardButton } from "std-widgets.slint";
+import { StandardButton, VerticalBox, HorizontalBox } from "std-widgets.slint";
 import { LocalGame, ControllerConfig, Netplay, Cheats, RetroAchievements, Settings, About } from "pages.slint";
 import { SideBar } from "side_bar.slint";
 import { SettingsData } from "settings_page.slint";
@@ -250,14 +250,29 @@ export component AppWindow inherits Window {
     }
 }
 
-export component ErrorDialog inherits Dialog {
+export component ErrorDialog inherits Window {
     in-out property <string> text;
     title: @tr("Error");
-    Text {
-        text: text;
-    }
+    callback close_clicked;
+    VerticalBox {
+        alignment: start;
+        vertical-stretch: 1;
+        padding-left: root.safe-area-insets.left;
+        padding-top: root.safe-area-insets.top;
+        padding-right: root.safe-area-insets.right;
+        padding-bottom: root.safe-area-insets.bottom;
+        Text {
+            text: text;
+        }
 
-    StandardButton {
-        kind: close;
+        HorizontalBox {
+            alignment: end;
+            StandardButton {
+                kind: close;
+                clicked => {
+                    close_clicked();
+                }
+            }
+        }
     }
 }
