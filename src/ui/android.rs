@@ -1,9 +1,9 @@
+use crate::ui;
 use jni::objects::{JClass, JObject, JString};
 use jni::refs::Global;
 use jni::sys::jint;
 use jni::{Env, EnvUnowned, JavaVM, bind_java_type};
-
-use crate::ui;
+use std::os::fd::FromRawFd;
 
 pub const REQUEST_SELECT_ROM: jint = 1;
 
@@ -72,6 +72,7 @@ bind_java_type! {
     ParcelFileDescriptor => "android.os.ParcelFileDescriptor",
     methods {
         fn close() -> (),
+        fn detach_fd() -> jint,
     },
 }
 
@@ -364,6 +365,57 @@ fn rom_exists_on_jvm(env: &mut Env<'_>, path: String) -> jni::errors::Result<()>
             return Ok(());
         } else {
             return Err(jni::errors::Error::ObjectFreed);
+        }
+    } else {
+        eprintln!("Android app not initialized");
+        return Err(jni::errors::Error::UninitializedJavaVM);
+    }
+}
+
+pub fn get_file_from_uri(path: &std::path::PathBuf) -> Option<std::fs::File> {
+    let path = path.to_str().unwrap().into();
+
+    let vm = if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
+    } else {
+        eprintln!("Android app not initialized");
+        return None;
+    };
+    match vm.attach_current_thread(|env| get_file_from_uri_on_jvm(env, path)) {
+        Ok(file) => file,
+        Err(err) => {
+            eprintln!("JNI error while opening URI: {err:?}");
+            return None;
+        }
+    }
+}
+
+fn get_file_from_uri_on_jvm(
+    env: &mut Env<'_>,
+    path: String,
+) -> jni::errors::Result<Option<std::fs::File>> {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+        let path = JString::from_str(env, path)?;
+        let mode = JString::from_str(env, "r")?;
+        let uri = AndroidUri::parse(env, &path)?;
+
+        let content_resolver = activity.as_ref().get_content_resolver(env)?;
+        let parcel_file_descriptor = content_resolver.open_file_descriptor(env, &uri, &mode);
+        if let Ok(descriptor) = parcel_file_descriptor
+            && !descriptor.is_null()
+        {
+            let owned_fd = unsafe { std::os::fd::OwnedFd::from_raw_fd(descriptor.detach_fd(env)?) };
+            let file = std::fs::File::from(owned_fd);
+            descriptor.close(env)?;
+            return Ok(Some(file));
+        } else {
+            return Ok(None);
         }
     } else {
         eprintln!("Android app not initialized");

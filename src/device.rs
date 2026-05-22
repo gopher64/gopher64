@@ -16,7 +16,7 @@ const N64_EXTENSIONS_UNCOMPRESSED: [&str; 8] =
 use rand::{Rng, SeedableRng};
 
 use crate::{cheats, netplay, retroachievements, ui};
-use std::{collections::HashMap, fs, io::Read};
+use std::{collections::HashMap, io::Read};
 
 pub mod ai;
 pub mod cache;
@@ -156,7 +156,10 @@ pub fn get_rom_contents(file_path: &std::path::PathBuf) -> Option<Vec<u8>> {
         .unwrap_or_default()
         .eq_ignore_ascii_case("zip")
     {
-        let zip_file = fs::File::open(file_path).unwrap();
+        #[cfg(target_os = "android")]
+        let zip_file = ui::android::get_file_from_uri(file_path).unwrap();
+        #[cfg(not(target_os = "android"))]
+        let zip_file = std::fs::File::open(file_path).unwrap();
         let mut archive = zip::ZipArchive::new(zip_file).unwrap();
         for i in 0..archive.len() {
             let mut file = archive.by_index(i).unwrap();
@@ -173,8 +176,12 @@ pub fn get_rom_contents(file_path: &std::path::PathBuf) -> Option<Vec<u8>> {
         .unwrap_or_default()
         .eq_ignore_ascii_case("7z")
     {
+        #[cfg(target_os = "android")]
+        let sevenz_file = ui::android::get_file_from_uri(file_path).unwrap();
+        #[cfg(not(target_os = "android"))]
+        let sevenz_file = std::fs::File::open(file_path).unwrap();
         let mut archive =
-            sevenz_rust2::ArchiveReader::open(file_path, sevenz_rust2::Password::empty()).unwrap();
+            sevenz_rust2::ArchiveReader::new(sevenz_file, sevenz_rust2::Password::empty()).unwrap();
 
         let mut found = false;
         archive
@@ -197,8 +204,11 @@ pub fn get_rom_contents(file_path: &std::path::PathBuf) -> Option<Vec<u8>> {
             )
             .expect("ok");
     } else {
-        contents = fs::read(file_path)
-            .unwrap_or_else(|_| panic!("Could not read ROM file: {}", file_path.display()));
+        #[cfg(target_os = "android")]
+        let mut file = ui::android::get_file_from_uri(file_path).unwrap();
+        #[cfg(not(target_os = "android"))]
+        let mut file = std::fs::File::open(file_path).unwrap();
+        file.read_to_end(&mut contents).unwrap();
     }
 
     if contents.is_empty() {
