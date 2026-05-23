@@ -7,6 +7,8 @@ mod retroachievements;
 mod savestates;
 mod ui;
 use clap::Parser;
+#[cfg(target_os = "android")]
+use slint::ComponentHandle;
 use std::io::Error;
 
 #[cfg(target_os = "android")]
@@ -295,7 +297,8 @@ pub async fn run() -> std::io::Result<()> {
     } else {
         #[cfg(feature = "gui")]
         {
-            ui::gui::app_window(false);
+            let app = ui::gui::AppWindow::new().unwrap();
+            ui::gui::app_window(&app, false);
         }
     }
 
@@ -307,7 +310,26 @@ pub async fn run() -> std::io::Result<()> {
 #[unsafe(no_mangle)]
 #[tokio::main(worker_threads = 4)]
 async fn android_main(app: slint::android::AndroidApp) {
-    slint::android::init(app.clone()).unwrap();
+    slint::android::init_with_event_listener(app.clone(), move |event| match event {
+        slint::android::android_activity::PollEvent::Main(main_event) => match main_event {
+            slint::android::android_activity::MainEvent::TerminateWindow { .. } => {
+                if let Ok(weak_app_window) = android::WEAK_SLINT_WINDOW.lock()
+                    && let Some(weak_app_window) = weak_app_window.as_ref()
+                {
+                    {
+                        weak_app_window
+                            .upgrade_in_event_loop(move |handle| ui::gui::save_settings(&handle))
+                            .unwrap();
+                    }
+                }
+            }
+            _ => {}
+        },
+        _ => {}
+    })
+    .unwrap();
+    let app_window = ui::gui::AppWindow::new().unwrap();
+    *android::WEAK_SLINT_WINDOW.lock().unwrap() = Some(app_window.as_weak());
 
     *android::ANDROID_APP.lock().unwrap() = Some(app);
 
@@ -318,6 +340,7 @@ async fn android_main(app: slint::android::AndroidApp) {
     std::fs::create_dir_all(dirs.data_dir.join("saves")).unwrap();
     std::fs::create_dir_all(dirs.data_dir.join("states")).unwrap();
 
-    ui::gui::app_window(true);
+    ui::gui::app_window(&app_window, true);
+    *android::WEAK_SLINT_WINDOW.lock().unwrap() = None;
     *android::ANDROID_APP.lock().unwrap() = None;
 }

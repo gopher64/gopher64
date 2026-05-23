@@ -500,9 +500,8 @@ fn about_window(app: &AppWindow) {
     }
 }
 
-pub fn app_window(is_android: bool) {
+pub fn app_window(app: &AppWindow, is_android: bool) {
     retroachievements::init_client(false, false, false);
-    let app = AppWindow::new().unwrap();
     app.set_is_android(is_android);
     about_window(&app);
     ui::retroachievements::ra_window(&app);
