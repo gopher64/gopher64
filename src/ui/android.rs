@@ -14,6 +14,9 @@ pub static SELECT_ROM_TX: std::sync::Mutex<
     Option<tokio::sync::oneshot::Sender<Option<std::path::PathBuf>>>,
 > = std::sync::Mutex::new(None);
 
+pub static WEAK_SLINT_WINDOW: std::sync::Mutex<Option<slint::Weak<ui::gui::AppWindow>>> =
+    std::sync::Mutex::new(None);
+
 bind_java_type! {
     DocumentsContract => "android.provider.DocumentsContract",
     fields {
