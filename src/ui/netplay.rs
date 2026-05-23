@@ -108,44 +108,50 @@ impl NetplayPages for NetplayJoin {
     }
 }
 
+async fn get_local_servers() -> Vec<(String, String)> {
+    if let Ok(broadcast_sock) =
+        tokio::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0)).await
+        && broadcast_sock.set_broadcast(true).is_ok()
+    {
+        let data: [u8; 1] = [1];
+        if let Err(e) = broadcast_sock
+            .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
+            .await
+        {
+            eprintln!("Error sending broadcast: {}", e);
+            return vec![];
+        }
+        let mut buffer = [0; 1024];
+        if let Ok(Ok(result)) = tokio::time::timeout(
+            std::time::Duration::from_millis(500),
+            broadcast_sock.recv(&mut buffer),
+        )
+        .await
+            && let Ok(data) = serde_json::from_slice::<std::collections::HashMap<String, String>>(
+                &buffer[..result],
+            )
+        {
+            let mut local_servers = vec![];
+            for server in data.iter() {
+                local_servers.push((server.0.into(), server.1.into()));
+            }
+            local_servers
+        } else {
+            vec![]
+        }
+    } else {
+        eprintln!("Error creating netplay broadcast socket");
+        vec![]
+    }
+}
+
 fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
     let task = ui::WEB_CLIENT
         .get("https://dispatch.gopher64.com/getRegions")
         .header("netplay-id", env!("NETPLAY_ID"))
         .send();
     tokio::spawn(async move {
-        let mut local_servers: Vec<(String, String)> = vec![];
-
-        if let Ok(broadcast_sock) =
-            tokio::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0)).await
-            && broadcast_sock.set_broadcast(true).is_ok()
-        {
-            let data: [u8; 1] = [1];
-            if let Err(e) = broadcast_sock
-                .send_to(&data, (std::net::Ipv4Addr::BROADCAST, 45000))
-                .await
-            {
-                eprintln!("Error sending broadcast: {}", e);
-            }
-            let mut buffer = [0; 1024];
-            if let Ok(Ok(result)) = tokio::time::timeout(
-                std::time::Duration::from_millis(200),
-                broadcast_sock.recv(&mut buffer),
-            )
-            .await
-                && let Ok(data) = serde_json::from_slice::<std::collections::HashMap<String, String>>(
-                    &buffer[..result],
-                )
-            {
-                for server in data.iter() {
-                    local_servers.push((server.0.into(), server.1.into()));
-                }
-            }
-        } else {
-            eprintln!("Error creating netplay broadcast socket");
-        }
-
-        let response = task.await;
+        let (response, local_servers) = tokio::join!(task, get_local_servers());
         let public_servers = if let Ok(response) = response
             && let Ok(servers) = response.json::<Vec<String>>().await
         {
