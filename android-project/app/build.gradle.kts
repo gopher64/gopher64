@@ -56,8 +56,8 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     environment("ANDROID_NDK_HOME", "$ndkDir")
     environment("LIBCLANG_PATH", "$ndkDir/toolchains/llvm/prebuilt/linux-x86_64/musl/lib")
 
-    val jniLibsFolder = layout.projectDirectory.dir("$rootDir/app/src/main/jniLibs")
-    project.delete(jniLibsFolder)
+    val jniType = if (isRelease) "release" else "debug"
+    val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs"
 
     commandLine(
         "cargo", "ndk",
@@ -65,7 +65,7 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
         "-P", "$minSdk",
         "-t", "arm64-v8a",
         "-t", "x86_64",
-        "-o", "$rootDir/app/src/main/jniLibs",
+        "-o", jniLibsFolder,
         "build", "--lib",
         "--profile", if (isRelease) "release" else "dev",
     )
