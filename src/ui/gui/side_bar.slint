@@ -93,56 +93,11 @@ export component SideBar inherits Rectangle {
     in property <string> title: "Gopher64";
     in property <bool> portrait;
     in-out property <int> current-item: 0;
-    out property <int> current-focused: fs.has-focus ? fs.focused-tab : -1;
-
-    forward-focus: fs;
 
     Rectangle {
         width: 100%;
         height: 100%;
         background: Palette.background.darker(0.2);
-    }
-
-    fs := FocusScope {
-        key-pressed(event) => {
-            if (event.text == "\n") {
-                root.current-item = root.current-focused;
-                return accept;
-            }
-            if (root.portrait) {
-                if (event.text == Key.LeftArrow) {
-                    self.focused-tab = Math.max(self.focused-tab - 1, 0);
-                    return accept;
-                }
-                if (event.text == Key.RightArrow) {
-                    self.focused-tab = Math.min(self.focused-tab + 1, root.model.length - 1);
-                    return accept;
-                }
-            } else {
-                if (event.text == Key.UpArrow) {
-                    self.focused-tab = Math.max(self.focused-tab - 1, 0);
-                    return accept;
-                }
-                if (event.text == Key.DownArrow) {
-                    self.focused-tab = Math.min(self.focused-tab + 1, root.model.length - 1);
-                    return accept;
-                }
-            }
-            return reject;
-        }
-
-        key-released(event) => {
-            if (event.text == " ") {
-                root.current-item = root.current-focused;
-                return accept;
-            }
-            return reject;
-        }
-
-        property <int> focused-tab: 0;
-
-        width: 0;
-        height: 0;
     }
 
     // Bottom bar in portrait: icons in a row, centered vertically in the bar.
@@ -155,7 +110,6 @@ export component SideBar inherits Rectangle {
         alignment: space-evenly;
 
         accessible-role: tab-list;
-        accessible-delegate-focus: root.current-focused >= 0 ? root.current-focused : root.current-item;
         accessible-label: root.title;
         accessible-item-count: root.model.length;
 
@@ -168,7 +122,6 @@ export component SideBar inherits Rectangle {
                 }
 
                 tab-index: index;
-                has-focus: index == root.current-focused;
                 icon: item.icon;
                 label: item.label;
                 selected: index == root.current-item;
@@ -186,7 +139,6 @@ export component SideBar inherits Rectangle {
         alignment: space-evenly;
 
         accessible-role: tab-list;
-        accessible-delegate-focus: root.current-focused >= 0 ? root.current-focused : root.current-item;
         accessible-label: root.title;
         accessible-item-count: root.model.length;
 
@@ -199,7 +151,6 @@ export component SideBar inherits Rectangle {
                 }
 
                 tab-index: index;
-                has-focus: index == root.current-focused;
                 icon: item.icon;
                 label: item.label;
                 selected: index == root.current-item;
