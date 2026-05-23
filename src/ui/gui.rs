@@ -1,3 +1,4 @@
+use crate::retroachievements;
 use crate::ui;
 #[cfg(target_os = "android")]
 use crate::ui::android;
@@ -500,6 +501,7 @@ fn about_window(app: &AppWindow) {
 }
 
 pub fn app_window(is_android: bool) {
+    retroachievements::init_client(false, false, false);
     let app = AppWindow::new().unwrap();
     app.set_is_android(is_android);
     about_window(&app);
@@ -521,6 +523,7 @@ pub fn app_window(is_android: bool) {
         slint::CloseRequestResponse::HideWindow
     });
     app.run().unwrap();
+    retroachievements::shutdown_client();
 }
 
 pub fn run_rom(

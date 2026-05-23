@@ -295,9 +295,7 @@ pub async fn run() -> std::io::Result<()> {
     } else {
         #[cfg(feature = "gui")]
         {
-            retroachievements::init_client(false, false, false);
             ui::gui::app_window(false);
-            retroachievements::shutdown_client();
         }
     }
 
