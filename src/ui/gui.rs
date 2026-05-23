@@ -503,16 +503,16 @@ fn about_window(app: &AppWindow) {
 pub fn app_window(app: &AppWindow, is_android: bool) {
     retroachievements::init_client(false, false, false);
     app.set_is_android(is_android);
-    about_window(&app);
-    ui::retroachievements::ra_window(&app);
+    about_window(app);
+    ui::retroachievements::ra_window(app);
     {
         let config = ui::config::Config::new();
-        settings_window(&app, &config);
-        controller_window(&app, &config);
-        local_game_window(&app, &config);
+        settings_window(app, &config);
+        controller_window(app, &config);
+        local_game_window(app, &config);
     }
-    ui::netplay::netplay_window(&app);
-    ui::cheats::cheats_window(&app);
+    ui::netplay::netplay_window(app);
+    ui::cheats::cheats_window(app);
 
     #[cfg(not(target_os = "android"))]
     {
