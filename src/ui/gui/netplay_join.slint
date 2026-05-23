@@ -3,6 +3,7 @@ import { NetplayData } from "netplay_page.slint";
 
 export component NetplayJoin inherits Window {
     title: @tr("Netplay: Join Session");
+    callback close_clicked;
     in-out property server_names <=> NetplayData.server_names;
     in-out property server_urls <=> NetplayData.server_urls;
     in-out property custom_server_url <=> NetplayData.custom_server_url;
@@ -23,6 +24,17 @@ export component NetplayJoin inherits Window {
     callback join_session(string, string, string, string, int);
     preferred-width: 700px;
     preferred-height: 475px;
+
+    forward-focus: my-key-handler;
+    my-key-handler := FocusScope {
+        key-pressed(event) => {
+            if (event.text == Key.Back) {
+                close_clicked();
+                return accept;
+            }
+            return reject;
+        }
+    }
 
     VerticalBox {
         vertical-stretch: 1;

@@ -254,6 +254,18 @@ export component ErrorDialog inherits Window {
     in-out property <string> text;
     title: @tr("Error");
     callback close_clicked;
+
+    forward-focus: my-key-handler;
+    my-key-handler := FocusScope {
+        key-pressed(event) => {
+            if (event.text == Key.Back) {
+                close_clicked();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
     VerticalBox {
         alignment: start;
         vertical-stretch: 1;

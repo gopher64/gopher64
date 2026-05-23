@@ -3,6 +3,7 @@ import { NetplayData } from "netplay_page.slint";
 
 export component NetplayCreate inherits Window {
     title: @tr("Netplay: Create Session");
+    callback close_clicked;
     preferred-width: 425px;
     preferred-height: 475px;
     in-out property server_names <=> NetplayData.server_names;
@@ -18,6 +19,17 @@ export component NetplayCreate inherits Window {
     callback get_custom_url();
     callback select_rom(string);
     callback create_session(string, string, string, string, string, string, string);
+
+    forward-focus: my-key-handler;
+    my-key-handler := FocusScope {
+        key-pressed(event) => {
+            if (event.text == Key.Back) {
+                close_clicked();
+                return accept;
+            }
+            return reject;
+        }
+    }
 
     VerticalBox {
         vertical-stretch: 1;

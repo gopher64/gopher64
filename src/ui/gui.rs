@@ -377,6 +377,10 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
                 })
                 .unwrap();
         });
+        let weak_dialog = dialog.as_weak();
+        dialog.on_close_clicked(move || {
+            weak_dialog.unwrap().hide().unwrap();
+        });
         dialog.show().unwrap();
     });
 

@@ -234,6 +234,10 @@ fn show_custom_url_dialog(weak: slint::Weak<NetplayCreate>, server_url: slint::S
         .unwrap();
         weak_dialog.unwrap().hide().unwrap();
     });
+    let weak_dialog = url_dialog.as_weak();
+    url_dialog.on_close_clicked(move || {
+        weak_dialog.unwrap().hide().unwrap();
+    });
     url_dialog.show().unwrap();
 }
 
@@ -363,6 +367,10 @@ pub fn setup_create_window(
         },
     );
 
+    let weak = create_window.as_weak();
+    create_window.on_close_clicked(move || {
+        weak.unwrap().hide().unwrap();
+    });
     create_window.show().unwrap();
 }
 
@@ -1132,6 +1140,10 @@ fn setup_wait_window(
         }
     });
 
+    let weak = wait.as_weak();
+    wait.on_close_clicked(move || {
+        weak.unwrap().hide().unwrap();
+    });
     wait.show().unwrap();
 }
 
@@ -1191,6 +1203,11 @@ pub fn setup_join_window(
             );
         },
     );
+
+    let weak = join_window.as_weak();
+    join_window.on_close_clicked(move || {
+        weak.unwrap().hide().unwrap();
+    });
 
     join_window.show().unwrap();
 }

@@ -12,6 +12,7 @@ export global NetplayWaitData {
 
 export component NetplayWait inherits Window {
     title: @tr("Netplay: Waiting Room");
+    callback close_clicked;
     preferred-width: 500px;
     preferred-height: 500px;
     in-out property players <=> NetplayWaitData.players;
@@ -25,6 +26,17 @@ export component NetplayWait inherits Window {
     in-out property ping <=> NetplayWaitData.ping;
     callback send_chat_message(string);
     callback begin_game;
+
+    forward-focus: my-key-handler;
+    my-key-handler := FocusScope {
+        key-pressed(event) => {
+            if (event.text == Key.Back) {
+                close_clicked();
+                return accept;
+            }
+            return reject;
+        }
+    }
 
     VerticalBox {
         vertical-stretch: 1;

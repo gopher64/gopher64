@@ -82,6 +82,19 @@ export component CustomNetplayServer inherits Window {
     title: @tr("Custom Netplay Server");
     preferred-width: 400px;
     callback ok_clicked(string);
+    callback close_clicked;
+
+    forward-focus: my-key-handler;
+    my-key-handler := FocusScope {
+        key-pressed(event) => {
+            if (event.text == Key.Back) {
+                close_clicked();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
     VerticalBox {
         alignment: start;
         vertical-stretch: 1;
