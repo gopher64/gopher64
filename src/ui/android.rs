@@ -151,9 +151,6 @@ pub fn list_controllers() -> Vec<ControllerInfo> {
 }
 
 fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<ControllerInfo>> {
-    let source_gamepad = AndroidInputDevice::SOURCE_GAMEPAD(env)?;
-    let source_joystick = AndroidInputDevice::SOURCE_JOYSTICK(env)?;
-
     let device_ids = AndroidInputDevice::get_device_ids(env)?;
     let count = device_ids.len(env)?;
     let mut ids = vec![0i32; count];
@@ -168,25 +165,11 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
             continue;
         }
 
-        if device.is_virtual(env)? {
-            continue;
-        }
-
-        if !device.is_external(env)? {
-            continue;
-        }
-
-        let supports_gamepad = device.supports_source(env, source_gamepad)?;
-        let supports_joystick = device.supports_source(env, source_joystick)?;
+        let supports_gamepad =
+            device.supports_source(env, AndroidInputDevice::SOURCE_GAMEPAD(env)?)?;
+        let supports_joystick =
+            device.supports_source(env, AndroidInputDevice::SOURCE_JOYSTICK(env)?)?;
         if !supports_gamepad && !supports_joystick {
-            continue;
-        }
-
-        if device.get_vendor_id(env)? == 0 {
-            continue;
-        }
-
-        if device.get_product_id(env)? == 0 {
             continue;
         }
 
