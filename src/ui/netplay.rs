@@ -1,9 +1,6 @@
 use crate::device;
 use crate::ui;
-use crate::ui::gui::{
-    AppWindow, CustomNetplayServer, DispatcherDialog, ErrorDialog, NetplayCreate, NetplayDevice,
-    NetplayJoin, NetplayWait, open_uri, run_rom, save_settings,
-};
+use crate::ui::gui::{AppWindow, NetplayDevice, open_uri, run_rom, save_settings};
 use futures::{SinkExt, StreamExt};
 use sha2::{Digest, Sha256};
 use slint::{ComponentHandle, Model};
@@ -44,70 +41,6 @@ pub struct NetplayMessage {
     rooms: Option<Vec<NetplayRoom>>,
 }
 
-trait NetplayPages {
-    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>);
-    fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>);
-    fn set_game_name(&self, game_name: slint::SharedString);
-    fn set_game_hash(&self, game_hash: slint::SharedString);
-    fn set_game_cheats(&self, game_cheats: slint::SharedString);
-    fn set_rom_path(&self, rom_path: slint::SharedString);
-    fn set_peer_addr(&self, peer_addr: slint::SharedString);
-    fn refresh_sessions(&self) {
-        // Default implementation does nothing
-    }
-}
-
-impl NetplayPages for NetplayCreate {
-    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>) {
-        self.set_server_names(names);
-    }
-    fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>) {
-        self.set_server_urls(urls);
-    }
-    fn set_game_name(&self, game_name: slint::SharedString) {
-        self.set_game_name(game_name);
-    }
-    fn set_game_hash(&self, game_hash: slint::SharedString) {
-        self.set_game_hash(game_hash);
-    }
-    fn set_game_cheats(&self, game_cheats: slint::SharedString) {
-        self.set_game_cheats(game_cheats);
-    }
-    fn set_rom_path(&self, rom_path: slint::SharedString) {
-        self.set_rom_path(rom_path);
-    }
-    fn set_peer_addr(&self, peer_addr: slint::SharedString) {
-        self.set_peer_addr(peer_addr);
-    }
-}
-
-impl NetplayPages for NetplayJoin {
-    fn set_server_names(&self, names: slint::ModelRc<slint::SharedString>) {
-        self.set_server_names(names);
-    }
-    fn set_server_urls(&self, urls: slint::ModelRc<slint::SharedString>) {
-        self.set_server_urls(urls);
-    }
-    fn refresh_sessions(&self) {
-        self.invoke_refresh_session();
-    }
-    fn set_game_name(&self, game_name: slint::SharedString) {
-        self.set_game_name(game_name);
-    }
-    fn set_game_hash(&self, game_hash: slint::SharedString) {
-        self.set_game_hash(game_hash);
-    }
-    fn set_game_cheats(&self, game_cheats: slint::SharedString) {
-        self.set_game_cheats(game_cheats);
-    }
-    fn set_rom_path(&self, rom_path: slint::SharedString) {
-        self.set_rom_path(rom_path);
-    }
-    fn set_peer_addr(&self, peer_addr: slint::SharedString) {
-        self.set_peer_addr(peer_addr);
-    }
-}
-
 async fn get_local_servers() -> Vec<(String, String)> {
     if let Ok(broadcast_sock) =
         tokio::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0)).await
@@ -145,7 +78,7 @@ async fn get_local_servers() -> Vec<(String, String)> {
     }
 }
 
-fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slint::Weak<T>) {
+fn populate_server_names(weak: slint::Weak<AppWindow>, refresh_sessions: bool) {
     let task = ui::WEB_CLIENT
         .get("https://dispatch.gopher64.com/getRegions")
         .header("netplay-id", env!("NETPLAY_ID"))
@@ -171,18 +104,17 @@ fn populate_server_names<T: ComponentHandle + NetplayPages + 'static>(weak: slin
                 server_urls.push(format!("dispatcher:{server}").into());
             }
             server_names.push("Custom".into());
-            handle.refresh_sessions();
-            handle.set_server_names(slint::ModelRc::from(std::rc::Rc::new(server_names)));
-            handle.set_server_urls(slint::ModelRc::from(std::rc::Rc::new(server_urls)));
+            if refresh_sessions {
+                handle.invoke_netplay_refresh_sessions();
+            }
+            handle.set_netplay_server_names(slint::ModelRc::from(std::rc::Rc::new(server_names)));
+            handle.set_netplay_server_urls(slint::ModelRc::from(std::rc::Rc::new(server_urls)));
         })
         .unwrap();
     });
 }
 
-fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
-    weak: slint::Weak<T>,
-    rom_dir: slint::SharedString,
-) {
+fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
     let select_rom = ui::gui::select_rom(rom_dir);
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
@@ -202,26 +134,20 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
                 }
 
                 weak.upgrade_in_event_loop(move |handle| {
-                    handle.set_game_name(game_name.into());
-                    handle.set_game_hash(hash.into());
-                    handle.set_game_cheats(parsed_cheats.into());
-                    handle.set_rom_path(file.to_str().unwrap().into());
+                    handle.set_netplay_game_name(game_name.into());
+                    handle.set_netplay_game_hash(hash.into());
+                    handle.set_netplay_game_cheats(parsed_cheats.into());
+                    handle.set_netplay_rom_path(file.to_str().unwrap().into());
                 })
                 .unwrap();
             } else {
                 weak.upgrade_in_event_loop(move |handle| {
-                    let message_dialog = ErrorDialog::new().unwrap();
-                    let weak_dialog = message_dialog.as_weak();
-                    message_dialog.on_close_clicked(move || {
-                        weak_dialog.unwrap().hide().unwrap();
-                    });
-                    message_dialog.set_text("Could not read ROM".into());
-                    message_dialog.show().unwrap();
+                    handle.invoke_show_message("Could not read ROM".into(), true);
 
-                    handle.set_game_name(String::new().into());
-                    handle.set_game_hash(String::new().into());
-                    handle.set_game_cheats(String::new().into());
-                    handle.set_rom_path(String::new().into());
+                    handle.set_netplay_game_name(String::new().into());
+                    handle.set_netplay_game_hash(String::new().into());
+                    handle.set_netplay_game_cheats(String::new().into());
+                    handle.set_netplay_rom_path(String::new().into());
                 })
                 .unwrap();
             }
@@ -229,54 +155,25 @@ fn select_rom<T: ComponentHandle + NetplayPages + 'static>(
     });
 }
 
-fn show_custom_url_dialog(weak: slint::Weak<NetplayCreate>, server_url: slint::SharedString) {
-    let url_dialog = CustomNetplayServer::new().unwrap();
-    url_dialog.set_custom_server_url(server_url);
-    let weak_dialog = url_dialog.as_weak();
-    url_dialog.on_ok_clicked(move |server_url| {
-        weak.upgrade_in_event_loop(move |handle| {
-            handle.set_custom_server_url(server_url.clone());
-        })
-        .unwrap();
-        weak_dialog.unwrap().hide().unwrap();
-    });
-    url_dialog.show().unwrap();
-}
-
-pub fn setup_create_window(
-    create_window: &NetplayCreate,
+fn setup_create_window(
+    app: &AppWindow,
     game_settings: ui::GameSettings,
-    rom_dir: slint::SharedString,
-    weak_app: slint::Weak<AppWindow>,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
 ) {
-    let (netplay_read_sender, netplay_read_receiver): (
-        tokio::sync::broadcast::Sender<NetplayMessage>,
-        tokio::sync::broadcast::Receiver<NetplayMessage>,
-    ) = tokio::sync::broadcast::channel(5);
-
-    let (netplay_write_sender, netplay_write_receiver): (
-        tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-        tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
-    ) = tokio::sync::broadcast::channel(5);
-
-    create_window.set_rom_dir(rom_dir);
-    populate_server_names(create_window.as_weak());
-    let weak = create_window.as_weak();
-    create_window.on_get_custom_url(move || {
-        let weak2 = weak.clone();
+    populate_server_names(app.as_weak(), false);
+    let weak = app.as_weak();
+    app.on_netplay_get_custom_url(move || {
         weak.upgrade_in_event_loop(move |handle| {
-            show_custom_url_dialog(weak2, handle.get_custom_server_url());
+            handle.invoke_show_custom_server_dialog();
         })
         .unwrap();
     });
 
-    let weak = create_window.as_weak();
-    create_window.on_select_rom(move |rom_dir| {
-        select_rom(weak.clone(), rom_dir);
-    });
-
-    let weak = create_window.as_weak();
-    create_window.on_create_session(
+    let weak = app.as_weak();
+    app.on_netplay_create_session(
         move |server_url,
               session_name,
               player_name,
@@ -286,10 +183,13 @@ pub fn setup_create_window(
               password| {
             let _ = netplay_write_sender.send(None); // close current websocket if any
             if server_url.starts_with("dispatcher:") {
-                let message_dialog = DispatcherDialog::new().unwrap();
-                let weak_dialog = message_dialog.as_weak();
-                message_dialog.show().unwrap();
-
+                weak.upgrade_in_event_loop(move |handle| {
+                    handle.invoke_show_message(
+                        "Creating server, please wait...This may take about 30 seconds.".into(),
+                        false,
+                    );
+                })
+                .unwrap();
                 let task = ui::WEB_CLIENT
                     .get("https://dispatch.gopher64.com/createServer")
                     .query(&[("region", server_url.strip_prefix("dispatcher:").unwrap())])
@@ -301,14 +201,10 @@ pub fn setup_create_window(
                 let netplay_read_receiver = netplay_read_receiver.resubscribe();
                 let game_settings = game_settings.clone();
                 let weak = weak.clone();
-                let weak_app = weak_app.clone();
+                let weak_app = weak.clone();
                 tokio::spawn(async move {
                     let response = task.await;
-                    weak_dialog
-                        .upgrade_in_event_loop(move |handle| {
-                            handle.hide().unwrap();
-                        })
-                        .unwrap();
+
                     if let Ok(response) = response
                         && let Ok(server) = response
                             .json::<std::collections::HashMap<String, String>>()
@@ -334,12 +230,11 @@ pub fn setup_create_window(
                             password.to_string(),
                             game_settings,
                             weak_app,
-                            weak.clone(),
                         );
                     } else {
                         weak.upgrade_in_event_loop(|handle| {
-                            handle.set_pending_session(false);
-                            show_netplay_error("Server could not be created".to_string());
+                            handle.set_netplay_pending_session(false);
+                            handle.invoke_show_message("Server could not be created".into(), true);
                         })
                         .unwrap();
                     }
@@ -362,21 +257,20 @@ pub fn setup_create_window(
                     game_cheats.to_string(),
                     password.to_string(),
                     game_settings.clone(),
-                    weak_app.clone(),
                     weak.clone(),
                 );
             }
         },
     );
 
-    create_window.show().unwrap();
+    app.set_show_netplay_create_room(true);
 }
 
-fn manage_websocket<T: ComponentHandle + NetplayPages + 'static>(
+fn manage_websocket(
     server_url: String,
-    netplay_read_sender: tokio::sync::broadcast::Sender<NetplayMessage>,
+    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
-    weak: slint::Weak<T>,
+    weak: slint::Weak<AppWindow>,
 ) {
     tokio::spawn(async move {
         if let Ok(Ok((socket, _response))) = tokio::time::timeout(
@@ -389,7 +283,7 @@ fn manage_websocket<T: ComponentHandle + NetplayPages + 'static>(
                 tokio_tungstenite::MaybeTlsStream::Plain(stream) => {
                     let addr = stream.peer_addr().unwrap().to_string();
                     weak.upgrade_in_event_loop(move |handle| {
-                        handle.set_peer_addr(addr.into());
+                        handle.set_netplay_peer_addr(addr.into());
                     })
                     .unwrap();
                 }
@@ -432,17 +326,7 @@ fn manage_websocket<T: ComponentHandle + NetplayPages + 'static>(
     });
 }
 
-fn show_netplay_error(message: String) {
-    let message_dialog = ErrorDialog::new().unwrap();
-    let weak_dialog = message_dialog.as_weak();
-    message_dialog.on_close_clicked(move || {
-        weak_dialog.unwrap().hide().unwrap();
-    });
-    message_dialog.set_text(message.into());
-    message_dialog.show().unwrap();
-}
-
-fn update_sessions(weak: slint::Weak<NetplayJoin>) {
+fn update_sessions(weak: slint::Weak<AppWindow>) {
     let task = ui::WEB_CLIENT
         .get("https://dispatch.gopher64.com/getServers")
         .header("netplay-id", env!("NETPLAY_ID"))
@@ -461,11 +345,11 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
         weak.upgrade_in_event_loop(move |handle| {
             let mut servers: std::collections::HashMap<String, String> =
                 std::collections::HashMap::new();
-            let server_names = handle.get_server_names();
-            let server_urls = handle.get_server_urls();
+            let server_names = handle.get_netplay_server_names();
+            let server_urls = handle.get_netplay_server_urls();
             for (i, server_name) in server_names.iter().enumerate() {
                 if server_name == "Custom" {
-                    let custom_server_url = handle.get_custom_server_url();
+                    let custom_server_url = handle.get_netplay_custom_server_url();
                     if !custom_server_url.is_empty() {
                         servers.insert(
                             "Custom".to_string(),
@@ -582,18 +466,20 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
                                 slint::VecModel::from(session.to_vec()),
                             )));
                         }
-                        handle.set_sessions(slint::ModelRc::from(std::rc::Rc::new(sessions_vec)));
+                        handle.set_netplay_sessions(slint::ModelRc::from(std::rc::Rc::new(
+                            sessions_vec,
+                        )));
 
-                        handle.set_room_urls(slint::ModelRc::from(std::rc::Rc::new(
+                        handle.set_netplay_room_urls(slint::ModelRc::from(std::rc::Rc::new(
                             slint::VecModel::from(room_urls.to_vec()),
                         )));
 
-                        handle.set_room_ports(slint::ModelRc::from(std::rc::Rc::new(
+                        handle.set_netplay_room_ports(slint::ModelRc::from(std::rc::Rc::new(
                             slint::VecModel::from(room_ports.to_vec()),
                         )));
 
-                        handle.set_current_session(-1);
-                        handle.set_pending_refresh(false);
+                        handle.set_netplay_current_session(-1);
+                        handle.set_netplay_pending_refresh(false);
                     })
                     .unwrap();
             });
@@ -605,7 +491,7 @@ fn update_sessions(weak: slint::Weak<NetplayJoin>) {
 #[allow(clippy::too_many_arguments)]
 fn create_session(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     session_name: String,
     player_name: String,
     game_name: String,
@@ -614,7 +500,6 @@ fn create_session(
     password: String,
     game_settings: ui::GameSettings,
     weak_app: slint::Weak<AppWindow>,
-    weak: slint::Weak<NetplayCreate>,
 ) {
     tokio::spawn(async move {
         let now_utc = std::time::SystemTime::now()
@@ -673,84 +558,85 @@ fn create_session(
         )
         .await
         {
-            Ok(Ok(message)) => {
+            Ok(Ok(Some(message))) => {
                 if message.message_type == "reply_create_room" && message.accept.unwrap() == 0 {
-                    weak.upgrade_in_event_loop(move |handle| {
-                        let session = message.room.as_ref().unwrap();
-                        let features_default = "false".to_string();
-                        let cheats_default = "{}".to_string();
-                        let overclock = session
-                            .features
-                            .as_ref()
-                            .unwrap()
-                            .get("overclock")
-                            .unwrap_or(&features_default);
-                        let disable_expansion_pak = session
-                            .features
-                            .as_ref()
-                            .unwrap()
-                            .get("disable_expansion_pak")
-                            .unwrap_or(&features_default);
-                        let cheats = session
-                            .features
-                            .as_ref()
-                            .unwrap()
-                            .get("cheats")
-                            .unwrap_or(&cheats_default);
-                        setup_wait_window(
-                            netplay_write_sender,
-                            netplay_read_receiver,
-                            session.room_name.as_ref().unwrap().into(),
-                            session.game_name.as_ref().unwrap().into(),
-                            handle.get_rom_path(),
-                            message.player_name.as_ref().unwrap().into(),
-                            session.port.unwrap(),
-                            ui::GameSettings {
-                                overclock: overclock.parse().unwrap(),
-                                disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
-                                cheats: serde_json::from_str(cheats).unwrap(),
-                                load_savestate_slot: None,
-                            },
-                            handle.get_peer_addr(),
-                            weak_app,
-                        );
-                        handle.hide().unwrap();
-                    })
-                    .unwrap();
+                    weak_app
+                        .upgrade_in_event_loop(move |handle| {
+                            let session = message.room.as_ref().unwrap();
+                            let features_default = "false".to_string();
+                            let cheats_default = "{}".to_string();
+                            let overclock = session
+                                .features
+                                .as_ref()
+                                .unwrap()
+                                .get("overclock")
+                                .unwrap_or(&features_default);
+                            let disable_expansion_pak = session
+                                .features
+                                .as_ref()
+                                .unwrap()
+                                .get("disable_expansion_pak")
+                                .unwrap_or(&features_default);
+                            let cheats = session
+                                .features
+                                .as_ref()
+                                .unwrap()
+                                .get("cheats")
+                                .unwrap_or(&cheats_default);
+                            setup_wait_window(
+                                netplay_write_sender,
+                                netplay_read_receiver,
+                                session.room_name.as_ref().unwrap().into(),
+                                session.game_name.as_ref().unwrap().into(),
+                                handle.get_netplay_rom_path(),
+                                message.player_name.as_ref().unwrap().into(),
+                                session.port.unwrap(),
+                                ui::GameSettings {
+                                    overclock: overclock.parse().unwrap(),
+                                    disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
+                                    cheats: serde_json::from_str(cheats).unwrap(),
+                                    load_savestate_slot: None,
+                                },
+                                handle.get_netplay_peer_addr(),
+                                &handle,
+                            );
+                        })
+                        .unwrap();
                 } else {
-                    weak.upgrade_in_event_loop(move |handle| {
-                        handle.set_pending_session(false);
-                        if let Some(message) = message.message {
-                            show_netplay_error(message);
-                        }
-                    })
-                    .unwrap();
+                    weak_app
+                        .upgrade_in_event_loop(move |handle| {
+                            handle.set_netplay_pending_session(false);
+                            if let Some(message) = message.message {
+                                handle.invoke_show_message(message.into(), true);
+                            }
+                        })
+                        .unwrap();
                 }
             }
+            Ok(Ok(None)) => {}
             Ok(Err(err)) => {
                 panic!("netplay_read_receiver error: {err}");
             }
             Err(_) => {
-                weak.upgrade_in_event_loop(move |handle| {
-                    handle.set_pending_session(false);
-                    show_netplay_error("Server did not respond".to_string());
-                })
-                .unwrap();
+                weak_app
+                    .upgrade_in_event_loop(move |handle| {
+                        handle.set_netplay_pending_session(false);
+                        handle.invoke_show_message("Server did not respond".into(), true);
+                    })
+                    .unwrap();
             }
         }
     });
 }
 
-#[allow(clippy::too_many_arguments)]
 fn join_session(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     player_name: String,
     game_hash: String,
     password: String,
     room_port: i32,
     weak_app: slint::Weak<AppWindow>,
-    weak: slint::Weak<NetplayJoin>,
 ) {
     tokio::spawn(async move {
         let now_utc = std::time::SystemTime::now()
@@ -798,69 +684,72 @@ fn join_session(
         )
         .await
         {
-            Ok(Ok(message)) => {
+            Ok(Ok(Some(message))) => {
                 if message.message_type == "reply_join_room" && message.accept.unwrap() == 0 {
-                    weak.upgrade_in_event_loop(move |handle| {
-                        let session = message.room.as_ref().unwrap();
-                        let features_default = "false".to_string();
-                        let cheats_default = "{}".to_string();
-                        let overclock = session
-                            .features
-                            .as_ref()
-                            .unwrap()
-                            .get("overclock")
-                            .unwrap_or(&features_default);
-                        let disable_expansion_pak = session
-                            .features
-                            .as_ref()
-                            .unwrap()
-                            .get("disable_expansion_pak")
-                            .unwrap_or(&features_default);
-                        let cheats = session
-                            .features
-                            .as_ref()
-                            .unwrap()
-                            .get("cheats")
-                            .unwrap_or(&cheats_default);
-                        setup_wait_window(
-                            netplay_write_sender,
-                            netplay_read_receiver,
-                            session.room_name.as_ref().unwrap().into(),
-                            session.game_name.as_ref().unwrap().into(),
-                            handle.get_rom_path(),
-                            message.player_name.as_ref().unwrap().into(),
-                            session.port.unwrap(),
-                            ui::GameSettings {
-                                overclock: overclock.parse().unwrap(),
-                                disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
-                                cheats: serde_json::from_str(cheats).unwrap(),
-                                load_savestate_slot: None,
-                            },
-                            handle.get_peer_addr(),
-                            weak_app,
-                        );
-                        handle.hide().unwrap();
-                    })
-                    .unwrap();
+                    weak_app
+                        .upgrade_in_event_loop(move |handle| {
+                            let session = message.room.as_ref().unwrap();
+                            let features_default = "false".to_string();
+                            let cheats_default = "{}".to_string();
+                            let overclock = session
+                                .features
+                                .as_ref()
+                                .unwrap()
+                                .get("overclock")
+                                .unwrap_or(&features_default);
+                            let disable_expansion_pak = session
+                                .features
+                                .as_ref()
+                                .unwrap()
+                                .get("disable_expansion_pak")
+                                .unwrap_or(&features_default);
+                            let cheats = session
+                                .features
+                                .as_ref()
+                                .unwrap()
+                                .get("cheats")
+                                .unwrap_or(&cheats_default);
+                            setup_wait_window(
+                                netplay_write_sender,
+                                netplay_read_receiver,
+                                session.room_name.as_ref().unwrap().into(),
+                                session.game_name.as_ref().unwrap().into(),
+                                handle.get_netplay_rom_path(),
+                                message.player_name.as_ref().unwrap().into(),
+                                session.port.unwrap(),
+                                ui::GameSettings {
+                                    overclock: overclock.parse().unwrap(),
+                                    disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
+                                    cheats: serde_json::from_str(cheats).unwrap(),
+                                    load_savestate_slot: None,
+                                },
+                                handle.get_netplay_peer_addr(),
+                                &handle,
+                            );
+                        })
+                        .unwrap();
                 } else {
-                    weak.upgrade_in_event_loop(move |handle| {
-                        handle.set_pending_session(false);
-                        if let Some(message) = message.message {
-                            show_netplay_error(message);
-                        }
-                    })
-                    .unwrap();
+                    weak_app
+                        .upgrade_in_event_loop(move |handle| {
+                            handle.set_netplay_pending_session(false);
+                            if let Some(message) = message.message {
+                                handle.invoke_show_message(message.into(), true);
+                            }
+                        })
+                        .unwrap();
                 }
             }
+            Ok(Ok(None)) => {}
             Ok(Err(err)) => {
                 panic!("netplay_read_receiver error: {err}");
             }
             Err(_) => {
-                weak.upgrade_in_event_loop(move |handle| {
-                    handle.set_pending_session(false);
-                    show_netplay_error("Server did not respond".to_string());
-                })
-                .unwrap();
+                weak_app
+                    .upgrade_in_event_loop(move |handle| {
+                        handle.set_netplay_pending_session(false);
+                        handle.invoke_show_message("Server did not respond".into(), true);
+                    })
+                    .unwrap();
             }
         }
     });
@@ -869,7 +758,7 @@ fn join_session(
 #[allow(clippy::too_many_arguments)]
 fn setup_wait_window(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<NetplayMessage>,
+    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
     session_name: slint::SharedString,
     game_name: slint::SharedString,
     rom_path: slint::SharedString,
@@ -877,21 +766,20 @@ fn setup_wait_window(
     port: i32,
     game_settings: ui::GameSettings,
     peer_addr: slint::SharedString,
-    weak_app: slint::Weak<AppWindow>,
+    app: &AppWindow,
 ) {
     let local_player = player_name.clone();
 
     let mut socket_addr: std::net::SocketAddr = peer_addr.to_string().parse().unwrap();
     socket_addr.set_port(port as u16);
-    let wait = NetplayWait::new().unwrap();
-    wait.set_session_name(session_name);
-    wait.set_game_name(game_name);
-    wait.set_rom_path(rom_path);
-    wait.set_port(port);
-    wait.set_ping("Unknown".into());
+    app.set_netplay_session_name(session_name);
+    app.set_netplay_game_name(game_name);
+    app.set_netplay_rom_path(rom_path);
+    app.set_netplay_port(port);
+    app.set_netplay_ping("Unknown".into());
 
     let sender = netplay_write_sender.clone();
-    wait.on_send_chat_message(move |message| {
+    app.on_netplay_send_chat_message(move |message| {
         let send_chat = NetplayMessage {
             message_type: "request_chat_message".to_string(),
             player_name: Some(player_name.to_string()),
@@ -919,7 +807,7 @@ fn setup_wait_window(
     });
 
     let sender = netplay_write_sender.clone();
-    wait.on_begin_game(move || {
+    app.on_netplay_begin_game(move || {
         let begin_game = NetplayMessage {
             message_type: "request_begin_game".to_string(),
             player_name: None,
@@ -944,12 +832,6 @@ fn setup_wait_window(
             }),
         };
         sender.send(Some(begin_game)).unwrap();
-    });
-
-    let sender = netplay_write_sender.clone();
-    wait.window().on_close_requested(move || {
-        let _ = sender.send(None); // close current websocket if any
-        slint::CloseRequestResponse::HideWindow
     });
 
     let motd_message = NetplayMessage {
@@ -988,17 +870,18 @@ fn setup_wait_window(
         .send(Some(ping_message.clone()))
         .unwrap();
 
-    let weak = wait.as_weak();
+    let weak_app = app.as_weak();
     tokio::spawn(async move {
         loop {
             match netplay_read_receiver.recv().await {
-                Ok(response) => match response.message_type.as_str() {
+                Ok(Some(response)) => match response.message_type.as_str() {
                     "reply_ping" => {
                         if let Some(message) = response.message {
-                            weak.upgrade_in_event_loop(move |handle| {
-                                handle.set_ping((message + " ms").into());
-                            })
-                            .unwrap();
+                            weak_app
+                                .upgrade_in_event_loop(move |handle| {
+                                    handle.set_netplay_ping((message + " ms").into());
+                                })
+                                .unwrap();
                         }
                         let ping_message = ping_message.clone();
                         let ping_writer = netplay_write_sender.clone();
@@ -1033,101 +916,111 @@ fn setup_wait_window(
                         };
                         netplay_write_sender.send(Some(request_players)).unwrap();
 
-                        weak.upgrade_in_event_loop(move |handle| {
-                            #[allow(clippy::regex_creation_in_loops)]
-                            let re = regex::Regex::new(r"<[^>]*>").unwrap();
-                            let motd = re
-                                .replace_all(response.message.unwrap().as_str(), "")
-                                .into_owned();
-                            handle.set_motd(motd.into());
-                        })
-                        .unwrap();
+                        weak_app
+                            .upgrade_in_event_loop(move |handle| {
+                                #[allow(clippy::regex_creation_in_loops)]
+                                let re = regex::Regex::new(r"<[^>]*>").unwrap();
+                                let motd = re
+                                    .replace_all(response.message.unwrap().as_str(), "")
+                                    .into_owned();
+                                handle.set_netplay_motd(motd.into());
+                            })
+                            .unwrap();
                     }
                     "reply_players" => {
                         let local_player = local_player.clone();
-                        weak.upgrade_in_event_loop(move |handle| {
-                            if let Some(player_names) = response.player_names {
-                                if local_player == player_names[0] {
-                                    handle.set_can_start(true);
-                                } else {
-                                    handle.set_can_start(false);
-                                }
+                        weak_app
+                            .upgrade_in_event_loop(move |handle| {
+                                if let Some(player_names) = response.player_names {
+                                    if local_player == player_names[0] {
+                                        handle.set_netplay_can_start(true);
+                                    } else {
+                                        handle.set_netplay_can_start(false);
+                                    }
 
-                                handle.set_players(slint::ModelRc::from(std::rc::Rc::new(
-                                    slint::VecModel::from(
-                                        player_names
-                                            .iter()
-                                            .map(|x| x.into())
-                                            .collect::<Vec<slint::SharedString>>(),
-                                    ),
-                                )));
-                            }
-                        })
-                        .unwrap();
+                                    handle.set_netplay_players(slint::ModelRc::from(
+                                        std::rc::Rc::new(slint::VecModel::from(
+                                            player_names
+                                                .iter()
+                                                .map(|x| x.into())
+                                                .collect::<Vec<slint::SharedString>>(),
+                                        )),
+                                    ));
+                                }
+                            })
+                            .unwrap();
                     }
                     "reply_chat_message" => {
-                        weak.upgrade_in_event_loop(move |handle| {
-                            let mut chat_text = handle.get_chat_text();
-                            chat_text.push_str(&format!("{}\n", response.message.unwrap()));
-                            handle.set_chat_text(chat_text);
-                        })
-                        .unwrap();
+                        weak_app
+                            .upgrade_in_event_loop(move |handle| {
+                                let mut chat_text = handle.get_netplay_chat_text();
+                                chat_text.push_str(&format!("{}\n", response.message.unwrap()));
+                                handle.set_netplay_chat_text(chat_text);
+                            })
+                            .unwrap();
                     }
                     "reply_begin_game" => {
                         if response.accept.unwrap() == 0 {
-                            weak.upgrade_in_event_loop(move |handle| {
-                                let _ = netplay_write_sender.send(None);
+                            let weak_app2 = weak_app.clone();
+                            weak_app
+                                .upgrade_in_event_loop(move |handle| {
+                                    let _ = netplay_write_sender.send(None);
 
-                                let mut player_number = 4;
-                                let players = handle.get_players();
-                                for (i, player) in players.iter().enumerate() {
-                                    if player == local_player {
-                                        player_number = i;
+                                    let mut player_number = 4;
+                                    let players = handle.get_netplay_players();
+                                    for (i, player) in players.iter().enumerate() {
+                                        if player == local_player {
+                                            player_number = i;
+                                        }
                                     }
-                                }
-                                if player_number > 3 {
-                                    panic!("Could not determine player number");
-                                }
+                                    if player_number > 3 {
+                                        panic!("Could not determine player number");
+                                    }
 
-                                run_rom(
-                                    handle.get_rom_path().as_str().into(),
-                                    ui::GameSettings {
-                                        overclock: game_settings.overclock,
-                                        disable_expansion_pak: game_settings.disable_expansion_pak,
-                                        cheats: game_settings.cheats,
-                                        load_savestate_slot: None,
-                                    },
-                                    Some(NetplayDevice {
-                                        peer_addr: socket_addr,
-                                        player_number: player_number as u8,
-                                    }),
-                                    weak_app,
-                                );
-                                handle.hide().unwrap();
-                            })
-                            .unwrap();
+                                    run_rom(
+                                        handle.get_netplay_rom_path().as_str().into(),
+                                        ui::GameSettings {
+                                            overclock: game_settings.overclock,
+                                            disable_expansion_pak: game_settings
+                                                .disable_expansion_pak,
+                                            cheats: game_settings.cheats,
+                                            load_savestate_slot: None,
+                                        },
+                                        Some(NetplayDevice {
+                                            peer_addr: socket_addr,
+                                            player_number: player_number as u8,
+                                        }),
+                                        weak_app2,
+                                    );
+                                    handle.invoke_netplay_close();
+                                })
+                                .unwrap();
                             return;
                         } else {
                             let local_player = local_player.clone();
-                            weak.upgrade_in_event_loop(move |handle| {
-                                if let Some(p0) = handle.get_players().row_data(0) {
-                                    if p0 == local_player {
-                                        handle.set_can_start(true);
-                                    } else {
-                                        handle.set_can_start(false);
+                            weak_app
+                                .upgrade_in_event_loop(move |handle| {
+                                    if let Some(p0) = handle.get_netplay_players().row_data(0) {
+                                        if p0 == local_player {
+                                            handle.set_netplay_can_start(true);
+                                        } else {
+                                            handle.set_netplay_can_start(false);
+                                        }
                                     }
-                                }
-                                if let Some(message) = response.message {
-                                    show_netplay_error(message);
-                                }
-                            })
-                            .unwrap();
+                                    if let Some(message) = response.message {
+                                        handle.invoke_show_message(message.into(), true);
+                                    }
+                                })
+                                .unwrap();
                         }
                     }
                     _ => {
                         eprintln!("Unknown netplay message type: {}", response.message_type);
                     }
                 },
+                Ok(None) => {
+                    break;
+                }
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
                     panic!("netplay_read_receiver lagged");
                 }
@@ -1137,45 +1030,28 @@ fn setup_wait_window(
             }
         }
     });
-
-    wait.show().unwrap();
+    app.set_show_netplay_wait_room(true);
+    app.set_show_netplay_create_room(false);
+    app.set_show_netplay_join_room(false);
+    app.invoke_close_message();
 }
 
-pub fn setup_join_window(
-    join_window: &NetplayJoin,
-    rom_dir: slint::SharedString,
-    weak_app: slint::Weak<AppWindow>,
+fn setup_join_window(
+    app: &AppWindow,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
 ) {
-    let (netplay_read_sender, netplay_read_receiver): (
-        tokio::sync::broadcast::Sender<NetplayMessage>,
-        tokio::sync::broadcast::Receiver<NetplayMessage>,
-    ) = tokio::sync::broadcast::channel(5);
+    app.set_netplay_pending_refresh(true);
+    populate_server_names(app.as_weak(), true);
 
-    let (netplay_write_sender, netplay_write_receiver): (
-        tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-        tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
-    ) = tokio::sync::broadcast::channel(5);
-
-    join_window.set_pending_refresh(true);
-    join_window.set_rom_dir(rom_dir);
-    populate_server_names(join_window.as_weak());
-
-    let weak = join_window.as_weak();
-    join_window.on_select_rom(move |rom_dir| {
-        select_rom(weak.clone(), rom_dir);
-    });
-
-    let sender = netplay_write_sender.clone();
-    join_window.window().on_close_requested(move || {
-        let _ = sender.send(None); // close current websocket if any
-        slint::CloseRequestResponse::HideWindow
-    });
-    let weak = join_window.as_weak();
-    join_window.on_refresh_session(move || {
+    let weak = app.as_weak();
+    app.on_netplay_refresh_sessions(move || {
         update_sessions(weak.clone());
     });
-    let weak = join_window.as_weak();
-    join_window.on_join_session(
+    let weak = app.as_weak();
+    app.on_netplay_join_session(
         move |player_name, game_hash, password, room_url, room_port| {
             let _ = netplay_write_sender.send(None); // close current websocket if any
             manage_websocket(
@@ -1192,50 +1068,97 @@ pub fn setup_join_window(
                 game_hash.to_string(),
                 password.to_string(),
                 room_port,
-                weak_app.clone(),
                 weak.clone(),
             );
         },
     );
 
-    join_window.show().unwrap();
+    app.set_show_netplay_join_room(true);
 }
 
 pub fn netplay_window(app: &AppWindow) {
-    let weak_create = app.as_weak();
+    let (netplay_read_sender, netplay_read_receiver): (
+        tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+        tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    ) = tokio::sync::broadcast::channel(5);
+
+    let (netplay_write_sender, netplay_write_receiver): (
+        tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+        tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    ) = tokio::sync::broadcast::channel(5);
+
     let weak_app = app.as_weak();
+    let write_sender_create = netplay_write_sender.clone();
+    let read_receiver_create = netplay_read_receiver.resubscribe();
+    let read_sender_create = netplay_read_sender.clone();
+    let write_receiver_create = netplay_write_receiver.resubscribe();
     app.on_create_session_button_clicked(move || {
-        let weak_app = weak_app.clone();
-        weak_create
+        let write_sender = write_sender_create.clone();
+        let read_receiver = read_receiver_create.resubscribe();
+        let read_sender = read_sender_create.clone();
+        let write_receiver = write_receiver_create.resubscribe();
+        weak_app
             .upgrade_in_event_loop(move |handle| {
-                let create_window = NetplayCreate::new().unwrap();
                 save_settings(&handle);
                 setup_create_window(
-                    &create_window,
+                    &handle,
                     ui::GameSettings {
                         overclock: handle.get_overclock_n64_cpu(),
                         disable_expansion_pak: handle.get_disable_expansion_pak(),
                         cheats: std::collections::HashMap::new(), // not used here
                         load_savestate_slot: None,
                     },
-                    handle.get_rom_dir(),
-                    weak_app,
+                    write_sender,
+                    read_receiver,
+                    read_sender,
+                    write_receiver,
                 );
             })
             .unwrap();
     });
 
-    let weak_join = app.as_weak();
     let weak_app = app.as_weak();
+    let write_sender_join = netplay_write_sender.clone();
+    let read_sender_join = netplay_read_sender.clone();
     app.on_join_session_button_clicked(move || {
-        let weak_app = weak_app.clone();
-        weak_join
+        let write_sender = write_sender_join.clone();
+        let read_receiver = netplay_read_receiver.resubscribe();
+        let read_sender = read_sender_join.clone();
+        let write_receiver = netplay_write_receiver.resubscribe();
+        weak_app
             .upgrade_in_event_loop(move |handle| {
-                let join_window = NetplayJoin::new().unwrap();
                 save_settings(&handle);
-                setup_join_window(&join_window, handle.get_rom_dir(), weak_app);
+                setup_join_window(
+                    &handle,
+                    write_sender,
+                    read_receiver,
+                    read_sender,
+                    write_receiver,
+                );
             })
             .unwrap();
+    });
+
+    let weak_app = app.as_weak();
+    app.on_netplay_select_rom(move |rom_dir| {
+        select_rom(weak_app.clone(), rom_dir);
+    });
+
+    let weak_app = app.as_weak();
+    let write_sender = netplay_write_sender.clone();
+    let read_sender = netplay_read_sender.clone();
+    app.on_netplay_close(move || {
+        weak_app
+            .upgrade_in_event_loop(move |handle| {
+                handle.set_show_netplay_wait_room(false);
+                handle.set_show_netplay_create_room(false);
+                handle.set_show_netplay_join_room(false);
+                handle.invoke_clear_netplay_data();
+                handle.invoke_close_message();
+            })
+            .unwrap();
+        let _ = write_sender.send(None); // close current websocket if any
+        let _ = read_sender.send(None); // close current receiver if any
     });
 
     app.on_netplay_discord_button_clicked(move || {

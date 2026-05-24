@@ -1,22 +1,20 @@
 import { HorizontalBox, VerticalBox, Button, LineEdit, Switch, Slider } from "std-widgets.slint";
+import { Page } from "page.slint";
 
 export global InputProfileData {
     in-out property <bool> dinput;
     in-out property <string> profile_name;
     in-out property <int> deadzone;
+    in-out property <bool> show_input_profile;
 }
 
-export component InputProfileDialog inherits Window {
+export component InputProfileDialog inherits Page {
     title: @tr("Create/Modify Input Profile");
     callback profile_creation_button_clicked;
     in-out property dinput <=> InputProfileData.dinput;
     in-out property profile_name <=> InputProfileData.profile_name;
     in-out property deadzone <=> InputProfileData.deadzone;
     VerticalBox {
-        padding-left: root.safe-area-insets.left;
-        padding-top: root.safe-area-insets.top;
-        padding-right: root.safe-area-insets.right;
-        padding-bottom: root.safe-area-insets.bottom;
         alignment: start;
 
         HorizontalBox {
@@ -25,6 +23,7 @@ export component InputProfileDialog inherits Window {
             LineEdit {
                 vertical-stretch: 0;
                 placeholder-text: @tr("Enter profile name to create or modify");
+                text: InputProfileData.profile_name;
                 preferred-width: 400px;
                 edited(text) => {
                     InputProfileData.profile_name = text;
@@ -78,10 +77,13 @@ export component InputProfileDialog inherits Window {
                     profile_creation_button_clicked();
                 }
             }
-        }
-
-        Rectangle {
-            vertical-stretch: 1;
+            Button {
+                vertical-stretch: 0;
+                text: @tr("Cancel");
+                clicked => {
+                    InputProfileData.show_input_profile = false;
+                }
+            }
         }
     }
 }

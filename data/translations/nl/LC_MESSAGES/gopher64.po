@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-05-19 09:43+0000\n"
+"POT-Creation-Date: 2026-05-25 08:28+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Dutch (Netherlands)\n"
@@ -47,45 +47,40 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Doneren (via GitHub)"
 
-#: src/ui/gui/appwindow.slint:103
+#: src/ui/gui/appwindow.slint:151
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Lokaal spel"
 
-#: src/ui/gui/appwindow.slint:107
+#: src/ui/gui/appwindow.slint:155
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Controllerconfiguratie"
 
-#: src/ui/gui/appwindow.slint:111
+#: src/ui/gui/appwindow.slint:159
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/appwindow.slint:115
+#: src/ui/gui/appwindow.slint:163
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Cheats"
 
-#: src/ui/gui/appwindow.slint:119
+#: src/ui/gui/appwindow.slint:167
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:123
+#: src/ui/gui/appwindow.slint:171
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Instellingen"
 
-#: src/ui/gui/appwindow.slint:127
+#: src/ui/gui/appwindow.slint:175
 msgctxt "Menu"
 msgid "About"
 msgstr "Over"
-
-#: src/ui/gui/appwindow.slint:248
-msgctxt "ErrorDialog"
-msgid "Error"
-msgstr "Fout"
 
 #: src/ui/gui/cheat_page.slint:15
 msgctxt "Cheats"
@@ -102,7 +97,7 @@ msgctxt "Cheats"
 msgid "Clear Cheats For All ROMs"
 msgstr "Cheats wissen voor alle ROM's"
 
-#: src/ui/gui/cheat_page.slint:87
+#: src/ui/gui/cheat_page.slint:88
 msgctxt "Cheats"
 msgid "No Cheats Available"
 msgstr "Geen cheats beschikbaar"
@@ -142,62 +137,67 @@ msgctxt "ControllerConfig"
 msgid "Controller Assignment"
 msgstr "Controllertoewijzing"
 
-#: src/ui/gui/input_profile.slint:10
+#: src/ui/gui/input_profile.slint:12
 msgctxt "InputProfileDialog"
 msgid "Create/Modify Input Profile"
 msgstr "Invoerprofiel maken/wijzigen"
 
-#: src/ui/gui/input_profile.slint:18
+#: src/ui/gui/input_profile.slint:25
 msgctxt "InputProfileDialog"
 msgid "Enter profile name to create or modify"
 msgstr "Profielnaam invoeren om aan te maken of te wijzigen"
 
-#: src/ui/gui/input_profile.slint:29
+#: src/ui/gui/input_profile.slint:38
 msgctxt "InputProfileDialog"
 msgid "Deadzone Percentage"
 msgstr "Dode-zonepercentage"
 
-#: src/ui/gui/input_profile.slint:51
+#: src/ui/gui/input_profile.slint:61
 msgctxt "InputProfileDialog"
 msgid "Use DirectInput"
 msgstr "DirectInput gebruiken"
 
-#: src/ui/gui/input_profile.slint:61
+#: src/ui/gui/input_profile.slint:74
 msgctxt "InputProfileDialog"
 msgid "Start Profile Creation Wizard"
 msgstr "Wizard voor profiel maken starten"
 
-#: src/ui/gui/localgame_page.slint:18
+#: src/ui/gui/input_profile.slint:82
+msgctxt "InputProfileDialog"
+msgid "Cancel"
+msgstr "Annuleren"
+
+#: src/ui/gui/localgame_page.slint:19
 msgctxt "LocalGame"
 msgid "Local Game"
 msgstr "Lokaal spel"
 
-#: src/ui/gui/localgame_page.slint:25
+#: src/ui/gui/localgame_page.slint:26
 msgctxt "LocalGame"
 msgid "Open ROM"
 msgstr "ROM openen"
 
-#: src/ui/gui/localgame_page.slint:36
+#: src/ui/gui/localgame_page.slint:37
 msgctxt "LocalGame"
 msgid "Open Saves Folder"
 msgstr "Map met opslagen openen"
 
-#: src/ui/gui/localgame_page.slint:53
+#: src/ui/gui/localgame_page.slint:54
 msgctxt "LocalGame"
 msgid "Recent ROMs"
 msgstr "Recent gebruikte ROM's"
 
-#: src/ui/gui/netplay_create.slint:5
+#: src/ui/gui/netplay_create.slint:7
 msgctxt "NetplayCreate"
 msgid "Netplay: Create Session"
 msgstr "Netplay: sessie aanmaken"
 
-#: src/ui/gui/netplay_create.slint:24
+#: src/ui/gui/netplay_create.slint:23
 msgctxt "NetplayCreate"
 msgid "Session Name:"
 msgstr "Sessienaam:"
 
-#: src/ui/gui/netplay_create.slint:28
+#: src/ui/gui/netplay_create.slint:27
 msgctxt "NetplayCreate"
 msgid "Enter session name"
 msgstr "Sessienaam invoeren"
@@ -212,27 +212,27 @@ msgctxt "NetplayCreate"
 msgid "Enter session password"
 msgstr "Sessiewachtwoord invoeren"
 
-#: src/ui/gui/netplay_create.slint:51
+#: src/ui/gui/netplay_create.slint:52
 msgctxt "NetplayCreate"
 msgid "Player Name:"
 msgstr "Spelernaam:"
 
-#: src/ui/gui/netplay_create.slint:55
+#: src/ui/gui/netplay_create.slint:56
 msgctxt "NetplayCreate"
 msgid "Enter player name"
 msgstr "Spelernaam invoeren"
 
-#: src/ui/gui/netplay_create.slint:64
+#: src/ui/gui/netplay_create.slint:66
 msgctxt "NetplayCreate"
 msgid "Server:"
 msgstr "Server:"
 
-#: src/ui/gui/netplay_create.slint:82
+#: src/ui/gui/netplay_create.slint:86
 msgctxt "NetplayCreate"
 msgid "Select ROM"
 msgstr "ROM selecteren"
 
-#: src/ui/gui/netplay_create.slint:97
+#: src/ui/gui/netplay_create.slint:102
 msgctxt "NetplayCreate"
 msgid ""
 "This game has cheats enabled. Cheats will be synchronized with other players."
@@ -240,168 +240,167 @@ msgstr ""
 "Voor dit spel zijn cheats ingeschakeld. Cheats worden gesynchroniseerd met "
 "andere spelers."
 
-#: src/ui/gui/netplay_create.slint:103
+#: src/ui/gui/netplay_create.slint:112
 msgctxt "NetplayCreate"
 msgid "Create Session"
 msgstr "Sessie aanmaken"
 
-#: src/ui/gui/netplay_create.slint:126
-msgctxt "DispatcherDialog"
-msgid "Creating Server"
-msgstr "Server wordt aangemaakt"
+#: src/ui/gui/netplay_create.slint:132
+msgctxt "NetplayCreate"
+msgid "Cancel"
+msgstr "Annuleren"
 
-#: src/ui/gui/netplay_create.slint:128
-msgctxt "DispatcherDialog"
-msgid "Creating server, please wait...This may take about 30 seconds."
-msgstr ""
-"Server wordt aangemaakt, even geduld… Dit kan ongeveer 30 seconden duren."
+#: src/ui/gui/netplay_create.slint:155
+msgctxt "CustomServerDialog"
+msgid "Enter a custom server URL"
+msgstr "Aangepaste server-URL invoeren"
 
-#: src/ui/gui/netplay_join.slint:5
+#: src/ui/gui/netplay_join.slint:7
 msgctxt "NetplayJoin"
 msgid "Netplay: Join Session"
 msgstr "Netplay: deelnemen aan sessie"
 
-#: src/ui/gui/netplay_join.slint:30
+#: src/ui/gui/netplay_join.slint:18
 msgctxt "NetplayJoin"
 msgid "Player Name (required):"
 msgstr "Spelernaam (verplicht):"
 
-#: src/ui/gui/netplay_join.slint:34
+#: src/ui/gui/netplay_join.slint:22
 msgctxt "NetplayJoin"
 msgid "Enter player name"
 msgstr "Spelernaam invoeren"
 
-#: src/ui/gui/netplay_join.slint:43
-msgctxt "NetplayJoin"
-msgid "Custom Server URL (optional):"
-msgstr "Aangepaste server-URL (optioneel):"
-
-#: src/ui/gui/netplay_join.slint:57
-msgctxt "NetplayJoin"
-msgid "Refreshing session list, please wait..."
-msgstr "Sessielijst wordt vernieuwd, even geduld…"
-
-#: src/ui/gui/netplay_join.slint:62
-msgctxt "NetplayJoin"
-msgid "Click on a session below to select it"
-msgstr "Klik hieronder op een sessie om die te selecteren"
-
-#: src/ui/gui/netplay_join.slint:67
-msgctxt "NetplayJoin"
-msgid "No sessions available. Please refresh to check again."
-msgstr "Geen sessies beschikbaar. Vernieuw om opnieuw te controleren."
-
-#: src/ui/gui/netplay_join.slint:73
-msgctxt "NetplayJoin"
-msgid "Server"
-msgstr "Server"
-
-#: src/ui/gui/netplay_join.slint:74
-msgctxt "NetplayJoin"
-msgid "Session Name"
-msgstr "Sessienaam"
-
-#: src/ui/gui/netplay_join.slint:75
-msgctxt "NetplayJoin"
-msgid "Game Name"
-msgstr "Spelnaam"
-
-#: src/ui/gui/netplay_join.slint:76
-msgctxt "NetplayJoin"
-msgid "Password"
-msgstr "Wachtwoord"
-
-#: src/ui/gui/netplay_join.slint:77
-msgctxt "NetplayJoin"
-msgid "Cheats"
-msgstr "Cheats"
-
-#: src/ui/gui/netplay_join.slint:91
-msgctxt "NetplayJoin"
-msgid "Refresh Session List"
-msgstr "Sessielijst vernieuwen"
-
-#: src/ui/gui/netplay_join.slint:105
+#: src/ui/gui/netplay_join.slint:31
 msgctxt "NetplayJoin"
 msgid "Password (if required)"
 msgstr "Wachtwoord (indien vereist)"
 
-#: src/ui/gui/netplay_join.slint:112
+#: src/ui/gui/netplay_join.slint:41
+msgctxt "NetplayJoin"
+msgid "Custom Server URL (optional):"
+msgstr "Aangepaste server-URL (optioneel):"
+
+#: src/ui/gui/netplay_join.slint:53
 msgctxt "NetplayJoin"
 msgid "Select ROM"
 msgstr "ROM selecteren"
 
-#: src/ui/gui/netplay_join.slint:125
+#: src/ui/gui/netplay_join.slint:68
+msgctxt "NetplayJoin"
+msgid "Refreshing session list, please wait..."
+msgstr "Sessielijst wordt vernieuwd, even geduld…"
+
+#: src/ui/gui/netplay_join.slint:73
+msgctxt "NetplayJoin"
+msgid "Click on a session below to select it"
+msgstr "Klik hieronder op een sessie om die te selecteren"
+
+#: src/ui/gui/netplay_join.slint:78
+msgctxt "NetplayJoin"
+msgid "No sessions available. Please refresh to check again."
+msgstr "Geen sessies beschikbaar. Vernieuw om opnieuw te controleren."
+
+#: src/ui/gui/netplay_join.slint:84
+msgctxt "NetplayJoin"
+msgid "Server"
+msgstr "Server"
+
+#: src/ui/gui/netplay_join.slint:85
+msgctxt "NetplayJoin"
+msgid "Session Name"
+msgstr "Sessienaam"
+
+#: src/ui/gui/netplay_join.slint:86
+msgctxt "NetplayJoin"
+msgid "Game Name"
+msgstr "Spelnaam"
+
+#: src/ui/gui/netplay_join.slint:87
+msgctxt "NetplayJoin"
+msgid "Password"
+msgstr "Wachtwoord"
+
+#: src/ui/gui/netplay_join.slint:88
+msgctxt "NetplayJoin"
+msgid "Cheats"
+msgstr "Cheats"
+
+#: src/ui/gui/netplay_join.slint:102
+msgctxt "NetplayJoin"
+msgid "Refresh Session List"
+msgstr "Sessielijst vernieuwen"
+
+#: src/ui/gui/netplay_join.slint:119
 msgctxt "NetplayJoin"
 msgid "Join Session"
 msgstr "Deelnemen aan sessie"
 
-#: src/ui/gui/netplay_page.slint:33
+#: src/ui/gui/netplay_join.slint:132
+msgctxt "NetplayJoin"
+msgid "Cancel"
+msgstr "Annuleren"
+
+#: src/ui/gui/netplay_page.slint:37
 msgctxt "Netplay"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/netplay_page.slint:40
+#: src/ui/gui/netplay_page.slint:45
 msgctxt "Netplay"
 msgid "Create Session"
 msgstr "Sessie aanmaken"
 
-#: src/ui/gui/netplay_page.slint:50
+#: src/ui/gui/netplay_page.slint:56
 msgctxt "Netplay"
 msgid "Join Session"
 msgstr "Deelnemen aan sessie"
 
-#: src/ui/gui/netplay_page.slint:64
+#: src/ui/gui/netplay_page.slint:70
 msgctxt "Netplay"
 msgid "Netplay Discord Channel"
 msgstr "Netplay-Discordkanaal"
 
-#: src/ui/gui/netplay_page.slint:71
+#: src/ui/gui/netplay_page.slint:77
 msgctxt "Netplay"
 msgid "Provide Feedback"
 msgstr "Feedback geven"
 
-#: src/ui/gui/netplay_page.slint:82
-msgctxt "CustomNetplayServer"
-msgid "Custom Netplay Server"
-msgstr "Aangepaste Netplay-server"
-
-#: src/ui/gui/netplay_wait.slint:14
+#: src/ui/gui/netplay_wait.slint:15
 msgctxt "NetplayWait"
 msgid "Netplay: Waiting Room"
 msgstr "Netplay: wachtruimte"
 
-#: src/ui/gui/netplay_wait.slint:31
+#: src/ui/gui/netplay_wait.slint:27
 msgctxt "NetplayWait"
 msgid "Session Name:"
 msgstr "Sessienaam:"
 
-#: src/ui/gui/netplay_wait.slint:37
+#: src/ui/gui/netplay_wait.slint:33
 msgctxt "NetplayWait"
 msgid "Game Name:"
 msgstr "Spelnaam:"
 
-#: src/ui/gui/netplay_wait.slint:43
+#: src/ui/gui/netplay_wait.slint:39
 msgctxt "NetplayWait"
 msgid "Ping:"
 msgstr "Ping:"
 
-#: src/ui/gui/netplay_wait.slint:50
+#: src/ui/gui/netplay_wait.slint:48
 msgctxt "NetplayWait"
 msgid "Player 1:"
 msgstr "Speler 1:"
 
-#: src/ui/gui/netplay_wait.slint:54
+#: src/ui/gui/netplay_wait.slint:52
 msgctxt "NetplayWait"
 msgid "Player 2:"
 msgstr "Speler 2:"
 
-#: src/ui/gui/netplay_wait.slint:60
+#: src/ui/gui/netplay_wait.slint:58
 msgctxt "NetplayWait"
 msgid "Player 3:"
 msgstr "Speler 3:"
 
-#: src/ui/gui/netplay_wait.slint:64
+#: src/ui/gui/netplay_wait.slint:62
 msgctxt "NetplayWait"
 msgid "Player 4:"
 msgstr "Speler 4:"
@@ -416,10 +415,15 @@ msgctxt "NetplayWait"
 msgid "Send Message"
 msgstr "Bericht verzenden"
 
-#: src/ui/gui/netplay_wait.slint:102
+#: src/ui/gui/netplay_wait.slint:105
 msgctxt "NetplayWait"
 msgid "Start Game"
 msgstr "Spel starten"
+
+#: src/ui/gui/netplay_wait.slint:113
+msgctxt "NetplayWait"
+msgid "Cancel"
+msgstr "Annuleren"
 
 #: src/ui/gui/retroachievements_page.slint:19
 msgctxt "RAData"
@@ -545,6 +549,11 @@ msgstr "VRU emuleren"
 msgctxt "VruDialog"
 msgid "What Would You Like To Say?"
 msgstr "Wat wil je zeggen?"
+
+#~ msgctxt "NetplayCreate"
+#~ msgid "Creating server, please wait...This may take about 30 seconds."
+#~ msgstr ""
+#~ "Server wordt aangemaakt, even geduld… Dit kan ongeveer 30 seconden duren."
 
 #~ msgctxt "ControllerConfig"
 #~ msgid "Port"

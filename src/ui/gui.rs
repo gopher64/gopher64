@@ -334,50 +334,54 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
 
     let weak_app = app.as_weak();
     app.on_input_profile_button_clicked(move || {
-        let dialog = InputProfileDialog::new().unwrap();
-        dialog.set_deadzone(ui::input::DEADZONE_DEFAULT);
-        let weak_dialog = dialog.as_weak();
-        let weak_app = weak_app.clone();
-        dialog.on_profile_creation_button_clicked(move || {
-            let weak_app = weak_app.clone();
-            weak_dialog
-                .upgrade_in_event_loop(move |handle| {
-                    let profile_name = handle.get_profile_name();
-                    let dinput = handle.get_dinput();
-                    let deadzone = handle.get_deadzone();
-                    handle.hide().unwrap();
+        weak_app
+            .upgrade_in_event_loop(move |handle| {
+                handle.set_input_deadzone(ui::input::DEADZONE_DEFAULT);
+                handle.set_input_profile_name(String::new().into());
+                handle.set_input_dinput(false);
+                handle.set_show_input_profile(true);
+            })
+            .unwrap();
+    });
+    let weak_app = app.as_weak();
+    app.on_input_profile_creation_button_clicked(move || {
+        let weak_app2 = weak_app.clone();
+        weak_app
+            .upgrade_in_event_loop(move |handle| {
+                let profile_name = handle.get_input_profile_name();
+                let dinput = handle.get_input_dinput();
+                let deadzone = handle.get_input_deadzone();
+                handle.set_show_input_profile(false);
 
-                    tokio::spawn(async move {
-                        let cli_path = std::env::current_exe()
-                            .unwrap()
-                            .parent()
-                            .unwrap()
-                            .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
-                        let cmd_path = if cfg!(target_os = "macos") && cli_path.exists() {
-                            cli_path
-                        } else {
-                            std::env::current_exe().unwrap()
-                        };
-                        let mut command = tokio::process::Command::new(cmd_path);
-                        command.args([
-                            "--configure-input-profile",
-                            &profile_name,
-                            "--deadzone",
-                            &deadzone.to_string(),
-                        ]);
-                        if dinput {
-                            command.arg("--use-dinput");
-                        }
-                        if !command.status().await.unwrap().success() {
-                            eprintln!("Failed to configure input profile");
-                        }
-                        let config = ui::config::Config::new();
-                        update_input_profiles(&weak_app, &config);
-                    });
-                })
-                .unwrap();
-        });
-        dialog.show().unwrap();
+                tokio::spawn(async move {
+                    let cli_path = std::env::current_exe()
+                        .unwrap()
+                        .parent()
+                        .unwrap()
+                        .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
+                    let cmd_path = if cfg!(target_os = "macos") && cli_path.exists() {
+                        cli_path
+                    } else {
+                        std::env::current_exe().unwrap()
+                    };
+                    let mut command = tokio::process::Command::new(cmd_path);
+                    command.args([
+                        "--configure-input-profile",
+                        &profile_name,
+                        "--deadzone",
+                        &deadzone.to_string(),
+                    ]);
+                    if dinput {
+                        command.arg("--use-dinput");
+                    }
+                    if !command.status().await.unwrap().success() {
+                        eprintln!("Failed to configure input profile");
+                    }
+                    let config = ui::config::Config::new();
+                    update_input_profiles(&weak_app2, &config);
+                });
+            })
+            .unwrap();
     });
 
     let weak_app2 = app.as_weak();
