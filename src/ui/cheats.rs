@@ -1,6 +1,5 @@
 use crate::ui;
 use crate::ui::gui::AppWindow;
-use crate::ui::gui::ErrorDialog;
 use crate::{cheats, device};
 use slint::ComponentHandle;
 
@@ -66,14 +65,8 @@ pub fn cheats_window(app: &AppWindow) {
                 }
             } else {
                 clear_cheats(&weak, true);
-                weak.upgrade_in_event_loop(move |_handle| {
-                    let message_dialog = ErrorDialog::new().unwrap();
-                    let weak_dialog = message_dialog.as_weak();
-                    message_dialog.on_close_clicked(move || {
-                        weak_dialog.unwrap().hide().unwrap();
-                    });
-                    message_dialog.set_text("Could not read ROM".into());
-                    message_dialog.show().unwrap();
+                weak.upgrade_in_event_loop(move |handle| {
+                    handle.invoke_show_message("Could not read ROM".into(), true);
                 })
                 .unwrap();
             }

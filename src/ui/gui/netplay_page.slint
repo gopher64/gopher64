@@ -3,6 +3,7 @@
 
 import { StandardButton, VerticalBox, HorizontalBox, Button, LineEdit } from "std-widgets.slint";
 import { Page } from "page.slint";
+import { State } from "localgame_page.slint";
 
 export global NetplayData {
     in-out property <[string]> server_names;
@@ -21,8 +22,11 @@ export global NetplayData {
     in-out property <[string]> room_urls;
     in-out property <[int]> room_ports;
     in-out property <int> current_session: -1;
-    in-out property <string> rom_dir;
     in-out property <string> custom_server_url;
+
+    in-out property <bool> show_wait_room;
+    in-out property <bool> show_create_room;
+    in-out property <bool> show_join_room;
 }
 
 export component Netplay inherits Page {
@@ -37,6 +41,7 @@ export component Netplay inherits Page {
         HorizontalBox {
             alignment: center;
             Button {
+                enabled: !State.game_running;
                 text: @tr("Create Session");
                 clicked => {
                     create_session_button_clicked();
@@ -47,6 +52,7 @@ export component Netplay inherits Page {
         HorizontalBox {
             alignment: center;
             Button {
+                enabled: !State.game_running;
                 text: @tr("Join Session");
                 clicked => {
                     join_session_button_clicked();
@@ -71,37 +77,6 @@ export component Netplay inherits Page {
                 text: @tr("Provide Feedback");
                 clicked => {
                     netplay_feedback_button_clicked();
-                }
-            }
-        }
-    }
-}
-
-export component CustomNetplayServer inherits Window {
-    in-out property custom_server_url <=> NetplayData.custom_server_url;
-    title: @tr("Custom Netplay Server");
-    preferred-width: 400px;
-    callback ok_clicked(string);
-    VerticalBox {
-        alignment: start;
-        vertical-stretch: 1;
-        padding-left: root.safe-area-insets.left;
-        padding-top: root.safe-area-insets.top;
-        padding-right: root.safe-area-insets.right;
-        padding-bottom: root.safe-area-insets.bottom;
-        server_url := LineEdit {
-            vertical-stretch: 0;
-            text: NetplayData.custom_server_url;
-            placeholder-text: "example.com:45000";
-        }
-
-        HorizontalBox {
-            alignment: end;
-            StandardButton {
-                kind: ok;
-                clicked => {
-                    NetplayData.custom_server_url = server_url.text;
-                    ok_clicked(NetplayData.custom_server_url);
                 }
             }
         }
