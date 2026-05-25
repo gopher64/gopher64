@@ -170,13 +170,11 @@ fn start_n64_activity_on_jvm(
         let profile_name_value = JString::from_str(env, profile_name)?;
         let dinput_key = JString::from_str(env, "dinput")?;
         let deadzone_key = JString::from_str(env, "deadzone")?;
-        let mode_key = JString::from_str(env, "mode")?;
         let intent = AndroidIntent::new(env)?
             .set_class_name(env, &package_name, &class_name)?
             .put_extra_string(env, &profile_name_key, &profile_name_value)?
             .put_extra_boolean(env, &dinput_key, dinput)?
-            .put_extra_int(env, &deadzone_key, deadzone)?
-            .put_extra_int(env, &mode_key, 1 /* configure input profile */)?;
+            .put_extra_int(env, &deadzone_key, deadzone)?;
 
         activity
             .as_ref()
