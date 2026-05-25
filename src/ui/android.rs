@@ -396,37 +396,40 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
     intent_data: JObject<'caller>,
 ) {
     let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
-        if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
-            && let Some(tx) = tx_lock.take()
-            && result_code == AndroidActivity::RESULT_OK(env)?
-            && !intent_data.is_null()
-        {
-            let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
+        if result_code == AndroidActivity::RESULT_OK(env)? && !intent_data.is_null() {
             match request_code {
                 REQUEST_SELECT_ROM => {
-                    let uri = result_intent.as_ref().get_data(env)?;
-                    if uri.is_null() {
-                        return Ok(());
-                    }
-
-                    if let Ok(app) = ANDROID_APP.lock()
-                        && let Some(app) = app.as_ref()
+                    if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
+                        && let Some(tx) = tx_lock.take()
                     {
-                        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
-                        let activity = unsafe {
-                            env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)?
-                        };
+                        let result_intent =
+                            unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
 
-                        let content_resolver = activity.as_ref().get_content_resolver(env)?;
-                        let take_flags = AndroidIntent::FLAG_GRANT_READ_URI_PERMISSION(env)?;
-                        content_resolver.take_persistable_uri_permission(env, &uri, take_flags)?;
+                        let uri = result_intent.as_ref().get_data(env)?;
+                        if uri.is_null() {
+                            return Ok(());
+                        }
 
-                        let path = uri.to_string(env)?;
+                        if let Ok(app) = ANDROID_APP.lock()
+                            && let Some(app) = app.as_ref()
+                        {
+                            let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+                            let activity = unsafe {
+                                env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)?
+                            };
 
-                        let _ = tx.send(Some(std::path::PathBuf::from(path.to_string())));
-                    } else {
-                        eprintln!("Android app not initialized");
-                        return Ok(());
+                            let content_resolver = activity.as_ref().get_content_resolver(env)?;
+                            let take_flags = AndroidIntent::FLAG_GRANT_READ_URI_PERMISSION(env)?;
+                            content_resolver
+                                .take_persistable_uri_permission(env, &uri, take_flags)?;
+
+                            let path = uri.to_string(env)?;
+
+                            let _ = tx.send(Some(std::path::PathBuf::from(path.to_string())));
+                        } else {
+                            eprintln!("Android app not initialized");
+                            return Ok(());
+                        }
                     }
                 }
                 _ => {}
