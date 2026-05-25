@@ -164,7 +164,7 @@ fn start_n64_activity_on_jvm(
         let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
         let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
-        let class_name = JString::from_str(env, "N64Activity")?;
+        let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
 
         let profile_name_key = JString::from_str(env, "profile_name")?;
         let profile_name_value = JString::from_str(env, profile_name)?;
