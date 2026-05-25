@@ -353,6 +353,10 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
                 let deadzone = handle.get_input_deadzone();
                 handle.set_show_input_profile(false);
 
+                #[cfg(target_os = "android")]
+                ui::android::configure_input_profile(profile_name, dinput, deadzone, weak_app2);
+
+                #[cfg(not(target_os = "android"))]
                 tokio::spawn(async move {
                     let cli_path = std::env::current_exe()
                         .unwrap()
@@ -538,6 +542,10 @@ pub fn run_rom(
     netplay: Option<NetplayDevice>,
     weak: slint::Weak<AppWindow>,
 ) {
+    #[cfg(target_os = "android")]
+    ui::android::run_rom(file_path, game_settings, netplay, weak);
+
+    #[cfg(not(target_os = "android"))]
     tokio::spawn(async move {
         weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
             .unwrap();
