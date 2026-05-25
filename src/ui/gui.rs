@@ -189,7 +189,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     }
 }
 
-fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
+pub fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
     let profiles = input_profiles(config);
     let config_bindings = config.input.input_profile_binding.clone();
     weak.upgrade_in_event_loop(move |handle| {

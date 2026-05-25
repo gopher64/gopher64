@@ -5,7 +5,8 @@ use jni::sys::jint;
 use jni::{Env, EnvUnowned, JavaVM, bind_java_type};
 use std::os::fd::FromRawFd;
 
-pub const REQUEST_SELECT_ROM: jint = 1;
+const REQUEST_SELECT_ROM: jint = 1;
+const CONFIGURE_INPUT_PROFILE: jint = 2;
 
 pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
     std::sync::Mutex::new(None);
@@ -60,14 +61,27 @@ bind_java_type! {
         static FLAG_GRANT_READ_URI_PERMISSION: jint,
     },
     constructors {
-        fn new(action: JString),
+        fn new(),
+        fn with_action(action: JString),
     },
     methods {
         fn set_data(uri: AndroidUri) -> AndroidIntent,
         fn set_type(r#type: JString) -> AndroidIntent,
         fn add_category(category: JString) -> AndroidIntent,
         fn get_data() -> AndroidUri,
-        fn put_extra(extra: JString, value: JString) -> AndroidIntent,
+        fn put_extra_string {
+            sig = (extra: JString, value: JString) -> AndroidIntent,
+            name = "putExtra",
+        },
+        fn put_extra_boolean {
+            sig = (extra: JString, value: jboolean) -> AndroidIntent,
+            name = "putExtra",
+        },
+        fn put_extra_int {
+            sig = (extra: JString, value: jint) -> AndroidIntent,
+            name = "putExtra",
+        },
+        fn set_class_name(package_name: JString, class_name: JString) -> AndroidIntent,
     },
 }
 
@@ -127,7 +141,51 @@ pub struct ControllerInfo {
     pub descriptor: String,
 }
 
-pub fn configure_input_profile(_profile_name: slint::SharedString, _dinput: bool, _deadzone: i32) {}
+pub fn configure_input_profile(profile_name: slint::SharedString, dinput: bool, deadzone: i32) {
+    if let Some(vm) = get_vm() {
+        if let Err(err) = vm.attach_current_thread(|env| {
+            start_n64_activity_on_jvm(env, profile_name.to_string(), dinput, deadzone)
+        }) {
+            eprintln!("JNI error while starting N64Activity: {err:?}");
+        }
+    }
+}
+
+fn start_n64_activity_on_jvm(
+    env: &mut Env<'_>,
+    profile_name: String,
+    dinput: bool,
+    deadzone: i32,
+) -> jni::errors::Result<()> {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+
+        let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
+        let class_name = JString::from_str(env, "N64Activity")?;
+
+        let profile_name_key = JString::from_str(env, "profile_name")?;
+        let profile_name_value = JString::from_str(env, profile_name)?;
+        let dinput_key = JString::from_str(env, "dinput")?;
+        let deadzone_key = JString::from_str(env, "deadzone")?;
+        let mode_key = JString::from_str(env, "mode")?;
+        let intent = AndroidIntent::new(env)?
+            .set_class_name(env, &package_name, &class_name)?
+            .put_extra_string(env, &profile_name_key, &profile_name_value)?
+            .put_extra_boolean(env, &dinput_key, dinput)?
+            .put_extra_int(env, &deadzone_key, deadzone)?
+            .put_extra_int(env, &mode_key, 1 /* configure input profile */)?;
+
+        activity
+            .as_ref()
+            .start_activity_for_result(env, &intent, CONFIGURE_INPUT_PROFILE)?;
+        Ok(())
+    } else {
+        Err(jni::errors::Error::UninitializedJavaVM)
+    }
+}
 
 pub fn run_rom(
     _file_path: std::path::PathBuf,
@@ -233,7 +291,7 @@ fn open_uri_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<()> {
         let uri = AndroidUri::parse(env, &uri_string)?;
 
         let action_view = AndroidIntent::ACTION_VIEW(env)?;
-        let intent = AndroidIntent::new(env, &action_view)?.set_data(env, &uri)?;
+        let intent = AndroidIntent::with_action(env, &action_view)?.set_data(env, &uri)?;
 
         activity.as_ref().start_activity(env, &intent)?;
         Ok(())
@@ -282,13 +340,13 @@ fn select_rom_on_jvm(env: &mut Env<'_>, rom_dir: String) -> jni::errors::Result<
         let action = AndroidIntent::ACTION_OPEN_DOCUMENT(env)?;
         let category = AndroidIntent::CATEGORY_OPENABLE(env)?;
         let mime_type = JString::from_str(env, "*/*")?;
-        let mut intent = AndroidIntent::new(env, &action)?
+        let mut intent = AndroidIntent::with_action(env, &action)?
             .set_type(env, &mime_type)?
             .add_category(env, &category)?;
         if !rom_dir.is_empty() {
             let start_dir = JString::from_str(env, rom_dir)?;
             let extra_initial_uri = DocumentsContract::EXTRA_INITIAL_URI(env)?;
-            intent = intent.put_extra(env, &extra_initial_uri, &start_dir)?;
+            intent = intent.put_extra_string(env, &extra_initial_uri, &start_dir)?;
         }
 
         activity.start_activity_for_result(env, &intent, REQUEST_SELECT_ROM)?;
@@ -423,6 +481,14 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                             eprintln!("Android app not initialized");
                             return Ok(());
                         }
+                    }
+                }
+                CONFIGURE_INPUT_PROFILE => {
+                    if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
+                        && let Some(weak_app_window) = weak_app_window.as_ref()
+                    {
+                        let config = ui::config::Config::new();
+                        ui::gui::update_input_profiles(&weak_app_window, &config);
                     }
                 }
                 _ => {}

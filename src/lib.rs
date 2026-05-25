@@ -316,11 +316,9 @@ async fn android_main(app: slint::android::AndroidApp) {
                 if let Ok(weak_app_window) = android::WEAK_SLINT_WINDOW.lock()
                     && let Some(weak_app_window) = weak_app_window.as_ref()
                 {
-                    {
-                        weak_app_window
-                            .upgrade_in_event_loop(move |handle| ui::gui::save_settings(&handle))
-                            .unwrap();
-                    }
+                    weak_app_window
+                        .upgrade_in_event_loop(move |handle| ui::gui::save_settings(&handle))
+                        .unwrap();
                 }
             }
             _ => {}
