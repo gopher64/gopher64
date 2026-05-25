@@ -2233,6 +2233,7 @@ dependencies = [
  "reqwest",
  "rfd",
  "sdl3-image-sys",
+ "sdl3-src",
  "sdl3-sys",
  "sdl3-ttf-sys",
  "semver",

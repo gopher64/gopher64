@@ -306,4 +306,29 @@ fn main() {
     {
         println!("cargo:rustc-cfg=ra_hardcore_enabled");
     }
+    if os == "android" {
+        copy_dir_all(
+            std::path::Path::new(sdl3_src::SOURCE_DIR)
+                .join("android-project/app/src/main/java/org/libsdl/app"),
+            "android-project/app/src/main/java/org/libsdl/app",
+        )
+        .unwrap();
+    }
+}
+
+fn copy_dir_all(
+    src: impl AsRef<std::path::Path>,
+    dst: impl AsRef<std::path::Path>,
+) -> std::io::Result<()> {
+    std::fs::create_dir_all(&dst)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        } else {
+            std::fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        }
+    }
+    Ok(())
 }

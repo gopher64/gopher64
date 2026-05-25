@@ -51,6 +51,7 @@ jni = "0.22"
 [build-dependencies]
 winresource = "0.1"
 bindgen = "0.72"
+sdl3-src = "3.4"
 slint-build = { version = "1.12", optional = true }
 cc = { version = "1.2", features = ["parallel"] }
 
