@@ -345,6 +345,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
     });
     let weak_app = app.as_weak();
     app.on_input_profile_creation_button_clicked(move || {
+        #[cfg(not(target_os = "android"))]
         let weak_app2 = weak_app.clone();
         weak_app
             .upgrade_in_event_loop(move |handle| {
@@ -354,7 +355,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
                 handle.set_show_input_profile(false);
 
                 #[cfg(target_os = "android")]
-                ui::android::configure_input_profile(profile_name, dinput, deadzone, weak_app2);
+                ui::android::configure_input_profile(profile_name, dinput, deadzone);
 
                 #[cfg(not(target_os = "android"))]
                 tokio::spawn(async move {
@@ -540,10 +541,11 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<NetplayDevice>,
-    weak: slint::Weak<AppWindow>,
+    #[cfg(target_os = "android")] _weak: slint::Weak<AppWindow>,
+    #[cfg(not(target_os = "android"))] weak: slint::Weak<AppWindow>,
 ) {
     #[cfg(target_os = "android")]
-    ui::android::run_rom(file_path, game_settings, netplay, weak);
+    ui::android::run_rom(file_path, game_settings, netplay);
 
     #[cfg(not(target_os = "android"))]
     tokio::spawn(async move {
