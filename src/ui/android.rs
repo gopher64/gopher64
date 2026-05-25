@@ -127,6 +127,28 @@ pub struct ControllerInfo {
     pub descriptor: String,
 }
 
+pub fn configure_input_profile(
+    _profile_name: slint::SharedString,
+    _dinput: bool,
+    _deadzone: i32,
+    _weak: slint::Weak<ui::gui::AppWindow>,
+) {
+}
+
+pub fn run_rom(
+    _file_path: std::path::PathBuf,
+    _game_settings: ui::GameSettings,
+    netplay: Option<ui::gui::NetplayDevice>,
+    _weak: slint::Weak<ui::gui::AppWindow>,
+) {
+    if let Some(netplay) = netplay {
+        println!(
+            "Netplay peer addr: {} player number: {}",
+            netplay.peer_addr, netplay.player_number
+        );
+    }
+}
+
 fn get_vm() -> Option<JavaVM> {
     if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
