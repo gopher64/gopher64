@@ -34,3 +34,5 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+app/src/main/java/org/libsdl/app/
