@@ -1,3 +1,4 @@
+use crate::Args;
 use crate::run;
 use crate::ui;
 use clap::Parser;
@@ -166,7 +167,7 @@ pub async extern "C" fn gopher64_sdl_main(
     argv: *mut *mut std::ffi::c_char,
 ) -> std::ffi::c_int {
     let raw = argv_to_strings(argc, argv);
-    let args = ui::Args::try_parse_from(raw).unwrap();
+    let args = Args::try_parse_from(raw).unwrap();
     if let Err(err) = run(args, argc as usize).await {
         eprintln!("Error running game: {err:?}");
         return 1;

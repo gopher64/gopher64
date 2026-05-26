@@ -4,8 +4,9 @@
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use clap::Parser;
+
 #[tokio::main(worker_threads = 4)]
 async fn main() -> std::io::Result<()> {
-    let args = gopher64::ui::Args::parse();
+    let args = gopher64::Args::parse();
     gopher64::run(args, std::env::args().count()).await
 }

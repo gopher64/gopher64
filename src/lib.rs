@@ -5,7 +5,8 @@ mod device;
 mod netplay;
 mod retroachievements;
 mod savestates;
-pub mod ui;
+mod ui;
+use clap::Parser;
 #[cfg(target_os = "android")]
 use slint::ComponentHandle;
 use std::io::Error;
@@ -13,7 +14,86 @@ use std::io::Error;
 #[cfg(target_os = "android")]
 use ui::android;
 
-pub async fn run(args: ui::Args, arg_count: usize) -> std::io::Result<()> {
+/// N64 emulator
+#[derive(Parser, Debug)]
+#[command(author, version=env!("GIT_DESCRIBE"), about, long_about = None, arg_required_else_help = if cfg!(feature = "gui") { false } else { true })]
+pub struct Args {
+    pub game: Option<String>,
+    #[arg(short, long)]
+    pub fullscreen: bool,
+    #[arg(long)]
+    pub overclock: Option<bool>,
+    #[arg(long)]
+    pub disable_expansion_pak: Option<bool>,
+    #[arg(long, value_name = "CHEATS_FILE", hide = true)]
+    pub cheats: Option<String>,
+    #[arg(long, value_name = "NETPLAY_PEER_ADDR", hide = true)]
+    pub netplay_peer_addr: Option<String>,
+    #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER", hide = true)]
+    pub netplay_player_number: Option<u8>,
+    #[arg(
+        long,
+        value_name = "PROFILE_NAME",
+        help = "Create a new input profile (keyboard/gamepad mappings)"
+    )]
+    pub configure_input_profile: Option<String>,
+    #[arg(long, help = "Use DirectInput when configuring a new input profile")]
+    pub use_dinput: bool,
+    #[arg(
+        long,
+        value_name = "DEADZONE_PERCENTAGE",
+        help = "Used along with --configure-input-profile to set the deadzone for analog sticks"
+    )]
+    pub deadzone: Option<i32>,
+    #[arg(
+        long,
+        value_name = "PROFILE_NAME",
+        help = "Must also specify --port. Used to bind a previously created profile to a port"
+    )]
+    pub bind_input_profile: Option<String>,
+    #[arg(
+        long,
+        help = "Lists connected controllers which can be used in --assign-controller"
+    )]
+    pub list_controllers: bool,
+    #[arg(
+        long,
+        value_name = "CONTROLLER_NUMBER",
+        help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
+    )]
+    pub assign_controller: Option<i32>,
+    #[arg(
+        long,
+        value_name = "PORT",
+        help = "Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller"
+    )]
+    pub port: Option<usize>,
+    #[arg(
+        long,
+        help = "Clear all input profile bindings and controller assignments"
+    )]
+    pub clear_input_bindings: bool,
+    #[arg(
+        long,
+        value_name = "SLOT",
+        help = "Load savestate from slot 0-9 when starting the game"
+    )]
+    pub load_state: Option<u32>,
+    #[arg(
+        long = "ra-username",
+        value_name = "USERNAME",
+        help = "Username for RetroAchievements"
+    )]
+    pub ra_username: Option<String>,
+    #[arg(
+        long = "ra-password",
+        value_name = "PASSWORD",
+        help = "Password for RetroAchievements"
+    )]
+    pub ra_password: Option<String>,
+}
+
+pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
     std::fs::create_dir_all(&dirs.config_dir)?;
