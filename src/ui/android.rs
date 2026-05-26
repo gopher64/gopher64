@@ -163,6 +163,8 @@ pub async extern "C" fn gopher64_sdl_main(
     argc: std::ffi::c_int,
     argv: *mut *mut std::ffi::c_char,
 ) -> std::ffi::c_int {
+    ui::sdl_hints();
+
     let raw = argv_to_strings(argc, argv);
     let args = ui::Args::try_parse_from(raw).unwrap();
     if let Some(profile) = args.configure_input_profile {

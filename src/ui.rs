@@ -173,6 +173,10 @@ pub fn sdl_hints() {
             sdl3_sys::everything::SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,
             hint.as_ptr(),
         );
+        sdl3_sys::everything::SDL_SetHint(
+            sdl3_sys::everything::SDL_HINT_ANDROID_ALLOW_RECREATE_ACTIVITY,
+            hint.as_ptr(),
+        );
     }
 }
 
