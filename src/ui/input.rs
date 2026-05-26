@@ -665,12 +665,16 @@ pub fn configure_input_profile(
     let title = std::ffi::CString::new("configure input profile").unwrap();
     let mut window: *mut sdl3_sys::video::SDL_Window = std::ptr::null_mut();
     let mut renderer: *mut sdl3_sys::render::SDL_Renderer = std::ptr::null_mut();
+    #[cfg(target_os = "android")]
+    let window_flags = sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
+    #[cfg(not(target_os = "android"))]
+    let window_flags = sdl3_sys::video::SDL_WindowFlags(0);
     if !unsafe {
         sdl3_sys::render::SDL_CreateWindowAndRenderer(
             title.as_ptr(),
             852,
             480,
-            sdl3_sys::video::SDL_WindowFlags(0),
+            window_flags,
             &mut window,
             &mut renderer,
         )
