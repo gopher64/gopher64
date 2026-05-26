@@ -1,4 +1,4 @@
-use crate::device;
+use crate::run;
 use crate::ui;
 use clap::Parser;
 use jni::objects::{JClass, JObject, JString};
@@ -165,46 +165,11 @@ pub async extern "C" fn gopher64_sdl_main(
     argc: std::ffi::c_int,
     argv: *mut *mut std::ffi::c_char,
 ) -> std::ffi::c_int {
-    ui::sdl_hints();
-
     let raw = argv_to_strings(argc, argv);
     let args = ui::Args::try_parse_from(raw).unwrap();
-    if let Some(profile) = args.configure_input_profile {
-        let mut config = ui::config::Config::new();
-        ui::input::configure_input_profile(
-            &mut config,
-            profile,
-            args.use_dinput,
-            args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
-        );
-
-        ui::sdl_close();
-    } else if let Some(rom) = args.game
-        && let file_path = std::path::Path::new(&rom).to_path_buf()
-        && let Some(rom_contents) = device::get_rom_contents(&file_path)
-    {
-        let mut device = device::Device::new();
-        device.ui.video.fullscreen = true;
-        let overclock = args
-            .overclock
-            .unwrap_or(device.ui.config.emulation.overclock);
-        let disable_expansion_pak = args
-            .disable_expansion_pak
-            .unwrap_or(device.ui.config.emulation.disable_expansion_pak);
-        device::run_game(
-            &mut device,
-            &rom_contents,
-            ui::GameSettings {
-                overclock,
-                disable_expansion_pak,
-                cheats: std::collections::HashMap::new(),
-                load_savestate_slot: args.load_state,
-            },
-            false,
-        )
-        .await;
-
-        ui::sdl_close();
+    if let Err(err) = run(args).await {
+        eprintln!("Error running game: {err:?}");
+        return 1;
     }
     0
 }
@@ -275,7 +240,7 @@ pub fn run_rom(
 
 fn start_run_rom_on_jvm(
     env: &mut Env<'_>,
-    _file_path: std::path::PathBuf,
+    file_path: std::path::PathBuf,
     _game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
 ) -> jni::errors::Result<()> {
@@ -288,10 +253,13 @@ fn start_run_rom_on_jvm(
         let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
         let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
 
+        let file_path_key = JString::from_str(env, "file_path")?;
+        let file_path_value = JString::from_str(env, file_path.to_str().unwrap())?;
         let request_code_key = JString::from_str(env, "request_code")?;
         let mut intent = AndroidIntent::new(env)?
             .set_class_name(env, &package_name, &class_name)?
-            .put_extra_int(env, &request_code_key, RUN_ROM)?;
+            .put_extra_int(env, &request_code_key, RUN_ROM)?
+            .put_extra_string(env, &file_path_key, &file_path_value)?;
 
         if let Some(netplay) = netplay {
             let netplay_peer_addr_key = JString::from_str(env, "netplay_peer_addr")?;

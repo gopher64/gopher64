@@ -37,7 +37,8 @@ class N64Activity : SDLActivity() {
             setResult(RESULT_OK) // so that the profiles are updated in the GUI
             return args.toTypedArray()
         } else if (request_code == RUN_ROM) {
-            val args = mutableListOf("file_path")
+            val file_path = intent.getStringExtra("file_path") ?: return super.getArguments()
+            val args = mutableListOf(file_path)
             setResult(RESULT_OK)
             return args.toTypedArray()
         } else {

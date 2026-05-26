@@ -5,8 +5,7 @@ mod device;
 mod netplay;
 mod retroachievements;
 mod savestates;
-mod ui;
-use clap::Parser;
+pub mod ui;
 #[cfg(target_os = "android")]
 use slint::ComponentHandle;
 use std::io::Error;
@@ -14,7 +13,7 @@ use std::io::Error;
 #[cfg(target_os = "android")]
 use ui::android;
 
-pub async fn run() -> std::io::Result<()> {
+pub async fn run(args: ui::Args) -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
     std::fs::create_dir_all(&dirs.config_dir)?;
@@ -24,7 +23,6 @@ pub async fn run() -> std::io::Result<()> {
 
     ui::sdl_hints();
 
-    let args = ui::Args::parse();
     if let Some(game) = args.game {
         let file_path = std::path::Path::new(&game).to_path_buf();
         let Some(rom_contents) = device::get_rom_contents(&file_path) else {
