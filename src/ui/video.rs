@@ -280,10 +280,12 @@ pub fn draw_text(
             h: (h - sdl3_ttf_sys::ttf::TTF_GetFontHeight(font)) as f32,
         };
         sdl3_sys::render::SDL_RenderTexture(renderer, image_texture, std::ptr::null(), &rect);
+        let (mut text_w, mut text_h) = (0, 0);
+        sdl3_ttf_sys::ttf::TTF_GetTextSize(ttf_text, &mut text_w, &mut text_h);
         sdl3_ttf_sys::ttf::TTF_DrawRendererText(
             ttf_text,
-            20.0,
-            (h - sdl3_ttf_sys::ttf::TTF_GetFontHeight(font)) as f32,
+            (w / 2 - text_w / 2) as f32,
+            (h - text_h) as f32,
         );
         sdl3_sys::render::SDL_RenderPresent(renderer);
         sdl3_ttf_sys::ttf::TTF_DestroyText(ttf_text);

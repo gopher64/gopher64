@@ -14,85 +14,6 @@ use std::io::Error;
 #[cfg(target_os = "android")]
 use ui::android;
 
-/// N64 emulator
-#[derive(Parser, Debug)]
-#[command(author, version=env!("GIT_DESCRIBE"), about, long_about = None, arg_required_else_help = if cfg!(feature = "gui") { false } else { true })]
-struct Args {
-    game: Option<String>,
-    #[arg(short, long)]
-    fullscreen: bool,
-    #[arg(long)]
-    overclock: Option<bool>,
-    #[arg(long)]
-    disable_expansion_pak: Option<bool>,
-    #[arg(long, value_name = "CHEATS_FILE", hide = true)]
-    cheats: Option<String>,
-    #[arg(long, value_name = "NETPLAY_PEER_ADDR", hide = true)]
-    netplay_peer_addr: Option<String>,
-    #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER", hide = true)]
-    netplay_player_number: Option<u8>,
-    #[arg(
-        long,
-        value_name = "PROFILE_NAME",
-        help = "Create a new input profile (keyboard/gamepad mappings)"
-    )]
-    configure_input_profile: Option<String>,
-    #[arg(long, help = "Use DirectInput when configuring a new input profile")]
-    use_dinput: bool,
-    #[arg(
-        long,
-        value_name = "DEADZONE_PERCENTAGE",
-        help = "Used along with --configure-input-profile to set the deadzone for analog sticks"
-    )]
-    deadzone: Option<i32>,
-    #[arg(
-        long,
-        value_name = "PROFILE_NAME",
-        help = "Must also specify --port. Used to bind a previously created profile to a port"
-    )]
-    bind_input_profile: Option<String>,
-    #[arg(
-        long,
-        help = "Lists connected controllers which can be used in --assign-controller"
-    )]
-    list_controllers: bool,
-    #[arg(
-        long,
-        value_name = "CONTROLLER_NUMBER",
-        help = "Must also specify --port. Used to assign a controller listed in --list-controllers to a port"
-    )]
-    assign_controller: Option<i32>,
-    #[arg(
-        long,
-        value_name = "PORT",
-        help = "Valid values: 1-4. To be used alongside --bind-input-profile and --assign-controller"
-    )]
-    port: Option<usize>,
-    #[arg(
-        long,
-        help = "Clear all input profile bindings and controller assignments"
-    )]
-    clear_input_bindings: bool,
-    #[arg(
-        long,
-        value_name = "SLOT",
-        help = "Load savestate from slot 0-9 when starting the game"
-    )]
-    load_state: Option<u32>,
-    #[arg(
-        long = "ra-username",
-        value_name = "USERNAME",
-        help = "Username for RetroAchievements"
-    )]
-    ra_username: Option<String>,
-    #[arg(
-        long = "ra-password",
-        value_name = "PASSWORD",
-        help = "Password for RetroAchievements"
-    )]
-    ra_password: Option<String>,
-}
-
 pub async fn run() -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
@@ -103,7 +24,7 @@ pub async fn run() -> std::io::Result<()> {
 
     ui::sdl_hints();
 
-    let args = Args::parse();
+    let args = ui::Args::parse();
     if let Some(game) = args.game {
         let file_path = std::path::Path::new(&game).to_path_buf();
         let Some(rom_contents) = device::get_rom_contents(&file_path) else {

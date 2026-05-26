@@ -355,7 +355,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
                 handle.set_show_input_profile(false);
 
                 #[cfg(target_os = "android")]
-                ui::android::configure_input_profile(profile_name, dinput, deadzone);
+                ui::android::spawn_configure_input_profile(profile_name, dinput, deadzone);
 
                 #[cfg(not(target_os = "android"))]
                 tokio::spawn(async move {
