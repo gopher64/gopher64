@@ -600,14 +600,20 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                 }
                 RUN_ROM => {
                     let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
-                    let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
-                    let _ = std::fs::remove_file(cheats_path);
 
                     let file_path_key = JString::from_str(env, "file_path")?;
                     let file_path = result_intent
                         .as_ref()
                         .get_string_extra(env, &file_path_key)?
                         .try_to_string(env)?;
+
+                    let cheats_path_key = JString::from_str(env, "cheats_path")?;
+                    let cheats_path = result_intent
+                        .as_ref()
+                        .get_string_extra(env, &cheats_path_key)?
+                        .try_to_string(env)?;
+
+                    let _ = std::fs::remove_file(cheats_path);
                     if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
                         && let Some(weak_app_window) = weak_app_window.as_ref()
                     {

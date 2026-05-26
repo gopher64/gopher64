@@ -61,6 +61,7 @@ class N64Activity : SDLActivity() {
             }
             val dataIntent = Intent()
             dataIntent.putExtra("file_path", file_path)
+            dataIntent.putExtra("cheats_path", cheats)
             setResult(RESULT_OK, dataIntent)
             return args.toTypedArray()
         } else {
