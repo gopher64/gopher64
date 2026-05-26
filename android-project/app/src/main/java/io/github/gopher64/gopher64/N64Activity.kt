@@ -5,6 +5,7 @@ import org.libsdl.app.SDLActivity
 class N64Activity : SDLActivity() {
     companion object {
         const val CONFIGURE_INPUT_PROFILE = 2
+        const val RUN_ROM = 3
     }
 
     override fun getLibraries(): Array<String> = arrayOf(
@@ -34,6 +35,10 @@ class N64Activity : SDLActivity() {
                 args.add(deadzone.toString())
             }
             setResult(RESULT_OK) // so that the profiles are updated in the GUI
+            return args.toTypedArray()
+        } else if (request_code == RUN_ROM) {
+            val args = mutableListOf("file_path")
+            setResult(RESULT_OK)
             return args.toTypedArray()
         } else {
             return super.getArguments()

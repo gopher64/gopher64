@@ -1,3 +1,4 @@
+use crate::device;
 use crate::ui;
 use clap::Parser;
 use jni::objects::{JClass, JObject, JString};
@@ -8,6 +9,7 @@ use std::os::fd::FromRawFd;
 
 const REQUEST_SELECT_ROM: jint = 1;
 const CONFIGURE_INPUT_PROFILE: jint = 2;
+const RUN_ROM: jint = 3;
 
 pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
     std::sync::Mutex::new(None);
@@ -177,6 +179,32 @@ pub async extern "C" fn gopher64_sdl_main(
         );
 
         ui::sdl_close();
+    } else if let Some(rom) = args.game
+        && let file_path = std::path::Path::new(&rom).to_path_buf()
+        && let Some(rom_contents) = device::get_rom_contents(&file_path)
+    {
+        let mut device = device::Device::new();
+        device.ui.video.fullscreen = true;
+        let overclock = args
+            .overclock
+            .unwrap_or(device.ui.config.emulation.overclock);
+        let disable_expansion_pak = args
+            .disable_expansion_pak
+            .unwrap_or(device.ui.config.emulation.disable_expansion_pak);
+        device::run_game(
+            &mut device,
+            &rom_contents,
+            ui::GameSettings {
+                overclock,
+                disable_expansion_pak,
+                cheats: std::collections::HashMap::new(),
+                load_savestate_slot: args.load_state,
+            },
+            false,
+        )
+        .await;
+
+        ui::sdl_close();
     }
     0
 }
@@ -188,14 +216,14 @@ pub fn spawn_configure_input_profile(
 ) {
     if let Some(vm) = get_vm() {
         if let Err(err) = vm.attach_current_thread(|env| {
-            start_n64_activity_on_jvm(env, profile_name.to_string(), dinput, deadzone)
+            start_configure_input_profile_on_jvm(env, profile_name.to_string(), dinput, deadzone)
         }) {
             eprintln!("JNI error while starting N64Activity: {err:?}");
         }
     }
 }
 
-fn start_n64_activity_on_jvm(
+fn start_configure_input_profile_on_jvm(
     env: &mut Env<'_>,
     profile_name: String,
     dinput: bool,
@@ -232,15 +260,58 @@ fn start_n64_activity_on_jvm(
 }
 
 pub fn run_rom(
+    file_path: std::path::PathBuf,
+    game_settings: ui::GameSettings,
+    netplay: Option<ui::gui::NetplayDevice>,
+) {
+    if let Some(vm) = get_vm() {
+        if let Err(err) = vm.attach_current_thread(|env| {
+            start_run_rom_on_jvm(env, file_path, game_settings, netplay)
+        }) {
+            eprintln!("JNI error while starting N64Activity: {err:?}");
+        }
+    }
+}
+
+fn start_run_rom_on_jvm(
+    env: &mut Env<'_>,
     _file_path: std::path::PathBuf,
     _game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
-) {
-    if let Some(netplay) = netplay {
-        println!(
-            "Netplay peer addr: {} player number: {}",
-            netplay.peer_addr, netplay.player_number
-        );
+) -> jni::errors::Result<()> {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+
+        let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
+        let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
+
+        let request_code_key = JString::from_str(env, "request_code")?;
+        let mut intent = AndroidIntent::new(env)?
+            .set_class_name(env, &package_name, &class_name)?
+            .put_extra_int(env, &request_code_key, RUN_ROM)?;
+
+        if let Some(netplay) = netplay {
+            let netplay_peer_addr_key = JString::from_str(env, "netplay_peer_addr")?;
+            let netplay_player_number_key = JString::from_str(env, "netplay_player_number")?;
+            let netplay_peer_addr_value = JString::from_str(env, &netplay.peer_addr.to_string())?;
+            intent = intent
+                .put_extra_string(env, &netplay_peer_addr_key, &netplay_peer_addr_value)?
+                .put_extra_int(
+                    env,
+                    &netplay_player_number_key,
+                    netplay.player_number as jint,
+                )?;
+        }
+
+        activity
+            .as_ref()
+            .start_activity_for_result(env, &intent, RUN_ROM)?;
+        Ok(())
+    } else {
+        Err(jni::errors::Error::UninitializedJavaVM)
     }
 }
 
@@ -536,6 +607,7 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                         ui::gui::update_input_profiles(&weak_app_window, &config);
                     }
                 }
+                RUN_ROM => {}
                 _ => {}
             }
         }
