@@ -115,6 +115,7 @@ bind_java_type! {
     methods {
         static fn parse(uri_string: JString) -> AndroidUri,
         fn to_string() -> JString,
+        static fn decode(path: JString) -> JString,
     },
 }
 
@@ -314,6 +315,27 @@ fn get_vm() -> Option<JavaVM> {
     } else {
         None
     }
+}
+
+pub fn decode_path(path: &str) -> String {
+    if let Some(vm) = get_vm() {
+        match vm.attach_current_thread(|env| decode_path_on_jvm(env, path)) {
+            Ok(decoded_path) => decoded_path,
+            Err(err) => {
+                eprintln!("JNI error while decoding path: {err:?}");
+                String::new()
+            }
+        }
+    } else {
+        eprintln!("Android app not initialized");
+        String::new()
+    }
+}
+
+fn decode_path_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<String> {
+    let path = JString::from_str(env, path)?;
+    let decoded_path = AndroidUri::decode(env, &path)?;
+    Ok(decoded_path.try_to_string(env)?)
 }
 
 /// Lists connected gamepads and joysticks using the Android framework.
@@ -608,12 +630,13 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                         .try_to_string(env)?;
 
                     let cheats_path_key = JString::from_str(env, "cheats_path")?;
-                    let cheats_path = result_intent
+                    if let Ok(cheats_path) = result_intent
                         .as_ref()
-                        .get_string_extra(env, &cheats_path_key)?
-                        .try_to_string(env)?;
-
-                    let _ = std::fs::remove_file(cheats_path);
+                        .get_string_extra(env, &cheats_path_key)
+                        && let Ok(cheats_path) = cheats_path.try_to_string(env)
+                    {
+                        let _ = std::fs::remove_file(cheats_path);
+                    }
                     if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
                         && let Some(weak_app_window) = weak_app_window.as_ref()
                     {

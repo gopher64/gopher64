@@ -111,7 +111,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
                 .map(|x| {
                     (
                         x.into(),
-                        std::path::Path::new(x)
+                        std::path::Path::new(&decode_path(x))
                             .file_name()
                             .unwrap()
                             .to_str()
@@ -609,11 +609,23 @@ pub fn run_rom(
     });
 }
 
+fn decode_path(path: &str) -> String {
+    #[cfg(target_os = "android")]
+    return ui::android::decode_path(path);
+    #[cfg(not(target_os = "android"))]
+    return path.to_string();
+}
+
 pub fn update_recent_roms(app: &AppWindow, file_path: std::path::PathBuf) {
     let recent_roms = slint::VecModel::default();
     recent_roms.push((
         file_path.to_str().unwrap().into(),
-        file_path.file_name().unwrap().to_str().unwrap().into(),
+        std::path::Path::new(&decode_path(file_path.to_str().unwrap()))
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .into(),
     ));
 
     for rom in app.get_recent_roms().iter() {

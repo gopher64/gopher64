@@ -49,6 +49,8 @@ class N64Activity : SDLActivity() {
                 "--disable-expansion-pak",
                 disable_expansion_pak.toString())
 
+            val dataIntent = Intent()
+
             val netplay_peer_addr = intent.getStringExtra("netplay_peer_addr")
             val cheats = intent.getStringExtra("cheats")
             if (netplay_peer_addr != null && cheats != null) {
@@ -58,10 +60,11 @@ class N64Activity : SDLActivity() {
                 args.add(intent.getIntExtra("netplay_player_number", 4).toString())
                 args.add("--cheats")
                 args.add(cheats)
+                dataIntent.putExtra("cheats_path", cheats)
             }
-            val dataIntent = Intent()
+
             dataIntent.putExtra("file_path", file_path)
-            dataIntent.putExtra("cheats_path", cheats)
+
             setResult(RESULT_OK, dataIntent)
             return args.toTypedArray()
         } else {
