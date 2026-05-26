@@ -1,4 +1,5 @@
 use crate::ui;
+use clap::Parser;
 use jni::objects::{JClass, JObject, JString};
 use jni::refs::Global;
 use jni::sys::jint;
@@ -141,7 +142,48 @@ pub struct ControllerInfo {
     pub descriptor: String,
 }
 
-pub fn configure_input_profile(profile_name: slint::SharedString, dinput: bool, deadzone: i32) {
+fn argv_to_strings(argc: std::ffi::c_int, argv: *mut *mut std::ffi::c_char) -> Vec<String> {
+    if argc <= 0 || argv.is_null() {
+        return Vec::new();
+    }
+    unsafe {
+        (0..argc as usize)
+            .map(|i| {
+                std::ffi::CStr::from_ptr(*argv.add(i))
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect()
+    }
+}
+
+#[unsafe(no_mangle)]
+#[tokio::main(worker_threads = 4)]
+pub async extern "C" fn gopher64_sdl_main(
+    argc: std::ffi::c_int,
+    argv: *mut *mut std::ffi::c_char,
+) -> std::ffi::c_int {
+    let raw = argv_to_strings(argc, argv);
+    let args = ui::Args::try_parse_from(raw).unwrap();
+    if let Some(profile) = args.configure_input_profile {
+        let mut config = ui::config::Config::new();
+        ui::input::configure_input_profile(
+            &mut config,
+            profile,
+            args.use_dinput,
+            args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
+        );
+
+        ui::sdl_close();
+    }
+    0
+}
+
+pub fn spawn_configure_input_profile(
+    profile_name: slint::SharedString,
+    dinput: bool,
+    deadzone: i32,
+) {
     if let Some(vm) = get_vm() {
         if let Err(err) = vm.attach_current_thread(|env| {
             start_n64_activity_on_jvm(env, profile_name.to_string(), dinput, deadzone)
@@ -166,6 +208,7 @@ fn start_n64_activity_on_jvm(
         let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
         let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
 
+        let request_code_key = JString::from_str(env, "request_code")?;
         let profile_name_key = JString::from_str(env, "profile_name")?;
         let profile_name_value = JString::from_str(env, profile_name)?;
         let dinput_key = JString::from_str(env, "dinput")?;
@@ -174,7 +217,8 @@ fn start_n64_activity_on_jvm(
             .set_class_name(env, &package_name, &class_name)?
             .put_extra_string(env, &profile_name_key, &profile_name_value)?
             .put_extra_boolean(env, &dinput_key, dinput)?
-            .put_extra_int(env, &deadzone_key, deadzone)?;
+            .put_extra_int(env, &deadzone_key, deadzone)?
+            .put_extra_int(env, &request_code_key, CONFIGURE_INPUT_PROFILE)?;
 
         activity
             .as_ref()
