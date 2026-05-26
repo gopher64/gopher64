@@ -7,5 +7,5 @@ use clap::Parser;
 #[tokio::main(worker_threads = 4)]
 async fn main() -> std::io::Result<()> {
     let args = gopher64::ui::Args::parse();
-    gopher64::run(args).await
+    gopher64::run(args, std::env::args().count()).await
 }

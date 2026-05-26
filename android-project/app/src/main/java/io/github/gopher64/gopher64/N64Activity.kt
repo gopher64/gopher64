@@ -38,7 +38,9 @@ class N64Activity : SDLActivity() {
             return args.toTypedArray()
         } else if (request_code == RUN_ROM) {
             val file_path = intent.getStringExtra("file_path") ?: return super.getArguments()
-            val args = mutableListOf(file_path)
+            val args = mutableListOf(
+                file_path,
+                "--fullscreen")
             setResult(RESULT_OK)
             return args.toTypedArray()
         } else {

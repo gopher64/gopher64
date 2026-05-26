@@ -13,7 +13,7 @@ use std::io::Error;
 #[cfg(target_os = "android")]
 use ui::android;
 
-pub async fn run(args: ui::Args) -> std::io::Result<()> {
+pub async fn run(args: ui::Args, arg_count: usize) -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
     std::fs::create_dir_all(&dirs.config_dir)?;
@@ -165,7 +165,7 @@ pub async fn run(args: ui::Args) -> std::io::Result<()> {
         if let Some(shutdown_tx) = &shutdown_tx {
             ui::usb::close(shutdown_tx, usb_handle).await;
         }
-    } else if std::env::args().count() > 1 {
+    } else if arg_count > 1 {
         let mut config = ui::config::Config::new();
 
         if let Some(profile) = args.configure_input_profile {

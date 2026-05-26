@@ -168,6 +168,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
         callback.paused = !callback.paused;
       }
       break;
+    case SDL_SCANCODE_AC_BACK:
     case SDL_SCANCODE_ESCAPE:
       if (gfx_info.fullscreen) {
         SDL_zero(user_event);
