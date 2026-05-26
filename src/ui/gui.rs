@@ -541,11 +541,10 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<NetplayDevice>,
-    #[cfg(target_os = "android")] _weak: slint::Weak<AppWindow>,
-    #[cfg(not(target_os = "android"))] weak: slint::Weak<AppWindow>,
+    weak: slint::Weak<AppWindow>,
 ) {
     #[cfg(target_os = "android")]
-    ui::android::run_rom(file_path, game_settings, netplay);
+    ui::android::run_rom(file_path, game_settings, netplay, weak);
 
     #[cfg(not(target_os = "android"))]
     tokio::spawn(async move {

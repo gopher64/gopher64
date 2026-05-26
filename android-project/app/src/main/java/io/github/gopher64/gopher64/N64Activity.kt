@@ -38,9 +38,15 @@ class N64Activity : SDLActivity() {
             return args.toTypedArray()
         } else if (request_code == RUN_ROM) {
             val file_path = intent.getStringExtra("file_path") ?: return super.getArguments()
+            val overclock = intent.getBooleanExtra("overclock", false)
+            val disable_expansion_pak = intent.getBooleanExtra("disable_expansion_pak", false)
             val args = mutableListOf(
                 file_path,
-                "--fullscreen")
+                "--fullscreen",
+                "--overclock",
+                overclock.toString(),
+                "--disable-expansion-pak",
+                disable_expansion_pak.toString())
             setResult(RESULT_OK)
             return args.toTypedArray()
         } else {

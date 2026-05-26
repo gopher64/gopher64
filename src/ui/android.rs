@@ -228,10 +228,11 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
+    weak: slint::Weak<ui::gui::AppWindow>,
 ) {
     if let Some(vm) = get_vm() {
         if let Err(err) = vm.attach_current_thread(|env| {
-            start_run_rom_on_jvm(env, file_path, game_settings, netplay)
+            start_run_rom_on_jvm(env, file_path, game_settings, netplay, weak)
         }) {
             eprintln!("JNI error while starting N64Activity: {err:?}");
         }
@@ -241,8 +242,9 @@ pub fn run_rom(
 fn start_run_rom_on_jvm(
     env: &mut Env<'_>,
     file_path: std::path::PathBuf,
-    _game_settings: ui::GameSettings,
+    game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
+    weak: slint::Weak<ui::gui::AppWindow>,
 ) -> jni::errors::Result<()> {
     if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
@@ -255,11 +257,19 @@ fn start_run_rom_on_jvm(
 
         let file_path_key = JString::from_str(env, "file_path")?;
         let file_path_value = JString::from_str(env, file_path.to_str().unwrap())?;
+        let overclock_key = JString::from_str(env, "overclock")?;
+        let disable_expansion_pak_key = JString::from_str(env, "disable_expansion_pak")?;
         let request_code_key = JString::from_str(env, "request_code")?;
         let mut intent = AndroidIntent::new(env)?
             .set_class_name(env, &package_name, &class_name)?
             .put_extra_int(env, &request_code_key, RUN_ROM)?
-            .put_extra_string(env, &file_path_key, &file_path_value)?;
+            .put_extra_string(env, &file_path_key, &file_path_value)?
+            .put_extra_boolean(env, &overclock_key, game_settings.overclock)?
+            .put_extra_boolean(
+                env,
+                &disable_expansion_pak_key,
+                game_settings.disable_expansion_pak,
+            )?;
 
         if let Some(netplay) = netplay {
             let netplay_peer_addr_key = JString::from_str(env, "netplay_peer_addr")?;
@@ -273,6 +283,9 @@ fn start_run_rom_on_jvm(
                     netplay.player_number as jint,
                 )?;
         }
+
+        weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
+            .unwrap();
 
         activity
             .as_ref()
@@ -575,7 +588,15 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                         ui::gui::update_input_profiles(&weak_app_window, &config);
                     }
                 }
-                RUN_ROM => {}
+                RUN_ROM => {
+                    if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
+                        && let Some(weak_app_window) = weak_app_window.as_ref()
+                    {
+                        weak_app_window
+                            .upgrade_in_event_loop(move |handle| handle.set_game_running(false))
+                            .unwrap();
+                    }
+                }
                 _ => {}
             }
         }
