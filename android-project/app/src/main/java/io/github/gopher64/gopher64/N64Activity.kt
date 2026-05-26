@@ -1,5 +1,6 @@
 package io.github.gopher64.gopher64
 
+import android.content.Intent
 import org.libsdl.app.SDLActivity
 
 class N64Activity : SDLActivity() {
@@ -47,7 +48,20 @@ class N64Activity : SDLActivity() {
                 overclock.toString(),
                 "--disable-expansion-pak",
                 disable_expansion_pak.toString())
-            setResult(RESULT_OK)
+
+            val netplay_peer_addr = intent.getStringExtra("netplay_peer_addr")
+            val cheats = intent.getStringExtra("cheats")
+            if (netplay_peer_addr != null && cheats != null) {
+                args.add("--netplay-peer-addr")
+                args.add(netplay_peer_addr)
+                args.add("--netplay-player-number")
+                args.add(intent.getIntExtra("netplay_player_number", 4).toString())
+                args.add("--cheats")
+                args.add(cheats)
+            }
+            val dataIntent = Intent()
+            dataIntent.putExtra("file_path", file_path)
+            setResult(RESULT_OK, dataIntent)
             return args.toTypedArray()
         } else {
             return super.getArguments()

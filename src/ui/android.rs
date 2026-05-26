@@ -85,6 +85,7 @@ bind_java_type! {
             sig = (extra: JString, value: jint) -> AndroidIntent,
             name = "putExtra",
         },
+        fn get_string_extra(name: JString) -> JString,
         fn set_class_name(package_name: JString, class_name: JString) -> AndroidIntent,
     },
 }
@@ -276,13 +277,21 @@ fn start_run_rom_on_jvm(
             let netplay_peer_addr_key = JString::from_str(env, "netplay_peer_addr")?;
             let netplay_player_number_key = JString::from_str(env, "netplay_player_number")?;
             let netplay_peer_addr_value = JString::from_str(env, &netplay.peer_addr.to_string())?;
+            let cheats_key = JString::from_str(env, "cheats")?;
+            let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
+            let cheats_value = JString::from_str(env, cheats_path.to_str().unwrap())?;
+
+            let f = std::fs::File::create(cheats_path).unwrap();
+            serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
+
             intent = intent
                 .put_extra_string(env, &netplay_peer_addr_key, &netplay_peer_addr_value)?
                 .put_extra_int(
                     env,
                     &netplay_player_number_key,
                     netplay.player_number as jint,
-                )?;
+                )?
+                .put_extra_string(env, &cheats_key, &cheats_value)?;
         }
 
         weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
@@ -590,11 +599,23 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                     }
                 }
                 RUN_ROM => {
+                    let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
+                    let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
+                    let _ = std::fs::remove_file(cheats_path);
+
+                    let file_path_key = JString::from_str(env, "file_path")?;
+                    let file_path = result_intent
+                        .as_ref()
+                        .get_string_extra(env, &file_path_key)?
+                        .try_to_string(env)?;
                     if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
                         && let Some(weak_app_window) = weak_app_window.as_ref()
                     {
                         weak_app_window
-                            .upgrade_in_event_loop(move |handle| handle.set_game_running(false))
+                            .upgrade_in_event_loop(move |handle| {
+                                ui::gui::update_recent_roms(&handle, file_path.into());
+                                handle.set_game_running(false)
+                            })
                             .unwrap();
                     }
                 }

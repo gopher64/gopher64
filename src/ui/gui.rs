@@ -570,7 +570,7 @@ pub fn run_rom(
         ]);
         let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
         if let Some(netplay_device) = netplay {
-            let f = std::fs::File::create(cheats_path.to_str().unwrap()).unwrap();
+            let f = std::fs::File::create(&cheats_path).unwrap();
             serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
 
             command.args([
@@ -594,33 +594,35 @@ pub fn run_rom(
             eprintln!("Failed to run game");
         }
 
-        let _ = std::fs::remove_file(cheats_path.to_str().unwrap());
+        let _ = std::fs::remove_file(cheats_path);
 
         weak.upgrade_in_event_loop(move |handle| {
             if let Some(rom_dir) = file_path.parent().unwrap().to_str() {
                 handle.set_rom_dir(rom_dir.into());
             }
             if success {
-                let recent_roms = slint::VecModel::default();
-                recent_roms.push((
-                    file_path.to_str().unwrap().into(),
-                    file_path.file_name().unwrap().to_str().unwrap().into(),
-                ));
-
-                for rom in handle.get_recent_roms().iter() {
-                    if rom.0 != file_path.to_str().unwrap()
-                        && recent_roms.row_count() < 5
-                        && rom_exists(&rom.0)
-                    {
-                        recent_roms.push(rom);
-                    }
-                }
-                handle.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(recent_roms)));
+                update_recent_roms(&handle, file_path);
             }
             handle.set_game_running(false);
         })
         .unwrap();
     });
+}
+
+pub fn update_recent_roms(app: &AppWindow, file_path: std::path::PathBuf) {
+    let recent_roms = slint::VecModel::default();
+    recent_roms.push((
+        file_path.to_str().unwrap().into(),
+        file_path.file_name().unwrap().to_str().unwrap().into(),
+    ));
+
+    for rom in app.get_recent_roms().iter() {
+        if rom.0 != file_path.to_str().unwrap() && recent_roms.row_count() < 5 && rom_exists(&rom.0)
+        {
+            recent_roms.push(rom);
+        }
+    }
+    app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(recent_roms)));
 }
 
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
