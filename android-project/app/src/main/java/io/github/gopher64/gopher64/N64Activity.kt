@@ -1,10 +1,12 @@
 package io.github.gopher64.gopher64
 
+import android.content.Intent
 import org.libsdl.app.SDLActivity
 
 class N64Activity : SDLActivity() {
     companion object {
         const val CONFIGURE_INPUT_PROFILE = 2
+        const val RUN_ROM = 3
     }
 
     override fun getLibraries(): Array<String> = arrayOf(
@@ -34,6 +36,36 @@ class N64Activity : SDLActivity() {
                 args.add(deadzone.toString())
             }
             setResult(RESULT_OK) // so that the profiles are updated in the GUI
+            return args.toTypedArray()
+        } else if (request_code == RUN_ROM) {
+            val file_path = intent.getStringExtra("file_path") ?: return super.getArguments()
+            val overclock = intent.getBooleanExtra("overclock", false)
+            val disable_expansion_pak = intent.getBooleanExtra("disable_expansion_pak", false)
+            val args = mutableListOf(
+                file_path,
+                "--fullscreen",
+                "--overclock",
+                overclock.toString(),
+                "--disable-expansion-pak",
+                disable_expansion_pak.toString())
+
+            val dataIntent = Intent()
+
+            val netplay_peer_addr = intent.getStringExtra("netplay_peer_addr")
+            val cheats = intent.getStringExtra("cheats")
+            if (netplay_peer_addr != null && cheats != null) {
+                args.add("--netplay-peer-addr")
+                args.add(netplay_peer_addr)
+                args.add("--netplay-player-number")
+                args.add(intent.getIntExtra("netplay_player_number", 4).toString())
+                args.add("--cheats")
+                args.add(cheats)
+                dataIntent.putExtra("cheats_path", cheats)
+            }
+
+            dataIntent.putExtra("file_path", file_path)
+
+            setResult(RESULT_OK, dataIntent)
             return args.toTypedArray()
         } else {
             return super.getArguments()

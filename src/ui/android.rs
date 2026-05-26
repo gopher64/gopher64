@@ -1,3 +1,5 @@
+use crate::Args;
+use crate::run;
 use crate::ui;
 use clap::Parser;
 use jni::objects::{JClass, JObject, JString};
@@ -8,6 +10,7 @@ use std::os::fd::FromRawFd;
 
 const REQUEST_SELECT_ROM: jint = 1;
 const CONFIGURE_INPUT_PROFILE: jint = 2;
+const RUN_ROM: jint = 3;
 
 pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
     std::sync::Mutex::new(None);
@@ -82,6 +85,7 @@ bind_java_type! {
             sig = (extra: JString, value: jint) -> AndroidIntent,
             name = "putExtra",
         },
+        fn get_string_extra(name: JString) -> JString,
         fn set_class_name(package_name: JString, class_name: JString) -> AndroidIntent,
     },
 }
@@ -111,6 +115,7 @@ bind_java_type! {
     methods {
         static fn parse(uri_string: JString) -> AndroidUri,
         fn to_string() -> JString,
+        static fn decode(path: JString) -> JString,
     },
 }
 
@@ -163,20 +168,11 @@ pub async extern "C" fn gopher64_sdl_main(
     argc: std::ffi::c_int,
     argv: *mut *mut std::ffi::c_char,
 ) -> std::ffi::c_int {
-    ui::sdl_hints();
-
     let raw = argv_to_strings(argc, argv);
-    let args = ui::Args::try_parse_from(raw).unwrap();
-    if let Some(profile) = args.configure_input_profile {
-        let mut config = ui::config::Config::new();
-        ui::input::configure_input_profile(
-            &mut config,
-            profile,
-            args.use_dinput,
-            args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
-        );
-
-        ui::sdl_close();
+    let args = Args::try_parse_from(raw).unwrap();
+    if let Err(err) = run(args, argc as usize).await {
+        eprintln!("Error running game: {err:?}");
+        return 1;
     }
     0
 }
@@ -188,14 +184,14 @@ pub fn spawn_configure_input_profile(
 ) {
     if let Some(vm) = get_vm() {
         if let Err(err) = vm.attach_current_thread(|env| {
-            start_n64_activity_on_jvm(env, profile_name.to_string(), dinput, deadzone)
+            start_configure_input_profile_on_jvm(env, profile_name.to_string(), dinput, deadzone)
         }) {
             eprintln!("JNI error while starting N64Activity: {err:?}");
         }
     }
 }
 
-fn start_n64_activity_on_jvm(
+fn start_configure_input_profile_on_jvm(
     env: &mut Env<'_>,
     profile_name: String,
     dinput: bool,
@@ -232,15 +228,82 @@ fn start_n64_activity_on_jvm(
 }
 
 pub fn run_rom(
-    _file_path: std::path::PathBuf,
-    _game_settings: ui::GameSettings,
+    file_path: std::path::PathBuf,
+    game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
+    weak: slint::Weak<ui::gui::AppWindow>,
 ) {
-    if let Some(netplay) = netplay {
-        println!(
-            "Netplay peer addr: {} player number: {}",
-            netplay.peer_addr, netplay.player_number
-        );
+    if let Some(vm) = get_vm() {
+        if let Err(err) = vm.attach_current_thread(|env| {
+            start_run_rom_on_jvm(env, file_path, game_settings, netplay, weak)
+        }) {
+            eprintln!("JNI error while starting N64Activity: {err:?}");
+        }
+    }
+}
+
+fn start_run_rom_on_jvm(
+    env: &mut Env<'_>,
+    file_path: std::path::PathBuf,
+    game_settings: ui::GameSettings,
+    netplay: Option<ui::gui::NetplayDevice>,
+    weak: slint::Weak<ui::gui::AppWindow>,
+) -> jni::errors::Result<()> {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+
+        let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
+        let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
+
+        let file_path_key = JString::from_str(env, "file_path")?;
+        let file_path_value = JString::from_str(env, file_path.to_str().unwrap())?;
+        let overclock_key = JString::from_str(env, "overclock")?;
+        let disable_expansion_pak_key = JString::from_str(env, "disable_expansion_pak")?;
+        let request_code_key = JString::from_str(env, "request_code")?;
+        let mut intent = AndroidIntent::new(env)?
+            .set_class_name(env, &package_name, &class_name)?
+            .put_extra_int(env, &request_code_key, RUN_ROM)?
+            .put_extra_string(env, &file_path_key, &file_path_value)?
+            .put_extra_boolean(env, &overclock_key, game_settings.overclock)?
+            .put_extra_boolean(
+                env,
+                &disable_expansion_pak_key,
+                game_settings.disable_expansion_pak,
+            )?;
+
+        if let Some(netplay) = netplay {
+            let netplay_peer_addr_key = JString::from_str(env, "netplay_peer_addr")?;
+            let netplay_player_number_key = JString::from_str(env, "netplay_player_number")?;
+            let netplay_peer_addr_value = JString::from_str(env, &netplay.peer_addr.to_string())?;
+            let cheats_key = JString::from_str(env, "cheats")?;
+            let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
+            let cheats_value = JString::from_str(env, cheats_path.to_str().unwrap())?;
+
+            let f = std::fs::File::create(cheats_path).unwrap();
+            serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
+
+            intent = intent
+                .put_extra_string(env, &netplay_peer_addr_key, &netplay_peer_addr_value)?
+                .put_extra_int(
+                    env,
+                    &netplay_player_number_key,
+                    netplay.player_number as jint,
+                )?
+                .put_extra_string(env, &cheats_key, &cheats_value)?;
+        }
+
+        weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
+            .unwrap();
+
+        activity
+            .as_ref()
+            .start_activity_for_result(env, &intent, RUN_ROM)?;
+        Ok(())
+    } else {
+        Err(jni::errors::Error::UninitializedJavaVM)
     }
 }
 
@@ -252,6 +315,27 @@ fn get_vm() -> Option<JavaVM> {
     } else {
         None
     }
+}
+
+pub fn decode_path(path: &str) -> String {
+    if let Some(vm) = get_vm() {
+        match vm.attach_current_thread(|env| decode_path_on_jvm(env, path)) {
+            Ok(decoded_path) => decoded_path,
+            Err(err) => {
+                eprintln!("JNI error while decoding path: {err:?}");
+                String::new()
+            }
+        }
+    } else {
+        eprintln!("Android app not initialized");
+        String::new()
+    }
+}
+
+fn decode_path_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<String> {
+    let path = JString::from_str(env, path)?;
+    let decoded_path = AndroidUri::decode(env, &path)?;
+    Ok(decoded_path.try_to_string(env)?)
 }
 
 /// Lists connected gamepads and joysticks using the Android framework.
@@ -534,6 +618,34 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                     {
                         let config = ui::config::Config::new();
                         ui::gui::update_input_profiles(&weak_app_window, &config);
+                    }
+                }
+                RUN_ROM => {
+                    let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
+
+                    let file_path_key = JString::from_str(env, "file_path")?;
+                    let file_path = result_intent
+                        .as_ref()
+                        .get_string_extra(env, &file_path_key)?
+                        .try_to_string(env)?;
+
+                    let cheats_path_key = JString::from_str(env, "cheats_path")?;
+                    if let Ok(cheats_path) = result_intent
+                        .as_ref()
+                        .get_string_extra(env, &cheats_path_key)
+                        && let Ok(cheats_path) = cheats_path.try_to_string(env)
+                    {
+                        let _ = std::fs::remove_file(cheats_path);
+                    }
+                    if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
+                        && let Some(weak_app_window) = weak_app_window.as_ref()
+                    {
+                        weak_app_window
+                            .upgrade_in_event_loop(move |handle| {
+                                ui::gui::update_recent_roms(&handle, file_path.into());
+                                handle.set_game_running(false)
+                            })
+                            .unwrap();
                     }
                 }
                 _ => {}
