@@ -21,10 +21,19 @@ class N64Activity : SDLActivity() {
         val request_code = intent.getIntExtra("request_code", 0)
         if (request_code == CONFIGURE_INPUT_PROFILE) {
             val profile = intent.getStringExtra("profile_name") ?: return super.getArguments()
-            return arrayOf(
+            val deadzone = intent.getIntExtra("deadzone", -1)
+            val args = mutableListOf(
                 "--configure-input-profile",
-                profile
+                profile,
             )
+            if (intent.getBooleanExtra("dinput", false)) {
+                args.add("--use-dinput")
+            }
+            if (deadzone != -1) {
+                args.add("--deadzone")
+                args.add(deadzone.toString())
+            }
+            return args.toTypedArray()
         } else {
             return super.getArguments()
         }
