@@ -786,7 +786,11 @@ pub fn configure_input_profile(
             );
             let mut event: sdl3_sys::events::SDL_Event = Default::default();
             while !key_set && unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
-                if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
+                if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED
+                    || (event.event_type() == sdl3_sys::events::SDL_EVENT_KEY_DOWN
+                        && unsafe { event.key.scancode }
+                            == sdl3_sys::scancode::SDL_SCANCODE_AC_BACK)
+                {
                     close_input_profile_window(
                         open_joysticks,
                         open_controllers,
