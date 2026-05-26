@@ -2,7 +2,7 @@ use crate::Args;
 use crate::run;
 use crate::ui;
 use clap::Parser;
-use jni::objects::{JClass, JObject, JString};
+use jni::objects::{JClass, JObject, JObjectArray, JString};
 use jni::refs::Global;
 use jni::sys::jint;
 use jni::{Env, EnvUnowned, JavaVM, bind_java_type};
@@ -77,12 +77,8 @@ bind_java_type! {
             sig = (extra: JString, value: JString) -> AndroidIntent,
             name = "putExtra",
         },
-        fn put_extra_boolean {
-            sig = (extra: JString, value: jboolean) -> AndroidIntent,
-            name = "putExtra",
-        },
-        fn put_extra_int {
-            sig = (extra: JString, value: jint) -> AndroidIntent,
+        fn put_extra_string_array {
+            sig = (extra: JString, value: JString[]) -> AndroidIntent,
             name = "putExtra",
         },
         fn get_string_extra(name: JString) -> JString,
@@ -206,17 +202,24 @@ fn start_configure_input_profile_on_jvm(
         let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
         let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
 
-        let request_code_key = JString::from_str(env, "request_code")?;
-        let profile_name_key = JString::from_str(env, "profile_name")?;
-        let profile_name_value = JString::from_str(env, profile_name)?;
-        let dinput_key = JString::from_str(env, "dinput")?;
-        let deadzone_key = JString::from_str(env, "deadzone")?;
+        let args_key = JString::from_str(env, "args")?;
+        let mut args = vec![
+            JString::from_str(env, "--configure-input-profile")?,
+            JString::from_str(env, &profile_name)?,
+            JString::from_str(env, "--deadzone")?,
+            JString::from_str(env, &deadzone.to_string())?,
+        ];
+        if dinput {
+            args.push(JString::from_str(env, "--use-dinput")?);
+        }
+        let empty_arg = JString::from_str(env, "")?;
+        let j_args = JObjectArray::<JString>::new(env, args.len(), empty_arg)?;
+        for (i, arg) in args.iter().enumerate() {
+            j_args.set_element(env, i, arg)?;
+        }
         let intent = AndroidIntent::new(env)?
             .set_class_name(env, &package_name, &class_name)?
-            .put_extra_string(env, &profile_name_key, &profile_name_value)?
-            .put_extra_boolean(env, &dinput_key, dinput)?
-            .put_extra_int(env, &deadzone_key, deadzone)?
-            .put_extra_int(env, &request_code_key, CONFIGURE_INPUT_PROFILE)?;
+            .put_extra_string_array(env, &args_key, &j_args)?;
 
         activity
             .as_ref()
@@ -259,41 +262,49 @@ fn start_run_rom_on_jvm(
         let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
 
         let file_path_key = JString::from_str(env, "file_path")?;
-        let file_path_value = JString::from_str(env, file_path.to_str().unwrap())?;
-        let overclock_key = JString::from_str(env, "overclock")?;
-        let disable_expansion_pak_key = JString::from_str(env, "disable_expansion_pak")?;
-        let request_code_key = JString::from_str(env, "request_code")?;
-        let mut intent = AndroidIntent::new(env)?
-            .set_class_name(env, &package_name, &class_name)?
-            .put_extra_int(env, &request_code_key, RUN_ROM)?
-            .put_extra_string(env, &file_path_key, &file_path_value)?
-            .put_extra_boolean(env, &overclock_key, game_settings.overclock)?
-            .put_extra_boolean(
-                env,
-                &disable_expansion_pak_key,
-                game_settings.disable_expansion_pak,
-            )?;
+        let file_path = file_path.to_str().unwrap();
+        let cheats_path_key = JString::from_str(env, "cheats_path")?;
+        let cheats_path = app
+            .internal_data_path()
+            .unwrap()
+            .join("cache")
+            .join("cheats.json");
+
+        let args_key = JString::from_str(env, "args")?;
+        let mut args = vec![
+            JString::from_str(env, file_path)?,
+            JString::from_str(env, "--fullscreen")?,
+            JString::from_str(env, "--overclock")?,
+            JString::from_str(env, &game_settings.overclock.to_string())?,
+            JString::from_str(env, "--disable-expansion-pak")?,
+            JString::from_str(env, &game_settings.disable_expansion_pak.to_string())?,
+        ];
 
         if let Some(netplay) = netplay {
-            let netplay_peer_addr_key = JString::from_str(env, "netplay_peer_addr")?;
-            let netplay_player_number_key = JString::from_str(env, "netplay_player_number")?;
-            let netplay_peer_addr_value = JString::from_str(env, &netplay.peer_addr.to_string())?;
-            let cheats_key = JString::from_str(env, "cheats")?;
-            let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
-            let cheats_value = JString::from_str(env, cheats_path.to_str().unwrap())?;
+            args.push(JString::from_str(env, "--netplay-peer-addr")?);
+            args.push(JString::from_str(env, &netplay.peer_addr.to_string())?);
+            args.push(JString::from_str(env, "--netplay-player-number")?);
+            args.push(JString::from_str(env, &netplay.player_number.to_string())?);
+            args.push(JString::from_str(env, "--cheats")?);
+            args.push(JString::from_str(env, cheats_path.to_str().unwrap())?);
 
-            let f = std::fs::File::create(cheats_path).unwrap();
+            let f = std::fs::File::create(&cheats_path).unwrap();
             serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
-
-            intent = intent
-                .put_extra_string(env, &netplay_peer_addr_key, &netplay_peer_addr_value)?
-                .put_extra_int(
-                    env,
-                    &netplay_player_number_key,
-                    netplay.player_number as jint,
-                )?
-                .put_extra_string(env, &cheats_key, &cheats_value)?;
         }
+
+        let empty_arg = JString::from_str(env, "")?;
+        let j_args = JObjectArray::<JString>::new(env, args.len(), empty_arg)?;
+        for (i, arg) in args.iter().enumerate() {
+            j_args.set_element(env, i, arg)?;
+        }
+
+        let file_path_string = JString::from_str(env, file_path)?;
+        let cheats_path_string = JString::from_str(env, cheats_path.to_str().unwrap())?;
+        let intent = AndroidIntent::new(env)?
+            .set_class_name(env, &package_name, &class_name)?
+            .put_extra_string(env, &file_path_key, &file_path_string)?
+            .put_extra_string(env, &cheats_path_key, &cheats_path_string)?
+            .put_extra_string_array(env, &args_key, &j_args)?;
 
         weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
             .unwrap();
