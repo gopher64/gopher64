@@ -489,11 +489,12 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
     intent_data: JObject<'caller>,
 ) {
     let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
-        if result_code == AndroidActivity::RESULT_OK(env)? && !intent_data.is_null() {
+        if result_code == AndroidActivity::RESULT_OK(env)? {
             match request_code {
                 REQUEST_SELECT_ROM => {
                     if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
                         && let Some(tx) = tx_lock.take()
+                        && !intent_data.is_null()
                     {
                         let result_intent =
                             unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };

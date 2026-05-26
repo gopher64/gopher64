@@ -33,6 +33,7 @@ class N64Activity : SDLActivity() {
                 args.add("--deadzone")
                 args.add(deadzone.toString())
             }
+            setResult(RESULT_OK) // so that the profiles are updated in the GUI
             return args.toTypedArray()
         } else {
             return super.getArguments()
