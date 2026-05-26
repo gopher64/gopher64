@@ -71,7 +71,36 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     )
 }
 
+val sdlLibsArm64 = tasks.register<Copy>("sdlLibsArm64") {
+    val isRelease = gradle.startParameter.taskNames.any { it.endsWith("Release", ignoreCase = true) }
+    val jniType = if (isRelease) "release" else "debug"
+    val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs/arm64-v8a"
+
+    from("$rootDir/../target/aarch64-linux-android/$jniType")
+    into(jniLibsFolder)
+    include("libSDL*")
+}
+
+val sdlLibsX64 = tasks.register<Copy>("sdlLibsX64") {
+    val isRelease = gradle.startParameter.taskNames.any { it.endsWith("Release", ignoreCase = true) }
+    val jniType = if (isRelease) "release" else "debug"
+    val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs/x86_64"
+
+    from("$rootDir/../target/x86_64-linux-android/$jniType")
+    into(jniLibsFolder)
+    include("libSDL*")
+}
+
 tasks.named("preBuild") {
+    dependsOn(sdlLibsArm64)
+    dependsOn(sdlLibsX64)
+}
+
+tasks.named("sdlLibsArm64") {
+    dependsOn(ndkBuild)
+}
+
+tasks.named("sdlLibsX64") {
     dependsOn(ndkBuild)
 }
 
