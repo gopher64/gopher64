@@ -1,12 +1,29 @@
 package io.github.gopher64.gopher64
 
 import android.content.Intent
+import android.os.PowerManager
+import android.content.Context
+import android.os.Bundle
+import android.util.Log
 import org.libsdl.app.SDLActivity
 
 class N64Activity : SDLActivity() {
     companion object {
         const val CONFIGURE_INPUT_PROFILE = 2
         const val RUN_ROM = 3
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val powerManager = getContext().getSystemService(Context.POWER_SERVICE) as PowerManager
+
+        if (powerManager.isSustainedPerformanceModeSupported) {
+            Log.v("SDL", "Enabling sustained performance mode")
+            window.setSustainedPerformanceMode(true)
+        } else {
+            Log.v("SDL", "Sustained performance mode not supported")
+        }
     }
 
     override fun getLibraries(): Array<String> = arrayOf(

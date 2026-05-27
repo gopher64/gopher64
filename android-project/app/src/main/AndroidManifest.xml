@@ -19,6 +19,7 @@
     <application
         android:icon="@mipmap/ic_launcher"
         android:label="Gopher64"
+        android:appCategory="game"
         android:hardwareAccelerated="true">
         <activity android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:name=".SlintActivity" android:exported="true">
