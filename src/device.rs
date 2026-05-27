@@ -74,8 +74,11 @@ pub async fn run_game(
     ui::input::init(&mut device.ui);
 
     // must be after video init
-    let (discord_watch_tx, discord_handle) =
-        retroachievements::load_game(rom_contents, rom_contents.len(), discord_rich_presence).await;
+    let (discord_watch_tx, discord_handle) = if device.netplay.is_none() {
+        retroachievements::load_game(rom_contents, rom_contents.len(), discord_rich_presence).await
+    } else {
+        (None, None)
+    };
 
     mi::init(device);
     pif::init(device);

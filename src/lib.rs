@@ -156,11 +156,10 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         let mut shutdown_tx = None;
         let mut usb_handle = None;
 
-        let rich_presence = if let Some(peer_addr) = args.netplay_peer_addr
+        if let Some(peer_addr) = args.netplay_peer_addr
             && let Some(player_number) = args.netplay_player_number
         {
             device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
-            false
         } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
@@ -176,39 +175,39 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
             if device.ui.config.emulation.usb {
                 (shutdown_tx, usb_handle, device.ui.usb) = ui::usb::init();
             }
+        };
 
-            let file_path = dirs.config_dir.join("retroachievements.json");
-            if let ra_config = std::fs::read(&file_path).unwrap_or_default()
-                && let ra_config =
-                    serde_json::from_slice::<retroachievements::RAConfig>(ra_config.as_ref())
-                        .unwrap_or_default()
-                && (ra_config.enabled || args.ra_username.is_some())
-            {
-                let username = args.ra_username.unwrap_or(ra_config.username);
-                retroachievements::init_client(
-                    if cfg!(ra_hardcore_enabled) {
-                        ra_config.hardcore
-                    } else {
-                        false
-                    },
-                    ra_config.challenge,
-                    ra_config.leaderboard,
-                );
-
-                let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
-                if let Some(password) = args.ra_password {
-                    retroachievements::login_user(username, password, tx);
-                } else if !ra_config.token.is_empty() {
-                    retroachievements::login_token_user(username, ra_config.token, tx);
+        let file_path = dirs.config_dir.join("retroachievements.json");
+        let rich_presence = if let ra_config = std::fs::read(&file_path).unwrap_or_default()
+            && let ra_config =
+                serde_json::from_slice::<retroachievements::RAConfig>(ra_config.as_ref())
+                    .unwrap_or_default()
+            && (ra_config.enabled || args.ra_username.is_some())
+        {
+            let username = args.ra_username.unwrap_or(ra_config.username);
+            retroachievements::init_client(
+                if cfg!(ra_hardcore_enabled) {
+                    ra_config.hardcore
                 } else {
-                    tx.send(false).unwrap();
-                }
+                    false
+                },
+                ra_config.challenge,
+                ra_config.leaderboard,
+            );
 
-                rx.await.unwrap();
-                ra_config.rich_presence
+            let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
+            if let Some(password) = args.ra_password {
+                retroachievements::login_user(username, password, tx);
+            } else if !ra_config.token.is_empty() {
+                retroachievements::login_token_user(username, ra_config.token, tx);
             } else {
-                false
+                tx.send(false).unwrap();
             }
+
+            rx.await.unwrap();
+            ra_config.rich_presence
+        } else {
+            false
         };
 
         device::run_game(
@@ -224,6 +223,8 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         )
         .await;
 
+        // on Android, the client is shut down in the app_window function
+        #[cfg(not(target_os = "android"))]
         retroachievements::shutdown_client();
 
         if device.netplay.is_some() {
