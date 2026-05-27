@@ -147,7 +147,6 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
   } else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running) {
     wsi_platform->do_resize();
   } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat) {
-    SDL_Log("Key down: %d", event->key.scancode);
     SDL_Event user_event;
     switch (event->key.scancode) {
     case SDL_SCANCODE_RETURN:
