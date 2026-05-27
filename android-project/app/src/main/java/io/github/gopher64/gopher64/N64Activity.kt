@@ -8,11 +8,6 @@ import android.util.Log
 import org.libsdl.app.SDLActivity
 
 class N64Activity : SDLActivity() {
-    companion object {
-        const val CONFIGURE_INPUT_PROFILE = 2
-        const val RUN_ROM = 3
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
