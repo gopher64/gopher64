@@ -266,6 +266,12 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     joystick_event->joystick_id = event->jdevice.which;
     joystick_event->connected = false;
     SDL_RunOnMainThread(add_joystick_event, joystick_event, false);
+  } else if (event->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
+    wsi->end_frame();
+    wsi->deinit_surface_and_swapchain();
+  } else if (event->type == SDL_EVENT_RENDER_DEVICE_RESET) {
+    wsi->init_surface_swapchain();
+    wsi->begin_frame();
   }
 
   return 0;
