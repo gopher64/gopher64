@@ -392,7 +392,7 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         {
             name
         } else {
-            "Unknown controller".to_string()
+            ui::input::UNKNOWN_CONTROLLER_NAME.to_string()
         };
         let descriptor = if let Ok(product_id) = device.get_product_id(env)
             && let Ok(vendor_id) = device.get_vendor_id(env)

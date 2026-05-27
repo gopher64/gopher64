@@ -30,6 +30,8 @@ const MAX_AXIS_VALUE: f64 = 85.0;
 
 pub const DEADZONE_DEFAULT: i32 = 5;
 
+pub const UNKNOWN_CONTROLLER_NAME: &str = "Unknown controller";
+
 pub struct Controllers {
     pub rumble: bool,
     pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
@@ -354,7 +356,7 @@ pub fn get_controller_names() -> Vec<String> {
         for joystick in get_joysticks().iter() {
             let name = unsafe { sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick) };
             controllers.push(if name.is_null() {
-                "Unknown controller".to_string()
+                UNKNOWN_CONTROLLER_NAME.to_string()
             } else {
                 unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
             });
@@ -1184,7 +1186,7 @@ pub fn init(ui: &mut ui::Ui) {
                     {
                         unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
                     } else {
-                        "Unknown controller".to_string()
+                        UNKNOWN_CONTROLLER_NAME.to_string()
                     };
 
                     let vendor_id =
