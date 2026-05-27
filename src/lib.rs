@@ -175,7 +175,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
             if device.ui.config.emulation.usb {
                 (shutdown_tx, usb_handle, device.ui.usb) = ui::usb::init();
             }
-        };
+        }
 
         let file_path = dirs.config_dir.join("retroachievements.json");
         let ra_config = if let ra_config = std::fs::read(&file_path).unwrap_or_default()
