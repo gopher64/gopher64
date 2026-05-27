@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -20,8 +22,8 @@ android {
         applicationId = "io.github.gopher64.gopher64"
         minSdk = 34
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.1.20"
+        versionCode = semverToVersionCode(cargoPackageVersion())
+        versionName = cargoPackageVersion()
         ndk {
             abiFilters.addAll(listOf("arm64-v8a", "x86_64"))
         }
@@ -46,6 +48,26 @@ android {
             excludes.add("lib/**/libsevenz_rust2*.so")
         }
     }
+}
+
+@Suppress("UNCHECKED_CAST")
+fun cargoPackageVersion(packageName: String = "gopher64"): String {
+    val repoRoot = rootDir.parentFile
+    val jsonText = providers.exec {
+        workingDir(repoRoot)
+        commandLine("cargo", "metadata", "--format-version", "1", "--no-deps")
+    }.standardOutput.asText.get()
+
+    val parsedJson = JsonSlurper().parseText(jsonText) as Map<String, Any>
+    val packages = parsedJson["packages"] as List<Map<String, Any>>
+    return packages.first { it["name"] == packageName }["version"] as String
+}
+
+fun semverToVersionCode(version: String): Int {
+    val parts = version.substringBefore('-').split(".")
+    val (major, minor, patch) = Triple(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())
+
+    return major * 1_000_000 + minor * 1_000 + patch
 }
 
 val ndkBuild = tasks.register<Exec>("ndkBuild") {
