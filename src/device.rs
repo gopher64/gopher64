@@ -51,7 +51,7 @@ pub async fn run_game(
     device: &mut Device,
     rom_contents: &[u8],
     game_settings: ui::GameSettings,
-    discord_rich_presence: bool,
+    ra_config: retroachievements::RAConfig,
 ) {
     device.cpu.overclock = game_settings.overclock;
     if game_settings.disable_expansion_pak {
@@ -74,8 +74,9 @@ pub async fn run_game(
     ui::input::init(&mut device.ui);
 
     // must be after video init
-    let (discord_watch_tx, discord_handle) = if device.netplay.is_none() {
-        retroachievements::load_game(rom_contents, rom_contents.len(), discord_rich_presence).await
+    let (discord_watch_tx, discord_handle) = if ra_config.enabled && device.netplay.is_none() {
+        retroachievements::load_game(rom_contents, rom_contents.len(), ra_config.rich_presence)
+            .await
     } else {
         (None, None)
     };

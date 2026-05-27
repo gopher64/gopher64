@@ -178,13 +178,13 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         };
 
         let file_path = dirs.config_dir.join("retroachievements.json");
-        let rich_presence = if let ra_config = std::fs::read(&file_path).unwrap_or_default()
+        let ra_config = if let ra_config = std::fs::read(&file_path).unwrap_or_default()
             && let ra_config =
                 serde_json::from_slice::<retroachievements::RAConfig>(ra_config.as_ref())
                     .unwrap_or_default()
             && (ra_config.enabled || args.ra_username.is_some())
         {
-            let username = args.ra_username.unwrap_or(ra_config.username);
+            let username = args.ra_username.unwrap_or(ra_config.username.clone());
             retroachievements::init_client(
                 if cfg!(ra_hardcore_enabled) {
                     ra_config.hardcore
@@ -199,15 +199,15 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
             if let Some(password) = args.ra_password {
                 retroachievements::login_user(username, password, tx);
             } else if !ra_config.token.is_empty() {
-                retroachievements::login_token_user(username, ra_config.token, tx);
+                retroachievements::login_token_user(username, ra_config.token.clone(), tx);
             } else {
                 tx.send(false).unwrap();
             }
 
             rx.await.unwrap();
-            ra_config.rich_presence
+            ra_config
         } else {
-            false
+            retroachievements::RAConfig::default()
         };
 
         device::run_game(
@@ -219,7 +219,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 cheats,
                 load_savestate_slot: args.load_state,
             },
-            rich_presence,
+            ra_config,
         )
         .await;
 
