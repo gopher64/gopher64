@@ -19,3 +19,64 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep,includedescriptorclasses,allowoptimization class org.libsdl.app.SDLActivity {
+    java.lang.String nativeGetHint(java.lang.String); # Java-side doesn't use this, so it gets minified, but C-side still tries to register it
+    java.lang.String clipboardGetText();
+    boolean clipboardHasText();
+    void clipboardSetText(java.lang.String);
+    int createCustomCursor(int[], int, int, int, int);
+    void destroyCustomCursor(int);
+    android.app.Activity getContext();
+    boolean getManifestEnvironmentVariables();
+    android.view.Surface getNativeSurface();
+    void initTouch();
+    boolean isAndroidTV();
+    boolean isChromebook();
+    boolean isDeXMode();
+    boolean isTablet();
+    void manualBackButton();
+    int messageboxShowMessageBox(int, java.lang.String, java.lang.String, int[], int[], java.lang.String[], int[]);
+    void minimizeWindow();
+    boolean openURL(java.lang.String);
+    void requestPermission(java.lang.String, int);
+    boolean showToast(java.lang.String, int, int, int, int);
+    boolean sendMessage(int, int);
+    boolean setActivityTitle(java.lang.String);
+    boolean setCustomCursor(int);
+    void setOrientation(int, int, boolean, java.lang.String);
+    boolean setRelativeMouseEnabled(boolean);
+    boolean setSystemCursor(int);
+    void setWindowStyle(boolean);
+    boolean shouldMinimizeOnFocusLoss();
+    boolean showTextInput(int, int, int, int, int);
+    boolean supportsRelativeMouse();
+    int openFileDescriptor(java.lang.String, java.lang.String);
+    boolean showFileDialog(java.lang.String[], boolean, boolean, int);
+    java.lang.String getPreferredLocales();
+    java.lang.String formatLocale(java.util.Locale);
+}
+
+-keep,includedescriptorclasses,allowoptimization class org.libsdl.app.HIDDeviceManager {
+    void closeDevice(int);
+    boolean initialize(boolean, boolean);
+    boolean openDevice(int);
+    boolean readReport(int, byte[], boolean);
+    int writeReport(int, byte[], boolean);
+}
+
+-keep,includedescriptorclasses,allowoptimization class org.libsdl.app.SDLAudioManager {
+    void registerAudioDeviceCallback();
+    void unregisterAudioDeviceCallback();
+    void audioSetThreadPriority(boolean, int);
+}
+
+-keep,includedescriptorclasses,allowoptimization class org.libsdl.app.SDLControllerManager {
+    void joystickSetSensorsEnabled(int, boolean);
+    void pollInputDevices();
+    void joystickSetLED(int, int, int, int);
+    void pollHapticDevices();
+    void hapticRun(int, float, int);
+    void hapticRumble(int, float, float, int);
+    void hapticStop(int);
+}

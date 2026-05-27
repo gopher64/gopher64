@@ -2,6 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 android {
     namespace = "io.github.gopher64.gopher64"
     compileSdk {
@@ -28,17 +32,15 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs["debug"]
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
+
     packaging {
         jniLibs {
             excludes.add("lib/**/libsevenz_rust2*.so")
