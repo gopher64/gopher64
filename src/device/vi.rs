@@ -145,6 +145,8 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         speed_limiter(device, speed_limiter_toggled);
     }
 
+    unsafe { sdl3_sys::events::SDL_PumpEvents() };
+
     ui::video::update_screen();
     device.vi.vi_counter += 1;
     device.vi.elapsed_time += device.vi.frame_time;
@@ -159,8 +161,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
             ui::video::pause_loop(device.vi.frame_time);
         }
     }
-
-    unsafe { sdl3_sys::events::SDL_PumpEvents() };
 
     /* toggle vi field if in interlaced mode */
     device.vi.field ^= (device.vi.regs[VI_STATUS_REG] >> 6) & 0x1;
