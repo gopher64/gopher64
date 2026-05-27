@@ -132,7 +132,6 @@ bind_java_type! {
         fn get_vendor_id() -> jint,
         fn get_product_id() -> jint,
         fn get_name() -> JString,
-        fn get_descriptor() -> JString,
     },
 }
 
@@ -395,10 +394,10 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         } else {
             "Unknown controller".to_string()
         };
-        let descriptor = if let Ok(descriptor) = device.get_descriptor(env)
-            && let Ok(descriptor) = descriptor.try_to_string(env)
+        let descriptor = if let Ok(product_id) = device.get_product_id(env)
+            && let Ok(vendor_id) = device.get_vendor_id(env)
         {
-            descriptor
+            format!("{}:{}:{}", name, vendor_id, product_id)
         } else {
             String::new()
         };

@@ -1177,10 +1177,33 @@ pub fn init(ui: &mut ui::Ui) {
             let mut joystick_id = sdl3_sys::everything::SDL_JoystickID(0);
 
             for joystick in get_joysticks().iter() {
-                let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
-                if !path.is_null()
-                    && unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }
-                        == controller_assignment
+                let path = if cfg!(target_os = "android") {
+                    let name = if let name =
+                        unsafe { sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick) }
+                        && !name.is_null()
+                    {
+                        unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
+                    } else {
+                        "Unknown controller".to_string()
+                    };
+
+                    let vendor_id =
+                        unsafe { sdl3_sys::joystick::SDL_GetJoystickVendorForID(*joystick) };
+                    let product_id =
+                        unsafe { sdl3_sys::joystick::SDL_GetJoystickProductForID(*joystick) };
+                    Some(format!("{}:{}:{}", name, vendor_id, product_id))
+                } else {
+                    let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
+                    if !path.is_null() {
+                        Some(
+                            unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string(),
+                        )
+                    } else {
+                        None
+                    }
+                };
+                if let Some(path) = path
+                    && path == *controller_assignment
                     && unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(*joystick) }.is_null()
                     && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(*joystick) }.is_null()
                 {
