@@ -4,12 +4,22 @@
 
     <uses-feature android:name="android.hardware.vulkan.version" android:required="true"
         android:version="0x00401000" />
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.gamepad"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.usb.host"
+        android:required="false" />
 
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:icon="@mipmap/ic_launcher"
-        android:label="Gopher64">
+        android:label="Gopher64"
+        android:hardwareAccelerated="true">
         <activity android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:name=".SlintActivity" android:exported="true">
             <meta-data android:name="android.app.lib_name" android:value="gopher64" />
