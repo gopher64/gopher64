@@ -1191,16 +1191,19 @@ pub fn init(ui: &mut ui::Ui) {
                         unsafe { sdl3_sys::joystick::SDL_GetJoystickVendorForID(*joystick) };
                     let product_id =
                         unsafe { sdl3_sys::joystick::SDL_GetJoystickProductForID(*joystick) };
-                    format!("{}:{}:{}", name, vendor_id, product_id)
+                    Some(format!("{}:{}:{}", name, vendor_id, product_id))
                 } else {
                     let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
                     if !path.is_null() {
-                        unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string()
+                        Some(
+                            unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string(),
+                        )
                     } else {
-                        String::new()
+                        None
                     }
                 };
-                if path == *controller_assignment
+                if let Some(path) = path
+                    && path == *controller_assignment
                     && unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(*joystick) }.is_null()
                     && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(*joystick) }.is_null()
                 {
