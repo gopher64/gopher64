@@ -254,7 +254,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            platform: 34
+            platform: 33
             ndk: 27.3.13750724
     steps:
       - uses: actions/checkout@v6
