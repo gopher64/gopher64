@@ -175,16 +175,19 @@ pub fn init() -> (
 }
 
 pub async fn close(
-    shutdown_tx: &tokio::sync::watch::Sender<()>,
+    shutdown_tx: Option<tokio::sync::watch::Sender<()>>,
     usb_handle: Option<tokio::task::JoinHandle<()>>,
 ) {
-    let _ = shutdown_tx.send(());
     if let Some(mut handle) = usb_handle
-        && tokio::time::timeout(std::time::Duration::from_secs(1), &mut handle)
+        && let Some(shutdown_tx) = shutdown_tx
+    {
+        let _ = shutdown_tx.send(());
+        if tokio::time::timeout(std::time::Duration::from_secs(1), &mut handle)
             .await
             .is_err()
-    {
-        handle.abort();
+        {
+            handle.abort();
+        }
     }
 }
 
