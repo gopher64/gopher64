@@ -310,7 +310,9 @@ static void rdp_new_processor() {
   processor = new RDP::CommandProcessor(wsi->get_device(), rdram_ptr, 0,
                                         gfx_info.RDRAM_SIZE,
                                         gfx_info.RDRAM_SIZE / 2, flags);
-  // rdram_ptr = (uint8_t *)processor->begin_read_rdram();
+#ifdef USE_GPU_RDRAM
+  rdram_ptr = (uint8_t *)processor->begin_read_rdram();
+#endif
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
@@ -336,6 +338,7 @@ static ImageHandle create_message_image(Vulkan::Device &device, int width,
 
 uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
                   size_t font_size, uint32_t save_state_slot) {
+  rdram_ptr = nullptr;
   memset(&rdp_device, 0, sizeof(RDP_DEVICE));
 
   window = (SDL_Window *)_window;
@@ -379,6 +382,7 @@ uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
     return NULL;
   }
 
+#ifndef USE_GPU_RDRAM
 #ifdef _WIN32
   rdram_ptr = (uint8_t *)_aligned_malloc(gfx_info.RDRAM_SIZE,
                                          MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT);
@@ -387,6 +391,7 @@ uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
                  gfx_info.RDRAM_SIZE);
 #endif
   memset(rdram_ptr, 0, gfx_info.RDRAM_SIZE);
+#endif
 
   rdp_new_processor();
 
@@ -460,10 +465,12 @@ void rdp_close() {
     wsi_platform = nullptr;
   }
 
+#ifndef USE_GPU_RDRAM
 #ifdef _WIN32
   _aligned_free(rdram_ptr);
 #else
   free(rdram_ptr);
+#endif
 #endif
 
   rdram_ptr = nullptr;
