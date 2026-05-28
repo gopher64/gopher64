@@ -179,13 +179,12 @@ pub async fn close(
     usb_handle: Option<tokio::task::JoinHandle<()>>,
 ) {
     let _ = shutdown_tx.send(());
-    if let Some(mut handle) = usb_handle {
-        if tokio::time::timeout(std::time::Duration::from_secs(1), &mut handle)
+    if let Some(mut handle) = usb_handle
+        && tokio::time::timeout(std::time::Duration::from_secs(1), &mut handle)
             .await
             .is_err()
-        {
-            handle.abort();
-        }
+    {
+        handle.abort();
     }
 }
 
