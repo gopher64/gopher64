@@ -288,12 +288,12 @@ jobs:
           cargo install cargo-ndk
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
           mkdir output
-          cp app/build/outputs/apk/${{ env.BUILD_DIR }}/app-${{ env.BUILD_DIR }}.apk output/Gopher64.apk
+          cp app/build/outputs/apk/${{ env.BUILD_DIR }}/app-${{ env.BUILD_DIR }}.apk output/Gopher64-android.apk
       - name: Upload file
         uses: actions/upload-artifact@v7
         with:
           name: gopher64-android
-          path: android-project/output/Gopher64.apk
+          path: android-project/output/Gopher64-android.apk
           archive: false
       - name: Setup butler
         if: ${{ github.ref_type == 'tag' }}
@@ -301,7 +301,7 @@ jobs:
       - name: Upload to itch.io
         if: ${{ github.ref_type == 'tag' }}
         run: |
-          butler push android-project/output/Gopher64.apk loganmc10/gopher64:android --userversion ${GITHUB_REF_NAME#v}
+          butler push android-project/output/Gopher64-android.apk loganmc10/gopher64:android --userversion ${GITHUB_REF_NAME#v}
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
 
