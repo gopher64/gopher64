@@ -141,8 +141,12 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         }
     }
 
+    if speed_limiter_toggled {
+        reset_pace_deadline(device);
+    }
+
     if device.vi.vi_counter.is_multiple_of(device.vi.limit_freq) && device.vi.enable_speed_limiter {
-        speed_limiter(device, speed_limiter_toggled);
+        speed_limiter(device);
     }
 
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
@@ -182,7 +186,8 @@ pub fn init(device: &mut device::Device) {
     }
 }
 
-fn speed_limiter(device: &mut device::Device, mut speed_limiter_toggled: bool) {
+fn speed_limiter(device: &mut device::Device) {
+    let mut speed_limiter_toggled = false;
     let interval =
         std::time::Duration::from_secs_f64(device.vi.frame_time * device.vi.limit_freq as f64);
 
