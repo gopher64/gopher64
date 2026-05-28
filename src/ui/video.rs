@@ -110,7 +110,7 @@ pub fn init(device: &mut device::Device) {
             font_bytes.len(),
             device.ui.storage.save_state_slot,
         )
-    };
+    }
 
     fps_counter(&mut device.ui);
 }
