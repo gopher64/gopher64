@@ -280,6 +280,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           skip-decompress: true
+          merge-multiple: true
           path: release-artifacts
       - name: Add files to release
         uses: softprops/action-gh-release@v3
