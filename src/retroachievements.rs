@@ -181,11 +181,16 @@ pub async fn unload_game(
     discord_watch_tx: Option<tokio::sync::watch::Sender<()>>,
     discord_handle: Option<tokio::task::JoinHandle<()>>,
 ) {
-    if let Some(discord_handle) = discord_handle
+    if let Some(mut discord_handle) = discord_handle
         && let Some(discord_watch_tx) = discord_watch_tx
     {
         let _ = discord_watch_tx.send(());
-        discord_handle.await.unwrap();
+        if tokio::time::timeout(std::time::Duration::from_secs(1), &mut discord_handle)
+            .await
+            .is_err()
+        {
+            discord_handle.abort();
+        }
     }
     unsafe { ra_unload_game() };
 }
