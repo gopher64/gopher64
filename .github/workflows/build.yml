@@ -246,7 +246,7 @@ jobs:
         if: ${{ github.ref_type == 'tag' }}
         working-directory: android-project
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > keystore.jks
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > app/keystore.jks
 
           cat <<EOF > keystore.properties
           storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
