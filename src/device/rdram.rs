@@ -1,6 +1,7 @@
 use crate::device;
 use crate::retroachievements;
 use crate::ui;
+use std::alloc::{Layout, alloc_zeroed};
 
 //const RDRAM_CONFIG_REG: usize = 0;
 //const RDRAM_DEVICE_ID_REG: usize = 1;
@@ -21,14 +22,6 @@ pub struct Rdram {
     pub mem: Vec<u8>,
     pub size: u32,
     pub regs: [[u32; RDRAM_REGS_COUNT]; 4],
-}
-
-impl Drop for Rdram {
-    fn drop(&mut self) {
-        // RDRAM memory is provided by parallel-rdp, so Rust must not deallocate it.
-        let mem = std::mem::take(&mut self.mem);
-        std::mem::forget(mem);
-    }
 }
 
 pub fn read_mem_fast(
@@ -150,14 +143,13 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     )
 }
 
-pub fn init(device: &mut device::Device, rdram_ptr: *mut u8) {
-    device.rdram.mem = unsafe {
-        Vec::from_raw_parts(
-            rdram_ptr,
-            device.rdram.size as usize,
-            device.rdram.size as usize,
-        )
-    };
+pub fn init(device: &mut device::Device) {
+    let alignment = 64 * 1024;
+    let layout =
+        Layout::from_size_align(device.rdram.size as usize, alignment).expect("Invalid layout");
+    let ptr = unsafe { alloc_zeroed(layout) };
+    device.rdram.mem =
+        unsafe { Vec::from_raw_parts(ptr, device.rdram.size as usize, device.rdram.size as usize) };
 
     retroachievements::set_rdram(device.rdram.mem.as_ptr(), device.rdram.size as usize);
 

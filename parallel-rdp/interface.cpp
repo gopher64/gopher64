@@ -12,10 +12,6 @@
 
 using namespace Vulkan;
 
-/* For paraLLEl-RDP which needs to import RDRAM as a host pointer with
- * potentially 64k of alignment. */
-enum { MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024 };
-
 #define DP_STATUS_XBUS_DMA 0x01
 #define DP_STATUS_FREEZE 0x02
 #define DP_STATUS_FLUSH 0x04
@@ -126,8 +122,6 @@ static bool display_fps;
 static Vulkan::ImageHandle fps_image;
 
 static std::queue<JoystickEvent> joystick_events;
-
-static uint8_t *rdram_ptr;
 
 typedef struct {
   float SourceSize[4];
@@ -307,12 +301,9 @@ static void rdp_new_processor() {
     gfx_info.upscale = 1;
   }
 
-  processor = new RDP::CommandProcessor(wsi->get_device(), rdram_ptr, 0,
+  processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0,
                                         gfx_info.RDRAM_SIZE,
                                         gfx_info.RDRAM_SIZE / 2, flags);
-#ifdef USE_GPU_RDRAM
-  rdram_ptr = (uint8_t *)processor->begin_read_rdram();
-#endif
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
@@ -336,9 +327,8 @@ static ImageHandle create_message_image(Vulkan::Device &device, int width,
   return handle;
 }
 
-uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
-                  size_t font_size, uint32_t save_state_slot) {
-  rdram_ptr = nullptr;
+void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
+              size_t font_size, uint32_t save_state_slot) {
   memset(&rdp_device, 0, sizeof(RDP_DEVICE));
 
   window = (SDL_Window *)_window;
@@ -346,7 +336,7 @@ uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
   if (!result) {
     printf("Could not add event watch.\n");
-    return NULL;
+    return;
   }
 
   gfx_info = _gfx_info;
@@ -375,29 +365,18 @@ uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   if (!::Vulkan::Context::init_loader(
           (PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr())) {
     rdp_close();
-    return NULL;
+    return;
   }
   if (!wsi->init_simple(1, handles)) {
     rdp_close();
-    return NULL;
+    return;
   }
-
-#ifndef USE_GPU_RDRAM
-#ifdef _WIN32
-  rdram_ptr = (uint8_t *)_aligned_malloc(gfx_info.RDRAM_SIZE,
-                                         MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT);
-#else
-  posix_memalign((void **)&rdram_ptr, MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT,
-                 gfx_info.RDRAM_SIZE);
-#endif
-  memset(rdram_ptr, 0, gfx_info.RDRAM_SIZE);
-#endif
 
   rdp_new_processor();
 
   if (!processor->device_is_supported()) {
     rdp_close();
-    return NULL;
+    return;
   }
 
   message_font =
@@ -406,7 +385,7 @@ uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
       TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 12.0);
   if (!message_font || !achievement_challenge_indicator_font) {
     rdp_close();
-    return NULL;
+    return;
   }
 
   wsi->begin_frame();
@@ -429,8 +408,6 @@ uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
 
   sync_signal = 0;
   rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
-
-  return rdram_ptr;
 }
 
 void rdp_close() {
@@ -464,16 +441,6 @@ void rdp_close() {
     delete wsi_platform;
     wsi_platform = nullptr;
   }
-
-#ifndef USE_GPU_RDRAM
-#ifdef _WIN32
-  _aligned_free(rdram_ptr);
-#else
-  free(rdram_ptr);
-#endif
-#endif
-
-  rdram_ptr = nullptr;
 
   SDL_RemoveEventWatch(sdl_event_filter, nullptr);
 }
@@ -797,9 +764,9 @@ uint64_t rdp_process_commands() {
       do {
         offset &= 0xFFFFF8;
         rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 0] =
-            *reinterpret_cast<const uint32_t *>(rdram_ptr + offset);
+            *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset);
         rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 1] =
-            *reinterpret_cast<const uint32_t *>(rdram_ptr + offset + 4);
+            *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset + 4);
         offset += sizeof(uint64_t);
         rdp_device.cmd_ptr++;
       } while (--length > 0);
