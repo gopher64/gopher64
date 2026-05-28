@@ -380,8 +380,8 @@ uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   }
 
 #ifdef _WIN32
-  rdram_ptr =
-      _aligned_malloc(gfx_info.RDRAM_SIZE, MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT);
+  rdram_ptr = (uint8_t *)_aligned_malloc(gfx_info.RDRAM_SIZE,
+                                         MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT);
 #else
   posix_memalign((void **)&rdram_ptr, MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT,
                  gfx_info.RDRAM_SIZE);
