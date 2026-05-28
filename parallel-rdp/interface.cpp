@@ -392,6 +392,7 @@ uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   posix_memalign((void **)&rdram_ptr, MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT,
                  gfx_info.RDRAM_SIZE);
 #endif
+  memset(rdram_ptr, 0, gfx_info.RDRAM_SIZE);
 
   rdp_new_processor();
 
