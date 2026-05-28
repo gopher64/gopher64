@@ -270,6 +270,18 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: "platforms;android-${{ matrix.platform }} ndk;${{ matrix.ndk }}"
+      - name: Decode keystore and create jks
+        if: ${{ github.ref_type == 'tag' }}
+        working-directory: android-project
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > keystore.jks
+
+          cat <<EOF > keystore.properties
+          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=gopher64
+          storeFile=keystore.jks
+          EOF
       - name: Build
         working-directory: android-project
         run: |
