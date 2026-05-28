@@ -141,6 +141,10 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         }
     }
 
+    if speed_limiter_toggled {
+        reset_pace_deadline(device);
+    }
+
     if device.vi.vi_counter.is_multiple_of(device.vi.limit_freq) && device.vi.enable_speed_limiter {
         speed_limiter(device, speed_limiter_toggled);
     }
@@ -221,10 +225,7 @@ fn speed_limiter(device: &mut device::Device, mut speed_limiter_toggled: bool) {
             {
                 device.vi.limit_freq += 1;
                 reset_pace_deadline(device);
-            } else if device.vi.min_wait_time
-                > std::time::Duration::from_secs_f64(device.vi.frame_time)
-                && device.vi.limit_freq > 1
-            {
+            } else if device.vi.min_wait_time > interval && device.vi.limit_freq > 1 {
                 device.vi.limit_freq -= 1;
                 reset_pace_deadline(device);
             }
