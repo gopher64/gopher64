@@ -12,6 +12,10 @@
 
 using namespace Vulkan;
 
+/* For paraLLEl-RDP which needs to import RDRAM as a host pointer with
+ * potentially 64k of alignment. */
+enum { MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT = 64 * 1024 };
+
 #define DP_STATUS_XBUS_DMA 0x01
 #define DP_STATUS_FREEZE 0x02
 #define DP_STATUS_FLUSH 0x04
@@ -122,6 +126,8 @@ static bool display_fps;
 static Vulkan::ImageHandle fps_image;
 
 static std::queue<JoystickEvent> joystick_events;
+
+static uint8_t *rdram_ptr;
 
 typedef struct {
   float SourceSize[4];
@@ -285,9 +291,7 @@ JoystickEvent get_joystick_event() {
   return joystick_event;
 }
 
-void rdp_new_processor(GFX_INFO _gfx_info) {
-  gfx_info = _gfx_info;
-
+static void rdp_new_processor() {
   sync_signal = 0;
   rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
 
@@ -309,9 +313,10 @@ void rdp_new_processor(GFX_INFO _gfx_info) {
     gfx_info.upscale = 1;
   }
 
-  processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0,
+  processor = new RDP::CommandProcessor(wsi->get_device(), rdram_ptr, 0,
                                         gfx_info.RDRAM_SIZE,
                                         gfx_info.RDRAM_SIZE / 2, flags);
+  // rdram_ptr = (uint8_t *)processor->begin_read_rdram();
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
@@ -335,8 +340,8 @@ static ImageHandle create_message_image(Vulkan::Device &device, int width,
   return handle;
 }
 
-void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
-              size_t font_size, uint32_t save_state_slot) {
+uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
+                  size_t font_size, uint32_t save_state_slot) {
   memset(&rdp_device, 0, sizeof(RDP_DEVICE));
 
   window = (SDL_Window *)_window;
@@ -344,7 +349,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
   if (!result) {
     printf("Could not add event watch.\n");
-    return;
+    return NULL;
   }
 
   gfx_info = _gfx_info;
@@ -373,18 +378,26 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   if (!::Vulkan::Context::init_loader(
           (PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr())) {
     rdp_close();
-    return;
+    return NULL;
   }
   if (!wsi->init_simple(1, handles)) {
     rdp_close();
-    return;
+    return NULL;
   }
 
-  rdp_new_processor(gfx_info);
+#ifdef _WIN32
+  rdram_ptr =
+      _aligned_malloc(gfx_info.RDRAM_SIZE, MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT);
+#else
+  posix_memalign((void **)&rdram_ptr, MB_RDRAM_DRAM_ALIGNMENT_REQUIREMENT,
+                 gfx_info.RDRAM_SIZE);
+#endif
+
+  rdp_new_processor();
 
   if (!processor->device_is_supported()) {
     rdp_close();
-    return;
+    return NULL;
   }
 
   message_font =
@@ -393,7 +406,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
       TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 12.0);
   if (!message_font || !achievement_challenge_indicator_font) {
     rdp_close();
-    return;
+    return NULL;
   }
 
   wsi->begin_frame();
@@ -413,6 +426,8 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
   display_fps = false;
+
+  return rdram_ptr;
 }
 
 void rdp_close() {
@@ -446,6 +461,9 @@ void rdp_close() {
     delete wsi_platform;
     wsi_platform = nullptr;
   }
+
+  free(rdram_ptr);
+  rdram_ptr = nullptr;
 
   SDL_RemoveEventWatch(sdl_event_filter, nullptr);
 }
@@ -700,7 +718,11 @@ void rdp_save_state(uint8_t *state) {
   memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
 
-void rdp_load_state(const uint8_t *state) {
+void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state) {
+  sync_signal = 0;
+  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
+
+  gfx_info = _gfx_info;
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 
@@ -765,9 +787,9 @@ uint64_t rdp_process_commands() {
       do {
         offset &= 0xFFFFF8;
         rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 0] =
-            *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset);
+            *reinterpret_cast<const uint32_t *>(rdram_ptr + offset);
         rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 1] =
-            *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset + 4);
+            *reinterpret_cast<const uint32_t *>(rdram_ptr + offset + 4);
         offset += sizeof(uint64_t);
         rdp_device.cmd_ptr++;
       } while (--length > 0);

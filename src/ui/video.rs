@@ -12,7 +12,6 @@ const NTSC_HEIGHT: i32 = 240;
 
 fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
     GFX_INFO {
-        RDRAM: device.rdram.mem.as_mut_ptr(),
         DMEM: device.rsp.mem.as_mut_ptr(),
         RDRAM_SIZE: device.rdram.size,
         DPC_CURRENT_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_CURRENT_REG],
@@ -34,7 +33,7 @@ fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
     }
 }
 
-pub fn init(device: &mut device::Device) {
+pub fn init(device: &mut device::Device) -> *mut u8 {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
     ui::ttf_init();
 
@@ -101,7 +100,7 @@ pub fn init(device: &mut device::Device) {
 
     let gfx_info = build_gfx_info(device);
 
-    unsafe {
+    let rdram_ptr = unsafe {
         let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
         rdp_init(
             device.ui.video.window as *mut std::ffi::c_void,
@@ -110,9 +109,10 @@ pub fn init(device: &mut device::Device) {
             font_bytes.len(),
             device.ui.storage.save_state_slot,
         )
-    }
+    };
 
     fps_counter(&mut device.ui);
+    rdram_ptr
 }
 
 fn fps_counter(ui: &mut ui::Ui) {
@@ -168,8 +168,7 @@ pub fn save_state(rdp_state: *mut u8) {
 pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
     let gfx_info = build_gfx_info(device);
     unsafe {
-        rdp_new_processor(gfx_info);
-        rdp_load_state(rdp_state);
+        rdp_load_state(gfx_info, rdp_state);
         for reg in 0..device::vi::VI_REGS_COUNT {
             rdp_set_vi_register(reg as u32, device.vi.regs[reg])
         }

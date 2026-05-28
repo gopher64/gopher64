@@ -66,12 +66,12 @@ pub async fn run_game(
 
     cart::rom::init(device, rom_contents); // cart needs to come before rdram
 
-    // rdram pointer is shared with parallel-rdp and retroachievements
-    rdram::init(device);
-
-    ui::video::init(device);
+    let rdram_ptr = ui::video::init(device);
     ui::audio::init(device);
     ui::input::init(&mut device.ui);
+
+    // rdram pointer is shared with parallel-rdp and retroachievements
+    rdram::init(device, rdram_ptr);
 
     // must be after video init
     let (discord_watch_tx, discord_handle) = if ra_config.enabled && device.netplay.is_none() {
