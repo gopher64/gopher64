@@ -327,8 +327,8 @@ fn manage_websocket(
 }
 
 async fn get_rooms_from_server(
-    server_url: String,
     server_name: String,
+    server_url: String,
 ) -> (
     Vec<Vec<slint::StandardListViewItem>>,
     Vec<slint::SharedString>,
@@ -469,7 +469,7 @@ fn update_sessions(weak: slint::Weak<AppWindow>) {
                 let mut room_urls = vec![];
                 let mut room_ports = vec![];
                 let server_tasks = servers.iter().map(|(server_name, server_url)| {
-                    get_rooms_from_server(server_url.clone(), server_name.clone())
+                    get_rooms_from_server(server_name.clone(), server_url.clone())
                 });
                 for (server_sessions, server_room_urls, server_room_ports) in
                     join_all(server_tasks).await
