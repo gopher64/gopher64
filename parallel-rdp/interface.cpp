@@ -463,7 +463,12 @@ void rdp_close() {
     wsi_platform = nullptr;
   }
 
+#ifdef _WIN32
+  _aligned_free(rdram_ptr);
+#else
   free(rdram_ptr);
+#endif
+
   rdram_ptr = nullptr;
 
   SDL_RemoveEventWatch(sdl_event_filter, nullptr);
