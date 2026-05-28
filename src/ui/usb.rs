@@ -18,7 +18,7 @@ fn respond_to_handshake(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, data: 
         ui::usb::send_to_usb(
             usb_tx,
             ui::usb::UsbData {
-                data: [b'N', b'6', b'4'].to_vec(),
+                data: b"N64".to_vec(),
                 data_type: DATATYPE_TCPTEST,
                 data_size: 3,
             },
