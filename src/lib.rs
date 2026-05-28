@@ -243,9 +243,8 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 }
             }
         }
-        if let Some(shutdown_tx) = &shutdown_tx {
-            ui::usb::close(shutdown_tx, usb_handle).await;
-        }
+
+        ui::usb::close(shutdown_tx, usb_handle).await;
     } else if arg_count > 1 {
         let mut config = ui::config::Config::new();
 
