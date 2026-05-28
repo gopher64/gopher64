@@ -292,12 +292,6 @@ JoystickEvent get_joystick_event() {
 }
 
 static void rdp_new_processor() {
-  sync_signal = 0;
-  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
-
-  if (processor) {
-    delete processor;
-  }
   RDP::CommandProcessorFlags flags = 0;
 
   if (gfx_info.upscale == 2) {
@@ -427,6 +421,9 @@ uint8_t *rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
   display_fps = false;
+
+  sync_signal = 0;
+  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
 
   return rdram_ptr;
 }
