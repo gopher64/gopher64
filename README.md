@@ -24,6 +24,9 @@ Linux:
 * Standalone executable: [gopher64-linux-x86_64](https://github.com/gopher64/gopher64/releases/latest/download/gopher64-linux-x86_64)
 * Flatpak: `flatpak install flathub io.github.gopher64.gopher64`
 
+Android:
+* APK: [gopher64-android.apk](https://github.com/gopher64/gopher64/releases/latest/download/gopher64-android.apk)
+
 ## wiki
 
 https://github.com/gopher64/gopher64/wiki
