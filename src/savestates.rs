@@ -124,40 +124,40 @@ pub fn load_savestate(device: &mut device::Device) {
             && let Ok(save_bytes) = ui::storage::decompress_file(savestate, "saves")
             && let Ok(rdp_state) = ui::storage::decompress_file(savestate, "rdp_state")
             && let Ok(ra_state) = ui::storage::decompress_file(savestate, "ra_state")
-            && let Ok(state) = postcard::from_bytes::<device::Device>(&device_bytes)
+            && let Ok(mut state) = postcard::from_bytes::<device::Device>(&device_bytes)
             && let Ok(saves) = postcard::from_bytes(&save_bytes)
             && device.rdram.size == state.rdram.size
         {
             device.ui.storage.saves = saves;
 
-            device.cpu = state.cpu;
-            device.pif = state.pif;
+            std::mem::swap(&mut device.cpu, &mut state.cpu);
+            std::mem::swap(&mut device.pif, &mut state.pif);
 
             let rom = device.cart.rom.clone();
-            device.cart = state.cart;
+            std::mem::swap(&mut device.cart, &mut state.cart);
             device.cart.rom = rom;
 
-            device.memory = state.memory;
-            device.rsp = state.rsp;
-            device.rdp = state.rdp;
+            std::mem::swap(&mut device.memory, &mut state.memory);
+            std::mem::swap(&mut device.rsp, &mut state.rsp);
+            std::mem::swap(&mut device.rdp, &mut state.rdp);
 
             device.rdram.mem.clone_from(&state.rdram.mem);
             device.rdram.regs = state.rdram.regs;
 
-            device.mi = state.mi;
-            device.pi = state.pi;
-            device.vi = state.vi;
-            device.ai = state.ai;
-            device.si = state.si;
-            device.ri = state.ri;
-            device.vru = state.vru;
-            device.cheats = state.cheats;
+            std::mem::swap(&mut device.mi, &mut state.mi);
+            std::mem::swap(&mut device.pi, &mut state.pi);
+            std::mem::swap(&mut device.vi, &mut state.vi);
+            std::mem::swap(&mut device.ai, &mut state.ai);
+            std::mem::swap(&mut device.si, &mut state.si);
+            std::mem::swap(&mut device.ri, &mut state.ri);
+            std::mem::swap(&mut device.vru, &mut state.vru);
+            std::mem::swap(&mut device.cheats, &mut state.cheats);
 
             let mut tpak_rom = [vec![], vec![], vec![], vec![]];
             for (i, item) in tpak_rom.iter_mut().enumerate() {
                 *item = device.transferpaks[i].cart.rom.clone();
             }
-            device.transferpaks = state.transferpaks;
+            std::mem::swap(&mut device.transferpaks, &mut state.transferpaks);
             for (i, item) in tpak_rom.iter().enumerate() {
                 device.transferpaks[i].cart.rom = item.clone();
             }
