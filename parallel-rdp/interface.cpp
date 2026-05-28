@@ -285,15 +285,7 @@ JoystickEvent get_joystick_event() {
   return joystick_event;
 }
 
-void rdp_new_processor(GFX_INFO _gfx_info) {
-  gfx_info = _gfx_info;
-
-  sync_signal = 0;
-  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
-
-  if (processor) {
-    delete processor;
-  }
+static void rdp_new_processor() {
   RDP::CommandProcessorFlags flags = 0;
 
   if (gfx_info.upscale == 2) {
@@ -380,7 +372,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
     return;
   }
 
-  rdp_new_processor(gfx_info);
+  rdp_new_processor();
 
   if (!processor->device_is_supported()) {
     rdp_close();
@@ -413,6 +405,9 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
   display_fps = false;
+
+  sync_signal = 0;
+  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
 }
 
 void rdp_close() {
@@ -700,7 +695,11 @@ void rdp_save_state(uint8_t *state) {
   memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
 
-void rdp_load_state(const uint8_t *state) {
+void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state) {
+  sync_signal = 0;
+  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
+
+  gfx_info = _gfx_info;
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 }
 

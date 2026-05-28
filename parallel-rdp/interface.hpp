@@ -58,11 +58,10 @@ void rdp_render_frame();
 CALL_BACK rdp_check_callback();
 uint64_t rdp_process_commands();
 void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds);
-void rdp_new_processor(GFX_INFO _gfx_info);
 void rdp_check_framebuffers(uint32_t address, uint32_t length);
 size_t rdp_state_size();
 void rdp_save_state(uint8_t *state);
-void rdp_load_state(const uint8_t *state);
+void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state);
 void rdp_set_fps(uint32_t fps, uint32_t vis);
 
 JoystickEvent get_joystick_event();
