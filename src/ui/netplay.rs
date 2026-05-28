@@ -1,7 +1,7 @@
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{AppWindow, NetplayDevice, open_uri, run_rom, save_settings};
-use futures::{SinkExt, StreamExt};
+use futures::{SinkExt, StreamExt, future::join_all};
 use sha2::{Digest, Sha256};
 use slint::{ComponentHandle, Model};
 use tokio_tungstenite::tungstenite::Bytes;
@@ -326,6 +326,101 @@ fn manage_websocket(
     });
 }
 
+async fn get_rooms_from_server(
+    server_name: String,
+    server_url: String,
+) -> (
+    Vec<Vec<slint::StandardListViewItem>>,
+    Vec<slint::SharedString>,
+    Vec<i32>,
+) {
+    let mut sessions = vec![];
+    let mut room_urls = vec![];
+    let mut room_ports = vec![];
+    if let Ok(Ok((socket, _response))) = tokio::time::timeout(
+        std::time::Duration::from_secs(2),
+        tokio_tungstenite::connect_async(&server_url),
+    )
+    .await
+    {
+        let (mut write, mut read) = socket.split();
+
+        let now_utc = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            .to_string();
+        let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
+        let request_rooms = NetplayMessage {
+            message_type: "request_get_rooms".to_string(),
+            player_name: None,
+            client_sha: None,
+            netplay_version: Some(NETPLAY_VERSION),
+            player_names: None,
+            emulator: Some(EMU_NAME.to_string()),
+            accept: None,
+            rooms: None,
+            message: None,
+            auth_time: Some(now_utc),
+            auth: Some(
+                hasher
+                    .finalize()
+                    .iter()
+                    .map(|b| format!("{:02x}", b))
+                    .collect(),
+            ),
+            room: None,
+        };
+        write
+            .send(Message::Binary(Bytes::from(
+                serde_json::to_vec(&request_rooms).unwrap(),
+            )))
+            .await
+            .unwrap();
+
+        if let Some(Ok(response)) = read.next().await
+            && let Ok(message) = serde_json::from_slice::<NetplayMessage>(&response.into_data())
+            && message.message_type == "reply_get_rooms"
+            && message.accept.unwrap() == 0
+            && let Some(rooms) = message.rooms
+        {
+            for room in rooms {
+                let mut session = vec![];
+                room_urls.push(server_url.as_str().into());
+                room_ports.push(room.port.unwrap());
+
+                session.push(slint::StandardListViewItem::from(
+                    slint::SharedString::from(&server_name),
+                ));
+                session.push(slint::StandardListViewItem::from(
+                    slint::SharedString::from(room.room_name.unwrap()),
+                ));
+                session.push(slint::StandardListViewItem::from(
+                    slint::SharedString::from(room.game_name.unwrap()),
+                ));
+                session.push(slint::StandardListViewItem::from(
+                    slint::SharedString::from(if room.protected.unwrap() {
+                        "True"
+                    } else {
+                        "False"
+                    }),
+                ));
+                session.push(slint::StandardListViewItem::from(
+                    slint::SharedString::from(
+                        if room.features.unwrap_or_default().contains_key("cheats") {
+                            "True"
+                        } else {
+                            "False"
+                        },
+                    ),
+                ));
+                sessions.push(session);
+            }
+        }
+    }
+    (sessions, room_urls, room_ports)
+}
+
 fn update_sessions(weak: slint::Weak<AppWindow>) {
     let task = ui::WEB_CLIENT
         .get("https://dispatch.gopher64.com/getServers")
@@ -373,91 +468,17 @@ fn update_sessions(weak: slint::Weak<AppWindow>) {
                 let mut sessions = vec![];
                 let mut room_urls = vec![];
                 let mut room_ports = vec![];
-                for (server_name, server_url) in servers.iter() {
-                    if let Ok(Ok((socket, _response))) = tokio::time::timeout(
-                        std::time::Duration::from_secs(2),
-                        tokio_tungstenite::connect_async(server_url.clone()),
-                    )
-                    .await
-                    {
-                        let (mut write, mut read) = socket.split();
-
-                        let now_utc = std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap()
-                            .as_millis()
-                            .to_string();
-                        let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
-                        let request_rooms = NetplayMessage {
-                            message_type: "request_get_rooms".to_string(),
-                            player_name: None,
-                            client_sha: None,
-                            netplay_version: Some(NETPLAY_VERSION),
-                            player_names: None,
-                            emulator: Some(EMU_NAME.to_string()),
-                            accept: None,
-                            rooms: None,
-                            message: None,
-                            auth_time: Some(now_utc),
-                            auth: Some(
-                                hasher
-                                    .finalize()
-                                    .iter()
-                                    .map(|b| format!("{:02x}", b))
-                                    .collect(),
-                            ),
-                            room: None,
-                        };
-                        write
-                            .send(Message::Binary(Bytes::from(
-                                serde_json::to_vec(&request_rooms).unwrap(),
-                            )))
-                            .await
-                            .unwrap();
-
-                        if let Some(Ok(response)) = read.next().await
-                            && let Ok(message) =
-                                serde_json::from_slice::<NetplayMessage>(&response.into_data())
-                            && message.message_type == "reply_get_rooms"
-                            && message.accept.unwrap() == 0
-                            && let Some(rooms) = message.rooms
-                        {
-                            for room in rooms {
-                                let mut session = vec![];
-                                room_urls.push(server_url.into());
-                                room_ports.push(room.port.unwrap());
-
-                                session.push(slint::StandardListViewItem::from(
-                                    slint::SharedString::from(server_name),
-                                ));
-                                session.push(slint::StandardListViewItem::from(
-                                    slint::SharedString::from(room.room_name.unwrap()),
-                                ));
-                                session.push(slint::StandardListViewItem::from(
-                                    slint::SharedString::from(room.game_name.unwrap()),
-                                ));
-                                session.push(slint::StandardListViewItem::from(
-                                    slint::SharedString::from(if room.protected.unwrap() {
-                                        "True"
-                                    } else {
-                                        "False"
-                                    }),
-                                ));
-                                session.push(slint::StandardListViewItem::from(
-                                    slint::SharedString::from(
-                                        if room.features.unwrap_or_default().contains_key("cheats")
-                                        {
-                                            "True"
-                                        } else {
-                                            "False"
-                                        },
-                                    ),
-                                ));
-                                sessions.push(session);
-                            }
-                        }
-                    }
+                let server_tasks = servers.iter().map(|(server_name, server_url)| {
+                    get_rooms_from_server(server_name.clone(), server_url.clone())
+                });
+                for (server_sessions, server_room_urls, server_room_ports) in
+                    join_all(server_tasks).await
+                {
+                    sessions.extend(server_sessions);
+                    room_urls.extend(server_room_urls);
+                    room_ports.extend(server_room_ports);
                 }
+
                 weak2
                     .upgrade_in_event_loop(move |handle| {
                         let sessions_vec = slint::VecModel::default();
