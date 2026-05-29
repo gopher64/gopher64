@@ -80,16 +80,19 @@ pub fn create_savestate(device: &device::Device) {
 
     if let Ok(device_data) = postcard::to_stdvec(device)
         && let Ok(saves_data) = postcard::to_stdvec(&device.ui.storage.saves)
-        && let Ok(compressed_file) = ui::storage::compress_file(&[
-            (&device_data, "device"),
-            (&saves_data, "saves"),
-            (&rdp_state, "rdp_state"),
-            (&ra_state, "ra_state"),
-        ])
     {
         tokio::spawn(async move {
-            if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
-                eprintln!("Error writing savestate: {}", e);
+            if let Ok(compressed_file) = ui::storage::compress_file(&[
+                (&device_data, "device"),
+                (&saves_data, "saves"),
+                (&rdp_state, "rdp_state"),
+                (&ra_state, "ra_state"),
+            ]) {
+                if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
+                    eprintln!("Error writing savestate: {}", e);
+                }
+            } else {
+                eprintln!("Error compressing savestate");
             }
         });
         ui::video::onscreen_message(
