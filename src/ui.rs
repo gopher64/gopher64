@@ -42,6 +42,7 @@ pub struct Audio {
 
 pub struct Input {
     pub keyboard_state: *const bool,
+    pub last_polled: u64,
     pub controllers: [input::Controllers; 4],
 }
 
@@ -95,6 +96,11 @@ pub fn sdl_hints() {
         );
         sdl3_sys::everything::SDL_SetHint(
             sdl3_sys::everything::SDL_HINT_ANDROID_ALLOW_RECREATE_ACTIVITY,
+            hint.as_ptr(),
+        );
+        let hint = std::ffi::CString::new("0").unwrap();
+        sdl3_sys::everything::SDL_SetHint(
+            sdl3_sys::everything::SDL_HINT_AUTO_UPDATE_JOYSTICKS,
             hint.as_ptr(),
         );
     }
@@ -165,6 +171,7 @@ impl Ui {
         let (vis_tx, vis_rx) = tokio::sync::mpsc::channel(1000);
         Ui {
             input: Input {
+                last_polled: 0,
                 controllers: [
                     input::Controllers {
                         game_controller: std::ptr::null_mut(),

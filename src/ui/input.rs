@@ -490,8 +490,13 @@ fn handle_hotkeys(keys: u32, last_key_state: u32) {
     }
 }
 
-pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
+pub fn get(ui: &mut ui::Ui, channel: usize, vi_counter: u64) -> InputData {
     handle_joystick_events(ui);
+
+    if ui.input.last_polled != vi_counter {
+        ui.input.last_polled = vi_counter;
+        unsafe { sdl3_sys::joystick::SDL_UpdateJoysticks() };
+    }
 
     let profile_name = &ui.config.input.input_profile_binding[channel];
     let Some(profile) = ui.config.input.input_profiles.get(profile_name) else {
