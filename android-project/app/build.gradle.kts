@@ -100,6 +100,7 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     var minSdk = android.defaultConfig.minSdk
     var ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath
     environment("ANDROID_NDK_HOME", "$ndkDir")
+    environment("ANDROID_NDK_ROOT", "$ndkDir")
     environment("LIBCLANG_PATH", "$ndkDir/toolchains/llvm/prebuilt/linux-x86_64/musl/lib")
 
     val jniType = if (isRelease) "release" else "debug"
