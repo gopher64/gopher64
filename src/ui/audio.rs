@@ -37,7 +37,7 @@ pub fn load_state(device: &mut device::Device) {
         sdl3_sys::audio::SDL_SetAudioStreamFormat(
             device.ui.audio.audio_stream,
             &game_audio_spec,
-            &game_audio_spec,
+            std::ptr::null(),
         );
     }
 
