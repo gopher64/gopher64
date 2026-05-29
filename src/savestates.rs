@@ -217,8 +217,7 @@ pub fn load_savestate(device: &mut device::Device) {
                 }
             }
 
-            ui::audio::close_game_audio(&mut device.ui);
-            ui::audio::init_game_audio(device);
+            ui::audio::load_state(device);
             ui::video::load_state(device, rdp_state.as_ptr());
 
             retroachievements::set_rdram(device.rdram.mem.as_ptr(), device.rdram.size as usize);

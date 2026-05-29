@@ -27,6 +27,27 @@ unsafe extern "C" fn audio_callback(
     }
 }
 
+pub fn load_state(device: &mut device::Device) {
+    let game_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
+        format: sdl3_sys::audio::SDL_AUDIO_S16LE,
+        freq: device.ai.freq as i32,
+        channels: 2,
+    };
+    unsafe {
+        sdl3_sys::audio::SDL_SetAudioStreamFormat(
+            device.ui.audio.audio_stream,
+            &game_audio_spec,
+            &game_audio_spec,
+        );
+    }
+
+    if device.ai.regs[device::ai::AI_STATUS_REG] & device::ai::AI_STATUS_BUSY != 0 {
+        resume_game_audio(&mut device.ui);
+    } else {
+        pause_game_audio(&mut device.ui);
+    }
+}
+
 pub fn init_game_audio(device: &mut device::Device) {
     let game_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
         format: sdl3_sys::audio::SDL_AUDIO_S16LE,
