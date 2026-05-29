@@ -27,7 +27,7 @@ unsafe extern "C" fn audio_callback(
     }
 }
 
-pub fn load_state(device: &mut device::Device) {
+pub fn update_freq(device: &mut device::Device) {
     let game_audio_spec = sdl3_sys::audio::SDL_AudioSpec {
         format: sdl3_sys::audio::SDL_AUDIO_S16LE,
         freq: device.ai.freq as i32,
