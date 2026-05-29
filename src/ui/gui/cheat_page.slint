@@ -47,43 +47,38 @@ export component Cheats inherits Page {
 
         Rectangle { }
 
-        if CheatsData.cheats.length > 0:ListView {
-            mouse-drag-pan-enabled: true;
-            preferred-height: root.height;
-            horizontal-stretch: 1;
-            for data in CheatsData.cheats: VerticalBox {
-                width: parent.width;
-                Text {
-                    text: data.cheat_name;
-                    font-size: 16px;
-                    wrap: word-wrap;
-                }
-
-                if data.notes != "":Text {
-                    text: data.notes;
-                    wrap: word-wrap;
-                }
-
-                if data.options.length == 0: Switch {
-                    checked: data.enabled;
-                    toggled => {
-                        data.enabled = self.checked;
-                        cheat_toggled(CheatsData.cheat_game_crc,data.cheat_name,"",self.checked);
-                    }
-                }
-                for item in data.options: CheckBox {
-                    text: item.option;
-                    enabled: !data.enabled || (data.enabled && item.enabled);
-                    checked: item.enabled;
-                    toggled => {
-                        item.enabled = self.checked;
-                        data.enabled = self.checked;
-                        cheat_toggled(CheatsData.cheat_game_crc,data.cheat_name,item.option,self.checked);
-                    }
-                }
-                Rectangle { }
+        for data in CheatsData.cheats: VerticalBox {
+            Text {
+                text: data.cheat_name;
+                font-size: 16px;
+                wrap: word-wrap;
             }
+
+            if data.notes != "":Text {
+                text: data.notes;
+                wrap: word-wrap;
+            }
+
+            if data.options.length == 0: Switch {
+                checked: data.enabled;
+                toggled => {
+                    data.enabled = self.checked;
+                    cheat_toggled(CheatsData.cheat_game_crc,data.cheat_name,"",self.checked);
+                }
+            }
+            for item in data.options: CheckBox {
+                text: item.option;
+                enabled: !data.enabled || (data.enabled && item.enabled);
+                checked: item.enabled;
+                toggled => {
+                    item.enabled = self.checked;
+                    data.enabled = self.checked;
+                    cheat_toggled(CheatsData.cheat_game_crc,data.cheat_name,item.option,self.checked);
+                }
+            }
+            Rectangle { }
         }
+
         if CheatsData.cheats.length == 0 && CheatsData.cheat_game_name != "": Text {
             text: @tr("No Cheats Available");
         }
