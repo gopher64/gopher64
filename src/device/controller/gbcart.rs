@@ -254,11 +254,9 @@ fn write_mbc3(
     } else if address < 0x6000 {
         cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0x8000 {
-        if cart.cart_type == CartType::MBC3RamBattRtc {
-            if (value & 0x1) != 0 {
-                update_rtc_regs(cart, elapsed_time);
-                cart.rtc_regs_latch = cart.rtc_regs;
-            }
+        if cart.cart_type == CartType::MBC3RamBattRtc && (value & 0x1) != 0 {
+            update_rtc_regs(cart, elapsed_time);
+            cart.rtc_regs_latch = cart.rtc_regs;
         }
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
