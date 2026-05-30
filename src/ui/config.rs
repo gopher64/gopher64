@@ -61,6 +61,7 @@ pub struct Emulation {
     pub overclock: bool,
     pub disable_expansion_pak: bool,
     pub usb: bool,
+    pub rewind: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -174,6 +175,7 @@ impl Config {
                 overclock: false,
                 disable_expansion_pak: false,
                 usb: false,
+                rewind: false,
             },
             rom_dir: std::path::PathBuf::new(),
             recent_roms: Vec::new(),

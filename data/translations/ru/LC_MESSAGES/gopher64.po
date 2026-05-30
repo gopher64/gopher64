@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-05-25 08:28+0000\n"
+"POT-Creation-Date: 2026-05-30 16:03+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Russian\n"
@@ -47,37 +47,37 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Пожертвовать (через GitHub)"
 
-#: src/ui/gui/appwindow.slint:151
+#: src/ui/gui/appwindow.slint:152
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Локальная игра"
 
-#: src/ui/gui/appwindow.slint:155
+#: src/ui/gui/appwindow.slint:156
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Настройка контроллера"
 
-#: src/ui/gui/appwindow.slint:159
+#: src/ui/gui/appwindow.slint:160
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Сетевая игра"
 
-#: src/ui/gui/appwindow.slint:163
+#: src/ui/gui/appwindow.slint:164
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Читы"
 
-#: src/ui/gui/appwindow.slint:167
+#: src/ui/gui/appwindow.slint:168
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:171
+#: src/ui/gui/appwindow.slint:172
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Настройки"
 
-#: src/ui/gui/appwindow.slint:175
+#: src/ui/gui/appwindow.slint:176
 msgctxt "Menu"
 msgid "About"
 msgstr "О программе"
@@ -97,7 +97,7 @@ msgctxt "Cheats"
 msgid "Clear Cheats For All ROMs"
 msgstr "Очистить читы для всех ROMов"
 
-#: src/ui/gui/cheat_page.slint:88
+#: src/ui/gui/cheat_page.slint:83
 msgctxt "Cheats"
 msgid "No Cheats Available"
 msgstr "Читы недоступны"
@@ -484,62 +484,67 @@ msgctxt "RetroAchievements"
 msgid "View Supported Games"
 msgstr "Просмотреть поддерживаемые игры"
 
-#: src/ui/gui/settings_page.slint:23
+#: src/ui/gui/settings_page.slint:24
 msgctxt "Settings"
 msgid "Settings"
 msgstr "Настройки"
 
-#: src/ui/gui/settings_page.slint:34
+#: src/ui/gui/settings_page.slint:35
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr "Разрешение:"
 
-#: src/ui/gui/settings_page.slint:48
+#: src/ui/gui/settings_page.slint:49
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr "SSAA даунскейлинг"
 
-#: src/ui/gui/settings_page.slint:56
+#: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr "Целочисленное масштабирование"
 
-#: src/ui/gui/settings_page.slint:64
+#: src/ui/gui/settings_page.slint:65
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr "Полноэкранный режим"
 
-#: src/ui/gui/settings_page.slint:72
+#: src/ui/gui/settings_page.slint:73
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr "Широкоэкранный режим (растянуто)"
 
-#: src/ui/gui/settings_page.slint:80
+#: src/ui/gui/settings_page.slint:81
 msgctxt "Settings"
 msgid "VSync"
 msgstr "Вертикальная синхронизация"
 
-#: src/ui/gui/settings_page.slint:88
+#: src/ui/gui/settings_page.slint:89
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr "Применить шейдер ЭЛТ"
 
-#: src/ui/gui/settings_page.slint:100
+#: src/ui/gui/settings_page.slint:101
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr "Разгон процессора N64 (может вызвать ошибки)"
 
-#: src/ui/gui/settings_page.slint:108
+#: src/ui/gui/settings_page.slint:109
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "Отключить Expansion Pak"
 
-#: src/ui/gui/settings_page.slint:116
+#: src/ui/gui/settings_page.slint:117
+msgctxt "Settings"
+msgid "Enable Rewind"
+msgstr "Включить перемотку назад"
+
+#: src/ui/gui/settings_page.slint:125
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
 msgstr "Эмулировать UNFLoader"
 
-#: src/ui/gui/settings_page.slint:124
+#: src/ui/gui/settings_page.slint:133
 msgctxt "Settings"
 msgid "Emulate VRU"
 msgstr "Эмулировать VRU"

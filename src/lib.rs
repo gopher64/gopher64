@@ -104,6 +104,8 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
     ui::sdl_hints();
 
     if let Some(game) = args.game {
+        ui::disable_auto_update_joysticks();
+
         let file_path = std::path::Path::new(&game).to_path_buf();
         let Some(rom_contents) = device::get_rom_contents(&file_path) else {
             return Err(Error::other(format!(

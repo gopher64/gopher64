@@ -59,6 +59,7 @@ enum user_event_codes {
   USER_EVENT_LOAD_STATE = 2,
   USER_EVENT_EXIT_GAME = 3,
   USER_EVENT_FAST_FORWARD = 4,
+  USER_EVENT_LOAD_REWIND = 5,
 };
 
 typedef struct {
@@ -189,6 +190,12 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       user_event.user.code = USER_EVENT_SAVE_STATE;
       SDL_PushEvent(&user_event);
       break;
+    case SDL_SCANCODE_F6:
+      SDL_zero(user_event);
+      user_event.type = SDL_EVENT_USER;
+      user_event.user.code = USER_EVENT_LOAD_REWIND;
+      SDL_PushEvent(&user_event);
+      break;
     case SDL_SCANCODE_F7:
       SDL_zero(user_event);
       user_event.type = SDL_EVENT_USER;
@@ -243,6 +250,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     switch (event->user.code) {
     case USER_EVENT_SAVE_STATE:
       callback.save_state = true;
+      break;
+    case USER_EVENT_LOAD_REWIND:
+      callback.load_rewind = true;
       break;
     case USER_EVENT_LOAD_STATE:
       callback.load_state = true;
@@ -330,6 +340,7 @@ static ImageHandle create_message_image(Vulkan::Device &device, int width,
 void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
               size_t font_size, uint32_t save_state_slot) {
   memset(&rdp_device, 0, sizeof(RDP_DEVICE));
+  memset(&callback, 0, sizeof(CALL_BACK));
 
   window = (SDL_Window *)_window;
   SDL_SyncWindow(window);
@@ -659,6 +670,7 @@ void rdp_update_screen() {
 CALL_BACK rdp_check_callback() {
   CALL_BACK return_value = callback;
   callback.save_state = false;
+  callback.load_rewind = false;
   callback.load_state = false;
   callback.reset_game = false;
   callback.lower_volume = false;

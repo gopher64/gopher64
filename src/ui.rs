@@ -113,6 +113,11 @@ pub fn sdl_hints() {
             sdl3_sys::everything::SDL_HINT_ANDROID_ALLOW_RECREATE_ACTIVITY,
             hint.as_ptr(),
         );
+    }
+}
+
+pub fn disable_auto_update_joysticks() {
+    unsafe {
         let hint = std::ffi::CString::new("0").unwrap();
         sdl3_sys::everything::SDL_SetHint(
             sdl3_sys::everything::SDL_HINT_AUTO_UPDATE_JOYSTICKS,

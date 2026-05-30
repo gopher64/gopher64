@@ -175,16 +175,19 @@ pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
     }
 }
 
-pub fn pause_loop(frame_time: f64) {
+pub fn pause_loop(ui: &mut ui::Ui, frame_time: f64) {
     let mut paused = true;
     let mut frame_advance = false;
+    let mut pause_counter = 0;
     while paused && !frame_advance {
         std::thread::sleep(std::time::Duration::from_secs_f64(frame_time));
+        ui::input::get(ui, 0, pause_counter); // to gather hotkey input
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
         retroachievements::do_idle();
         let callback = unsafe { rdp_check_callback() };
         paused = callback.paused;
         frame_advance = callback.frame_advance;
+        pause_counter += 1;
     }
 }
 
@@ -194,9 +197,12 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     device.cpu.running = callback.emu_running;
     if device.netplay.is_none() {
         if callback.save_state {
-            device.save_state = true;
+            device.savestate.save_state = true;
         } else if callback.load_state {
-            device.load_state = true;
+            device.savestate.load_state = true;
+        }
+        if callback.load_rewind {
+            device.savestate.load_rewind = true;
         }
         if callback.reset_game {
             device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] |= device::cop0::COP0_CAUSE_IP4;
