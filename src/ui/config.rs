@@ -76,6 +76,8 @@ pub struct Config {
     pub emulation: Emulation,
     pub rom_dir: std::path::PathBuf,
     pub recent_roms: Vec<String>,
+    #[serde(skip)]
+    write_to_disk: bool,
 }
 
 impl Drop for Cheats {
@@ -113,7 +115,9 @@ impl Cheats {
 
 impl Drop for Config {
     fn drop(&mut self) {
-        write_config(self);
+        if self.write_to_disk {
+            write_config(self);
+        }
     }
 }
 
@@ -172,6 +176,7 @@ impl Config {
             },
             rom_dir: std::path::PathBuf::new(),
             recent_roms: Vec::new(),
+            write_to_disk: true,
         }
     }
 }
