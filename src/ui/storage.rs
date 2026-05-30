@@ -13,6 +13,7 @@ pub enum SaveTypes {
     Romsave,
 }
 
+#[derive(Default)]
 pub struct Paths {
     pub eep_file_path: std::path::PathBuf,
     pub sra_file_path: std::path::PathBuf,
@@ -25,19 +26,19 @@ pub struct Paths {
 
 // the bool indicates whether the save has been written to
 // if that is the case, it will be flushed to the disk when the program closes
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Save {
     pub data: Vec<u8>,
     pub write_pending: bool,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct RomSave {
     pub data: std::collections::HashMap<u32, u8>,
     pub write_pending: bool,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Saves {
     pub eeprom: Save,
     pub sram: Save,

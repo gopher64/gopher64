@@ -28,24 +28,27 @@ pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLoc
         .unwrap()
 });
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct Dirs {
     pub config_dir: std::path::PathBuf,
     pub data_dir: std::path::PathBuf,
     pub cache_dir: std::path::PathBuf,
 }
 
+#[derive(Default)]
 pub struct Audio {
     pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub gain: f32,
 }
 
+#[derive(Default)]
 pub struct Input {
     pub keyboard_state: *const bool,
     pub last_polled: u64,
     pub controllers: [input::Controllers; 4],
 }
 
+#[derive(Default)]
 pub struct Storage {
     pub save_type: Vec<storage::SaveTypes>,
     pub paths: storage::Paths,
@@ -53,15 +56,17 @@ pub struct Storage {
     pub save_state_slot: u32,
 }
 
+#[derive(Default)]
 pub struct Video {
     pub window: *mut sdl3_sys::video::SDL_Window,
     pub fullscreen: bool,
-    pub fps_tx: tokio::sync::mpsc::Sender<bool>,
+    pub fps_tx: Option<tokio::sync::mpsc::Sender<bool>>,
     pub fps_rx: Option<tokio::sync::mpsc::Receiver<bool>>,
-    pub vis_tx: tokio::sync::mpsc::Sender<bool>,
+    pub vis_tx: Option<tokio::sync::mpsc::Sender<bool>>,
     pub vis_rx: Option<tokio::sync::mpsc::Receiver<bool>>,
 }
 
+#[derive(Default)]
 pub struct Usb {
     pub usb_tx: Option<tokio::sync::broadcast::Sender<usb::UsbData>>,
     pub cart_rx: Option<tokio::sync::broadcast::Receiver<usb::UsbData>>,
@@ -75,6 +80,7 @@ pub struct GameSettings {
     pub load_savestate_slot: Option<u32>,
 }
 
+#[derive(Default)]
 pub struct Ui {
     pub dirs: Dirs,
     pub config: config::Config,
@@ -254,9 +260,9 @@ impl Ui {
             video: Video {
                 window: std::ptr::null_mut(),
                 fullscreen: false,
-                fps_tx,
+                fps_tx: Some(fps_tx),
                 fps_rx: Some(fps_rx),
-                vis_tx,
+                vis_tx: Some(vis_tx),
                 vis_rx: Some(vis_rx),
             },
             usb: Usb {

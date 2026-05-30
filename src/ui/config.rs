@@ -33,7 +33,7 @@ pub struct InputProfile {
     pub deadzone: i32,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Input {
     pub input_profiles: std::collections::BTreeMap<String, InputProfile>,
     pub input_profile_binding: [String; 4],
@@ -45,7 +45,7 @@ pub struct Input {
     pub emulate_vru: bool,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Video {
     pub upscale: u32,
     pub ssaa: bool,
@@ -56,7 +56,7 @@ pub struct Video {
     pub crt: bool,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Emulation {
     pub overclock: bool,
     pub disable_expansion_pak: bool,
@@ -69,7 +69,7 @@ pub struct Cheats {
         std::collections::HashMap<String, std::collections::HashMap<String, Option<String>>>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub input: Input,
     pub video: Video,
