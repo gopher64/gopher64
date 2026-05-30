@@ -111,7 +111,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             let current_origin = device.vi.regs[reg as usize];
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
             if current_origin != device.vi.regs[reg as usize] {
-                let _ = device.ui.video.fps_tx.try_send(true);
+                let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
             }
         }
         _ => {
@@ -127,7 +127,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     }
 
     ui::video::render_frame();
-    let _ = device.ui.video.vis_tx.try_send(true);
+    let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
 
     retroachievements::do_frame();
 

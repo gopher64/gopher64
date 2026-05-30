@@ -32,6 +32,7 @@ pub const DEADZONE_DEFAULT: i32 = 5;
 
 pub const UNKNOWN_CONTROLLER_NAME: &str = "Unknown controller";
 
+#[derive(Default)]
 pub struct Controllers {
     pub rumble: bool,
     pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
