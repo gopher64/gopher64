@@ -149,15 +149,13 @@ fn tlb_unmap(device: &mut device::Device, index: u64) {
     if e.v_even != 0 {
         let mut i = e.start_even;
         while i < e.end_even {
-            device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].address = 0;
-            device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].cached = false;
+            device.cpu.cop0.tlb_lut_r.remove(&(i >> 12));
             i += 0x1000
         }
         if e.d_even != 0 {
             let mut i = e.start_even;
             while i < e.end_even {
-                device.cpu.cop0.tlb_lut_w[(i >> 12) as usize].address = 0;
-                device.cpu.cop0.tlb_lut_w[(i >> 12) as usize].cached = false;
+                device.cpu.cop0.tlb_lut_w.remove(&(i >> 12));
                 i += 0x1000
             }
         }
@@ -166,15 +164,13 @@ fn tlb_unmap(device: &mut device::Device, index: u64) {
     if e.v_odd != 0 {
         let mut i = e.start_odd;
         while i < e.end_odd {
-            device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].address = 0;
-            device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].cached = false;
+            device.cpu.cop0.tlb_lut_r.remove(&(i >> 12));
             i += 0x1000
         }
         if e.d_odd != 0 {
             let mut i = e.start_odd;
             while i < e.end_odd {
-                device.cpu.cop0.tlb_lut_w[(i >> 12) as usize].address = 0;
-                device.cpu.cop0.tlb_lut_w[(i >> 12) as usize].cached = false;
+                device.cpu.cop0.tlb_lut_w.remove(&(i >> 12));
                 i += 0x1000
             }
         }
@@ -191,17 +187,25 @@ fn tlb_map(device: &mut device::Device, index: u64) {
     {
         let mut i = e.start_even;
         while i < e.end_even {
-            device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].address =
-                0x80000000 | (e.phys_even + (i - e.start_even) + 0xFFF);
-            device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].cached = e.c_even != 2;
+            device.cpu.cop0.tlb_lut_r.insert(
+                i >> 12,
+                TlbLut {
+                    address: 0x80000000 | (e.phys_even + (i - e.start_even) + 0xFFF),
+                    cached: e.c_even != 2,
+                },
+            );
             i += 0x1000
         }
         if e.d_even != 0 {
             let mut i = e.start_even;
             while i < e.end_even {
-                device.cpu.cop0.tlb_lut_w[(i >> 12) as usize].address =
-                    0x80000000 | (e.phys_even + (i - e.start_even) + 0xFFF);
-                device.cpu.cop0.tlb_lut_w[(i >> 12) as usize].cached = e.c_even != 2;
+                device.cpu.cop0.tlb_lut_w.insert(
+                    i >> 12,
+                    TlbLut {
+                        address: 0x80000000 | (e.phys_even + (i - e.start_even) + 0xFFF),
+                        cached: e.c_even != 2,
+                    },
+                );
                 i += 0x1000
             }
         }
@@ -214,17 +218,25 @@ fn tlb_map(device: &mut device::Device, index: u64) {
     {
         let mut i = e.start_odd;
         while i < e.end_odd {
-            device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].address =
-                0x80000000 | (e.phys_odd + (i - e.start_odd) + 0xFFF);
-            device.cpu.cop0.tlb_lut_r[(i >> 12) as usize].cached = e.c_odd != 2;
+            device.cpu.cop0.tlb_lut_r.insert(
+                i >> 12,
+                TlbLut {
+                    address: 0x80000000 | (e.phys_odd + (i - e.start_odd) + 0xFFF),
+                    cached: e.c_odd != 2,
+                },
+            );
             i += 0x1000
         }
         if e.d_odd != 0 {
             let mut i = e.start_odd;
             while i < e.end_odd {
-                device.cpu.cop0.tlb_lut_w[(i >> 12) as usize].address =
-                    0x80000000 | (e.phys_odd + (i - e.start_odd) + 0xFFF);
-                device.cpu.cop0.tlb_lut_w[(i >> 12) as usize].cached = e.c_odd != 2;
+                device.cpu.cop0.tlb_lut_w.insert(
+                    i >> 12,
+                    TlbLut {
+                        address: 0x80000000 | (e.phys_odd + (i - e.start_odd) + 0xFFF),
+                        cached: e.c_odd != 2,
+                    },
+                );
                 i += 0x1000
             }
         }
@@ -239,19 +251,17 @@ pub fn get_physical_address(
     address &= 0xffffffff;
 
     if access_type == device::memory::AccessType::Write {
-        if device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].address != 0 {
+        if let Some(lut) = device.cpu.cop0.tlb_lut_w.get(&(address >> 12)) {
             return (
-                (device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].address & 0x1FFFF000)
-                    | (address & 0xFFF),
-                device.cpu.cop0.tlb_lut_w[(address >> 12) as usize].cached,
+                (lut.address & 0x1FFFF000) | (address & 0xFFF),
+                lut.cached,
                 false,
             );
         }
-    } else if device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].address != 0 {
+    } else if let Some(lut) = device.cpu.cop0.tlb_lut_r.get(&(address >> 12)) {
         return (
-            (device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].address & 0x1FFFF000)
-                | (address & 0xFFF),
-            device.cpu.cop0.tlb_lut_r[(address >> 12) as usize].cached,
+            (lut.address & 0x1FFFF000) | (address & 0xFFF),
+            lut.cached,
             false,
         );
     }
