@@ -8,7 +8,7 @@ pub struct DecodedCheat {
     data: u16,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Cheats {
     pub cheats: Vec<Vec<DecodedCheat>>,
     pub boot: bool,

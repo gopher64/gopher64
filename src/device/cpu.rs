@@ -1,6 +1,6 @@
 use crate::{device, savestates, ui};
 
-#[derive(PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum State {
     Step,
     Take,
@@ -11,13 +11,13 @@ pub enum State {
     Exception,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct BranchState {
     pub state: State,
     pub pc: u64,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Cpu {
     pub cop0: device::cop0::Cop0,
     pub cop1: device::cop1::Cop1,

@@ -24,7 +24,7 @@ const FCR31_CAUSE_MASK: u32 = 0b00000000000000111111000000000000;
 const FCR31_ENABLE_MASK: u32 = 0b00000000000000000000111110000000;
 const FCR31_WRITE_MASK: u32 = 0b00000001100000111111111111111111;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Cop1 {
     pub fcr0: u32,
     pub fcr31: u32,

@@ -8,7 +8,7 @@ const MBC3_RTC_DAYS_L: usize = 3;
 const MBC3_RTC_DAYS_H: usize = 4;
 const MBC3_RTC_REGS_COUNT: usize = 5;
 
-#[derive(Default, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GbCart {
     pub enabled: bool,
     #[serde(skip)]

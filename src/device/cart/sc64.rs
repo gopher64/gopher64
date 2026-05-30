@@ -20,7 +20,7 @@ pub const SC64_CFG_COUNT: usize = 15;
 const SC64_BUFFER_MASK: usize = 0x1FFF;
 const SC64_EEPROM_MASK: usize = 0xFFF;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Sc64 {
     pub buffer: Vec<u8>,
     pub regs: [u32; SC64_REGS_COUNT],

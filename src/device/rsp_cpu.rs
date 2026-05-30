@@ -6,7 +6,7 @@ use crate::{device, savestates};
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct BranchState {
     pub state: device::cpu::State,
     pub pc: u32,
@@ -25,7 +25,7 @@ pub enum InstructionType {
     Vu,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Cpu {
     #[serde(with = "serde_big_array::BigArray")]
     pub instructions: [Instructions; 0x1000 / 4],

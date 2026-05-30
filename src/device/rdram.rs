@@ -17,7 +17,7 @@ pub const RDRAM_REGS_COUNT: usize = 10;
 
 pub const RDRAM_MASK: usize = 0xFFFFFF;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Rdram {
     pub mem: Vec<u8>,
     pub size: u32,

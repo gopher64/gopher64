@@ -41,12 +41,18 @@ pub struct Audio {
     pub gain: f32,
 }
 
+unsafe impl Send for Audio {}
+unsafe impl Sync for Audio {}
+
 #[derive(Default)]
 pub struct Input {
     pub keyboard_state: *const bool,
     pub last_polled: u64,
     pub controllers: [input::Controllers; 4],
 }
+
+unsafe impl Send for Input {}
+unsafe impl Sync for Input {}
 
 #[derive(Default)]
 pub struct Storage {
@@ -65,6 +71,9 @@ pub struct Video {
     pub vis_tx: Option<tokio::sync::mpsc::Sender<bool>>,
     pub vis_rx: Option<tokio::sync::mpsc::Receiver<bool>>,
 }
+
+unsafe impl Send for Video {}
+unsafe impl Sync for Video {}
 
 #[derive(Default)]
 pub struct Usb {

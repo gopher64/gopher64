@@ -76,7 +76,7 @@ pub struct RspDma {
     pub dramaddr: u32,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Rsp {
     pub cpu: device::rsp_cpu::Cpu,
     pub regs: [u32; SP_REGS_COUNT],
