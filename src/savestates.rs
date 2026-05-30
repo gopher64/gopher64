@@ -306,7 +306,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool) {
         } else {
             "Failed to rewind"
         };
-        ui::video::onscreen_message(message, ui::video::MESSAGE_LENGTH_MESSAGE_SHORT);
+        ui::video::onscreen_message(message, ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT);
     }
 }
 
