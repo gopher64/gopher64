@@ -201,7 +201,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
         } else if callback.load_state {
             device.savestate.load_state = true;
         }
-        if callback.load_rewind {
+        if callback.load_rewind && device.ui.config.emulation.rewind {
             device.savestate.load_rewind = true;
         }
         if callback.reset_game {
