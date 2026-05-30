@@ -175,6 +175,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_overclock_n64_cpu(config.emulation.overclock);
     app.set_disable_expansion_pak(config.emulation.disable_expansion_pak);
     app.set_emulate_usb(config.emulation.usb);
+    app.set_rewind(config.emulation.rewind);
     let combobox_value = match config.video.upscale {
         1 => 0,
         2 => 1,
@@ -446,6 +447,7 @@ pub fn save_settings(app: &AppWindow) {
     config.emulation.overclock = app.get_overclock_n64_cpu();
     config.emulation.disable_expansion_pak = app.get_disable_expansion_pak();
     config.emulation.usb = app.get_emulate_usb();
+    config.emulation.rewind = app.get_rewind();
     let upscale_values = [1, 2, 4, 8];
     config.video.upscale = upscale_values[app.get_resolution() as usize];
 

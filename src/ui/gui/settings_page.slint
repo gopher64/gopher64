@@ -15,6 +15,7 @@ export global SettingsData {
     in-out property <bool> disable_expansion_pak;
     in-out property <int> resolution;
     in-out property <bool> emulate_usb;
+    in-out property <bool> rewind;
     in-out property <bool> emulate_vru;
     in-out property <string> rom_dir;
 }
@@ -109,6 +110,14 @@ export component Settings inherits Page {
                     checked: SettingsData.disable_expansion_pak;
                     toggled => {
                         SettingsData.disable_expansion_pak = self.checked;
+                    }
+                }
+
+                Switch {
+                    text: @tr("Enable Rewind");
+                    checked: SettingsData.rewind;
+                    toggled => {
+                        SettingsData.rewind = self.checked;
                     }
                 }
 

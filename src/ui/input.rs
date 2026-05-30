@@ -489,6 +489,17 @@ fn handle_hotkeys(keys: u32, last_key_state: u32) {
             })
         };
     }
+    if keys & (1 << L_CBUTTON) != 0 && last_key_state & (1 << L_CBUTTON) == 0 {
+        unsafe {
+            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
+                user: sdl3_sys::events::SDL_UserEvent {
+                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
+                    code: 5, //load rewind
+                    ..Default::default()
+                },
+            })
+        };
+    }
 }
 
 pub fn get(ui: &mut ui::Ui, channel: usize, vi_counter: u64) -> InputData {

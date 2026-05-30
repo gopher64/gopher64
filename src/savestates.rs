@@ -69,7 +69,25 @@ where
     seq.end()
 }
 
-pub fn create_savestate(device: &device::Device) {
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct Savestate {
+    pub save_state: bool,
+    pub load_state: bool,
+    pub save_rewind: bool,
+    pub load_rewind: bool,
+    pub last_rewind_saved: f64,
+    #[serde(skip)]
+    pub rewind_pool: std::sync::Arc<std::sync::Mutex<std::collections::VecDeque<SavestateData>>>,
+}
+
+pub struct SavestateData {
+    device_data: Vec<u8>,
+    saves_data: Vec<u8>,
+    rdp_state: Vec<u8>,
+    ra_state: Vec<u8>,
+}
+
+pub fn create_savestate(device: &mut device::Device, rewind: bool) {
     let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
     ui::video::save_state(rdp_state.as_mut_ptr());
 
@@ -80,24 +98,39 @@ pub fn create_savestate(device: &device::Device) {
 
     let device_clone = device.clone_without_ui();
     let save_state_slot = device.ui.storage.save_state_slot;
+    let rewind_pool = device.savestate.rewind_pool.clone();
     tokio::spawn(async move {
         let mut error = false;
         if let Ok(device_data) = postcard::to_stdvec(&device_clone)
             && let Ok(saves_data) = postcard::to_stdvec(&device_clone.ui.storage.saves)
         {
-            if let Ok(compressed_file) = ui::storage::compress_file(&[
-                (&device_data, "device"),
-                (&saves_data, "saves"),
-                (&rdp_state, "rdp_state"),
-                (&ra_state, "ra_state"),
-            ]) {
-                if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
-                    eprintln!("Error writing savestate: {}", e);
-                    error = true;
+            if rewind {
+                if let Ok(mut pool) = rewind_pool.lock() {
+                    pool.push_back(SavestateData {
+                        device_data,
+                        saves_data,
+                        rdp_state,
+                        ra_state,
+                    });
+                    if pool.len() > 30 {
+                        pool.pop_front();
+                    }
                 }
             } else {
-                eprintln!("Error compressing savestate");
-                error = true;
+                if let Ok(compressed_file) = ui::storage::compress_file(&[
+                    (&device_data, "device"),
+                    (&saves_data, "saves"),
+                    (&rdp_state, "rdp_state"),
+                    (&ra_state, "ra_state"),
+                ]) {
+                    if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
+                        eprintln!("Error writing savestate: {}", e);
+                        error = true;
+                    }
+                } else {
+                    eprintln!("Error compressing savestate");
+                    error = true;
+                }
             }
         } else {
             error = true;
@@ -107,7 +140,7 @@ pub fn create_savestate(device: &device::Device) {
                 &format!("Failed to create savestate in slot {}", save_state_slot),
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
-        } else {
+        } else if !rewind {
             ui::video::onscreen_message(
                 &format!("Savestate created in slot {}", save_state_slot),
                 ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
@@ -116,7 +149,7 @@ pub fn create_savestate(device: &device::Device) {
     });
 }
 
-pub fn load_savestate(device: &mut device::Device) {
+pub fn load_savestate(device: &mut device::Device, rewind: bool) {
     if retroachievements::get_hardcore() {
         ui::video::onscreen_message(
             "Cannot load savestate in RA hardcore mode",
@@ -124,119 +157,138 @@ pub fn load_savestate(device: &mut device::Device) {
         );
         return;
     }
-    let savestate = std::fs::read(&device.ui.storage.paths.savestate_file_path);
-    if let Ok(savestate) = &savestate {
-        if let Ok(device_bytes) = ui::storage::decompress_file(savestate, "device")
-            && let Ok(save_bytes) = ui::storage::decompress_file(savestate, "saves")
-            && let Ok(rdp_state) = ui::storage::decompress_file(savestate, "rdp_state")
-            && let Ok(ra_state) = ui::storage::decompress_file(savestate, "ra_state")
-            && let Ok(mut state) = postcard::from_bytes::<device::Device>(&device_bytes)
-            && let Ok(saves) = postcard::from_bytes(&save_bytes)
-            && device.rdram.size == state.rdram.size
-        {
-            device.ui.storage.saves = saves;
 
-            std::mem::swap(&mut device.cpu, &mut state.cpu);
-            std::mem::swap(&mut device.pif, &mut state.pif);
+    let state_data = if rewind {
+        if let Ok(mut pool) = device.savestate.rewind_pool.lock() {
+            pool.pop_back()
+        } else {
+            None
+        }
+    } else if let savestate = std::fs::read(&device.ui.storage.paths.savestate_file_path)
+        && let Ok(savestate) = &savestate
+        && let Ok(device_data) = ui::storage::decompress_file(savestate, "device")
+        && let Ok(saves_data) = ui::storage::decompress_file(savestate, "saves")
+        && let Ok(rdp_state) = ui::storage::decompress_file(savestate, "rdp_state")
+        && let Ok(ra_state) = ui::storage::decompress_file(savestate, "ra_state")
+    {
+        Some(SavestateData {
+            device_data,
+            saves_data,
+            rdp_state,
+            ra_state,
+        })
+    } else {
+        None
+    };
+    if let Some(state_data) = state_data
+        && let Ok(mut state) = postcard::from_bytes::<device::Device>(&state_data.device_data)
+        && let Ok(saves) = postcard::from_bytes(&state_data.saves_data)
+        && device.rdram.size == state.rdram.size
+    {
+        device.savestate.last_rewind_saved = state.vi.elapsed_time;
 
-            let rom = device.cart.rom.clone();
-            std::mem::swap(&mut device.cart, &mut state.cart);
-            device.cart.rom = rom;
+        device.ui.storage.saves = saves;
 
-            std::mem::swap(&mut device.memory, &mut state.memory);
-            std::mem::swap(&mut device.rsp, &mut state.rsp);
-            std::mem::swap(&mut device.rdp, &mut state.rdp);
+        std::mem::swap(&mut device.cpu, &mut state.cpu);
+        std::mem::swap(&mut device.pif, &mut state.pif);
 
-            device.rdram.mem.clone_from(&state.rdram.mem);
-            device.rdram.regs = state.rdram.regs;
+        let rom = device.cart.rom.clone();
+        std::mem::swap(&mut device.cart, &mut state.cart);
+        device.cart.rom = rom;
 
-            std::mem::swap(&mut device.mi, &mut state.mi);
-            std::mem::swap(&mut device.pi, &mut state.pi);
-            std::mem::swap(&mut device.vi, &mut state.vi);
-            std::mem::swap(&mut device.ai, &mut state.ai);
-            std::mem::swap(&mut device.si, &mut state.si);
-            std::mem::swap(&mut device.ri, &mut state.ri);
-            std::mem::swap(&mut device.vru, &mut state.vru);
-            std::mem::swap(&mut device.cheats, &mut state.cheats);
+        std::mem::swap(&mut device.memory, &mut state.memory);
+        std::mem::swap(&mut device.rsp, &mut state.rsp);
+        std::mem::swap(&mut device.rdp, &mut state.rdp);
 
-            let mut tpak_rom = [vec![], vec![], vec![], vec![]];
-            for (i, item) in tpak_rom.iter_mut().enumerate() {
-                *item = device.transferpaks[i].cart.rom.clone();
+        device.rdram.mem.clone_from(&state.rdram.mem);
+        device.rdram.regs = state.rdram.regs;
+
+        std::mem::swap(&mut device.mi, &mut state.mi);
+        std::mem::swap(&mut device.pi, &mut state.pi);
+        std::mem::swap(&mut device.vi, &mut state.vi);
+        std::mem::swap(&mut device.ai, &mut state.ai);
+        std::mem::swap(&mut device.si, &mut state.si);
+        std::mem::swap(&mut device.ri, &mut state.ri);
+        std::mem::swap(&mut device.vru, &mut state.vru);
+        std::mem::swap(&mut device.cheats, &mut state.cheats);
+
+        let mut tpak_rom = [vec![], vec![], vec![], vec![]];
+        for (i, item) in tpak_rom.iter_mut().enumerate() {
+            *item = device.transferpaks[i].cart.rom.clone();
+        }
+        std::mem::swap(&mut device.transferpaks, &mut state.transferpaks);
+        for (i, item) in tpak_rom.iter().enumerate() {
+            device.transferpaks[i].cart.rom = item.clone();
+        }
+
+        device::memory::init(device);
+        device::vi::set_expected_refresh_rate(device);
+        device::cpu::map_instructions(device);
+        device::cop0::map_instructions(device);
+        device::cop1::map_instructions(device);
+        device::cop2::map_instructions(device);
+        device::rsp_cpu::map_instructions(device);
+
+        let mut mem_addr = 0x1000;
+        while mem_addr < 0x2000 {
+            let data =
+                u32::from_be_bytes(device.rsp.mem[mem_addr..mem_addr + 4].try_into().unwrap());
+            device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].func =
+                device::rsp_cpu::decode_opcode(device, data);
+            device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].opcode = data;
+            mem_addr += 4;
+        }
+
+        for line_index in 0..512 {
+            for i in 0..8 {
+                device.memory.icache[line_index].instruction[i] =
+                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[i]);
             }
-            std::mem::swap(&mut device.transferpaks, &mut state.transferpaks);
-            for (i, item) in tpak_rom.iter().enumerate() {
-                device.transferpaks[i].cart.rom = item.clone();
-            }
+        }
 
-            device::memory::init(device);
-            device::vi::set_expected_refresh_rate(device);
-            device::cpu::map_instructions(device);
-            device::cop0::map_instructions(device);
-            device::cop1::map_instructions(device);
-            device::cop2::map_instructions(device);
-            device::rsp_cpu::map_instructions(device);
-
-            let mut mem_addr = 0x1000;
-            while mem_addr < 0x2000 {
-                let data =
-                    u32::from_be_bytes(device.rsp.mem[mem_addr..mem_addr + 4].try_into().unwrap());
-                device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].func =
-                    device::rsp_cpu::decode_opcode(device, data);
-                device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].opcode = data;
-                mem_addr += 4;
-            }
-
-            for line_index in 0..512 {
-                for i in 0..8 {
-                    device.memory.icache[line_index].instruction[i] = device::cpu::decode_opcode(
-                        device,
-                        device.memory.icache[line_index].words[i],
-                    );
+        device::pif::connect_pif_channels(device);
+        for i in 0..4 {
+            if let Some(handler) = device.pif.channels[i].pak_handler {
+                if handler.pak_type == device::controller::PakType::RumblePak {
+                    let rumblepak_handler = device::controller::PakHandler {
+                        read: device::controller::rumble::read,
+                        write: device::controller::rumble::write,
+                        pak_type: device::controller::PakType::RumblePak,
+                    };
+                    device.pif.channels[i].pak_handler = Some(rumblepak_handler);
+                } else if handler.pak_type == device::controller::PakType::MemPak {
+                    let mempak_handler = device::controller::PakHandler {
+                        read: device::controller::mempak::read,
+                        write: device::controller::mempak::write,
+                        pak_type: device::controller::PakType::MemPak,
+                    };
+                    device.pif.channels[i].pak_handler = Some(mempak_handler);
+                } else if handler.pak_type == device::controller::PakType::TransferPak {
+                    let tpak_handler = device::controller::PakHandler {
+                        read: device::controller::transferpak::read,
+                        write: device::controller::transferpak::write,
+                        pak_type: device::controller::PakType::TransferPak,
+                    };
+                    device.pif.channels[i].pak_handler = Some(tpak_handler);
                 }
             }
+        }
 
-            device::pif::connect_pif_channels(device);
-            for i in 0..4 {
-                if let Some(handler) = device.pif.channels[i].pak_handler {
-                    if handler.pak_type == device::controller::PakType::RumblePak {
-                        let rumblepak_handler = device::controller::PakHandler {
-                            read: device::controller::rumble::read,
-                            write: device::controller::rumble::write,
-                            pak_type: device::controller::PakType::RumblePak,
-                        };
-                        device.pif.channels[i].pak_handler = Some(rumblepak_handler);
-                    } else if handler.pak_type == device::controller::PakType::MemPak {
-                        let mempak_handler = device::controller::PakHandler {
-                            read: device::controller::mempak::read,
-                            write: device::controller::mempak::write,
-                            pak_type: device::controller::PakType::MemPak,
-                        };
-                        device.pif.channels[i].pak_handler = Some(mempak_handler);
-                    } else if handler.pak_type == device::controller::PakType::TransferPak {
-                        let tpak_handler = device::controller::PakHandler {
-                            read: device::controller::transferpak::read,
-                            write: device::controller::transferpak::write,
-                            pak_type: device::controller::PakType::TransferPak,
-                        };
-                        device.pif.channels[i].pak_handler = Some(tpak_handler);
-                    }
-                }
-            }
+        ui::audio::update_freq(device);
+        ui::video::load_state(device, state_data.rdp_state.as_ptr());
 
-            ui::audio::update_freq(device);
-            ui::video::load_state(device, rdp_state.as_ptr());
+        retroachievements::set_rdram(device.rdram.mem.as_ptr(), device.rdram.size as usize);
+        if !state_data.ra_state.is_empty() {
+            retroachievements::load_state(state_data.ra_state.as_ptr(), state_data.ra_state.len());
+        } else {
+            retroachievements::load_state(std::ptr::null(), 0);
+        }
 
-            retroachievements::set_rdram(device.rdram.mem.as_ptr(), device.rdram.size as usize);
-            if !ra_state.is_empty() {
-                retroachievements::load_state(ra_state.as_ptr(), ra_state.len());
-            } else {
-                retroachievements::load_state(std::ptr::null(), 0);
-            }
+        if device.cheats.enabled {
+            cheats::execute_cheats(device, device.cheats.cheats.clone());
+        }
 
-            if device.cheats.enabled {
-                cheats::execute_cheats(device, device.cheats.cheats.clone());
-            }
-
+        if !rewind {
             ui::video::onscreen_message(
                 &format!(
                     "Savestate loaded from slot {}",
@@ -244,23 +296,17 @@ pub fn load_savestate(device: &mut device::Device) {
                 ),
                 ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
             );
-        } else {
-            ui::video::onscreen_message(
-                &format!(
-                    "Failed to load savestate from slot {}",
-                    device.ui.storage.save_state_slot
-                ),
-                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-            );
         }
     } else {
-        ui::video::onscreen_message(
+        let message = if !rewind {
             &format!(
-                "Could not find savestate in slot {}",
+                "Failed to load savestate from slot {}",
                 device.ui.storage.save_state_slot
-            ),
-            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-        );
+            )
+        } else {
+            "Failed to rewind"
+        };
+        ui::video::onscreen_message(message, ui::video::MESSAGE_LENGTH_MESSAGE_SHORT);
     }
 }
 

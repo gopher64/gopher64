@@ -15,7 +15,7 @@ const N64_EXTENSIONS_UNCOMPRESSED: [&str; 8] =
 
 use rand::{Rng, SeedableRng};
 
-use crate::{cheats, netplay, retroachievements, ui};
+use crate::{cheats, netplay, retroachievements, savestates, ui};
 use std::{collections::HashMap, io::Read};
 
 pub mod ai;
@@ -59,7 +59,7 @@ pub async fn run_game(
     }
     if let Some(slot) = game_settings.load_savestate_slot {
         device.ui.storage.save_state_slot = slot;
-        device.load_state = true;
+        device.savestate.load_state = true;
     }
 
     init_rng(device);
@@ -229,8 +229,7 @@ pub struct Device {
     #[serde(skip)]
     pub ui: ui::Ui,
     pub byte_swap: usize,
-    pub save_state: bool,
-    pub load_state: bool,
+    pub savestate: savestates::Savestate,
     pub cpu: cpu::Cpu,
     pub pif: pif::Pif,
     pub cart: cart::Cart,
@@ -261,8 +260,7 @@ impl Device {
             netplay: None,
             ui: ui::Ui::default(),
             byte_swap: self.byte_swap,
-            save_state: self.save_state,
-            load_state: self.load_state,
+            savestate: self.savestate.clone(),
             cpu: self.cpu.clone(),
             pif: self.pif.clone(),
             cart: self.cart.clone(),
@@ -294,8 +292,16 @@ impl Device {
             netplay: None,
             ui: ui::Ui::new(),
             byte_swap,
-            save_state: false,
-            load_state: false,
+            savestate: savestates::Savestate {
+                save_state: false,
+                load_state: false,
+                save_rewind: false,
+                load_rewind: false,
+                last_rewind_saved: 0.0,
+                rewind_pool: std::sync::Arc::new(std::sync::Mutex::new(
+                    std::collections::VecDeque::new(),
+                )),
+            },
             cpu: cpu::Cpu {
                 cop0: cop0::Cop0 {
                     regs: [0; cop0::COP0_REGS_COUNT],

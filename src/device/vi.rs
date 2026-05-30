@@ -122,6 +122,8 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
+    device.vi.elapsed_time += device.vi.frame_time;
+
     if device.cheats.enabled {
         cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
@@ -139,6 +141,11 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
             speed_limiter_toggled = true;
             device.vi.enable_speed_limiter = !netplay.fast_forward;
         }
+    } else if device.ui.config.emulation.rewind
+        && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
+    {
+        device.savestate.save_rewind = true;
+        device.savestate.last_rewind_saved = device.vi.elapsed_time;
     }
 
     if speed_limiter_toggled {
@@ -153,7 +160,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     ui::video::update_screen();
     device.vi.vi_counter += 1;
-    device.vi.elapsed_time += device.vi.frame_time;
 
     if device.netplay.is_none() && paused {
         if retroachievements::get_hardcore() {
@@ -162,7 +168,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
         } else {
-            ui::video::pause_loop(device.vi.frame_time);
+            ui::video::pause_loop(&mut device.ui, device.vi.frame_time);
         }
     }
 
