@@ -21,7 +21,7 @@ const JDT_EEPROM_16K: u16 = 0xc000; /* 16k EEPROM */
 const EEPROM_BLOCK_SIZE: usize = 8;
 pub const EEPROM_MAX_SIZE: usize = 0x800;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct AfRtc {
     pub control: u16,
 }
@@ -31,7 +31,7 @@ fn byte2bcd(mut n: u32) -> u8 {
     (((n / 10) << 4) | (n % 10)) as u8
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Cart {
     #[serde(skip)]
     pub rom: Vec<u8>,

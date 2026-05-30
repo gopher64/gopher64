@@ -10,7 +10,7 @@ pub const RI_REFRESH_REG: usize = 4;
 //const RI_WERROR_REG: usize = 7;
 pub const RI_REGS_COUNT: usize = 8;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Ri {
     pub regs: [u32; RI_REGS_COUNT],
     pub ram_init: bool,

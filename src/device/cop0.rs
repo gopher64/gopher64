@@ -91,7 +91,7 @@ const COP0_XCONTEXT_REG_MASK: u64 =
 const COP0_PARITYERR_REG_MASK: u64 = 0b00000000000000000000000011111111;
 const COP0_TAGLO_REG_MASK: u64 = 0b00001111111111111111111111000000;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Cop0 {
     pub reg_latch: u64,
     pub regs: [u64; COP0_REGS_COUNT],

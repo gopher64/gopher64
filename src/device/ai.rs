@@ -11,7 +11,7 @@ pub const AI_REGS_COUNT: usize = 6;
 pub const AI_STATUS_BUSY: u32 = 0x40000000;
 const AI_STATUS_FULL: u32 = 0x80000000;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Ai {
     pub regs: [u32; AI_REGS_COUNT],
     pub fifo: [AiDma; 2],

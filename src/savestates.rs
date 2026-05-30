@@ -78,10 +78,13 @@ pub fn create_savestate(device: &device::Device) {
 
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
 
-    if let Ok(device_data) = postcard::to_stdvec(device)
-        && let Ok(saves_data) = postcard::to_stdvec(&device.ui.storage.saves)
-    {
-        tokio::spawn(async move {
+    let device_clone = device.clone_without_ui();
+    let save_state_slot = device.ui.storage.save_state_slot;
+    tokio::spawn(async move {
+        let mut error = false;
+        if let Ok(device_data) = postcard::to_stdvec(&device_clone)
+            && let Ok(saves_data) = postcard::to_stdvec(&device_clone.ui.storage.saves)
+        {
             if let Ok(compressed_file) = ui::storage::compress_file(&[
                 (&device_data, "device"),
                 (&saves_data, "saves"),
@@ -90,27 +93,27 @@ pub fn create_savestate(device: &device::Device) {
             ]) {
                 if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
                     eprintln!("Error writing savestate: {}", e);
+                    error = true;
                 }
             } else {
                 eprintln!("Error compressing savestate");
+                error = true;
             }
-        });
-        ui::video::onscreen_message(
-            &format!(
-                "Savestate created in slot {}",
-                device.ui.storage.save_state_slot
-            ),
-            ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
-        );
-    } else {
-        ui::video::onscreen_message(
-            &format!(
-                "Failed to create savestate in slot {}",
-                device.ui.storage.save_state_slot
-            ),
-            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-        );
-    }
+        } else {
+            error = true;
+        }
+        if error {
+            ui::video::onscreen_message(
+                &format!("Failed to create savestate in slot {}", save_state_slot),
+                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+            );
+        } else {
+            ui::video::onscreen_message(
+                &format!("Savestate created in slot {}", save_state_slot),
+                ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
+            );
+        }
+    });
 }
 
 pub fn load_savestate(device: &mut device::Device) {

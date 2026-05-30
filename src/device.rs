@@ -256,6 +256,32 @@ pub fn zero_m128i() -> __m128i {
 }
 
 impl Device {
+    pub fn clone_without_ui(&self) -> Device {
+        Device {
+            netplay: None,
+            ui: ui::Ui::default(),
+            byte_swap: self.byte_swap,
+            save_state: self.save_state,
+            load_state: self.load_state,
+            cpu: self.cpu.clone(),
+            pif: self.pif.clone(),
+            cart: self.cart.clone(),
+            memory: self.memory.clone(),
+            rsp: self.rsp.clone(),
+            rdp: self.rdp.clone(),
+            rdram: self.rdram.clone(),
+            mi: self.mi.clone(),
+            pi: self.pi.clone(),
+            vi: self.vi.clone(),
+            ai: self.ai.clone(),
+            si: self.si.clone(),
+            ri: self.ri.clone(),
+            rng: self.rng.clone(),
+            vru: self.vru.clone(),
+            transferpaks: self.transferpaks.clone(),
+            cheats: self.cheats.clone(),
+        }
+    }
     pub fn new() -> Device {
         let mut byte_swap: usize = 0;
         let test: [u8; 4] = [1, 2, 3, 4];

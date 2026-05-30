@@ -137,8 +137,9 @@ impl Config {
         let file_path = dirs.config_dir.join("config.json");
         let config_file = std::fs::read(file_path);
         if let Ok(config_file) = config_file {
-            let result = serde_json::from_slice(config_file.as_ref());
-            if let Ok(result) = result {
+            let result = serde_json::from_slice::<Config>(config_file.as_ref());
+            if let Ok(mut result) = result {
+                result.write_to_disk = true;
                 return result;
             }
         }

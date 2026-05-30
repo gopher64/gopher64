@@ -1,7 +1,7 @@
 mod rom;
 use crate::device;
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Pif {
     #[serde(with = "serde_big_array::BigArray")]
     pub rom: [u8; 1984],
