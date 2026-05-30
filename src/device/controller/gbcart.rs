@@ -19,7 +19,6 @@ pub struct GbCart {
     pub mbc1_mode: bool,
     pub ram_bank: u16,
     pub rom_bank: u32,
-    pub latch: bool,
     pub rtc_regs: [u8; MBC3_RTC_REGS_COUNT],
     pub rtc_regs_latch: [u8; MBC3_RTC_REGS_COUNT],
     pub last_elapsed_time: i64,
@@ -256,11 +255,10 @@ fn write_mbc3(
         cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0x8000 {
         if cart.cart_type == CartType::MBC3RamBattRtc {
-            if !cart.latch && (value & 0x1) != 0 {
+            if (value & 0x1) != 0 {
                 update_rtc_regs(cart, elapsed_time);
                 cart.rtc_regs_latch = cart.rtc_regs;
             }
-            cart.latch = (value & 0x1) != 0;
         }
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
@@ -284,7 +282,6 @@ fn read_mbc3(
     address: u16,
     data: usize,
     size: usize,
-    elapsed_time: i64,
 ) {
     if address < 0x4000 {
         let banked_address = address & 0x3FFF;
@@ -309,15 +306,8 @@ fn read_mbc3(
                     .unwrap_or(&vec![0; size]),
             );
         } else if cart.cart_type == CartType::MBC3RamBattRtc {
-            if cart.latch {
-                for i in 0..size {
-                    pif_ram[data + i] = cart.rtc_regs_latch[cart.ram_bank as usize - 0x8];
-                }
-            } else {
-                update_rtc_regs(cart, elapsed_time);
-                for i in 0..size {
-                    pif_ram[data + i] = cart.rtc_regs[cart.ram_bank as usize - 0x8];
-                }
+            for i in 0..size {
+                pif_ram[data + i] = cart.rtc_regs_latch[cart.ram_bank as usize - 0x8];
             }
         }
     } else {
@@ -395,7 +385,6 @@ pub fn read(
     address: u16,
     data: usize,
     size: usize,
-    elapsed_time: i64,
 ) {
     if !cart.enabled {
         for i in 0..size {
@@ -405,8 +394,8 @@ pub fn read(
     }
     match cart.cart_type {
         CartType::MBC1RamBatt => read_mbc1(pif_ram, cart, address, data, size),
-        CartType::MBC3RamBatt => read_mbc3(pif_ram, cart, address, data, size, elapsed_time),
-        CartType::MBC3RamBattRtc => read_mbc3(pif_ram, cart, address, data, size, elapsed_time),
+        CartType::MBC3RamBatt => read_mbc3(pif_ram, cart, address, data, size),
+        CartType::MBC3RamBattRtc => read_mbc3(pif_ram, cart, address, data, size),
         CartType::MBC5RamBatt => read_mbc5(pif_ram, cart, address, data, size),
         _ => panic!("Unsupported cart type"),
     }
