@@ -34,8 +34,8 @@ pub const UNKNOWN_CONTROLLER_NAME: &str = "Unknown controller";
 
 pub struct Controllers {
     pub rumble: bool,
-    pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
-    pub joystick: *mut sdl3_sys::joystick::SDL_Joystick,
+    pub game_controller: std::sync::atomic::AtomicPtr<sdl3_sys::gamepad::SDL_Gamepad>,
+    pub joystick: std::sync::atomic::AtomicPtr<sdl3_sys::joystick::SDL_Joystick>,
     pub guid: sdl3_sys::guid::SDL_GUID,
     pub last_key_state: u32,
 }
@@ -277,8 +277,12 @@ pub fn set_rumble(ui: &ui::Ui, channel: usize, rumble: u8) {
     if !ui.input.controllers[channel].rumble {
         return;
     }
-    let controller = ui.input.controllers[channel].game_controller;
-    let joystick = ui.input.controllers[channel].joystick;
+    let controller = ui.input.controllers[channel]
+        .game_controller
+        .load(std::sync::atomic::Ordering::Relaxed);
+    let joystick = ui.input.controllers[channel]
+        .joystick
+        .load(std::sync::atomic::Ordering::Relaxed);
     if !controller.is_null() {
         unsafe {
             sdl3_sys::gamepad::SDL_RumbleGamepad(
@@ -395,6 +399,12 @@ fn handle_joystick_events(ui: &mut ui::Ui) {
     if joystick_event.joystick_id != 0 {
         let joystick_id = sdl3_sys::joystick::SDL_JoystickID(joystick_event.joystick_id);
         for (i, controller) in ui.input.controllers.iter_mut().enumerate() {
+            let joystick = controller
+                .joystick
+                .load(std::sync::atomic::Ordering::Relaxed);
+            let game_controller = controller
+                .game_controller
+                .load(std::sync::atomic::Ordering::Relaxed);
             if joystick_event.connected {
                 if let Some(profile) = ui
                     .config
@@ -403,40 +413,47 @@ fn handle_joystick_events(ui: &mut ui::Ui) {
                     .get(&ui.config.input.input_profile_binding[i])
                 {
                     if profile.dinput {
-                        if controller.joystick.is_null()
+                        if joystick.is_null()
                             && controller.guid
                                 == unsafe {
                                     sdl3_sys::joystick::SDL_GetJoystickGUIDForID(joystick_id)
                                 }
                         {
-                            controller.joystick =
-                                unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) };
+                            controller.joystick.store(
+                                unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) },
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
                         }
                     } else {
-                        if controller.game_controller.is_null()
+                        if game_controller.is_null()
                             && controller.guid
                                 == unsafe {
                                     sdl3_sys::gamepad::SDL_GetGamepadGUIDForID(joystick_id)
                                 }
                         {
-                            controller.game_controller =
-                                unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick_id) };
+                            controller.game_controller.store(
+                                unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick_id) },
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
                         }
                     }
                 }
             } else {
-                if !controller.joystick.is_null()
-                    && controller.joystick
-                        == unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(joystick_id) }
+                if !joystick.is_null()
+                    && joystick == unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(joystick_id) }
                 {
-                    unsafe { sdl3_sys::joystick::SDL_CloseJoystick(controller.joystick) };
-                    controller.joystick = std::ptr::null_mut();
-                } else if !controller.game_controller.is_null()
-                    && controller.game_controller
+                    unsafe { sdl3_sys::joystick::SDL_CloseJoystick(joystick) };
+                    controller
+                        .joystick
+                        .store(std::ptr::null_mut(), std::sync::atomic::Ordering::Relaxed);
+                } else if !game_controller.is_null()
+                    && game_controller
                         == unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(joystick_id) }
                 {
-                    unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller.game_controller) };
-                    controller.game_controller = std::ptr::null_mut();
+                    unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(game_controller) };
+                    controller
+                        .game_controller
+                        .store(std::ptr::null_mut(), std::sync::atomic::Ordering::Relaxed);
                 }
             }
         }
@@ -507,27 +524,28 @@ pub fn get(ui: &mut ui::Ui, channel: usize, vi_counter: u64) -> InputData {
         };
     };
     let mut keys = 0;
-    let controller = ui.input.controllers[channel].game_controller;
-    let joystick = ui.input.controllers[channel].joystick;
+    let controller = ui.input.controllers[channel]
+        .game_controller
+        .load(std::sync::atomic::Ordering::Relaxed);
+    let joystick = ui.input.controllers[channel]
+        .joystick
+        .load(std::sync::atomic::Ordering::Relaxed);
+    let keyboard_state = ui
+        .input
+        .keyboard_state
+        .load(std::sync::atomic::Ordering::Relaxed);
 
     let alt_pressed = unsafe {
         // ignore key presses if ALT is pressed
-        *ui.input
-            .keyboard_state
-            .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_LALT) as isize)
-            || *ui
-                .input
-                .keyboard_state
-                .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
+        *keyboard_state.offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_LALT) as isize)
+            || *keyboard_state.offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
     };
 
     for i in 0..14 {
         if profile_name != "default" || channel == 0 {
             let profile_key = profile.keys[i];
             if profile_key.enabled && !alt_pressed {
-                keys |= (unsafe { *ui.input.keyboard_state.offset(profile_key.id as isize) }
-                    as u32)
-                    << i;
+                keys |= (unsafe { *keyboard_state.offset(profile_key.id as isize) } as u32) << i;
             }
         }
 
@@ -542,7 +560,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize, vi_counter: u64) -> InputData {
     let mut y: f64 = 0.0;
 
     if profile_name != "default" || channel == 0 {
-        (x, y) = set_axis_from_keys(profile, ui.input.keyboard_state);
+        (x, y) = set_axis_from_keys(profile, keyboard_state);
     }
 
     if !controller.is_null() {
@@ -570,8 +588,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize, vi_counter: u64) -> InputData {
         let key = profile.keys[HOTKEY];
         InputData {
             data: keys,
-            pak_change_pressed: key.enabled
-                && unsafe { *ui.input.keyboard_state.offset(key.id as isize) },
+            pak_change_pressed: key.enabled && unsafe { *keyboard_state.offset(key.id as isize) },
         }
     }
 }
@@ -1171,11 +1188,10 @@ fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
 pub fn init(ui: &mut ui::Ui) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
 
-    ui.input.keyboard_state =
-        unsafe { sdl3_sys::keyboard::SDL_GetKeyboardState(std::ptr::null_mut()) };
-    if ui.input.keyboard_state.is_null() {
-        panic!("Could not get keyboard state");
-    }
+    ui.input.keyboard_state.store(
+        unsafe { sdl3_sys::keyboard::SDL_GetKeyboardState(std::ptr::null_mut()) } as *mut bool,
+        std::sync::atomic::Ordering::Relaxed,
+    );
 
     for i in 0..4 {
         if let Some(controller_assignment) = &ui.config.input.controller_assignment[i]
@@ -1231,7 +1247,9 @@ pub fn init(ui: &mut ui::Ui) {
                     if gamepad.is_null() {
                         eprintln!("could not connect gamepad: {}", u32::from(joystick_id))
                     } else {
-                        ui.input.controllers[i].game_controller = gamepad;
+                        ui.input.controllers[i]
+                            .game_controller
+                            .store(gamepad, std::sync::atomic::Ordering::Relaxed);
                         ui.input.controllers[i].guid =
                             unsafe { sdl3_sys::gamepad::SDL_GetGamepadGUIDForID(joystick_id) };
                         let properties =
@@ -1252,7 +1270,9 @@ pub fn init(ui: &mut ui::Ui) {
                     if joystick.is_null() {
                         eprintln!("could not connect joystick: {}", u32::from(joystick_id))
                     } else {
-                        ui.input.controllers[i].joystick = joystick;
+                        ui.input.controllers[i]
+                            .joystick
+                            .store(joystick, std::sync::atomic::Ordering::Relaxed);
                         ui.input.controllers[i].guid =
                             unsafe { sdl3_sys::joystick::SDL_GetJoystickGUIDForID(joystick_id) };
                         let properties =
@@ -1278,13 +1298,24 @@ pub fn init(ui: &mut ui::Ui) {
 
 pub fn close(ui: &mut ui::Ui) {
     for controller in ui.input.controllers.iter_mut() {
-        if !controller.joystick.is_null() {
-            unsafe { sdl3_sys::joystick::SDL_CloseJoystick(controller.joystick) }
-            controller.joystick = std::ptr::null_mut();
+        let joystick = controller
+            .joystick
+            .load(std::sync::atomic::Ordering::Relaxed);
+        let game_controller = controller
+            .game_controller
+            .load(std::sync::atomic::Ordering::Relaxed);
+
+        if !joystick.is_null() {
+            unsafe { sdl3_sys::joystick::SDL_CloseJoystick(joystick) }
+            controller
+                .joystick
+                .store(std::ptr::null_mut(), std::sync::atomic::Ordering::Relaxed);
         }
-        if !controller.game_controller.is_null() {
-            unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller.game_controller) }
-            controller.game_controller = std::ptr::null_mut();
+        if !game_controller.is_null() {
+            unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(game_controller) }
+            controller
+                .game_controller
+                .store(std::ptr::null_mut(), std::sync::atomic::Ordering::Relaxed);
         }
     }
 }

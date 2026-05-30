@@ -36,12 +36,12 @@ pub struct Dirs {
 }
 
 pub struct Audio {
-    pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
+    pub audio_stream: std::sync::atomic::AtomicPtr<sdl3_sys::audio::SDL_AudioStream>,
     pub gain: f32,
 }
 
 pub struct Input {
-    pub keyboard_state: *const bool,
+    pub keyboard_state: std::sync::atomic::AtomicPtr<bool>,
     pub last_polled: u64,
     pub controllers: [input::Controllers; 4],
 }
@@ -54,7 +54,7 @@ pub struct Storage {
 }
 
 pub struct Video {
-    pub window: *mut sdl3_sys::video::SDL_Window,
+    pub window: std::sync::atomic::AtomicPtr<sdl3_sys::video::SDL_Window>,
     pub fullscreen: bool,
     pub fps_tx: tokio::sync::mpsc::Sender<bool>,
     pub fps_rx: Option<tokio::sync::mpsc::Receiver<bool>>,
@@ -174,35 +174,35 @@ impl Ui {
                 last_polled: 0,
                 controllers: [
                     input::Controllers {
-                        game_controller: std::ptr::null_mut(),
-                        joystick: std::ptr::null_mut(),
+                        game_controller: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
+                        joystick: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
                         rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
                     },
                     input::Controllers {
-                        game_controller: std::ptr::null_mut(),
-                        joystick: std::ptr::null_mut(),
+                        game_controller: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
+                        joystick: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
                         rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
                     },
                     input::Controllers {
-                        game_controller: std::ptr::null_mut(),
-                        joystick: std::ptr::null_mut(),
+                        game_controller: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
+                        joystick: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
                         rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
                     },
                     input::Controllers {
-                        game_controller: std::ptr::null_mut(),
-                        joystick: std::ptr::null_mut(),
+                        game_controller: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
+                        joystick: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
                         rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
                     },
                 ],
-                keyboard_state: std::ptr::null_mut(),
+                keyboard_state: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
             },
             storage: Storage {
                 save_state_slot: 0,
@@ -248,11 +248,11 @@ impl Ui {
             game_id: String::new(),
             game_hash: String::new(),
             audio: Audio {
-                audio_stream: std::ptr::null_mut(),
+                audio_stream: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
                 gain: 1.0,
             },
             video: Video {
-                window: std::ptr::null_mut(),
+                window: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),
                 fullscreen: false,
                 fps_tx,
                 fps_rx: Some(fps_rx),

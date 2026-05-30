@@ -70,10 +70,10 @@ pub fn init(device: &mut device::Device) {
         };
         window_height = NTSC_HEIGHT * scale;
     }
-    device.ui.video.window = unsafe {
+    let window = unsafe {
         sdl3_sys::video::SDL_CreateWindow(window_title.as_ptr(), window_width, window_height, flags)
     };
-    if device.ui.video.window.is_null() {
+    if window.is_null() {
         let err = sdl3_sys::error::SDL_GetError();
         panic!(
             "Could not create window: {}",
@@ -84,7 +84,7 @@ pub fn init(device: &mut device::Device) {
             }
         );
     }
-    if !unsafe { sdl3_sys::video::SDL_ShowWindow(device.ui.video.window) } {
+    if !unsafe { sdl3_sys::video::SDL_ShowWindow(window) } {
         let err = sdl3_sys::error::SDL_GetError();
         panic!(
             "Could not show window: {}",
@@ -104,13 +104,18 @@ pub fn init(device: &mut device::Device) {
     unsafe {
         let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
         rdp_init(
-            device.ui.video.window as *mut std::ffi::c_void,
+            window as *mut std::ffi::c_void,
             gfx_info,
             font_bytes.as_ptr() as *const std::ffi::c_void,
             font_bytes.len(),
             device.ui.storage.save_state_slot,
         )
     }
+    device
+        .ui
+        .video
+        .window
+        .store(window, std::sync::atomic::Ordering::Relaxed);
 
     fps_counter(&mut device.ui);
 }
@@ -145,7 +150,9 @@ fn fps_counter(ui: &mut ui::Ui) {
 pub fn close(ui: &ui::Ui) {
     unsafe {
         rdp_close();
-        sdl3_sys::video::SDL_DestroyWindow(ui.video.window);
+        sdl3_sys::video::SDL_DestroyWindow(
+            ui.video.window.load(std::sync::atomic::Ordering::Relaxed),
+        );
     }
 }
 

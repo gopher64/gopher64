@@ -35,7 +35,11 @@ pub fn update_freq(device: &mut device::Device) {
     };
     unsafe {
         sdl3_sys::audio::SDL_SetAudioStreamFormat(
-            device.ui.audio.audio_stream,
+            device
+                .ui
+                .audio
+                .audio_stream
+                .load(std::sync::atomic::Ordering::Relaxed),
             &game_audio_spec,
             std::ptr::null(),
         );
@@ -55,7 +59,7 @@ pub fn init_game_audio(device: &mut device::Device) {
         channels: 2,
     };
 
-    device.ui.audio.audio_stream = unsafe {
+    let stream = unsafe {
         sdl3_sys::audio::SDL_OpenAudioDeviceStream(
             sdl3_sys::audio::SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
             &game_audio_spec,
@@ -63,19 +67,26 @@ pub fn init_game_audio(device: &mut device::Device) {
             std::ptr::null_mut(),
         )
     };
-    if device.ui.audio.audio_stream.is_null() {
+    if stream.is_null() {
         panic!("Could not create audio stream");
     }
     if !unsafe {
-        sdl3_sys::audio::SDL_SetAudioStreamGain(device.ui.audio.audio_stream, device.ui.audio.gain)
+        sdl3_sys::audio::SDL_SetAudioStreamGain(stream, device.ui.audio.gain)
             && sdl3_sys::audio::SDL_SetAudioStreamGetCallback(
-                device.ui.audio.audio_stream,
+                stream,
                 Some(audio_callback),
                 std::ptr::null_mut(),
             )
     } {
         panic!("Could not initialize audio stream");
     }
+
+    device
+        .ui
+        .audio
+        .audio_stream
+        .store(stream, std::sync::atomic::Ordering::Relaxed);
+
     if device.ai.regs[device::ai::AI_STATUS_REG] & device::ai::AI_STATUS_BUSY != 0 {
         resume_game_audio(&mut device.ui);
     } else {
@@ -89,32 +100,50 @@ pub fn close(ui: &mut ui::Ui) {
 
 pub fn resume_game_audio(ui: &mut ui::Ui) {
     unsafe {
-        sdl3_sys::audio::SDL_ResumeAudioStreamDevice(ui.audio.audio_stream);
+        sdl3_sys::audio::SDL_ResumeAudioStreamDevice(
+            ui.audio
+                .audio_stream
+                .load(std::sync::atomic::Ordering::Relaxed),
+        );
     }
 }
 
 pub fn pause_game_audio(ui: &mut ui::Ui) {
     unsafe {
-        sdl3_sys::audio::SDL_PauseAudioStreamDevice(ui.audio.audio_stream);
+        sdl3_sys::audio::SDL_PauseAudioStreamDevice(
+            ui.audio
+                .audio_stream
+                .load(std::sync::atomic::Ordering::Relaxed),
+        );
     }
 }
 
 pub fn close_game_audio(ui: &mut ui::Ui) {
+    let stream = ui
+        .audio
+        .audio_stream
+        .load(std::sync::atomic::Ordering::Relaxed);
     unsafe {
-        if !ui.audio.audio_stream.is_null() {
-            sdl3_sys::audio::SDL_DestroyAudioStream(ui.audio.audio_stream);
-            ui.audio.audio_stream = std::ptr::null_mut();
+        if !stream.is_null() {
+            sdl3_sys::audio::SDL_DestroyAudioStream(stream);
+            ui.audio
+                .audio_stream
+                .store(std::ptr::null_mut(), std::sync::atomic::Ordering::Relaxed);
         }
     }
 }
 
 pub fn lower_audio_volume(ui: &mut ui::Ui) {
+    let stream = ui
+        .audio
+        .audio_stream
+        .load(std::sync::atomic::Ordering::Relaxed);
     unsafe {
-        ui.audio.gain = sdl3_sys::audio::SDL_GetAudioStreamGain(ui.audio.audio_stream) - 0.05;
+        ui.audio.gain = sdl3_sys::audio::SDL_GetAudioStreamGain(stream) - 0.05;
         if ui.audio.gain < 0.0 {
             ui.audio.gain = 0.0;
         }
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
+        sdl3_sys::audio::SDL_SetAudioStreamGain(stream, ui.audio.gain);
     }
     ui::video::onscreen_message(
         &format!("Audio volume: {:.0}%", ui.audio.gain * 100.0),
@@ -123,12 +152,16 @@ pub fn lower_audio_volume(ui: &mut ui::Ui) {
 }
 
 pub fn raise_audio_volume(ui: &mut ui::Ui) {
+    let stream = ui
+        .audio
+        .audio_stream
+        .load(std::sync::atomic::Ordering::Relaxed);
     unsafe {
-        ui.audio.gain = sdl3_sys::audio::SDL_GetAudioStreamGain(ui.audio.audio_stream) + 0.05;
+        ui.audio.gain = sdl3_sys::audio::SDL_GetAudioStreamGain(stream) + 0.05;
         if ui.audio.gain > 2.0 {
             ui.audio.gain = 2.0;
         }
-        sdl3_sys::audio::SDL_SetAudioStreamGain(ui.audio.audio_stream, ui.audio.gain);
+        sdl3_sys::audio::SDL_SetAudioStreamGain(stream, ui.audio.gain);
     }
     ui::video::onscreen_message(
         &format!("Audio volume: {:.0}%", ui.audio.gain * 100.0),
@@ -170,9 +203,11 @@ fn adjust_audio_frequency(audio_stream: *mut sdl3_sys::audio::SDL_AudioStream, f
 }
 
 pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
-    if device.ui.audio.audio_stream.is_null() {
-        return;
-    }
+    let stream = device
+        .ui
+        .audio
+        .audio_stream
+        .load(std::sync::atomic::Ordering::Relaxed);
 
     let mut primary_buffer: Vec<i16> = vec![0; length as usize / 2];
     let mut i = 0;
@@ -187,19 +222,18 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
         i += 2;
     }
 
-    let audio_queued =
-        unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(device.ui.audio.audio_stream) } as f64;
+    let audio_queued = unsafe { sdl3_sys::audio::SDL_GetAudioStreamQueued(stream) } as f64;
     let samples_per_frame = device.ai.freq as f64 * device.vi.frame_time * 4.0;
     let max_latency = samples_per_frame * 8.0;
     if audio_queued < max_latency {
         unsafe {
             sdl3_sys::audio::SDL_PutAudioStreamData(
-                device.ui.audio.audio_stream,
+                stream,
                 primary_buffer.as_ptr() as *const std::ffi::c_void,
                 primary_buffer.len() as i32 * 2,
             )
         };
     } else if device.vi.enable_speed_limiter {
-        adjust_audio_frequency(device.ui.audio.audio_stream, 0.0005);
+        adjust_audio_frequency(stream, 0.0005);
     }
 }
