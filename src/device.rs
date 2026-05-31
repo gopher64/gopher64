@@ -16,7 +16,7 @@ const N64_EXTENSIONS_UNCOMPRESSED: [&str; 8] =
 use rand::{Rng, SeedableRng};
 
 use crate::{cheats, netplay, retroachievements, savestates, ui};
-use std::{collections::HashMap, io::Read};
+use std::io::Read;
 
 pub mod ai;
 pub mod cache;
@@ -310,20 +310,8 @@ impl Device {
                     is_event: false,
                     instrs: [cop0::reserved; 32],
                     instrs2: [cop0::reserved; 32],
-                    tlb_lut_w: vec![
-                        tlb::TlbLut {
-                            address: 0,
-                            cached: false,
-                        };
-                        0x100000
-                    ],
-                    tlb_lut_r: vec![
-                        tlb::TlbLut {
-                            address: 0,
-                            cached: false,
-                        };
-                        0x100000
-                    ],
+                    tlb_lut_w: vec![],
+                    tlb_lut_r: vec![],
                     tlb_entries: [tlb::TlbEntry {
                         mask: 0,
                         vpn2: 0,
@@ -558,7 +546,7 @@ impl Device {
                 word_buffer: [0; 40],
                 words: Vec::new(),
                 talking: false,
-                word_mappings: HashMap::new(),
+                word_mappings: rustc_hash::FxHashMap::default(),
             },
             rng: set_rng(),
             transferpaks: [

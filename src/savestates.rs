@@ -97,12 +97,13 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool) {
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
 
     let device_clone = device.clone_without_ui();
+    let saves_clone = device.ui.storage.saves.clone();
     let save_state_slot = device.ui.storage.save_state_slot;
     let rewind_pool = device.savestate.rewind_pool.clone();
     tokio::spawn(async move {
         let mut error = false;
         if let Ok(device_data) = postcard::to_stdvec(&device_clone)
-            && let Ok(saves_data) = postcard::to_stdvec(&device_clone.ui.storage.saves)
+            && let Ok(saves_data) = postcard::to_stdvec(&saves_clone)
         {
             if rewind {
                 if let Ok(mut pool) = rewind_pool.lock() {
@@ -244,6 +245,11 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool) {
                 device.memory.icache[line_index].instruction[i] =
                     device::cpu::decode_opcode(device, device.memory.icache[line_index].words[i]);
             }
+        }
+
+        device::tlb::init(device);
+        for i in 0..32 {
+            device::tlb::tlb_map(device, i);
         }
 
         device::pif::connect_pif_channels(device);

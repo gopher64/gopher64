@@ -2232,6 +2232,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rfd",
+ "rustc-hash 2.1.2",
  "sdl3-image-sys",
  "sdl3-src",
  "sdl3-sys",

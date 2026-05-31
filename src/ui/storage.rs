@@ -26,19 +26,19 @@ pub struct Paths {
 
 // the bool indicates whether the save has been written to
 // if that is the case, it will be flushed to the disk when the program closes
-#[derive(Default, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Save {
     pub data: Vec<u8>,
     pub write_pending: bool,
 }
 
-#[derive(Default, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct RomSave {
-    pub data: std::collections::HashMap<u32, u8>,
+    pub data: rustc_hash::FxHashMap<u32, u8>,
     pub write_pending: bool,
 }
 
-#[derive(Default, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Saves {
     pub eeprom: Save,
     pub sram: Save,

@@ -100,7 +100,9 @@ pub struct Cop0 {
     pub instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip, default = "savestates::default_instructions")]
     pub instrs2: [fn(&mut device::Device, u32); 32],
+    #[serde(skip)]
     pub tlb_lut_r: Vec<device::tlb::TlbLut>,
+    #[serde(skip)]
     pub tlb_lut_w: Vec<device::tlb::TlbLut>,
     pub tlb_entries: [device::tlb::TlbEntry; 32],
     pub is_event: bool,
@@ -369,6 +371,7 @@ pub fn init(device: &mut device::Device) {
     ];
 
     map_instructions(device);
+    device::tlb::init(device);
 
     // taken from VR4300 manual
     device.cpu.cop0.regs[COP0_RANDOM_REG] = 0b00000000000000000000000000011111;

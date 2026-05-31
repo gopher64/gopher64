@@ -38,7 +38,7 @@ pub struct PlayerData {
     lag: u8,
     count: u32,
     pub reg_id: u32,
-    input_events: std::collections::HashMap<u32, InputEvent>,
+    input_events: rustc_hash::FxHashMap<u32, InputEvent>,
 }
 
 struct InputEvent {
@@ -310,25 +310,25 @@ pub fn init(peer_addr: std::net::SocketAddr, player_number: u8) -> Netplay {
                 lag: 0,
                 count: 0,
                 reg_id: reg_id[0],
-                input_events: std::collections::HashMap::new(),
+                input_events: rustc_hash::FxHashMap::default(),
             },
             PlayerData {
                 lag: 0,
                 count: 0,
                 reg_id: reg_id[1],
-                input_events: std::collections::HashMap::new(),
+                input_events: rustc_hash::FxHashMap::default(),
             },
             PlayerData {
                 lag: 0,
                 count: 0,
                 reg_id: reg_id[2],
-                input_events: std::collections::HashMap::new(),
+                input_events: rustc_hash::FxHashMap::default(),
             },
             PlayerData {
                 lag: 0,
                 count: 0,
                 reg_id: reg_id[3],
-                input_events: std::collections::HashMap::new(),
+                input_events: rustc_hash::FxHashMap::default(),
             },
         ],
     }
