@@ -310,8 +310,20 @@ impl Device {
                     is_event: false,
                     instrs: [cop0::reserved; 32],
                     instrs2: [cop0::reserved; 32],
-                    tlb_lut_w: rustc_hash::FxHashMap::default(),
-                    tlb_lut_r: rustc_hash::FxHashMap::default(),
+                    tlb_lut_w: vec![
+                        tlb::TlbLut {
+                            address: 0,
+                            cached: false,
+                        };
+                        0x100000
+                    ],
+                    tlb_lut_r: vec![
+                        tlb::TlbLut {
+                            address: 0,
+                            cached: false,
+                        };
+                        0x100000
+                    ],
                     tlb_entries: [tlb::TlbEntry {
                         mask: 0,
                         vpn2: 0,

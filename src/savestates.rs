@@ -246,6 +246,24 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool) {
             }
         }
 
+        device.cpu.cop0.tlb_lut_r.resize(
+            0x100000,
+            device::tlb::TlbLut {
+                address: 0,
+                cached: false,
+            },
+        );
+        device.cpu.cop0.tlb_lut_w.resize(
+            0x100000,
+            device::tlb::TlbLut {
+                address: 0,
+                cached: false,
+            },
+        );
+        for i in 0..32 {
+            device::tlb::tlb_map(device, i);
+        }
+
         device::pif::connect_pif_channels(device);
         for i in 0..4 {
             if let Some(handler) = device.pif.channels[i].pak_handler {

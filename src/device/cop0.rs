@@ -100,8 +100,10 @@ pub struct Cop0 {
     pub instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip, default = "savestates::default_instructions")]
     pub instrs2: [fn(&mut device::Device, u32); 32],
-    pub tlb_lut_r: rustc_hash::FxHashMap<u64, device::tlb::TlbLut>,
-    pub tlb_lut_w: rustc_hash::FxHashMap<u64, device::tlb::TlbLut>,
+    #[serde(skip)]
+    pub tlb_lut_r: Vec<device::tlb::TlbLut>,
+    #[serde(skip)]
+    pub tlb_lut_w: Vec<device::tlb::TlbLut>,
     pub tlb_entries: [device::tlb::TlbEntry; 32],
     pub is_event: bool,
 }
