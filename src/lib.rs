@@ -93,6 +93,13 @@ pub struct Args {
     pub ra_password: Option<String>,
 }
 
+#[cfg(feature = "gui")]
+fn set_app_id() {
+    if let Err(e) = slint::set_xdg_app_id(ui::APP_ID) {
+        eprintln!("Could not set application ID: {}", e);
+    }
+}
+
 pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
@@ -299,6 +306,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         #[cfg(feature = "gui")]
         {
             let app = ui::gui::AppWindow::new().unwrap();
+            set_app_id();
             ui::gui::app_window(&app, false);
         }
     }
