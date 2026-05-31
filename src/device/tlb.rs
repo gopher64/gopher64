@@ -46,6 +46,7 @@ pub fn init(device: &mut device::Device) {
         },
     );
 }
+
 pub fn read(device: &mut device::Device, index: u64) {
     if index > 31 {
         return;
