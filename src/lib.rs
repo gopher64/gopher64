@@ -137,7 +137,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
             return Err(Error::other("Savestate slot must be between 0 and 9"));
         }
 
-        let mut device = device::Device::new();
+        let mut device = device::Device::new(true);
 
         device.ui.config.recent_roms.retain(|x| *x != game);
         device.ui.config.recent_roms.insert(0, game);

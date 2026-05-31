@@ -255,32 +255,26 @@ pub fn zero_m128i() -> __m128i {
 }
 
 impl Device {
-    pub fn clone_without_ui(&self) -> Device {
-        Device {
-            netplay: None,
-            ui: ui::Ui::default(),
-            byte_swap: self.byte_swap,
-            savestate: self.savestate.clone(),
-            cpu: self.cpu.clone(),
-            pif: self.pif.clone(),
-            cart: self.cart.clone(),
-            memory: self.memory.clone(),
-            rsp: self.rsp.clone(),
-            rdp: self.rdp.clone(),
-            rdram: self.rdram.clone(),
-            mi: self.mi.clone(),
-            pi: self.pi.clone(),
-            vi: self.vi.clone(),
-            ai: self.ai.clone(),
-            si: self.si.clone(),
-            ri: self.ri.clone(),
-            rng: self.rng.clone(),
-            vru: self.vru.clone(),
-            transferpaks: self.transferpaks.clone(),
-            cheats: self.cheats.clone(),
-        }
+    pub fn clone_state(&mut self, device: &Device) {
+        self.cpu.clone_from(&device.cpu);
+        self.pif.clone_from(&device.pif);
+        self.cart.clone_from(&device.cart);
+        self.memory.clone_from(&device.memory);
+        self.rsp.clone_from(&device.rsp);
+        self.rdp.clone_from(&device.rdp);
+        self.rdram.clone_from(&device.rdram);
+        self.mi.clone_from(&device.mi);
+        self.pi.clone_from(&device.pi);
+        self.vi.clone_from(&device.vi);
+        self.ai.clone_from(&device.ai);
+        self.si.clone_from(&device.si);
+        self.ri.clone_from(&device.ri);
+        self.vru.clone_from(&device.vru);
+        self.transferpaks.clone_from(&device.transferpaks);
+        self.cheats.clone_from(&device.cheats);
     }
-    pub fn new() -> Device {
+
+    pub fn new(with_ui: bool) -> Device {
         let mut byte_swap: usize = 0;
         let test: [u8; 4] = [1, 2, 3, 4];
         // if the host computer is little endian, that means the RDRAM will be stored as little endian
@@ -290,7 +284,11 @@ impl Device {
         }
         Device {
             netplay: None,
-            ui: ui::Ui::new(),
+            ui: if with_ui {
+                ui::Ui::new()
+            } else {
+                ui::Ui::default()
+            },
             byte_swap,
             savestate: savestates::Savestate {
                 save_state: false,

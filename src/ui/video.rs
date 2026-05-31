@@ -161,8 +161,8 @@ pub fn state_size() -> usize {
     unsafe { rdp_state_size() }
 }
 
-pub fn save_state(rdp_state: *mut u8) {
-    unsafe { rdp_save_state(rdp_state) }
+pub fn save_state(rdp_state: *mut u8, rewind: bool) {
+    unsafe { rdp_save_state(rdp_state, rewind) }
 }
 
 pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
