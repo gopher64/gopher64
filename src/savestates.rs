@@ -121,12 +121,12 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool) {
     tokio::task::spawn_blocking(move || {
         let mut error = false;
 
-        if let Ok(mut device_clone) = DEVICE_CLONE.lock()
+        if let Ok(device_clone) = DEVICE_CLONE.lock()
             && let Ok(saves_clone) = SAVES_CLONE.lock()
         {
             if rewind {
                 let mut state = device::Device::new(false);
-                std::mem::swap(&mut state, &mut *device_clone);
+                state.clone_state(device_clone.deref());
                 if let Ok(mut pool) = rewind_pool.lock() {
                     pool.push_back(SavestateData {
                         device: state,
