@@ -95,6 +95,19 @@ static SAVES_CLONE: std::sync::LazyLock<std::sync::Mutex<ui::storage::Saves>> =
     std::sync::LazyLock::new(|| std::sync::Mutex::new(ui::storage::Saves::default()));
 
 pub fn create_savestate(device: &mut device::Device, rewind: bool) {
+    if let Ok(mut device_clone) = DEVICE_CLONE.lock()
+        && let Ok(mut saves_clone) = SAVES_CLONE.lock()
+    {
+        device_clone.clone_state(device);
+        saves_clone.clone_from(&device.ui.storage.saves);
+    } else {
+        ui::video::onscreen_message(
+            &format!("Failed to create savestate"),
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+        );
+        return;
+    }
+
     let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
     ui::video::save_state(rdp_state.as_mut_ptr(), rewind);
 
@@ -102,24 +115,18 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool) {
     retroachievements::save_state(ra_state.as_mut_ptr(), ra_state.len());
 
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
-
-    if let Ok(mut device_clone) = DEVICE_CLONE.lock() {
-        device_clone.clone_state(device);
-    }
-    if let Ok(mut saves_clone) = SAVES_CLONE.lock() {
-        saves_clone.clone_from(&device.ui.storage.saves);
-    }
     let save_state_slot = device.ui.storage.save_state_slot;
     let rewind_pool = device.savestate.rewind_pool.clone();
+
     tokio::task::spawn_blocking(move || {
         let mut error = false;
 
-        if let Ok(device_clone) = DEVICE_CLONE.lock()
+        if let Ok(mut device_clone) = DEVICE_CLONE.lock()
             && let Ok(saves_clone) = SAVES_CLONE.lock()
         {
             if rewind {
                 let mut state = device::Device::new(false);
-                state.clone_state(&device_clone);
+                std::mem::swap(&mut state, &mut *device_clone);
                 if let Ok(mut pool) = rewind_pool.lock() {
                     pool.push_back(SavestateData {
                         device: state,
