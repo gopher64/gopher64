@@ -247,11 +247,6 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool) {
             }
         }
 
-        device::tlb::init(device);
-        for i in 0..32 {
-            device::tlb::tlb_map(device, i);
-        }
-
         device::pif::connect_pif_channels(device);
         for i in 0..4 {
             if let Some(handler) = device.pif.channels[i].pak_handler {
