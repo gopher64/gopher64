@@ -703,7 +703,7 @@ void rdp_check_framebuffers(uint32_t address, uint32_t length) {
 size_t rdp_state_size() { return sizeof(RDP_DEVICE); }
 
 void rdp_save_state(uint8_t *state, bool rewind) {
-  if (!rewind)
+  if (!rewind) // speed hack for rewind
     processor->wait_for_timeline(processor->signal_timeline());
   memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
