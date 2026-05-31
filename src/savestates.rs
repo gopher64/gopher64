@@ -95,6 +95,12 @@ static SAVES_CLONE: std::sync::LazyLock<std::sync::Mutex<ui::storage::Saves>> =
     std::sync::LazyLock::new(|| std::sync::Mutex::new(ui::storage::Saves::default()));
 
 pub fn create_savestate(device: &mut device::Device, rewind: bool) {
+    let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
+    ui::video::save_state(rdp_state.as_mut_ptr(), rewind);
+
+    let mut ra_state: Vec<u8> = vec![0; retroachievements::state_size()];
+    retroachievements::save_state(ra_state.as_mut_ptr(), ra_state.len());
+
     if let Ok(mut device_clone) = DEVICE_CLONE.lock()
         && let Ok(mut saves_clone) = SAVES_CLONE.lock()
     {
@@ -107,12 +113,6 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool) {
         );
         return;
     }
-
-    let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
-    ui::video::save_state(rdp_state.as_mut_ptr(), rewind);
-
-    let mut ra_state: Vec<u8> = vec![0; retroachievements::state_size()];
-    retroachievements::save_state(ra_state.as_mut_ptr(), ra_state.len());
 
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
     let save_state_slot = device.ui.storage.save_state_slot;
