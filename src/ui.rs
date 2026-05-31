@@ -17,6 +17,8 @@ pub mod video;
 #[cfg(all(feature = "gui", not(target_os = "android")))]
 pub mod vru;
 
+pub const APP_ID: &str = "io.github.gopher64.gopher64";
+
 pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
     reqwest::Client::builder()
         .user_agent(format!(
@@ -113,6 +115,8 @@ pub fn sdl_hints() {
             sdl3_sys::everything::SDL_HINT_ANDROID_ALLOW_RECREATE_ACTIVITY,
             hint.as_ptr(),
         );
+        let app_id = std::ffi::CString::new(APP_ID).unwrap();
+        sdl3_sys::everything::SDL_SetHint(sdl3_sys::everything::SDL_HINT_APP_ID, app_id.as_ptr());
     }
 }
 
