@@ -708,10 +708,7 @@ void rdp_idle() {
   sync_signal = 0;
 }
 
-void rdp_save_state(uint8_t *state, bool rewind) {
-  if (!rewind) { // speed hack for rewind
-    rdp_idle();
-  }
+void rdp_save_state(uint8_t *state) {
   memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
 
