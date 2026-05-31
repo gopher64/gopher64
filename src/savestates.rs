@@ -228,6 +228,8 @@ fn load_savestate(device: &mut device::Device, rewind: bool) {
     if let Some(mut state) = state_data
         && device.rdram.size == state.device.rdram.size
     {
+        ui::video::idle(); // to flush the RDP so it doesn't overwrite the RDRAM
+
         device.savestate.last_rewind_saved = state.device.vi.elapsed_time;
 
         std::mem::swap(&mut device.ui.storage.saves, &mut state.saves);

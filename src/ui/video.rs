@@ -165,6 +165,10 @@ pub fn save_state(rdp_state: *mut u8, rewind: bool) {
     unsafe { rdp_save_state(rdp_state, rewind) }
 }
 
+pub fn idle() {
+    unsafe { rdp_idle() }
+}
+
 pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
     let gfx_info = build_gfx_info(device);
     unsafe {
