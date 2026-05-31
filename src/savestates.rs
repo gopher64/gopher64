@@ -102,7 +102,7 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool) {
         saves_clone.clone_from(&device.ui.storage.saves);
     } else {
         ui::video::onscreen_message(
-            &format!("Failed to create savestate"),
+            "Failed to create savestate",
             ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
         );
         return;
