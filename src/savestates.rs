@@ -97,12 +97,13 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool) {
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
 
     let device_clone = device.clone_without_ui();
+    let saves_clone = device.ui.storage.saves.clone();
     let save_state_slot = device.ui.storage.save_state_slot;
     let rewind_pool = device.savestate.rewind_pool.clone();
     tokio::spawn(async move {
         let mut error = false;
         if let Ok(device_data) = postcard::to_stdvec(&device_clone)
-            && let Ok(saves_data) = postcard::to_stdvec(&device_clone.ui.storage.saves)
+            && let Ok(saves_data) = postcard::to_stdvec(&saves_clone)
         {
             if rewind {
                 if let Ok(mut pool) = rewind_pool.lock() {
