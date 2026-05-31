@@ -5,6 +5,7 @@ use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
+use std::ops::Deref;
 
 struct M128iArrayVisitor<const N: usize>;
 
@@ -81,35 +82,55 @@ pub struct Savestate {
 }
 
 pub struct SavestateData {
-    device_data: Vec<u8>,
-    saves_data: Vec<u8>,
+    device: device::Device,
+    saves: ui::storage::Saves,
     rdp_state: Vec<u8>,
     ra_state: Vec<u8>,
 }
 
+static DEVICE_CLONE: std::sync::LazyLock<std::sync::Mutex<device::Device>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(device::Device::new(false)));
+
+static SAVES_CLONE: std::sync::LazyLock<std::sync::Mutex<ui::storage::Saves>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(ui::storage::Saves::default()));
+
 pub fn create_savestate(device: &mut device::Device, rewind: bool) {
+    if let Ok(mut device_clone) = DEVICE_CLONE.lock()
+        && let Ok(mut saves_clone) = SAVES_CLONE.lock()
+    {
+        device_clone.clone_state(device);
+        saves_clone.clone_from(&device.ui.storage.saves);
+    } else {
+        ui::video::onscreen_message(
+            "Failed to create savestate",
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+        );
+        return;
+    }
+
     let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
-    ui::video::save_state(rdp_state.as_mut_ptr());
+    ui::video::save_state(rdp_state.as_mut_ptr(), rewind);
 
     let mut ra_state: Vec<u8> = vec![0; retroachievements::state_size()];
     retroachievements::save_state(ra_state.as_mut_ptr(), ra_state.len());
 
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
-
-    let device_clone = device.clone_without_ui();
-    let saves_clone = device.ui.storage.saves.clone();
     let save_state_slot = device.ui.storage.save_state_slot;
     let rewind_pool = device.savestate.rewind_pool.clone();
-    tokio::spawn(async move {
+
+    tokio::task::spawn_blocking(move || {
         let mut error = false;
-        if let Ok(device_data) = postcard::to_stdvec(&device_clone)
-            && let Ok(saves_data) = postcard::to_stdvec(&saves_clone)
+
+        if let Ok(mut device_clone) = DEVICE_CLONE.lock()
+            && let Ok(saves_clone) = SAVES_CLONE.lock()
         {
             if rewind {
+                let mut state = device::Device::new(false);
+                std::mem::swap(&mut state, &mut *device_clone);
                 if let Ok(mut pool) = rewind_pool.lock() {
                     pool.push_back(SavestateData {
-                        device_data,
-                        saves_data,
+                        device: state,
+                        saves: saves_clone.clone(),
                         rdp_state,
                         ra_state,
                     });
@@ -118,13 +139,16 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool) {
                     }
                 }
             } else {
-                if let Ok(compressed_file) = ui::storage::compress_file(&[
-                    (&device_data, "device"),
-                    (&saves_data, "saves"),
-                    (&rdp_state, "rdp_state"),
-                    (&ra_state, "ra_state"),
-                ]) {
-                    if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
+                if let Ok(device_data) = postcard::to_stdvec(device_clone.deref())
+                    && let Ok(saves_data) = postcard::to_stdvec(saves_clone.deref())
+                    && let Ok(compressed_file) = ui::storage::compress_file(&[
+                        (&device_data, "device"),
+                        (&saves_data, "saves"),
+                        (&rdp_state, "rdp_state"),
+                        (&ra_state, "ra_state"),
+                    ])
+                {
+                    if let Err(e) = std::fs::write(save_path, compressed_file) {
                         eprintln!("Error writing savestate: {}", e);
                         error = true;
                     }
@@ -136,6 +160,7 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool) {
         } else {
             error = true;
         }
+
         if error {
             ui::video::onscreen_message(
                 &format!("Failed to create savestate in slot {}", save_state_slot),
@@ -171,55 +196,54 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool) {
         && let Ok(saves_data) = ui::storage::decompress_file(savestate, "saves")
         && let Ok(rdp_state) = ui::storage::decompress_file(savestate, "rdp_state")
         && let Ok(ra_state) = ui::storage::decompress_file(savestate, "ra_state")
+        && let Ok(state) = postcard::from_bytes::<device::Device>(&device_data)
+        && let Ok(saves) = postcard::from_bytes(&saves_data)
     {
         Some(SavestateData {
-            device_data,
-            saves_data,
+            device: state,
+            saves,
             rdp_state,
             ra_state,
         })
     } else {
         None
     };
-    if let Some(state_data) = state_data
-        && let Ok(mut state) = postcard::from_bytes::<device::Device>(&state_data.device_data)
-        && let Ok(saves) = postcard::from_bytes(&state_data.saves_data)
-        && device.rdram.size == state.rdram.size
+
+    if let Some(mut state) = state_data
+        && device.rdram.size == state.device.rdram.size
     {
-        device.savestate.last_rewind_saved = state.vi.elapsed_time;
+        device.savestate.last_rewind_saved = state.device.vi.elapsed_time;
 
-        device.ui.storage.saves = saves;
+        std::mem::swap(&mut device.ui.storage.saves, &mut state.saves);
 
-        std::mem::swap(&mut device.cpu, &mut state.cpu);
-        std::mem::swap(&mut device.pif, &mut state.pif);
+        std::mem::swap(&mut device.cpu, &mut state.device.cpu);
+        std::mem::swap(&mut device.pif, &mut state.device.pif);
 
-        let rom = device.cart.rom.clone();
-        std::mem::swap(&mut device.cart, &mut state.cart);
-        device.cart.rom = rom;
+        std::mem::swap(&mut device.cart, &mut state.device.cart);
+        std::mem::swap(&mut device.cart.rom, &mut state.device.cart.rom); // ROM is not included in the savestate
 
-        std::mem::swap(&mut device.memory, &mut state.memory);
-        std::mem::swap(&mut device.rsp, &mut state.rsp);
-        std::mem::swap(&mut device.rdp, &mut state.rdp);
+        std::mem::swap(&mut device.memory, &mut state.device.memory);
+        std::mem::swap(&mut device.rsp, &mut state.device.rsp);
+        std::mem::swap(&mut device.rdp, &mut state.device.rdp);
 
-        device.rdram.mem.clone_from(&state.rdram.mem);
-        device.rdram.regs = state.rdram.regs;
+        device.rdram.mem.clone_from(&state.device.rdram.mem); // RDRAM address should not change
+        std::mem::swap(&mut device.rdram.regs, &mut state.device.rdram.regs);
 
-        std::mem::swap(&mut device.mi, &mut state.mi);
-        std::mem::swap(&mut device.pi, &mut state.pi);
-        std::mem::swap(&mut device.vi, &mut state.vi);
-        std::mem::swap(&mut device.ai, &mut state.ai);
-        std::mem::swap(&mut device.si, &mut state.si);
-        std::mem::swap(&mut device.ri, &mut state.ri);
-        std::mem::swap(&mut device.vru, &mut state.vru);
-        std::mem::swap(&mut device.cheats, &mut state.cheats);
+        std::mem::swap(&mut device.mi, &mut state.device.mi);
+        std::mem::swap(&mut device.pi, &mut state.device.pi);
+        std::mem::swap(&mut device.vi, &mut state.device.vi);
+        std::mem::swap(&mut device.ai, &mut state.device.ai);
+        std::mem::swap(&mut device.si, &mut state.device.si);
+        std::mem::swap(&mut device.ri, &mut state.device.ri);
+        std::mem::swap(&mut device.vru, &mut state.device.vru);
+        std::mem::swap(&mut device.cheats, &mut state.device.cheats);
 
-        let mut tpak_rom = [vec![], vec![], vec![], vec![]];
-        for (i, item) in tpak_rom.iter_mut().enumerate() {
-            *item = device.transferpaks[i].cart.rom.clone();
-        }
-        std::mem::swap(&mut device.transferpaks, &mut state.transferpaks);
-        for (i, item) in tpak_rom.iter().enumerate() {
-            device.transferpaks[i].cart.rom = item.clone();
+        std::mem::swap(&mut device.transferpaks, &mut state.device.transferpaks);
+        for (i, item) in device.transferpaks.iter_mut().enumerate() {
+            std::mem::swap(
+                &mut item.cart.rom,
+                &mut state.device.transferpaks[i].cart.rom,
+            ); // ROM is not included in the savestate
         }
 
         device::memory::init(device);
@@ -276,11 +300,11 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool) {
         }
 
         ui::audio::update_freq(device);
-        ui::video::load_state(device, state_data.rdp_state.as_ptr());
+        ui::video::load_state(device, state.rdp_state.as_ptr());
 
         retroachievements::set_rdram(device.rdram.mem.as_ptr(), device.rdram.size as usize);
-        if !state_data.ra_state.is_empty() {
-            retroachievements::load_state(state_data.ra_state.as_ptr(), state_data.ra_state.len());
+        if !state.ra_state.is_empty() {
+            retroachievements::load_state(state.ra_state.as_ptr(), state.ra_state.len());
         } else {
             retroachievements::load_state(std::ptr::null(), 0);
         }
