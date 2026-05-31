@@ -30,6 +30,22 @@ pub struct TlbEntry {
     pub phys_odd: u64,
 }
 
+pub fn init(device: &mut device::Device) {
+    device.cpu.cop0.tlb_lut_r.resize(
+        0x100000,
+        device::tlb::TlbLut {
+            address: 0,
+            cached: false,
+        },
+    );
+    device.cpu.cop0.tlb_lut_w.resize(
+        0x100000,
+        device::tlb::TlbLut {
+            address: 0,
+            cached: false,
+        },
+    );
+}
 pub fn read(device: &mut device::Device, index: u64) {
     if index > 31 {
         return;

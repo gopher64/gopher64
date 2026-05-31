@@ -371,6 +371,7 @@ pub fn init(device: &mut device::Device) {
     ];
 
     map_instructions(device);
+    device::tlb::init(device);
 
     // taken from VR4300 manual
     device.cpu.cop0.regs[COP0_RANDOM_REG] = 0b00000000000000000000000000011111;

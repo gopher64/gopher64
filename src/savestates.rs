@@ -246,20 +246,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool) {
             }
         }
 
-        device.cpu.cop0.tlb_lut_r.resize(
-            0x100000,
-            device::tlb::TlbLut {
-                address: 0,
-                cached: false,
-            },
-        );
-        device.cpu.cop0.tlb_lut_w.resize(
-            0x100000,
-            device::tlb::TlbLut {
-                address: 0,
-                cached: false,
-            },
-        );
+        device::tlb::init(device);
         for i in 0..32 {
             device::tlb::tlb_map(device, i);
         }
