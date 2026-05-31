@@ -94,7 +94,23 @@ static DEVICE_CLONE: std::sync::LazyLock<std::sync::Mutex<device::Device>> =
 static SAVES_CLONE: std::sync::LazyLock<std::sync::Mutex<ui::storage::Saves>> =
     std::sync::LazyLock::new(|| std::sync::Mutex::new(ui::storage::Saves::default()));
 
-pub fn create_savestate(device: &mut device::Device, rewind: bool) {
+pub fn process_savestates(device: &mut device::Device) {
+    if device.savestate.save_state || device.savestate.save_rewind {
+        let rewind = device.savestate.save_rewind && !device.savestate.save_state;
+        if rewind {
+            device.savestate.save_rewind = false;
+        }
+        device.savestate.save_state = false;
+        create_savestate(device, rewind);
+    } else if device.savestate.load_state || device.savestate.load_rewind {
+        device.savestate.load_state = false;
+        let rewind = device.savestate.load_rewind;
+        device.savestate.load_rewind = false;
+        load_savestate(device, rewind);
+    }
+}
+
+fn create_savestate(device: &mut device::Device, rewind: bool) {
     let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
     ui::video::save_state(rdp_state.as_mut_ptr(), rewind);
 
@@ -175,7 +191,7 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool) {
     });
 }
 
-pub fn load_savestate(device: &mut device::Device, rewind: bool) {
+fn load_savestate(device: &mut device::Device, rewind: bool) {
     if retroachievements::get_hardcore() {
         ui::video::onscreen_message(
             "Cannot load savestate in RA hardcore mode",
@@ -196,11 +212,11 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool) {
         && let Ok(saves_data) = ui::storage::decompress_file(savestate, "saves")
         && let Ok(rdp_state) = ui::storage::decompress_file(savestate, "rdp_state")
         && let Ok(ra_state) = ui::storage::decompress_file(savestate, "ra_state")
-        && let Ok(state) = postcard::from_bytes::<device::Device>(&device_data)
+        && let Ok(state) = postcard::from_bytes::<Box<device::Device>>(&device_data)
         && let Ok(saves) = postcard::from_bytes(&saves_data)
     {
         Some(SavestateData {
-            device: state,
+            device: *state,
             saves,
             rdp_state,
             ra_state,

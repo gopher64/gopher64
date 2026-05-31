@@ -120,21 +120,7 @@ fn run_rdp(device: &mut device::Device) {
     device.rdp.regs_dpc[DPC_PIPEBUSY_REG] = 0xFFFFFF;
 
     if timer != 0 {
-        if device.savestate.save_state || device.savestate.save_rewind {
-            // Right after full sync, good time for save state
-            let rewind = device.savestate.save_rewind && !device.savestate.save_state;
-            if rewind {
-                device.savestate.save_rewind = false;
-            }
-            device.savestate.save_state = false;
-            savestates::create_savestate(device, rewind);
-        } else if device.savestate.load_state || device.savestate.load_rewind {
-            // Right after full sync, good time for save state
-            device.savestate.load_state = false;
-            let rewind = device.savestate.load_rewind;
-            device.savestate.load_rewind = false;
-            savestates::load_savestate(device, rewind);
-        }
+        savestates::process_savestates(device);
         device::events::create_event(device, device::events::EVENT_TYPE_DP, timer)
     }
 }

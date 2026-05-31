@@ -58,12 +58,12 @@ pub fn process(device: &mut device::Device, channel: usize) {
             let offset = device.pif.channels[channel].rx_buf.unwrap();
             let input = if let Some(netplay) = &mut device.netplay {
                 if netplay.player_number as usize == channel {
-                    let local_input = ui::input::get(&mut device.ui, 0, device.vi.vi_counter);
+                    let local_input = ui::input::get(&mut device.ui, 0, device.frame_counter);
                     netplay::send_input(netplay, local_input);
                 }
                 netplay::get_input(device, channel)
             } else {
-                ui::input::get(&mut device.ui, channel, device.vi.vi_counter)
+                ui::input::get(&mut device.ui, channel, device.frame_counter)
             };
 
             device.pif.ram[offset..offset + 4].copy_from_slice(&input.data.to_ne_bytes());

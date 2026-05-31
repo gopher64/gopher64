@@ -26,7 +26,6 @@ pub struct Vi {
     pub next_pace_deadline: Option<std::time::Instant>,
     pub count_per_scanline: u64,
     pub enable_speed_limiter: bool,
-    pub vi_counter: u64,
     pub min_wait_time: std::time::Duration,
     pub frame_time: f64,
     pub elapsed_time: f64,
@@ -152,14 +151,14 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         reset_pace_deadline(device);
     }
 
-    if device.vi.vi_counter.is_multiple_of(device.vi.limit_freq) && device.vi.enable_speed_limiter {
+    if device.frame_counter.is_multiple_of(device.vi.limit_freq) && device.vi.enable_speed_limiter {
         speed_limiter(device);
     }
 
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
 
     ui::video::update_screen();
-    device.vi.vi_counter += 1;
+    device.frame_counter += 1;
 
     if device.netplay.is_none() && paused {
         if retroachievements::get_hardcore() {
