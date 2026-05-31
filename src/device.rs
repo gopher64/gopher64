@@ -229,6 +229,7 @@ pub struct Device {
     #[serde(skip)]
     pub ui: ui::Ui,
     pub byte_swap: usize,
+    pub frame_counter: u64,
     pub savestate: savestates::Savestate,
     pub cpu: cpu::Cpu,
     pub pif: pif::Pif,
@@ -290,6 +291,7 @@ impl Device {
                 ui::Ui::default()
             },
             byte_swap,
+            frame_counter: 0,
             savestate: savestates::Savestate {
                 save_state: false,
                 load_state: false,
@@ -529,7 +531,6 @@ impl Device {
                 count_per_scanline: 0,
                 enable_speed_limiter: true,
                 next_pace_deadline: None,
-                vi_counter: 0,
                 min_wait_time: std::time::Duration::from_secs(1),
                 frame_time: 0.0,
                 elapsed_time: 0.0,
