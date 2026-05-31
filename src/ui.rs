@@ -85,7 +85,7 @@ pub struct Usb {
 pub struct GameSettings {
     pub overclock: bool,
     pub disable_expansion_pak: bool,
-    pub cheats: std::collections::HashMap<String, Option<String>>,
+    pub cheats: rustc_hash::FxHashMap<String, Option<String>>,
     pub load_savestate_slot: Option<u32>,
 }
 
@@ -259,7 +259,7 @@ impl Ui {
                         write_pending: false,
                     },
                     romsave: storage::RomSave {
-                        data: std::collections::HashMap::new(),
+                        data: rustc_hash::FxHashMap::default(),
                         write_pending: false,
                     },
                 },

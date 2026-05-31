@@ -66,8 +66,7 @@ pub struct Emulation {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cheats {
-    pub cheats:
-        std::collections::HashMap<String, std::collections::HashMap<String, Option<String>>>,
+    pub cheats: rustc_hash::FxHashMap<String, rustc_hash::FxHashMap<String, Option<String>>>,
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -109,7 +108,7 @@ impl Cheats {
             }
         }
         Cheats {
-            cheats: std::collections::HashMap::new(),
+            cheats: rustc_hash::FxHashMap::default(),
         }
     }
 }

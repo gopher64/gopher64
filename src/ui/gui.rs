@@ -72,7 +72,7 @@ fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
             ui::GameSettings {
                 overclock: handle.get_overclock_n64_cpu(),
                 disable_expansion_pak: handle.get_disable_expansion_pak(),
-                cheats: std::collections::HashMap::new(), // will be filled in later
+                cheats: rustc_hash::FxHashMap::default(), // will be filled in later
                 load_savestate_slot: None,
             },
             None,
@@ -702,7 +702,7 @@ fn open_rom(app: &AppWindow) {
                 ui::GameSettings {
                     overclock,
                     disable_expansion_pak,
-                    cheats: std::collections::HashMap::new(), // will be filled in later
+                    cheats: rustc_hash::FxHashMap::default(), // will be filled in later
                     load_savestate_slot: None,
                 },
                 None,

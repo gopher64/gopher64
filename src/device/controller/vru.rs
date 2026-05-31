@@ -1,7 +1,6 @@
 use crate::device;
 #[cfg(all(feature = "gui", not(target_os = "android")))]
 use crate::ui;
-use std::collections::HashMap;
 
 const JCMD_VRU_READ: u8 = 0x09;
 const JCMD_VRU_WRITE: u8 = 0x0A;
@@ -28,7 +27,7 @@ pub struct Vru {
     pub word_buffer: [u16; 40],
     pub words: Vec<String>,
     pub talking: bool,
-    pub word_mappings: HashMap<String, String>,
+    pub word_mappings: rustc_hash::FxHashMap<String, String>,
 }
 
 pub fn init(device: &mut device::Device) {
@@ -186,7 +185,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
             #[cfg(any(not(feature = "gui"), target_os = "android"))]
             let index = 0x7FFF;
             let num_results = if index == 0x7FFF { 0 } else { 1 };
-            let data: HashMap<usize, u16> = HashMap::from([
+            let data: rustc_hash::FxHashMap<usize, u16> = rustc_hash::FxHashMap::from_iter([
                 (0, 0x8000),
                 (2, 0x0F00),
                 (4, 0),           // error flags
@@ -247,7 +246,7 @@ pub fn vru_talking_event(device: &mut device::Device) {
 }
 
 fn create_word_mappings(device: &mut device::Device) {
-    device.vru.word_mappings = HashMap::from([
+    device.vru.word_mappings = rustc_hash::FxHashMap::from_iter([
         (
             String::from("03A50024000303CF00A80003036000EA"),
             String::from("pikachu"),

@@ -34,7 +34,7 @@ pub struct Save {
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct RomSave {
-    pub data: std::collections::HashMap<u32, u8>,
+    pub data: rustc_hash::FxHashMap<u32, u8>,
     pub write_pending: bool,
 }
 

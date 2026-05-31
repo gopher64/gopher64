@@ -19,7 +19,7 @@ pub struct NetplayRoom {
     md5: Option<String>,
     game_name: Option<String>,
     pub port: Option<i32>,
-    features: Option<std::collections::HashMap<String, String>>,
+    features: Option<rustc_hash::FxHashMap<String, String>>,
     buffer_target: Option<i32>,
 }
 
@@ -60,9 +60,8 @@ async fn get_local_servers() -> Vec<(String, String)> {
             broadcast_sock.recv(&mut buffer),
         )
         .await
-            && let Ok(data) = serde_json::from_slice::<std::collections::HashMap<String, String>>(
-                &buffer[..result],
-            )
+            && let Ok(data) =
+                serde_json::from_slice::<rustc_hash::FxHashMap<String, String>>(&buffer[..result])
         {
             let mut local_servers = vec![];
             for server in data.iter() {
@@ -207,7 +206,7 @@ fn setup_create_window(
 
                     if let Ok(response) = response
                         && let Ok(server) = response
-                            .json::<std::collections::HashMap<String, String>>()
+                            .json::<rustc_hash::FxHashMap<String, String>>()
                             .await
                     {
                         let server_url = server.values().next().unwrap();
@@ -427,19 +426,19 @@ fn update_sessions(weak: slint::Weak<AppWindow>) {
         .header("netplay-id", env!("NETPLAY_ID"))
         .send();
     tokio::spawn(async move {
-        let mut dispatcher_servers = std::collections::HashMap::new();
+        let mut dispatcher_servers = rustc_hash::FxHashMap::default();
         let response = task.await;
         if let Ok(response) = response
             && let Ok(servers) = response
-                .json::<std::collections::HashMap<String, String>>()
+                .json::<rustc_hash::FxHashMap<String, String>>()
                 .await
         {
             dispatcher_servers = servers;
         }
         let weak2 = weak.clone();
         weak.upgrade_in_event_loop(move |handle| {
-            let mut servers: std::collections::HashMap<String, String> =
-                std::collections::HashMap::new();
+            let mut servers: rustc_hash::FxHashMap<String, String> =
+                rustc_hash::FxHashMap::default();
             let server_names = handle.get_netplay_server_names();
             let server_urls = handle.get_netplay_server_urls();
             for (i, server_name) in server_names.iter().enumerate() {
@@ -529,7 +528,7 @@ fn create_session(
             .as_millis()
             .to_string();
         let hasher = Sha256::new().chain_update(&now_utc).chain_update(EMU_NAME);
-        let mut features = std::collections::HashMap::new();
+        let mut features = rustc_hash::FxHashMap::default();
 
         if !game_cheats.is_empty() {
             features.insert("cheats".to_string(), game_cheats);
@@ -1126,7 +1125,7 @@ pub fn netplay_window(app: &AppWindow) {
                     ui::GameSettings {
                         overclock: handle.get_overclock_n64_cpu(),
                         disable_expansion_pak: handle.get_disable_expansion_pak(),
-                        cheats: std::collections::HashMap::new(), // not used here
+                        cheats: rustc_hash::FxHashMap::default(), // not used here
                         load_savestate_slot: None,
                     },
                     write_sender,

@@ -26,7 +26,7 @@ pub type Cheat = std::collections::BTreeMap<String, std::collections::BTreeMap<S
 
 pub fn init(
     device: &mut device::Device,
-    cheat_settings: std::collections::HashMap<String, Option<String>>,
+    cheat_settings: rustc_hash::FxHashMap<String, Option<String>>,
 ) {
     let cheats = serde_json::from_slice::<Cheat>(include_bytes!("../data/cheats.json"))
         .unwrap()
