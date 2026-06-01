@@ -204,7 +204,7 @@ fn main() {
         .allowlist_function("rdp_check_callback")
         .allowlist_function("rdp_check_framebuffers")
         .allowlist_function("rdp_state_size")
-        .allowlist_function("rdp_idle")
+        .allowlist_function("rdp_hard_sync")
         .allowlist_function("rdp_save_state")
         .allowlist_function("rdp_load_state")
         .allowlist_function("rdp_set_fps")

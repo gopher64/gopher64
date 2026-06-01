@@ -702,7 +702,7 @@ void rdp_check_framebuffers(uint32_t address, uint32_t length) {
 
 size_t rdp_state_size() { return sizeof(RDP_DEVICE); }
 
-void rdp_idle() {
+void rdp_hard_sync() {
   processor->wait_for_timeline(processor->signal_timeline());
   rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
   sync_signal = 0;
