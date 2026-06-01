@@ -1,4 +1,4 @@
-use crate::{cheats, device, netplay, retroachievements, ui};
+use crate::{cheats, device, netplay, retroachievements, savestates, ui};
 
 const VI_STATUS_REG: usize = 0;
 const VI_ORIGIN_REG: usize = 1;
@@ -110,6 +110,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             let current_origin = device.vi.regs[reg as usize];
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
             if current_origin != device.vi.regs[reg as usize] {
+                savestates::process_savestates(device);
                 let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
             }
         }

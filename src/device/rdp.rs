@@ -1,4 +1,4 @@
-use crate::{device, savestates, ui};
+use crate::{device, ui};
 
 pub const DPC_START_REG: usize = 0;
 pub const DPC_END_REG: usize = 1;
@@ -120,7 +120,6 @@ fn run_rdp(device: &mut device::Device) {
     device.rdp.regs_dpc[DPC_PIPEBUSY_REG] = 0xFFFFFF;
 
     if timer != 0 {
-        savestates::process_savestates(device);
         device::events::create_event(device, device::events::EVENT_TYPE_DP, timer)
     }
 }
