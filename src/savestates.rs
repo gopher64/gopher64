@@ -113,7 +113,7 @@ pub fn process_savestates(device: &mut device::Device) {
 fn create_savestate(device: &mut device::Device, rewind: bool) {
     if !rewind {
         // skipped on rewind as a speed hack
-        ui::video::idle(); // to flush the RDP so the RDRAM is updated
+        ui::video::hard_sync(); // to flush the RDP so the RDRAM is updated
     }
     let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
     ui::video::save_state(rdp_state.as_mut_ptr());
@@ -232,7 +232,7 @@ fn load_savestate(device: &mut device::Device, rewind: bool) {
     if let Some(mut state) = state_data
         && device.rdram.size == state.device.rdram.size
     {
-        ui::video::idle(); // to flush the RDP so it doesn't overwrite the RDRAM
+        ui::video::hard_sync(); // to flush the RDP so it doesn't overwrite the RDRAM
 
         device.savestate.last_rewind_saved = state.device.vi.elapsed_time;
 
