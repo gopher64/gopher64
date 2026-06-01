@@ -248,7 +248,7 @@ fn load_savestate(device: &mut device::Device, rewind: bool) {
         std::mem::swap(&mut device.rsp, &mut state.device.rsp);
         std::mem::swap(&mut device.rdp, &mut state.device.rdp);
 
-        device.rdram.mem.clone_from(&state.device.rdram.mem); // RDRAM address should not change
+        device.rdram.mem.copy_from_slice(&state.device.rdram.mem); // RDRAM address should not change
         std::mem::swap(&mut device.rdram.regs, &mut state.device.rdram.regs);
 
         std::mem::swap(&mut device.mi, &mut state.device.mi);
