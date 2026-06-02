@@ -107,7 +107,7 @@ export component NetplayJoin inherits Page {
                 clicked => {
                     NetplayData.pending_session = true;
                     join_session(
-                    NetplayData.session_name,
+                    NetplayData.sessions[NetplayData.current_session][0].text,
                     NetplayData.player_name,
                     NetplayData.game_hash,
                     NetplayData.password);
