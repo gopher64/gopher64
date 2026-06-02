@@ -118,7 +118,14 @@ fn setup_create_window(
     app.set_show_netplay_create_session(true);
 }
 
-fn do_authentication() -> NetplayMessage {
+async fn do_authentication(
+    write: &mut futures::stream::SplitSink<
+        tokio_tungstenite::WebSocketStream<
+            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+        >,
+        tokio_tungstenite::tungstenite::Message,
+    >,
+) {
     let now_utc = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
@@ -132,11 +139,18 @@ fn do_authentication() -> NetplayMessage {
         .map(|b| format!("{:02x}", b))
         .collect();
     let message = format!("{}|{}", now_utc, hasher);
-    NetplayMessage {
+    let authenticate = NetplayMessage {
         message_type: MessageType::Authenticate,
         sessions: std::collections::HashMap::new(),
-        message: Some(message),
-    }
+        message: Some(message.into()),
+    };
+
+    write
+        .send(Message::Binary(Bytes::from(
+            postcard::to_stdvec(&authenticate).unwrap(),
+        )))
+        .await
+        .unwrap();
 }
 
 fn manage_websocket(
@@ -153,13 +167,6 @@ fn manage_websocket(
         {
             let (mut write, mut read) = socket.split();
 
-            write
-                .send(Message::Binary(Bytes::from(
-                    postcard::to_stdvec(&do_authentication()).unwrap(),
-                )))
-                .await
-                .unwrap();
-
             tokio::spawn(async move {
                 while let Some(Ok(response)) = read.next().await {
                     let decoded_response =
@@ -175,6 +182,7 @@ fn manage_websocket(
                 }
             });
             tokio::spawn(async move {
+                do_authentication(&mut write).await;
                 loop {
                     match netplay_write_receiver.recv().await {
                         Ok(Some(response)) => {
