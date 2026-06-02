@@ -379,8 +379,10 @@ fn setup_wait_window(
                     MessageType::ResponseSession => {
                         weak_app
                             .upgrade_in_event_loop(move |handle| {
-                                let player_names =
-                                    response.sessions.iter().next().unwrap().1.players.clone();
+                                let session = response.sessions.iter().next().unwrap().1;
+                                let player_names = session.players.clone();
+
+                                handle.set_netplay_motd(session.motd.as_ref().unwrap().into());
 
                                 handle.set_netplay_players(slint::ModelRc::from(std::rc::Rc::new(
                                     slint::VecModel::from(
