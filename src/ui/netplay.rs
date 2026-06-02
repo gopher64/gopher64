@@ -542,6 +542,7 @@ fn setup_join_window(
                             );
                         })
                         .unwrap();
+                        return;
                     } else if message.message_type == MessageType::ResponseListSessions
                         && message.message.is_none()
                     {
