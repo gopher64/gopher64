@@ -344,6 +344,13 @@ fn setup_wait_window(
     app.set_netplay_game_name(game_name);
     app.set_netplay_rom_path(rom_path);
 
+    let request_update = NetplayMessage {
+        message_type: MessageType::RequestUpdateSession,
+        sessions: std::collections::HashMap::new(),
+        message: None,
+    };
+    netplay_write_sender.send(Some(request_update)).unwrap();
+
     let sender = netplay_write_sender.clone();
     app.on_netplay_send_chat_message(move |message| {
         let send_chat = NetplayMessage {
