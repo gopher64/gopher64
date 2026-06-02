@@ -2,6 +2,7 @@ use crate::device;
 use crate::ui;
 use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings};
 use futures::{SinkExt, StreamExt};
+use sha2::digest::Digest;
 use slint::ComponentHandle;
 use tokio_tungstenite::tungstenite::Bytes;
 use tokio_tungstenite::tungstenite::Utf8Bytes;
@@ -20,6 +21,7 @@ enum MessageType {
     ResponseListSessions,
     SendChatMessage,
     ReceiveChatMessage,
+    Authenticate,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -116,6 +118,27 @@ fn setup_create_window(
     app.set_show_netplay_create_session(true);
 }
 
+fn do_authentication() -> NetplayMessage {
+    let now_utc = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis()
+        .to_string();
+    let hasher: String = sha2::Sha256::new()
+        .chain_update(&now_utc)
+        .chain_update(env!("NETPLAY_ID"))
+        .finalize()
+        .iter()
+        .map(|b| format!("{:02x}", b))
+        .collect();
+    let message = format!("{}|{}", now_utc, hasher);
+    NetplayMessage {
+        message_type: MessageType::Authenticate,
+        sessions: std::collections::HashMap::new(),
+        message: Some(message),
+    }
+}
+
 fn manage_websocket(
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
@@ -129,6 +152,14 @@ fn manage_websocket(
         .await
         {
             let (mut write, mut read) = socket.split();
+
+            write
+                .send(Message::Binary(Bytes::from(
+                    postcard::to_stdvec(&do_authentication()).unwrap(),
+                )))
+                .await
+                .unwrap();
+
             tokio::spawn(async move {
                 while let Some(Ok(response)) = read.next().await {
                     let decoded_response =
