@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-05-30 16:03+0000\n"
+"POT-Creation-Date: 2026-06-02 19:40+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: French (France)\n"
@@ -47,37 +47,37 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Faire un don (via GitHub)"
 
-#: src/ui/gui/appwindow.slint:152
+#: src/ui/gui/appwindow.slint:143
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Jeu local"
 
-#: src/ui/gui/appwindow.slint:156
+#: src/ui/gui/appwindow.slint:147
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Configuration manette"
 
-#: src/ui/gui/appwindow.slint:160
+#: src/ui/gui/appwindow.slint:151
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/appwindow.slint:164
+#: src/ui/gui/appwindow.slint:155
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Triche"
 
-#: src/ui/gui/appwindow.slint:168
+#: src/ui/gui/appwindow.slint:159
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:172
+#: src/ui/gui/appwindow.slint:163
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Paramètres"
 
-#: src/ui/gui/appwindow.slint:176
+#: src/ui/gui/appwindow.slint:167
 msgctxt "Menu"
 msgid "About"
 msgstr "À propos"
@@ -192,47 +192,42 @@ msgctxt "NetplayCreate"
 msgid "Netplay: Create Session"
 msgstr "Netplay : créer une session"
 
-#: src/ui/gui/netplay_create.slint:23
+#: src/ui/gui/netplay_create.slint:22
 msgctxt "NetplayCreate"
 msgid "Session Name:"
 msgstr "Nom de la session :"
 
-#: src/ui/gui/netplay_create.slint:27
+#: src/ui/gui/netplay_create.slint:26
 msgctxt "NetplayCreate"
 msgid "Enter session name"
 msgstr "Saisir le nom de la session"
 
-#: src/ui/gui/netplay_create.slint:37
+#: src/ui/gui/netplay_create.slint:36
 msgctxt "NetplayCreate"
 msgid "Password (Optional):"
 msgstr "Mot de passe (facultatif) :"
 
-#: src/ui/gui/netplay_create.slint:41
+#: src/ui/gui/netplay_create.slint:40
 msgctxt "NetplayCreate"
 msgid "Enter session password"
 msgstr "Saisir le mot de passe de la session"
 
-#: src/ui/gui/netplay_create.slint:52
+#: src/ui/gui/netplay_create.slint:51
 msgctxt "NetplayCreate"
 msgid "Player Name:"
 msgstr "Nom du joueur :"
 
-#: src/ui/gui/netplay_create.slint:56
+#: src/ui/gui/netplay_create.slint:55
 msgctxt "NetplayCreate"
 msgid "Enter player name"
 msgstr "Saisir le nom du joueur"
 
 #: src/ui/gui/netplay_create.slint:66
 msgctxt "NetplayCreate"
-msgid "Server:"
-msgstr "Serveur :"
-
-#: src/ui/gui/netplay_create.slint:86
-msgctxt "NetplayCreate"
 msgid "Select ROM"
 msgstr "Sélectionner une ROM"
 
-#: src/ui/gui/netplay_create.slint:102
+#: src/ui/gui/netplay_create.slint:82
 msgctxt "NetplayCreate"
 msgid ""
 "This game has cheats enabled. Cheats will be synchronized with other players."
@@ -240,20 +235,15 @@ msgstr ""
 "La triche est activée pour ce jeu. Elle sera synchronisée avec les autres "
 "joueurs."
 
-#: src/ui/gui/netplay_create.slint:112
+#: src/ui/gui/netplay_create.slint:91
 msgctxt "NetplayCreate"
 msgid "Create Session"
 msgstr "Créer la session"
 
-#: src/ui/gui/netplay_create.slint:132
+#: src/ui/gui/netplay_create.slint:105
 msgctxt "NetplayCreate"
 msgid "Cancel"
 msgstr "Annuler"
-
-#: src/ui/gui/netplay_create.slint:155
-msgctxt "CustomServerDialog"
-msgid "Enter a custom server URL"
-msgstr "Saisir l'URL personnalisée du serveur"
 
 #: src/ui/gui/netplay_join.slint:7
 msgctxt "NetplayJoin"
@@ -275,153 +265,138 @@ msgctxt "NetplayJoin"
 msgid "Password (if required)"
 msgstr "Mot de passe (si requis)"
 
-#: src/ui/gui/netplay_join.slint:41
-msgctxt "NetplayJoin"
-msgid "Custom Server URL (optional):"
-msgstr "URL personnalisée du serveur (facultatif) :"
-
-#: src/ui/gui/netplay_join.slint:53
+#: src/ui/gui/netplay_join.slint:42
 msgctxt "NetplayJoin"
 msgid "Select ROM"
 msgstr "Sélectionner une ROM"
 
-#: src/ui/gui/netplay_join.slint:68
+#: src/ui/gui/netplay_join.slint:57
 msgctxt "NetplayJoin"
 msgid "Refreshing session list, please wait..."
 msgstr "Actualisation de la liste des sessions, veuillez patienter…"
 
-#: src/ui/gui/netplay_join.slint:73
+#: src/ui/gui/netplay_join.slint:62
 msgctxt "NetplayJoin"
 msgid "Click on a session below to select it"
 msgstr "Cliquez sur une session ci-dessous pour la sélectionner"
 
-#: src/ui/gui/netplay_join.slint:78
+#: src/ui/gui/netplay_join.slint:67
 msgctxt "NetplayJoin"
 msgid "No sessions available. Please refresh to check again."
 msgstr ""
 "Aucune session disponible. Veuillez actualiser pour vérifier à nouveau."
 
-#: src/ui/gui/netplay_join.slint:84
-msgctxt "NetplayJoin"
-msgid "Server"
-msgstr "Serveur"
-
-#: src/ui/gui/netplay_join.slint:85
+#: src/ui/gui/netplay_join.slint:73
 msgctxt "NetplayJoin"
 msgid "Session Name"
 msgstr "Nom de la session"
 
-#: src/ui/gui/netplay_join.slint:86
+#: src/ui/gui/netplay_join.slint:74
 msgctxt "NetplayJoin"
 msgid "Game Name"
 msgstr "Nom du jeu"
 
-#: src/ui/gui/netplay_join.slint:87
+#: src/ui/gui/netplay_join.slint:75
 msgctxt "NetplayJoin"
 msgid "Password"
 msgstr "Mot de passe"
 
-#: src/ui/gui/netplay_join.slint:88
+#: src/ui/gui/netplay_join.slint:76
 msgctxt "NetplayJoin"
 msgid "Cheats"
 msgstr "Triche"
 
-#: src/ui/gui/netplay_join.slint:102
+#: src/ui/gui/netplay_join.slint:90
 msgctxt "NetplayJoin"
 msgid "Refresh Session List"
 msgstr "Actualiser la liste"
 
-#: src/ui/gui/netplay_join.slint:119
+#: src/ui/gui/netplay_join.slint:105
 msgctxt "NetplayJoin"
 msgid "Join Session"
 msgstr "Rejoindre la session"
 
-#: src/ui/gui/netplay_join.slint:132
+#: src/ui/gui/netplay_join.slint:117
 msgctxt "NetplayJoin"
 msgid "Cancel"
 msgstr "Annuler"
 
-#: src/ui/gui/netplay_page.slint:37
+#: src/ui/gui/netplay_page.slint:31
 msgctxt "Netplay"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/netplay_page.slint:45
+#: src/ui/gui/netplay_page.slint:39
 msgctxt "Netplay"
 msgid "Create Session"
 msgstr "Créer une session"
 
-#: src/ui/gui/netplay_page.slint:56
+#: src/ui/gui/netplay_page.slint:50
 msgctxt "Netplay"
 msgid "Join Session"
 msgstr "Rejoindre une session"
 
-#: src/ui/gui/netplay_page.slint:70
+#: src/ui/gui/netplay_page.slint:64
 msgctxt "Netplay"
 msgid "Netplay Discord Channel"
 msgstr "Salon Discord Netplay"
 
-#: src/ui/gui/netplay_page.slint:77
+#: src/ui/gui/netplay_page.slint:71
 msgctxt "Netplay"
 msgid "Provide Feedback"
 msgstr "Donner votre avis"
 
-#: src/ui/gui/netplay_wait.slint:15
+#: src/ui/gui/netplay_wait.slint:13
 msgctxt "NetplayWait"
 msgid "Netplay: Waiting Room"
 msgstr "Netplay : salle d'attente"
 
-#: src/ui/gui/netplay_wait.slint:27
+#: src/ui/gui/netplay_wait.slint:25
 msgctxt "NetplayWait"
 msgid "Session Name:"
 msgstr "Nom de la session :"
 
-#: src/ui/gui/netplay_wait.slint:33
+#: src/ui/gui/netplay_wait.slint:31
 msgctxt "NetplayWait"
 msgid "Game Name:"
 msgstr "Nom du jeu :"
 
-#: src/ui/gui/netplay_wait.slint:39
-msgctxt "NetplayWait"
-msgid "Ping:"
-msgstr "Ping :"
-
-#: src/ui/gui/netplay_wait.slint:48
+#: src/ui/gui/netplay_wait.slint:41
 msgctxt "NetplayWait"
 msgid "Player 1:"
 msgstr "Joueur 1 :"
 
-#: src/ui/gui/netplay_wait.slint:52
+#: src/ui/gui/netplay_wait.slint:45
 msgctxt "NetplayWait"
 msgid "Player 2:"
 msgstr "Joueur 2 :"
 
-#: src/ui/gui/netplay_wait.slint:58
+#: src/ui/gui/netplay_wait.slint:51
 msgctxt "NetplayWait"
 msgid "Player 3:"
 msgstr "Joueur 3 :"
 
-#: src/ui/gui/netplay_wait.slint:62
+#: src/ui/gui/netplay_wait.slint:55
 msgctxt "NetplayWait"
 msgid "Player 4:"
 msgstr "Joueur 4 :"
 
-#: src/ui/gui/netplay_wait.slint:76
+#: src/ui/gui/netplay_wait.slint:69
 msgctxt "NetplayWait"
 msgid "Enter chat message"
 msgstr "Saisir un message"
 
-#: src/ui/gui/netplay_wait.slint:87
+#: src/ui/gui/netplay_wait.slint:80
 msgctxt "NetplayWait"
 msgid "Send Message"
 msgstr "Envoyer"
 
-#: src/ui/gui/netplay_wait.slint:105
+#: src/ui/gui/netplay_wait.slint:98
 msgctxt "NetplayWait"
 msgid "Start Game"
 msgstr "Lancer la partie"
 
-#: src/ui/gui/netplay_wait.slint:113
+#: src/ui/gui/netplay_wait.slint:106
 msgctxt "NetplayWait"
 msgid "Cancel"
 msgstr "Annuler"
@@ -555,6 +530,26 @@ msgstr "Émuler le VRU"
 msgctxt "VruDialog"
 msgid "What Would You Like To Say?"
 msgstr "Que souhaitez-vous dire ?"
+
+#~ msgctxt "NetplayCreate"
+#~ msgid "Server:"
+#~ msgstr "Serveur :"
+
+#~ msgctxt "CustomServerDialog"
+#~ msgid "Enter a custom server URL"
+#~ msgstr "Saisir l'URL personnalisée du serveur"
+
+#~ msgctxt "NetplayJoin"
+#~ msgid "Custom Server URL (optional):"
+#~ msgstr "URL personnalisée du serveur (facultatif) :"
+
+#~ msgctxt "NetplayJoin"
+#~ msgid "Server"
+#~ msgstr "Serveur"
+
+#~ msgctxt "NetplayWait"
+#~ msgid "Ping:"
+#~ msgstr "Ping :"
 
 #~ msgctxt "NetplayCreate"
 #~ msgid "Creating server, please wait...This may take about 30 seconds."
