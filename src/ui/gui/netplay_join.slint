@@ -7,7 +7,7 @@ export component NetplayJoin inherits Page {
     title: @tr("Netplay: Join Session");
     callback refresh_sessions();
     callback select_rom(string);
-    callback join_session(string, string, string, string, int);
+    callback join_session(string, string, string, string);
     callback close;
 
     VerticalBox {
@@ -37,18 +37,6 @@ export component NetplayJoin inherits Page {
             }
 
             VerticalBox {
-                Text {
-                    text: @tr("Custom Server URL (optional):");
-                }
-
-                LineEdit {
-                    placeholder-text: "example.com:45000";
-                    text: NetplayData.custom_server_url;
-                    edited(text) => {
-                        NetplayData.custom_server_url = text;
-                    }
-                }
-
                 if NetplayData.game_name == "": Button {
                     text: @tr("Select ROM");
                     clicked => {
@@ -81,7 +69,6 @@ export component NetplayJoin inherits Page {
         }
         StandardTableView {
             columns: [
-            { title: @tr("Server") },
             { title: @tr("Session Name") },
             { title: @tr("Game Name") },
             { title: @tr("Password") },
@@ -104,8 +91,6 @@ export component NetplayJoin inherits Page {
                     NetplayData.pending_refresh = true;
                     NetplayData.current_session = -1;
                     NetplayData.sessions = [];
-                    NetplayData.room_urls = [];
-                    NetplayData.room_ports = [];
                     refresh_sessions();
                 }
             }
@@ -121,11 +106,10 @@ export component NetplayJoin inherits Page {
                 clicked => {
                     NetplayData.pending_session = true;
                     join_session(
+                    NetplayData.session_name,
                     NetplayData.player_name,
                     NetplayData.game_hash,
-                    NetplayData.password,
-                    NetplayData.room_urls[NetplayData.current_session],
-                    NetplayData.room_ports[NetplayData.current_session]);
+                    NetplayData.password);
                 }
             }
             Button {

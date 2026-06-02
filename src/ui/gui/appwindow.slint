@@ -13,7 +13,7 @@ import { CheatsData } from "cheat_page.slint";
 import { InputProfileDialog, InputProfileData } from "input_profile.slint";
 import { NetplayData } from "netplay_page.slint";
 export { VruDialog } from "vru_dialog.slint";
-import { NetplayCreate, CustomServerDialog } from "netplay_create.slint";
+import { NetplayCreate } from "netplay_create.slint";
 import { NetplayJoin } from "netplay_join.slint";
 import { NetplayWait, NetplayWaitData } from "netplay_wait.slint";
 
@@ -37,10 +37,9 @@ export component AppWindow inherits Window {
     callback netplay_begin_game;
     callback netplay_send_chat_message(string);
     callback netplay_refresh_sessions;
-    callback netplay_create_session(string, string, string, string, string, string, string);
-    callback netplay_get_custom_url;
+    callback netplay_create_session(string, string, string, string, string, string);
     callback netplay_select_rom(string);
-    callback netplay_join_session(string, string, string, string, int);
+    callback netplay_join_session(string, string, string, string);
     callback netplay_close;
     callback cheats_select_rom_clicked(string);
     callback cheats_clear_clicked;
@@ -99,27 +98,19 @@ export component AppWindow inherits Window {
     in-out property input_dinput <=> InputProfileData.dinput;
     in-out property show_input_profile <=> InputProfileData.show_input_profile;
 
-    in-out property show_netplay_wait_room <=> NetplayData.show_wait_room;
-    in-out property show_netplay_create_room <=> NetplayData.show_create_room;
-    in-out property show_netplay_join_room <=> NetplayData.show_join_room;
+    in-out property show_netplay_wait_session <=> NetplayData.show_wait_session;
+    in-out property show_netplay_create_session <=> NetplayData.show_create_session;
+    in-out property show_netplay_join_session <=> NetplayData.show_join_session;
 
-    in-out property netplay_server_names <=> NetplayData.server_names;
-    in-out property netplay_server_urls <=> NetplayData.server_urls;
-    in-out property netplay_custom_server_url <=> NetplayData.custom_server_url;
     in-out property netplay_game_name <=> NetplayData.game_name;
     in-out property netplay_game_hash <=> NetplayData.game_hash;
     in-out property netplay_game_cheats <=> NetplayData.game_cheats;
     in-out property netplay_pending_session <=> NetplayData.pending_session;
     in-out property netplay_rom_path <=> NetplayData.rom_path;
-    in-out property netplay_peer_addr <=> NetplayData.peer_addr;
-    in-out property netplay_room_urls <=> NetplayData.room_urls;
-    in-out property netplay_room_ports <=> NetplayData.room_ports;
     in-out property netplay_current_session <=> NetplayData.current_session;
     in-out property netplay_sessions <=> NetplayData.sessions;
     in-out property netplay_pending_refresh <=> NetplayData.pending_refresh;
     in-out property netplay_session_name <=> NetplayData.session_name;
-    in-out property netplay_port <=> NetplayWaitData.port;
-    in-out property netplay_ping <=> NetplayWaitData.ping;
     in-out property netplay_motd <=> NetplayWaitData.motd;
     in-out property netplay_can_start <=> NetplayWaitData.can_start;
     in-out property netplay_players <=> NetplayWaitData.players;
@@ -225,7 +216,7 @@ export component AppWindow inherits Window {
                 input_profile_creation_button_clicked();
             }
         }
-        if(side-bar.current-item == 2 && !show_netplay_wait_room && !show_netplay_create_room && !show_netplay_join_room): Netplay {
+        if(side-bar.current-item == 2 && !show_netplay_wait_session && !show_netplay_create_session && !show_netplay_join_session): Netplay {
             width: 100%;
             height: 100%;
             create_session_button_clicked => {
@@ -241,7 +232,7 @@ export component AppWindow inherits Window {
                 netplay_feedback_button_clicked();
             }
         }
-        if(side-bar.current-item == 2 && show_netplay_wait_room): NetplayWait {
+        if(side-bar.current-item == 2 && show_netplay_wait_session): NetplayWait {
             width: 100%;
             height: 100%;
             send_chat_message(message) => {
@@ -254,23 +245,20 @@ export component AppWindow inherits Window {
                 netplay_close();
             }
         }
-        if(side-bar.current-item == 2 && show_netplay_create_room && !show_netplay_wait_room): NetplayCreate {
+        if(side-bar.current-item == 2 && show_netplay_create_session && !show_netplay_wait_session): NetplayCreate {
             width: 100%;
             height: 100%;
-            get_custom_url => {
-                netplay_get_custom_url();
-            }
             select_rom(rom_dir) => {
                 netplay_select_rom(rom_dir);
             }
-            create_session(a, b, c, d, e, f, g) => {
-                netplay_create_session(a,b,c,d,e,f,g);
+            create_session(a, b, c, d, e, f) => {
+                netplay_create_session(a,b,c,d,e,f);
             }
             close => {
                 netplay_close();
             }
         }
-        if(side-bar.current-item == 2 && show_netplay_join_room && !show_netplay_wait_room): NetplayJoin {
+        if(side-bar.current-item == 2 && show_netplay_join_session && !show_netplay_wait_session): NetplayJoin {
             width: 100%;
             height: 100%;
             refresh_sessions => {
@@ -279,8 +267,8 @@ export component AppWindow inherits Window {
             select_rom(rom_dir) => {
                 netplay_select_rom(rom_dir);
             }
-            join_session(a, b, c, d, e) => {
-                netplay_join_session(a,b,c,d,e);
+            join_session(a, b, c, d) => {
+                netplay_join_session(a,b,c,d);
             }
             close => {
                 netplay_close();
@@ -371,15 +359,6 @@ export component AppWindow inherits Window {
             height: content-area.height;
             width: content-area.width;
         }
-        customserverdialog := CustomServerDialog{
-            x: content-area.x;
-            y: content-area.y;
-            height: content-area.height;
-            width: content-area.width;
-        }
-    }
-    public function show_custom_server_dialog() {
-        customserverdialog.show();
     }
     public function show_message(message: string, has_close: bool) {
         popup_message = message;
@@ -394,7 +373,6 @@ export component AppWindow inherits Window {
         NetplayData.game_name = "";
         NetplayData.password = "";
         NetplayData.session_name = "";
-        NetplayData.custom_server_url = "";
         NetplayWaitData.chat_text = "";
         NetplayData.pending_session = false;
         NetplayData.pending_refresh = false;

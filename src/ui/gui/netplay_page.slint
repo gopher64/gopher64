@@ -6,27 +6,21 @@ import { Page } from "page.slint";
 import { State } from "localgame_page.slint";
 
 export global NetplayData {
-    in-out property <[string]> server_names;
-    in-out property <[string]> server_urls;
     in-out property <string> player_name;
     in-out property <string> game_name;
     in-out property <string> game_hash;
     in-out property <string> game_cheats;
     in-out property <string> rom_path;
     in-out property <string> password;
-    in-out property <string> peer_addr;
     in-out property <bool> pending_session;
     in-out property <bool> pending_refresh;
     in-out property <string> session_name;
     in-out property <[[StandardListViewItem]]> sessions;
-    in-out property <[string]> room_urls;
-    in-out property <[int]> room_ports;
     in-out property <int> current_session: -1;
-    in-out property <string> custom_server_url;
 
-    in-out property <bool> show_wait_room;
-    in-out property <bool> show_create_room;
-    in-out property <bool> show_join_room;
+    in-out property <bool> show_wait_session;
+    in-out property <bool> show_create_session;
+    in-out property <bool> show_join_session;
 }
 
 export component Netplay inherits Page {

@@ -5,10 +5,8 @@ import { Page } from "page.slint";
 export global NetplayWaitData {
     in-out property <string> motd;
     in-out property <[string]> players;
-    in-out property <int> port;
     in-out property <bool> can_start;
     in-out property <string> chat_text;
-    in-out property <string> ping;
 }
 
 export component NetplayWait inherits Page {
@@ -32,11 +30,6 @@ export component NetplayWait inherits Page {
                 Text {
                     text: @tr("Game Name:") + " " + NetplayData.game_name;
                     font-size: 15px;
-                    horizontal-alignment: center;
-                }
-
-                Text {
-                    text: @tr("Ping:") + " " + NetplayWaitData.ping;
                     horizontal-alignment: center;
                 }
 
