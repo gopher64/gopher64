@@ -24,7 +24,6 @@ enum MessageType {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct NetplaySession {
-    protected: bool,
     password: Option<String>,
     game_name: Option<String>,
     motd: Option<String>,
@@ -132,10 +131,15 @@ fn manage_websocket(
             let (mut write, mut read) = socket.split();
             tokio::spawn(async move {
                 while let Some(Ok(response)) = read.next().await {
-                    if let Ok(message) =
-                        postcard::from_bytes::<NetplayMessage>(&response.into_data())
-                    {
-                        let _ = netplay_read_sender.send(Some(message));
+                    let decoded_response =
+                        postcard::from_bytes::<NetplayMessage>(&response.into_data());
+                    match decoded_response {
+                        Ok(message) => {
+                            let _ = netplay_read_sender.send(Some(message));
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to parse message: {}", e);
+                        }
                     }
                 }
             });
@@ -210,7 +214,6 @@ fn create_session(
         );
 
         let session = NetplaySession {
-            protected: false,
             password: Some(password),
             game_name: Some(game_name),
             motd: None,
@@ -310,7 +313,6 @@ fn join_session(
     password: String,
 ) {
     let session = NetplaySession {
-        protected: false,
         password: Some(password),
         game_name: None,
         motd: None,
@@ -547,7 +549,7 @@ fn setup_join_window(
                                 slint::SharedString::from(remote_session.game_name.unwrap()),
                             ));
                             session.push(slint::StandardListViewItem::from(
-                                slint::SharedString::from(if remote_session.protected {
+                                slint::SharedString::from(if remote_session.password.is_some() {
                                     "True"
                                 } else {
                                     "False"
