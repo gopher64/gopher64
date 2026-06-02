@@ -37,6 +37,7 @@ export component NetplayJoin inherits Page {
             }
 
             VerticalBox {
+                Rectangle {}
                 if NetplayData.game_name == "": Button {
                     text: @tr("Select ROM");
                     clicked => {

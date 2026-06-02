@@ -4,7 +4,9 @@ use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings};
 use futures::{SinkExt, StreamExt};
 use slint::ComponentHandle;
 use tokio_tungstenite::tungstenite::Bytes;
-use tokio_tungstenite::tungstenite::protocol::Message;
+use tokio_tungstenite::tungstenite::Utf8Bytes;
+use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
+use tokio_tungstenite::tungstenite::protocol::{CloseFrame, Message};
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 enum MessageType {
@@ -159,93 +161,26 @@ fn manage_websocket(
                         }
                     }
                 }
-                write.close().await.unwrap();
+                write
+                    .send(Message::Close(Some(CloseFrame {
+                        code: CloseCode::Normal,
+                        reason: Utf8Bytes::from(""),
+                    })))
+                    .await
+                    .unwrap();
             });
         }
     });
 }
 
-async fn get_sessions_from_server() -> Vec<Vec<slint::StandardListViewItem>> {
-    let server_url = "ws://127.0.0.1:45000";
-    let mut sessions = vec![];
-    if let Ok(Ok((socket, _response))) = tokio::time::timeout(
-        std::time::Duration::from_secs(2),
-        tokio_tungstenite::connect_async(server_url),
-    )
-    .await
-    {
-        let (mut write, mut read) = socket.split();
+fn update_sessions(netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>) {
+    let request_sessions = NetplayMessage {
+        message_type: MessageType::RequestListSessions,
+        sessions: std::collections::HashMap::new(),
+        message: None,
+    };
 
-        let request_sessions = NetplayMessage {
-            message_type: MessageType::RequestListSessions,
-            sessions: std::collections::HashMap::new(),
-            message: None,
-        };
-
-        write
-            .send(Message::Binary(Bytes::from(
-                postcard::to_stdvec(&request_sessions).unwrap(),
-            )))
-            .await
-            .unwrap();
-
-        if let Some(Ok(response)) = read.next().await
-            && let Ok(message) = postcard::from_bytes::<NetplayMessage>(&response.into_data())
-            && message.message_type == MessageType::ResponseListSessions
-        {
-            for (session_name, remote_session) in message.sessions {
-                let mut session = vec![];
-
-                session.push(slint::StandardListViewItem::from(
-                    slint::SharedString::from(session_name),
-                ));
-                session.push(slint::StandardListViewItem::from(
-                    slint::SharedString::from(remote_session.game_name.unwrap()),
-                ));
-                session.push(slint::StandardListViewItem::from(
-                    slint::SharedString::from(if remote_session.protected {
-                        "True"
-                    } else {
-                        "False"
-                    }),
-                ));
-                session.push(slint::StandardListViewItem::from(
-                    slint::SharedString::from(
-                        if remote_session
-                            .features
-                            .unwrap_or_default()
-                            .contains_key("cheats")
-                        {
-                            "True"
-                        } else {
-                            "False"
-                        },
-                    ),
-                ));
-                sessions.push(session);
-            }
-        }
-    }
-    sessions
-}
-
-fn update_sessions(weak: slint::Weak<AppWindow>) {
-    tokio::spawn(async move {
-        let sessions = get_sessions_from_server().await;
-        weak.upgrade_in_event_loop(move |handle| {
-            let sessions_vec = slint::VecModel::default();
-            for session in sessions.iter() {
-                sessions_vec.push(slint::ModelRc::from(std::rc::Rc::new(
-                    slint::VecModel::from(session.to_vec()),
-                )));
-            }
-            handle.set_netplay_sessions(slint::ModelRc::from(std::rc::Rc::new(sessions_vec)));
-
-            handle.set_netplay_current_session(-1);
-            handle.set_netplay_pending_refresh(false);
-        })
-        .unwrap();
-    });
+    netplay_write_sender.send(Some(request_sessions)).unwrap();
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -443,6 +378,57 @@ fn join_session(
                             );
                         })
                         .unwrap();
+                } else if message.message_type == MessageType::ResponseListSessions
+                    && message.message.is_none()
+                {
+                    let mut sessions = vec![];
+                    for (session_name, remote_session) in message.sessions {
+                        let mut session = vec![];
+
+                        session.push(slint::StandardListViewItem::from(
+                            slint::SharedString::from(session_name),
+                        ));
+                        session.push(slint::StandardListViewItem::from(
+                            slint::SharedString::from(remote_session.game_name.unwrap()),
+                        ));
+                        session.push(slint::StandardListViewItem::from(
+                            slint::SharedString::from(if remote_session.protected {
+                                "True"
+                            } else {
+                                "False"
+                            }),
+                        ));
+                        session.push(slint::StandardListViewItem::from(
+                            slint::SharedString::from(
+                                if remote_session
+                                    .features
+                                    .unwrap_or_default()
+                                    .contains_key("cheats")
+                                {
+                                    "True"
+                                } else {
+                                    "False"
+                                },
+                            ),
+                        ));
+                        sessions.push(session);
+                    }
+                    weak_app
+                        .upgrade_in_event_loop(move |handle| {
+                            let sessions_vec = slint::VecModel::default();
+                            for session in sessions.iter() {
+                                sessions_vec.push(slint::ModelRc::from(std::rc::Rc::new(
+                                    slint::VecModel::from(session.to_vec()),
+                                )));
+                            }
+                            handle.set_netplay_sessions(slint::ModelRc::from(std::rc::Rc::new(
+                                sessions_vec,
+                            )));
+
+                            handle.set_netplay_current_session(-1);
+                            handle.set_netplay_pending_refresh(false);
+                        })
+                        .unwrap();
                 } else {
                     weak_app
                         .upgrade_in_event_loop(move |handle| {
@@ -601,9 +587,9 @@ fn setup_join_window(
 ) {
     app.set_netplay_pending_refresh(true);
 
-    let weak = app.as_weak();
+    let write_sender = netplay_write_sender.clone();
     app.on_netplay_refresh_sessions(move || {
-        update_sessions(weak.clone());
+        update_sessions(write_sender.clone());
     });
 
     app.invoke_netplay_refresh_sessions();
