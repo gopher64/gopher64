@@ -585,6 +585,12 @@ fn setup_join_window(
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
     netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
 ) {
+    let _ = netplay_write_sender.send(None); // close current websocket if any
+    manage_websocket(
+        netplay_read_sender.clone(),
+        netplay_write_receiver.resubscribe(),
+    );
+
     app.set_netplay_pending_refresh(true);
 
     let write_sender = netplay_write_sender.clone();
@@ -596,12 +602,6 @@ fn setup_join_window(
 
     let weak = app.as_weak();
     app.on_netplay_join_session(move |session_name, player_name, game_hash, password| {
-        let _ = netplay_write_sender.send(None); // close current websocket if any
-        manage_websocket(
-            netplay_read_sender.clone(),
-            netplay_write_receiver.resubscribe(),
-        );
-
         join_session(
             netplay_write_sender.clone(),
             netplay_read_receiver.resubscribe(),
