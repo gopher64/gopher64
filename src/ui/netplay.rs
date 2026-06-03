@@ -37,7 +37,7 @@ struct NetplaySession {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-struct NetplayMessage {
+struct NetplayLobbyMessage {
     message_type: MessageType,
     sessions: std::collections::HashMap<String, NetplaySession>,
     message: Option<String>,
@@ -103,10 +103,10 @@ fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
 fn setup_create_window(
     app: &AppWindow,
     game_settings: ui::GameSettings,
-    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
-    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
 ) {
     let weak = app.as_weak();
     app.on_netplay_create_session(
@@ -143,7 +143,7 @@ async fn do_authentication(
         tokio_tungstenite::tungstenite::Message,
     >,
 ) {
-    let authenticate = NetplayMessage {
+    let authenticate = NetplayLobbyMessage {
         message_type: MessageType::Authenticate,
         sessions: std::collections::HashMap::new(),
         message: Some(get_auth_token()),
@@ -158,8 +158,8 @@ async fn do_authentication(
 }
 
 fn manage_websocket(
-    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
 ) {
     let server_url = "ws://localhost:45000";
     tokio::spawn(async move {
@@ -174,7 +174,7 @@ fn manage_websocket(
             tokio::spawn(async move {
                 while let Some(Ok(response)) = read.next().await {
                     let decoded_response =
-                        postcard::from_bytes::<NetplayMessage>(&response.into_data());
+                        postcard::from_bytes::<NetplayLobbyMessage>(&response.into_data());
                     match decoded_response {
                         Ok(message) => {
                             let _ = netplay_read_sender.send(Some(message));
@@ -220,8 +220,10 @@ fn manage_websocket(
     });
 }
 
-fn update_sessions(netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>) {
-    let request_sessions = NetplayMessage {
+fn update_sessions(
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+) {
+    let request_sessions = NetplayLobbyMessage {
         message_type: MessageType::RequestListSessions,
         sessions: std::collections::HashMap::new(),
         message: None,
@@ -232,8 +234,8 @@ fn update_sessions(netplay_write_sender: tokio::sync::broadcast::Sender<Option<N
 
 #[allow(clippy::too_many_arguments)]
 fn create_session(
-    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     session_name: String,
     player_name: String,
     game_name: String,
@@ -265,7 +267,7 @@ fn create_session(
             features: Some(features),
             players: vec![player_name],
         };
-        let create_session = NetplayMessage {
+        let create_session = NetplayLobbyMessage {
             message_type: MessageType::RequestCreateSession,
             sessions: std::collections::HashMap::from([(session_name, session)]),
             message: None,
@@ -349,7 +351,7 @@ fn create_session(
 }
 
 fn join_session(
-    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     session_name: String,
     player_name: String,
     game_hash: String,
@@ -364,7 +366,7 @@ fn join_session(
         features: None,
         players: vec![player_name],
     };
-    let join_session = NetplayMessage {
+    let join_session = NetplayLobbyMessage {
         message_type: MessageType::RequestJoinSession,
         sessions: std::collections::HashMap::from([(session_name, session)]),
         message: None,
@@ -375,8 +377,8 @@ fn join_session(
 
 #[allow(clippy::too_many_arguments)]
 fn setup_wait_window(
-    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     session_name: slint::SharedString,
     game_name: slint::SharedString,
     rom_path: slint::SharedString,
@@ -388,7 +390,7 @@ fn setup_wait_window(
     app.set_netplay_rom_path(rom_path);
     app.set_netplay_can_start(true);
 
-    let request_update = NetplayMessage {
+    let request_update = NetplayLobbyMessage {
         message_type: MessageType::RequestUpdateSession,
         sessions: std::collections::HashMap::new(),
         message: None,
@@ -397,7 +399,7 @@ fn setup_wait_window(
 
     let sender = netplay_write_sender.clone();
     app.on_netplay_send_chat_message(move |message| {
-        let send_chat = NetplayMessage {
+        let send_chat = NetplayLobbyMessage {
             message_type: MessageType::SendChatMessage,
             sessions: std::collections::HashMap::new(),
             message: Some(message.into()),
@@ -407,7 +409,7 @@ fn setup_wait_window(
 
     let sender = netplay_write_sender.clone();
     app.on_netplay_begin_game(move || {
-        let begin_game = NetplayMessage {
+        let begin_game = NetplayLobbyMessage {
             message_type: MessageType::RequestBeginGame,
             sessions: std::collections::HashMap::new(),
             message: None,
@@ -513,10 +515,10 @@ fn setup_wait_window(
 
 fn setup_join_window(
     app: &AppWindow,
-    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
-    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-    netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
 ) {
     let _ = netplay_write_sender.send(None); // close current websocket if any
     manage_websocket(
@@ -673,13 +675,13 @@ fn setup_join_window(
 
 pub fn netplay_window(app: &AppWindow) {
     let (netplay_read_sender, netplay_read_receiver): (
-        tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-        tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+        tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+        tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     ) = tokio::sync::broadcast::channel(5);
 
     let (netplay_write_sender, netplay_write_receiver): (
-        tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
-        tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
+        tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+        tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     ) = tokio::sync::broadcast::channel(5);
 
     let weak_app = app.as_weak();
