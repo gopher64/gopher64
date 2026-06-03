@@ -34,7 +34,6 @@ pub struct Netplay {
     pub session: ggrs::P2PSession<GgrsConfig>,
     pub reliable_channel: matchbox_socket::WebRtcChannel,
     pub peers: Vec<matchbox_socket::PeerId>,
-    pub session_name: String,
     pub player_number: usize,
     pub connected: [bool; 4],
     pub data: std::collections::VecDeque<Vec<u8>>,
@@ -50,7 +49,6 @@ enum MessageType {
 #[derive(serde::Serialize, serde::Deserialize)]
 struct NetplayMessage {
     message_type: MessageType,
-    session: String,
     name: String,
     data: Vec<u8>,
 }
@@ -78,7 +76,6 @@ fn receive_message(netplay: &mut Netplay) -> NetplayMessage {
 pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
     let message = NetplayMessage {
         message_type: MessageType::SendData,
-        session: netplay.session_name.clone(),
         name: "rtc".to_string(),
         data: rtc.to_be_bytes().to_vec(),
     };
@@ -88,7 +85,6 @@ pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
 pub fn receive_rtc(netplay: &mut Netplay) -> i64 {
     let message = NetplayMessage {
         message_type: MessageType::ReceiveData,
-        session: netplay.session_name.clone(),
         name: "rtc".to_string(),
         data: vec![],
     };
@@ -102,7 +98,6 @@ pub fn receive_rtc(netplay: &mut Netplay) -> i64 {
 pub fn send_rng(netplay: &mut Netplay, seed: u64) {
     let message = NetplayMessage {
         message_type: MessageType::SendData,
-        session: netplay.session_name.clone(),
         name: "rng".to_string(),
         data: seed.to_be_bytes().to_vec(),
     };
@@ -112,7 +107,6 @@ pub fn send_rng(netplay: &mut Netplay, seed: u64) {
 pub fn receive_rng(netplay: &mut Netplay) -> u64 {
     let message = NetplayMessage {
         message_type: MessageType::ReceiveData,
-        session: netplay.session_name.clone(),
         name: "rng".to_string(),
         data: vec![],
     };
@@ -125,7 +119,6 @@ pub fn receive_rng(netplay: &mut Netplay) -> u64 {
 pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8]) {
     let message = NetplayMessage {
         message_type: MessageType::SendData,
-        session: netplay.session_name.clone(),
         name: save_type.to_string(),
         data: save_data.to_vec(),
     };
@@ -135,7 +128,6 @@ pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8]) {
 pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<u8>) {
     let message = NetplayMessage {
         message_type: MessageType::ReceiveData,
-        session: netplay.session_name.clone(),
         name: save_type.to_string(),
         data: vec![],
     };
@@ -149,8 +141,8 @@ pub fn process_netplay(netplay: &mut Netplay) {
     netplay.session.poll_remote_clients();
 }
 
-pub fn init(session_name: String, player_number: usize, number_of_players: usize) -> Netplay {
-    let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new("ws://localhost:45001")
+pub fn init(server_addr: String, player_number: usize, number_of_players: usize) -> Netplay {
+    let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
         .add_reliable_channel()
         .build();
@@ -200,7 +192,6 @@ pub fn init(session_name: String, player_number: usize, number_of_players: usize
         session,
         reliable_channel,
         peers,
-        session_name,
         player_number,
         connected: [false; 4],
         data: std::collections::VecDeque::new(),

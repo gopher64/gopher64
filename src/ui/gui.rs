@@ -19,7 +19,7 @@ struct GithubData {
 }
 
 pub struct NetplayDevice {
-    pub session_name: String,
+    pub server_addr: String,
     pub player_number: usize,
     pub number_of_players: usize,
 }
@@ -577,8 +577,8 @@ pub fn run_rom(
             serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
 
             command.args([
-                "--netplay-session-name",
-                &netplay_device.session_name,
+                "--netplay-server-addr",
+                &netplay_device.server_addr,
                 "--netplay-player-number",
                 &netplay_device.player_number.to_string(),
                 "--netplay-number-of-players",

@@ -451,11 +451,13 @@ fn setup_wait_window(
                             .unwrap();
                     }
                     MessageType::ResponseBeginGame => {
-                        if response.message.is_none() {
+                        if let Some(message) = &response.message
+                            && let Ok(_addr) = message.parse::<std::net::SocketAddr>()
+                        {
+                            let server_addr = message.clone();
                             let weak_app2 = weak_app.clone();
                             weak_app
                                 .upgrade_in_event_loop(move |handle| {
-                                    let session_name = handle.get_netplay_session_name();
                                     let player_name = handle.get_netplay_player_name();
                                     let players = handle.get_netplay_players();
                                     let player_number =
@@ -470,7 +472,7 @@ fn setup_wait_window(
                                             load_savestate_slot: None,
                                         },
                                         Some(ui::gui::NetplayDevice {
-                                            session_name: session_name.to_string(),
+                                            server_addr,
                                             player_number,
                                             number_of_players: players.row_count(),
                                         }),

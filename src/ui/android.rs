@@ -280,8 +280,8 @@ fn start_run_rom_on_jvm(
         ];
 
         if let Some(netplay) = netplay {
-            args.push(JString::from_str(env, "--netplay-session-name")?);
-            args.push(JString::from_str(env, &netplay.session_name)?);
+            args.push(JString::from_str(env, "--netplay-server-addr")?);
+            args.push(JString::from_str(env, &netplay.server_addr)?);
             args.push(JString::from_str(env, "--netplay-player-number")?);
             args.push(JString::from_str(env, &netplay.player_number.to_string())?);
             args.push(JString::from_str(env, "--netplay-number-of-players")?);
