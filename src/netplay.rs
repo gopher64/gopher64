@@ -15,7 +15,7 @@ pub struct Netplay {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 enum MessageType {
-    Authenticate,
+    Register,
     SendData,
     ReceiveData,
 }
@@ -123,13 +123,13 @@ pub fn init(session_name: String, player_number: usize) -> Netplay {
             ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
         );
     } else {
-        let authenticate = NetplayMessage {
-            message_type: MessageType::Authenticate,
+        let register = NetplayMessage {
+            message_type: MessageType::Register,
             session: session_name.clone(),
-            name: "authenticate".to_string(),
+            name: "register".to_string(),
             data: ui::netplay::get_auth_token().into(),
         };
-        let data = postcard::to_stdvec(&authenticate).unwrap();
+        let data = postcard::to_stdvec(&register).unwrap();
         socket
             .send(tokio_tungstenite::tungstenite::Message::Binary(data.into()))
             .unwrap();

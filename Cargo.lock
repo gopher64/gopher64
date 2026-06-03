@@ -2245,7 +2245,6 @@ dependencies = [
  "sha2",
  "slint",
  "slint-build",
- "socket2",
  "spin_sleep",
  "tokio",
  "tokio-tungstenite",
