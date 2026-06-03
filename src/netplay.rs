@@ -142,10 +142,11 @@ pub fn process_netplay(netplay: &mut Netplay) {
 }
 
 pub fn init(server_addr: String, player_number: usize, number_of_players: usize) -> Netplay {
-    let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
-        .add_unreliable_channel()
-        .add_reliable_channel()
-        .build();
+    let (socket, loop_fut) =
+        matchbox_socket::WebRtcSocketBuilder::new(format!("ws://{}", server_addr))
+            .add_unreliable_channel()
+            .add_reliable_channel()
+            .build();
     tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
             eprintln!("WebRTC loop failed: {}", e);
@@ -163,7 +164,7 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
             .0
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
-        if peers.len() == number_of_players {
+        if peers.len() == number_of_players - 1 {
             session_builder = session_builder
                 .with_num_players(number_of_players)
                 .unwrap()
