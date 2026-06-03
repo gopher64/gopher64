@@ -160,7 +160,7 @@ fn manage_websocket(
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayMessage>>,
 ) {
-    let server_url = "ws://127.0.0.1:45000";
+    let server_url = "ws://localhost:45000";
     tokio::spawn(async move {
         if let Ok(Ok((socket, _response))) = tokio::time::timeout(
             std::time::Duration::from_secs(2),
