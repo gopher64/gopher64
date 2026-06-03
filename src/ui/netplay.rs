@@ -521,8 +521,6 @@ fn setup_join_window(
         update_sessions(write_sender.clone());
     });
 
-    app.invoke_netplay_refresh_sessions();
-
     let write_sender = netplay_write_sender.clone();
     app.on_netplay_join_session(move |session_name, player_name, game_hash, password| {
         join_session(
@@ -660,6 +658,7 @@ fn setup_join_window(
     });
 
     app.set_show_netplay_join_session(true);
+    app.invoke_netplay_refresh_sessions();
 }
 
 pub fn netplay_window(app: &AppWindow) {
