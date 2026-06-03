@@ -284,6 +284,11 @@ fn start_run_rom_on_jvm(
             args.push(JString::from_str(env, &netplay.session_name)?);
             args.push(JString::from_str(env, "--netplay-player-number")?);
             args.push(JString::from_str(env, &netplay.player_number.to_string())?);
+            args.push(JString::from_str(env, "--netplay-number-of-players")?);
+            args.push(JString::from_str(
+                env,
+                &netplay.number_of_players.to_string(),
+            )?);
             args.push(JString::from_str(env, "--cheats")?);
             args.push(JString::from_str(env, cheats_path.to_str().unwrap())?);
 

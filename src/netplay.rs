@@ -1,16 +1,42 @@
-use crate::device;
 use crate::ui;
-use tokio_tungstenite::tungstenite::Utf8Bytes;
-use tokio_tungstenite::tungstenite::protocol::frame::CloseFrame;
-use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
+
+pub struct GgrsConfig;
+impl ggrs::Config for GgrsConfig {
+    type Input = u64;
+    type InputPredictor = ggrs::PredictRepeatLast;
+    type State = u64;
+    type Address = matchbox_socket::PeerId;
+}
+
+pub struct MatchboxSocket(matchbox_socket::WebRtcSocket);
+
+impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxSocket {
+    fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
+        let encoded = postcard::to_stdvec(msg).expect("serialization failed");
+        let channel = self.0.get_channel_mut(0).unwrap();
+        channel.send(encoded.into(), *addr);
+    }
+
+    fn receive_all_messages(&mut self) -> Vec<(matchbox_socket::PeerId, ggrs::Message)> {
+        let channel = self.0.get_channel_mut(0).unwrap();
+        channel
+            .receive()
+            .iter()
+            .filter_map(|(peer, packet)| {
+                let msg = postcard::from_bytes::<ggrs::Message>(&packet).ok()?;
+                Some((*peer, msg))
+            })
+            .collect()
+    }
+}
 
 pub struct Netplay {
+    pub session: ggrs::P2PSession<GgrsConfig>,
+    pub reliable_channel: matchbox_socket::WebRtcChannel,
+    pub peers: Vec<matchbox_socket::PeerId>,
     pub session_name: String,
     pub player_number: usize,
     pub connected: [bool; 4],
-    pub socket: tokio_tungstenite::tungstenite::WebSocket<
-        tokio_tungstenite::tungstenite::stream::MaybeTlsStream<std::net::TcpStream>,
-    >,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -30,15 +56,14 @@ struct NetplayMessage {
 
 fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
     let data = postcard::to_stdvec(&message).unwrap();
-    netplay
-        .socket
-        .send(tokio_tungstenite::tungstenite::Message::Binary(data.into()))
-        .unwrap();
+    for peer in netplay.peers.iter() {
+        netplay.reliable_channel.send(data.clone().into(), *peer);
+    }
 }
 
 fn receive_message(netplay: &mut Netplay) -> NetplayMessage {
-    let message = netplay.socket.read().unwrap();
-    let message = postcard::from_bytes::<NetplayMessage>(&message.into_data()).unwrap();
+    let messages = netplay.reliable_channel.receive();
+    let message = postcard::from_bytes::<NetplayMessage>(&messages.first().unwrap().1).unwrap();
     message
 }
 
@@ -112,45 +137,63 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message.data;
 }
 
-pub fn init(session_name: String, player_number: usize) -> Netplay {
-    let (mut socket, response) =
-        tokio_tungstenite::tungstenite::connect("ws://localhost:45000").expect("Can't connect");
+pub fn process_netplay(netplay: &mut Netplay) {
+    netplay.session.poll_remote_clients();
+}
 
-    let status = response.status();
-    if status.is_server_error() || status.is_client_error() {
-        ui::video::onscreen_message(
-            "Failed to connect to netplay server",
-            ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
-        );
-    } else {
-        let register = NetplayMessage {
-            message_type: MessageType::Register,
-            session: session_name.clone(),
-            name: "register".to_string(),
-            data: ui::netplay::get_auth_token().into(),
-        };
-        let data = postcard::to_stdvec(&register).unwrap();
-        socket
-            .send(tokio_tungstenite::tungstenite::Message::Binary(data.into()))
-            .unwrap();
+pub fn init(session_name: String, player_number: usize, number_of_players: usize) -> Netplay {
+    let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new("ws://localhost:45001")
+        .add_unreliable_channel()
+        .add_reliable_channel()
+        .build();
+    tokio::spawn(async move {
+        if let Err(e) = loop_fut.await {
+            eprintln!("WebRTC loop failed: {}", e);
+        }
+    });
+    let mut matchbox_socket = MatchboxSocket(socket);
+    let reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
+    let now = std::time::Instant::now();
+    let timeout = std::time::Duration::from_secs(10);
+    let mut peers = vec![];
+    let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new();
+    loop {
+        matchbox_socket.0.update_peers();
+        peers = matchbox_socket
+            .0
+            .connected_peers()
+            .collect::<Vec<matchbox_socket::PeerId>>();
+        if peers.len() == number_of_players {
+            session_builder = session_builder
+                .with_num_players(number_of_players)
+                .unwrap()
+                .with_input_delay(2)
+                .add_player(ggrs::PlayerType::Local, 0)
+                .unwrap();
+            for (i, peer) in peers.iter().enumerate() {
+                session_builder = session_builder
+                    .add_player(ggrs::PlayerType::Remote(*peer), i + 1)
+                    .unwrap();
+            }
+
+            break;
+        }
+        if now.elapsed() > timeout {
+            ui::video::onscreen_message(
+                "Failed to connect to netplay server",
+                ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+            );
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
     }
+    let session = session_builder.start_p2p_session(matchbox_socket).unwrap();
     Netplay {
+        session,
+        reliable_channel,
+        peers,
         session_name,
         player_number,
         connected: [false; 4],
-        socket,
     }
-}
-
-pub fn close(device: &mut device::Device) {
-    device
-        .netplay
-        .as_mut()
-        .unwrap()
-        .socket
-        .close(Some(CloseFrame {
-            code: CloseCode::Normal,
-            reason: Utf8Bytes::from(""),
-        }))
-        .unwrap();
 }

@@ -21,6 +21,7 @@ struct GithubData {
 pub struct NetplayDevice {
     pub session_name: String,
     pub player_number: usize,
+    pub number_of_players: usize,
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
@@ -580,6 +581,8 @@ pub fn run_rom(
                 &netplay_device.session_name,
                 "--netplay-player-number",
                 &netplay_device.player_number.to_string(),
+                "--netplay-number-of-players",
+                &netplay_device.number_of_players.to_string(),
                 "--cheats",
                 cheats_path.to_str().unwrap(),
             ]);

@@ -472,6 +472,7 @@ fn setup_wait_window(
                                         Some(ui::gui::NetplayDevice {
                                             session_name: session_name.to_string(),
                                             player_number,
+                                            number_of_players: players.row_count(),
                                         }),
                                         weak_app2,
                                     );
