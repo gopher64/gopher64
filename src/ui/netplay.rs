@@ -1,3 +1,5 @@
+use std::net::ToSocketAddrs;
+
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings};
@@ -452,7 +454,7 @@ fn setup_wait_window(
                     }
                     MessageType::ResponseBeginGame => {
                         if let Some(message) = &response.message
-                            && let Ok(_addr) = message.parse::<std::net::SocketAddr>()
+                            && let Ok(_addr) = message.to_socket_addrs()
                         {
                             let server_addr = message.clone();
                             let weak_app2 = weak_app.clone();
