@@ -4,6 +4,7 @@ use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings};
 use futures::{SinkExt, StreamExt};
 use sha2::digest::Digest;
 use slint::ComponentHandle;
+use slint::Model;
 use tokio_tungstenite::tungstenite::Bytes;
 use tokio_tungstenite::tungstenite::Utf8Bytes;
 use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
@@ -452,6 +453,11 @@ fn setup_wait_window(
                             let weak_app2 = weak_app.clone();
                             weak_app
                                 .upgrade_in_event_loop(move |handle| {
+                                    let session_name = handle.get_netplay_session_name();
+                                    let player_name = handle.get_netplay_player_name();
+                                    let players = handle.get_netplay_players();
+                                    let player_number =
+                                        players.iter().position(|x| x == &player_name).unwrap();
                                     run_rom(
                                         handle.get_netplay_rom_path().as_str().into(),
                                         ui::GameSettings {
@@ -462,8 +468,8 @@ fn setup_wait_window(
                                             load_savestate_slot: None,
                                         },
                                         Some(ui::gui::NetplayDevice {
-                                            session_name: "".to_string(),
-                                            player_number: 0,
+                                            session_name: session_name.to_string(),
+                                            player_number,
                                         }),
                                         weak_app2,
                                     );
