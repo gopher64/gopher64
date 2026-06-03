@@ -36,19 +36,11 @@ pub struct Netplay {
     pub peers: Vec<matchbox_socket::PeerId>,
     pub player_number: usize,
     pub connected: [bool; 4],
-    pub data: std::collections::VecDeque<Vec<u8>>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-enum MessageType {
-    Register,
-    SendData,
-    ReceiveData,
+    pub data: std::collections::HashMap<String, Vec<u8>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct NetplayMessage {
-    message_type: MessageType,
     name: String,
     data: Vec<u8>,
 }
@@ -60,22 +52,20 @@ fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
     }
 }
 
-fn receive_message(netplay: &mut Netplay) -> NetplayMessage {
-    while netplay.data.len() == 0 {
+fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
+    while !netplay.data.contains_key(name) {
         let messages = netplay.reliable_channel.receive();
-        netplay
-            .data
-            .extend(messages.iter().map(|(_, data)| data.to_vec()));
+        for (_, data) in messages {
+            let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
+            netplay.data.insert(message.name, message.data);
+        }
         std::thread::sleep(std::time::Duration::from_millis(1));
     }
-    let data = netplay.data.pop_front().unwrap();
-    let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
-    message
+    netplay.data.remove(name).unwrap()
 }
 
 pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
     let message = NetplayMessage {
-        message_type: MessageType::SendData,
         name: "rtc".to_string(),
         data: rtc.to_be_bytes().to_vec(),
     };
@@ -83,21 +73,13 @@ pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
 }
 
 pub fn receive_rtc(netplay: &mut Netplay) -> i64 {
-    let message = NetplayMessage {
-        message_type: MessageType::ReceiveData,
-        name: "rtc".to_string(),
-        data: vec![],
-    };
-    send_message(netplay, message);
+    let message = receive_message(netplay, "rtc");
 
-    let message = receive_message(netplay);
-
-    i64::from_be_bytes(message.data.try_into().unwrap())
+    i64::from_be_bytes(message.try_into().unwrap())
 }
 
 pub fn send_rng(netplay: &mut Netplay, seed: u64) {
     let message = NetplayMessage {
-        message_type: MessageType::SendData,
         name: "rng".to_string(),
         data: seed.to_be_bytes().to_vec(),
     };
@@ -105,20 +87,12 @@ pub fn send_rng(netplay: &mut Netplay, seed: u64) {
 }
 
 pub fn receive_rng(netplay: &mut Netplay) -> u64 {
-    let message = NetplayMessage {
-        message_type: MessageType::ReceiveData,
-        name: "rng".to_string(),
-        data: vec![],
-    };
-    send_message(netplay, message);
-
-    let message = receive_message(netplay);
-    u64::from_be_bytes(message.data.try_into().unwrap())
+    let message = receive_message(netplay, "rng");
+    u64::from_be_bytes(message.try_into().unwrap())
 }
 
 pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8]) {
     let message = NetplayMessage {
-        message_type: MessageType::SendData,
         name: save_type.to_string(),
         data: save_data.to_vec(),
     };
@@ -126,15 +100,8 @@ pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8]) {
 }
 
 pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<u8>) {
-    let message = NetplayMessage {
-        message_type: MessageType::ReceiveData,
-        name: save_type.to_string(),
-        data: vec![],
-    };
-    send_message(netplay, message);
-
-    let message = receive_message(netplay);
-    *save_data = message.data;
+    let message = receive_message(netplay, save_type);
+    *save_data = message;
 }
 
 pub fn process_netplay(netplay: &mut Netplay) {
@@ -200,6 +167,6 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
             number_of_players > 2,
             number_of_players > 3,
         ],
-        data: std::collections::VecDeque::new(),
+        data: std::collections::HashMap::new(),
     }
 }
