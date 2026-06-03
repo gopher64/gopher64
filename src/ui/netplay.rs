@@ -382,6 +382,7 @@ fn setup_wait_window(
     app.set_netplay_session_name(session_name);
     app.set_netplay_game_name(game_name);
     app.set_netplay_rom_path(rom_path);
+    app.set_netplay_can_start(true);
 
     let request_update = NetplayMessage {
         message_type: MessageType::RequestUpdateSession,
