@@ -452,8 +452,6 @@ fn setup_wait_window(
                             let weak_app2 = weak_app.clone();
                             weak_app
                                 .upgrade_in_event_loop(move |handle| {
-                                    let _ = netplay_write_sender.send(None);
-
                                     run_rom(
                                         handle.get_netplay_rom_path().as_str().into(),
                                         ui::GameSettings {
