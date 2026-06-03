@@ -15,6 +15,7 @@ pub struct Netplay {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 enum MessageType {
+    Authenticate,
     SendData,
     ReceiveData,
 }
@@ -105,7 +106,7 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
 }
 
 pub fn init(_session_name: String, player_number: usize) -> Netplay {
-    let (socket, response) =
+    let (mut socket, response) =
         tokio_tungstenite::tungstenite::connect("ws://localhost:45000").expect("Can't connect");
 
     let status = response.status();
@@ -114,6 +115,16 @@ pub fn init(_session_name: String, player_number: usize) -> Netplay {
             "Failed to connect to netplay server",
             ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
         );
+    } else {
+        let authenticate = NetplayMessage {
+            message_type: MessageType::Authenticate,
+            name: "authenticate".to_string(),
+            data: ui::netplay::get_auth_token().into(),
+        };
+        let data = postcard::to_stdvec(&authenticate).unwrap();
+        socket
+            .send(tokio_tungstenite::tungstenite::Message::Binary(data.into()))
+            .unwrap();
     }
     Netplay {
         player_number,

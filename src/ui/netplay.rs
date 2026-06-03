@@ -42,6 +42,22 @@ struct NetplayMessage {
     message: Option<String>,
 }
 
+pub fn get_auth_token() -> String {
+    let now_utc = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis()
+        .to_string();
+    let hasher: String = sha2::Sha256::new()
+        .chain_update(&now_utc)
+        .chain_update(env!("NETPLAY_ID"))
+        .finalize()
+        .iter()
+        .map(|b| format!("{:02x}", b))
+        .collect();
+    format!("{}|{}", now_utc, hasher)
+}
+
 fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
     let select_rom = ui::gui::select_rom(rom_dir);
     tokio::spawn(async move {
@@ -126,23 +142,10 @@ async fn do_authentication(
         tokio_tungstenite::tungstenite::Message,
     >,
 ) {
-    let now_utc = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis()
-        .to_string();
-    let hasher: String = sha2::Sha256::new()
-        .chain_update(&now_utc)
-        .chain_update(env!("NETPLAY_ID"))
-        .finalize()
-        .iter()
-        .map(|b| format!("{:02x}", b))
-        .collect();
-    let message = format!("{}|{}", now_utc, hasher);
     let authenticate = NetplayMessage {
         message_type: MessageType::Authenticate,
         sessions: std::collections::HashMap::new(),
-        message: Some(message.into()),
+        message: Some(get_auth_token()),
     };
 
     write
