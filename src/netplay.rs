@@ -1,7 +1,6 @@
 use crate::device;
 use crate::ui;
 use tokio_tungstenite::tungstenite::Utf8Bytes;
-use tokio_tungstenite::tungstenite::http::StatusCode;
 use tokio_tungstenite::tungstenite::protocol::frame::CloseFrame;
 use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
 
@@ -118,7 +117,7 @@ pub fn init(session_name: String, player_number: usize) -> Netplay {
         tokio_tungstenite::tungstenite::connect("ws://localhost:45000").expect("Can't connect");
 
     let status = response.status();
-    if status != StatusCode::OK {
+    if status.is_server_error() || status.is_client_error() {
         ui::video::onscreen_message(
             "Failed to connect to netplay server",
             ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
