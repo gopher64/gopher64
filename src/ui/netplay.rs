@@ -461,7 +461,10 @@ fn setup_wait_window(
                                             cheats: game_settings.cheats,
                                             load_savestate_slot: None,
                                         },
-                                        None,
+                                        Some(ui::gui::NetplayDevice {
+                                            session_name: "".to_string(),
+                                            player_number: 0,
+                                        }),
                                         weak_app2,
                                     );
                                     handle.invoke_netplay_close();

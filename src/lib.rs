@@ -27,8 +27,8 @@ pub struct Args {
     pub disable_expansion_pak: Option<bool>,
     #[arg(long, value_name = "CHEATS_FILE", hide = true)]
     pub cheats: Option<String>,
-    #[arg(long, value_name = "NETPLAY_PEER_ADDR", hide = true)]
-    pub netplay_peer_addr: Option<String>,
+    #[arg(long, value_name = "NETPLAY_SESSION_NAME", hide = true)]
+    pub netplay_session_name: Option<String>,
     #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER", hide = true)]
     pub netplay_player_number: Option<usize>,
     #[arg(
@@ -165,10 +165,10 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         let mut shutdown_tx = None;
         let mut usb_handle = None;
 
-        if let Some(peer_addr) = args.netplay_peer_addr
+        if let Some(session_name) = args.netplay_session_name
             && let Some(player_number) = args.netplay_player_number
         {
-            device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
+            device.netplay = Some(netplay::init(session_name, player_number));
         } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]

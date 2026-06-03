@@ -6,6 +6,7 @@ use tokio_tungstenite::tungstenite::protocol::frame::CloseFrame;
 use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
 
 pub struct Netplay {
+    pub session_name: String,
     pub player_number: usize,
     pub connected: [bool; 4],
     pub socket: tokio_tungstenite::tungstenite::WebSocket<
@@ -23,6 +24,7 @@ enum MessageType {
 #[derive(serde::Serialize, serde::Deserialize)]
 struct NetplayMessage {
     message_type: MessageType,
+    session: String,
     name: String,
     data: Vec<u8>,
 }
@@ -44,6 +46,7 @@ fn receive_message(netplay: &mut Netplay) -> NetplayMessage {
 pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
     let message = NetplayMessage {
         message_type: MessageType::SendData,
+        session: netplay.session_name.clone(),
         name: "rtc".to_string(),
         data: rtc.to_be_bytes().to_vec(),
     };
@@ -53,6 +56,7 @@ pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
 pub fn receive_rtc(netplay: &mut Netplay) -> i64 {
     let message = NetplayMessage {
         message_type: MessageType::ReceiveData,
+        session: netplay.session_name.clone(),
         name: "rtc".to_string(),
         data: vec![],
     };
@@ -66,6 +70,7 @@ pub fn receive_rtc(netplay: &mut Netplay) -> i64 {
 pub fn send_rng(netplay: &mut Netplay, seed: u64) {
     let message = NetplayMessage {
         message_type: MessageType::SendData,
+        session: netplay.session_name.clone(),
         name: "rng".to_string(),
         data: seed.to_be_bytes().to_vec(),
     };
@@ -75,6 +80,7 @@ pub fn send_rng(netplay: &mut Netplay, seed: u64) {
 pub fn receive_rng(netplay: &mut Netplay) -> u64 {
     let message = NetplayMessage {
         message_type: MessageType::ReceiveData,
+        session: netplay.session_name.clone(),
         name: "rng".to_string(),
         data: vec![],
     };
@@ -87,6 +93,7 @@ pub fn receive_rng(netplay: &mut Netplay) -> u64 {
 pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8]) {
     let message = NetplayMessage {
         message_type: MessageType::SendData,
+        session: netplay.session_name.clone(),
         name: save_type.to_string(),
         data: save_data.to_vec(),
     };
@@ -96,6 +103,7 @@ pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8]) {
 pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<u8>) {
     let message = NetplayMessage {
         message_type: MessageType::ReceiveData,
+        session: netplay.session_name.clone(),
         name: save_type.to_string(),
         data: vec![],
     };
@@ -105,7 +113,7 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message.data;
 }
 
-pub fn init(_session_name: String, player_number: usize) -> Netplay {
+pub fn init(session_name: String, player_number: usize) -> Netplay {
     let (mut socket, response) =
         tokio_tungstenite::tungstenite::connect("ws://localhost:45000").expect("Can't connect");
 
@@ -118,6 +126,7 @@ pub fn init(_session_name: String, player_number: usize) -> Netplay {
     } else {
         let authenticate = NetplayMessage {
             message_type: MessageType::Authenticate,
+            session: session_name.clone(),
             name: "authenticate".to_string(),
             data: ui::netplay::get_auth_token().into(),
         };
@@ -127,6 +136,7 @@ pub fn init(_session_name: String, player_number: usize) -> Netplay {
             .unwrap();
     }
     Netplay {
+        session_name,
         player_number,
         connected: [false; 4],
         socket,
