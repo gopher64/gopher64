@@ -194,7 +194,12 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
         reliable_channel,
         peers,
         player_number,
-        connected: [false; 4],
+        connected: [
+            number_of_players > 0,
+            number_of_players > 1,
+            number_of_players > 2,
+            number_of_players > 3,
+        ],
         data: std::collections::VecDeque::new(),
     }
 }
