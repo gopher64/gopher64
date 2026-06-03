@@ -64,6 +64,43 @@ fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
     netplay.data.remove(name).unwrap()
 }
 
+fn send_player_number(
+    channel: &mut matchbox_socket::WebRtcChannel,
+    peers: Vec<matchbox_socket::PeerId>,
+    player_number: usize,
+) {
+    let message = NetplayMessage {
+        name: "player_number".to_string(),
+        data: player_number.to_be_bytes().to_vec(),
+    };
+    let data = postcard::to_stdvec(&message).unwrap();
+    for peer in peers {
+        channel.send(data.clone().into(), peer);
+    }
+}
+
+fn get_player_numbers(
+    channel: &mut matchbox_socket::WebRtcChannel,
+    local_player_number: usize,
+    number_of_peers: usize,
+) -> std::collections::BTreeMap<usize, Option<matchbox_socket::PeerId>> {
+    let mut player_numbers = std::collections::BTreeMap::new();
+    player_numbers.insert(local_player_number, None);
+    let mut messages = vec![];
+    while messages.len() < number_of_peers {
+        messages.extend(channel.receive());
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    for (peer, data) in messages {
+        let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
+        player_numbers.insert(
+            usize::from_be_bytes(message.data.try_into().unwrap()),
+            Some(peer),
+        );
+    }
+    player_numbers
+}
+
 pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
     let message = NetplayMessage {
         name: "rtc".to_string(),
@@ -120,7 +157,7 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
         }
     });
     let mut matchbox_socket = MatchboxSocket(socket);
-    let reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
+    let mut reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
     let now = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(10);
     let mut peers = vec![];
@@ -132,16 +169,23 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
         if peers.len() == number_of_players - 1 {
+            send_player_number(&mut reliable_channel, peers.clone(), player_number);
+            let player_numbers =
+                get_player_numbers(&mut reliable_channel, player_number, peers.len());
             session_builder = session_builder
                 .with_num_players(number_of_players)
                 .unwrap()
-                .with_input_delay(2)
-                .add_player(ggrs::PlayerType::Local, 0)
-                .unwrap();
-            for (i, peer) in peers.iter().enumerate() {
-                session_builder = session_builder
-                    .add_player(ggrs::PlayerType::Remote(*peer), i + 1)
-                    .unwrap();
+                .with_input_delay(2);
+            for (i, peer) in player_numbers.iter() {
+                if let Some(peer) = peer {
+                    session_builder = session_builder
+                        .add_player(ggrs::PlayerType::Remote(*peer), *i)
+                        .unwrap();
+                } else {
+                    session_builder = session_builder
+                        .add_player(ggrs::PlayerType::Local, *i)
+                        .unwrap();
+                }
             }
 
             break;
