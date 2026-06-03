@@ -219,7 +219,7 @@ pub fn process_ram(device: &mut device::Device) {
 pub fn connect_pif_channels(device: &mut device::Device) {
     for i in 0..4 {
         if let Some(netplay) = &device.netplay {
-            if netplay.player_data[i].reg_id != 0 {
+            if netplay.connected[i] {
                 device.pif.channels[i].process = Some(device::controller::process);
             }
         } else if device.ui.config.input.controller_enabled[i] {
@@ -278,7 +278,7 @@ pub fn init(device: &mut device::Device) {
 
     for i in 0..4 {
         if let Some(netplay) = &device.netplay {
-            if netplay.player_data[i].reg_id != 0 {
+            if netplay.connected[i] {
                 device.pif.channels[i].pak_handler = Some(default_handler);
             }
         } else if device.ui.config.input.controller_enabled[i] {

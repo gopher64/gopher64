@@ -30,7 +30,7 @@ pub struct Args {
     #[arg(long, value_name = "NETPLAY_PEER_ADDR", hide = true)]
     pub netplay_peer_addr: Option<String>,
     #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER", hide = true)]
-    pub netplay_player_number: Option<u8>,
+    pub netplay_player_number: Option<usize>,
     #[arg(
         long,
         value_name = "PROFILE_NAME",

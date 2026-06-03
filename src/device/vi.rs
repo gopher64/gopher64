@@ -1,4 +1,4 @@
-use crate::{cheats, device, netplay, retroachievements, savestates, ui};
+use crate::{cheats, device, retroachievements, savestates, ui};
 
 const VI_STATUS_REG: usize = 0;
 const VI_ORIGIN_REG: usize = 1;
@@ -133,15 +133,10 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     retroachievements::do_frame();
 
-    let (mut speed_limiter_toggled, paused) = ui::video::check_callback(device);
+    let (speed_limiter_toggled, paused) = ui::video::check_callback(device);
 
-    if let Some(netplay) = &mut device.netplay {
-        netplay::send_sync_check(netplay, device.cpu.cop0.regs.as_ref());
-        if device.vi.enable_speed_limiter == netplay.fast_forward {
-            speed_limiter_toggled = true;
-            device.vi.enable_speed_limiter = !netplay.fast_forward;
-        }
-    } else if device.ui.config.emulation.rewind
+    if device.netplay.is_none()
+        && device.ui.config.emulation.rewind
         && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
     {
         device.savestate.save_rewind = true;
