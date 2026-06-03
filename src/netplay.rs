@@ -37,6 +37,7 @@ pub struct Netplay {
     pub session_name: String,
     pub player_number: usize,
     pub connected: [bool; 4],
+    pub data: std::collections::VecDeque<Vec<u8>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -62,8 +63,15 @@ fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
 }
 
 fn receive_message(netplay: &mut Netplay) -> NetplayMessage {
-    let messages = netplay.reliable_channel.receive();
-    let message = postcard::from_bytes::<NetplayMessage>(&messages.first().unwrap().1).unwrap();
+    while netplay.data.len() == 0 {
+        let messages = netplay.reliable_channel.receive();
+        netplay
+            .data
+            .extend(messages.iter().map(|(_, data)| data.to_vec()));
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    let data = netplay.data.pop_front().unwrap();
+    let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
     message
 }
 
@@ -195,5 +203,6 @@ pub fn init(session_name: String, player_number: usize, number_of_players: usize
         session_name,
         player_number,
         connected: [false; 4],
+        data: std::collections::VecDeque::new(),
     }
 }
