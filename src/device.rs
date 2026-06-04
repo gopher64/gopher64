@@ -256,6 +256,7 @@ pub fn zero_m128i() -> __m128i {
 
 impl Device {
     pub fn clone_state(&mut self, device: &Device) {
+        self.rng.clone_from(&device.rng);
         self.cpu.clone_from(&device.cpu);
         self.pif.clone_from(&device.pif);
         self.cart.clone_from(&device.cart);
