@@ -179,6 +179,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 player_number,
                 number_of_players,
                 input_delay,
+                device::cart::rom::is_system_pal(rom_contents[0x3E]),
             ));
         } else {
             for i in 0..4 {

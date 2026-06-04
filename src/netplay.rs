@@ -252,6 +252,7 @@ pub fn init(
     player_number: usize,
     number_of_players: usize,
     input_delay: usize,
+    pal: bool,
 ) -> Netplay {
     let (socket, loop_fut) =
         matchbox_socket::WebRtcSocketBuilder::new(format!("ws://{}", server_addr))
@@ -283,6 +284,8 @@ pub fn init(
                 .with_num_players(number_of_players)
                 .unwrap()
                 .with_input_delay(input_delay)
+                .with_fps(if pal { 50 } else { 60 })
+                .unwrap()
                 .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
             for (i, peer) in player_numbers.iter() {
                 if let Some(peer) = peer {
