@@ -192,12 +192,14 @@ fn manage_websocket(
                 loop {
                     match netplay_write_receiver.recv().await {
                         Ok(Some(response)) => {
-                            write
+                            if let Err(e) = write
                                 .send(Message::Binary(Bytes::from(
                                     postcard::to_stdvec(&response).unwrap(),
                                 )))
                                 .await
-                                .unwrap();
+                            {
+                                eprintln!("Failed to send message: {}", e);
+                            }
                         }
                         Ok(None) => {
                             break;
@@ -210,13 +212,15 @@ fn manage_websocket(
                         }
                     }
                 }
-                write
+                if let Err(e) = write
                     .send(Message::Close(Some(CloseFrame {
                         code: CloseCode::Normal,
                         reason: Utf8Bytes::from(""),
                     })))
                     .await
-                    .unwrap();
+                {
+                    eprintln!("Failed to send close message: {}", e);
+                }
             });
         }
     });
