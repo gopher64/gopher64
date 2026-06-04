@@ -176,7 +176,7 @@ pub fn process_requests(
         } else {
             let netplay = device.netplay.as_mut().unwrap();
             netplay.session.poll_remote_clients();
-            advance_frame(netplay);
+            advance_frame(device);
         }
     }
 }
@@ -221,22 +221,23 @@ pub fn process_netplay(
         }
     }
 
+    println!(
+        "processing netplay for frame {}",
+        netplay.session.current_frame()
+    );
+
+    advance_frame(device);
+    process_requests(device)
+}
+
+fn advance_frame(device: &mut device::Device) {
+    let netplay = device.netplay.as_mut().unwrap();
     let local_input = ui::input::get(&mut device.ui, 0, device.frame_counter);
     let local_handle = *netplay.session.local_player_handles().first().unwrap();
     netplay
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
-    println!(
-        "processing netplay for frame {}",
-        netplay.session.current_frame()
-    );
-
-    advance_frame(netplay);
-    process_requests(device)
-}
-
-fn advance_frame(netplay: &mut Netplay) {
     match netplay.session.advance_frame() {
         Ok(requests) => {
             netplay.requests.extend(requests);
