@@ -261,7 +261,11 @@ fn create_session(
         );
 
         let session = NetplaySession {
-            password: Some(password),
+            password: if password.is_empty() {
+                None
+            } else {
+                Some(password)
+            },
             game_name: Some(game_name),
             motd: None,
             game_checksum: Some(game_hash),
