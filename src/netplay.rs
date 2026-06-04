@@ -195,7 +195,9 @@ pub fn process_netplay(device: &mut device::Device) {
                 }
             }
         }
-        Err(ggrs::GgrsError::PredictionThreshold) => { /* skip frame */ }
+        Err(ggrs::GgrsError::PredictionThreshold) => {
+            println!("prediction threshold reached");
+        }
         Err(e) => panic!("{e}"),
     }
 }
