@@ -195,8 +195,9 @@ pub fn process_netplay(device: &mut device::Device) {
                         let hash = u128::from_be_bytes(hasher.finalize()[..16].try_into().unwrap());
                         cell.save(frame, Some(frame), Some(hash));
                     }
-                    ggrs::GgrsRequest::LoadGameState { .. } => {
-                        println!("load game state");
+                    ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
+                        let _state = cell.load().unwrap();
+                        // load state here
                     }
                     ggrs::GgrsRequest::AdvanceFrame { inputs } => {
                         println!("advance frame");
