@@ -1,11 +1,12 @@
 use crate::device;
 use crate::ui;
+use sha2::digest::Digest;
 
 pub struct GgrsConfig;
 impl ggrs::Config for GgrsConfig {
     type Input = ui::input::InputData;
     type InputPredictor = ggrs::PredictRepeatLast;
-    type State = u64;
+    type State = i32;
     type Address = matchbox_socket::PeerId;
 }
 
@@ -185,8 +186,14 @@ pub fn process_netplay(device: &mut device::Device) {
         Ok(requests) => {
             for request in requests {
                 match request {
-                    ggrs::GgrsRequest::SaveGameState { .. } => {
-                        println!("save game state");
+                    ggrs::GgrsRequest::SaveGameState { cell, frame } => {
+                        // save state here
+                        let mut hasher = sha2::Sha256::new();
+                        for reg in device.cpu.cop0.regs.as_ref() {
+                            hasher.update(reg.to_be_bytes());
+                        }
+                        let hash = u128::from_be_bytes(hasher.finalize()[..16].try_into().unwrap());
+                        cell.save(frame, Some(frame), Some(hash));
                     }
                     ggrs::GgrsRequest::LoadGameState { .. } => {
                         println!("load game state");
@@ -235,7 +242,8 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
             session_builder = session_builder
                 .with_num_players(number_of_players)
                 .unwrap()
-                .with_input_delay(2);
+                .with_input_delay(2)
+                .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
             for (i, peer) in player_numbers.iter() {
                 if let Some(peer) = peer {
                     session_builder = session_builder
