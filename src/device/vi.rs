@@ -111,7 +111,10 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
             if current_origin != device.vi.regs[reg as usize] {
                 if device.netplay.is_some() {
-                    netplay::process_netplay(device);
+                    let mut process_netplay = true;
+                    while process_netplay {
+                        process_netplay = netplay::process_netplay(device);
+                    }
                 } else {
                     savestates::process_savestates(device);
                 }
@@ -151,13 +154,19 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         reset_pace_deadline(device);
     }
 
-    if device.frame_counter.is_multiple_of(device.vi.limit_freq) && device.vi.enable_speed_limiter {
+    if (device.netplay.is_none()
+        || (device.netplay.is_some() && device.netplay.as_ref().unwrap().inputs.len() == 1))
+        && device.frame_counter.is_multiple_of(device.vi.limit_freq)
+        && device.vi.enable_speed_limiter
+    {
         speed_limiter(device);
     }
 
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
 
-    ui::video::update_screen();
+    if device.netplay.is_none() || device.netplay.as_ref().unwrap().inputs.len() == 1 {
+        ui::video::update_screen();
+    }
     device.frame_counter += 1;
 
     if device.netplay.is_none() && paused {

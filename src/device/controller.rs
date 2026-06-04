@@ -57,7 +57,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
         JCMD_CONTROLLER_READ => {
             let offset = device.pif.channels[channel].rx_buf.unwrap();
             let input = if let Some(netplay) = &mut device.netplay {
-                netplay.inputs[channel].0
+                netplay.inputs.front().unwrap()[channel].0
             } else {
                 ui::input::get(&mut device.ui, channel, device.frame_counter)
             };
@@ -158,7 +158,7 @@ pub fn pak_switch_event(device: &mut device::Device) {
         if channel.change_pak != PakType::None {
             //stop rumble if it is on
             if let Some(netplay) = &device.netplay {
-                if netplay.player_number as usize == i {
+                if netplay.player_number == i {
                     device::ui::input::set_rumble(&device.ui, 0, 0);
                 }
             } else {

@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::device;
 use crate::savestates;
 use crate::ui;
@@ -26,7 +28,7 @@ impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxSocket {
             .receive()
             .iter()
             .filter_map(|(peer, packet)| {
-                let msg = postcard::from_bytes::<ggrs::Message>(&packet).ok()?;
+                let msg = postcard::from_bytes::<ggrs::Message>(packet).ok()?;
                 Some((*peer, msg))
             })
             .collect()
@@ -40,7 +42,7 @@ pub struct Netplay {
     pub player_number: usize,
     pub connected: [bool; 4],
     pub data: std::collections::HashMap<String, Vec<u8>>,
-    pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
+    pub inputs: VecDeque<Vec<(ui::input::InputData, ggrs::InputStatus)>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -145,7 +147,7 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message;
 }
 
-pub fn process_netplay(device: &mut device::Device) {
+pub fn process_netplay(device: &mut device::Device) -> bool {
     let netplay = device.netplay.as_mut().unwrap();
 
     netplay.session.poll_remote_clients();
@@ -177,6 +179,12 @@ pub fn process_netplay(device: &mut device::Device) {
             }
         }
     }
+
+    if netplay.inputs.pop_front().is_some() && !netplay.inputs.is_empty() {
+        // there are more inputs to process
+        return false;
+    }
+
     let local_input = ui::input::get(&mut device.ui, 0, device.frame_counter);
     let local_handle = *netplay.session.local_player_handles().first().unwrap();
     netplay
@@ -187,6 +195,7 @@ pub fn process_netplay(device: &mut device::Device) {
         "processing netplay for frame {}",
         netplay.session.current_frame()
     );
+    let mut needs_more_inputs = true;
     match netplay.session.advance_frame() {
         Ok(requests) => {
             let mut save_frame = None;
@@ -207,8 +216,9 @@ pub fn process_netplay(device: &mut device::Device) {
                         load_frame = Some(cell.load().unwrap());
                     }
                     ggrs::GgrsRequest::AdvanceFrame { inputs } => {
-                        println!("advance frame");
-                        netplay.inputs.clone_from(&inputs);
+                        println!("adding input to netplay");
+                        netplay.inputs.push_back(inputs);
+                        needs_more_inputs = false;
                     }
                 }
             }
@@ -216,6 +226,7 @@ pub fn process_netplay(device: &mut device::Device) {
                 savestates::create_savestate(device, true, Some(save_frame));
             }
             if let Some(load_frame) = load_frame {
+                println!("loading savestate");
                 savestates::load_savestate(device, true, Some(load_frame));
             }
         }
@@ -224,6 +235,8 @@ pub fn process_netplay(device: &mut device::Device) {
         }
         Err(e) => panic!("{e}"),
     }
+
+    needs_more_inputs
 }
 
 pub fn init(server_addr: String, player_number: usize, number_of_players: usize) -> Netplay {
@@ -297,6 +310,6 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
             number_of_players > 3,
         ],
         data: std::collections::HashMap::new(),
-        inputs: vec![],
+        inputs: VecDeque::new(),
     }
 }

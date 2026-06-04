@@ -463,7 +463,7 @@ fn setup_wait_window(
                                     let player_name = handle.get_netplay_player_name();
                                     let players = handle.get_netplay_players();
                                     let player_number =
-                                        players.iter().position(|x| x == &player_name).unwrap();
+                                        players.iter().position(|x| x == player_name).unwrap();
                                     run_rom(
                                         handle.get_netplay_rom_path().as_str().into(),
                                         ui::GameSettings {

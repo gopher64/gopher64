@@ -218,11 +218,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
     let state_data = if rewind {
         if let Ok(mut pool) = device.savestate.rewind_pool.lock() {
             if let Some(rewind_frame) = rewind_frame {
-                if let Some(state) = pool.remove(&rewind_frame) {
-                    Some(state)
-                } else {
-                    None
-                }
+                pool.remove(&rewind_frame)
             } else if let Some((_key, state)) = pool.pop_last() {
                 Some(state)
             } else {

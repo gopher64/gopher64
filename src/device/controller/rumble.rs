@@ -17,7 +17,7 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
         let rumble = device.pif.ram[data + size - 1];
 
         if let Some(netplay) = &device.netplay {
-            if netplay.player_number as usize == channel {
+            if netplay.player_number == channel {
                 device::ui::input::set_rumble(&device.ui, 0, rumble);
             }
         } else {
