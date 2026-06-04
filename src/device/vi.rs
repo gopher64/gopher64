@@ -155,13 +155,17 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         reset_pace_deadline(device);
     }
 
-    if device.frame_counter.is_multiple_of(device.vi.limit_freq) && device.vi.enable_speed_limiter {
+    if (device.netplay.is_none() || netplay::pending_frames(device.netplay.as_ref().unwrap()) == 0)
+        && device.frame_counter.is_multiple_of(device.vi.limit_freq)
+        && device.vi.enable_speed_limiter
+    {
         speed_limiter(device);
     }
 
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
-
-    ui::video::update_screen();
+    if device.netplay.is_none() || netplay::pending_frames(device.netplay.as_ref().unwrap()) == 0 {
+        ui::video::update_screen();
+    }
     device.frame_counter += 1;
 
     if device.netplay.is_none() && paused {

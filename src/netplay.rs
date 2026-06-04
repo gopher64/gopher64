@@ -146,6 +146,14 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message;
 }
 
+pub fn pending_frames(netplay: &Netplay) -> usize {
+    netplay
+        .requests
+        .iter()
+        .filter(|r| matches!(r, ggrs::GgrsRequest::AdvanceFrame { .. }))
+        .count()
+}
+
 pub fn process_requests(
     device: &mut device::Device,
 ) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
