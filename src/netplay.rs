@@ -17,6 +17,9 @@ impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxSocket {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
         let channel = self.0.get_channel_mut(0).unwrap();
+        if channel.config().max_retransmits != Some(0) || channel.config().ordered {
+            eprintln!("Sending GGRS traffic over reliable channel");
+        }
         channel.send(encoded.into(), *addr);
     }
 
