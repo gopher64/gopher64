@@ -253,6 +253,8 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
 
         device.savestate.last_rewind_saved = state.device.vi.elapsed_time;
 
+        std::mem::swap(&mut device.rng, &mut state.device.rng);
+
         std::mem::swap(&mut device.ui.storage.saves, &mut state.saves);
 
         std::mem::swap(&mut device.cpu, &mut state.device.cpu);

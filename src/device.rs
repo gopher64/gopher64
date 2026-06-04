@@ -244,7 +244,6 @@ pub struct Device {
     pub ai: ai::Ai,
     pub si: si::Si,
     pub ri: ri::Ri,
-    #[serde(skip, default = "set_rng")]
     pub rng: rand::rngs::Xoshiro256PlusPlus,
     pub vru: controller::vru::Vru,
     pub transferpaks: [controller::transferpak::TransferPak; 4],
