@@ -172,6 +172,7 @@ pub fn process_netplay(device: &mut device::Device) -> bool {
                 println!("wait recommendation: skip_frames={}", skip_frames);
             }
             ggrs::GgrsEvent::DesyncDetected { .. } => {
+                println!("desync detected");
                 ui::video::onscreen_message(
                     "Desync detected",
                     ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
