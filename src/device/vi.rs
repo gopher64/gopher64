@@ -111,11 +111,11 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
             if current_origin != device.vi.regs[reg as usize] {
                 if let Some(netplay) = &device.netplay {
-                    if netplay.requests.is_empty() {
-                        netplay::process_netplay(device);
+                    device.netplay.as_mut().unwrap().inputs = if netplay.requests.is_empty() {
+                        netplay::process_netplay(device)
                     } else {
-                        netplay::process_requests(device);
-                    }
+                        netplay::process_requests(device)
+                    };
                 } else {
                     savestates::process_savestates(device);
                 }

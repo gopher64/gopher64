@@ -146,41 +146,44 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message;
 }
 
-pub fn process_requests(device: &mut device::Device) {
+pub fn process_requests(
+    device: &mut device::Device,
+) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
     loop {
-        let request = if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
-            request
+        if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
+            match request {
+                ggrs::GgrsRequest::SaveGameState { cell, frame } => {
+                    savestates::create_savestate(device, true, Some(frame));
+
+                    let mut hasher = sha2::Sha256::new();
+                    for reg in device.cpu.cop0.regs.as_ref() {
+                        hasher.update(reg.to_be_bytes());
+                    }
+                    let hash = u128::from_be_bytes(hasher.finalize()[..16].try_into().unwrap());
+                    cell.save(frame, Some(frame), Some(hash));
+                }
+                ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
+                    if let Some(frame) = cell.load() {
+                        savestates::load_savestate(device, true, Some(frame));
+                        println!("loaded savestate");
+                    }
+                }
+                ggrs::GgrsRequest::AdvanceFrame { inputs } => {
+                    println!("adding input to netplay");
+                    return inputs;
+                }
+            }
         } else {
-            return;
-        };
-
-        match request {
-            ggrs::GgrsRequest::SaveGameState { cell, frame } => {
-                savestates::create_savestate(device, true, Some(frame));
-
-                let mut hasher = sha2::Sha256::new();
-                for reg in device.cpu.cop0.regs.as_ref() {
-                    hasher.update(reg.to_be_bytes());
-                }
-                let hash = u128::from_be_bytes(hasher.finalize()[..16].try_into().unwrap());
-                cell.save(frame, Some(frame), Some(hash));
-            }
-            ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
-                if let Some(frame) = cell.load() {
-                    savestates::load_savestate(device, true, Some(frame));
-                    println!("loaded savestate");
-                }
-            }
-            ggrs::GgrsRequest::AdvanceFrame { inputs } => {
-                println!("adding input to netplay");
-                device.netplay.as_mut().unwrap().inputs.clone_from(&inputs);
-                return;
-            }
+            let netplay = device.netplay.as_mut().unwrap();
+            netplay.session.poll_remote_clients();
+            advance_frame(netplay);
         }
     }
 }
 
-pub fn process_netplay(device: &mut device::Device) {
+pub fn process_netplay(
+    device: &mut device::Device,
+) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
     let netplay = device.netplay.as_mut().unwrap();
 
     netplay.session.poll_remote_clients();
@@ -229,6 +232,11 @@ pub fn process_netplay(device: &mut device::Device) {
         netplay.session.current_frame()
     );
 
+    advance_frame(netplay);
+    process_requests(device)
+}
+
+fn advance_frame(netplay: &mut Netplay) {
     match netplay.session.advance_frame() {
         Ok(requests) => {
             netplay.requests.extend(requests);
@@ -238,7 +246,6 @@ pub fn process_netplay(device: &mut device::Device) {
         }
         Err(e) => panic!("{e}"),
     }
-    process_requests(device);
 }
 
 pub fn init(server_addr: String, player_number: usize, number_of_players: usize) -> Netplay {
