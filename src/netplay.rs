@@ -1,8 +1,9 @@
+use crate::device;
 use crate::ui;
 
 pub struct GgrsConfig;
 impl ggrs::Config for GgrsConfig {
-    type Input = u64;
+    type Input = ui::input::InputData;
     type InputPredictor = ggrs::PredictRepeatLast;
     type State = u64;
     type Address = matchbox_socket::PeerId;
@@ -141,8 +142,60 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message;
 }
 
-pub fn process_netplay(netplay: &mut Netplay) {
+pub fn process_netplay(device: &mut device::Device) {
+    let netplay = device.netplay.as_mut().unwrap();
+
     netplay.session.poll_remote_clients();
+    for event in netplay.session.events() {
+        match event {
+            ggrs::GgrsEvent::Synchronizing { .. } => {
+                println!("synchronizing");
+            }
+            ggrs::GgrsEvent::Synchronized { .. } => {
+                println!("synchronized");
+            }
+            ggrs::GgrsEvent::Disconnected { .. } => {
+                println!("disconnected");
+            }
+            ggrs::GgrsEvent::NetworkInterrupted { .. } => {
+                println!("network interrupted");
+            }
+            ggrs::GgrsEvent::NetworkResumed { .. } => {
+                println!("network resumed");
+            }
+            ggrs::GgrsEvent::WaitRecommendation { .. } => {
+                println!("wait recommendation");
+            }
+            ggrs::GgrsEvent::DesyncDetected { .. } => {
+                println!("desync detected");
+            }
+        }
+    }
+    let local_input = ui::input::get(&mut device.ui, 0, device.frame_counter);
+    let local_handle = *netplay.session.local_player_handles().first().unwrap();
+    netplay
+        .session
+        .add_local_input(local_handle, local_input)
+        .unwrap();
+    match netplay.session.advance_frame() {
+        Ok(requests) => {
+            for request in requests {
+                match request {
+                    ggrs::GgrsRequest::SaveGameState { .. } => {
+                        println!("save game state");
+                    }
+                    ggrs::GgrsRequest::LoadGameState { .. } => {
+                        println!("load game state");
+                    }
+                    ggrs::GgrsRequest::AdvanceFrame { .. } => {
+                        println!("advance frame");
+                    }
+                }
+            }
+        }
+        Err(ggrs::GgrsError::PredictionThreshold) => { /* skip frame */ }
+        Err(e) => panic!("{e}"),
+    }
 }
 
 pub fn init(server_addr: String, player_number: usize, number_of_players: usize) -> Netplay {

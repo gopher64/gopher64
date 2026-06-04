@@ -111,8 +111,8 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
             if current_origin != device.vi.regs[reg as usize] {
                 savestates::process_savestates(device);
-                if let Some(netplay) = device.netplay.as_mut() {
-                    netplay::process_netplay(netplay);
+                if device.netplay.is_some() {
+                    netplay::process_netplay(device);
                 }
                 let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
             }
