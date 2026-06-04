@@ -83,13 +83,13 @@ pub struct Savestate {
 }
 
 pub struct SavestateData {
-    device: device::Device,
+    device: Box<device::Device>,
     saves: ui::storage::Saves,
     rdp_state: Vec<u8>,
     ra_state: Vec<u8>,
 }
 
-static DEVICE_CLONE: std::sync::LazyLock<std::sync::Mutex<device::Device>> =
+static DEVICE_CLONE: std::sync::LazyLock<std::sync::Mutex<Box<device::Device>>> =
     std::sync::LazyLock::new(|| std::sync::Mutex::new(device::Device::new(false)));
 
 static SAVES_CLONE: std::sync::LazyLock<std::sync::Mutex<ui::storage::Saves>> =
@@ -241,7 +241,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         && let Ok(saves) = postcard::from_bytes(&saves_data)
     {
         Some(SavestateData {
-            device: *state,
+            device: state,
             saves,
             rdp_state,
             ra_state,

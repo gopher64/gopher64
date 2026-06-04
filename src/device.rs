@@ -275,7 +275,7 @@ impl Device {
         self.cheats.clone_from(&device.cheats);
     }
 
-    pub fn new(with_ui: bool) -> Device {
+    pub fn new(with_ui: bool) -> Box<Device> {
         let mut byte_swap: usize = 0;
         let test: [u8; 4] = [1, 2, 3, 4];
         // if the host computer is little endian, that means the RDRAM will be stored as little endian
@@ -283,7 +283,7 @@ impl Device {
         if u32::from_le_bytes(test) == u32::from_ne_bytes(test) {
             byte_swap = 3;
         }
-        Device {
+        Box::new(Device {
             netplay: None,
             ui: if with_ui {
                 ui::Ui::new()
@@ -559,6 +559,6 @@ impl Device {
                 boot: true,
                 enabled: false,
             },
-        }
+        })
     }
 }
