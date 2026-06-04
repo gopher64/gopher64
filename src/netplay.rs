@@ -38,6 +38,7 @@ pub struct Netplay {
     pub player_number: usize,
     pub connected: [bool; 4],
     pub data: std::collections::HashMap<String, Vec<u8>>,
+    pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -187,8 +188,9 @@ pub fn process_netplay(device: &mut device::Device) {
                     ggrs::GgrsRequest::LoadGameState { .. } => {
                         println!("load game state");
                     }
-                    ggrs::GgrsRequest::AdvanceFrame { .. } => {
+                    ggrs::GgrsRequest::AdvanceFrame { inputs } => {
                         println!("advance frame");
+                        netplay.inputs.clone_from(&inputs);
                     }
                 }
             }
@@ -265,5 +267,6 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
             number_of_players > 3,
         ],
         data: std::collections::HashMap::new(),
+        inputs: vec![],
     }
 }

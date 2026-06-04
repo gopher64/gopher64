@@ -56,11 +56,8 @@ pub fn process(device: &mut device::Device, channel: usize) {
         }
         JCMD_CONTROLLER_READ => {
             let offset = device.pif.channels[channel].rx_buf.unwrap();
-            let input = if let Some(_netplay) = &mut device.netplay {
-                ui::input::InputData {
-                    data: 0,
-                    pak_change_pressed: false,
-                }
+            let input = if let Some(netplay) = &mut device.netplay {
+                netplay.inputs[channel].0
             } else {
                 ui::input::get(&mut device.ui, channel, device.frame_counter)
             };
