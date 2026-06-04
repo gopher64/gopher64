@@ -195,14 +195,9 @@ pub fn process_netplay(
     netplay.session.poll_remote_clients();
     for event in netplay.session.events() {
         match event {
-            ggrs::GgrsEvent::Synchronizing { .. } => {
-                println!("synchronizing");
-            }
-            ggrs::GgrsEvent::Synchronized { .. } => {
-                println!("synchronized");
-            }
+            ggrs::GgrsEvent::Synchronizing { .. } => {}
+            ggrs::GgrsEvent::Synchronized { .. } => {}
             ggrs::GgrsEvent::Disconnected { .. } => {
-                println!("disconnected");
                 ui::video::onscreen_message(
                     "Peer disconnected",
                     ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
@@ -222,7 +217,6 @@ pub fn process_netplay(
                     "Desync detected",
                     ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
                 );
-                panic!("desync detected");
             }
         }
     }
@@ -281,7 +275,7 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
                 .with_num_players(number_of_players)
                 .unwrap()
                 .with_input_delay(2)
-                .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 5 });
+                .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
             for (i, peer) in player_numbers.iter() {
                 if let Some(peer) = peer {
                     session_builder = session_builder
