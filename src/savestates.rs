@@ -78,7 +78,8 @@ pub struct Savestate {
     pub load_rewind: bool,
     pub last_rewind_saved: f64,
     #[serde(skip)]
-    pub rewind_pool: std::sync::Arc<std::sync::Mutex<std::collections::VecDeque<SavestateData>>>,
+    pub rewind_pool:
+        std::sync::Arc<std::sync::Mutex<std::collections::BTreeMap<i32, SavestateData>>>,
 }
 
 pub struct SavestateData {
@@ -101,16 +102,16 @@ pub fn process_savestates(device: &mut device::Device) {
             device.savestate.save_rewind = false;
         }
         device.savestate.save_state = false;
-        create_savestate(device, rewind);
+        create_savestate(device, rewind, None);
     } else if device.savestate.load_state || device.savestate.load_rewind {
         device.savestate.load_state = false;
         let rewind = device.savestate.load_rewind;
         device.savestate.load_rewind = false;
-        load_savestate(device, rewind);
+        load_savestate(device, rewind, None);
     }
 }
 
-fn create_savestate(device: &mut device::Device, rewind: bool) {
+pub fn create_savestate(device: &mut device::Device, rewind: bool, rewind_frame: Option<i32>) {
     if !rewind {
         // skipped on rewind as a speed hack
         ui::video::hard_sync(); // to flush the RDP so the RDRAM is updated
@@ -148,14 +149,24 @@ fn create_savestate(device: &mut device::Device, rewind: bool) {
                 let mut state = device::Device::new(false);
                 state.clone_state(device_clone.deref());
                 if let Ok(mut pool) = rewind_pool.lock() {
-                    pool.push_back(SavestateData {
-                        device: state,
-                        saves: saves_clone.clone(),
-                        rdp_state,
-                        ra_state,
-                    });
+                    let key = if let Some(key) = rewind_frame {
+                        key
+                    } else if let Some(key) = pool.keys().last() {
+                        key + 1
+                    } else {
+                        0
+                    };
+                    pool.insert(
+                        key,
+                        SavestateData {
+                            device: state,
+                            saves: saves_clone.clone(),
+                            rdp_state,
+                            ra_state,
+                        },
+                    );
                     if pool.len() > 30 {
-                        pool.pop_front();
+                        pool.pop_first();
                     }
                 }
             } else {
@@ -195,7 +206,7 @@ fn create_savestate(device: &mut device::Device, rewind: bool) {
     });
 }
 
-fn load_savestate(device: &mut device::Device, rewind: bool) {
+pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: Option<i32>) {
     if retroachievements::get_hardcore() {
         ui::video::onscreen_message(
             "Cannot load savestate in RA hardcore mode",
@@ -206,7 +217,17 @@ fn load_savestate(device: &mut device::Device, rewind: bool) {
 
     let state_data = if rewind {
         if let Ok(mut pool) = device.savestate.rewind_pool.lock() {
-            pool.pop_back()
+            if let Some(rewind_frame) = rewind_frame {
+                if let Some(state) = pool.remove(&rewind_frame) {
+                    Some(state)
+                } else {
+                    None
+                }
+            } else if let Some((_key, state)) = pool.pop_last() {
+                Some(state)
+            } else {
+                None
+            }
         } else {
             None
         }

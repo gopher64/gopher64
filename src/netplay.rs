@@ -1,4 +1,5 @@
 use crate::device;
+use crate::savestates;
 use crate::ui;
 use sha2::digest::Digest;
 
@@ -187,7 +188,8 @@ pub fn process_netplay(device: &mut device::Device) {
             for request in requests {
                 match request {
                     ggrs::GgrsRequest::SaveGameState { cell, frame } => {
-                        // save state here
+                        savestates::create_savestate(device, true, Some(frame));
+
                         let mut hasher = sha2::Sha256::new();
                         for reg in device.cpu.cop0.regs.as_ref() {
                             hasher.update(reg.to_be_bytes());
@@ -196,8 +198,8 @@ pub fn process_netplay(device: &mut device::Device) {
                         cell.save(frame, Some(frame), Some(hash));
                     }
                     ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
-                        let _state = cell.load().unwrap();
-                        // load state here
+                        let state_frame = cell.load().unwrap();
+                        savestates::load_savestate(device, true, Some(state_frame));
                     }
                     ggrs::GgrsRequest::AdvanceFrame { inputs } => {
                         println!("advance frame");
