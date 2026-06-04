@@ -165,11 +165,9 @@ pub fn process_requests(
                 ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
                     if let Some(frame) = cell.load() {
                         savestates::load_savestate(device, true, Some(frame));
-                        println!("loaded savestate");
                     }
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
-                    println!("adding input to netplay");
                     return inputs;
                 }
             }
@@ -220,11 +218,6 @@ pub fn process_netplay(
             }
         }
     }
-
-    println!(
-        "processing netplay for frame {}",
-        netplay.session.current_frame()
-    );
 
     advance_frame(device);
     process_requests(device)
