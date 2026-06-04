@@ -168,7 +168,10 @@ pub fn process_netplay(device: &mut device::Device) {
                 println!("wait recommendation: skip_frames={}", skip_frames);
             }
             ggrs::GgrsEvent::DesyncDetected { .. } => {
-                println!("desync detected");
+                ui::video::onscreen_message(
+                    "Desync detected",
+                    ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+                );
             }
         }
     }
@@ -248,10 +251,6 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
             break;
         }
         if now.elapsed() > timeout {
-            ui::video::onscreen_message(
-                "Failed to connect to netplay server",
-                ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
-            );
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
