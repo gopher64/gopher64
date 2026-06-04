@@ -161,6 +161,10 @@ pub fn process_netplay(device: &mut device::Device) -> bool {
             }
             ggrs::GgrsEvent::Disconnected { .. } => {
                 println!("disconnected");
+                ui::video::onscreen_message(
+                    "Peer disconnected",
+                    ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+                );
             }
             ggrs::GgrsEvent::NetworkInterrupted { .. } => {
                 println!("network interrupted");
