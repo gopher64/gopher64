@@ -102,9 +102,9 @@ export component NetplayWait inherits Page {
 
                     ComboBox {
                         model: ["0", "1", "2", "3", "4", "5", "6", "7", "8"];
-                        current-value: NetplayWaitData.input_delay;
-                        selected(value) => {
-                            NetplayWaitData.input_delay = value.to-float();
+                        current-index: NetplayWaitData.input_delay;
+                        selected => {
+                            NetplayWaitData.input_delay = self.current-index;
                         }
 
                     }
