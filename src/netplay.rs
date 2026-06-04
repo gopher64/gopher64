@@ -183,7 +183,10 @@ pub fn process_netplay(device: &mut device::Device) {
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
-    println!("processing netplay");
+    println!(
+        "processing netplay for frame {}",
+        netplay.session.current_frame()
+    );
     match netplay.session.advance_frame() {
         Ok(requests) => {
             let mut save_frame = None;
@@ -274,7 +277,14 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
-    let session = session_builder.start_p2p_session(matchbox_socket).unwrap();
+    let mut session = session_builder.start_p2p_session(matchbox_socket).unwrap();
+
+    let now = std::time::Instant::now();
+    while session.current_state() != ggrs::SessionState::Running && now.elapsed() < timeout {
+        session.poll_remote_clients();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+
     Netplay {
         session,
         reliable_channel,
