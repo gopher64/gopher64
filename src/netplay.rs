@@ -168,6 +168,7 @@ pub fn process_requests(device: &mut device::Device) {
             ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
                 if let Some(frame) = cell.load() {
                     savestates::load_savestate(device, true, Some(frame));
+                    println!("loaded savestate");
                 }
             }
             ggrs::GgrsRequest::AdvanceFrame { inputs } => {
@@ -271,7 +272,7 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
                 .with_num_players(number_of_players)
                 .unwrap()
                 .with_input_delay(2)
-                .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
+                .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 5 });
             for (i, peer) in player_numbers.iter() {
                 if let Some(peer) = peer {
                     session_builder = session_builder
