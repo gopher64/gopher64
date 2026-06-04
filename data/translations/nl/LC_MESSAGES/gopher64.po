@@ -393,7 +393,7 @@ msgstr "Bericht verzenden"
 #: src/ui/gui/netplay_wait.slint:98
 msgctxt "NetplayWait"
 msgid "Local Input Delay:"
-msgstr ""
+msgstr "Lokale invoervertraging:"
 
 #: src/ui/gui/netplay_wait.slint:115
 msgctxt "NetplayWait"

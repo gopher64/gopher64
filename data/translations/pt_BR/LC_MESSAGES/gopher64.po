@@ -394,7 +394,7 @@ msgstr "Enviar Mensagem"
 #: src/ui/gui/netplay_wait.slint:98
 msgctxt "NetplayWait"
 msgid "Local Input Delay:"
-msgstr ""
+msgstr "Atraso de entrada local:"
 
 #: src/ui/gui/netplay_wait.slint:115
 msgctxt "NetplayWait"
