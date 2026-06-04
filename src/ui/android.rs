@@ -289,6 +289,8 @@ fn start_run_rom_on_jvm(
                 env,
                 &netplay.number_of_players.to_string(),
             )?);
+            args.push(JString::from_str(env, "--netplay-input-delay")?);
+            args.push(JString::from_str(env, &netplay.input_delay.to_string())?);
             args.push(JString::from_str(env, "--cheats")?);
             args.push(JString::from_str(env, cheats_path.to_str().unwrap())?);
 

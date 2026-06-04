@@ -244,7 +244,12 @@ fn advance_frame(device: &mut device::Device) {
     }
 }
 
-pub fn init(server_addr: String, player_number: usize, number_of_players: usize) -> Netplay {
+pub fn init(
+    server_addr: String,
+    player_number: usize,
+    number_of_players: usize,
+    input_delay: usize,
+) -> Netplay {
     let (socket, loop_fut) =
         matchbox_socket::WebRtcSocketBuilder::new(format!("ws://{}", server_addr))
             .add_unreliable_channel()
@@ -274,7 +279,7 @@ pub fn init(server_addr: String, player_number: usize, number_of_players: usize)
             session_builder = session_builder
                 .with_num_players(number_of_players)
                 .unwrap()
-                .with_input_delay(2)
+                .with_input_delay(input_delay)
                 .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
             for (i, peer) in player_numbers.iter() {
                 if let Some(peer) = peer {

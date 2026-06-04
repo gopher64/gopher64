@@ -391,6 +391,7 @@ fn setup_wait_window(
     app.set_netplay_game_name(game_name);
     app.set_netplay_rom_path(rom_path);
     app.set_netplay_can_start(true);
+    app.set_netplay_input_delay(2);
 
     let request_update = NetplayLobbyMessage {
         message_type: MessageType::RequestUpdateSession,
@@ -462,6 +463,7 @@ fn setup_wait_window(
                                 .upgrade_in_event_loop(move |handle| {
                                     let player_name = handle.get_netplay_player_name();
                                     let players = handle.get_netplay_players();
+                                    let input_delay = handle.get_netplay_input_delay();
                                     let player_number =
                                         players.iter().position(|x| x == player_name).unwrap();
                                     run_rom(
@@ -477,6 +479,7 @@ fn setup_wait_window(
                                             server_addr,
                                             player_number,
                                             number_of_players: players.row_count(),
+                                            input_delay,
                                         }),
                                         weak_app2,
                                     );

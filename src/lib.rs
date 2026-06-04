@@ -33,6 +33,8 @@ pub struct Args {
     pub netplay_player_number: Option<usize>,
     #[arg(long, value_name = "NETPLAY_NUMBER_OF_PLAYERS", hide = true)]
     pub netplay_number_of_players: Option<usize>,
+    #[arg(long, value_name = "NETPLAY_INPUT_DELAY", hide = true)]
+    pub netplay_input_delay: Option<usize>,
     #[arg(
         long,
         value_name = "PROFILE_NAME",
@@ -170,8 +172,14 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         if let Some(server_addr) = args.netplay_server_addr
             && let Some(player_number) = args.netplay_player_number
             && let Some(number_of_players) = args.netplay_number_of_players
+            && let Some(input_delay) = args.netplay_input_delay
         {
-            device.netplay = Some(netplay::init(server_addr, player_number, number_of_players));
+            device.netplay = Some(netplay::init(
+                server_addr,
+                player_number,
+                number_of_players,
+                input_delay,
+            ));
         } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
