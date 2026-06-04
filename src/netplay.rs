@@ -183,12 +183,15 @@ pub fn process_netplay(device: &mut device::Device) {
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
+    println!("processing netplay");
     match netplay.session.advance_frame() {
         Ok(requests) => {
+            let mut save_frame = None;
+            let mut load_frame = None;
             for request in requests {
                 match request {
                     ggrs::GgrsRequest::SaveGameState { cell, frame } => {
-                        savestates::create_savestate(device, true, Some(frame));
+                        save_frame = Some(frame);
 
                         let mut hasher = sha2::Sha256::new();
                         for reg in device.cpu.cop0.regs.as_ref() {
@@ -198,14 +201,19 @@ pub fn process_netplay(device: &mut device::Device) {
                         cell.save(frame, Some(frame), Some(hash));
                     }
                     ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
-                        let state_frame = cell.load().unwrap();
-                        savestates::load_savestate(device, true, Some(state_frame));
+                        load_frame = Some(cell.load().unwrap());
                     }
                     ggrs::GgrsRequest::AdvanceFrame { inputs } => {
                         println!("advance frame");
                         netplay.inputs.clone_from(&inputs);
                     }
                 }
+            }
+            if let Some(save_frame) = save_frame {
+                savestates::create_savestate(device, true, Some(save_frame));
+            }
+            if let Some(load_frame) = load_frame {
+                savestates::load_savestate(device, true, Some(load_frame));
             }
         }
         Err(ggrs::GgrsError::PredictionThreshold) => {
