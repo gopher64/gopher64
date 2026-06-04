@@ -164,8 +164,8 @@ pub fn process_netplay(device: &mut device::Device) {
             ggrs::GgrsEvent::NetworkResumed { .. } => {
                 println!("network resumed");
             }
-            ggrs::GgrsEvent::WaitRecommendation { .. } => {
-                println!("wait recommendation");
+            ggrs::GgrsEvent::WaitRecommendation { skip_frames } => {
+                println!("wait recommendation: skip_frames={}", skip_frames);
             }
             ggrs::GgrsEvent::DesyncDetected { .. } => {
                 println!("desync detected");
