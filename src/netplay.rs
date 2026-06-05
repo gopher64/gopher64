@@ -311,6 +311,7 @@ pub fn init(
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
+    setup_channel.close();
 
     let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new()
         .with_num_players(number_of_players)
