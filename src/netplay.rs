@@ -110,29 +110,17 @@ fn send_player_number(
 
 fn get_player_numbers(
     channel: &mut matchbox_socket::WebRtcChannel,
-    local_player_number: usize,
-    number_of_peers: usize,
-) -> std::collections::BTreeMap<usize, Option<matchbox_socket::PeerId>> {
-    let mut player_numbers = std::collections::BTreeMap::new();
-    player_numbers.insert(local_player_number, None);
-    let timeout = std::time::Duration::from_secs(10);
-    let now = std::time::Instant::now();
-    while player_numbers.len() < number_of_peers + 1 {
-        for (peer, data) in channel.receive() {
-            let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
-            if message.name == "player_number" {
-                player_numbers.insert(
-                    usize::from_be_bytes(message.data.try_into().unwrap()),
-                    Some(peer),
-                );
-            }
+    player_numbers: &mut std::collections::BTreeMap<usize, Option<matchbox_socket::PeerId>>,
+) {
+    for (peer, data) in channel.receive() {
+        let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
+        if message.name == "player_number" {
+            player_numbers.insert(
+                usize::from_be_bytes(message.data.try_into().unwrap()),
+                Some(peer),
+            );
         }
-        if now.elapsed() > timeout {
-            return std::collections::BTreeMap::new();
-        }
-        std::thread::sleep(std::time::Duration::from_millis(1));
     }
-    player_numbers
 }
 
 pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
@@ -185,11 +173,7 @@ fn pending_frames(netplay: &Netplay) -> usize {
 
 pub fn netplay_in_rollback(netplay: Option<&Netplay>) -> bool {
     if let Some(netplay) = netplay {
-        if pending_frames(netplay) != 0 {
-            true
-        } else {
-            false
-        }
+        pending_frames(netplay) != 0
     } else {
         false
     }
@@ -295,6 +279,7 @@ pub fn init(
     let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
         .add_reliable_channel()
+        .add_reliable_channel()
         .build();
     tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
@@ -302,52 +287,54 @@ pub fn init(
         }
     });
     let mut matchbox_socket = MatchboxSocket(socket);
-    let mut reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
+    let mut setup_channel = matchbox_socket.0.take_channel(2).unwrap();
     let now = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(10);
-    let mut peers = vec![];
-    let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new();
+    let mut player_numbers = std::collections::BTreeMap::new();
+    player_numbers.insert(player_number, None);
     loop {
         matchbox_socket.0.update_peers();
-        peers = matchbox_socket
+        let peers = matchbox_socket
             .0
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
-        if peers.len() == number_of_players - 1 {
-            send_player_number(&mut reliable_channel, peers.clone(), player_number);
-            let player_numbers =
-                get_player_numbers(&mut reliable_channel, player_number, peers.len());
-            if player_numbers.len() != number_of_players {
-                eprintln!("Could not get player numbers");
-                return None;
-            }
-            session_builder = session_builder
-                .with_num_players(number_of_players)
-                .unwrap()
-                .with_input_delay(input_delay)
-                .with_fps(if pal { 50 } else { 60 })
-                .unwrap()
-                .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
-            for (i, peer) in player_numbers.iter() {
-                if let Some(peer) = peer {
-                    session_builder = session_builder
-                        .add_player(ggrs::PlayerType::Remote(*peer), *i)
-                        .unwrap();
-                } else {
-                    session_builder = session_builder
-                        .add_player(ggrs::PlayerType::Local, *i)
-                        .unwrap();
-                }
-            }
 
+        send_player_number(&mut setup_channel, peers, player_number);
+        get_player_numbers(&mut setup_channel, &mut player_numbers);
+        if player_numbers.len() == number_of_players {
             break;
         }
+
         if now.elapsed() > timeout {
             eprintln!("Could not connect to netplay peers");
             return None;
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
+
+    let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new()
+        .with_num_players(number_of_players)
+        .unwrap()
+        .with_input_delay(input_delay)
+        .with_fps(if pal { 50 } else { 60 })
+        .unwrap()
+        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
+
+    let mut peers = vec![];
+    for (i, peer) in player_numbers.iter() {
+        if let Some(peer) = peer {
+            session_builder = session_builder
+                .add_player(ggrs::PlayerType::Remote(*peer), *i)
+                .unwrap();
+            peers.push(*peer);
+        } else {
+            session_builder = session_builder
+                .add_player(ggrs::PlayerType::Local, *i)
+                .unwrap();
+        }
+    }
+
+    let reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
     let mut session = session_builder.start_p2p_session(matchbox_socket).unwrap();
 
     let now = std::time::Instant::now();
