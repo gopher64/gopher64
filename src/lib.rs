@@ -207,7 +207,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         {
             let username = args.ra_username.unwrap_or(ra_config.username.clone());
             retroachievements::init_client(
-                if cfg!(ra_hardcore_enabled) {
+                if cfg!(ra_hardcore_enabled) && device.netplay.is_none() {
                     ra_config.hardcore
                 } else {
                     false
