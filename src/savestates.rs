@@ -366,15 +366,26 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
             );
         }
     } else {
-        let message = if !rewind {
-            &format!(
-                "Failed to load savestate from slot {}",
-                device.ui.storage.save_state_slot
+        let (message, length) = if !rewind {
+            (
+                format!(
+                    "Failed to load savestate from slot {}",
+                    device.ui.storage.save_state_slot
+                ),
+                ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
+            )
+        } else if device.netplay.is_none() {
+            (
+                "Failed to rewind".to_string(),
+                ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
             )
         } else {
-            "Failed to rewind"
+            (
+                "Failed to rollback".to_string(),
+                ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+            )
         };
-        ui::video::onscreen_message(message, ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT);
+        ui::video::onscreen_message(&message, length);
     }
 }
 
