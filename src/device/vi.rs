@@ -130,7 +130,9 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
 
-    ui::video::render_frame();
+    if !netplay::netplay_in_rollback(device.netplay.as_ref()) {
+        ui::video::render_frame();
+    }
     let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
 
     retroachievements::do_frame();
@@ -149,15 +151,15 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         reset_pace_deadline(device);
     }
 
-    if (device.netplay.is_none() || netplay::pending_frames(device.netplay.as_ref().unwrap()) == 0)
+    if !netplay::netplay_in_rollback(device.netplay.as_ref())
         && device.frame_counter.is_multiple_of(device.vi.limit_freq)
         && device.vi.enable_speed_limiter
     {
         speed_limiter(device);
     }
 
-    unsafe { sdl3_sys::events::SDL_PumpEvents() };
-    if device.netplay.is_none() || netplay::pending_frames(device.netplay.as_ref().unwrap()) == 0 {
+    if !netplay::netplay_in_rollback(device.netplay.as_ref()) {
+        unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::update_screen();
     }
     device.frame_counter += 1;

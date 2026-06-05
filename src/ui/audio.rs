@@ -174,9 +174,7 @@ pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
     if device.ui.audio.audio_stream.is_null() {
         return;
     }
-    if let Some(netplay) = &device.netplay
-        && netplay::pending_frames(netplay) != 0
-    {
+    if netplay::netplay_in_rollback(device.netplay.as_ref()) {
         return;
     }
 

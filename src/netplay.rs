@@ -175,12 +175,24 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message;
 }
 
-pub fn pending_frames(netplay: &Netplay) -> usize {
+fn pending_frames(netplay: &Netplay) -> usize {
     netplay
         .requests
         .iter()
         .filter(|r| matches!(r, ggrs::GgrsRequest::AdvanceFrame { .. }))
         .count()
+}
+
+pub fn netplay_in_rollback(netplay: Option<&Netplay>) -> bool {
+    if let Some(netplay) = netplay {
+        if pending_frames(netplay) != 0 {
+            true
+        } else {
+            false
+        }
+    } else {
+        false
+    }
 }
 
 pub fn process_requests(
