@@ -42,7 +42,8 @@ pub struct Netplay {
     pub peers: Vec<matchbox_socket::PeerId>,
     pub player_number: usize,
     pub connected: [bool; 4],
-    pub received_messages: std::collections::VecDeque<Vec<u8>>,
+    pub messages: std::collections::HashMap<String, Vec<u8>>,
+    pub received_data: std::collections::VecDeque<Vec<u8>>,
     pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
 }
@@ -68,7 +69,7 @@ fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
     let now = std::time::Instant::now();
     let mut message = vec![];
     loop {
-        netplay.received_messages.extend(
+        netplay.received_data.extend(
             netplay
                 .reliable_channel
                 .receive()
@@ -76,14 +77,19 @@ fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
                 .map(|(_, data)| data.to_vec()),
         );
 
-        while !netplay.received_messages.is_empty() {
-            if let Some(data) = netplay.received_messages.pop_front() {
+        while !netplay.received_data.is_empty() {
+            if let Some(data) = netplay.received_data.pop_front() {
                 message.extend(data);
 
                 if let Ok(decoded_message) = postcard::from_bytes::<NetplayMessage>(&message) {
-                    return decoded_message.data;
+                    netplay
+                        .messages
+                        .insert(decoded_message.name, decoded_message.data);
                 }
             }
+        }
+        if let Some(data) = netplay.messages.remove(name) {
+            return data;
         }
 
         if now.elapsed() > timeout {
@@ -279,7 +285,6 @@ pub fn init(
     let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
         .add_reliable_channel()
-        .add_reliable_channel()
         .build();
     tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
@@ -287,7 +292,7 @@ pub fn init(
         }
     });
     let mut matchbox_socket = MatchboxSocket(socket);
-    let mut setup_channel = matchbox_socket.0.take_channel(2).unwrap();
+    let mut reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
     let now = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(10);
     let mut player_numbers = std::collections::BTreeMap::new();
@@ -299,8 +304,8 @@ pub fn init(
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
 
-        send_player_number(&mut setup_channel, peers, player_number);
-        get_player_numbers(&mut setup_channel, &mut player_numbers);
+        send_player_number(&mut reliable_channel, peers, player_number);
+        get_player_numbers(&mut reliable_channel, &mut player_numbers);
         if player_numbers.len() == number_of_players {
             break;
         }
@@ -311,7 +316,6 @@ pub fn init(
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
-    setup_channel.close();
 
     let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new()
         .with_num_players(number_of_players)
@@ -335,7 +339,6 @@ pub fn init(
         }
     }
 
-    let reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
     let mut session = session_builder.start_p2p_session(matchbox_socket).unwrap();
 
     let now = std::time::Instant::now();
@@ -347,6 +350,8 @@ pub fn init(
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
+
+    reliable_channel.receive(); //clear the channel
 
     Some(Netplay {
         session,
@@ -361,6 +366,7 @@ pub fn init(
         ],
         inputs: Vec::new(),
         requests: std::collections::VecDeque::new(),
-        received_messages: std::collections::VecDeque::new(),
+        received_data: std::collections::VecDeque::new(),
+        messages: std::collections::HashMap::new(),
     })
 }
