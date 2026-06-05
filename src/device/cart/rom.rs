@@ -137,7 +137,7 @@ pub fn init(device: &mut device::Device, rom_file: &[u8]) {
     device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 1;
 
     device.cart.rom = rom_file.to_vec();
-    device.cart.pal = is_system_pal(device.cart.rom[0x3E]);
+    device.cart.pal = is_system_pal(&device.cart.rom);
     set_cic(device);
 
     device.ui.game_hash = calculate_hash(&device.cart.rom);
@@ -148,10 +148,10 @@ pub fn init(device: &mut device::Device, rom_file: &[u8]) {
     }
 }
 
-pub fn is_system_pal(country: u8) -> bool {
+pub fn is_system_pal(rom_contents: &[u8]) -> bool {
     let pal_codes: [u8; 8] = *b"DFIPSUXY";
     for i in pal_codes {
-        if country == i {
+        if rom_contents[0x3E] == i {
             return true;
         }
     }

@@ -179,7 +179,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 player_number,
                 number_of_players,
                 input_delay,
-                device::cart::rom::is_system_pal(rom_contents[0x3E]),
+                device::cart::rom::is_system_pal(&rom_contents),
             );
             if device.netplay.is_none() {
                 return Err(Error::other("Failed to connect to netplay server"));
