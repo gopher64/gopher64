@@ -42,7 +42,7 @@ pub struct Netplay {
     pub peers: Vec<matchbox_socket::PeerId>,
     pub player_number: usize,
     pub connected: [bool; 4],
-    pub data: std::collections::HashMap<String, Vec<u8>>,
+    pub received_messages: std::collections::VecDeque<Vec<u8>>,
     pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
 }
@@ -55,26 +55,42 @@ struct NetplayMessage {
 
 fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
     let data = postcard::to_stdvec(&message).unwrap();
+    let chunks = data.chunks(16384).collect::<Vec<&[u8]>>();
     for peer in netplay.peers.iter() {
-        netplay.reliable_channel.send(data.clone().into(), *peer);
+        for chunk in chunks.iter() {
+            netplay.reliable_channel.send(chunk.to_vec().into(), *peer);
+        }
     }
 }
 
 fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
     let timeout = std::time::Duration::from_secs(10);
     let now = std::time::Instant::now();
-    while !netplay.data.contains_key(name) {
-        let messages = netplay.reliable_channel.receive();
-        for (_, data) in messages {
-            let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
-            netplay.data.insert(message.name, message.data);
+    let mut message = vec![];
+    loop {
+        netplay.received_messages.extend(
+            netplay
+                .reliable_channel
+                .receive()
+                .iter()
+                .map(|(_, data)| data.to_vec()),
+        );
+
+        while !netplay.received_messages.is_empty() {
+            if let Some(data) = netplay.received_messages.pop_front() {
+                message.extend(data);
+
+                if let Ok(decoded_message) = postcard::from_bytes::<NetplayMessage>(&message) {
+                    return decoded_message.data;
+                }
+            }
         }
+
         if now.elapsed() > timeout {
             panic!("Could not receive message for {name}");
         }
         std::thread::sleep(std::time::Duration::from_millis(1));
     }
-    netplay.data.remove(name).unwrap()
 }
 
 fn send_player_number(
@@ -343,8 +359,8 @@ pub fn init(
             number_of_players > 2,
             number_of_players > 3,
         ],
-        data: std::collections::HashMap::new(),
         inputs: Vec::new(),
         requests: std::collections::VecDeque::new(),
+        received_messages: std::collections::VecDeque::new(),
     })
 }
