@@ -398,6 +398,15 @@ fn setup_wait_window(
     game_settings: ui::GameSettings,
     app: &AppWindow,
 ) {
+    let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr.clone())
+        .add_unreliable_channel()
+        .build();
+    tokio::spawn(async move {
+        if let Err(e) = loop_fut.await {
+            eprintln!("WebRTC loop failed: {}", e);
+        }
+    });
+
     app.set_netplay_session_name(session_name);
     app.set_netplay_game_name(game_name);
     app.set_netplay_rom_path(rom_path);
@@ -494,6 +503,7 @@ fn setup_wait_window(
                                     handle.invoke_netplay_close();
                                 })
                                 .unwrap();
+                            socket.close();
                             return;
                         } else {
                             weak_app
