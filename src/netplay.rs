@@ -61,11 +61,16 @@ fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
 }
 
 fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
+    let timeout = std::time::Duration::from_secs(10);
+    let now = std::time::Instant::now();
     while !netplay.data.contains_key(name) {
         let messages = netplay.reliable_channel.receive();
         for (_, data) in messages {
             let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
             netplay.data.insert(message.name, message.data);
+        }
+        if now.elapsed() > timeout {
+            panic!("Could not receive message for {name}");
         }
         std::thread::sleep(std::time::Duration::from_millis(1));
     }
@@ -94,6 +99,8 @@ fn get_player_numbers(
 ) -> std::collections::BTreeMap<usize, Option<matchbox_socket::PeerId>> {
     let mut player_numbers = std::collections::BTreeMap::new();
     player_numbers.insert(local_player_number, None);
+    let timeout = std::time::Duration::from_secs(10);
+    let now = std::time::Instant::now();
     while player_numbers.len() < number_of_peers + 1 {
         for (peer, data) in channel.receive() {
             let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
@@ -103,6 +110,9 @@ fn get_player_numbers(
                     Some(peer),
                 );
             }
+        }
+        if now.elapsed() > timeout {
+            return std::collections::BTreeMap::new();
         }
         std::thread::sleep(std::time::Duration::from_millis(1));
     }
@@ -253,7 +263,7 @@ pub fn init(
     number_of_players: usize,
     input_delay: usize,
     pal: bool,
-) -> Netplay {
+) -> Option<Netplay> {
     let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
         .add_reliable_channel()
@@ -279,6 +289,10 @@ pub fn init(
             send_player_number(&mut reliable_channel, peers.clone(), player_number);
             let player_numbers =
                 get_player_numbers(&mut reliable_channel, player_number, peers.len());
+            if player_numbers.len() != number_of_players {
+                eprintln!("Could not get player numbers");
+                return None;
+            }
             session_builder = session_builder
                 .with_num_players(number_of_players)
                 .unwrap()
@@ -301,19 +315,24 @@ pub fn init(
             break;
         }
         if now.elapsed() > timeout {
-            break;
+            eprintln!("Could not connect to netplay peers");
+            return None;
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
     let mut session = session_builder.start_p2p_session(matchbox_socket).unwrap();
 
     let now = std::time::Instant::now();
-    while session.current_state() != ggrs::SessionState::Running && now.elapsed() < timeout {
+    while session.current_state() != ggrs::SessionState::Running {
         session.poll_remote_clients();
+        if now.elapsed() > timeout {
+            eprintln!("Could not start netplay session");
+            return None;
+        }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
 
-    Netplay {
+    Some(Netplay {
         session,
         reliable_channel,
         peers,
@@ -327,5 +346,5 @@ pub fn init(
         data: std::collections::HashMap::new(),
         inputs: Vec::new(),
         requests: std::collections::VecDeque::new(),
-    }
+    })
 }
