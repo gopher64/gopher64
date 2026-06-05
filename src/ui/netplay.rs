@@ -82,7 +82,7 @@ fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
 
                 weak.upgrade_in_event_loop(move |handle| {
                     handle.set_netplay_game_name(game_name.into());
-                    handle.set_netplay_game_pal(pal.into());
+                    handle.set_netplay_game_pal(pal);
                     handle.set_netplay_game_hash(hash.into());
                     handle.set_netplay_game_cheats(parsed_cheats.into());
                     handle.set_netplay_rom_path(file.to_str().unwrap().into());
