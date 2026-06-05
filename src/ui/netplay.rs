@@ -67,7 +67,7 @@ fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
             if let Some(rom_contents) = device::get_rom_contents(&file) {
                 let hash = device::cart::rom::calculate_hash(&rom_contents);
                 let mut game_name = ui::storage::get_game_name(&rom_contents);
-                let pal = device::cart::rom::is_system_pal(rom_contents[0x3E]);
+                let pal = device::cart::rom::is_system_pal(&rom_contents);
                 let game_crc = ui::storage::get_game_crc(&rom_contents);
                 let cheats = ui::config::Cheats::new();
                 let mut parsed_cheats = String::new();
