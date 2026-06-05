@@ -85,6 +85,7 @@ fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
                     netplay
                         .messages
                         .insert(decoded_message.name, decoded_message.data);
+                    message.clear();
                 }
             }
         }
@@ -350,8 +351,6 @@ pub fn init(
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
-
-    reliable_channel.receive(); //clear the channel
 
     Some(Netplay {
         session,
