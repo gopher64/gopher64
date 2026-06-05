@@ -94,17 +94,17 @@ fn get_player_numbers(
 ) -> std::collections::BTreeMap<usize, Option<matchbox_socket::PeerId>> {
     let mut player_numbers = std::collections::BTreeMap::new();
     player_numbers.insert(local_player_number, None);
-    let mut messages = vec![];
-    while messages.len() < number_of_peers {
-        messages.extend(channel.receive());
+    while player_numbers.len() < number_of_peers + 1 {
+        for (peer, data) in channel.receive() {
+            let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
+            if message.name == "player_number" {
+                player_numbers.insert(
+                    usize::from_be_bytes(message.data.try_into().unwrap()),
+                    Some(peer),
+                );
+            }
+        }
         std::thread::sleep(std::time::Duration::from_millis(1));
-    }
-    for (peer, data) in messages {
-        let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
-        player_numbers.insert(
-            usize::from_be_bytes(message.data.try_into().unwrap()),
-            Some(peer),
-        );
     }
     player_numbers
 }
