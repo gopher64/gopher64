@@ -283,10 +283,11 @@ pub fn init(
     input_delay: usize,
     pal: bool,
 ) -> Option<Netplay> {
-    let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
-        .add_unreliable_channel()
-        .add_reliable_channel()
-        .build();
+    let (socket, loop_fut) =
+        matchbox_socket::WebRtcSocketBuilder::new(format!("{}/game", server_addr))
+            .add_unreliable_channel()
+            .add_reliable_channel()
+            .build();
     tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
             eprintln!("WebRTC loop failed: {}", e);
