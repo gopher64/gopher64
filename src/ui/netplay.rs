@@ -108,6 +108,7 @@ fn setup_create_window(
     netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    close_ping_rx: tokio::sync::broadcast::Receiver<()>,
 ) {
     let weak = app.as_weak();
     app.on_netplay_create_session(
@@ -121,6 +122,7 @@ fn setup_create_window(
             create_session(
                 netplay_write_sender.clone(),
                 netplay_read_receiver.resubscribe(),
+                close_ping_rx.resubscribe(),
                 session_name.to_string(),
                 player_name.to_string(),
                 game_name.to_string(),
@@ -241,6 +243,7 @@ fn update_sessions(
 fn create_session(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    close_ping_rx: tokio::sync::broadcast::Receiver<()>,
     session_name: String,
     player_name: String,
     game_name: String,
@@ -320,6 +323,7 @@ fn create_session(
                             setup_wait_window(
                                 netplay_write_sender,
                                 netplay_read_receiver,
+                                close_ping_rx,
                                 session.server_address.as_ref().unwrap().clone(),
                                 session_name.into(),
                                 session.game_name.as_ref().unwrap().into(),
@@ -387,10 +391,53 @@ fn join_session(
     netplay_write_sender.send(Some(join_session)).unwrap();
 }
 
+fn update_ping(server_addr: String, mut close_ping_rx: tokio::sync::broadcast::Receiver<()>) {
+    let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
+        .add_unreliable_channel()
+        .build();
+
+    tokio::spawn(async move {
+        if let Err(e) = loop_fut.await {
+            eprintln!("WebRTC loop failed: {}", e);
+        }
+    });
+    let channel = socket.take_channel(0).unwrap();
+    let (mut write, mut read) = channel.split();
+    tokio::spawn(async move {
+        loop {
+            if close_ping_rx.try_recv().is_ok() {
+                break;
+            }
+            socket.update_peers();
+            for peer in socket.connected_peers() {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis();
+                let _ = write.send((peer, now.to_be_bytes().to_vec().into())).await;
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        }
+        socket.close();
+    });
+    tokio::spawn(async move {
+        while let Some((_, data)) = read.next().await {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis();
+            let time = u128::from_be_bytes(data.as_ref().try_into().unwrap());
+            let ping = now - time;
+            println!("Ping {:?}ms", ping);
+        }
+    });
+}
+
 #[allow(clippy::too_many_arguments)]
 fn setup_wait_window(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    close_ping_rx: tokio::sync::broadcast::Receiver<()>,
     server_addr: String,
     session_name: slint::SharedString,
     game_name: slint::SharedString,
@@ -398,14 +445,7 @@ fn setup_wait_window(
     game_settings: ui::GameSettings,
     app: &AppWindow,
 ) {
-    let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr.clone())
-        .add_unreliable_channel()
-        .build();
-    tokio::spawn(async move {
-        if let Err(e) = loop_fut.await {
-            eprintln!("WebRTC loop failed: {}", e);
-        }
-    });
+    update_ping(server_addr.clone(), close_ping_rx);
 
     app.set_netplay_session_name(session_name);
     app.set_netplay_game_name(game_name);
@@ -503,7 +543,6 @@ fn setup_wait_window(
                                     handle.invoke_netplay_close();
                                 })
                                 .unwrap();
-                            socket.close();
                             return;
                         } else {
                             weak_app
@@ -545,6 +584,7 @@ fn setup_join_window(
     netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    close_ping_rx: tokio::sync::broadcast::Receiver<()>,
 ) {
     let _ = netplay_write_sender.send(None); // close current websocket if any
     manage_websocket(
@@ -607,6 +647,7 @@ fn setup_join_window(
                             setup_wait_window(
                                 sender,
                                 receiver,
+                                close_ping_rx.resubscribe(),
                                 session.server_address.as_ref().unwrap().clone(),
                                 session_name.into(),
                                 session.game_name.as_ref().unwrap().into(),
@@ -711,16 +752,23 @@ pub fn netplay_window(app: &AppWindow) {
         tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     ) = tokio::sync::broadcast::channel(5);
 
+    let (close_ping_tx, close_ping_rx): (
+        tokio::sync::broadcast::Sender<()>,
+        tokio::sync::broadcast::Receiver<()>,
+    ) = tokio::sync::broadcast::channel(5);
+
     let weak_app = app.as_weak();
     let write_sender_create = netplay_write_sender.clone();
     let read_receiver_create = netplay_read_receiver.resubscribe();
     let read_sender_create = netplay_read_sender.clone();
     let write_receiver_create = netplay_write_receiver.resubscribe();
+    let close_ping_create = close_ping_rx.resubscribe();
     app.on_create_session_button_clicked(move || {
         let write_sender = write_sender_create.clone();
         let read_receiver = read_receiver_create.resubscribe();
         let read_sender = read_sender_create.clone();
         let write_receiver = write_receiver_create.resubscribe();
+        let close_ping_rx = close_ping_create.resubscribe();
         weak_app
             .upgrade_in_event_loop(move |handle| {
                 save_settings(&handle);
@@ -736,6 +784,7 @@ pub fn netplay_window(app: &AppWindow) {
                     read_receiver,
                     read_sender,
                     write_receiver,
+                    close_ping_rx,
                 );
             })
             .unwrap();
@@ -744,11 +793,13 @@ pub fn netplay_window(app: &AppWindow) {
     let weak_app = app.as_weak();
     let write_sender_join = netplay_write_sender.clone();
     let read_sender_join = netplay_read_sender.clone();
+    let close_ping_join = close_ping_rx.resubscribe();
     app.on_join_session_button_clicked(move || {
         let write_sender = write_sender_join.clone();
         let read_receiver = netplay_read_receiver.resubscribe();
         let read_sender = read_sender_join.clone();
         let write_receiver = netplay_write_receiver.resubscribe();
+        let close_ping_rx = close_ping_join.resubscribe();
         weak_app
             .upgrade_in_event_loop(move |handle| {
                 save_settings(&handle);
@@ -758,6 +809,7 @@ pub fn netplay_window(app: &AppWindow) {
                     read_receiver,
                     read_sender,
                     write_receiver,
+                    close_ping_rx,
                 );
             })
             .unwrap();
@@ -783,6 +835,7 @@ pub fn netplay_window(app: &AppWindow) {
             .unwrap();
         let _ = write_sender.send(None); // close current websocket if any
         let _ = read_sender.send(None); // close current receiver if any
+        let _ = close_ping_tx.send(()); // close ping
     });
 
     app.on_netplay_discord_button_clicked(move || {
