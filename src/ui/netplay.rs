@@ -67,6 +67,7 @@ fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
             if let Some(rom_contents) = device::get_rom_contents(&file) {
                 let hash = device::cart::rom::calculate_hash(&rom_contents);
                 let mut game_name = ui::storage::get_game_name(&rom_contents);
+                let pal = device::cart::rom::is_system_pal(rom_contents[0x3E]);
                 let game_crc = ui::storage::get_game_crc(&rom_contents);
                 let cheats = ui::config::Cheats::new();
                 let mut parsed_cheats = String::new();
@@ -81,6 +82,7 @@ fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
 
                 weak.upgrade_in_event_loop(move |handle| {
                     handle.set_netplay_game_name(game_name.into());
+                    handle.set_netplay_game_pal(pal.into());
                     handle.set_netplay_game_hash(hash.into());
                     handle.set_netplay_game_cheats(parsed_cheats.into());
                     handle.set_netplay_rom_path(file.to_str().unwrap().into());
@@ -391,7 +393,11 @@ fn join_session(
     netplay_write_sender.send(Some(join_session)).unwrap();
 }
 
-fn update_ping(server_addr: String, mut close_ping_rx: tokio::sync::broadcast::Receiver<()>) {
+fn update_ping(
+    server_addr: String,
+    mut close_ping_rx: tokio::sync::broadcast::Receiver<()>,
+    weak_app: slint::Weak<AppWindow>,
+) {
     let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
         .build();
@@ -421,6 +427,7 @@ fn update_ping(server_addr: String, mut close_ping_rx: tokio::sync::broadcast::R
         socket.close();
     });
     tokio::spawn(async move {
+        let mut pings = vec![];
         while let Some((_, data)) = read.next().await {
             let now = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -428,7 +435,25 @@ fn update_ping(server_addr: String, mut close_ping_rx: tokio::sync::broadcast::R
                 .as_millis();
             let time = u128::from_be_bytes(data.as_ref().try_into().unwrap());
             let ping = now - time;
-            println!("Ping {:?}ms", ping);
+            pings.push(ping);
+            if pings.len() > 10 {
+                // once we have 10 samples, remove the highest 2 and return the next highest
+                pings.sort();
+                pings.truncate(pings.len() - 2);
+                let ping = *pings.last().unwrap();
+                pings.clear();
+                weak_app
+                    .upgrade_in_event_loop(move |handle| {
+                        let refresh_rate = if handle.get_netplay_game_pal() {
+                            50.0
+                        } else {
+                            60.0
+                        };
+                        let recommendation = (ping as f64 / (1000.0 / refresh_rate)) as i32 + 1;
+                        handle.set_netplay_recommended_delay(recommendation.to_string().into());
+                    })
+                    .unwrap();
+            }
         }
     });
 }
@@ -445,7 +470,8 @@ fn setup_wait_window(
     game_settings: ui::GameSettings,
     app: &AppWindow,
 ) {
-    update_ping(server_addr.clone(), close_ping_rx);
+    app.set_netplay_recommended_delay("Calculating...".into());
+    update_ping(server_addr.clone(), close_ping_rx, app.as_weak());
 
     app.set_netplay_session_name(session_name);
     app.set_netplay_game_name(game_name);

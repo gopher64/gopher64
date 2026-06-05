@@ -8,6 +8,8 @@ export global NetplayWaitData {
     in-out property <bool> can_start;
     in-out property <string> chat_text;
     in-out property <int> input_delay;
+    in-out property <string> recommended_delay;
+    in-out property <bool> game_pal;
 }
 
 export component NetplayWait inherits Page {
@@ -107,6 +109,12 @@ export component NetplayWait inherits Page {
                             NetplayWaitData.input_delay = self.current-index;
                         }
 
+                    }
+
+                    Text {
+                        text: @tr("Recommended: ") + NetplayWaitData.recommended_delay;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
                     }
                 }
                 HorizontalBox {
