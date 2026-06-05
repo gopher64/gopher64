@@ -117,6 +117,8 @@ export component AppWindow inherits Window {
     in-out property netplay_players <=> NetplayWaitData.players;
     in-out property netplay_chat_text <=> NetplayWaitData.chat_text;
     in-out property netplay_input_delay <=> NetplayWaitData.input_delay;
+    in-out property netplay_recommended_delay <=> NetplayWaitData.recommended_delay;
+    in-out property netplay_game_pal <=> NetplayWaitData.game_pal;
 
     private property <string> popup_message;
     private property <bool> popup_has_close;

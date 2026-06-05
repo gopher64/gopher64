@@ -110,13 +110,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             let current_origin = device.vi.regs[reg as usize];
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
             if current_origin != device.vi.regs[reg as usize] {
-                if let Some(netplay) = &device.netplay {
-                    device.netplay.as_mut().unwrap().inputs = if netplay.requests.is_empty() {
-                        netplay::process_netplay(device)
-                    } else {
-                        netplay::process_requests(device)
-                    };
-                } else {
+                if device.netplay.is_none() {
                     savestates::process_savestates(device);
                 }
                 let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
@@ -167,6 +161,14 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         ui::video::update_screen();
     }
     device.frame_counter += 1;
+
+    if let Some(netplay) = &device.netplay {
+        device.netplay.as_mut().unwrap().inputs = if netplay.requests.is_empty() {
+            netplay::process_netplay(device)
+        } else {
+            netplay::process_requests(device)
+        };
+    }
 
     if device.netplay.is_none() && paused {
         if retroachievements::get_hardcore() {

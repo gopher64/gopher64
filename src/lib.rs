@@ -174,13 +174,16 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
             && let Some(number_of_players) = args.netplay_number_of_players
             && let Some(input_delay) = args.netplay_input_delay
         {
-            device.netplay = Some(netplay::init(
+            device.netplay = netplay::init(
                 server_addr,
                 player_number,
                 number_of_players,
                 input_delay,
                 device::cart::rom::is_system_pal(rom_contents[0x3E]),
-            ));
+            );
+            if device.netplay.is_none() {
+                return Err(Error::other("Failed to connect to netplay server"));
+            }
         } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]

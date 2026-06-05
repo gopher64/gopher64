@@ -216,14 +216,23 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
     }
 
     let state_data = if rewind {
-        if let Ok(mut pool) = device.savestate.rewind_pool.lock() {
-            if let Some(rewind_frame) = rewind_frame {
-                pool.remove(&rewind_frame)
-            } else if let Some((_key, state)) = pool.pop_last() {
-                Some(state)
-            } else {
-                None
+        if let Some(rewind_frame) = rewind_frame {
+            let timeout = std::time::Duration::from_secs(1);
+            let now = std::time::Instant::now();
+            loop {
+                if let Ok(mut pool) = device.savestate.rewind_pool.lock()
+                    && pool.contains_key(&rewind_frame)
+                {
+                    break pool.remove(&rewind_frame);
+                }
+                if now.elapsed() > timeout {
+                    break None;
+                }
             }
+        } else if let Ok(mut pool) = device.savestate.rewind_pool.lock()
+            && let Some((_key, state)) = pool.pop_last()
+        {
+            Some(state)
         } else {
             None
         }
@@ -366,15 +375,26 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
             );
         }
     } else {
-        let message = if !rewind {
-            &format!(
-                "Failed to load savestate from slot {}",
-                device.ui.storage.save_state_slot
+        let (message, length) = if !rewind {
+            (
+                format!(
+                    "Failed to load savestate from slot {}",
+                    device.ui.storage.save_state_slot
+                ),
+                ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
+            )
+        } else if device.netplay.is_none() {
+            (
+                "Failed to rewind".to_string(),
+                ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
             )
         } else {
-            "Failed to rewind"
+            (
+                "Failed to rollback".to_string(),
+                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+            )
         };
-        ui::video::onscreen_message(message, ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT);
+        ui::video::onscreen_message(&message, length);
     }
 }
 
