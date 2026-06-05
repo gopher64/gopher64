@@ -1,5 +1,3 @@
-use std::net::ToSocketAddrs;
-
 use crate::device;
 use crate::ui;
 use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings};
@@ -36,6 +34,7 @@ struct NetplaySession {
     client_version: Option<String>,
     features: Option<std::collections::HashMap<String, String>>,
     players: Vec<String>,
+    server_address: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -276,6 +275,7 @@ fn create_session(
             client_version: Some(env!("GIT_DESCRIBE").to_string()),
             features: Some(features),
             players: vec![player_name],
+            server_address: None,
         };
         let create_session = NetplayLobbyMessage {
             message_type: MessageType::RequestCreateSession,
@@ -320,6 +320,7 @@ fn create_session(
                             setup_wait_window(
                                 netplay_write_sender,
                                 netplay_read_receiver,
+                                session.server_address.as_ref().unwrap().clone(),
                                 session_name.into(),
                                 session.game_name.as_ref().unwrap().into(),
                                 handle.get_netplay_rom_path(),
@@ -375,6 +376,7 @@ fn join_session(
         client_version: Some(env!("GIT_DESCRIBE").to_string()),
         features: None,
         players: vec![player_name],
+        server_address: None,
     };
     let join_session = NetplayLobbyMessage {
         message_type: MessageType::RequestJoinSession,
@@ -389,6 +391,7 @@ fn join_session(
 fn setup_wait_window(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    server_addr: String,
     session_name: slint::SharedString,
     game_name: slint::SharedString,
     rom_path: slint::SharedString,
@@ -462,10 +465,7 @@ fn setup_wait_window(
                             .unwrap();
                     }
                     MessageType::ResponseBeginGame => {
-                        if let Some(message) = &response.message
-                            && let Ok(_addr) = message.to_socket_addrs()
-                        {
-                            let server_addr = message.clone();
+                        if response.message.is_none() {
                             let weak_app2 = weak_app.clone();
                             weak_app
                                 .upgrade_in_event_loop(move |handle| {
@@ -597,6 +597,7 @@ fn setup_join_window(
                             setup_wait_window(
                                 sender,
                                 receiver,
+                                session.server_address.as_ref().unwrap().clone(),
                                 session_name.into(),
                                 session.game_name.as_ref().unwrap().into(),
                                 handle.get_netplay_rom_path(),
