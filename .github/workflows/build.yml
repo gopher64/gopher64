@@ -14,9 +14,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RA_HARDCORE: ${{ github.ref_type == 'tag' && 'true' || 'false' }}
-  NETPLAY_ID: ${{ github.ref_type == 'tag' && secrets.NETPLAY_ID || 'dev' }}
-  BUILD_PROFILE: ${{ github.ref_type == 'tag' && 'release' || 'dev' }}
-  BUILD_DIR: ${{ github.ref_type == 'tag' && 'release' || 'debug' }}
+  BUILD_PROFILE: ${{ github.ref_type == 'tag' && 'release' || 'release' }}
+  BUILD_DIR: ${{ github.ref_type == 'tag' && 'release' || 'release' }}
 
 jobs:
   build-linux:
