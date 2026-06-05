@@ -25,10 +25,11 @@ encoding_rs = "0.8"
 mimalloc = "0.1"
 regex = "1.11"
 tokio-tungstenite = "0.29"
+matchbox_socket = "0.14"
+ggrs = { version = "0.12", features = ["sync-send"] }
 rustc-hash = "2.1"
 futures = "0.3"
-socket2 = { version = "0.6", features = ["all"] }
-rand = "0.10"
+rand = { version = "0.10", features = ["serde"] }
 fatfs = "0.3"
 semver = "1.0"
 postcard = { version = "1.1", features = ["use-std"] }

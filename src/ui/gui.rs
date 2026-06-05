@@ -19,8 +19,10 @@ struct GithubData {
 }
 
 pub struct NetplayDevice {
-    pub peer_addr: std::net::SocketAddr,
-    pub player_number: u8,
+    pub server_addr: String,
+    pub player_number: usize,
+    pub number_of_players: usize,
+    pub input_delay: i32,
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {
@@ -576,10 +578,14 @@ pub fn run_rom(
             serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
 
             command.args([
-                "--netplay-peer-addr",
-                &netplay_device.peer_addr.to_string(),
+                "--netplay-server-addr",
+                &netplay_device.server_addr,
                 "--netplay-player-number",
                 &netplay_device.player_number.to_string(),
+                "--netplay-number-of-players",
+                &netplay_device.number_of_players.to_string(),
+                "--netplay-input-delay",
+                &netplay_device.input_delay.to_string(),
                 "--cheats",
                 cheats_path.to_str().unwrap(),
             ]);

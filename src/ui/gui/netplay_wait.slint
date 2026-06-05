@@ -1,14 +1,13 @@
-import { VerticalBox, HorizontalBox, TextEdit, LineEdit, Button, GridBox, ScrollView } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox, TextEdit, ComboBox, GroupBox, LineEdit, Button, GridBox, ScrollView } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 import { Page } from "page.slint";
 
 export global NetplayWaitData {
     in-out property <string> motd;
     in-out property <[string]> players;
-    in-out property <int> port;
     in-out property <bool> can_start;
     in-out property <string> chat_text;
-    in-out property <string> ping;
+    in-out property <int> input_delay;
 }
 
 export component NetplayWait inherits Page {
@@ -32,11 +31,6 @@ export component NetplayWait inherits Page {
                 Text {
                     text: @tr("Game Name:") + " " + NetplayData.game_name;
                     font-size: 15px;
-                    horizontal-alignment: center;
-                }
-
-                Text {
-                    text: @tr("Ping:") + " " + NetplayWaitData.ping;
                     horizontal-alignment: center;
                 }
 
@@ -67,7 +61,7 @@ export component NetplayWait inherits Page {
 
                 TextEdit {
                     read-only: true;
-                    min-height: 120px;
+                    min-height: 110px;
                     text: NetplayWaitData.chat_text;
                 }
 
@@ -98,7 +92,23 @@ export component NetplayWait inherits Page {
                     horizontal-alignment: center;
                     wrap: word-wrap;
                 }
+                HorizontalBox {
+                    alignment: center;
+                    Text {
+                        text: @tr("Local Input Delay:");
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
 
+                    ComboBox {
+                        model: ["0", "1", "2", "3", "4", "5", "6", "7", "8"];
+                        current-index: NetplayWaitData.input_delay;
+                        selected => {
+                            NetplayWaitData.input_delay = self.current-index;
+                        }
+
+                    }
+                }
                 HorizontalBox {
                     alignment: center;
                     Button {

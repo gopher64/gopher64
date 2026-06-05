@@ -27,10 +27,14 @@ pub struct Args {
     pub disable_expansion_pak: Option<bool>,
     #[arg(long, value_name = "CHEATS_FILE", hide = true)]
     pub cheats: Option<String>,
-    #[arg(long, value_name = "NETPLAY_PEER_ADDR", hide = true)]
-    pub netplay_peer_addr: Option<String>,
+    #[arg(long, value_name = "NETPLAY_SERVER_ADDR", hide = true)]
+    pub netplay_server_addr: Option<String>,
     #[arg(long, value_name = "NETPLAY_PLAYER_NUMBER", hide = true)]
-    pub netplay_player_number: Option<u8>,
+    pub netplay_player_number: Option<usize>,
+    #[arg(long, value_name = "NETPLAY_NUMBER_OF_PLAYERS", hide = true)]
+    pub netplay_number_of_players: Option<usize>,
+    #[arg(long, value_name = "NETPLAY_INPUT_DELAY", hide = true)]
+    pub netplay_input_delay: Option<usize>,
     #[arg(
         long,
         value_name = "PROFILE_NAME",
@@ -165,10 +169,18 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         let mut shutdown_tx = None;
         let mut usb_handle = None;
 
-        if let Some(peer_addr) = args.netplay_peer_addr
+        if let Some(server_addr) = args.netplay_server_addr
             && let Some(player_number) = args.netplay_player_number
+            && let Some(number_of_players) = args.netplay_number_of_players
+            && let Some(input_delay) = args.netplay_input_delay
         {
-            device.netplay = Some(netplay::init(peer_addr.parse().unwrap(), player_number));
+            device.netplay = Some(netplay::init(
+                server_addr,
+                player_number,
+                number_of_players,
+                input_delay,
+                device::cart::rom::is_system_pal(rom_contents[0x3E]),
+            ));
         } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
@@ -195,7 +207,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         {
             let username = args.ra_username.unwrap_or(ra_config.username.clone());
             retroachievements::init_client(
-                if cfg!(ra_hardcore_enabled) {
+                if cfg!(ra_hardcore_enabled) && device.netplay.is_none() {
                     ra_config.hardcore
                 } else {
                     false
@@ -236,9 +248,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         #[cfg(not(target_os = "android"))]
         retroachievements::shutdown_client();
 
-        if device.netplay.is_some() {
-            netplay::close(&mut device);
-        } else {
+        if device.netplay.is_none() {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
                     && !device.ui.config.input.gb_ram_path[i].is_empty()

@@ -1,349 +1,331 @@
-use crate::{device, ui};
-use std::io::{Read, Write};
-//UDP packet formats
-const UDP_SEND_KEY_INFO: u8 = 0;
-const UDP_RECEIVE_KEY_INFO: u8 = 1;
-const UDP_REQUEST_KEY_INFO: u8 = 2;
-const UDP_RECEIVE_KEY_INFO_GRATUITOUS: u8 = 3;
-const UDP_SYNC_DATA: u8 = 4;
+use crate::device;
+use crate::savestates;
+use crate::ui;
+use sha2::digest::Digest;
 
-//TCP packet formats
-const TCP_SEND_SAVE: u8 = 1;
-//const TCP_RECEIVE_SAVE: u8 = 2;
-//const TCP_SEND_SETTINGS: u8 = 3;
-//const TCP_RECEIVE_SETTINGS: u8 = 4;
-const TCP_REGISTER_PLAYER: u8 = 5;
-const TCP_GET_REGISTRATION: u8 = 6;
-const TCP_DISCONNECT_NOTICE: u8 = 7;
-const TCP_RECEIVE_SAVE_WITH_SIZE: u8 = 8;
-const TCP_SEND_RTC: u8 = 64;
-const TCP_RECEIVE_RTC: u8 = 128;
-const TCP_SEND_RNG: u8 = 65;
-const TCP_RECEIVE_RNG: u8 = 129;
+pub struct GgrsConfig;
+impl ggrs::Config for GgrsConfig {
+    type Input = ui::input::InputData;
+    type InputPredictor = ggrs::PredictRepeatLast;
+    type State = i32;
+    type Address = matchbox_socket::PeerId;
+}
 
-const CS4: u32 = 32;
+pub struct MatchboxSocket(matchbox_socket::WebRtcSocket);
+
+impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxSocket {
+    fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
+        let encoded = postcard::to_stdvec(msg).expect("serialization failed");
+        let channel = self.0.get_channel_mut(0).unwrap();
+        if channel.config().max_retransmits != Some(0) || channel.config().ordered {
+            eprintln!("Sending GGRS traffic over reliable channel");
+        }
+        channel.send(encoded.into(), *addr);
+    }
+
+    fn receive_all_messages(&mut self) -> Vec<(matchbox_socket::PeerId, ggrs::Message)> {
+        let channel = self.0.get_channel_mut(0).unwrap();
+        channel
+            .receive()
+            .iter()
+            .filter_map(|(peer, packet)| {
+                let msg = postcard::from_bytes::<ggrs::Message>(packet).ok()?;
+                Some((*peer, msg))
+            })
+            .collect()
+    }
+}
 
 pub struct Netplay {
-    udp_socket: std::net::UdpSocket,
-    tcp_stream: std::net::TcpStream,
-    pub player_number: u8,
-    pub player_data: [PlayerData; 4],
-    vi_counter: u32,
-    status: u8,
-    buffer_target: u8,
-    pub fast_forward: bool,
+    pub session: ggrs::P2PSession<GgrsConfig>,
+    pub reliable_channel: matchbox_socket::WebRtcChannel,
+    pub peers: Vec<matchbox_socket::PeerId>,
+    pub player_number: usize,
+    pub connected: [bool; 4],
+    pub data: std::collections::HashMap<String, Vec<u8>>,
+    pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
+    pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
 }
 
-pub struct PlayerData {
-    lag: u8,
-    count: u32,
-    pub reg_id: u32,
-    input_events: rustc_hash::FxHashMap<u32, InputEvent>,
+#[derive(serde::Serialize, serde::Deserialize)]
+struct NetplayMessage {
+    name: String,
+    data: Vec<u8>,
 }
 
-struct InputEvent {
-    input: u32,
-    plugin: u8,
+fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
+    let data = postcard::to_stdvec(&message).unwrap();
+    for peer in netplay.peers.iter() {
+        netplay.reliable_channel.send(data.clone().into(), *peer);
+    }
+}
+
+fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
+    while !netplay.data.contains_key(name) {
+        let messages = netplay.reliable_channel.receive();
+        for (_, data) in messages {
+            let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
+            netplay.data.insert(message.name, message.data);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    netplay.data.remove(name).unwrap()
+}
+
+fn send_player_number(
+    channel: &mut matchbox_socket::WebRtcChannel,
+    peers: Vec<matchbox_socket::PeerId>,
+    player_number: usize,
+) {
+    let message = NetplayMessage {
+        name: "player_number".to_string(),
+        data: player_number.to_be_bytes().to_vec(),
+    };
+    let data = postcard::to_stdvec(&message).unwrap();
+    for peer in peers {
+        channel.send(data.clone().into(), peer);
+    }
+}
+
+fn get_player_numbers(
+    channel: &mut matchbox_socket::WebRtcChannel,
+    local_player_number: usize,
+    number_of_peers: usize,
+) -> std::collections::BTreeMap<usize, Option<matchbox_socket::PeerId>> {
+    let mut player_numbers = std::collections::BTreeMap::new();
+    player_numbers.insert(local_player_number, None);
+    while player_numbers.len() < number_of_peers + 1 {
+        for (peer, data) in channel.receive() {
+            let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
+            if message.name == "player_number" {
+                player_numbers.insert(
+                    usize::from_be_bytes(message.data.try_into().unwrap()),
+                    Some(peer),
+                );
+            }
+        }
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    player_numbers
 }
 
 pub fn send_rtc(netplay: &mut Netplay, rtc: i64) {
-    let mut request: Vec<u8> = [TCP_SEND_RTC].to_vec();
-    let size: u32 = 8;
-    request.extend_from_slice(&size.to_be_bytes());
-    request.extend_from_slice(&rtc.to_be_bytes());
-    netplay.tcp_stream.write_all(&request).unwrap();
+    let message = NetplayMessage {
+        name: "rtc".to_string(),
+        data: rtc.to_be_bytes().to_vec(),
+    };
+    send_message(netplay, message);
 }
 
 pub fn receive_rtc(netplay: &mut Netplay) -> i64 {
-    let request: Vec<u8> = [TCP_RECEIVE_RTC].to_vec();
-    netplay.tcp_stream.write_all(&request).unwrap();
-    let mut rtc: [u8; 8] = [0; 8];
-    netplay.tcp_stream.read_exact(&mut rtc).unwrap();
-    i64::from_be_bytes(rtc)
+    let message = receive_message(netplay, "rtc");
+
+    i64::from_be_bytes(message.try_into().unwrap())
 }
 
 pub fn send_rng(netplay: &mut Netplay, seed: u64) {
-    let mut request: Vec<u8> = [TCP_SEND_RNG].to_vec();
-    let size: u32 = 8;
-    request.extend_from_slice(&size.to_be_bytes());
-    request.extend_from_slice(&seed.to_be_bytes());
-    netplay.tcp_stream.write_all(&request).unwrap();
+    let message = NetplayMessage {
+        name: "rng".to_string(),
+        data: seed.to_be_bytes().to_vec(),
+    };
+    send_message(netplay, message);
 }
 
 pub fn receive_rng(netplay: &mut Netplay) -> u64 {
-    let request: Vec<u8> = [TCP_RECEIVE_RNG].to_vec();
-    netplay.tcp_stream.write_all(&request).unwrap();
-    let mut seed: [u8; 8] = [0; 8];
-    netplay.tcp_stream.read_exact(&mut seed).unwrap();
-    u64::from_be_bytes(seed)
+    let message = receive_message(netplay, "rng");
+    u64::from_be_bytes(message.try_into().unwrap())
 }
 
-pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8], size: usize) {
-    let mut request: Vec<u8> = [TCP_SEND_SAVE].to_vec();
-    request.extend_from_slice(save_type.as_bytes());
-    request.push(0); // null terminate string
-    request.extend_from_slice(&(size as u32).to_be_bytes());
-
-    if size > 0 {
-        request.extend_from_slice(save_data);
-    }
-    netplay.tcp_stream.write_all(&request).unwrap();
+pub fn send_save(netplay: &mut Netplay, save_type: &str, save_data: &[u8]) {
+    let message = NetplayMessage {
+        name: save_type.to_string(),
+        data: save_data.to_vec(),
+    };
+    send_message(netplay, message);
 }
 
 pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<u8>) {
-    let mut request: Vec<u8> = [TCP_RECEIVE_SAVE_WITH_SIZE].to_vec();
-    request.extend_from_slice(save_type.as_bytes());
-    request.push(0); // null terminate string
-    netplay.tcp_stream.write_all(&request).unwrap();
-
-    let mut size: [u8; 4] = [0; 4];
-    netplay.tcp_stream.read_exact(&mut size).unwrap();
-    let mut response: Vec<u8> = vec![0; u32::from_be_bytes(size) as usize];
-    netplay.tcp_stream.read_exact(&mut response).unwrap();
-    *save_data = response;
+    let message = receive_message(netplay, save_type);
+    *save_data = message;
 }
 
-pub fn send_sync_check(netplay: &mut Netplay, regs: &[u64]) {
-    if netplay.vi_counter.is_multiple_of(600) {
-        let mut request: Vec<u8> = [UDP_SYNC_DATA].to_vec();
-        request.extend_from_slice(&(netplay.vi_counter).to_be_bytes());
-
-        for item in regs.iter() {
-            request.extend_from_slice(&(*item as u32).to_be_bytes());
-        }
-
-        netplay.udp_socket.send(&request).unwrap();
-    }
-    netplay.vi_counter = netplay.vi_counter.wrapping_add(1);
-}
-
-pub fn send_input(netplay: &Netplay, input: ui::input::InputData) {
-    let mut request: Vec<u8> = [UDP_SEND_KEY_INFO].to_vec();
-    request.push(netplay.player_number);
-    request.extend_from_slice(
-        &(netplay.player_data[netplay.player_number as usize].count).to_be_bytes(),
-    );
-    request.extend_from_slice(&(input.data).to_be_bytes());
-    request.push(input.pak_change_pressed as u8);
-    netplay.udp_socket.send(&request).unwrap();
-}
-
-pub fn get_input(device: &mut device::Device, channel: usize) -> ui::input::InputData {
-    let netplay = device.netplay.as_mut().unwrap();
-    let mut input = None;
-
-    let timeout = std::time::Instant::now() + std::time::Duration::from_secs(10);
-    let mut request_timer = std::time::Instant::now() - std::time::Duration::from_millis(5);
-    while input.is_none() {
-        process_incoming(netplay); // we execute process_incoming before request_input so that we send an accurate buffer count
-        if std::time::Instant::now() > request_timer {
-            // sends a request packet every 5ms
-            request_input(netplay, channel);
-            request_timer = std::time::Instant::now() + std::time::Duration::from_millis(5);
-        }
-        input = netplay.player_data[channel]
-            .input_events
-            .remove(&netplay.player_data[channel].count);
-
-        if std::time::Instant::now() > timeout {
-            ui::video::onscreen_message(
-                "Lost connection to netplay server",
-                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-            );
-            input = Some(InputEvent {
-                input: 0,
-                plugin: 0,
-            });
-            device.cpu.running = false;
-        }
-    }
-
-    netplay.fast_forward = netplay.player_data[channel].lag > 0
-        && netplay.player_data[channel].input_events.len() as u8 > netplay.buffer_target;
-
-    netplay.player_data[channel].count = netplay.player_data[channel].count.wrapping_add(1);
-    ui::input::InputData {
-        data: input.as_ref().unwrap().input,
-        pak_change_pressed: input.as_ref().unwrap().plugin != 0,
-    }
-}
-
-fn request_input(netplay: &Netplay, channel: usize) {
-    let mut request: Vec<u8> = [UDP_REQUEST_KEY_INFO].to_vec();
-    request.push(channel as u8); //The player we need input for
-    request.extend_from_slice(
-        &(netplay.player_data[netplay.player_number as usize].reg_id).to_be_bytes(),
-    );
-    request.extend_from_slice(&(netplay.player_data[channel].count).to_be_bytes());
-    request.push(0); //spectator mode
-    request.push(netplay.player_data[channel].input_events.len() as u8);
-    netplay.udp_socket.send(&request).unwrap();
-}
-
-fn process_incoming(netplay: &mut Netplay) {
-    let mut buf: [u8; 1024] = [0; 1024];
-    while netplay.udp_socket.recv(&mut buf).is_ok() {
-        match buf[0] {
-            UDP_RECEIVE_KEY_INFO | UDP_RECEIVE_KEY_INFO_GRATUITOUS => {
-                let player = buf[1] as usize;
-                //current_status is a status update from the server
-                //it will let us know if another player has disconnected, or the games have desynced
-                let current_status = buf[2];
-                if buf[0] == UDP_RECEIVE_KEY_INFO {
-                    netplay.player_data[player].lag = buf[3];
-                }
-                if current_status != netplay.status {
-                    if ((current_status & 0x1) ^ (netplay.status & 0x1)) != 0 {
-                        ui::video::onscreen_message(
-                            "Netplay desync detected",
-                            ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
-                        );
-                    }
-                    for dis in 1..5 {
-                        if ((current_status & (0x1 << dis)) ^ (netplay.status & (0x1 << dis))) != 0
-                        {
-                            ui::video::onscreen_message(
-                                &format!("Player {dis} disconnected"),
-                                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-                            );
-                        }
-                    }
-                    netplay.status = current_status;
-                }
-
-                let mut buffer_offset = 5;
-                for _i in 0..buf[4] {
-                    let count = u32::from_be_bytes(
-                        buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
-                    );
-                    buffer_offset += 4;
-
-                    if (count.wrapping_sub(netplay.player_data[player].count)) > (u32::MAX / 2) {
-                        //event doesn't need to be recorded
-                        buffer_offset += 5;
-                        continue;
-                    }
-
-                    let input = u32::from_be_bytes(
-                        buf[buffer_offset..buffer_offset + 4].try_into().unwrap(),
-                    );
-                    buffer_offset += 4;
-                    let plugin = buf[buffer_offset];
-                    buffer_offset += 1;
-                    let input_event = InputEvent { input, plugin };
-                    netplay.player_data[player]
-                        .input_events
-                        .insert(count, input_event);
-                }
-            }
-            _ => {
-                panic!("unknown UDP packet")
-            }
-        }
-    }
-}
-
-pub fn init(peer_addr: std::net::SocketAddr, player_number: u8) -> Netplay {
-    let udp_socket;
-    if peer_addr.is_ipv4() {
-        udp_socket = std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, 0))
-            .expect("couldn't bind to address");
-        socket2::SockRef::from(&udp_socket)
-            .set_tos_v4(CS4 << 2)
-            .unwrap();
-    } else {
-        udp_socket = std::net::UdpSocket::bind((std::net::Ipv6Addr::UNSPECIFIED, 0))
-            .expect("couldn't bind to address");
-        #[cfg(not(target_os = "windows"))]
-        socket2::SockRef::from(&udp_socket)
-            .set_tclass_v6(CS4 << 2)
-            .unwrap();
-    };
-
-    udp_socket.connect(peer_addr).unwrap();
-    udp_socket.set_nonblocking(true).unwrap();
-
-    let mut stream = std::net::TcpStream::connect(peer_addr).unwrap();
-
-    let regid = (player_number + 1) as u32;
-    let mut request: [u8; 8] = [
-        TCP_REGISTER_PLAYER,
-        player_number,
-        0, //plugin/pak
-        0, //rawdata
-        0, //regid (u32)
-        0, //regid (u32)
-        0, //regid (u32)
-        0, //regid (u32)
-    ];
-
-    request[4..8].copy_from_slice(&regid.to_be_bytes());
-    stream.write_all(&request).unwrap();
-
-    let mut response: [u8; 2] = [0, 0];
-    stream.read_exact(&mut response).unwrap();
-    if response[0] != 1 {
-        panic!("Failed to register player");
-    }
-    let buffer_target = response[1];
-
-    let request: [u8; 1] = [TCP_GET_REGISTRATION];
-    stream.write_all(&request).unwrap();
-    let mut response: [u8; 24] = [0; 24];
-    stream.read_exact(&mut response).unwrap();
-
-    let mut reg_id: [u32; 4] = [0; 4];
-    for i in 0..4 {
-        // reg_id of 0 means no player connected
-        reg_id[i] = u32::from_be_bytes(response[(i * 6)..(i * 6) + 4].try_into().unwrap());
-    }
-    Netplay {
-        udp_socket,
-        tcp_stream: stream,
-        player_number,
-        vi_counter: 0,
-        status: 0,
-        buffer_target,
-        fast_forward: false,
-        player_data: [
-            PlayerData {
-                lag: 0,
-                count: 0,
-                reg_id: reg_id[0],
-                input_events: rustc_hash::FxHashMap::default(),
-            },
-            PlayerData {
-                lag: 0,
-                count: 0,
-                reg_id: reg_id[1],
-                input_events: rustc_hash::FxHashMap::default(),
-            },
-            PlayerData {
-                lag: 0,
-                count: 0,
-                reg_id: reg_id[2],
-                input_events: rustc_hash::FxHashMap::default(),
-            },
-            PlayerData {
-                lag: 0,
-                count: 0,
-                reg_id: reg_id[3],
-                input_events: rustc_hash::FxHashMap::default(),
-            },
-        ],
-    }
-}
-
-pub fn close(device: &mut device::Device) {
-    let netplay = device.netplay.as_mut().unwrap();
-    let regid = (netplay.player_number + 1) as u32;
-    let mut request: [u8; 5] = [TCP_DISCONNECT_NOTICE, 0, 0, 0, 0];
-    request[1..5].copy_from_slice(&regid.to_be_bytes());
-
-    netplay.tcp_stream.write_all(&request).unwrap();
-    netplay.tcp_stream.flush().unwrap();
+pub fn pending_frames(netplay: &Netplay) -> usize {
     netplay
-        .tcp_stream
-        .shutdown(std::net::Shutdown::Both)
+        .requests
+        .iter()
+        .filter(|r| matches!(r, ggrs::GgrsRequest::AdvanceFrame { .. }))
+        .count()
+}
+
+pub fn process_requests(
+    device: &mut device::Device,
+) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
+    loop {
+        if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
+            match request {
+                ggrs::GgrsRequest::SaveGameState { cell, frame } => {
+                    savestates::create_savestate(device, true, Some(frame));
+
+                    let mut hasher = sha2::Sha256::new();
+                    for reg in device.cpu.cop0.regs.as_ref() {
+                        hasher.update(reg.to_be_bytes());
+                    }
+                    let hash = u128::from_be_bytes(hasher.finalize()[..16].try_into().unwrap());
+                    cell.save(frame, Some(frame), Some(hash));
+                }
+                ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
+                    if let Some(frame) = cell.load() {
+                        savestates::load_savestate(device, true, Some(frame));
+                    }
+                }
+                ggrs::GgrsRequest::AdvanceFrame { inputs } => {
+                    return inputs;
+                }
+            }
+        } else {
+            let netplay = device.netplay.as_mut().unwrap();
+            netplay.session.poll_remote_clients();
+            advance_frame(device);
+        }
+    }
+}
+
+pub fn process_netplay(
+    device: &mut device::Device,
+) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
+    let netplay = device.netplay.as_mut().unwrap();
+
+    netplay.session.poll_remote_clients();
+    for event in netplay.session.events() {
+        match event {
+            ggrs::GgrsEvent::Synchronizing { .. } => {}
+            ggrs::GgrsEvent::Synchronized { .. } => {}
+            ggrs::GgrsEvent::Disconnected { .. } => {
+                ui::video::onscreen_message(
+                    "Peer disconnected",
+                    ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+                );
+            }
+            ggrs::GgrsEvent::NetworkInterrupted { .. } => {
+                println!("network interrupted");
+            }
+            ggrs::GgrsEvent::NetworkResumed { .. } => {
+                println!("network resumed");
+            }
+            ggrs::GgrsEvent::WaitRecommendation { skip_frames } => {
+                println!("wait recommendation: skip_frames={}", skip_frames);
+            }
+            ggrs::GgrsEvent::DesyncDetected { .. } => {
+                ui::video::onscreen_message(
+                    "Desync detected",
+                    ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+                );
+            }
+        }
+    }
+
+    advance_frame(device);
+    process_requests(device)
+}
+
+fn advance_frame(device: &mut device::Device) {
+    let netplay = device.netplay.as_mut().unwrap();
+    let local_input = ui::input::get(&mut device.ui, 0, device.frame_counter);
+    let local_handle = *netplay.session.local_player_handles().first().unwrap();
+    netplay
+        .session
+        .add_local_input(local_handle, local_input)
         .unwrap();
+    match netplay.session.advance_frame() {
+        Ok(requests) => {
+            netplay.requests.extend(requests);
+        }
+        Err(ggrs::GgrsError::PredictionThreshold) => {
+            println!("prediction threshold reached");
+        }
+        Err(e) => panic!("{e}"),
+    }
+}
+
+pub fn init(
+    server_addr: String,
+    player_number: usize,
+    number_of_players: usize,
+    input_delay: usize,
+    pal: bool,
+) -> Netplay {
+    let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
+        .add_unreliable_channel()
+        .add_reliable_channel()
+        .build();
+    tokio::spawn(async move {
+        if let Err(e) = loop_fut.await {
+            eprintln!("WebRTC loop failed: {}", e);
+        }
+    });
+    let mut matchbox_socket = MatchboxSocket(socket);
+    let mut reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
+    let now = std::time::Instant::now();
+    let timeout = std::time::Duration::from_secs(10);
+    let mut peers = vec![];
+    let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new();
+    loop {
+        matchbox_socket.0.update_peers();
+        peers = matchbox_socket
+            .0
+            .connected_peers()
+            .collect::<Vec<matchbox_socket::PeerId>>();
+        if peers.len() == number_of_players - 1 {
+            send_player_number(&mut reliable_channel, peers.clone(), player_number);
+            let player_numbers =
+                get_player_numbers(&mut reliable_channel, player_number, peers.len());
+            session_builder = session_builder
+                .with_num_players(number_of_players)
+                .unwrap()
+                .with_input_delay(input_delay)
+                .with_fps(if pal { 50 } else { 60 })
+                .unwrap()
+                .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
+            for (i, peer) in player_numbers.iter() {
+                if let Some(peer) = peer {
+                    session_builder = session_builder
+                        .add_player(ggrs::PlayerType::Remote(*peer), *i)
+                        .unwrap();
+                } else {
+                    session_builder = session_builder
+                        .add_player(ggrs::PlayerType::Local, *i)
+                        .unwrap();
+                }
+            }
+
+            break;
+        }
+        if now.elapsed() > timeout {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let mut session = session_builder.start_p2p_session(matchbox_socket).unwrap();
+
+    let now = std::time::Instant::now();
+    while session.current_state() != ggrs::SessionState::Running && now.elapsed() < timeout {
+        session.poll_remote_clients();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+
+    Netplay {
+        session,
+        reliable_channel,
+        peers,
+        player_number,
+        connected: [
+            number_of_players > 0,
+            number_of_players > 1,
+            number_of_players > 2,
+            number_of_players > 3,
+        ],
+        data: std::collections::HashMap::new(),
+        inputs: Vec::new(),
+        requests: std::collections::VecDeque::new(),
+    }
 }

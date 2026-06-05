@@ -280,10 +280,17 @@ fn start_run_rom_on_jvm(
         ];
 
         if let Some(netplay) = netplay {
-            args.push(JString::from_str(env, "--netplay-peer-addr")?);
-            args.push(JString::from_str(env, &netplay.peer_addr.to_string())?);
+            args.push(JString::from_str(env, "--netplay-server-addr")?);
+            args.push(JString::from_str(env, &netplay.server_addr)?);
             args.push(JString::from_str(env, "--netplay-player-number")?);
             args.push(JString::from_str(env, &netplay.player_number.to_string())?);
+            args.push(JString::from_str(env, "--netplay-number-of-players")?);
+            args.push(JString::from_str(
+                env,
+                &netplay.number_of_players.to_string(),
+            )?);
+            args.push(JString::from_str(env, "--netplay-input-delay")?);
+            args.push(JString::from_str(env, &netplay.input_delay.to_string())?);
             args.push(JString::from_str(env, "--cheats")?);
             args.push(JString::from_str(env, cheats_path.to_str().unwrap())?);
 

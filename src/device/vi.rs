@@ -110,7 +110,15 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             let current_origin = device.vi.regs[reg as usize];
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
             if current_origin != device.vi.regs[reg as usize] {
-                savestates::process_savestates(device);
+                if let Some(netplay) = &device.netplay {
+                    device.netplay.as_mut().unwrap().inputs = if netplay.requests.is_empty() {
+                        netplay::process_netplay(device)
+                    } else {
+                        netplay::process_requests(device)
+                    };
+                } else {
+                    savestates::process_savestates(device);
+                }
                 let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
             }
         }
@@ -133,15 +141,10 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     retroachievements::do_frame();
 
-    let (mut speed_limiter_toggled, paused) = ui::video::check_callback(device);
+    let (speed_limiter_toggled, paused) = ui::video::check_callback(device);
 
-    if let Some(netplay) = &mut device.netplay {
-        netplay::send_sync_check(netplay, device.cpu.cop0.regs.as_ref());
-        if device.vi.enable_speed_limiter == netplay.fast_forward {
-            speed_limiter_toggled = true;
-            device.vi.enable_speed_limiter = !netplay.fast_forward;
-        }
-    } else if device.ui.config.emulation.rewind
+    if device.netplay.is_none()
+        && device.ui.config.emulation.rewind
         && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
     {
         device.savestate.save_rewind = true;
@@ -152,13 +155,17 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         reset_pace_deadline(device);
     }
 
-    if device.frame_counter.is_multiple_of(device.vi.limit_freq) && device.vi.enable_speed_limiter {
+    if (device.netplay.is_none() || netplay::pending_frames(device.netplay.as_ref().unwrap()) == 0)
+        && device.frame_counter.is_multiple_of(device.vi.limit_freq)
+        && device.vi.enable_speed_limiter
+    {
         speed_limiter(device);
     }
 
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
-
-    ui::video::update_screen();
+    if device.netplay.is_none() || netplay::pending_frames(device.netplay.as_ref().unwrap()) == 0 {
+        ui::video::update_screen();
+    }
     device.frame_counter += 1;
 
     if device.netplay.is_none() && paused {
@@ -194,8 +201,17 @@ pub fn init(device: &mut device::Device) {
 
 fn speed_limiter(device: &mut device::Device) {
     let mut speed_limiter_toggled = false;
-    let interval =
+    let mut interval =
         std::time::Duration::from_secs_f64(device.vi.frame_time * device.vi.limit_freq as f64);
+
+    if let Some(netplay) = &device.netplay {
+        let ahead = netplay.session.frames_ahead();
+        if ahead > 0 {
+            interval = interval.mul_f64(1.0 + 0.05 * ahead.min(2) as f64);
+        } else if ahead < 0 {
+            interval = interval.mul_f64(1.0 - 0.05 * (-ahead).min(2) as f64);
+        }
+    }
 
     let now = std::time::Instant::now();
     match device.vi.next_pace_deadline {

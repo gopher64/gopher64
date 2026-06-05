@@ -244,7 +244,6 @@ pub struct Device {
     pub ai: ai::Ai,
     pub si: si::Si,
     pub ri: ri::Ri,
-    #[serde(skip, default = "set_rng")]
     pub rng: rand::rngs::Xoshiro256PlusPlus,
     pub vru: controller::vru::Vru,
     pub transferpaks: [controller::transferpak::TransferPak; 4],
@@ -257,6 +256,7 @@ pub fn zero_m128i() -> __m128i {
 
 impl Device {
     pub fn clone_state(&mut self, device: &Device) {
+        self.rng.clone_from(&device.rng);
         self.cpu.clone_from(&device.cpu);
         self.pif.clone_from(&device.pif);
         self.cart.clone_from(&device.cart);
@@ -275,7 +275,7 @@ impl Device {
         self.cheats.clone_from(&device.cheats);
     }
 
-    pub fn new(with_ui: bool) -> Device {
+    pub fn new(with_ui: bool) -> Box<Device> {
         let mut byte_swap: usize = 0;
         let test: [u8; 4] = [1, 2, 3, 4];
         // if the host computer is little endian, that means the RDRAM will be stored as little endian
@@ -283,7 +283,7 @@ impl Device {
         if u32::from_le_bytes(test) == u32::from_ne_bytes(test) {
             byte_swap = 3;
         }
-        Device {
+        Box::new(Device {
             netplay: None,
             ui: if with_ui {
                 ui::Ui::new()
@@ -299,7 +299,7 @@ impl Device {
                 load_rewind: false,
                 last_rewind_saved: 0.0,
                 rewind_pool: std::sync::Arc::new(std::sync::Mutex::new(
-                    std::collections::VecDeque::new(),
+                    std::collections::BTreeMap::new(),
                 )),
             },
             cpu: cpu::Cpu {
@@ -559,6 +559,6 @@ impl Device {
                 boot: true,
                 enabled: false,
             },
-        }
+        })
     }
 }

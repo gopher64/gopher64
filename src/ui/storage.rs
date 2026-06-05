@@ -243,25 +243,21 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
                 netplay.as_mut().unwrap(),
                 "eep",
                 &ui.storage.saves.eeprom.data,
-                ui.storage.saves.eeprom.data.len(),
             );
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "sra",
                 &ui.storage.saves.sram.data,
-                ui.storage.saves.sram.data.len(),
             );
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "fla",
                 &ui.storage.saves.flash.data,
-                ui.storage.saves.flash.data.len(),
             );
             netplay::send_save(
                 netplay.as_mut().unwrap(),
                 "mpk",
                 &ui.storage.saves.mempak.data,
-                ui.storage.saves.mempak.data.len(),
             );
 
             let mut compressed_sd = Vec::new();
@@ -270,12 +266,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             {
                 compressed_sd = file_data;
             }
-            netplay::send_save(
-                netplay.as_mut().unwrap(),
-                "img",
-                &compressed_sd,
-                compressed_sd.len(),
-            );
+            netplay::send_save(netplay.as_mut().unwrap(), "img", &compressed_sd);
 
             let mut compressed_romsave = Vec::new();
             if !ui.storage.saves.romsave.data.is_empty()
@@ -284,12 +275,7 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             {
                 compressed_romsave = compressed_file_data;
             }
-            netplay::send_save(
-                netplay.as_mut().unwrap(),
-                "rom",
-                &compressed_romsave,
-                compressed_romsave.len(),
-            );
+            netplay::send_save(netplay.as_mut().unwrap(), "rom", &compressed_romsave);
         } else {
             netplay::receive_save(
                 netplay.as_mut().unwrap(),

@@ -5,9 +5,8 @@ import { Page } from "page.slint";
 
 export component NetplayCreate inherits Page {
     title: @tr("Netplay: Create Session");
-    callback get_custom_url();
     callback select_rom(string);
-    callback create_session(string, string, string, string, string, string, string);
+    callback create_session(string, string, string, string, string, string);
     callback close;
 
     VerticalBox {
@@ -61,25 +60,6 @@ export component NetplayCreate inherits Page {
                     }
                 }
 
-                VerticalBox {
-                    Text {
-                        text: @tr("Server:");
-                    }
-
-                    HorizontalBox {
-                        server := ComboBox {
-                            model: NetplayData.server_names;
-                            selected => {
-                                if (self.current-index >= 0) {
-                                    if (self.current-value == "Custom") {
-                                        get_custom_url();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 HorizontalBox {
                     alignment: center;
                     if NetplayData.game_name == "": Button {
@@ -108,18 +88,11 @@ export component NetplayCreate inherits Page {
                 HorizontalBox {
                     alignment: center;
                     Button {
-                        property <string> server_url;
                         text: @tr("Create Session");
                         enabled: NetplayData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
                         clicked => {
                             NetplayData.pending_session = true;
-                            if (server.current-value == "Custom") {
-                                server_url = "ws://" + NetplayData.custom_server_url;
-                            } else {
-                                server_url = NetplayData.server_urls[server.current-index];
-                            }
                             create_session(
-                            server_url,
                             NetplayData.session_name,
                             NetplayData.player_name,
                             NetplayData.game_name,
@@ -136,46 +109,6 @@ export component NetplayCreate inherits Page {
                     }
                 }
                 Rectangle { }
-            }
-        }
-    }
-}
-
-export component CustomServerDialog inherits PopupWindow {
-    close-policy: no-auto-close;
-    Rectangle {
-        height:100%;
-        width: 100%;
-        background: Palette.background;
-        VerticalBox {
-            alignment: center;
-            HorizontalBox{
-                alignment: center;
-                Text {
-                    text: @tr("Enter a custom server URL");
-                }
-            }
-            HorizontalBox {
-                alignment: center;
-                vertical-stretch: 0;
-                LineEdit {
-                    vertical-stretch: 0;
-                    text: NetplayData.custom_server_url;
-                    placeholder-text: "example.com:45000";
-                    preferred-width: 300px;
-                    edited(text) => {
-                        NetplayData.custom_server_url = text;
-                    }
-                }
-            }
-            HorizontalBox{
-                alignment: center;
-                StandardButton {
-                    kind: ok;
-                    clicked() => {
-                        root.close();
-                    }
-                }
             }
         }
     }

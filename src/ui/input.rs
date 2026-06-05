@@ -41,6 +41,7 @@ pub struct Controllers {
     pub last_key_state: u32,
 }
 
+#[derive(Default, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct InputData {
     pub data: u32,
     pub pak_change_pressed: bool,

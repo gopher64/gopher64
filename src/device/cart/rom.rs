@@ -148,7 +148,7 @@ pub fn init(device: &mut device::Device, rom_file: &[u8]) {
     }
 }
 
-fn is_system_pal(country: u8) -> bool {
+pub fn is_system_pal(country: u8) -> bool {
     let pal_codes: [u8; 8] = *b"DFIPSUXY";
     for i in pal_codes {
         if country == i {
