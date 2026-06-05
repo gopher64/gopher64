@@ -507,8 +507,11 @@ fn about_window(app: &AppWindow) {
     });
     app.set_version(format!("Version: {}", env!("GIT_DESCRIBE")).into());
 
-    //flatpak and itch.io have their own update checking mechanism
-    if std::env::var("FLATPAK_ID").is_err() && std::env::var("ITCHIO_APP").is_err() {
+    //flatpak, itch.io, and android have their own update checking mechanism
+    if std::env::var("FLATPAK_ID").is_err()
+        && std::env::var("ITCHIO_APP").is_err()
+        && cfg!(not(target_os = "android"))
+    {
         check_latest_version(app.as_weak());
     }
 }
