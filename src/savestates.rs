@@ -218,7 +218,16 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
     let state_data = if rewind {
         if let Ok(mut pool) = device.savestate.rewind_pool.lock() {
             if let Some(rewind_frame) = rewind_frame {
-                pool.remove(&rewind_frame)
+                let timeout = std::time::Duration::from_secs(1);
+                let now = std::time::Instant::now();
+                loop {
+                    if pool.contains_key(&rewind_frame) {
+                        break pool.remove(&rewind_frame);
+                    }
+                    if now.elapsed() > timeout {
+                        break None;
+                    }
+                }
             } else if let Some((_key, state)) = pool.pop_last() {
                 Some(state)
             } else {
@@ -382,7 +391,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         } else {
             (
                 "Failed to rollback".to_string(),
-                ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             )
         };
         ui::video::onscreen_message(&message, length);
