@@ -398,9 +398,10 @@ fn update_ping(
     mut close_ping_rx: tokio::sync::broadcast::Receiver<()>,
     weak_app: slint::Weak<AppWindow>,
 ) {
-    let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
-        .add_unreliable_channel()
-        .build();
+    let (mut socket, loop_fut) =
+        matchbox_socket::WebRtcSocketBuilder::new(format!("{}/lobby", server_addr))
+            .add_unreliable_channel()
+            .build();
 
     tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
