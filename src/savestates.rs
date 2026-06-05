@@ -220,10 +220,10 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
             let timeout = std::time::Duration::from_secs(1);
             let now = std::time::Instant::now();
             loop {
-                if let Ok(mut pool) = device.savestate.rewind_pool.lock() {
-                    if pool.contains_key(&rewind_frame) {
-                        break pool.remove(&rewind_frame);
-                    }
+                if let Ok(mut pool) = device.savestate.rewind_pool.lock()
+                    && pool.contains_key(&rewind_frame)
+                {
+                    break pool.remove(&rewind_frame);
                 }
                 if now.elapsed() > timeout {
                     break None;
