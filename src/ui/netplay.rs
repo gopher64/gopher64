@@ -166,7 +166,7 @@ fn manage_websocket(
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
 ) {
-    let server_url = "ws://netplay.gopher64.com:45000";
+    let server_url = "wss://netplay.gopher64.com";
     tokio::spawn(async move {
         if let Ok(Ok((socket, _response))) = tokio::time::timeout(
             std::time::Duration::from_secs(2),
