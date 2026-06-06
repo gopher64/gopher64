@@ -164,12 +164,8 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     }
     device.frame_counter += 1;
 
-    if let Some(netplay) = &device.netplay {
-        device.netplay.as_mut().unwrap().inputs = if netplay.requests.is_empty() {
-            netplay::process_netplay(device)
-        } else {
-            netplay::process_requests(device)
-        };
+    if device.netplay.is_some() {
+        device.netplay.as_mut().unwrap().inputs = netplay::process_requests(device);
     }
 
     if device.netplay.is_none() && paused {
