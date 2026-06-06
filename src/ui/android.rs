@@ -165,7 +165,7 @@ pub async extern "C" fn gopher64_sdl_main(
 ) -> std::ffi::c_int {
     let raw = argv_to_strings(argc, argv);
     let args = Args::try_parse_from(raw).unwrap();
-    if let Err(err) = run(args, argc as usize).await {
+    if let Err(err) = run(args, argc as usize) {
         eprintln!("Error running game: {err:?}");
         return 1;
     }
