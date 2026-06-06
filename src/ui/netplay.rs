@@ -2,11 +2,11 @@ use crate::device;
 use crate::ui;
 use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings};
 use futures::{SinkExt, StreamExt};
-use sha2::digest::Digest;
 use slint::ComponentHandle;
 use slint::Model;
 use tokio_tungstenite::tungstenite::Bytes;
 use tokio_tungstenite::tungstenite::Utf8Bytes;
+use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
 use tokio_tungstenite::tungstenite::protocol::{CloseFrame, Message};
 
@@ -22,7 +22,6 @@ enum MessageType {
     ResponseListSessions,
     SendChatMessage,
     ReceiveChatMessage,
-    Authenticate,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -54,22 +53,6 @@ enum PingType {
 struct NetplayPingMessage {
     message_type: PingType,
     timestamp: u128,
-}
-
-pub fn get_auth_token() -> String {
-    let now_utc = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis()
-        .to_string();
-    let hasher: String = sha2::Sha256::new()
-        .chain_update(&now_utc)
-        .chain_update(env!("NETPLAY_ID"))
-        .finalize()
-        .iter()
-        .map(|b| format!("{:02x}", b))
-        .collect();
-    format!("{}|{}", now_utc, hasher)
 }
 
 fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
@@ -152,37 +135,18 @@ fn setup_create_window(
     app.set_show_netplay_create_session(true);
 }
 
-async fn do_authentication(
-    write: &mut futures::stream::SplitSink<
-        tokio_tungstenite::WebSocketStream<
-            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
-        >,
-        tokio_tungstenite::tungstenite::Message,
-    >,
-) {
-    let authenticate = NetplayLobbyMessage {
-        message_type: MessageType::Authenticate,
-        sessions: std::collections::HashMap::new(),
-        message: Some(get_auth_token()),
-    };
-
-    write
-        .send(Message::Binary(Bytes::from(
-            postcard::to_stdvec(&authenticate).unwrap(),
-        )))
-        .await
-        .unwrap();
-}
-
 fn manage_websocket(
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
 ) {
-    let server_url = "wss://netplay.gopher64.com";
+    let mut request = "wss://netplay.gopher64.com".into_client_request().unwrap();
+    request
+        .headers_mut()
+        .insert("Authorization", env!("NETPLAY_ID").parse().unwrap());
     tokio::spawn(async move {
         if let Ok(Ok((socket, _response))) = tokio::time::timeout(
             std::time::Duration::from_secs(2),
-            tokio_tungstenite::connect_async(server_url),
+            tokio_tungstenite::connect_async(request),
         )
         .await
         {
@@ -203,7 +167,6 @@ fn manage_websocket(
                 }
             });
             tokio::spawn(async move {
-                do_authentication(&mut write).await;
                 loop {
                     match netplay_write_receiver.recv().await {
                         Ok(Some(response)) => {
