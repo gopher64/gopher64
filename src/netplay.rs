@@ -212,16 +212,13 @@ pub fn process_requests(
                 }
             }
         } else {
-            let netplay = device.netplay.as_mut().unwrap();
-            netplay.session.poll_remote_clients();
-            advance_frame(device);
+            // unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the screen doesn't freeze
+            return process_netplay(device);
         }
     }
 }
 
-pub fn process_netplay(
-    device: &mut device::Device,
-) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
+fn process_netplay(device: &mut device::Device) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
     let netplay = device.netplay.as_mut().unwrap();
 
     netplay.session.poll_remote_clients();
@@ -326,7 +323,8 @@ pub fn init(
         .with_input_delay(input_delay)
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
-        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
+        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
+        .with_disconnect_timeout(std::time::Duration::from_secs(5));
 
     #[cfg(debug_assertions)]
     {
