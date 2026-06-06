@@ -104,7 +104,7 @@ fn set_app_id() {
     }
 }
 
-pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
+pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
     let dirs = ui::get_dirs();
 
     std::fs::create_dir_all(&dirs.config_dir)?;
@@ -228,7 +228,11 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 tx.send(false).unwrap();
             }
 
-            rx.await.unwrap();
+            let join_handle = std::thread::spawn(move || {
+                rx.blocking_recv().unwrap();
+            });
+            join_handle.join().unwrap();
+
             ra_config
         } else {
             retroachievements::RAConfig::default()
@@ -244,8 +248,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 load_savestate_slot: args.load_state,
             },
             ra_config,
-        )
-        .await;
+        );
 
         // on Android, the client is shut down in the app_window function
         #[cfg(not(target_os = "android"))]
@@ -266,7 +269,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
             }
         }
 
-        ui::usb::close(shutdown_tx, usb_handle).await;
+        ui::usb::close(shutdown_tx, usb_handle);
     } else if arg_count > 1 {
         let mut config = ui::config::Config::new();
 
@@ -330,7 +333,7 @@ pub async fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
 
 #[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
-#[tokio::main(worker_threads = 4)]
+#[tokio::main]
 async fn android_main(app: slint::android::AndroidApp) {
     slint::android::init_with_event_listener(app.clone(), move |event| match event {
         slint::android::android_activity::PollEvent::Main(main_event) => match main_event {

@@ -47,7 +47,7 @@ pub mod tlb;
 pub mod unmapped;
 pub mod vi;
 
-pub async fn run_game(
+pub fn run_game(
     device: &mut Device,
     rom_contents: &[u8],
     game_settings: ui::GameSettings,
@@ -76,7 +76,6 @@ pub async fn run_game(
     // must be after video init
     let (discord_watch_tx, discord_handle) = if ra_config.enabled && device.netplay.is_none() {
         retroachievements::load_game(rom_contents, rom_contents.len(), ra_config.rich_presence)
-            .await
     } else {
         (None, None)
     };
@@ -103,7 +102,7 @@ pub async fn run_game(
 
     cpu::run(device);
 
-    retroachievements::unload_game(discord_watch_tx, discord_handle).await;
+    retroachievements::unload_game(discord_watch_tx, discord_handle);
 
     ui::storage::write_saves(device);
     ui::input::close(&mut device.ui);
