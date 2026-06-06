@@ -158,7 +158,7 @@ fn argv_to_strings(argc: std::ffi::c_int, argv: *mut *mut std::ffi::c_char) -> V
 }
 
 #[unsafe(no_mangle)]
-#[tokio::main(worker_threads = 4)]
+#[tokio::main]
 pub async extern "C" fn gopher64_sdl_main(
     argc: std::ffi::c_int,
     argv: *mut *mut std::ffi::c_char,

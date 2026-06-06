@@ -137,7 +137,7 @@ pub extern "C" fn rust_server_call(
     });
 }
 
-pub async fn load_game(
+pub fn load_game(
     rom: &[u8],
     rom_size: usize,
     discord_rich_presence: bool,
@@ -150,7 +150,10 @@ pub async fn load_game(
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
         ra_load_game(rom.as_ptr(), rom_size, tx_ptr);
     };
-    rx.await.unwrap();
+    let join_handle = tokio::spawn(async move { rx.await.unwrap() });
+    tokio::runtime::Handle::current()
+        .block_on(join_handle)
+        .unwrap();
 
     let mut c_title = std::ptr::null();
     let mut c_image_url = std::ptr::null();
@@ -177,7 +180,7 @@ pub async fn load_game(
     }
 }
 
-pub async fn unload_game(
+pub fn unload_game(
     discord_watch_tx: Option<tokio::sync::watch::Sender<()>>,
     discord_handle: Option<tokio::task::JoinHandle<()>>,
 ) {
@@ -185,12 +188,14 @@ pub async fn unload_game(
         && let Some(discord_watch_tx) = discord_watch_tx
     {
         let _ = discord_watch_tx.send(());
-        if tokio::time::timeout(std::time::Duration::from_secs(1), &mut discord_handle)
-            .await
-            .is_err()
-        {
-            discord_handle.abort();
-        }
+        tokio::task::spawn(async move {
+            if tokio::time::timeout(std::time::Duration::from_secs(1), &mut discord_handle)
+                .await
+                .is_err()
+            {
+                discord_handle.abort();
+            }
+        });
     }
     unsafe { ra_unload_game() };
 }
