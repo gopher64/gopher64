@@ -463,7 +463,7 @@ fn update_ping(
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap()
                             .as_millis();
-                        let ping = now - message.timestamp;
+                        let ping = (now - message.timestamp) / 2; // calculate one-way latency
                         pings.push(ping);
                         if pings.len() > 10 {
                             // once we have 10 samples, remove the highest 2 and return the next highest
