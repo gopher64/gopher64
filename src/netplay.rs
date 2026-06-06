@@ -230,6 +230,7 @@ pub fn process_netplay(
             ggrs::GgrsEvent::Synchronizing { .. } => {}
             ggrs::GgrsEvent::Synchronized { .. } => {}
             ggrs::GgrsEvent::Disconnected { .. } => {
+                eprintln!("peer disconnected");
                 ui::video::onscreen_message(
                     "Peer disconnected",
                     ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
@@ -245,6 +246,7 @@ pub fn process_netplay(
                 println!("wait recommendation: skip_frames={}", skip_frames);
             }
             ggrs::GgrsEvent::DesyncDetected { .. } => {
+                eprintln!("desync detected");
                 ui::video::onscreen_message(
                     "Desync detected",
                     ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
@@ -283,11 +285,10 @@ pub fn init(
     input_delay: usize,
     pal: bool,
 ) -> Option<Netplay> {
-    let (socket, loop_fut) =
-        matchbox_socket::WebRtcSocketBuilder::new(format!("{}/game", server_addr))
-            .add_unreliable_channel()
-            .add_reliable_channel()
-            .build();
+    let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
+        .add_unreliable_channel()
+        .add_reliable_channel()
+        .build();
     tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
             eprintln!("WebRTC loop failed: {}", e);
@@ -325,7 +326,8 @@ pub fn init(
         .with_input_delay(input_delay)
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
-        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 });
+        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
+        .with_disconnect_timeout(std::time::Duration::from_secs(5));
 
     let mut peers = vec![];
     for (i, peer) in player_numbers.iter() {
