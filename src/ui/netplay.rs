@@ -44,6 +44,18 @@ struct NetplayLobbyMessage {
     message: Option<String>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+enum PingType {
+    Ping,
+    Pong,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct NetplayPingMessage {
+    message_type: PingType,
+    timestamp: u128,
+}
+
 pub fn get_auth_token() -> String {
     let now_utc = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -166,7 +178,7 @@ fn manage_websocket(
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
 ) {
-    let server_url = "ws://netplay.gopher64.com:45000";
+    let server_url = "wss://netplay.gopher64.com";
     tokio::spawn(async move {
         if let Ok(Ok((socket, _response))) = tokio::time::timeout(
             std::time::Duration::from_secs(2),
@@ -409,6 +421,7 @@ fn update_ping(
     });
     let channel = socket.take_channel(0).unwrap();
     let (mut write, mut read) = channel.split();
+    let mut write_clone = write.clone();
     tokio::spawn(async move {
         loop {
             if close_ping_rx.try_recv().is_ok() {
@@ -420,7 +433,12 @@ fn update_ping(
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_millis();
-                let _ = write.send((peer, now.to_be_bytes().to_vec().into())).await;
+                let ping_message = NetplayPingMessage {
+                    message_type: PingType::Ping,
+                    timestamp: now,
+                };
+                let data = postcard::to_stdvec(&ping_message).unwrap();
+                let _ = write.send((peer, data.into())).await;
             }
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         }
@@ -428,31 +446,51 @@ fn update_ping(
     });
     tokio::spawn(async move {
         let mut pings = vec![];
-        while let Some((_, data)) = read.next().await {
-            let now = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_millis();
-            let time = u128::from_be_bytes(data.as_ref().try_into().unwrap());
-            let ping = now - time;
-            pings.push(ping);
-            if pings.len() > 10 {
-                // once we have 10 samples, remove the highest 2 and return the next highest
-                pings.sort();
-                pings.truncate(pings.len() - 2);
-                let ping = *pings.last().unwrap();
-                pings.clear();
-                weak_app
-                    .upgrade_in_event_loop(move |handle| {
-                        let refresh_rate = if handle.get_netplay_game_pal() {
-                            50.0
-                        } else {
-                            60.0
+        while let Some((peer, data)) = read.next().await {
+            let decoded_message = postcard::from_bytes::<NetplayPingMessage>(&data);
+            match decoded_message {
+                Ok(message) => match message.message_type {
+                    PingType::Ping => {
+                        let pong_message = NetplayPingMessage {
+                            message_type: PingType::Pong,
+                            timestamp: message.timestamp,
                         };
-                        let recommendation = (ping as f64 / (1000.0 / refresh_rate)) as i32 + 1;
-                        handle.set_netplay_recommended_delay(recommendation.to_string().into());
-                    })
-                    .unwrap();
+                        let data = postcard::to_stdvec(&pong_message).unwrap();
+                        let _ = write_clone.send((peer, data.into())).await;
+                    }
+                    PingType::Pong => {
+                        let now = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_millis();
+                        let ping = now - message.timestamp;
+                        pings.push(ping);
+                        if pings.len() > 10 {
+                            // once we have 10 samples, remove the highest 2 and return the next highest
+                            pings.sort();
+                            pings.truncate(pings.len() - 2);
+                            let ping = *pings.last().unwrap();
+                            pings.clear();
+                            weak_app
+                                .upgrade_in_event_loop(move |handle| {
+                                    let refresh_rate = if handle.get_netplay_game_pal() {
+                                        50.0
+                                    } else {
+                                        60.0
+                                    };
+                                    let recommendation =
+                                        (ping as f64 / (1000.0 / refresh_rate)) as i32 + 1;
+                                    handle.set_netplay_recommended_delay(
+                                        recommendation.to_string().into(),
+                                    );
+                                })
+                                .unwrap();
+                        }
+                    }
+                },
+                Err(e) => {
+                    eprintln!("Failed to parse message: {}", e);
+                }
             }
         }
     });
