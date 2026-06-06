@@ -219,7 +219,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 ra_config.leaderboard,
             );
 
-            let (tx, mut rx) = tokio::sync::oneshot::channel::<bool>();
+            let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
             if let Some(password) = args.ra_password {
                 retroachievements::login_user(username, password, tx);
             } else if !ra_config.token.is_empty() {
@@ -228,7 +228,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 tx.send(false).unwrap();
             }
 
-            while rx.try_recv().is_err() {}
+            rx.blocking_recv().unwrap();
 
             ra_config
         } else {

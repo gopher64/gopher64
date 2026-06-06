@@ -145,12 +145,12 @@ pub fn load_game(
     Option<tokio::sync::watch::Sender<()>>,
     Option<tokio::task::JoinHandle<()>>,
 ) {
-    let (tx, mut rx) = tokio::sync::oneshot::channel::<bool>();
+    let (tx, rx) = tokio::sync::oneshot::channel::<bool>();
     unsafe {
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
         ra_load_game(rom.as_ptr(), rom_size, tx_ptr);
     };
-    while rx.try_recv().is_err() {}
+    rx.blocking_recv().unwrap();
 
     let mut c_title = std::ptr::null();
     let mut c_image_url = std::ptr::null();
