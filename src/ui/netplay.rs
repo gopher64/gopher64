@@ -428,8 +428,8 @@ fn update_ping(
                             .as_millis();
                         let ping = (now - message.timestamp) / 2; // calculate one-way latency
                         pings.push(ping);
-                        if pings.len() > 10 {
-                            // once we have 10 samples, remove the highest 2 and return the next highest
+                        if pings.len() > 12 {
+                            // once we have at least 12 samples, remove the highest 2 and return the next highest
                             pings.sort();
                             pings.truncate(pings.len() - 2);
                             let ping = *pings.last().unwrap();
