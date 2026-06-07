@@ -296,7 +296,9 @@ JoystickEvent get_joystick_event() {
 }
 
 static void rdp_new_processor() {
-  RDP::CommandProcessorFlags flags = 0;
+  RDP::CommandProcessorFlags flags =
+      RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_HIDDEN_RDRAM_BIT |
+      RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_TMEM_BIT;
 
   if (gfx_info.upscale == 2) {
     flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
@@ -700,15 +702,47 @@ void rdp_check_framebuffers(uint32_t address, uint32_t length) {
   }
 }
 
-size_t rdp_state_size() { return sizeof(RDP_DEVICE); }
+size_t rdp_state_size() {
+  return sizeof(RDP_DEVICE) + 0x1000 + processor->get_hidden_rdram_size();
+}
 
 void rdp_save_state(uint8_t *state) {
   memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
+
+  void *gpu_tmem = processor->get_tmem();
+  if (gpu_tmem) {
+    memcpy(state + sizeof(RDP_DEVICE), gpu_tmem, 0x1000);
+  } else {
+    printf("Failed to get tmem\n");
+  }
+
+  void *gpu_hidden_rdram = processor->begin_read_hidden_rdram();
+  if (gpu_hidden_rdram) {
+    memcpy(state + sizeof(RDP_DEVICE) + 0x1000, gpu_hidden_rdram,
+           processor->get_hidden_rdram_size());
+  } else {
+    printf("Failed to get hidden_rdram\n");
+  }
 }
 
 void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state) {
   gfx_info = _gfx_info;
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
+
+  void *gpu_tmem = processor->get_tmem();
+  if (gpu_tmem) {
+    memcpy(gpu_tmem, state + sizeof(RDP_DEVICE), 0x1000);
+  } else {
+    printf("Failed to get tmem\n");
+  }
+
+  void *gpu_hidden_rdram = processor->begin_read_hidden_rdram();
+  if (gpu_hidden_rdram) {
+    memcpy(gpu_hidden_rdram, state + sizeof(RDP_DEVICE) + 0x1000,
+           processor->get_hidden_rdram_size());
+  } else {
+    printf("Failed to get hidden_rdram\n");
+  }
 }
 
 static void push_onscreen_message(void *data) {
