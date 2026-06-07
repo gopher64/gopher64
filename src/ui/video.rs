@@ -219,9 +219,9 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
                 device.cpu.clock_rate, // 1 second
             );
         }
-        if device.vi.enable_speed_limiter != callback.enable_speedlimiter {
+        if device.speed_limiter.enabled != callback.enable_speedlimiter {
             speed_limiter_toggled = true;
-            device.vi.enable_speed_limiter = callback.enable_speedlimiter;
+            device.speed_limiter.enabled = callback.enable_speedlimiter;
         }
     }
 
