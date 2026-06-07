@@ -22,17 +22,9 @@ pub struct Vi {
     pub clock: u64,
     pub delay: u64,
     pub field: u32,
-    #[serde(skip)]
-    pub next_pace_deadline: Option<std::time::Instant>,
     pub count_per_scanline: u64,
-    pub enable_speed_limiter: bool,
-    pub min_wait_time: std::time::Duration,
     pub frame_time: f64,
     pub elapsed_time: f64,
-    pub limit_freq: u64,
-    #[serde(skip)]
-    #[serde(default = "std::time::Instant::now")]
-    pub limit_freq_check: std::time::Instant,
 }
 
 const MAX_LIMIT_FREQ: u64 = 3;
@@ -45,12 +37,10 @@ pub fn set_expected_refresh_rate(device: &mut device::Device) {
     device.vi.frame_time = 1.0 / expected_refresh_rate;
     device.vi.delay = (device.cpu.clock_rate as f64 / expected_refresh_rate) as u64;
     device.vi.count_per_scanline = device.vi.delay / (device.vi.regs[VI_V_SYNC_REG] + 1) as u64;
-
-    reset_pace_deadline(device);
 }
 
 fn reset_pace_deadline(device: &mut device::Device) {
-    device.vi.next_pace_deadline = None;
+    device.speed_limiter.next_pace_deadline = None;
 }
 
 fn set_vertical_interrupt(device: &mut device::Device) {
@@ -154,8 +144,11 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     }
 
     if !netplay::netplay_in_rollback(device.netplay.as_ref())
-        && device.frame_counter.is_multiple_of(device.vi.limit_freq)
-        && device.vi.enable_speed_limiter
+        && device
+            .speed_limiter
+            .frame_counter
+            .is_multiple_of(device.speed_limiter.limit_freq)
+        && device.speed_limiter.enabled
     {
         speed_limiter(device);
     }
@@ -163,8 +156,8 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     if !netplay::netplay_in_rollback(device.netplay.as_ref()) {
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::update_screen();
+        device.speed_limiter.frame_counter += 1;
     }
-    device.frame_counter += 1;
 
     if device.netplay.is_some() {
         device.netplay.as_mut().unwrap().inputs = netplay::process_requests(device);
@@ -203,8 +196,9 @@ pub fn init(device: &mut device::Device) {
 
 fn speed_limiter(device: &mut device::Device) {
     let mut speed_limiter_toggled = false;
-    let mut interval =
-        std::time::Duration::from_secs_f64(device.vi.frame_time * device.vi.limit_freq as f64);
+    let mut interval = std::time::Duration::from_secs_f64(
+        device.vi.frame_time * device.speed_limiter.limit_freq as f64,
+    );
 
     if let Some(netplay) = &device.netplay {
         let ahead = netplay.session.frames_ahead();
@@ -216,51 +210,51 @@ fn speed_limiter(device: &mut device::Device) {
     }
 
     let now = std::time::Instant::now();
-    match device.vi.next_pace_deadline {
+    match device.speed_limiter.next_pace_deadline {
         None => {
-            device.vi.next_pace_deadline = Some(now + interval);
+            device.speed_limiter.next_pace_deadline = Some(now + interval);
             speed_limiter_toggled = true;
         }
         Some(deadline) => {
             if now < deadline {
                 let dur = deadline - now;
                 spin_sleep::sleep(dur);
-                if dur < device.vi.min_wait_time {
-                    device.vi.min_wait_time = dur;
+                if dur < device.speed_limiter.min_wait_time {
+                    device.speed_limiter.min_wait_time = dur;
                 }
             } else {
                 //println!("did not sleep");
-                device.vi.min_wait_time = std::time::Duration::from_secs(0);
+                device.speed_limiter.min_wait_time = std::time::Duration::from_secs(0);
             }
             let mut next = deadline + interval;
             let t = std::time::Instant::now();
             while next <= t {
                 next += interval;
             }
-            device.vi.next_pace_deadline = Some(next);
+            device.speed_limiter.next_pace_deadline = Some(next);
         }
     }
 
-    if std::time::Instant::now().duration_since(device.vi.limit_freq_check)
+    if std::time::Instant::now().duration_since(device.speed_limiter.limit_freq_check)
         > std::time::Duration::from_secs(1)
     {
         if !speed_limiter_toggled {
-            if device.vi.min_wait_time == std::time::Duration::from_secs(0)
-                && device.vi.limit_freq < MAX_LIMIT_FREQ
+            if device.speed_limiter.min_wait_time == std::time::Duration::from_secs(0)
+                && device.speed_limiter.limit_freq < MAX_LIMIT_FREQ
             {
-                device.vi.limit_freq += 1;
+                device.speed_limiter.limit_freq += 1;
                 reset_pace_deadline(device);
-            } else if device.vi.min_wait_time
+            } else if device.speed_limiter.min_wait_time
                 > std::time::Duration::from_secs_f64(device.vi.frame_time)
-                && device.vi.limit_freq > 1
+                && device.speed_limiter.limit_freq > 1
             {
-                device.vi.limit_freq -= 1;
+                device.speed_limiter.limit_freq -= 1;
                 reset_pace_deadline(device);
             }
         }
 
         //println!("limit freq: {}", device.vi.limit_freq);
-        device.vi.min_wait_time = std::time::Duration::from_secs(1);
-        device.vi.limit_freq_check = std::time::Instant::now();
+        device.speed_limiter.min_wait_time = std::time::Duration::from_secs(1);
+        device.speed_limiter.limit_freq_check = std::time::Instant::now();
     }
 }

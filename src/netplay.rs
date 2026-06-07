@@ -258,7 +258,7 @@ fn process_netplay(device: &mut device::Device) -> Vec<(ui::input::InputData, gg
 
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
-    let local_input = ui::input::get(&mut device.ui, 0, device.frame_counter);
+    let local_input = ui::input::get(&mut device.ui, 0, device.speed_limiter.frame_counter);
     let local_handle = *netplay.session.local_player_handles().first().unwrap();
     netplay
         .session
