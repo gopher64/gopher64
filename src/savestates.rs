@@ -139,57 +139,62 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool, rewind_frame:
     let save_state_slot = device.ui.storage.save_state_slot;
     let rewind_pool = device.savestate.rewind_pool.clone();
 
-    tokio::task::spawn_blocking(move || {
+    tokio::spawn(async move {
         let mut error = false;
 
-        if let Ok(device_clone) = DEVICE_CLONE.lock()
-            && let Ok(saves_clone) = SAVES_CLONE.lock()
-        {
-            if rewind {
+        if rewind {
+            if let Ok(device_clone) = DEVICE_CLONE.lock()
+                && let Ok(saves_clone) = SAVES_CLONE.lock()
+                && let Ok(mut pool) = rewind_pool.lock()
+            {
                 let mut state = device::Device::new(false);
                 state.clone_state(device_clone.deref());
-                if let Ok(mut pool) = rewind_pool.lock() {
-                    let key = if let Some(key) = rewind_frame {
-                        key
-                    } else if let Some(key) = pool.keys().last() {
-                        key + 1
-                    } else {
-                        0
-                    };
-                    pool.insert(
-                        key,
-                        SavestateData {
-                            device: state,
-                            saves: saves_clone.clone(),
-                            rdp_state,
-                            ra_state,
-                        },
-                    );
-                    if pool.len() > 30 {
-                        pool.pop_first();
-                    }
+                let key = if let Some(key) = rewind_frame {
+                    key
+                } else if let Some(key) = pool.keys().last() {
+                    key + 1
+                } else {
+                    0
+                };
+                pool.insert(
+                    key,
+                    SavestateData {
+                        device: state,
+                        saves: saves_clone.clone(),
+                        rdp_state,
+                        ra_state,
+                    },
+                );
+                if pool.len() > 30 {
+                    pool.pop_first();
                 }
             } else {
-                if let Ok(device_data) = postcard::to_stdvec(device_clone.deref())
-                    && let Ok(saves_data) = postcard::to_stdvec(saves_clone.deref())
-                    && let Ok(compressed_file) = ui::storage::compress_file(&[
-                        (&device_data, "device"),
-                        (&saves_data, "saves"),
-                        (&rdp_state, "rdp_state"),
-                        (&ra_state, "ra_state"),
-                    ])
-                {
-                    if let Err(e) = std::fs::write(save_path, compressed_file) {
-                        eprintln!("Error writing savestate: {}", e);
-                        error = true;
-                    }
-                } else {
-                    eprintln!("Error compressing savestate");
-                    error = true;
-                }
+                error = true;
             }
         } else {
-            error = true;
+            let compressed_file = if let Ok(device_clone) = DEVICE_CLONE.lock()
+                && let Ok(saves_clone) = SAVES_CLONE.lock()
+                && let Ok(device_data) = postcard::to_stdvec(device_clone.deref())
+                && let Ok(saves_data) = postcard::to_stdvec(saves_clone.deref())
+                && let Ok(compressed_file) = ui::storage::compress_file(&[
+                    (&device_data, "device"),
+                    (&saves_data, "saves"),
+                    (&rdp_state, "rdp_state"),
+                    (&ra_state, "ra_state"),
+                ]) {
+                Some(compressed_file)
+            } else {
+                None
+            };
+            if let Some(compressed_file) = compressed_file {
+                if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
+                    eprintln!("Error writing savestate: {}", e);
+                    error = true;
+                }
+            } else {
+                error = true;
+                eprintln!("Error compressing savestate");
+            }
         }
 
         if error {
