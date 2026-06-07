@@ -81,6 +81,8 @@ typedef struct {
   int cmd_ptr;
   uint32_t region;
   FrameBufferInfo frame_buffer_info;
+  uint8_t tmem[0x1000];
+  uint8_t hidden_rdram[0x400000];
 } RDP_DEVICE;
 
 typedef struct {
@@ -296,7 +298,9 @@ JoystickEvent get_joystick_event() {
 }
 
 static void rdp_new_processor() {
-  RDP::CommandProcessorFlags flags = 0;
+  RDP::CommandProcessorFlags flags =
+      RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_HIDDEN_RDRAM_BIT |
+      RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_TMEM_BIT;
 
   if (gfx_info.upscale == 2) {
     flags |= RDP::COMMAND_PROCESSOR_FLAG_SUPER_SAMPLED_DITHER_BIT;
@@ -703,12 +707,18 @@ void rdp_check_framebuffers(uint32_t address, uint32_t length) {
 size_t rdp_state_size() { return sizeof(RDP_DEVICE); }
 
 void rdp_save_state(uint8_t *state) {
+  memcpy(rdp_device.tmem, processor->get_tmem(), 0x1000);
+  memcpy(rdp_device.hidden_rdram, processor->begin_read_hidden_rdram(),
+         processor->get_hidden_rdram_size());
   memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
 
 void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state) {
   gfx_info = _gfx_info;
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
+  memcpy(processor->get_tmem(), rdp_device.tmem, 0x1000);
+  memcpy(processor->begin_read_hidden_rdram(), rdp_device.hidden_rdram,
+         processor->get_hidden_rdram_size());
 }
 
 static void push_onscreen_message(void *data) {
