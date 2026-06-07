@@ -707,18 +707,42 @@ void rdp_check_framebuffers(uint32_t address, uint32_t length) {
 size_t rdp_state_size() { return sizeof(RDP_DEVICE); }
 
 void rdp_save_state(uint8_t *state) {
-  memcpy(rdp_device.tmem, processor->get_tmem(), 0x1000);
-  memcpy(rdp_device.hidden_rdram, processor->begin_read_hidden_rdram(),
-         processor->get_hidden_rdram_size());
+  void *tmem = processor->get_tmem();
+  if (tmem) {
+    memcpy(rdp_device.tmem, tmem, 0x1000);
+  } else {
+    printf("Failed to get tmem\n");
+  }
+
+  void *hidden_rdram = processor->begin_read_hidden_rdram();
+  if (hidden_rdram) {
+    memcpy(rdp_device.hidden_rdram, hidden_rdram,
+           processor->get_hidden_rdram_size());
+  } else {
+    printf("Failed to get hidden_rdram\n");
+  }
+
   memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
 
 void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state) {
   gfx_info = _gfx_info;
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
-  memcpy(processor->get_tmem(), rdp_device.tmem, 0x1000);
-  memcpy(processor->begin_read_hidden_rdram(), rdp_device.hidden_rdram,
-         processor->get_hidden_rdram_size());
+
+  void *tmem = processor->get_tmem();
+  if (tmem) {
+    memcpy(tmem, rdp_device.tmem, 0x1000);
+  } else {
+    printf("Failed to get tmem\n");
+  }
+
+  void *hidden_rdram = processor->begin_read_hidden_rdram();
+  if (hidden_rdram) {
+    memcpy(hidden_rdram, rdp_device.hidden_rdram,
+           processor->get_hidden_rdram_size());
+  } else {
+    printf("Failed to get hidden_rdram\n");
+  }
 }
 
 static void push_onscreen_message(void *data) {
