@@ -81,8 +81,6 @@ typedef struct {
   int cmd_ptr;
   uint32_t region;
   FrameBufferInfo frame_buffer_info;
-  uint8_t tmem[0x1000];
-  uint8_t hidden_rdram[0x400000];
 } RDP_DEVICE;
 
 typedef struct {
@@ -704,41 +702,43 @@ void rdp_check_framebuffers(uint32_t address, uint32_t length) {
   }
 }
 
-size_t rdp_state_size() { return sizeof(RDP_DEVICE); }
+size_t rdp_state_size() {
+  return sizeof(RDP_DEVICE) + 0x1000 + processor->get_hidden_rdram_size();
+}
 
 void rdp_save_state(uint8_t *state) {
-  void *tmem = processor->get_tmem();
-  if (tmem) {
-    memcpy(rdp_device.tmem, tmem, 0x1000);
+  memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
+
+  void *gpu_tmem = processor->get_tmem();
+  if (gpu_tmem) {
+    memcpy(state + sizeof(RDP_DEVICE), gpu_tmem, 0x1000);
   } else {
     printf("Failed to get tmem\n");
   }
 
-  void *hidden_rdram = processor->begin_read_hidden_rdram();
-  if (hidden_rdram) {
-    memcpy(rdp_device.hidden_rdram, hidden_rdram,
+  void *gpu_hidden_rdram = processor->begin_read_hidden_rdram();
+  if (gpu_hidden_rdram) {
+    memcpy(state + sizeof(RDP_DEVICE) + 0x1000, gpu_hidden_rdram,
            processor->get_hidden_rdram_size());
   } else {
     printf("Failed to get hidden_rdram\n");
   }
-
-  memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 }
 
 void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state) {
   gfx_info = _gfx_info;
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 
-  void *tmem = processor->get_tmem();
-  if (tmem) {
-    memcpy(tmem, rdp_device.tmem, 0x1000);
+  void *gpu_tmem = processor->get_tmem();
+  if (gpu_tmem) {
+    memcpy(gpu_tmem, state + sizeof(RDP_DEVICE), 0x1000);
   } else {
     printf("Failed to get tmem\n");
   }
 
-  void *hidden_rdram = processor->begin_read_hidden_rdram();
-  if (hidden_rdram) {
-    memcpy(hidden_rdram, rdp_device.hidden_rdram,
+  void *gpu_hidden_rdram = processor->begin_read_hidden_rdram();
+  if (gpu_hidden_rdram) {
+    memcpy(gpu_hidden_rdram, state + sizeof(RDP_DEVICE) + 0x1000,
            processor->get_hidden_rdram_size());
   } else {
     printf("Failed to get hidden_rdram\n");
