@@ -263,7 +263,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
     if let Some(mut state) = state_data
         && device.rdram.size == state.device.rdram.size
     {
-        if !rewind {
+        if device.netplay.is_none() {
             ui::video::check_framebuffers(0, device.rdram.size);
         }
 
