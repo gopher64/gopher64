@@ -83,6 +83,9 @@ typedef struct {
   FrameBufferInfo frame_buffer_info;
 } RDP_DEVICE;
 
+static void *g_tmem = nullptr;
+static void *g_hidden_rdram = nullptr;
+
 typedef struct {
   uint32_t fps;
   uint32_t vis;
@@ -316,6 +319,14 @@ static void rdp_new_processor() {
   processor = new RDP::CommandProcessor(wsi->get_device(), gfx_info.RDRAM, 0,
                                         gfx_info.RDRAM_SIZE,
                                         gfx_info.RDRAM_SIZE / 2, flags);
+  g_tmem = processor->get_tmem();
+  if (!g_tmem) {
+    printf("Failed to get tmem\n");
+  }
+  g_hidden_rdram = processor->begin_read_hidden_rdram();
+  if (!g_hidden_rdram) {
+    printf("Failed to get hidden_rdram\n");
+  }
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
@@ -425,6 +436,9 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
 
 void rdp_close() {
   display_fps = false;
+
+  g_tmem = nullptr;
+  g_hidden_rdram = nullptr;
 
   messages = std::queue<Message>();
   achievement_challenge_indicator_image = Vulkan::ImageHandle();
@@ -709,19 +723,13 @@ size_t rdp_state_size() {
 void rdp_save_state(uint8_t *state) {
   memcpy(state, &rdp_device, sizeof(RDP_DEVICE));
 
-  void *gpu_tmem = processor->get_tmem();
-  if (gpu_tmem) {
-    memcpy(state + sizeof(RDP_DEVICE), gpu_tmem, 0x1000);
-  } else {
-    printf("Failed to get tmem\n");
+  if (g_tmem) {
+    memcpy(state + sizeof(RDP_DEVICE), g_tmem, 0x1000);
   }
 
-  void *gpu_hidden_rdram = processor->begin_read_hidden_rdram();
-  if (gpu_hidden_rdram) {
-    memcpy(state + sizeof(RDP_DEVICE) + 0x1000, gpu_hidden_rdram,
+  if (g_hidden_rdram) {
+    memcpy(state + sizeof(RDP_DEVICE) + 0x1000, g_hidden_rdram,
            processor->get_hidden_rdram_size());
-  } else {
-    printf("Failed to get hidden_rdram\n");
   }
 }
 
@@ -729,19 +737,13 @@ void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state) {
   gfx_info = _gfx_info;
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 
-  void *gpu_tmem = processor->get_tmem();
-  if (gpu_tmem) {
-    memcpy(gpu_tmem, state + sizeof(RDP_DEVICE), 0x1000);
-  } else {
-    printf("Failed to get tmem\n");
+  if (g_tmem) {
+    memcpy(g_tmem, state + sizeof(RDP_DEVICE), 0x1000);
   }
 
-  void *gpu_hidden_rdram = processor->begin_read_hidden_rdram();
-  if (gpu_hidden_rdram) {
-    memcpy(gpu_hidden_rdram, state + sizeof(RDP_DEVICE) + 0x1000,
+  if (g_hidden_rdram) {
+    memcpy(g_hidden_rdram, state + sizeof(RDP_DEVICE) + 0x1000,
            processor->get_hidden_rdram_size());
-  } else {
-    printf("Failed to get hidden_rdram\n");
   }
 }
 

@@ -112,6 +112,10 @@ pub fn process_savestates(device: &mut device::Device) {
 }
 
 pub fn create_savestate(device: &mut device::Device, rewind: bool, rewind_frame: Option<i32>) {
+    if !rewind {
+        ui::video::check_framebuffers(0, device.rdram.size);
+    }
+
     let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
     ui::video::save_state(rdp_state.as_mut_ptr());
 
@@ -259,6 +263,10 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
     if let Some(mut state) = state_data
         && device.rdram.size == state.device.rdram.size
     {
+        if device.netplay.is_none() {
+            ui::video::check_framebuffers(0, device.rdram.size);
+        }
+
         device.savestate.last_rewind_saved = state.device.vi.elapsed_time;
 
         std::mem::swap(&mut device.rng, &mut state.device.rng);
