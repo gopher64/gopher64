@@ -26,8 +26,8 @@ If applicable, add screenshots to help explain your problem.
 
 **Device (please complete the following information):**
  - OS: [e.g. Windows 11]
- - CPU [e.g. Intel i7-1365U]
- - GPU [e.g. Nvidia 5060 Ti]
+ - CPU: [e.g. Intel i7-1365U]
+ - GPU: [e.g. Nvidia 5060 Ti]
 
 **Additional context**
 Add any other context about the problem here.
