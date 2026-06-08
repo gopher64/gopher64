@@ -298,6 +298,12 @@ JoystickEvent get_joystick_event() {
   return joystick_event;
 }
 
+void rdp_idle() {
+  processor->idle();
+  sync_signal = 0;
+  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
+}
+
 static void rdp_new_processor() {
   RDP::CommandProcessorFlags flags =
       RDP::COMMAND_PROCESSOR_FLAG_HOST_VISIBLE_HIDDEN_RDRAM_BIT |
@@ -327,6 +333,9 @@ static void rdp_new_processor() {
   if (!g_hidden_rdram) {
     printf("Failed to get hidden_rdram\n");
   }
+
+  sync_signal = 0;
+  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
@@ -429,9 +438,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
   display_fps = false;
-
-  sync_signal = 0;
-  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
 }
 
 void rdp_close() {
