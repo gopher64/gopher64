@@ -24,3 +24,4 @@ CC = "clang"
 CXX = "clang++"
 AR = "llvm-ar"
 SDKROOT = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+CMAKE_POLICY_VERSION_MINIMUM = "3.5" # for freetype
