@@ -391,6 +391,7 @@ fn update_ping(
     let channel = socket.take_channel(0).unwrap();
     let (mut write, mut read) = channel.split();
     let mut write_clone = write.clone();
+    let mut close_ping_rx_clone = close_ping_rx.resubscribe();
     tokio::spawn(async move {
         loop {
             socket.update_peers();
@@ -407,7 +408,7 @@ fn update_ping(
                 let _ = write.send((peer, data.into())).await;
             }
             tokio::select! {
-                result = close_ping_rx.recv() => {
+                result = close_ping_rx_clone.recv() => {
                     match result {
                         Ok(()) => {
                             break;
@@ -423,56 +424,72 @@ fn update_ping(
                 _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {}
             }
         }
-        socket.close();
     });
     tokio::spawn(async move {
         let mut pings = vec![];
-        while let Some((peer, data)) = read.next().await {
-            let decoded_message = postcard::from_bytes::<NetplayPingMessage>(&data);
-            match decoded_message {
-                Ok(message) => match message.message_type {
-                    PingType::Ping => {
-                        let pong_message = NetplayPingMessage {
-                            message_type: PingType::Pong,
-                            timestamp: message.timestamp,
-                        };
-                        let data = postcard::to_stdvec(&pong_message).unwrap();
-                        let _ = write_clone.send((peer, data.into())).await;
-                    }
-                    PingType::Pong => {
-                        let now = std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap()
-                            .as_millis();
-                        let ping = (now - message.timestamp) / 2; // calculate one-way latency
-                        pings.push(ping);
-                        if pings.len() > 12 {
-                            // once we have at least 12 samples, remove the highest 2 and return the next highest
-                            pings.sort();
-                            pings.truncate(pings.len() - 2);
-                            let ping = *pings.last().unwrap();
-                            pings.clear();
-                            weak_app
-                                .upgrade_in_event_loop(move |handle| {
-                                    let refresh_rate = if handle.get_netplay_game_pal() {
-                                        50.0
-                                    } else {
-                                        60.0
-                                    };
-                                    let recommendation =
-                                        (ping as f64 / (1000.0 / refresh_rate)) as i32 + 1;
-
-                                    if handle.get_netplay_recommended_delay() == 0 {
-                                        handle.set_netplay_input_delay(recommendation);
-                                    }
-                                    handle.set_netplay_recommended_delay(recommendation);
-                                })
-                                .unwrap();
+        loop {
+            tokio::select! {
+                result = close_ping_rx.recv() => {
+                    match result {
+                        Ok(()) => {
+                            break;
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                            panic!("close_ping_rx lagged");
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                            break;
                         }
                     }
-                },
-                Err(e) => {
-                    eprintln!("Failed to parse message: {}", e);
+                }
+                Some((peer, data)) = read.next() => {
+                    let decoded_message = postcard::from_bytes::<NetplayPingMessage>(&data);
+                    match decoded_message {
+                        Ok(message) => match message.message_type {
+                            PingType::Ping => {
+                                let pong_message = NetplayPingMessage {
+                                    message_type: PingType::Pong,
+                                    timestamp: message.timestamp,
+                                };
+                                let data = postcard::to_stdvec(&pong_message).unwrap();
+                                let _ = write_clone.send((peer, data.into())).await;
+                            }
+                            PingType::Pong => {
+                                let now = std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_millis();
+                                let ping = (now - message.timestamp) / 2; // calculate one-way latency
+                                pings.push(ping);
+                                if pings.len() > 12 {
+                                    // once we have at least 12 samples, remove the highest 2 and return the next highest
+                                    pings.sort();
+                                    pings.truncate(pings.len() - 2);
+                                    let ping = *pings.last().unwrap();
+                                    pings.clear();
+                                    weak_app
+                                        .upgrade_in_event_loop(move |handle| {
+                                            let refresh_rate = if handle.get_netplay_game_pal() {
+                                                50.0
+                                            } else {
+                                                60.0
+                                            };
+                                            let recommendation =
+                                                (ping as f64 / (1000.0 / refresh_rate)) as i32 + 1;
+
+                                            if handle.get_netplay_recommended_delay() == 0 {
+                                                handle.set_netplay_input_delay(recommendation);
+                                            }
+                                            handle.set_netplay_recommended_delay(recommendation);
+                                        })
+                                        .unwrap();
+                                }
+                            }
+                        },
+                        Err(e) => {
+                            eprintln!("Failed to parse message: {}", e);
+                        }
+                    }
                 }
             }
         }
