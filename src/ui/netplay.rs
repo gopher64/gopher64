@@ -446,9 +446,11 @@ fn update_ping(
                                     };
                                     let recommendation =
                                         (ping as f64 / (1000.0 / refresh_rate)) as i32 + 1;
-                                    handle.set_netplay_recommended_delay(
-                                        recommendation.to_string().into(),
-                                    );
+
+                                    if handle.get_netplay_recommended_delay() == 0 {
+                                        handle.set_netplay_input_delay(recommendation);
+                                    }
+                                    handle.set_netplay_recommended_delay(recommendation);
                                 })
                                 .unwrap();
                         }
@@ -474,14 +476,12 @@ fn setup_wait_window(
     game_settings: ui::GameSettings,
     app: &AppWindow,
 ) {
-    app.set_netplay_recommended_delay("Calculating...".into());
     update_ping(server_addr.clone(), close_ping_rx, app.as_weak());
 
     app.set_netplay_session_name(session_name);
     app.set_netplay_game_name(game_name);
     app.set_netplay_rom_path(rom_path);
     app.set_netplay_can_start(true);
-    app.set_netplay_input_delay(2);
 
     let request_update = NetplayLobbyMessage {
         message_type: MessageType::RequestUpdateSession,
@@ -585,7 +585,6 @@ fn setup_wait_window(
                             weak_app
                                 .upgrade_in_event_loop(move |handle| {
                                     handle.set_netplay_can_start(true);
-
                                     if let Some(message) = response.message {
                                         handle.invoke_show_message(message.into(), true);
                                     }
