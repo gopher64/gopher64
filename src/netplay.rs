@@ -212,12 +212,12 @@ pub fn process_requests(
             }
         } else {
             // unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the screen doesn't freeze
-            return process_netplay(device);
+            process_netplay(device);
         }
     }
 }
 
-fn process_netplay(device: &mut device::Device) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
+fn process_netplay(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
 
     netplay.session.poll_remote_clients();
@@ -252,7 +252,6 @@ fn process_netplay(device: &mut device::Device) -> Vec<(ui::input::InputData, gg
     }
 
     advance_frame(device);
-    process_requests(device)
 }
 
 fn advance_frame(device: &mut device::Device) {
