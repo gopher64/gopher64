@@ -111,7 +111,6 @@ fn setup_create_window(
     let weak = app.as_weak();
     app.on_netplay_create_session(
         move |session_name, player_name, game_name, game_hash, game_cheats, password| {
-            let _ = netplay_write_sender.send(None); // close current websocket if any
             manage_websocket(
                 netplay_read_sender.clone(),
                 netplay_write_receiver.resubscribe(),
@@ -390,8 +389,17 @@ fn update_ping(
     let mut write_clone = write.clone();
     tokio::spawn(async move {
         loop {
-            if close_ping_rx.try_recv().is_ok() {
-                break;
+            match close_ping_rx.try_recv() {
+                Ok(()) => {
+                    break;
+                }
+                Err(tokio::sync::broadcast::error::TryRecvError::Lagged(_)) => {
+                    panic!("close_ping_rx lagged");
+                }
+                Err(tokio::sync::broadcast::error::TryRecvError::Empty) => {}
+                Err(tokio::sync::broadcast::error::TryRecvError::Closed) => {
+                    break;
+                }
             }
             socket.update_peers();
             for peer in socket.connected_peers() {
@@ -622,7 +630,6 @@ fn setup_join_window(
     netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     close_ping_rx: tokio::sync::broadcast::Receiver<()>,
 ) {
-    let _ = netplay_write_sender.send(None); // close current websocket if any
     manage_websocket(
         netplay_read_sender.clone(),
         netplay_write_receiver.resubscribe(),
