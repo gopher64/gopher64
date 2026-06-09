@@ -184,12 +184,6 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     case SDL_SCANCODE_F1:
       display_fps = !display_fps;
       break;
-    case SDL_SCANCODE_F2:
-      callback.decrease_input_delay = true;
-      break;
-    case SDL_SCANCODE_F3:
-      callback.increase_input_delay = true;
-      break;
     case SDL_SCANCODE_F4:
       crop_letterbox = !crop_letterbox;
       break;
@@ -227,10 +221,18 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       callback.reset_game = true;
       break;
     case SDL_SCANCODE_LEFTBRACKET:
-      callback.lower_volume = true;
+      if (event->key.mod & SDL_KMOD_ALT) {
+        callback.decrease_input_delay = true;
+      } else {
+        callback.lower_volume = true;
+      }
       break;
     case SDL_SCANCODE_RIGHTBRACKET:
-      callback.raise_volume = true;
+      if (event->key.mod & SDL_KMOD_ALT) {
+        callback.increase_input_delay = true;
+      } else {
+        callback.raise_volume = true;
+      }
       break;
     case SDL_SCANCODE_SLASH:
       callback.frame_advance = true;
