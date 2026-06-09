@@ -389,18 +389,6 @@ fn update_ping(
     let mut write_clone = write.clone();
     tokio::spawn(async move {
         loop {
-            match close_ping_rx.try_recv() {
-                Ok(()) => {
-                    break;
-                }
-                Err(tokio::sync::broadcast::error::TryRecvError::Lagged(_)) => {
-                    panic!("close_ping_rx lagged");
-                }
-                Err(tokio::sync::broadcast::error::TryRecvError::Empty) => {}
-                Err(tokio::sync::broadcast::error::TryRecvError::Closed) => {
-                    break;
-                }
-            }
             socket.update_peers();
             for peer in socket.connected_peers() {
                 let now = std::time::SystemTime::now()
@@ -414,7 +402,22 @@ fn update_ping(
                 let data = postcard::to_stdvec(&ping_message).unwrap();
                 let _ = write.send((peer, data.into())).await;
             }
-            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            tokio::select! {
+                result = close_ping_rx.recv() => {
+                    match result {
+                        Ok(()) => {
+                            break;
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                            panic!("close_ping_rx lagged");
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                            break;
+                        }
+                    }
+                }
+                _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {}
+            }
         }
         socket.close();
     });
