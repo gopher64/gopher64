@@ -47,6 +47,7 @@ pub struct Netplay {
     pub received_data: std::collections::VecDeque<Vec<u8>>,
     pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
+    pub incoming_message: Vec<u8>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -65,31 +66,37 @@ fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
     }
 }
 
+fn process_reliable_messages(netplay: &mut Netplay) {
+    netplay.received_data.extend(
+        netplay
+            .reliable_channel
+            .receive()
+            .iter()
+            .map(|(_, data)| data.to_vec()),
+    );
+
+    while !netplay.received_data.is_empty() {
+        if let Some(data) = netplay.received_data.pop_front() {
+            netplay.incoming_message.extend(data);
+
+            if let Ok(decoded_message) =
+                postcard::from_bytes::<NetplayMessage>(&netplay.incoming_message)
+            {
+                netplay
+                    .messages
+                    .insert(decoded_message.name, decoded_message.data);
+                netplay.incoming_message.clear();
+            }
+        }
+    }
+}
+
 fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
     let timeout = std::time::Duration::from_secs(10);
     let now = std::time::Instant::now();
-    let mut message = vec![];
+
     loop {
-        netplay.received_data.extend(
-            netplay
-                .reliable_channel
-                .receive()
-                .iter()
-                .map(|(_, data)| data.to_vec()),
-        );
-
-        while !netplay.received_data.is_empty() {
-            if let Some(data) = netplay.received_data.pop_front() {
-                message.extend(data);
-
-                if let Ok(decoded_message) = postcard::from_bytes::<NetplayMessage>(&message) {
-                    netplay
-                        .messages
-                        .insert(decoded_message.name, decoded_message.data);
-                    message.clear();
-                }
-            }
-        }
+        process_reliable_messages(netplay);
         if let Some(data) = netplay.messages.remove(name) {
             return data;
         }
@@ -171,7 +178,16 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message;
 }
 
-pub fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
+pub fn send_input_delay(netplay: &mut Netplay, input_delay: usize) {
+    let message = NetplayMessage {
+        name: "input_delay".to_string(),
+        data: input_delay.to_be_bytes().to_vec(),
+    };
+    send_message(netplay, message);
+    change_input_delay(netplay, input_delay);
+}
+
+fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
     netplay.input_delay = input_delay;
     for handle in netplay.session.local_player_handles() {
         if let Err(e) = netplay.session.set_input_delay(handle, input_delay) {
@@ -181,6 +197,15 @@ pub fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
                 &format!("Input delay: {}", input_delay),
                 ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
             );
+        }
+    }
+}
+
+fn check_input_delay(netplay: &mut Netplay) {
+    if let Some(data) = netplay.messages.remove("input_delay") {
+        let input_delay = usize::from_be_bytes(data.try_into().unwrap());
+        if input_delay != netplay.input_delay {
+            change_input_delay(netplay, input_delay);
         }
     }
 }
@@ -251,6 +276,8 @@ fn process_netplay(device: &mut device::Device) {
         }
     }
 
+    process_reliable_messages(netplay);
+    check_input_delay(netplay);
     advance_frame(device);
 }
 
@@ -356,6 +383,7 @@ pub fn init(
     }
 
     Some(Netplay {
+        incoming_message: vec![],
         input_delay,
         session,
         reliable_channel,

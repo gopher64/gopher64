@@ -248,9 +248,9 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
         && netplay.player_number == 0
     {
         if callback.decrease_input_delay {
-            netplay::change_input_delay(netplay, netplay.input_delay - 1);
+            netplay::send_input_delay(netplay, netplay.input_delay - 1);
         } else if callback.increase_input_delay {
-            netplay::change_input_delay(netplay, netplay.input_delay + 1);
+            netplay::send_input_delay(netplay, netplay.input_delay + 1);
         }
     }
     (speed_limiter_toggled, callback.paused)
