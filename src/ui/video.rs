@@ -244,7 +244,9 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
         ui::audio::raise_audio_volume(&mut device.ui);
     }
 
-    if let Some(netplay) = &mut device.netplay {
+    if let Some(netplay) = &mut device.netplay
+        && netplay.player_number == 0
+    {
         if callback.decrease_input_delay {
             netplay::change_input_delay(netplay, netplay.input_delay - 1);
         } else if callback.increase_input_delay {

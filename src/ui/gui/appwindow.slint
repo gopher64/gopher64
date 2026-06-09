@@ -34,7 +34,7 @@ export component AppWindow inherits Window {
     callback join_session_button_clicked;
     callback netplay_discord_button_clicked;
     callback netplay_feedback_button_clicked;
-    callback netplay_begin_game;
+    callback netplay_begin_game(int);
     callback netplay_send_chat_message(string);
     callback netplay_refresh_sessions;
     callback netplay_create_session(string, string, string, string, string, string);
@@ -242,8 +242,8 @@ export component AppWindow inherits Window {
             send_chat_message(message) => {
                 netplay_send_chat_message(message);
             }
-            begin_game => {
-                netplay_begin_game();
+            begin_game(a) => {
+                netplay_begin_game(a);
             }
             close => {
                 netplay_close();

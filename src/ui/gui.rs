@@ -22,7 +22,7 @@ pub struct NetplayDevice {
     pub server_addr: String,
     pub player_number: usize,
     pub number_of_players: usize,
-    pub input_delay: i32,
+    pub input_delay: usize,
 }
 
 fn check_latest_version(weak: slint::Weak<AppWindow>) {

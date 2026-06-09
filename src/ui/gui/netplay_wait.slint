@@ -15,7 +15,7 @@ export global NetplayWaitData {
 export component NetplayWait inherits Page {
     title: @tr("Netplay: Waiting Room");
     callback send_chat_message(string);
-    callback begin_game;
+    callback begin_game(int);
     callback close;
     VerticalBox {
         alignment: start;
@@ -94,7 +94,7 @@ export component NetplayWait inherits Page {
                     horizontal-alignment: center;
                     wrap: word-wrap;
                 }
-                HorizontalBox {
+                if NetplayData.player_name == NetplayWaitData.players[0]: HorizontalBox {
                     alignment: center;
                     Text {
                         text: @tr("Local Input Delay:");
@@ -124,7 +124,7 @@ export component NetplayWait inherits Page {
                         enabled: NetplayWaitData.can_start;
                         clicked => {
                             NetplayWaitData.can_start = false;
-                            begin_game();
+                            begin_game(NetplayWaitData.input_delay);
                         }
                     }
                     Button {
