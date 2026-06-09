@@ -103,9 +103,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                 if device.netplay.is_none() {
                     savestates::process_savestates(device);
                 }
-                if !netplay::netplay_in_rollback(device.netplay.as_ref()) {
-                    let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
-                }
+                let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
             }
         }
         _ => {
@@ -122,10 +120,8 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
 
-    if !netplay::netplay_in_rollback(device.netplay.as_ref()) {
-        ui::video::render_frame();
-        let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
-    }
+    ui::video::render_frame();
+    let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
 
     retroachievements::do_frame();
 
@@ -143,21 +139,18 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         reset_pace_deadline(device);
     }
 
-    if !netplay::netplay_in_rollback(device.netplay.as_ref())
-        && device
-            .speed_limiter
-            .frame_counter
-            .is_multiple_of(device.speed_limiter.limit_freq)
+    if device
+        .speed_limiter
+        .frame_counter
+        .is_multiple_of(device.speed_limiter.limit_freq)
         && device.speed_limiter.enabled
     {
         speed_limiter(device);
     }
 
-    if !netplay::netplay_in_rollback(device.netplay.as_ref()) {
-        unsafe { sdl3_sys::events::SDL_PumpEvents() };
-        ui::video::update_screen();
-        device.speed_limiter.frame_counter += 1;
-    }
+    unsafe { sdl3_sys::events::SDL_PumpEvents() };
+    ui::video::update_screen();
+    device.speed_limiter.frame_counter += 1;
 
     if device.netplay.is_some() {
         device.netplay.as_mut().unwrap().inputs = netplay::process_requests(device);

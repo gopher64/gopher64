@@ -34,6 +34,7 @@ struct NetplaySession {
     features: Option<std::collections::HashMap<String, String>>,
     players: Vec<String>,
     server_address: Option<String>,
+    input_delay: Option<usize>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -256,6 +257,7 @@ fn create_session(
             features: Some(features),
             players: vec![player_name],
             server_address: None,
+            input_delay: None,
         };
         let create_session = NetplayLobbyMessage {
             message_type: MessageType::RequestCreateSession,
@@ -358,6 +360,7 @@ fn join_session(
         features: None,
         players: vec![player_name],
         server_address: None,
+        input_delay: None,
     };
     let join_session = NetplayLobbyMessage {
         message_type: MessageType::RequestJoinSession,
@@ -498,11 +501,11 @@ fn setup_wait_window(
     });
 
     let sender = netplay_write_sender.clone();
-    app.on_netplay_begin_game(move || {
+    app.on_netplay_begin_game(move |chosen_input_delay| {
         let begin_game = NetplayLobbyMessage {
             message_type: MessageType::RequestBeginGame,
             sessions: std::collections::HashMap::new(),
-            message: None,
+            message: Some(chosen_input_delay.to_string()),
         };
         sender.send(Some(begin_game)).unwrap();
     });
@@ -547,7 +550,14 @@ fn setup_wait_window(
                                 .upgrade_in_event_loop(move |handle| {
                                     let player_name = handle.get_netplay_player_name();
                                     let players = handle.get_netplay_players();
-                                    let input_delay = handle.get_netplay_input_delay();
+                                    let input_delay = response
+                                        .sessions
+                                        .iter()
+                                        .next()
+                                        .unwrap()
+                                        .1
+                                        .input_delay
+                                        .unwrap();
                                     let player_number =
                                         players.iter().position(|x| x == player_name).unwrap();
                                     run_rom(

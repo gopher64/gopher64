@@ -221,10 +221,18 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
       callback.reset_game = true;
       break;
     case SDL_SCANCODE_LEFTBRACKET:
-      callback.lower_volume = true;
+      if (event->key.mod & SDL_KMOD_ALT) {
+        callback.decrease_input_delay = true;
+      } else {
+        callback.lower_volume = true;
+      }
       break;
     case SDL_SCANCODE_RIGHTBRACKET:
-      callback.raise_volume = true;
+      if (event->key.mod & SDL_KMOD_ALT) {
+        callback.increase_input_delay = true;
+      } else {
+        callback.raise_volume = true;
+      }
       break;
     case SDL_SCANCODE_SLASH:
       callback.frame_advance = true;
@@ -697,6 +705,8 @@ CALL_BACK rdp_check_callback() {
   callback.reset_game = false;
   callback.lower_volume = false;
   callback.raise_volume = false;
+  callback.decrease_input_delay = false;
+  callback.increase_input_delay = false;
   callback.frame_advance = false;
   return return_value;
 }

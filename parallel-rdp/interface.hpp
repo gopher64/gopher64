@@ -34,6 +34,8 @@ typedef struct {
   bool enable_speedlimiter;
   bool lower_volume;
   bool raise_volume;
+  bool decrease_input_delay;
+  bool increase_input_delay;
   bool paused;
   bool frame_advance;
   uint32_t save_state_slot;

@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 include!(concat!(env!("OUT_DIR"), "/parallel_bindings.rs"));
-use crate::{device, retroachievements, ui};
+use crate::{device, netplay, retroachievements, ui};
 
 const PAL_WIDESCREEN_WIDTH: i32 = 512;
 const PAL_STANDARD_WIDTH: i32 = 384;
@@ -242,6 +242,16 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
         ui::audio::lower_audio_volume(&mut device.ui);
     } else if callback.raise_volume {
         ui::audio::raise_audio_volume(&mut device.ui);
+    }
+
+    if let Some(netplay) = &mut device.netplay
+        && netplay.player_number == 0
+    {
+        if callback.decrease_input_delay && netplay.input_delay > 0 {
+            netplay::send_input_delay(netplay, netplay.input_delay - 1);
+        } else if callback.increase_input_delay {
+            netplay::send_input_delay(netplay, netplay.input_delay + 1);
+        }
     }
     (speed_limiter_toggled, callback.paused)
 }
