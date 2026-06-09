@@ -42,6 +42,7 @@ pub struct Netplay {
     pub peers: Vec<matchbox_socket::PeerId>,
     pub player_number: usize,
     pub connected: [bool; 4],
+    pub input_delay: usize,
     pub messages: std::collections::HashMap<String, Vec<u8>>,
     pub received_data: std::collections::VecDeque<Vec<u8>>,
     pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
@@ -170,19 +171,17 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message;
 }
 
-fn pending_frames(netplay: &Netplay) -> usize {
-    netplay
-        .requests
-        .iter()
-        .filter(|r| matches!(r, ggrs::GgrsRequest::AdvanceFrame { .. }))
-        .count()
-}
-
-pub fn netplay_in_rollback(netplay: Option<&Netplay>) -> bool {
-    if let Some(netplay) = netplay {
-        pending_frames(netplay) != 0
-    } else {
-        false
+pub fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
+    netplay.input_delay = input_delay;
+    for handle in netplay.session.local_player_handles() {
+        if let Err(e) = netplay.session.set_input_delay(handle, input_delay) {
+            eprintln!("Error setting input delay: {}", e);
+        } else {
+            ui::video::onscreen_message(
+                &format!("Input delay: {}", input_delay),
+                ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
+            );
+        }
     }
 }
 
@@ -324,6 +323,7 @@ pub fn init(
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
+        .with_max_prediction_window(0)
         .with_disconnect_timeout(std::time::Duration::from_secs(if cfg!(debug_assertions) {
             10
         } else {
@@ -357,6 +357,7 @@ pub fn init(
     }
 
     Some(Netplay {
+        input_delay,
         session,
         reliable_channel,
         peers,

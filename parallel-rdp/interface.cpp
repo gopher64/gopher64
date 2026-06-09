@@ -184,6 +184,12 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     case SDL_SCANCODE_F1:
       display_fps = !display_fps;
       break;
+    case SDL_SCANCODE_F2:
+      callback.decrease_input_delay = true;
+      break;
+    case SDL_SCANCODE_F3:
+      callback.increase_input_delay = true;
+      break;
     case SDL_SCANCODE_F4:
       crop_letterbox = !crop_letterbox;
       break;
@@ -697,6 +703,8 @@ CALL_BACK rdp_check_callback() {
   callback.reset_game = false;
   callback.lower_volume = false;
   callback.raise_volume = false;
+  callback.decrease_input_delay = false;
+  callback.increase_input_delay = false;
   callback.frame_advance = false;
   return return_value;
 }
