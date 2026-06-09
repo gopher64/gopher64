@@ -122,10 +122,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
 
-    if device.netplay.is_some() {
-        device.netplay.as_mut().unwrap().inputs = netplay::process_requests(device);
-    }
-
     if !netplay::netplay_in_rollback(device.netplay.as_ref()) {
         ui::video::render_frame();
         let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
@@ -161,6 +157,10 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::update_screen();
         device.speed_limiter.frame_counter += 1;
+    }
+
+    if device.netplay.is_some() {
+        device.netplay.as_mut().unwrap().inputs = netplay::process_requests(device);
     }
 
     if device.netplay.is_none() && paused {
