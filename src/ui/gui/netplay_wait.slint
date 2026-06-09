@@ -8,7 +8,7 @@ export global NetplayWaitData {
     in-out property <bool> can_start;
     in-out property <string> chat_text;
     in-out property <int> input_delay;
-    in-out property <string> recommended_delay;
+    in-out property <int> recommended_delay;
     in-out property <bool> game_pal;
 }
 
@@ -105,6 +105,7 @@ export component NetplayWait inherits Page {
                     ComboBox {
                         model: ["0", "1", "2", "3", "4", "5", "6", "7", "8"];
                         current-index: NetplayWaitData.input_delay;
+                        enabled: NetplayWaitData.recommended_delay != 0;
                         selected => {
                             NetplayWaitData.input_delay = self.current-index;
                         }
@@ -112,7 +113,7 @@ export component NetplayWait inherits Page {
                     }
 
                     Text {
-                        text: @tr("Recommended: ") + NetplayWaitData.recommended_delay;
+                        text: @tr("Recommended: ") + (NetplayWaitData.recommended_delay == 0 ? "Calculating..." : NetplayWaitData.recommended_delay);
                         horizontal-alignment: center;
                         vertical-alignment: center;
                     }
@@ -121,7 +122,7 @@ export component NetplayWait inherits Page {
                     alignment: center;
                     Button {
                         text: @tr("Start Game");
-                        enabled: NetplayWaitData.can_start;
+                        enabled: NetplayWaitData.players[0] == NetplayData.player_name && NetplayWaitData.can_start && NetplayWaitData.recommended_delay != 0;
                         clicked => {
                             NetplayWaitData.can_start = false;
                             begin_game(NetplayWaitData.input_delay);
