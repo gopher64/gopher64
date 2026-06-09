@@ -352,7 +352,11 @@ fn join_session(
     password: String,
 ) {
     let session = NetplaySession {
-        password: Some(password),
+        password: if password.is_empty() {
+            None
+        } else {
+            Some(password)
+        },
         game_name: None,
         motd: None,
         game_checksum: Some(game_hash),
