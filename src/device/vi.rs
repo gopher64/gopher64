@@ -113,7 +113,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
 }
 
-pub fn v_start_event(device: &mut device::Device) {
+pub fn update_screen(device: &mut device::Device) {
     ui::video::render_frame();
 
     let (speed_limiter_toggled, paused) = ui::video::check_callback(device);
@@ -186,7 +186,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     if v_start > v_intr {
         device::events::create_event(
             device,
-            device::events::EVENT_TYPE_V_START,
+            device::events::EVENT_TYPE_UPDATE_SCREEN,
             (v_start - v_intr) as u64 * device.vi.count_per_scanline,
         );
     }
