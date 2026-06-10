@@ -3,14 +3,14 @@ use crate::{cheats, device, netplay, retroachievements, savestates, ui};
 const VI_STATUS_REG: usize = 0;
 const VI_ORIGIN_REG: usize = 1;
 //const VI_WIDTH_REG: usize = 2;
-//const VI_V_INTR_REG: usize = 3;
+const VI_V_INTR_REG: usize = 3;
 const VI_CURRENT_REG: usize = 4;
 //const VI_BURST_REG: usize = 5;
 const VI_V_SYNC_REG: usize = 6;
 const VI_H_SYNC_REG: usize = 7;
 //const VI_LEAP_REG: usize = 8;
 //const VI_H_START_REG: usize = 9;
-//const VI_V_START_REG: usize = 10;
+const VI_V_START_REG: usize = 10;
 //const VI_V_BURST_REG: usize = 11;
 //const VI_X_SCALE_REG: usize = 12;
 //const VI_Y_SCALE_REG: usize = 13;
@@ -113,7 +113,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
 }
 
-pub fn vertical_interrupt_event(device: &mut device::Device) {
+pub fn v_start_event(device: &mut device::Device) {
     device.vi.elapsed_time += device.vi.frame_time;
 
     if device.cheats.enabled {
@@ -166,11 +166,23 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
             ui::video::pause_loop(&mut device.ui, device.vi.frame_time);
         }
     }
+}
 
+pub fn vertical_interrupt_event(device: &mut device::Device) {
     /* toggle vi field if in interlaced mode */
     device.vi.field ^= (device.vi.regs[VI_STATUS_REG] >> 6) & 0x1;
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_VI);
+
+    let v_intr = device.vi.regs[VI_V_INTR_REG] & 0x3FF;
+    let v_start = (device.vi.regs[VI_V_START_REG] >> 16) & 0x3FF;
+    if v_start > v_intr {
+        device::events::create_event(
+            device,
+            device::events::EVENT_TYPE_V_START,
+            (v_start - v_intr) as u64 * device.vi.count_per_scanline,
+        );
+    }
 
     device::events::create_event_at(
         device,
