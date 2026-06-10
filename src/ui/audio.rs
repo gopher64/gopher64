@@ -1,4 +1,5 @@
 use crate::device;
+use crate::netplay;
 use crate::ui;
 
 static ADJUST_LOCKED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -171,6 +172,10 @@ fn adjust_audio_frequency(audio_stream: *mut sdl3_sys::audio::SDL_AudioStream, f
 
 pub fn play_audio(device: &device::Device, dram_addr: usize, length: u64) {
     if device.ui.audio.audio_stream.is_null() {
+        return;
+    }
+
+    if netplay::in_rollback(device.netplay.as_ref()) {
         return;
     }
 

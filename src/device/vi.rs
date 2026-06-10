@@ -103,7 +103,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                 if device.netplay.is_none() {
                     savestates::process_savestates(device);
                 }
-                let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
+                if !netplay::in_rollback(device.netplay.as_ref()) {
+                    let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
+                }
             }
         }
         _ => {
@@ -114,7 +116,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 pub fn update_screen(device: &mut device::Device) {
-    ui::video::render_frame();
+    if !netplay::in_rollback(device.netplay.as_ref()) {
+        ui::video::render_frame();
+    }
 
     let (speed_limiter_toggled, paused) = ui::video::check_callback(device);
 
@@ -122,18 +126,22 @@ pub fn update_screen(device: &mut device::Device) {
         reset_pace_deadline(device);
     }
 
-    if device
-        .speed_limiter
-        .frame_counter
-        .is_multiple_of(device.speed_limiter.limit_freq)
+    if !netplay::in_rollback(device.netplay.as_ref())
+        && device
+            .speed_limiter
+            .frame_counter
+            .is_multiple_of(device.speed_limiter.limit_freq)
         && device.speed_limiter.enabled
     {
         speed_limiter(device);
     }
 
-    unsafe { sdl3_sys::events::SDL_PumpEvents() };
-    ui::video::update_screen();
-    device.speed_limiter.frame_counter += 1;
+    if !netplay::in_rollback(device.netplay.as_ref()) {
+        unsafe { sdl3_sys::events::SDL_PumpEvents() };
+        ui::video::update_screen();
+        device.speed_limiter.frame_counter += 1;
+        let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
+    }
 
     if device.netplay.is_some() {
         device.netplay.as_mut().unwrap().inputs = netplay::process_requests(device);
@@ -155,8 +163,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     if device.cheats.enabled {
         cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
-
-    let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
 
     retroachievements::do_frame();
 

@@ -210,6 +210,22 @@ fn check_input_delay(netplay: &mut Netplay) {
     }
 }
 
+fn pending_frames(netplay: &Netplay) -> usize {
+    netplay
+        .requests
+        .iter()
+        .filter(|r| matches!(r, ggrs::GgrsRequest::AdvanceFrame { .. }))
+        .count()
+}
+
+pub fn in_rollback(netplay: Option<&Netplay>) -> bool {
+    if let Some(netplay) = netplay {
+        pending_frames(netplay) != 0
+    } else {
+        false
+    }
+}
+
 pub fn process_requests(
     device: &mut device::Device,
 ) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
