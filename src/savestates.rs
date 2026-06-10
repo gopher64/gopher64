@@ -245,12 +245,11 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         } else {
             None
         }
-    } else if let savestate = std::fs::read(&device.ui.storage.paths.savestate_file_path)
-        && let Ok(savestate) = &savestate
-        && let Ok(device_data) = ui::storage::decompress_file(savestate, "device")
-        && let Ok(saves_data) = ui::storage::decompress_file(savestate, "saves")
-        && let Ok(rdp_state) = ui::storage::decompress_file(savestate, "rdp_state")
-        && let Ok(ra_state) = ui::storage::decompress_file(savestate, "ra_state")
+    } else if let Ok(savestate) = std::fs::read(&device.ui.storage.paths.savestate_file_path)
+        && let Ok(device_data) = ui::storage::decompress_file(&savestate, "device")
+        && let Ok(saves_data) = ui::storage::decompress_file(&savestate, "saves")
+        && let Ok(rdp_state) = ui::storage::decompress_file(&savestate, "rdp_state")
+        && let Ok(ra_state) = ui::storage::decompress_file(&savestate, "ra_state")
         && let Ok(state) = postcard::from_bytes::<Box<device::Device>>(&device_data)
         && let Ok(saves) = postcard::from_bytes(&saves_data)
     {
