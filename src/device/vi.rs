@@ -114,26 +114,9 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 pub fn v_start_event(device: &mut device::Device) {
-    device.vi.elapsed_time += device.vi.frame_time;
-
-    if device.cheats.enabled {
-        cheats::execute_cheats(device, device.cheats.cheats.clone());
-    }
-
     ui::video::render_frame();
-    let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
-
-    retroachievements::do_frame();
 
     let (speed_limiter_toggled, paused) = ui::video::check_callback(device);
-
-    if device.netplay.is_none()
-        && device.ui.config.emulation.rewind
-        && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
-    {
-        device.savestate.save_rewind = true;
-        device.savestate.last_rewind_saved = device.vi.elapsed_time;
-    }
 
     if speed_limiter_toggled {
         reset_pace_deadline(device);
@@ -169,6 +152,24 @@ pub fn v_start_event(device: &mut device::Device) {
 }
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
+    device.vi.elapsed_time += device.vi.frame_time;
+
+    if device.cheats.enabled {
+        cheats::execute_cheats(device, device.cheats.cheats.clone());
+    }
+
+    let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
+
+    retroachievements::do_frame();
+
+    if device.netplay.is_none()
+        && device.ui.config.emulation.rewind
+        && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
+    {
+        device.savestate.save_rewind = true;
+        device.savestate.last_rewind_saved = device.vi.elapsed_time;
+    }
+
     /* toggle vi field if in interlaced mode */
     device.vi.field ^= (device.vi.regs[VI_STATUS_REG] >> 6) & 0x1;
 
