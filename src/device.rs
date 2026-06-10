@@ -314,7 +314,6 @@ impl Device {
             savestate: savestates::Savestate {
                 save_state: false,
                 load_state: false,
-                save_rewind: false,
                 load_rewind: false,
                 last_rewind_saved: 0.0,
                 rewind_pool: std::sync::Arc::new(std::sync::Mutex::new(

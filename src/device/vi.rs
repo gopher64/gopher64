@@ -160,14 +160,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     retroachievements::do_frame();
 
-    if device.netplay.is_none()
-        && device.ui.config.emulation.rewind
-        && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
-    {
-        device.savestate.save_rewind = true;
-        device.savestate.last_rewind_saved = device.vi.elapsed_time;
-    }
-
     /* toggle vi field if in interlaced mode */
     device.vi.field ^= (device.vi.regs[VI_STATUS_REG] >> 6) & 0x1;
 

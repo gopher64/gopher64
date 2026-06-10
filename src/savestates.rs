@@ -74,7 +74,6 @@ where
 pub struct Savestate {
     pub save_state: bool,
     pub load_state: bool,
-    pub save_rewind: bool,
     pub load_rewind: bool,
     pub last_rewind_saved: f64,
     #[serde(skip)]
@@ -96,18 +95,23 @@ static SAVES_CLONE: std::sync::LazyLock<std::sync::Mutex<ui::storage::Saves>> =
     std::sync::LazyLock::new(|| std::sync::Mutex::new(ui::storage::Saves::default()));
 
 pub fn process_savestates(device: &mut device::Device) {
-    if device.savestate.save_state || device.savestate.save_rewind {
-        let rewind = device.savestate.save_rewind && !device.savestate.save_state;
-        if rewind {
-            device.savestate.save_rewind = false;
-        }
+    let save_rewind = if device.netplay.is_none()
+        && device.ui.config.emulation.rewind
+        && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
+    {
+        device.savestate.last_rewind_saved = device.vi.elapsed_time;
+        true
+    } else {
+        false
+    };
+
+    if device.savestate.save_state || save_rewind {
+        create_savestate(device, !device.savestate.save_state, None);
         device.savestate.save_state = false;
-        create_savestate(device, rewind, None);
     } else if device.savestate.load_state || device.savestate.load_rewind {
+        load_savestate(device, device.savestate.load_rewind, None);
         device.savestate.load_state = false;
-        let rewind = device.savestate.load_rewind;
         device.savestate.load_rewind = false;
-        load_savestate(device, rewind, None);
     }
 }
 
