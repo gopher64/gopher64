@@ -15,7 +15,8 @@ pub const EVENT_TYPE_VRU: usize = 10;
 pub const EVENT_TYPE_PAK: usize = 11;
 pub const EVENT_TYPE_SAVE: usize = 12;
 pub const EVENT_TYPE_NMI: usize = 13;
-pub const EVENT_TYPE_COUNT: usize = 14;
+pub const EVENT_TYPE_UPDATE_SCREEN: usize = 14;
+pub const EVENT_TYPE_COUNT: usize = 15;
 
 #[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Event {
@@ -65,6 +66,7 @@ fn get_event_handler(name: usize) -> fn(&mut device::Device) {
         EVENT_TYPE_PAK => device::controller::pak_switch_event,
         EVENT_TYPE_SAVE => ui::storage::save_event,
         EVENT_TYPE_NMI => device::exceptions::reset_event,
+        EVENT_TYPE_UPDATE_SCREEN => device::vi::update_screen,
         _ => dummy_event,
     }
 }

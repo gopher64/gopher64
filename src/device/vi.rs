@@ -3,14 +3,14 @@ use crate::{cheats, device, netplay, retroachievements, savestates, ui};
 const VI_STATUS_REG: usize = 0;
 const VI_ORIGIN_REG: usize = 1;
 //const VI_WIDTH_REG: usize = 2;
-//const VI_V_INTR_REG: usize = 3;
+const VI_V_INTR_REG: usize = 3;
 const VI_CURRENT_REG: usize = 4;
 //const VI_BURST_REG: usize = 5;
 const VI_V_SYNC_REG: usize = 6;
 const VI_H_SYNC_REG: usize = 7;
 //const VI_LEAP_REG: usize = 8;
 //const VI_H_START_REG: usize = 9;
-//const VI_V_START_REG: usize = 10;
+const VI_V_START_REG: usize = 10;
 //const VI_V_BURST_REG: usize = 11;
 //const VI_X_SCALE_REG: usize = 12;
 //const VI_Y_SCALE_REG: usize = 13;
@@ -113,27 +113,10 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
     ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
 }
 
-pub fn vertical_interrupt_event(device: &mut device::Device) {
-    device.vi.elapsed_time += device.vi.frame_time;
-
-    if device.cheats.enabled {
-        cheats::execute_cheats(device, device.cheats.cheats.clone());
-    }
-
+pub fn update_screen(device: &mut device::Device) {
     ui::video::render_frame();
-    let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
-
-    retroachievements::do_frame();
 
     let (speed_limiter_toggled, paused) = ui::video::check_callback(device);
-
-    if device.netplay.is_none()
-        && device.ui.config.emulation.rewind
-        && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
-    {
-        device.savestate.save_rewind = true;
-        device.savestate.last_rewind_saved = device.vi.elapsed_time;
-    }
 
     if speed_limiter_toggled {
         reset_pace_deadline(device);
@@ -154,9 +137,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     if device.netplay.is_some() {
         device.netplay.as_mut().unwrap().inputs = netplay::process_requests(device);
-    }
-
-    if device.netplay.is_none() && paused {
+    } else if paused {
         if retroachievements::get_hardcore() {
             ui::video::onscreen_message(
                 "Cannot pause in RA hardcore mode",
@@ -165,6 +146,26 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         } else {
             ui::video::pause_loop(&mut device.ui, device.vi.frame_time);
         }
+    }
+}
+
+pub fn vertical_interrupt_event(device: &mut device::Device) {
+    device.vi.elapsed_time += device.vi.frame_time;
+
+    if device.cheats.enabled {
+        cheats::execute_cheats(device, device.cheats.cheats.clone());
+    }
+
+    let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
+
+    retroachievements::do_frame();
+
+    if device.netplay.is_none()
+        && device.ui.config.emulation.rewind
+        && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
+    {
+        device.savestate.save_rewind = true;
+        device.savestate.last_rewind_saved = device.vi.elapsed_time;
     }
 
     /* toggle vi field if in interlaced mode */
@@ -176,7 +177,17 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         device,
         device::events::EVENT_TYPE_VI,
         device.cpu.next_event_count + device.vi.delay,
-    )
+    );
+
+    let v_intr = device.vi.regs[VI_V_INTR_REG] & 0x3FF;
+    let v_start = (device.vi.regs[VI_V_START_REG] >> 16) & 0x3FF;
+    if v_start > v_intr {
+        device::events::create_event(
+            device,
+            device::events::EVENT_TYPE_UPDATE_SCREEN,
+            (v_start - v_intr) as u64 * device.vi.count_per_scanline,
+        );
+    }
 }
 
 pub fn init(device: &mut device::Device) {
