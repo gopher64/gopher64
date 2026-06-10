@@ -37,7 +37,7 @@ impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
 }
 
 pub struct Netplay {
-    pub session: ggrs::P2PSession<GgrsConfig>,
+    pub session: ggrs::SyncTestSession<GgrsConfig>,
     pub reliable_channel: matchbox_socket::WebRtcChannel,
     pub peers: Vec<matchbox_socket::PeerId>,
     pub player_number: usize,
@@ -198,16 +198,6 @@ pub fn send_input_delay(netplay: &mut Netplay, input_delay: usize) {
 
 fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
     netplay.input_delay = input_delay;
-    for handle in netplay.session.local_player_handles() {
-        if let Err(e) = netplay.session.set_input_delay(handle, input_delay) {
-            eprintln!("Error setting input delay: {}", e);
-        } else {
-            ui::video::onscreen_message(
-                &format!("Input delay: {}", input_delay),
-                ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
-            );
-        }
-    }
 }
 
 fn check_input_delay(netplay: &mut Netplay) {
@@ -236,18 +226,7 @@ pub fn in_rollback(netplay: Option<&Netplay>) -> bool {
 }
 
 fn process_disconnected_peers(netplay: &mut Netplay) {
-    while let Ok(addr) = netplay.disconnected_peers.try_recv() {
-        for handle in netplay.session.handles_by_address(addr) {
-            if let Err(e) = netplay.session.disconnect_player(handle) {
-                eprintln!("Error disconnecting player: {}", e);
-            } else {
-                ui::video::onscreen_message(
-                    &format!("Player {} disconnected", handle + 1),
-                    ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-                );
-            }
-        }
-    }
+    while let Ok(_addr) = netplay.disconnected_peers.try_recv() {}
 }
 
 pub fn process_requests(
@@ -286,36 +265,6 @@ fn process_netplay(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
     process_disconnected_peers(netplay);
 
-    netplay.session.poll_remote_clients();
-    for event in netplay.session.events() {
-        match event {
-            ggrs::GgrsEvent::Synchronizing { .. } => {}
-            ggrs::GgrsEvent::Synchronized { .. } => {}
-            ggrs::GgrsEvent::Disconnected { .. } => {
-                ui::video::onscreen_message(
-                    "Lost connection to peer",
-                    ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
-                );
-            }
-            ggrs::GgrsEvent::NetworkInterrupted { .. } => {
-                println!("network interrupted");
-            }
-            ggrs::GgrsEvent::NetworkResumed { .. } => {
-                println!("network resumed");
-            }
-            ggrs::GgrsEvent::WaitRecommendation { skip_frames } => {
-                println!("wait recommendation: skip_frames={}", skip_frames);
-            }
-            ggrs::GgrsEvent::DesyncDetected { .. } => {
-                eprintln!("desync detected");
-                ui::video::onscreen_message(
-                    "Desync detected",
-                    ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
-                );
-            }
-        }
-    }
-
     process_reliable_messages(netplay);
     advance_frame(device);
 }
@@ -323,11 +272,7 @@ fn process_netplay(device: &mut device::Device) {
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
     let local_input = ui::input::get(&mut device.ui, 0, device.speed_limiter.frame_counter);
-    let local_handle = *netplay.session.local_player_handles().first().unwrap();
-    netplay
-        .session
-        .add_local_input(local_handle, local_input)
-        .unwrap();
+    netplay.session.add_local_input(0, local_input).unwrap();
     match netplay.session.advance_frame() {
         Ok(requests) => {
             netplay.requests.extend(requests);
@@ -388,11 +333,10 @@ pub fn init(
     let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new()
         .with_num_players(number_of_players)
         .unwrap()
-        .with_input_delay(input_delay)
+        .with_check_distance(2)
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
-        .with_max_prediction_window(0)
         .with_disconnect_timeout(std::time::Duration::from_secs(if cfg!(debug_assertions) {
             10
         } else {
@@ -419,17 +363,7 @@ pub fn init(
         eprintln!("Sending GGRS traffic over reliable channel");
     }
 
-    let mut session = session_builder.start_p2p_session(matchbox_channel).unwrap();
-
-    let now = std::time::Instant::now();
-    while session.current_state() != ggrs::SessionState::Running {
-        session.poll_remote_clients();
-        if now.elapsed() > timeout {
-            eprintln!("Could not start netplay session");
-            return None;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(10));
-    }
+    let session = session_builder.start_synctest_session().unwrap();
 
     Some(Netplay {
         disconnected_peers: disconnected_peers_rx,

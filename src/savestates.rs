@@ -398,7 +398,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         } else {
             (
                 "Failed to rollback".to_string(),
-                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+                ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
             )
         };
         ui::video::onscreen_message(&message, length);

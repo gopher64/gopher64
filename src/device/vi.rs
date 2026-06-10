@@ -198,18 +198,9 @@ pub fn init(device: &mut device::Device) {
 
 fn speed_limiter(device: &mut device::Device) {
     let mut speed_limiter_toggled = false;
-    let mut interval = std::time::Duration::from_secs_f64(
+    let interval = std::time::Duration::from_secs_f64(
         device.vi.frame_time * device.speed_limiter.limit_freq as f64,
     );
-
-    if let Some(netplay) = &device.netplay {
-        let ahead = netplay.session.frames_ahead();
-        if ahead > 0 {
-            interval = interval.mul_f64(1.0 + 0.05 * ahead.min(2) as f64);
-        } else if ahead < 0 {
-            interval = interval.mul_f64(1.0 - 0.05 * (-ahead).min(2) as f64);
-        }
-    }
 
     let now = std::time::Instant::now();
     match device.speed_limiter.next_pace_deadline {

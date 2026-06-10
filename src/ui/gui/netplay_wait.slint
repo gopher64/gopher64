@@ -124,7 +124,7 @@ export component NetplayWait inherits Page {
                     Button {
                         property <bool> mesh_complete: NetplayWaitData.players.length == (NetplayWaitData.connected_peers_count + 1);
                         text: mesh_complete ? @tr("Start Game") : @tr("Waiting for P2P mesh ") + (NetplayWaitData.connected_peers_count + 1) + "/" + NetplayWaitData.players.length;
-                        enabled: NetplayWaitData.players[0] == NetplayData.player_name && NetplayWaitData.can_start && NetplayWaitData.recommended_delay != 0 && mesh_complete;
+                        enabled: NetplayWaitData.players[0] == NetplayData.player_name && NetplayWaitData.can_start && mesh_complete;
                         clicked => {
                             NetplayWaitData.can_start = false;
                             begin_game(NetplayWaitData.input_delay);
