@@ -267,7 +267,9 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
     if let Some(mut state) = state_data
         && device.rdram.size == state.device.rdram.size
     {
-        ui::video::idle();
+        if device.netplay.is_none() {
+            ui::video::idle();
+        }
 
         device.savestate.last_rewind_saved = state.device.vi.elapsed_time;
 
