@@ -137,9 +137,7 @@ pub fn update_screen(device: &mut device::Device) {
 
     if device.netplay.is_some() {
         device.netplay.as_mut().unwrap().inputs = netplay::process_requests(device);
-    }
-
-    if device.netplay.is_none() && paused {
+    } else if paused {
         if retroachievements::get_hardcore() {
             ui::video::onscreen_message(
                 "Cannot pause in RA hardcore mode",
