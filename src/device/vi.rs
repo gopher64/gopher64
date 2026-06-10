@@ -174,6 +174,12 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_VI);
 
+    device::events::create_event_at(
+        device,
+        device::events::EVENT_TYPE_VI,
+        device.cpu.next_event_count + device.vi.delay,
+    );
+
     let v_intr = device.vi.regs[VI_V_INTR_REG] & 0x3FF;
     let v_start = (device.vi.regs[VI_V_START_REG] >> 16) & 0x3FF;
     if v_start > v_intr {
@@ -183,12 +189,6 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
             (v_start - v_intr) as u64 * device.vi.count_per_scanline,
         );
     }
-
-    device::events::create_event_at(
-        device,
-        device::events::EVENT_TYPE_VI,
-        device.cpu.next_event_count + device.vi.delay,
-    )
 }
 
 pub fn init(device: &mut device::Device) {
