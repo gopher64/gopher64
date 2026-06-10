@@ -106,13 +106,12 @@ pub fn process_savestates(device: &mut device::Device) {
     };
 
     if device.savestate.save_state || save_rewind {
-        device.savestate.save_state = false;
         create_savestate(device, !device.savestate.save_state, None);
+        device.savestate.save_state = false;
     } else if device.savestate.load_state || device.savestate.load_rewind {
+        load_savestate(device, device.savestate.load_rewind, None);
         device.savestate.load_state = false;
-        let rewind = device.savestate.load_rewind;
         device.savestate.load_rewind = false;
-        load_savestate(device, rewind, None);
     }
 }
 
