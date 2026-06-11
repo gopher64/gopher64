@@ -342,7 +342,10 @@ async fn android_main(app: slint::android::AndroidApp) {
                     && let Some(weak_app_window) = weak_app_window.as_ref()
                 {
                     weak_app_window
-                        .upgrade_in_event_loop(move |handle| ui::gui::save_settings(&handle))
+                        .upgrade_in_event_loop(move |handle| {
+                            ui::gui::save_settings(&handle);
+                            handle.invoke_netplay_close();
+                        })
                         .unwrap();
                 }
             }

@@ -535,11 +535,15 @@ pub fn app_window(app: &AppWindow, is_android: bool) {
         let weak_app = app.as_weak();
         app.window().on_close_requested(move || {
             weak_app
-                .upgrade_in_event_loop(move |handle| save_settings(&handle))
+                .upgrade_in_event_loop(move |handle| {
+                    save_settings(&handle);
+                    handle.invoke_netplay_close();
+                })
                 .unwrap();
             slint::CloseRequestResponse::HideWindow
         });
     }
+
     app.run().unwrap();
     retroachievements::shutdown_client();
 }
