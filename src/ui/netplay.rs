@@ -54,6 +54,7 @@ enum PingType {
 struct NetplayPingMessage {
     message_type: PingType,
     timestamp: u128,
+    num_of_peers: usize,
 }
 
 fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
@@ -414,6 +415,7 @@ fn update_ping(
                 let ping_message = NetplayPingMessage {
                     message_type: PingType::Ping,
                     timestamp: now,
+                    num_of_peers: socket.connected_peers().count(),
                 };
                 let data = postcard::to_stdvec(&ping_message).unwrap();
                 let _ = write.send((peer, data.into())).await;
@@ -461,6 +463,7 @@ fn update_ping(
                                 let pong_message = NetplayPingMessage {
                                     message_type: PingType::Pong,
                                     timestamp: message.timestamp,
+                                    num_of_peers: message.num_of_peers,
                                 };
                                 let data = postcard::to_stdvec(&pong_message).unwrap();
                                 let _ = write_clone.send((peer, data.into())).await;
@@ -472,8 +475,8 @@ fn update_ping(
                                     .as_millis();
                                 let ping = (now - message.timestamp) / 2; // calculate one-way latency
                                 pings.push(ping);
-                                if pings.len() > 12 {
-                                    // once we have at least 12 samples, remove the highest 2 and return the next highest
+                                if pings.len() > message.num_of_peers * 4 {
+                                    // once we have enough samples, remove the highest 2 and return the next highest
                                     pings.sort();
                                     pings.truncate(pings.len() - 2);
                                     let ping = *pings.last().unwrap();
