@@ -144,62 +144,70 @@ fn manage_websocket(
         .headers_mut()
         .insert("Authorization", env!("NETPLAY_ID").parse().unwrap());
     tokio::spawn(async move {
-        if let Ok(Ok((socket, _response))) = tokio::time::timeout(
+        match tokio::time::timeout(
             std::time::Duration::from_secs(2),
             tokio_tungstenite::connect_async(request),
         )
         .await
         {
-            let (mut write, mut read) = socket.split();
+            Ok(Ok((socket, _response))) => {
+                let (mut write, mut read) = socket.split();
 
-            tokio::spawn(async move {
-                while let Some(Ok(response)) = read.next().await {
-                    let decoded_response =
-                        postcard::from_bytes::<NetplayLobbyMessage>(&response.into_data());
-                    match decoded_response {
-                        Ok(message) => {
-                            let _ = netplay_read_sender.send(Some(message));
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to parse message: {}", e);
-                        }
-                    }
-                }
-            });
-            tokio::spawn(async move {
-                loop {
-                    match netplay_write_receiver.recv().await {
-                        Ok(Some(response)) => {
-                            if let Err(e) = write
-                                .send(Message::Binary(Bytes::from(
-                                    postcard::to_stdvec(&response).unwrap(),
-                                )))
-                                .await
-                            {
-                                eprintln!("Failed to send message: {}", e);
+                tokio::spawn(async move {
+                    while let Some(Ok(response)) = read.next().await {
+                        let decoded_response =
+                            postcard::from_bytes::<NetplayLobbyMessage>(&response.into_data());
+                        match decoded_response {
+                            Ok(message) => {
+                                let _ = netplay_read_sender.send(Some(message));
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to parse message: {}", e);
                             }
                         }
-                        Ok(None) => {
-                            break;
-                        }
-                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
-                            panic!("netplay_write_receiver lagged");
-                        }
-                        Err(tokio::sync::broadcast::error::RecvError::Closed) => {
-                            break; // exit the loop if the receiver is closed
+                    }
+                });
+                tokio::spawn(async move {
+                    loop {
+                        match netplay_write_receiver.recv().await {
+                            Ok(Some(response)) => {
+                                if let Err(e) = write
+                                    .send(Message::Binary(Bytes::from(
+                                        postcard::to_stdvec(&response).unwrap(),
+                                    )))
+                                    .await
+                                {
+                                    eprintln!("Failed to send message: {}", e);
+                                }
+                            }
+                            Ok(None) => {
+                                break;
+                            }
+                            Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                                panic!("netplay_write_receiver lagged");
+                            }
+                            Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                                break; // exit the loop if the receiver is closed
+                            }
                         }
                     }
-                }
-                if let Err(e) = write
-                    .send(Message::Close(Some(CloseFrame {
-                        code: CloseCode::Normal,
-                        reason: Utf8Bytes::from(""),
-                    })))
-                    .await
-                {
-                    eprintln!("Failed to send close message: {}", e);
-                }
-            });
+                    if let Err(e) = write
+                        .send(Message::Close(Some(CloseFrame {
+                            code: CloseCode::Normal,
+                            reason: Utf8Bytes::from(""),
+                        })))
+                        .await
+                    {
+                        eprintln!("Failed to send close message: {}", e);
+                    }
+                });
+            }
+            Ok(Err(e)) => {
+                eprintln!("Failed to connect to netplay: {}", e);
+            }
+            Err(e) => {
+                eprintln!("Failed to connect to netplay: {}", e);
+            }
         }
     });
 }
