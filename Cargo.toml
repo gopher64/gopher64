@@ -24,7 +24,7 @@ spin_sleep = "1.3"
 encoding_rs = "0.8"
 mimalloc = "0.1"
 regex = "1.11"
-tokio-tungstenite = { version = "0.29", features = ["native-tls"] }
+tokio-tungstenite = { version = "0.29", features = ["native-tls-vendored"] }
 matchbox_socket = "0.14"
 ggrs = { git = "https://github.com/gschup/ggrs.git", features = ["sync-send"] }
 rustc-hash = "2.1"
