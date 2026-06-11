@@ -530,16 +530,18 @@ pub fn app_window(app: &AppWindow, is_android: bool) {
     ui::netplay::netplay_window(app);
     ui::cheats::cheats_window(app);
 
-    #[cfg(not(target_os = "android"))]
-    {
-        let weak_app = app.as_weak();
-        app.window().on_close_requested(move || {
-            weak_app
-                .upgrade_in_event_loop(move |handle| save_settings(&handle))
-                .unwrap();
-            slint::CloseRequestResponse::HideWindow
-        });
-    }
+    let weak_app = app.as_weak();
+    app.window().on_close_requested(move || {
+        weak_app
+            .upgrade_in_event_loop(move |handle| {
+                #[cfg(not(target_os = "android"))]
+                save_settings(&handle);
+                handle.invoke_netplay_close();
+            })
+            .unwrap();
+        slint::CloseRequestResponse::HideWindow
+    });
+
     app.run().unwrap();
     retroachievements::shutdown_client();
 }
