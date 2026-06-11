@@ -331,11 +331,14 @@ fn create_session(
             Ok(Err(err)) => {
                 panic!("netplay_read_receiver error: {err}");
             }
-            Err(_) => {
+            Err(e) => {
                 weak_app
                     .upgrade_in_event_loop(move |handle| {
                         handle.set_netplay_pending_session(false);
-                        handle.invoke_show_message("Server did not respond".into(), true);
+                        handle.invoke_show_message(
+                            format!("Server did not respond: {e}").into(),
+                            true,
+                        );
                     })
                     .unwrap();
             }
@@ -793,10 +796,13 @@ fn setup_join_window(
                 Ok(None) => {
                     break;
                 }
-                Err(_) => {
+                Err(e) => {
                     weak.upgrade_in_event_loop(move |handle| {
                         handle.set_netplay_pending_session(false);
-                        handle.invoke_show_message("Server did not respond".into(), true);
+                        handle.invoke_show_message(
+                            format!("Server did not respond: {e}").into(),
+                            true,
+                        );
                     })
                     .unwrap();
                 }
