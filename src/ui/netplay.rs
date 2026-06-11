@@ -156,15 +156,23 @@ fn manage_websocket(
 
                 tokio::spawn(async move {
                     while let Some(Ok(response)) = read.next().await {
-                        let decoded_response =
-                            postcard::from_bytes::<NetplayLobbyMessage>(&response.into_data());
-                        match decoded_response {
-                            Ok(message) => {
-                                let _ = netplay_read_sender.send(Some(message));
+                        match response {
+                            Message::Binary(data) => {
+                                let decoded_response =
+                                    postcard::from_bytes::<NetplayLobbyMessage>(&data);
+                                match decoded_response {
+                                    Ok(message) => {
+                                        let _ = netplay_read_sender.send(Some(message));
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Failed to parse message: {}", e);
+                                    }
+                                }
                             }
-                            Err(e) => {
-                                eprintln!("Failed to parse message: {}", e);
+                            Message::Close(_) => {
+                                return;
                             }
+                            _ => {}
                         }
                     }
                 });
