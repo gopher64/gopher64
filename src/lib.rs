@@ -228,10 +228,9 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 tx.send(false).unwrap();
             }
 
-            let join_handle = std::thread::spawn(move || {
+            tokio::task::block_in_place(move || {
                 rx.blocking_recv().unwrap();
             });
-            join_handle.join().unwrap();
 
             ra_config
         } else {
