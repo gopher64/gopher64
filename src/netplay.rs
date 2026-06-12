@@ -16,7 +16,7 @@ pub struct MatchboxChannel(matchbox_socket::WebRtcChannel);
 impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
-        let _ = self.0.try_send(encoded.into(), *addr);
+        self.0.send(encoded.into(), *addr);
     }
 
     fn receive_all_messages(&mut self) -> Vec<(matchbox_socket::PeerId, ggrs::Message)> {
@@ -56,9 +56,7 @@ fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
     let chunks = data.chunks(16384).collect::<Vec<&[u8]>>();
     for peer in netplay.peers.iter() {
         for chunk in chunks.iter() {
-            let _ = netplay
-                .reliable_channel
-                .try_send(chunk.to_vec().into(), *peer);
+            netplay.reliable_channel.send(chunk.to_vec().into(), *peer);
         }
     }
 }
@@ -84,23 +82,8 @@ fn process_reliable_messages(netplay: &mut Netplay) {
                     .insert(decoded_message.name, decoded_message.data);
                 netplay.incoming_message.clear();
                 check_input_delay(netplay);
-                check_disconnect(netplay);
             }
         }
-    }
-}
-
-fn check_disconnect(netplay: &mut Netplay) {
-    if let Some(data) = netplay.messages.remove("disconnect") {
-        let remote_player_number = usize::from_be_bytes(data.try_into().unwrap());
-        netplay
-            .session
-            .disconnect_player(remote_player_number)
-            .unwrap();
-        ui::video::onscreen_message(
-            &format!("Player {} disconnected", remote_player_number + 1),
-            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-        );
     }
 }
 
@@ -132,7 +115,7 @@ fn send_player_number(
     };
     let data = postcard::to_stdvec(&message).unwrap();
     for peer in peers {
-        channel.try_send(data.clone().into(), peer).unwrap();
+        channel.send(data.clone().into(), peer);
     }
 }
 
@@ -432,14 +415,4 @@ pub fn init(
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
     })
-}
-
-pub fn close(netplay: &mut Netplay) {
-    let message = NetplayMessage {
-        name: "disconnect".to_string(),
-        data: netplay.player_number.to_be_bytes().to_vec(),
-    };
-    send_message(netplay, message);
-    // Let loop_fut drain the outbound queue
-    std::thread::sleep(std::time::Duration::from_millis(100));
 }
