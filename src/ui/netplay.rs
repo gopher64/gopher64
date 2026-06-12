@@ -412,9 +412,16 @@ fn update_ping(
     let (mut write, mut read) = channel.split();
     let mut write_clone = write.clone();
     let mut close_ping_rx_clone = close_ping_rx.resubscribe();
+    let weak_app_clone = weak_app.clone();
     tokio::spawn(async move {
         loop {
             socket.update_peers();
+            let peers_count = socket.connected_peers().count();
+            weak_app_clone
+                .upgrade_in_event_loop(move |handle| {
+                    handle.set_netplay_connected_peers_count(peers_count as i32);
+                })
+                .unwrap();
             for peer in socket.connected_peers() {
                 let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
@@ -423,7 +430,7 @@ fn update_ping(
                 let ping_message = NetplayPingMessage {
                     message_type: PingType::Ping,
                     timestamp: now,
-                    num_of_peers: socket.connected_peers().count(),
+                    num_of_peers: peers_count,
                 };
                 let data = postcard::to_stdvec(&ping_message).unwrap();
                 let _ = write.send((peer, data.into())).await;
