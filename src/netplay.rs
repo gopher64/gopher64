@@ -356,10 +356,10 @@ pub fn init(
         }
     });
 
-    let (tx, rx) = tokio::sync::mpsc::channel(100);
+    let (disconnected_peers_tx, disconnected_peers_rx) = tokio::sync::mpsc::channel(100);
     let matchbox_channel = MatchboxChannel {
         channel: socket.take_channel(0).unwrap(),
-        disconnected_peers: tx,
+        disconnected_peers: disconnected_peers_tx,
     };
     let mut reliable_channel = socket.take_channel(1).unwrap();
     let now = std::time::Instant::now();
@@ -432,7 +432,7 @@ pub fn init(
     }
 
     Some(Netplay {
-        disconnected_peers: rx,
+        disconnected_peers: disconnected_peers_rx,
         incoming_message: vec![],
         input_delay,
         session,
