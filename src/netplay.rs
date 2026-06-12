@@ -246,7 +246,7 @@ fn process_disconnected_peers(netplay: &mut Netplay) {
                 } else {
                     ui::video::onscreen_message(
                         &format!("Player {} disconnected", handle + 1),
-                        ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+                        ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
                     );
                 }
             }
