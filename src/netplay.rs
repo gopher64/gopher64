@@ -11,8 +11,9 @@ impl ggrs::Config for GgrsConfig {
     type Address = matchbox_socket::PeerId;
 }
 
-static DISCONNECTED_PEERS: std::sync::Mutex<Vec<matchbox_socket::PeerId>> =
-    std::sync::Mutex::new(vec![]);
+static DISCONNECTED_PEERS: std::sync::LazyLock<
+    std::sync::Mutex<rustc_hash::FxHashSet<matchbox_socket::PeerId>>,
+> = std::sync::LazyLock::new(|| std::sync::Mutex::new(rustc_hash::FxHashSet::default()));
 
 pub struct MatchboxChannel(matchbox_socket::WebRtcChannel);
 
@@ -22,7 +23,7 @@ impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
         if let Err(_) = self.0.try_send(encoded.into(), *addr)
             && let Ok(mut disconnected_peers) = DISCONNECTED_PEERS.lock()
         {
-            disconnected_peers.push(*addr);
+            disconnected_peers.insert(*addr);
         }
     }
 
@@ -238,8 +239,8 @@ pub fn in_rollback(netplay: Option<&Netplay>) -> bool {
 
 fn process_disconnected_peers(netplay: &mut Netplay) {
     if let Ok(mut disconnected_peers) = DISCONNECTED_PEERS.lock() {
-        for addr in disconnected_peers.drain(..) {
-            for handle in netplay.session.handles_by_address(addr) {
+        for addr in disconnected_peers.iter() {
+            for handle in netplay.session.handles_by_address(*addr) {
                 if let Err(e) = netplay.session.disconnect_player(handle) {
                     eprintln!("Error disconnecting player: {}", e);
                 } else {
@@ -250,6 +251,7 @@ fn process_disconnected_peers(netplay: &mut Netplay) {
                 }
             }
         }
+        disconnected_peers.clear();
     }
 }
 
