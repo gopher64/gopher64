@@ -32,7 +32,6 @@ impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
 }
 
 pub struct Netplay {
-    pub future_handle: Option<tokio::task::JoinHandle<()>>,
     pub session: ggrs::P2PSession<GgrsConfig>,
     pub reliable_channel: matchbox_socket::WebRtcChannel,
     pub peers: Vec<matchbox_socket::PeerId>,
@@ -336,7 +335,7 @@ pub fn init(
         .add_unreliable_channel()
         .add_reliable_channel()
         .build();
-    let future_handle = tokio::spawn(async move {
+    tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
             eprintln!("WebRTC loop failed: {}", e);
         }
@@ -413,7 +412,6 @@ pub fn init(
     }
 
     Some(Netplay {
-        future_handle: Some(future_handle),
         incoming_message: vec![],
         input_delay,
         session,
@@ -439,12 +437,6 @@ pub fn close(netplay: &mut Netplay) {
         data: netplay.player_number.to_be_bytes().to_vec(),
     };
     send_message(netplay, message);
-    netplay.reliable_channel.close();
-    if let Some(future_handle) = netplay.future_handle.take() {
-        tokio::task::block_in_place(move || {
-            tokio::runtime::Handle::current()
-                .block_on(async move { future_handle.await })
-                .unwrap();
-        });
-    }
+    // Let loop_fut drain the outbound queue
+    std::thread::sleep(std::time::Duration::from_millis(100));
 }
