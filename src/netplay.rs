@@ -56,10 +56,9 @@ fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
     let chunks = data.chunks(16384).collect::<Vec<&[u8]>>();
     for peer in netplay.peers.iter() {
         for chunk in chunks.iter() {
-            netplay
+            let _ = netplay
                 .reliable_channel
-                .try_send(chunk.to_vec().into(), *peer)
-                .unwrap();
+                .try_send(chunk.to_vec().into(), *peer);
         }
     }
 }
