@@ -1,7 +1,6 @@
 use crate::device;
 use crate::savestates;
 use crate::ui;
-use futures::SinkExt;
 use sha2::digest::Digest;
 
 pub struct GgrsConfig;
@@ -33,6 +32,7 @@ impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
 }
 
 pub struct Netplay {
+    pub future_handle: Option<tokio::task::JoinHandle<()>>,
     pub session: ggrs::P2PSession<GgrsConfig>,
     pub reliable_channel: matchbox_socket::WebRtcChannel,
     pub peers: Vec<matchbox_socket::PeerId>,
@@ -52,18 +52,16 @@ struct NetplayMessage {
     data: Vec<u8>,
 }
 
-fn send_message(netplay: &mut Netplay, message: NetplayMessage) -> tokio::task::JoinHandle<()> {
-    let peers = netplay.peers.clone();
-    let mut sender_clone = netplay.reliable_channel.sender_clone();
-    tokio::spawn(async move {
-        let data = postcard::to_stdvec(&message).unwrap();
-        let chunks = data.chunks(16384).collect::<Vec<&[u8]>>();
-        for peer in peers.iter() {
-            for chunk in chunks.iter() {
-                let _ = sender_clone.send((*peer, chunk.to_vec().into())).await;
-            }
+fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
+    let data = postcard::to_stdvec(&message).unwrap();
+    let chunks = data.chunks(16384).collect::<Vec<&[u8]>>();
+    for peer in netplay.peers.iter() {
+        for chunk in chunks.iter() {
+            let _ = netplay
+                .reliable_channel
+                .try_send(chunk.to_vec().into(), *peer);
         }
-    })
+    }
 }
 
 fn process_reliable_messages(netplay: &mut Netplay) {
@@ -97,7 +95,10 @@ fn check_disconnect(netplay: &mut Netplay) {
     if let Some(data) = netplay.messages.remove("disconnect") {
         let remote_player_number = usize::from_be_bytes(data.try_into().unwrap());
         let _ = netplay.session.disconnect_player(remote_player_number);
-        ui::video::onscreen_message("Peer disconnected", ui::video::MESSAGE_LENGTH_MESSAGE_SHORT);
+        ui::video::onscreen_message(
+            &format!("Player {} disconnected", remote_player_number + 1),
+            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+        );
     }
 }
 
@@ -129,7 +130,7 @@ fn send_player_number(
     };
     let data = postcard::to_stdvec(&message).unwrap();
     for peer in peers {
-        channel.send(data.clone().into(), peer);
+        channel.try_send(data.clone().into(), peer).unwrap();
     }
 }
 
@@ -335,7 +336,7 @@ pub fn init(
         .add_unreliable_channel()
         .add_reliable_channel()
         .build();
-    tokio::spawn(async move {
+    let future_handle = tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
             eprintln!("WebRTC loop failed: {}", e);
         }
@@ -412,6 +413,7 @@ pub fn init(
     }
 
     Some(Netplay {
+        future_handle: Some(future_handle),
         incoming_message: vec![],
         input_delay,
         session,
@@ -436,9 +438,13 @@ pub fn close(netplay: &mut Netplay) {
         name: "disconnect".to_string(),
         data: netplay.player_number.to_be_bytes().to_vec(),
     };
-    tokio::task::block_in_place(move || {
-        tokio::runtime::Handle::current()
-            .block_on(send_message(netplay, message))
-            .unwrap();
-    });
+    send_message(netplay, message);
+    netplay.reliable_channel.close();
+    if let Some(future_handle) = netplay.future_handle.take() {
+        tokio::task::block_in_place(move || {
+            tokio::runtime::Handle::current()
+                .block_on(async move { future_handle.await })
+                .unwrap();
+        });
+    }
 }
