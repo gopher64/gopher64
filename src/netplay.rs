@@ -16,7 +16,9 @@ pub struct MatchboxChannel(matchbox_socket::WebRtcChannel);
 impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
-        self.0.send(encoded.into(), *addr);
+        if let Err(e) = self.0.try_send(encoded.into(), *addr) {
+            eprintln!("Failed to send message: {}", e);
+        }
     }
 
     fn receive_all_messages(&mut self) -> Vec<(matchbox_socket::PeerId, ggrs::Message)> {
@@ -56,7 +58,12 @@ fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
     let chunks = data.chunks(16384).collect::<Vec<&[u8]>>();
     for peer in netplay.peers.iter() {
         for chunk in chunks.iter() {
-            netplay.reliable_channel.send(chunk.to_vec().into(), *peer);
+            if let Err(e) = netplay
+                .reliable_channel
+                .try_send(chunk.to_vec().into(), *peer)
+            {
+                eprintln!("Failed to send message: {}", e);
+            }
         }
     }
 }
@@ -115,7 +122,9 @@ fn send_player_number(
     };
     let data = postcard::to_stdvec(&message).unwrap();
     for peer in peers {
-        channel.send(data.clone().into(), peer);
+        if let Err(e) = channel.try_send(data.clone().into(), peer) {
+            eprintln!("Failed to send message: {}", e);
+        }
     }
 }
 
@@ -415,4 +424,10 @@ pub fn init(
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
     })
+}
+
+pub fn close(netplay: &mut Netplay) {
+    for player in netplay.session.remote_player_handles() {
+        let _ = netplay.session.disconnect_player(player);
+    }
 }
