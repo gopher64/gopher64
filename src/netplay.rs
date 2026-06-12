@@ -1,6 +1,7 @@
 use crate::device;
 use crate::savestates;
 use crate::ui;
+use futures::SinkExt;
 use sha2::digest::Digest;
 
 pub struct GgrsConfig;
@@ -51,14 +52,18 @@ struct NetplayMessage {
     data: Vec<u8>,
 }
 
-fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
-    let data = postcard::to_stdvec(&message).unwrap();
-    let chunks = data.chunks(16384).collect::<Vec<&[u8]>>();
-    for peer in netplay.peers.iter() {
-        for chunk in chunks.iter() {
-            netplay.reliable_channel.send(chunk.to_vec().into(), *peer);
+fn send_message(netplay: &mut Netplay, message: NetplayMessage) -> tokio::task::JoinHandle<()> {
+    let peers = netplay.peers.clone();
+    let mut sender_clone = netplay.reliable_channel.sender_clone();
+    tokio::spawn(async move {
+        let data = postcard::to_stdvec(&message).unwrap();
+        let chunks = data.chunks(16384).collect::<Vec<&[u8]>>();
+        for peer in peers.iter() {
+            for chunk in chunks.iter() {
+                let _ = sender_clone.send((*peer, chunk.to_vec().into())).await;
+            }
         }
-    }
+    })
 }
 
 fn process_reliable_messages(netplay: &mut Netplay) {
@@ -81,8 +86,18 @@ fn process_reliable_messages(netplay: &mut Netplay) {
                     .messages
                     .insert(decoded_message.name, decoded_message.data);
                 netplay.incoming_message.clear();
+                check_input_delay(netplay);
+                check_disconnect(netplay);
             }
         }
+    }
+}
+
+fn check_disconnect(netplay: &mut Netplay) {
+    if let Some(data) = netplay.messages.remove("disconnect") {
+        let remote_player_number = usize::from_be_bytes(data.try_into().unwrap());
+        let _ = netplay.session.disconnect_player(remote_player_number);
+        ui::video::onscreen_message("Peer disconnected", ui::video::MESSAGE_LENGTH_MESSAGE_SHORT);
     }
 }
 
@@ -262,9 +277,8 @@ fn process_netplay(device: &mut device::Device) {
             ggrs::GgrsEvent::Synchronizing { .. } => {}
             ggrs::GgrsEvent::Synchronized { .. } => {}
             ggrs::GgrsEvent::Disconnected { .. } => {
-                eprintln!("peer disconnected");
                 ui::video::onscreen_message(
-                    "Peer disconnected",
+                    "Lost connection to peer",
                     ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
                 );
             }
@@ -288,7 +302,6 @@ fn process_netplay(device: &mut device::Device) {
     }
 
     process_reliable_messages(netplay);
-    check_input_delay(netplay);
     advance_frame(device);
 }
 
@@ -416,4 +429,16 @@ pub fn init(
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
     })
+}
+
+pub fn close(netplay: &mut Netplay) {
+    let message = NetplayMessage {
+        name: "disconnect".to_string(),
+        data: netplay.player_number.to_be_bytes().to_vec(),
+    };
+    tokio::task::block_in_place(move || {
+        tokio::runtime::Handle::current()
+            .block_on(send_message(netplay, message))
+            .unwrap();
+    });
 }

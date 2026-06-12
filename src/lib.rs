@@ -254,7 +254,9 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         #[cfg(not(target_os = "android"))]
         retroachievements::shutdown_client();
 
-        if device.netplay.is_none() {
+        if let Some(mut netplay) = device.netplay {
+            netplay::close(&mut netplay);
+        } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
                     && !device.ui.config.input.gb_ram_path[i].is_empty()
