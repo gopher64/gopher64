@@ -239,8 +239,8 @@ pub fn in_rollback(netplay: Option<&Netplay>) -> bool {
 
 fn process_disconnected_peers(netplay: &mut Netplay) {
     if let Ok(mut disconnected_peers) = DISCONNECTED_PEERS.lock() {
-        for addr in disconnected_peers.iter() {
-            for handle in netplay.session.handles_by_address(*addr) {
+        for addr in disconnected_peers.drain() {
+            for handle in netplay.session.handles_by_address(addr) {
                 if let Err(e) = netplay.session.disconnect_player(handle) {
                     eprintln!("Error disconnecting player: {}", e);
                 } else {
@@ -251,7 +251,6 @@ fn process_disconnected_peers(netplay: &mut Netplay) {
                 }
             }
         }
-        disconnected_peers.clear();
     }
 }
 
