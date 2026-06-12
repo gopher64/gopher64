@@ -19,10 +19,10 @@ pub struct MatchboxChannel(matchbox_socket::WebRtcChannel);
 impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
-        if let Err(_) = self.0.try_send(encoded.into(), *addr) {
-            if let Ok(mut disconnected_peers) = DISCONNECTED_PEERS.lock() {
-                disconnected_peers.push(*addr);
-            }
+        if let Err(_) = self.0.try_send(encoded.into(), *addr)
+            && let Ok(mut disconnected_peers) = DISCONNECTED_PEERS.lock()
+        {
+            disconnected_peers.push(*addr);
         }
     }
 
