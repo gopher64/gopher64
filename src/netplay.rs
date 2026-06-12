@@ -11,24 +11,21 @@ impl ggrs::Config for GgrsConfig {
     type Address = matchbox_socket::PeerId;
 }
 
-pub struct MatchboxChannel(
-    (
-        matchbox_socket::WebRtcChannel,
-        tokio::sync::mpsc::Sender<matchbox_socket::PeerId>,
-    ),
-);
+pub struct MatchboxChannel {
+    channel: matchbox_socket::WebRtcChannel,
+    disconnected_peers: tokio::sync::mpsc::Sender<matchbox_socket::PeerId>,
+}
 
 impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
-        if let Err(_) = self.0.0.try_send(encoded.into(), *addr) {
-            self.0.1.try_send(*addr).unwrap();
+        if let Err(_) = self.channel.try_send(encoded.into(), *addr) {
+            self.disconnected_peers.try_send(*addr).unwrap();
         }
     }
 
     fn receive_all_messages(&mut self) -> Vec<(matchbox_socket::PeerId, ggrs::Message)> {
-        self.0
-            .0
+        self.channel
             .receive()
             .iter()
             .filter_map(|(peer, packet)| {
@@ -360,7 +357,10 @@ pub fn init(
     });
 
     let (tx, rx) = tokio::sync::mpsc::channel(100);
-    let matchbox_channel = MatchboxChannel((socket.take_channel(0).unwrap(), tx));
+    let matchbox_channel = MatchboxChannel {
+        channel: socket.take_channel(0).unwrap(),
+        disconnected_peers: tx,
+    };
     let mut reliable_channel = socket.take_channel(1).unwrap();
     let now = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(10);
@@ -413,8 +413,8 @@ pub fn init(
         }
     }
 
-    if matchbox_channel.0.0.config().max_retransmits != Some(0)
-        || matchbox_channel.0.0.config().ordered
+    if matchbox_channel.channel.config().max_retransmits != Some(0)
+        || matchbox_channel.channel.config().ordered
     {
         eprintln!("Sending GGRS traffic over reliable channel");
     }
