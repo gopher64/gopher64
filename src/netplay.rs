@@ -16,9 +16,6 @@ pub struct MatchboxChannel(matchbox_socket::WebRtcChannel);
 impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
-        if self.0.config().max_retransmits != Some(0) || self.0.config().ordered {
-            eprintln!("Sending GGRS traffic over reliable channel");
-        }
         let _ = self.0.try_send(encoded.into(), *addr);
     }
 
@@ -382,6 +379,11 @@ pub fn init(
                 .add_player(ggrs::PlayerType::Local, *i)
                 .unwrap();
         }
+    }
+
+    if matchbox_channel.0.config().max_retransmits != Some(0) || matchbox_channel.0.config().ordered
+    {
+        eprintln!("Sending GGRS traffic over reliable channel");
     }
 
     let mut session = session_builder.start_p2p_session(matchbox_channel).unwrap();
