@@ -11,21 +11,19 @@ impl ggrs::Config for GgrsConfig {
     type Address = matchbox_socket::PeerId;
 }
 
-pub struct MatchboxSocket(matchbox_socket::WebRtcSocket);
+pub struct MatchboxChannel(matchbox_socket::WebRtcChannel);
 
-impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxSocket {
+impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
-        let channel = self.0.get_channel_mut(0).unwrap();
-        if channel.config().max_retransmits != Some(0) || channel.config().ordered {
+        if self.0.config().max_retransmits != Some(0) || self.0.config().ordered {
             eprintln!("Sending GGRS traffic over reliable channel");
         }
-        channel.send(encoded.into(), *addr);
+        let _ = self.0.try_send(encoded.into(), *addr);
     }
 
     fn receive_all_messages(&mut self) -> Vec<(matchbox_socket::PeerId, ggrs::Message)> {
-        let channel = self.0.get_channel_mut(0).unwrap();
-        channel
+        self.0
             .receive()
             .iter()
             .filter_map(|(peer, packet)| {
@@ -323,7 +321,7 @@ pub fn init(
     input_delay: usize,
     pal: bool,
 ) -> Option<Netplay> {
-    let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
+    let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
         .add_reliable_channel()
         .build();
@@ -332,16 +330,16 @@ pub fn init(
             eprintln!("WebRTC loop failed: {}", e);
         }
     });
-    let mut matchbox_socket = MatchboxSocket(socket);
-    let mut reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
+
+    let matchbox_channel = MatchboxChannel(socket.take_channel(0).unwrap());
+    let mut reliable_channel = socket.take_channel(1).unwrap();
     let now = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(10);
     let mut player_numbers = std::collections::BTreeMap::new();
     player_numbers.insert(player_number, None);
     loop {
-        matchbox_socket.0.update_peers();
-        let peers = matchbox_socket
-            .0
+        socket.update_peers();
+        let peers = socket
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
 
@@ -386,7 +384,7 @@ pub fn init(
         }
     }
 
-    let mut session = session_builder.start_p2p_session(matchbox_socket).unwrap();
+    let mut session = session_builder.start_p2p_session(matchbox_channel).unwrap();
 
     let now = std::time::Instant::now();
     while session.current_state() != ggrs::SessionState::Running {
