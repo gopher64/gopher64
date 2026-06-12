@@ -11,21 +11,24 @@ impl ggrs::Config for GgrsConfig {
     type Address = matchbox_socket::PeerId;
 }
 
-pub struct MatchboxSocket(matchbox_socket::WebRtcSocket);
+static DISCONNECTED_PEERS: std::sync::LazyLock<
+    std::sync::Mutex<rustc_hash::FxHashSet<matchbox_socket::PeerId>>,
+> = std::sync::LazyLock::new(|| std::sync::Mutex::new(rustc_hash::FxHashSet::default()));
 
-impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxSocket {
+pub struct MatchboxChannel(matchbox_socket::WebRtcChannel);
+
+impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
-        let channel = self.0.get_channel_mut(0).unwrap();
-        if channel.config().max_retransmits != Some(0) || channel.config().ordered {
-            eprintln!("Sending GGRS traffic over reliable channel");
+        if let Err(_) = self.0.try_send(encoded.into(), *addr)
+            && let Ok(mut disconnected_peers) = DISCONNECTED_PEERS.lock()
+        {
+            disconnected_peers.insert(*addr);
         }
-        channel.send(encoded.into(), *addr);
     }
 
     fn receive_all_messages(&mut self) -> Vec<(matchbox_socket::PeerId, ggrs::Message)> {
-        let channel = self.0.get_channel_mut(0).unwrap();
-        channel
+        self.0
             .receive()
             .iter()
             .filter_map(|(peer, packet)| {
@@ -61,7 +64,12 @@ fn send_message(netplay: &mut Netplay, message: NetplayMessage) {
     let chunks = data.chunks(16384).collect::<Vec<&[u8]>>();
     for peer in netplay.peers.iter() {
         for chunk in chunks.iter() {
-            netplay.reliable_channel.send(chunk.to_vec().into(), *peer);
+            if let Err(e) = netplay
+                .reliable_channel
+                .try_send(chunk.to_vec().into(), *peer)
+            {
+                eprintln!("Failed to send message: {}", e);
+            }
         }
     }
 }
@@ -86,6 +94,7 @@ fn process_reliable_messages(netplay: &mut Netplay) {
                     .messages
                     .insert(decoded_message.name, decoded_message.data);
                 netplay.incoming_message.clear();
+                check_input_delay(netplay);
             }
         }
     }
@@ -119,7 +128,9 @@ fn send_player_number(
     };
     let data = postcard::to_stdvec(&message).unwrap();
     for peer in peers {
-        channel.send(data.clone().into(), peer);
+        if let Err(e) = channel.try_send(data.clone().into(), peer) {
+            eprintln!("Failed to send message: {}", e);
+        }
     }
 }
 
@@ -226,6 +237,23 @@ pub fn in_rollback(netplay: Option<&Netplay>) -> bool {
     }
 }
 
+fn process_disconnected_peers(netplay: &mut Netplay) {
+    if let Ok(mut disconnected_peers) = DISCONNECTED_PEERS.lock() {
+        for addr in disconnected_peers.drain() {
+            for handle in netplay.session.handles_by_address(addr) {
+                if let Err(e) = netplay.session.disconnect_player(handle) {
+                    eprintln!("Error disconnecting player: {}", e);
+                } else {
+                    ui::video::onscreen_message(
+                        &format!("Player {} disconnected", handle + 1),
+                        ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+                    );
+                }
+            }
+        }
+    }
+}
+
 pub fn process_requests(
     device: &mut device::Device,
 ) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
@@ -260,6 +288,7 @@ pub fn process_requests(
 
 fn process_netplay(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
+    process_disconnected_peers(netplay);
 
     netplay.session.poll_remote_clients();
     for event in netplay.session.events() {
@@ -267,9 +296,8 @@ fn process_netplay(device: &mut device::Device) {
             ggrs::GgrsEvent::Synchronizing { .. } => {}
             ggrs::GgrsEvent::Synchronized { .. } => {}
             ggrs::GgrsEvent::Disconnected { .. } => {
-                eprintln!("peer disconnected");
                 ui::video::onscreen_message(
-                    "Peer disconnected",
+                    "Lost connection to peer",
                     ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
                 );
             }
@@ -293,7 +321,6 @@ fn process_netplay(device: &mut device::Device) {
     }
 
     process_reliable_messages(netplay);
-    check_input_delay(netplay);
     advance_frame(device);
 }
 
@@ -323,7 +350,7 @@ pub fn init(
     input_delay: usize,
     pal: bool,
 ) -> Option<Netplay> {
-    let (socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
+    let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
         .add_reliable_channel()
         .build();
@@ -332,16 +359,16 @@ pub fn init(
             eprintln!("WebRTC loop failed: {}", e);
         }
     });
-    let mut matchbox_socket = MatchboxSocket(socket);
-    let mut reliable_channel = matchbox_socket.0.take_channel(1).unwrap();
+
+    let matchbox_channel = MatchboxChannel(socket.take_channel(0).unwrap());
+    let mut reliable_channel = socket.take_channel(1).unwrap();
     let now = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(10);
     let mut player_numbers = std::collections::BTreeMap::new();
     player_numbers.insert(player_number, None);
     loop {
-        matchbox_socket.0.update_peers();
-        let peers = matchbox_socket
-            .0
+        socket.update_peers();
+        let peers = socket
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
 
@@ -386,7 +413,12 @@ pub fn init(
         }
     }
 
-    let mut session = session_builder.start_p2p_session(matchbox_socket).unwrap();
+    if matchbox_channel.0.config().max_retransmits != Some(0) || matchbox_channel.0.config().ordered
+    {
+        eprintln!("Sending GGRS traffic over reliable channel");
+    }
+
+    let mut session = session_builder.start_p2p_session(matchbox_channel).unwrap();
 
     let now = std::time::Instant::now();
     while session.current_state() != ggrs::SessionState::Running {

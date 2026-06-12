@@ -150,10 +150,9 @@ pub fn load_game(
         let tx_ptr = Box::into_raw(Box::new(tx)) as *mut std::ffi::c_void;
         ra_load_game(rom.as_ptr(), rom_size, tx_ptr);
     };
-    let join_handle = std::thread::spawn(move || {
+    tokio::task::block_in_place(move || {
         rx.blocking_recv().unwrap();
     });
-    join_handle.join().unwrap();
 
     let mut c_title = std::ptr::null();
     let mut c_image_url = std::ptr::null();
