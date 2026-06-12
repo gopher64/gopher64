@@ -93,7 +93,10 @@ fn process_reliable_messages(netplay: &mut Netplay) {
 fn check_disconnect(netplay: &mut Netplay) {
     if let Some(data) = netplay.messages.remove("disconnect") {
         let remote_player_number = usize::from_be_bytes(data.try_into().unwrap());
-        let _ = netplay.session.disconnect_player(remote_player_number);
+        netplay
+            .session
+            .disconnect_player(remote_player_number)
+            .unwrap();
         ui::video::onscreen_message(
             &format!("Player {} disconnected", remote_player_number + 1),
             ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
