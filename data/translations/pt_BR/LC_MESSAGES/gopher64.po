@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-06-05 12:03+0000\n"
+"POT-Creation-Date: 2026-06-12 06:51+0000\n"
 "PO-Revision-Date: 2026-05-11 18:11-3000\n"
 "Last-Translator: EDUARDO CARVALHO <eduardotcarvalho@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,37 +47,37 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Doações (via GitHub)"
 
-#: src/ui/gui/appwindow.slint:147
+#: src/ui/gui/appwindow.slint:148
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Jogo Local"
 
-#: src/ui/gui/appwindow.slint:151
+#: src/ui/gui/appwindow.slint:152
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Configurar Controle"
 
-#: src/ui/gui/appwindow.slint:155
+#: src/ui/gui/appwindow.slint:156
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/appwindow.slint:159
+#: src/ui/gui/appwindow.slint:160
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Trapaças"
 
-#: src/ui/gui/appwindow.slint:163
+#: src/ui/gui/appwindow.slint:164
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:167
+#: src/ui/gui/appwindow.slint:168
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Configurações"
 
-#: src/ui/gui/appwindow.slint:171
+#: src/ui/gui/appwindow.slint:172
 msgctxt "Menu"
 msgid "About"
 msgstr "Sobre"
@@ -346,67 +346,72 @@ msgctxt "Netplay"
 msgid "Provide Feedback"
 msgstr "Fornecer Feedback"
 
-#: src/ui/gui/netplay_wait.slint:16
+#: src/ui/gui/netplay_wait.slint:17
 msgctxt "NetplayWait"
 msgid "Netplay: Waiting Room"
 msgstr "Netplay: Aguardando Sala"
 
-#: src/ui/gui/netplay_wait.slint:28
+#: src/ui/gui/netplay_wait.slint:29
 msgctxt "NetplayWait"
 msgid "Session Name:"
 msgstr "Nome da Sessão:"
 
-#: src/ui/gui/netplay_wait.slint:34
+#: src/ui/gui/netplay_wait.slint:35
 msgctxt "NetplayWait"
 msgid "Game Name:"
 msgstr "Nome do Jogo:"
 
-#: src/ui/gui/netplay_wait.slint:44
+#: src/ui/gui/netplay_wait.slint:45
 msgctxt "NetplayWait"
 msgid "Player 1:"
 msgstr "Jogador 1"
 
-#: src/ui/gui/netplay_wait.slint:48
+#: src/ui/gui/netplay_wait.slint:49
 msgctxt "NetplayWait"
 msgid "Player 2:"
 msgstr "Jogador 2:"
 
-#: src/ui/gui/netplay_wait.slint:54
+#: src/ui/gui/netplay_wait.slint:55
 msgctxt "NetplayWait"
 msgid "Player 3:"
 msgstr "Jogador 3:"
 
-#: src/ui/gui/netplay_wait.slint:58
+#: src/ui/gui/netplay_wait.slint:59
 msgctxt "NetplayWait"
 msgid "Player 4:"
 msgstr "Jogador 4:"
 
-#: src/ui/gui/netplay_wait.slint:72
+#: src/ui/gui/netplay_wait.slint:73
 msgctxt "NetplayWait"
 msgid "Enter chat message"
 msgstr "Escrever mensagem no chat"
 
-#: src/ui/gui/netplay_wait.slint:83
+#: src/ui/gui/netplay_wait.slint:84
 msgctxt "NetplayWait"
 msgid "Send Message"
 msgstr "Enviar Mensagem"
 
-#: src/ui/gui/netplay_wait.slint:100
+#: src/ui/gui/netplay_wait.slint:101
 msgctxt "NetplayWait"
 msgid "Local Input Delay:"
 msgstr "Atraso de entrada local:"
 
-#: src/ui/gui/netplay_wait.slint:115
+#: src/ui/gui/netplay_wait.slint:117
 msgctxt "NetplayWait"
 msgid "Recommended: "
 msgstr "Recomendado: "
 
-#: src/ui/gui/netplay_wait.slint:123
+#: src/ui/gui/netplay_wait.slint:126
 msgctxt "NetplayWait"
 msgid "Start Game"
 msgstr "Iniciar jogo"
 
-#: src/ui/gui/netplay_wait.slint:131
+#: src/ui/gui/netplay_wait.slint:126
+msgctxt "NetplayWait"
+msgid "Waiting for P2P mesh "
+msgstr "Aguardando malha P2P "
+
+#: src/ui/gui/netplay_wait.slint:134
 msgctxt "NetplayWait"
 msgid "Cancel"
 msgstr "Cancelar"
