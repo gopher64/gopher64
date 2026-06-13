@@ -3,6 +3,13 @@ use crate::savestates;
 use crate::ui;
 use sha2::digest::Digest;
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RtcIceServerConfig {
+    pub urls: Vec<String>,
+    pub username: Option<String>,
+    pub credential: Option<String>,
+}
+
 pub struct GgrsConfig;
 impl ggrs::Config for GgrsConfig {
     type Input = ui::input::InputData;
@@ -346,10 +353,24 @@ pub fn init(
     input_delay: usize,
     pal: bool,
 ) -> Option<Netplay> {
-    let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
+    let mut builder = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
-        .add_reliable_channel()
-        .build();
+        .add_reliable_channel();
+
+    if let ice_config_path = ui::get_dirs().cache_dir.join("ice_config.json")
+        && let Ok(ice_config) = std::fs::read(&ice_config_path)
+        && let Ok(ice_config) = serde_json::from_slice::<RtcIceServerConfig>(&ice_config)
+    {
+        builder = builder.ice_server(matchbox_socket::RtcIceServerConfig {
+            urls: ice_config.urls,
+            username: ice_config.username,
+            credential: ice_config.credential,
+        });
+    } else {
+        eprintln!("Using default ICE config");
+    }
+
+    let (mut socket, loop_fut) = builder.build();
     tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
             eprintln!("WebRTC loop failed: {}", e);
