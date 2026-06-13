@@ -169,6 +169,8 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         let mut shutdown_tx = None;
         let mut usb_handle = None;
 
+        let ice_config_path = dirs.cache_dir.join("ice_config.json");
+
         if let Some(server_addr) = args.netplay_server_addr
             && let Some(player_number) = args.netplay_player_number
             && let Some(number_of_players) = args.netplay_number_of_players
@@ -179,6 +181,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 player_number,
                 number_of_players,
                 input_delay,
+                ice_config_path.clone(),
                 device::cart::rom::is_system_pal(&rom_contents),
             );
             if device.netplay.is_none() {
@@ -253,7 +256,9 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         #[cfg(not(target_os = "android"))]
         retroachievements::shutdown_client();
 
-        if device.netplay.is_none() {
+        if device.netplay.is_some() {
+            netplay::close(ice_config_path);
+        } else {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
                     && !device.ui.config.input.gb_ram_path[i].is_empty()

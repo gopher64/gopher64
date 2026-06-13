@@ -351,14 +351,14 @@ pub fn init(
     player_number: usize,
     number_of_players: usize,
     input_delay: usize,
+    ice_config_path: std::path::PathBuf,
     pal: bool,
 ) -> Option<Netplay> {
     let mut builder = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
         .add_reliable_channel();
 
-    if let ice_config_path = ui::get_dirs().cache_dir.join("ice_config.json")
-        && let Ok(ice_config) = std::fs::read(&ice_config_path)
+    if let Ok(ice_config) = std::fs::read(&ice_config_path)
         && let Ok(ice_config) = serde_json::from_slice::<RtcIceServerConfig>(&ice_config)
     {
         builder = builder.ice_server(matchbox_socket::RtcIceServerConfig {
@@ -471,4 +471,8 @@ pub fn init(
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
     })
+}
+
+pub fn close(ice_config_path: std::path::PathBuf) {
+    let _ = std::fs::remove_file(ice_config_path);
 }
