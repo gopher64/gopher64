@@ -148,7 +148,7 @@ fn manage_websocket(
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
 ) {
-    let mut request = "ws://localhost:44000".into_client_request().unwrap();
+    let mut request = "wss://netplay.gopher64.com".into_client_request().unwrap();
     request
         .headers_mut()
         .insert("Authorization", env!("NETPLAY_ID").parse().unwrap());
