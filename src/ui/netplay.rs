@@ -544,6 +544,22 @@ fn update_ping(
     });
 }
 
+fn update_ice_config(ice_server_config: Option<RtcIceServerConfig>) {
+    tokio::spawn(async move {
+        let ice_config_path = ui::get_dirs().cache_dir.join("ice_config.json");
+        if let Some(ice_server_config) = ice_server_config {
+            tokio::fs::write(
+                &ice_config_path,
+                serde_json::to_vec(&ice_server_config).unwrap(),
+            )
+            .await
+            .unwrap();
+        } else {
+            let _ = tokio::fs::remove_file(&ice_config_path).await;
+        }
+    });
+}
+
 #[allow(clippy::too_many_arguments)]
 fn setup_wait_window(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
@@ -557,6 +573,7 @@ fn setup_wait_window(
     game_settings: ui::GameSettings,
     app: &AppWindow,
 ) {
+    update_ice_config(ice_server_config.clone());
     update_ping(
         server_addr.clone(),
         ice_server_config.clone(),

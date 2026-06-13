@@ -346,10 +346,31 @@ pub fn init(
     input_delay: usize,
     pal: bool,
 ) -> Option<Netplay> {
-    let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
+    let ice_config_path = ui::get_dirs().cache_dir.join("ice_config.json");
+    let ice_config = if ice_config_path.exists() {
+        Some(
+            serde_json::from_slice::<ui::netplay::RtcIceServerConfig>(
+                &std::fs::read(&ice_config_path).unwrap(),
+            )
+            .unwrap(),
+        )
+    } else {
+        None
+    };
+
+    let mut builder = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
-        .add_reliable_channel()
-        .build();
+        .add_reliable_channel();
+
+    if let Some(ice_config) = ice_config {
+        builder = builder.ice_server(matchbox_socket::RtcIceServerConfig {
+            urls: ice_config.urls,
+            username: ice_config.username,
+            credential: ice_config.credential,
+        });
+    }
+
+    let (mut socket, loop_fut) = builder.build();
     tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
             eprintln!("WebRTC loop failed: {}", e);
