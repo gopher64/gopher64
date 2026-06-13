@@ -491,10 +491,9 @@ fn update_ping(
                                 let ping = (now - message.timestamp) as f64 / 2.0; // calculate one-way latency
                                 pings.push(ping);
                                 if pings.len() > message.num_of_peers * 4 {
-                                    // once we have enough samples, remove the highest 2 and return the next highest
+                                    // once we have enough samples, average the 3 highest values
                                     pings.sort_by(f64::total_cmp);
-                                    pings.truncate(pings.len() - 2);
-                                    let ping = *pings.last().unwrap();
+                                    let ping_avg = pings.iter().rev().take(3).sum::<f64>() / 3.0;
                                     pings.clear();
                                     weak_app
                                         .upgrade_in_event_loop(move |handle| {
@@ -503,7 +502,7 @@ fn update_ping(
                                             } else {
                                                 60.0
                                             };
-                                            let latency_frames = (ping / (1000.0 / refresh_rate)).ceil() as i32;
+                                            let latency_frames = (ping_avg / (1000.0 / refresh_rate)).ceil() as i32;
                                             let recommendation =
                                                 (latency_frames + 1).min(8);
 
