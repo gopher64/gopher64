@@ -488,11 +488,11 @@ fn update_ping(
                                     .duration_since(std::time::UNIX_EPOCH)
                                     .unwrap()
                                     .as_millis();
-                                let ping = (now - message.timestamp) / 2; // calculate one-way latency
+                                let ping = (now - message.timestamp) as f64 / 2.0; // calculate one-way latency
                                 pings.push(ping);
                                 if pings.len() > message.num_of_peers * 4 {
                                     // once we have enough samples, remove the highest 2 and return the next highest
-                                    pings.sort();
+                                    pings.sort_by(f64::total_cmp);
                                     pings.truncate(pings.len() - 2);
                                     let ping = *pings.last().unwrap();
                                     pings.clear();
@@ -503,7 +503,7 @@ fn update_ping(
                                             } else {
                                                 60.0
                                             };
-                                            let latency_frames = (ping as f64 / (1000.0 / refresh_rate)).ceil() as i32;
+                                            let latency_frames = (ping / (1000.0 / refresh_rate)).ceil() as i32;
                                             let recommendation =
                                                 (latency_frames + 1).min(8);
 
