@@ -25,6 +25,13 @@ enum MessageType {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RtcIceServerConfig {
+    pub urls: Vec<String>,
+    pub username: Option<String>,
+    pub credential: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct NetplaySession {
     password: Option<String>,
     game_name: Option<String>,
@@ -35,6 +42,7 @@ struct NetplaySession {
     players: Vec<String>,
     server_address: Option<String>,
     input_delay: Option<usize>,
+    ice_server_config: Option<RtcIceServerConfig>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -140,7 +148,7 @@ fn manage_websocket(
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
 ) {
-    let mut request = "wss://netplay.gopher64.com".into_client_request().unwrap();
+    let mut request = "ws://localhost:44000".into_client_request().unwrap();
     request
         .headers_mut()
         .insert("Authorization", env!("NETPLAY_ID").parse().unwrap());
@@ -274,6 +282,7 @@ fn create_session(
             players: vec![player_name],
             server_address: None,
             input_delay: None,
+            ice_server_config: None,
         };
         let create_session = NetplayLobbyMessage {
             message_type: MessageType::RequestCreateSession,
@@ -321,6 +330,7 @@ fn create_session(
                                 close_ping_rx,
                                 session.server_address.as_ref().unwrap().clone(),
                                 session_name.into(),
+                                session.ice_server_config.clone(),
                                 session.game_name.as_ref().unwrap().into(),
                                 handle.get_netplay_rom_path(),
                                 ui::GameSettings {
@@ -384,6 +394,7 @@ fn join_session(
         players: vec![player_name],
         server_address: None,
         input_delay: None,
+        ice_server_config: None,
     };
     let join_session = NetplayLobbyMessage {
         message_type: MessageType::RequestJoinSession,
@@ -396,12 +407,20 @@ fn join_session(
 
 fn update_ping(
     server_addr: String,
+    ice_server_config: Option<RtcIceServerConfig>,
     mut close_ping_rx: tokio::sync::broadcast::Receiver<()>,
     weak_app: slint::Weak<AppWindow>,
 ) {
-    let (mut socket, loop_fut) = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
-        .add_unreliable_channel()
-        .build();
+    let mut builder =
+        matchbox_socket::WebRtcSocketBuilder::new(server_addr).add_unreliable_channel();
+    if let Some(ice_server_config) = ice_server_config {
+        builder = builder.ice_server(matchbox_socket::RtcIceServerConfig {
+            urls: ice_server_config.urls,
+            username: ice_server_config.username,
+            credential: ice_server_config.credential,
+        });
+    }
+    let (mut socket, loop_fut) = builder.build();
 
     tokio::spawn(async move {
         if let Err(e) = loop_fut.await {
@@ -532,12 +551,18 @@ fn setup_wait_window(
     close_ping_rx: tokio::sync::broadcast::Receiver<()>,
     server_addr: String,
     session_name: slint::SharedString,
+    ice_server_config: Option<RtcIceServerConfig>,
     game_name: slint::SharedString,
     rom_path: slint::SharedString,
     game_settings: ui::GameSettings,
     app: &AppWindow,
 ) {
-    update_ping(server_addr.clone(), close_ping_rx, app.as_weak());
+    update_ping(
+        server_addr.clone(),
+        ice_server_config.clone(),
+        close_ping_rx,
+        app.as_weak(),
+    );
 
     app.set_netplay_session_name(session_name);
     app.set_netplay_game_name(game_name);
@@ -746,6 +771,7 @@ fn setup_join_window(
                                 close_ping_rx.resubscribe(),
                                 session.server_address.as_ref().unwrap().clone(),
                                 session_name.into(),
+                                session.ice_server_config.clone(),
                                 session.game_name.as_ref().unwrap().into(),
                                 handle.get_netplay_rom_path(),
                                 ui::GameSettings {
