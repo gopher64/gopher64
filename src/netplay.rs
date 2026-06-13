@@ -366,6 +366,8 @@ pub fn init(
             username: ice_config.username,
             credential: ice_config.credential,
         });
+    } else {
+        eprintln!("Using default ICE config");
     }
 
     let (mut socket, loop_fut) = builder.build();
