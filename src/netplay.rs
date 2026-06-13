@@ -353,20 +353,14 @@ pub fn init(
     input_delay: usize,
     pal: bool,
 ) -> Option<Netplay> {
-    let ice_config_path = ui::get_dirs().cache_dir.join("ice_config.json");
-    let ice_config = if let Ok(ice_config) = std::fs::read(&ice_config_path)
-        && let Ok(ice_config) = serde_json::from_slice::<RtcIceServerConfig>(&ice_config)
-    {
-        Some(ice_config)
-    } else {
-        None
-    };
-
     let mut builder = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
         .add_unreliable_channel()
         .add_reliable_channel();
 
-    if let Some(ice_config) = ice_config {
+    if let ice_config_path = ui::get_dirs().cache_dir.join("ice_config.json")
+        && let Ok(ice_config) = std::fs::read(&ice_config_path)
+        && let Ok(ice_config) = serde_json::from_slice::<RtcIceServerConfig>(&ice_config)
+    {
         builder = builder.ice_server(matchbox_socket::RtcIceServerConfig {
             urls: ice_config.urls,
             username: ice_config.username,
