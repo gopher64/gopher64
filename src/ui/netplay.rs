@@ -503,8 +503,9 @@ fn update_ping(
                                             } else {
                                                 60.0
                                             };
+                                            let latency_frames = (ping as f64 / (1000.0 / refresh_rate)).ceil() as i32;
                                             let recommendation =
-                                                ((ping as f64 / (1000.0 / refresh_rate)) as i32 + 1).min(8);
+                                                (latency_frames + 1).min(8);
 
                                             if handle.get_netplay_recommended_delay() == 0 {
                                                 handle.set_netplay_input_delay(recommendation);
