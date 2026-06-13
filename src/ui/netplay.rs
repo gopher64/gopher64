@@ -413,6 +413,8 @@ fn update_ping(
             username: ice_server_config.username,
             credential: ice_server_config.credential,
         });
+    } else {
+        eprintln!("Using default ICE config");
     }
     let (mut socket, loop_fut) = builder.build();
 
