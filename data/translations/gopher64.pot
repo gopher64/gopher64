@@ -392,7 +392,7 @@ msgstr ""
 msgctxt "NetplayWait"
 msgid ""
 "Setting the input delay too low will cause the game to lag.\nYou can lower "
-"the input delay in-game by pressing Alt+[ and raise it with Alt+]"
+"the input delay in-game by pressing Alt+[ and raise it with Alt+]."
 msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:101
