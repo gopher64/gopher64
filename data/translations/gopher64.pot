@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-06-12 06:51+0000\n"
+"POT-Creation-Date: 2026-06-13 07:48+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -386,6 +386,13 @@ msgstr ""
 #: src/ui/gui/netplay_wait.slint:84
 msgctxt "NetplayWait"
 msgid "Send Message"
+msgstr ""
+
+#: src/ui/gui/netplay_wait.slint:94
+msgctxt "NetplayWait"
+msgid ""
+"Setting the input delay too low will cause the game to lag.\nYou can lower "
+"the input delay in-game by pressing Alt+[ and raise it with Alt+]"
 msgstr ""
 
 #: src/ui/gui/netplay_wait.slint:101
