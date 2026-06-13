@@ -118,6 +118,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 pub fn update_screen(device: &mut device::Device) {
     if !netplay::in_rollback(device.netplay.as_ref()) {
         ui::video::render_frame();
+        unsafe { sdl3_sys::events::SDL_PumpEvents() };
     }
 
     let (speed_limiter_toggled, paused) = ui::video::check_callback(device);
@@ -137,7 +138,6 @@ pub fn update_screen(device: &mut device::Device) {
     }
 
     if !netplay::in_rollback(device.netplay.as_ref()) {
-        unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::update_screen();
         device.speed_limiter.frame_counter += 1;
         let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
