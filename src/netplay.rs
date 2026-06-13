@@ -3,6 +3,13 @@ use crate::savestates;
 use crate::ui;
 use sha2::digest::Digest;
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RtcIceServerConfig {
+    pub urls: Vec<String>,
+    pub username: Option<String>,
+    pub credential: Option<String>,
+}
+
 pub struct GgrsConfig;
 impl ggrs::Config for GgrsConfig {
     type Input = ui::input::InputData;
@@ -347,13 +354,10 @@ pub fn init(
     pal: bool,
 ) -> Option<Netplay> {
     let ice_config_path = ui::get_dirs().cache_dir.join("ice_config.json");
-    let ice_config = if ice_config_path.exists() {
-        Some(
-            serde_json::from_slice::<ui::netplay::RtcIceServerConfig>(
-                &std::fs::read(&ice_config_path).unwrap(),
-            )
-            .unwrap(),
-        )
+    let ice_config = if let Ok(ice_config) = std::fs::read(&ice_config_path)
+        && let Ok(ice_config) = serde_json::from_slice::<RtcIceServerConfig>(&ice_config)
+    {
+        Some(ice_config)
     } else {
         None
     };

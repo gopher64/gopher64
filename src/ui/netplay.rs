@@ -1,4 +1,5 @@
 use crate::device;
+use crate::netplay::RtcIceServerConfig;
 use crate::ui;
 use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings};
 use futures::{SinkExt, StreamExt};
@@ -22,13 +23,6 @@ enum MessageType {
     ResponseListSessions,
     SendChatMessage,
     ReceiveChatMessage,
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct RtcIceServerConfig {
-    pub urls: Vec<String>,
-    pub username: Option<String>,
-    pub credential: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -576,7 +570,7 @@ fn setup_wait_window(
     update_ice_config(ice_server_config.clone());
     update_ping(
         server_addr.clone(),
-        ice_server_config.clone(),
+        ice_server_config,
         close_ping_rx,
         app.as_weak(),
     );
