@@ -122,7 +122,7 @@ fn send_player_number(
 ) {
     let message = NetplayMessage {
         name: "player_number".to_string(),
-        data: player_number.to_be_bytes().to_vec(),
+        data: (player_number as u64).to_be_bytes().to_vec(),
     };
     let data = postcard::to_stdvec(&message).unwrap();
     for peer in peers {
@@ -140,7 +140,7 @@ fn get_player_numbers(
         let message = postcard::from_bytes::<NetplayMessage>(&data).unwrap();
         if message.name == "player_number" {
             player_numbers.insert(
-                usize::from_be_bytes(message.data.try_into().unwrap()),
+                u64::from_be_bytes(message.data.try_into().unwrap()) as usize,
                 Some(peer),
             );
         }
@@ -190,7 +190,7 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
 pub fn send_input_delay(netplay: &mut Netplay, input_delay: usize) {
     let message = NetplayMessage {
         name: "input_delay".to_string(),
-        data: input_delay.to_be_bytes().to_vec(),
+        data: (input_delay as u64).to_be_bytes().to_vec(),
     };
     send_message(netplay, message);
     change_input_delay(netplay, input_delay);
@@ -212,7 +212,7 @@ fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
 
 fn check_input_delay(netplay: &mut Netplay) {
     if let Some(data) = netplay.messages.remove("input_delay") {
-        let input_delay = usize::from_be_bytes(data.try_into().unwrap());
+        let input_delay = u64::from_be_bytes(data.try_into().unwrap()) as usize;
         if input_delay != netplay.input_delay {
             change_input_delay(netplay, input_delay);
         }
