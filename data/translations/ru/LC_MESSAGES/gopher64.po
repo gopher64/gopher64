@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-12 06:51+0000\n"
+"POT-Creation-Date: 2026-06-13 07:48+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Russian\n"
@@ -388,6 +388,17 @@ msgstr "Введите сообщение чата"
 msgctxt "NetplayWait"
 msgid "Send Message"
 msgstr "Отправить сообщение"
+
+#: src/ui/gui/netplay_wait.slint:94
+msgctxt "NetplayWait"
+msgid ""
+"Setting the input delay too low will cause the game to lag.\n"
+"You can lower the input delay in-game by pressing Alt+[ and raise it with "
+"Alt+]."
+msgstr ""
+"Слишком низкая задержка ввода вызовет лаги в игре.\n"
+"Вы можете уменьшить задержку ввода в игре, нажав Alt+[, и увеличить её с "
+"помощью Alt+]."
 
 #: src/ui/gui/netplay_wait.slint:101
 msgctxt "NetplayWait"

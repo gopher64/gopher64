@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-12 06:51+0000\n"
+"POT-Creation-Date: 2026-06-13 07:48+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Dutch (Netherlands)\n"
@@ -389,6 +389,17 @@ msgstr "Chatbericht invoeren"
 msgctxt "NetplayWait"
 msgid "Send Message"
 msgstr "Bericht verzenden"
+
+#: src/ui/gui/netplay_wait.slint:94
+msgctxt "NetplayWait"
+msgid ""
+"Setting the input delay too low will cause the game to lag.\n"
+"You can lower the input delay in-game by pressing Alt+[ and raise it with "
+"Alt+]."
+msgstr ""
+"Een te lage invoervertraging zorgt ervoor dat het spel gaat haperen.\n"
+"Je kunt de invoervertraging in het spel verlagen met Alt+[ en verhogen met "
+"Alt+]."
 
 #: src/ui/gui/netplay_wait.slint:101
 msgctxt "NetplayWait"
