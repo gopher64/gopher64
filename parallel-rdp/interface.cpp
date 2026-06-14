@@ -622,10 +622,10 @@ static void render_frame(Vulkan::Device &device) {
     cmd->set_depth_test(false, false);
     cmd->set_cull_mode(VK_CULL_MODE_NONE);
 
+    VkViewport vp = cmd->get_viewport();
     // If we don't have an image, we just get a cleared screen in the render
     // pass.
     if (image) {
-      VkViewport vp = cmd->get_viewport();
       calculate_viewport(&vp.x, &vp.y, &vp.width, &vp.height,
                          image->get_height() / gfx_info.upscale);
 
@@ -646,33 +646,32 @@ static void render_frame(Vulkan::Device &device) {
       // The vertices are constants in the shader.
       // Draws fullscreen quad using oversized triangle.
       cmd->draw(3);
-
-      if (!messages.empty()) {
-        Message *message = &messages.front();
-        if (!message->image) {
-          message->image = create_message_image(device, vp.width, message_font,
-                                                message->message.c_str());
-          SDL_AddTimer(message->milliseconds, pop_message_callback, NULL);
-        }
-        cmd->set_texture(0, 0, message->image->get_view(),
-                         Vulkan::StockSampler::NearestClamp);
-        vp.x = floor(vp.x + (vp.width - message->image->get_width()) / 2);
-        vp.y = vp.y + vp.height - message->image->get_height();
-        vp.height = message->image->get_height();
-        vp.width = message->image->get_width();
-        cmd->set_viewport(vp);
-
-        cmd->draw(3);
-      } else if (achievement_progress_indicator_image) {
-        draw_indicator(cmd, achievement_progress_indicator_image, vp);
-      } else if (achievement_challenge_indicator_image &&
-                 display_challenge_indicator) {
-        draw_indicator(cmd, achievement_challenge_indicator_image, vp);
+    }
+    if (!messages.empty()) {
+      Message *message = &messages.front();
+      if (!message->image) {
+        message->image = create_message_image(device, vp.width, message_font,
+                                              message->message.c_str());
+        SDL_AddTimer(message->milliseconds, pop_message_callback, NULL);
       }
+      cmd->set_texture(0, 0, message->image->get_view(),
+                       Vulkan::StockSampler::NearestClamp);
+      vp.x = floor(vp.x + (vp.width - message->image->get_width()) / 2);
+      vp.y = vp.y + vp.height - message->image->get_height();
+      vp.height = message->image->get_height();
+      vp.width = message->image->get_width();
+      cmd->set_viewport(vp);
 
-      if (messages.empty() && display_fps && fps_image) {
-        draw_fps(cmd, vp);
-      }
+      cmd->draw(3);
+    } else if (achievement_progress_indicator_image) {
+      draw_indicator(cmd, achievement_progress_indicator_image, vp);
+    } else if (achievement_challenge_indicator_image &&
+               display_challenge_indicator) {
+      draw_indicator(cmd, achievement_challenge_indicator_image, vp);
+    }
+
+    if (messages.empty() && display_fps && fps_image) {
+      draw_fps(cmd, vp);
     }
 
     cmd->end_render_pass();

@@ -43,6 +43,14 @@ impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     }
 }
 
+pub struct NetplayConfig {
+    pub server_addr: String,
+    pub player_number: usize,
+    pub number_of_players: usize,
+    pub input_delay: usize,
+    pub ice_config_path: std::path::PathBuf,
+}
+
 pub struct Netplay {
     pub session: ggrs::P2PSession<GgrsConfig>,
     pub reliable_channel: matchbox_socket::WebRtcChannel,
@@ -56,6 +64,7 @@ pub struct Netplay {
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
     pub incoming_message: Vec<u8>,
     pub disconnected_peers: tokio::sync::mpsc::Receiver<matchbox_socket::PeerId>,
+    pub ice_config_path: std::path::PathBuf,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -387,6 +396,12 @@ pub fn init(
     let timeout = std::time::Duration::from_secs(30);
     let mut player_numbers = std::collections::BTreeMap::new();
     player_numbers.insert(player_number, None);
+
+    ui::video::onscreen_message(
+        "Connecting to netplay peers...",
+        ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+    );
+
     loop {
         socket.update_peers();
         let peers = socket
@@ -403,6 +418,9 @@ pub fn init(
             eprintln!("Could not connect to netplay peers");
             return None;
         }
+        unsafe { sdl3_sys::events::SDL_PumpEvents() };
+        ui::video::render_frame();
+        ui::video::update_screen();
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
 
@@ -449,6 +467,7 @@ pub fn init(
             eprintln!("Could not start netplay session");
             return None;
         }
+        unsafe { sdl3_sys::events::SDL_PumpEvents() };
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
 
@@ -470,9 +489,10 @@ pub fn init(
         requests: std::collections::VecDeque::new(),
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
+        ice_config_path,
     })
 }
 
-pub fn close(ice_config_path: std::path::PathBuf) {
-    let _ = std::fs::remove_file(ice_config_path);
+pub fn close(netplay: &Netplay) {
+    let _ = std::fs::remove_file(&netplay.ice_config_path);
 }

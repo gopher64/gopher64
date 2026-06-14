@@ -1,5 +1,4 @@
 use crate::device;
-use crate::netplay;
 use crate::ui;
 use sha2::{Digest, Sha256};
 
@@ -122,18 +121,6 @@ pub fn dma_write(
 }
 
 pub fn init(device: &mut device::Device, rom_file: &[u8]) {
-    device.cart.rtc_timestamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
-    if let Some(netplay) = &mut device.netplay {
-        if netplay.player_number == 0 {
-            netplay::send_rtc(netplay, device.cart.rtc_timestamp);
-        } else {
-            device.cart.rtc_timestamp = netplay::receive_rtc(netplay);
-        }
-    }
-
     device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 1;
 
     device.cart.rom = rom_file.to_vec();
