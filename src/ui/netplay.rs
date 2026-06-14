@@ -519,7 +519,7 @@ fn update_ping(
                                             };
                                             let latency_frames = (ping_avg / (1000.0 / refresh_rate)).ceil() as i32;
                                             let recommendation =
-                                                (latency_frames + 1).min(8);
+                                                (latency_frames + 1).min(16);
 
                                             if handle.get_netplay_recommended_delay() == 0 {
                                                 handle.set_netplay_input_delay(recommendation);
