@@ -1,4 +1,4 @@
-import { VerticalBox, HorizontalBox, TextEdit, ComboBox, GroupBox, LineEdit, Button, GridBox, ScrollView } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox, TextEdit, SpinBox, GroupBox, LineEdit, Button, GridBox, ScrollView } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 import { Page } from "page.slint";
 
@@ -103,12 +103,13 @@ export component NetplayWait inherits Page {
                         vertical-alignment: center;
                     }
 
-                    ComboBox {
-                        model: ["0", "1", "2", "3", "4", "5", "6", "7", "8"];
-                        current-index: NetplayWaitData.input_delay;
+                    SpinBox {
+                        minimum: 0;
+                        maximum: 16;
+                        value: NetplayWaitData.input_delay;
                         enabled: NetplayWaitData.recommended_delay != 0;
-                        selected => {
-                            NetplayWaitData.input_delay = self.current-index;
+                        edited => {
+                            NetplayWaitData.input_delay = self.value;
                         }
 
                     }
