@@ -26,6 +26,12 @@ enum MessageType {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ServerAddresses {
+    pub lobby: String,
+    pub game: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct NetplaySession {
     password: Option<String>,
     game_name: Option<String>,
@@ -34,7 +40,7 @@ struct NetplaySession {
     client_version: Option<String>,
     features: Option<std::collections::HashMap<String, String>>,
     players: Vec<String>,
-    server_address: Option<String>,
+    server_address: Option<ServerAddresses>,
     input_delay: Option<usize>,
     ice_server_config: Option<RtcIceServerConfig>,
 }
@@ -561,7 +567,7 @@ fn setup_wait_window(
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     close_ping_rx: tokio::sync::broadcast::Receiver<()>,
-    server_addr: String,
+    server_addresses: ServerAddresses,
     session_name: slint::SharedString,
     ice_server_config: Option<RtcIceServerConfig>,
     game_name: slint::SharedString,
@@ -571,7 +577,7 @@ fn setup_wait_window(
 ) {
     update_ice_config(ice_server_config.clone());
     update_ping(
-        server_addr.clone(),
+        server_addresses.lobby.clone(),
         ice_server_config,
         close_ping_rx,
         app.as_weak(),
@@ -669,7 +675,7 @@ fn setup_wait_window(
                                             load_savestate_slot: None,
                                         },
                                         Some(ui::gui::NetplayDevice {
-                                            server_addr,
+                                            server_addr: server_addresses.game.clone(),
                                             player_number,
                                             number_of_players: players.row_count(),
                                             input_delay,
