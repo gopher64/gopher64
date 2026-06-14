@@ -125,8 +125,8 @@ pub fn run_game(
 
     ui::storage::write_saves(device);
 
-    if device.netplay.is_some() {
-        netplay::close(netplay_config.as_ref().unwrap().ice_config_path.clone());
+    if let Some(netplay) = &mut device.netplay {
+        netplay::close(netplay);
     }
 
     ui::input::close(&mut device.ui);

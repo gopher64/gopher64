@@ -64,6 +64,7 @@ pub struct Netplay {
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
     pub incoming_message: Vec<u8>,
     pub disconnected_peers: tokio::sync::mpsc::Receiver<matchbox_socket::PeerId>,
+    pub ice_config_path: std::path::PathBuf,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -488,9 +489,10 @@ pub fn init(
         requests: std::collections::VecDeque::new(),
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
+        ice_config_path,
     })
 }
 
-pub fn close(ice_config_path: std::path::PathBuf) {
-    let _ = std::fs::remove_file(ice_config_path);
+pub fn close(netplay: &Netplay) {
+    let _ = std::fs::remove_file(&netplay.ice_config_path);
 }
