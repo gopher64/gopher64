@@ -287,7 +287,7 @@ fn create_session(
         netplay_write_sender.send(Some(create_session)).unwrap();
 
         match tokio::time::timeout(
-            std::time::Duration::from_secs(2),
+            std::time::Duration::from_secs(3),
             netplay_read_receiver.recv(),
         )
         .await
