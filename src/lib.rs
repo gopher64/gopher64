@@ -169,25 +169,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         let mut shutdown_tx = None;
         let mut usb_handle = None;
 
-        let ice_config_path = dirs.cache_dir.join("ice_config.json");
-
-        if let Some(server_addr) = args.netplay_server_addr
-            && let Some(player_number) = args.netplay_player_number
-            && let Some(number_of_players) = args.netplay_number_of_players
-            && let Some(input_delay) = args.netplay_input_delay
-        {
-            device.netplay = netplay::init(
-                server_addr,
-                player_number,
-                number_of_players,
-                input_delay,
-                ice_config_path.clone(),
-                device::cart::rom::is_system_pal(&rom_contents),
-            );
-            if device.netplay.is_none() {
-                return Err(Error::other("Failed to connect to netplay server"));
-            }
-        } else {
+        if args.netplay_server_addr.is_none() {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
                     && !device.ui.config.input.gb_rom_path[i].is_empty()
@@ -213,7 +195,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         {
             let username = args.ra_username.unwrap_or(ra_config.username.clone());
             retroachievements::init_client(
-                if cfg!(ra_hardcore_enabled) && device.netplay.is_none() {
+                if cfg!(ra_hardcore_enabled) && args.netplay_server_addr.is_none() {
                     ra_config.hardcore
                 } else {
                     false
@@ -240,6 +222,22 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
             retroachievements::RAConfig::default()
         };
 
+        let netplay_config = if let Some(server_addr) = args.netplay_server_addr
+            && let Some(player_number) = args.netplay_player_number
+            && let Some(number_of_players) = args.netplay_number_of_players
+            && let Some(input_delay) = args.netplay_input_delay
+        {
+            Some(netplay::NetplayConfig {
+                server_addr,
+                player_number,
+                number_of_players,
+                input_delay,
+                ice_config_path: dirs.cache_dir.join("ice_config.json"),
+            })
+        } else {
+            None
+        };
+
         device::run_game(
             &mut device,
             &rom_contents,
@@ -250,15 +248,14 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 load_savestate_slot: args.load_state,
             },
             ra_config,
+            netplay_config,
         );
 
         // on Android, the client is shut down in the app_window function
         #[cfg(not(target_os = "android"))]
         retroachievements::shutdown_client();
 
-        if device.netplay.is_some() {
-            netplay::close(ice_config_path);
-        } else {
+        if device.netplay.is_none() {
             for i in 0..4 {
                 if device.ui.config.input.transfer_pak[i]
                     && !device.ui.config.input.gb_ram_path[i].is_empty()

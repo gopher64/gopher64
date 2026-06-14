@@ -52,6 +52,7 @@ pub fn run_game(
     rom_contents: &[u8],
     game_settings: ui::GameSettings,
     ra_config: retroachievements::RAConfig,
+    netplay_config: Option<netplay::NetplayConfig>,
 ) {
     device.cpu.overclock = game_settings.overclock;
     if game_settings.disable_expansion_pak {
@@ -62,16 +63,34 @@ pub fn run_game(
         device.savestate.load_state = true;
     }
 
-    init_rng(device);
-
     cart::rom::init(device, rom_contents); // cart needs to come before rdram
 
     // rdram pointer is shared with parallel-rdp and retroachievements
     rdram::init(device);
 
-    ui::video::init(device);
+    ui::video::init(device, netplay_config.is_some());
     ui::audio::init(device);
     ui::input::init(&mut device.ui);
+
+    // must be after video init
+    if let Some(netplay_config) = &netplay_config {
+        device.netplay = netplay::init(
+            netplay_config.server_addr.clone(),
+            netplay_config.player_number,
+            netplay_config.number_of_players,
+            netplay_config.input_delay,
+            netplay_config.ice_config_path.clone(),
+            cart::rom::is_system_pal(rom_contents),
+        );
+        if device.netplay.is_none() {
+            ui::input::close(&mut device.ui);
+            ui::audio::close(&mut device.ui);
+            ui::video::close(&device.ui);
+            return;
+        }
+    }
+
+    init_rng_rtc(device);
 
     // must be after video init
     let (discord_watch_tx, discord_handle) = if ra_config.enabled && device.netplay.is_none() {
@@ -105,6 +124,11 @@ pub fn run_game(
     retroachievements::unload_game(discord_watch_tx, discord_handle);
 
     ui::storage::write_saves(device);
+
+    if device.netplay.is_some() {
+        netplay::close(netplay_config.as_ref().unwrap().ice_config_path.clone());
+    }
+
     ui::input::close(&mut device.ui);
     ui::audio::close(&mut device.ui);
     ui::video::close(&device.ui);
@@ -114,7 +138,7 @@ fn set_rng() -> rand::rngs::Xoshiro256PlusPlus {
     rand::rngs::Xoshiro256PlusPlus::try_from_rng(&mut rand::rngs::SysRng).unwrap()
 }
 
-fn init_rng(device: &mut Device) {
+fn init_rng_rtc(device: &mut Device) {
     let mut rng_seed = set_rng().next_u64();
     if let Some(netplay) = &mut device.netplay {
         if netplay.player_number == 0 {
@@ -124,6 +148,18 @@ fn init_rng(device: &mut Device) {
         }
     }
     device.rng = rand::rngs::Xoshiro256PlusPlus::seed_from_u64(rng_seed);
+
+    device.cart.rtc_timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+    if let Some(netplay) = &mut device.netplay {
+        if netplay.player_number == 0 {
+            netplay::send_rtc(netplay, device.cart.rtc_timestamp);
+        } else {
+            device.cart.rtc_timestamp = netplay::receive_rtc(netplay);
+        }
+    }
 }
 
 fn swap_rom(contents: Vec<u8>) -> Option<Vec<u8>> {

@@ -10,7 +10,7 @@ const NTSC_WIDESCREEN_WIDTH: i32 = 426;
 const NTSC_STANDARD_WIDTH: i32 = 320;
 const NTSC_HEIGHT: i32 = 240;
 
-fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
+fn build_gfx_info(device: &mut device::Device, netplay: bool) -> GFX_INFO {
     GFX_INFO {
         RDRAM: device.rdram.mem.as_mut_ptr(),
         DMEM: device.rsp.mem.as_mut_ptr(),
@@ -22,7 +22,7 @@ fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
         PAL: device.cart.pal,
         widescreen: device.ui.config.video.widescreen,
         fullscreen: device.ui.video.fullscreen,
-        vsync: if device.netplay.is_none() {
+        vsync: if !netplay {
             device.ui.config.video.vsync
         } else {
             false
@@ -34,7 +34,7 @@ fn build_gfx_info(device: &mut device::Device) -> GFX_INFO {
     }
 }
 
-pub fn init(device: &mut device::Device) {
+pub fn init(device: &mut device::Device, netplay: bool) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
     ui::ttf_init();
 
@@ -99,7 +99,7 @@ pub fn init(device: &mut device::Device) {
         sdl3_sys::everything::SDL_HideCursor();
     }
 
-    let gfx_info = build_gfx_info(device);
+    let gfx_info = build_gfx_info(device, netplay);
 
     unsafe {
         let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
@@ -170,7 +170,7 @@ pub fn idle() {
 }
 
 pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
-    let gfx_info = build_gfx_info(device);
+    let gfx_info = build_gfx_info(device, device.netplay.is_some());
     unsafe {
         rdp_load_state(gfx_info, rdp_state);
         for reg in 0..device::vi::VI_REGS_COUNT {
