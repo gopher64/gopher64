@@ -148,7 +148,7 @@ fn manage_websocket(
         .insert("Authorization", env!("NETPLAY_ID").parse().unwrap());
     tokio::spawn(async move {
         match tokio::time::timeout(
-            std::time::Duration::from_secs(2),
+            std::time::Duration::from_secs(3),
             tokio_tungstenite::connect_async(request),
         )
         .await
