@@ -384,7 +384,7 @@ pub fn init(
     };
     let mut reliable_channel = socket.take_channel(1).unwrap();
     let now = std::time::Instant::now();
-    let timeout = std::time::Duration::from_secs(10);
+    let timeout = std::time::Duration::from_secs(30);
     let mut player_numbers = std::collections::BTreeMap::new();
     player_numbers.insert(player_number, None);
     loop {
