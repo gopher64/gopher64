@@ -20,14 +20,14 @@ impl ggrs::Config for GgrsConfig {
 
 pub struct MatchboxChannel {
     channel: matchbox_socket::WebRtcChannel,
-    disconnected_peers: tokio::sync::mpsc::Sender<matchbox_socket::PeerId>,
+    disconnected_peers: tokio::sync::mpsc::UnboundedSender<matchbox_socket::PeerId>,
 }
 
 impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
         if self.channel.try_send(encoded.into(), *addr).is_err() {
-            self.disconnected_peers.try_send(*addr).unwrap();
+            self.disconnected_peers.send(*addr).unwrap();
         }
     }
 
@@ -63,7 +63,7 @@ pub struct Netplay {
     pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
     pub incoming_message: Vec<u8>,
-    pub disconnected_peers: tokio::sync::mpsc::Receiver<matchbox_socket::PeerId>,
+    pub disconnected_peers: tokio::sync::mpsc::UnboundedReceiver<matchbox_socket::PeerId>,
     pub ice_config_path: std::path::PathBuf,
 }
 
@@ -386,7 +386,7 @@ pub fn init(
         }
     });
 
-    let (disconnected_peers_tx, disconnected_peers_rx) = tokio::sync::mpsc::channel(100);
+    let (disconnected_peers_tx, disconnected_peers_rx) = tokio::sync::mpsc::unbounded_channel();
     let matchbox_channel = MatchboxChannel {
         channel: socket.take_channel(0).unwrap(),
         disconnected_peers: disconnected_peers_tx,

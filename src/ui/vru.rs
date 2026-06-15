@@ -7,13 +7,13 @@ pub fn prompt_for_match(words: &[String], frame_time: f64) -> u16 {
     dedup_words.sort();
     dedup_words.dedup();
 
-    let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
 
     let vru_dialog = gui::VruDialog::new().unwrap();
     let vru_dialog_weak = vru_dialog.as_weak();
 
     vru_dialog.on_vru_button_clicked(move |chosen_word| {
-        tx.try_send(chosen_word.to_string()).unwrap();
+        tx.send(chosen_word.to_string()).unwrap();
         vru_dialog_weak.unwrap().hide().unwrap();
     });
 

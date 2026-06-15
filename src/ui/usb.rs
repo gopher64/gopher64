@@ -11,7 +11,7 @@ pub struct UsbData {
     pub data_size: u32,
 }
 
-fn respond_to_handshake(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, data: Vec<u8>) {
+fn respond_to_handshake(usb_tx: &tokio::sync::mpsc::UnboundedSender<UsbData>, data: Vec<u8>) {
     if let Ok(data) = String::from_utf8(data)
         && data == "N64"
     {
@@ -29,98 +29,96 @@ fn respond_to_handshake(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, data: 
 async fn handle_connection(
     conn: tokio::net::TcpStream,
     mut shutdown_rx: tokio::sync::watch::Receiver<()>,
-    mut usb_rx: tokio::sync::broadcast::Receiver<UsbData>,
-    usb_tx: tokio::sync::broadcast::Sender<UsbData>,
-    cart_tx: tokio::sync::broadcast::Sender<UsbData>,
+    usb_rx: &mut tokio::sync::mpsc::UnboundedReceiver<UsbData>,
+    usb_tx: tokio::sync::mpsc::UnboundedSender<UsbData>,
+    cart_tx: tokio::sync::mpsc::UnboundedSender<UsbData>,
 ) {
     let (mut incoming, mut outgoing) = conn.into_split();
 
     let mut shutdown_rx_clone = shutdown_rx.clone();
+
     tokio::spawn(async move {
+        let mut incoming_buffer = vec![0u8; 4096];
+        let mut data_type: Option<u32> = None;
+        let mut data_size: Option<u32> = None;
+        let mut usb_buffer: Vec<u8> = vec![];
         loop {
             tokio::select! {
-                data = usb_rx.recv() => {
-                    match data {
-                        Ok(data) => {
-                            let mut output: Vec<u8> = vec![];
-                            output.extend_from_slice(&data.data_type.to_be_bytes());
-                            output.extend_from_slice(&data.data_size.to_be_bytes());
-                            output.extend_from_slice(&data.data);
-                            if outgoing.write_all(&output).await.is_err() {
-                                break;
+                result = incoming.read(&mut incoming_buffer) => {
+                    match result {
+                        Ok(0) => {
+                            break;
+                        }
+                        Ok(n) => {
+                            usb_buffer.extend_from_slice(&incoming_buffer[0..n]);
+                            if data_type.is_none() {
+                                if usb_buffer.len() < 4 {
+                                    continue;
+                                } else {
+                                    data_type = Some(u32::from_be_bytes(usb_buffer[0..4].try_into().unwrap()));
+                                    usb_buffer.drain(0..4);
+                                }
+                            }
+                            if data_type.is_some() && data_size.is_none() {
+                                if usb_buffer.len() < 4 {
+                                    continue;
+                                } else {
+                                    data_size = Some(u32::from_be_bytes(usb_buffer[0..4].try_into().unwrap()));
+                                    usb_buffer.drain(0..4);
+                                }
+                            }
+                            if let Some(d_type) = data_type && let Some(d_size) = data_size {
+                                let length = d_size as usize;
+                                if usb_buffer.len() >= length {
+                                    let usb_data = UsbData {
+                                        data: usb_buffer[0..length].to_vec(),
+                                        data_type: d_type,
+                                        data_size: d_size,
+                                    };
+                                    usb_buffer.drain(0..length);
+                                    if usb_data.data_type == DATATYPE_TCPTEST {
+                                        respond_to_handshake(&usb_tx,usb_data.data);
+                                    } else if usb_data.data_type == DATATYPE_ROMUPLOAD {
+                                        panic!("ROM upload not supported");
+                                    } else {
+                                        cart_tx.send(usb_data).unwrap();
+                                    }
+                                    data_type = None;
+                                    data_size = None;
+                                }
                             }
                         }
-                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
-                            panic!("usb_rx lagged");
-                        }
-                        Err(tokio::sync::broadcast::error::RecvError::Closed) => {
-                          break;
+                        Err(_e) => {
+                            break;
                         }
                     }
                 }
-                _ = shutdown_rx_clone.changed() => {
+                _ = shutdown_rx.changed() => {
                     break;
                 }
             }
         }
     });
 
-    let mut incoming_buffer = vec![0u8; 4096];
-    let mut data_type: Option<u32> = None;
-    let mut data_size: Option<u32> = None;
-    let mut usb_buffer: Vec<u8> = vec![];
     loop {
         tokio::select! {
-            result = incoming.read(&mut incoming_buffer) => {
-                match result {
-                    Ok(0) => {
-                        break;
-                    }
-                    Ok(n) => {
-                        usb_buffer.extend_from_slice(&incoming_buffer[0..n]);
-                        if data_type.is_none() {
-                            if usb_buffer.len() < 4 {
-                                continue;
-                            } else {
-                                data_type = Some(u32::from_be_bytes(usb_buffer[0..4].try_into().unwrap()));
-                                usb_buffer.drain(0..4);
-                            }
-                        }
-                        if data_type.is_some() && data_size.is_none() {
-                            if usb_buffer.len() < 4 {
-                                continue;
-                            } else {
-                                data_size = Some(u32::from_be_bytes(usb_buffer[0..4].try_into().unwrap()));
-                                usb_buffer.drain(0..4);
-                            }
-                        }
-                        if let Some(d_type) = data_type && let Some(d_size) = data_size {
-                            let length = d_size as usize;
-                            if usb_buffer.len() >= length {
-                                let usb_data = UsbData {
-                                    data: usb_buffer[0..length].to_vec(),
-                                    data_type: d_type,
-                                    data_size: d_size,
-                                };
-                                usb_buffer.drain(0..length);
-                                if usb_data.data_type == DATATYPE_TCPTEST {
-                                    respond_to_handshake(&usb_tx,usb_data.data);
-                                } else if usb_data.data_type == DATATYPE_ROMUPLOAD {
-                                    panic!("ROM upload not supported");
-                                } else {
-                                    cart_tx.send(usb_data).unwrap();
-                                }
-                                data_type = None;
-                                data_size = None;
-                            }
+            data = usb_rx.recv() => {
+                match data {
+                    Some(data) => {
+                        let mut output: Vec<u8> = vec![];
+                        output.extend_from_slice(&data.data_type.to_be_bytes());
+                        output.extend_from_slice(&data.data_size.to_be_bytes());
+                        output.extend_from_slice(&data.data);
+                        if outgoing.write_all(&output).await.is_err() {
+                            break;
                         }
                     }
-                    Err(_e) => {
-                        break;
+                    None => {
+                      break;
                     }
                 }
             }
-            _ = shutdown_rx.changed() => {
+            _ = shutdown_rx_clone.changed() => {
                 break;
             }
         }
@@ -133,24 +131,23 @@ pub fn init() -> (
     ui::Usb,
 ) {
     let (shutdown_tx, mut shutdown_rx) = tokio::sync::watch::channel(());
-    let (usb_tx, usb_rx): (
-        tokio::sync::broadcast::Sender<UsbData>,
-        tokio::sync::broadcast::Receiver<UsbData>,
-    ) = tokio::sync::broadcast::channel(1024);
+    let (usb_tx, mut usb_rx): (
+        tokio::sync::mpsc::UnboundedSender<UsbData>,
+        tokio::sync::mpsc::UnboundedReceiver<UsbData>,
+    ) = tokio::sync::mpsc::unbounded_channel();
     let (cart_tx, cart_rx): (
-        tokio::sync::broadcast::Sender<UsbData>,
-        tokio::sync::broadcast::Receiver<UsbData>,
-    ) = tokio::sync::broadcast::channel(1024);
+        tokio::sync::mpsc::UnboundedSender<UsbData>,
+        tokio::sync::mpsc::UnboundedReceiver<UsbData>,
+    ) = tokio::sync::mpsc::unbounded_channel();
 
     let usb_tx_clone = usb_tx.clone();
-    let cart_rx_clone = cart_rx.resubscribe();
     let handle = tokio::spawn(async move {
         if let Ok(listener) = tokio::net::TcpListener::bind("localhost:48646").await {
             loop {
                 tokio::select! {
                     res = listener.accept() => {
                         if let Ok((c,_)) = res {
-                            handle_connection(c,shutdown_rx.clone(),usb_rx.resubscribe(),usb_tx.clone(),cart_tx.clone()).await;
+                            handle_connection(c,shutdown_rx.clone(),&mut usb_rx,usb_tx.clone(),cart_tx.clone()).await;
                         } else {
                             break;
                         }
@@ -169,7 +166,7 @@ pub fn init() -> (
         Some(handle),
         ui::Usb {
             usb_tx: Some(usb_tx_clone),
-            cart_rx: Some(cart_rx_clone),
+            cart_rx: Some(cart_rx),
         },
     )
 }
@@ -193,6 +190,6 @@ pub fn close(
     }
 }
 
-pub fn send_to_usb(usb_tx: &tokio::sync::broadcast::Sender<UsbData>, buffer: UsbData) {
+pub fn send_to_usb(usb_tx: &tokio::sync::mpsc::UnboundedSender<UsbData>, buffer: UsbData) {
     usb_tx.send(buffer).unwrap();
 }
