@@ -399,6 +399,7 @@ pub fn init(
         ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
     );
 
+    device.cpu.running = true;
     while device.cpu.running {
         socket.update_peers();
         let peers = socket
@@ -421,6 +422,11 @@ pub fn init(
         std::thread::sleep(std::time::Duration::from_millis(10));
         ui::video::check_callback(device);
     }
+    if !device.cpu.running {
+        // user closed the window
+        return None;
+    }
+    device.cpu.running = false;
 
     let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new()
         .with_num_players(netplay_config.number_of_players)
