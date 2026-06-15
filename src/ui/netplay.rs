@@ -110,12 +110,12 @@ fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
 
 fn setup_callbacks(
     app: &AppWindow,
-    netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
-    netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
-    netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
-    netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
-    close_ping_tx: tokio::sync::broadcast::Sender<()>,
-    close_ping_rx: tokio::sync::broadcast::Receiver<()>,
+    netplay_write_sender: &tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    netplay_read_receiver: &tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    netplay_read_sender: &tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    netplay_write_receiver: &tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    close_ping_tx: &tokio::sync::broadcast::Sender<()>,
+    close_ping_rx: &tokio::sync::broadcast::Receiver<()>,
 ) {
     let weak = app.as_weak();
     let netplay_write_sender_create_session = netplay_write_sender.clone();
@@ -242,6 +242,9 @@ fn setup_callbacks(
     });
 
     let weak_app = app.as_weak();
+    let netplay_write_sender = netplay_write_sender.clone();
+    let netplay_read_sender = netplay_read_sender.clone();
+    let close_ping_tx = close_ping_tx.clone();
     app.on_netplay_close(move || {
         weak_app
             .upgrade_in_event_loop(move |handle| {
@@ -1006,11 +1009,11 @@ pub fn netplay_window(app: &AppWindow) {
 
     setup_callbacks(
         app,
-        netplay_write_sender.clone(),
-        netplay_read_receiver.resubscribe(),
-        netplay_read_sender.clone(),
-        netplay_write_receiver.resubscribe(),
-        close_ping_tx.clone(),
-        close_ping_rx.resubscribe(),
+        &netplay_write_sender,
+        &netplay_read_receiver,
+        &netplay_read_sender,
+        &netplay_write_receiver,
+        &close_ping_tx,
+        &close_ping_rx,
     );
 }
