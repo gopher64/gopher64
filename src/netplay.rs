@@ -356,18 +356,15 @@ fn advance_frame(device: &mut device::Device) {
 }
 
 pub fn init(
-    server_addr: String,
-    player_number: usize,
-    number_of_players: usize,
-    input_delay: usize,
-    ice_config_path: std::path::PathBuf,
+    device: &mut device::Device,
+    netplay_config: &NetplayConfig,
     pal: bool,
 ) -> Option<Netplay> {
-    let mut builder = matchbox_socket::WebRtcSocketBuilder::new(server_addr)
+    let mut builder = matchbox_socket::WebRtcSocketBuilder::new(&netplay_config.server_addr)
         .add_unreliable_channel()
         .add_reliable_channel();
 
-    if let Ok(ice_config) = std::fs::read(&ice_config_path)
+    if let Ok(ice_config) = std::fs::read(&netplay_config.ice_config_path)
         && let Ok(ice_config) = serde_json::from_slice::<RtcIceServerConfig>(&ice_config)
     {
         builder = builder.ice_server(matchbox_socket::RtcIceServerConfig {
@@ -395,22 +392,23 @@ pub fn init(
     let now = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(30);
     let mut player_numbers = std::collections::BTreeMap::new();
-    player_numbers.insert(player_number, None);
+    player_numbers.insert(netplay_config.player_number, None);
 
     ui::video::onscreen_message(
         "Connecting to netplay peers...",
         ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
     );
 
-    loop {
+    device.cpu.running = true;
+    while device.cpu.running {
         socket.update_peers();
         let peers = socket
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
 
-        send_player_number(&mut reliable_channel, peers, player_number);
+        send_player_number(&mut reliable_channel, peers, netplay_config.player_number);
         get_player_numbers(&mut reliable_channel, &mut player_numbers);
-        if player_numbers.len() == number_of_players {
+        if player_numbers.len() == netplay_config.number_of_players {
             break;
         }
 
@@ -422,12 +420,18 @@ pub fn init(
         ui::video::render_frame();
         ui::video::update_screen();
         std::thread::sleep(std::time::Duration::from_millis(10));
+        ui::video::check_callback(device);
     }
+    if !device.cpu.running {
+        // user closed the window
+        return None;
+    }
+    device.cpu.running = false;
 
     let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new()
-        .with_num_players(number_of_players)
+        .with_num_players(netplay_config.number_of_players)
         .unwrap()
-        .with_input_delay(input_delay)
+        .with_input_delay(netplay_config.input_delay)
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
@@ -474,22 +478,22 @@ pub fn init(
     Some(Netplay {
         disconnected_peers: disconnected_peers_rx,
         incoming_message: vec![],
-        input_delay,
+        input_delay: netplay_config.input_delay,
         session,
         reliable_channel,
         peers,
-        player_number,
+        player_number: netplay_config.player_number,
         connected: [
-            number_of_players > 0,
-            number_of_players > 1,
-            number_of_players > 2,
-            number_of_players > 3,
+            netplay_config.number_of_players > 0,
+            netplay_config.number_of_players > 1,
+            netplay_config.number_of_players > 2,
+            netplay_config.number_of_players > 3,
         ],
         inputs: Vec::new(),
         requests: std::collections::VecDeque::new(),
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
-        ice_config_path,
+        ice_config_path: netplay_config.ice_config_path.clone(),
     })
 }
 
