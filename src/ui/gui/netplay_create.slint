@@ -6,7 +6,7 @@ import { Page } from "page.slint";
 export component NetplayCreate inherits Page {
     title: @tr("Netplay: Create Session");
     callback select_rom(string);
-    callback create_session(string, string, string, string, string, string);
+    callback create_session(string, string, string, string, string, string, bool, bool);
     callback close;
 
     VerticalBox {
@@ -98,7 +98,9 @@ export component NetplayCreate inherits Page {
                             NetplayData.game_name,
                             NetplayData.game_hash,
                             NetplayData.game_cheats,
-                            NetplayData.password);
+                            NetplayData.password,
+                            SettingsData.overclock_n64_cpu,
+                            SettingsData.disable_expansion_pak);
                         }
                     }
                     Button {
