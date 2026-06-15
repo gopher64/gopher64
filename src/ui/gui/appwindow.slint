@@ -37,7 +37,7 @@ export component AppWindow inherits Window {
     callback netplay_begin_game(int);
     callback netplay_send_chat_message(string);
     callback netplay_refresh_sessions;
-    callback netplay_create_session(string, string, string, string, string, string);
+    callback netplay_create_session(string, string, string, string, string, string, bool, bool);
     callback netplay_select_rom(string);
     callback netplay_join_session(string, string, string, string);
     callback netplay_close;
@@ -256,8 +256,8 @@ export component AppWindow inherits Window {
             select_rom(rom_dir) => {
                 netplay_select_rom(rom_dir);
             }
-            create_session(a, b, c, d, e, f) => {
-                netplay_create_session(a,b,c,d,e,f);
+            create_session(a, b, c, d, e, f, g, h) => {
+                netplay_create_session(a,b,c,d,e,f,g,h);
             }
             close => {
                 netplay_close();

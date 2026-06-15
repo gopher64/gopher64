@@ -108,39 +108,155 @@ fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
     });
 }
 
-fn setup_create_window(
+fn setup_callbacks(
     app: &AppWindow,
-    game_settings: ui::GameSettings,
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    close_ping_tx: tokio::sync::broadcast::Sender<()>,
     close_ping_rx: tokio::sync::broadcast::Receiver<()>,
 ) {
     let weak = app.as_weak();
+    let write_sender_create_session = netplay_write_sender.clone();
+    let netplay_read_receiver_create_session = netplay_read_receiver.resubscribe();
+    let netplay_write_receiver_create_session = netplay_write_receiver.resubscribe();
+    let netplay_read_sender_create_session = netplay_read_sender.clone();
+    let close_ping_rx_create_session = close_ping_rx.resubscribe();
     app.on_netplay_create_session(
-        move |session_name, player_name, game_name, game_hash, game_cheats, password| {
+        move |session_name,
+              player_name,
+              game_name,
+              game_hash,
+              game_cheats,
+              password,
+              overclock,
+              disable_expansion_pak| {
             manage_websocket(
-                netplay_read_sender.clone(),
-                netplay_write_receiver.resubscribe(),
+                netplay_read_sender_create_session.clone(),
+                netplay_write_receiver_create_session.resubscribe(),
             );
 
             create_session(
-                netplay_write_sender.clone(),
-                netplay_read_receiver.resubscribe(),
-                close_ping_rx.resubscribe(),
+                write_sender_create_session.clone(),
+                netplay_read_receiver_create_session.resubscribe(),
+                close_ping_rx_create_session.resubscribe(),
                 session_name.to_string(),
                 player_name.to_string(),
                 game_name.to_string(),
                 game_hash.to_string(),
                 game_cheats.to_string(),
                 password.to_string(),
-                game_settings.clone(),
+                overclock,
+                disable_expansion_pak,
                 weak.clone(),
             );
         },
     );
 
+    let write_sender_chat_message = netplay_write_sender.clone();
+    app.on_netplay_send_chat_message(move |message| {
+        let send_chat = NetplayLobbyMessage {
+            message_type: MessageType::SendChatMessage,
+            sessions: std::collections::HashMap::new(),
+            message: Some(message.into()),
+        };
+        write_sender_chat_message.send(Some(send_chat)).unwrap();
+    });
+
+    let write_sender_begin_game = netplay_write_sender.clone();
+    app.on_netplay_begin_game(move |chosen_input_delay| {
+        let begin_game = NetplayLobbyMessage {
+            message_type: MessageType::RequestBeginGame,
+            sessions: std::collections::HashMap::new(),
+            message: Some(chosen_input_delay.to_string()),
+        };
+        write_sender_begin_game.send(Some(begin_game)).unwrap();
+    });
+
+    let write_sender_refresh_sessions = netplay_write_sender.clone();
+    app.on_netplay_refresh_sessions(move || {
+        update_sessions(write_sender_refresh_sessions.clone());
+    });
+
+    let write_sender_join_session = netplay_write_sender.clone();
+    app.on_netplay_join_session(move |session_name, player_name, game_hash, password| {
+        join_session(
+            write_sender_join_session.clone(),
+            session_name.to_string(),
+            player_name.to_string(),
+            game_hash.to_string(),
+            password.to_string(),
+        );
+    });
+
+    let weak_app = app.as_weak();
+    app.on_create_session_button_clicked(move || {
+        weak_app
+            .upgrade_in_event_loop(move |handle| {
+                save_settings(&handle);
+                setup_create_window(&handle);
+            })
+            .unwrap();
+    });
+
+    let weak_app = app.as_weak();
+    let netplay_write_sender_join_session_button = netplay_write_sender.clone();
+    let netplay_read_receiver_join_session_button = netplay_read_receiver.resubscribe();
+    let netplay_read_sender_join_session_button = netplay_read_sender.clone();
+    let netplay_write_receiver_join_session_button = netplay_write_receiver.resubscribe();
+    let close_ping_rx_join_session_button = close_ping_rx.resubscribe();
+    app.on_join_session_button_clicked(move || {
+        let netplay_write_sender = netplay_write_sender_join_session_button.clone();
+        let netplay_read_receiver = netplay_read_receiver_join_session_button.resubscribe();
+        let netplay_read_sender = netplay_read_sender_join_session_button.clone();
+        let netplay_write_receiver = netplay_write_receiver_join_session_button.resubscribe();
+        let close_ping_rx = close_ping_rx_join_session_button.resubscribe();
+        weak_app
+            .upgrade_in_event_loop(move |handle| {
+                save_settings(&handle);
+                setup_join_window(
+                    &handle,
+                    netplay_write_sender,
+                    netplay_read_receiver,
+                    netplay_read_sender,
+                    netplay_write_receiver,
+                    close_ping_rx,
+                );
+            })
+            .unwrap();
+    });
+
+    let weak_app = app.as_weak();
+    app.on_netplay_select_rom(move |rom_dir| {
+        select_rom(weak_app.clone(), rom_dir);
+    });
+
+    let weak_app = app.as_weak();
+    app.on_netplay_close(move || {
+        weak_app
+            .upgrade_in_event_loop(move |handle| {
+                handle.set_show_netplay_wait_session(false);
+                handle.set_show_netplay_create_session(false);
+                handle.set_show_netplay_join_session(false);
+                handle.invoke_clear_netplay_data();
+                handle.invoke_close_message();
+            })
+            .unwrap();
+        let _ = netplay_write_sender.send(None); // close current websocket if any
+        let _ = netplay_read_sender.send(None); // close current receiver if any
+        let _ = close_ping_tx.send(()); // close ping
+    });
+
+    app.on_netplay_discord_button_clicked(move || {
+        open_uri("https://discord.gg/JyW6ZgBUyS");
+    });
+    app.on_netplay_feedback_button_clicked(move || {
+        open_uri("https://github.com/gopher64/gopher64/discussions/453");
+    });
+}
+
+fn setup_create_window(app: &AppWindow) {
     app.set_show_netplay_create_session(true);
 }
 
@@ -255,7 +371,8 @@ fn create_session(
     game_hash: String,
     game_cheats: String,
     password: String,
-    game_settings: ui::GameSettings,
+    overclock: bool,
+    disable_expansion_pak: bool,
     weak_app: slint::Weak<AppWindow>,
 ) {
     tokio::spawn(async move {
@@ -265,10 +382,10 @@ fn create_session(
             features.insert("cheats".to_string(), game_cheats);
         }
 
-        features.insert("overclock".to_string(), game_settings.overclock.to_string());
+        features.insert("overclock".to_string(), overclock.to_string());
         features.insert(
             "disable_expansion_pak".to_string(),
-            game_settings.disable_expansion_pak.to_string(),
+            disable_expansion_pak.to_string(),
         );
 
         let session = NetplaySession {
@@ -598,26 +715,6 @@ fn setup_wait_window(
     };
     netplay_write_sender.send(Some(request_update)).unwrap();
 
-    let sender = netplay_write_sender.clone();
-    app.on_netplay_send_chat_message(move |message| {
-        let send_chat = NetplayLobbyMessage {
-            message_type: MessageType::SendChatMessage,
-            sessions: std::collections::HashMap::new(),
-            message: Some(message.into()),
-        };
-        sender.send(Some(send_chat)).unwrap();
-    });
-
-    let sender = netplay_write_sender.clone();
-    app.on_netplay_begin_game(move |chosen_input_delay| {
-        let begin_game = NetplayLobbyMessage {
-            message_type: MessageType::RequestBeginGame,
-            sessions: std::collections::HashMap::new(),
-            message: Some(chosen_input_delay.to_string()),
-        };
-        sender.send(Some(begin_game)).unwrap();
-    });
-
     let weak_app = app.as_weak();
     tokio::spawn(async move {
         loop {
@@ -736,22 +833,6 @@ fn setup_join_window(
     );
 
     app.set_netplay_pending_refresh(true);
-
-    let write_sender = netplay_write_sender.clone();
-    app.on_netplay_refresh_sessions(move || {
-        update_sessions(write_sender.clone());
-    });
-
-    let write_sender = netplay_write_sender.clone();
-    app.on_netplay_join_session(move |session_name, player_name, game_hash, password| {
-        join_session(
-            write_sender.clone(),
-            session_name.to_string(),
-            player_name.to_string(),
-            game_hash.to_string(),
-            password.to_string(),
-        );
-    });
 
     let weak = app.as_weak();
     let mut read_receiver = netplay_read_receiver.resubscribe();
@@ -904,91 +985,13 @@ pub fn netplay_window(app: &AppWindow) {
         tokio::sync::broadcast::Receiver<()>,
     ) = tokio::sync::broadcast::channel(5);
 
-    let weak_app = app.as_weak();
-    let write_sender_create = netplay_write_sender.clone();
-    let read_receiver_create = netplay_read_receiver.resubscribe();
-    let read_sender_create = netplay_read_sender.clone();
-    let write_receiver_create = netplay_write_receiver.resubscribe();
-    let close_ping_create = close_ping_rx.resubscribe();
-    app.on_create_session_button_clicked(move || {
-        let write_sender = write_sender_create.clone();
-        let read_receiver = read_receiver_create.resubscribe();
-        let read_sender = read_sender_create.clone();
-        let write_receiver = write_receiver_create.resubscribe();
-        let close_ping_rx = close_ping_create.resubscribe();
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                save_settings(&handle);
-                setup_create_window(
-                    &handle,
-                    ui::GameSettings {
-                        overclock: handle.get_overclock_n64_cpu(),
-                        disable_expansion_pak: handle.get_disable_expansion_pak(),
-                        cheats: rustc_hash::FxHashMap::default(), // not used here
-                        load_savestate_slot: None,
-                    },
-                    write_sender,
-                    read_receiver,
-                    read_sender,
-                    write_receiver,
-                    close_ping_rx,
-                );
-            })
-            .unwrap();
-    });
-
-    let weak_app = app.as_weak();
-    let write_sender_join = netplay_write_sender.clone();
-    let read_sender_join = netplay_read_sender.clone();
-    let close_ping_join = close_ping_rx.resubscribe();
-    app.on_join_session_button_clicked(move || {
-        let write_sender = write_sender_join.clone();
-        let read_receiver = netplay_read_receiver.resubscribe();
-        let read_sender = read_sender_join.clone();
-        let write_receiver = netplay_write_receiver.resubscribe();
-        let close_ping_rx = close_ping_join.resubscribe();
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                save_settings(&handle);
-                setup_join_window(
-                    &handle,
-                    write_sender,
-                    read_receiver,
-                    read_sender,
-                    write_receiver,
-                    close_ping_rx,
-                );
-            })
-            .unwrap();
-    });
-
-    let weak_app = app.as_weak();
-    app.on_netplay_select_rom(move |rom_dir| {
-        select_rom(weak_app.clone(), rom_dir);
-    });
-
-    let weak_app = app.as_weak();
-    let write_sender = netplay_write_sender.clone();
-    let read_sender = netplay_read_sender.clone();
-    app.on_netplay_close(move || {
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                handle.set_show_netplay_wait_session(false);
-                handle.set_show_netplay_create_session(false);
-                handle.set_show_netplay_join_session(false);
-                handle.invoke_clear_netplay_data();
-                handle.invoke_close_message();
-            })
-            .unwrap();
-        let _ = write_sender.send(None); // close current websocket if any
-        let _ = read_sender.send(None); // close current receiver if any
-        let _ = close_ping_tx.send(()); // close ping
-    });
-
-    app.on_netplay_discord_button_clicked(move || {
-        open_uri("https://discord.gg/JyW6ZgBUyS");
-    });
-    app.on_netplay_feedback_button_clicked(move || {
-        open_uri("https://github.com/gopher64/gopher64/discussions/453");
-    });
+    setup_callbacks(
+        app,
+        netplay_write_sender.clone(),
+        netplay_read_receiver.resubscribe(),
+        netplay_read_sender.clone(),
+        netplay_write_receiver.resubscribe(),
+        close_ping_tx.clone(),
+        close_ping_rx.resubscribe(),
+    );
 }
