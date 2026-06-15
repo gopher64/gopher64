@@ -220,7 +220,9 @@ fn speed_limiter(device: &mut device::Device) {
         Some(deadline) => {
             if now < deadline {
                 let dur = deadline - now;
-                spin_sleep::sleep(dur);
+                tokio::task::block_in_place(|| {
+                    spin_sleep::sleep(dur);
+                });
                 if dur < device.speed_limiter.min_wait_time {
                     device.speed_limiter.min_wait_time = dur;
                 }

@@ -127,7 +127,9 @@ fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
         if now.elapsed() > timeout {
             panic!("Could not receive message for {name}");
         }
-        std::thread::sleep(std::time::Duration::from_millis(1));
+        tokio::task::block_in_place(|| {
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        });
     }
 }
 
@@ -294,6 +296,11 @@ pub fn process_requests(
         } else {
             // unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the screen doesn't freeze
             process_netplay(device);
+            if device.netplay.as_ref().unwrap().requests.is_empty() {
+                tokio::task::block_in_place(|| {
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                });
+            }
         }
     }
 }
@@ -419,7 +426,9 @@ pub fn init(
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::render_frame();
         ui::video::update_screen();
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        tokio::task::block_in_place(|| {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        });
         ui::video::check_callback(device);
     }
     if !device.cpu.running {
@@ -472,7 +481,9 @@ pub fn init(
             return None;
         }
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        tokio::task::block_in_place(|| {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        });
     }
 
     Some(Netplay {
