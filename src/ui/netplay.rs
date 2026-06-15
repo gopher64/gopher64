@@ -654,6 +654,7 @@ fn update_ping(
                                 if pings.len() > message.num_of_peers * 4 {
                                     // once we have enough samples, average the 3 highest values
                                     pings.sort_by(f64::total_cmp);
+                                    pings.pop(); // Remove highest value to avoid outliers
                                     let ping_avg = pings.iter().rev().take(3).sum::<f64>() / 3.0;
                                     pings.clear();
                                     weak_app
