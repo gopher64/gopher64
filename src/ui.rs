@@ -68,10 +68,10 @@ pub struct Storage {
 pub struct Video {
     pub window: *mut sdl3_sys::video::SDL_Window,
     pub fullscreen: bool,
-    pub fps_tx: Option<tokio::sync::mpsc::Sender<bool>>,
-    pub fps_rx: Option<tokio::sync::mpsc::Receiver<bool>>,
-    pub vis_tx: Option<tokio::sync::mpsc::Sender<bool>>,
-    pub vis_rx: Option<tokio::sync::mpsc::Receiver<bool>>,
+    pub fps_tx: Option<tokio::sync::mpsc::UnboundedSender<bool>>,
+    pub fps_rx: Option<tokio::sync::mpsc::UnboundedReceiver<bool>>,
+    pub vis_tx: Option<tokio::sync::mpsc::UnboundedSender<bool>>,
+    pub vis_rx: Option<tokio::sync::mpsc::UnboundedReceiver<bool>>,
 }
 
 unsafe impl Send for Video {}
@@ -79,8 +79,8 @@ unsafe impl Sync for Video {}
 
 #[derive(Default)]
 pub struct Usb {
-    pub usb_tx: Option<tokio::sync::broadcast::Sender<usb::UsbData>>,
-    pub cart_rx: Option<tokio::sync::broadcast::Receiver<usb::UsbData>>,
+    pub usb_tx: Option<tokio::sync::mpsc::UnboundedSender<usb::UsbData>>,
+    pub cart_rx: Option<tokio::sync::mpsc::UnboundedReceiver<usb::UsbData>>,
 }
 
 #[derive(Clone)]
@@ -191,8 +191,8 @@ impl Ui {
     pub fn new() -> Ui {
         let dirs = get_dirs();
 
-        let (fps_tx, fps_rx) = tokio::sync::mpsc::channel(1000);
-        let (vis_tx, vis_rx) = tokio::sync::mpsc::channel(1000);
+        let (fps_tx, fps_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (vis_tx, vis_rx) = tokio::sync::mpsc::unbounded_channel();
         Ui {
             input: Input {
                 last_polled: 0,

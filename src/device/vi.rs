@@ -104,7 +104,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     savestates::process_savestates(device);
                 }
                 if !netplay::in_rollback(device.netplay.as_ref()) {
-                    let _ = device.ui.video.fps_tx.as_ref().unwrap().try_send(true);
+                    let _ = device.ui.video.fps_tx.as_ref().unwrap().send(true);
                 }
             }
         }
@@ -140,7 +140,7 @@ pub fn update_screen(device: &mut device::Device) {
     if !netplay::in_rollback(device.netplay.as_ref()) {
         ui::video::update_screen();
         device.speed_limiter.frame_counter += 1;
-        let _ = device.ui.video.vis_tx.as_ref().unwrap().try_send(true);
+        let _ = device.ui.video.vis_tx.as_ref().unwrap().send(true);
     }
 
     if device.netplay.is_some() {
