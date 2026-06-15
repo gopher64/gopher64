@@ -419,6 +419,7 @@ pub fn init(
         ui::video::render_frame();
         ui::video::update_screen();
         std::thread::sleep(std::time::Duration::from_millis(10));
+        ui::video::check_callback(device);
     }
 
     let mut session_builder = ggrs::SessionBuilder::<GgrsConfig>::new()
