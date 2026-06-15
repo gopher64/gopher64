@@ -75,11 +75,8 @@ pub fn run_game(
     // must be after video init
     if let Some(netplay_config) = &netplay_config {
         device.netplay = netplay::init(
-            netplay_config.server_addr.clone(),
-            netplay_config.player_number,
-            netplay_config.number_of_players,
-            netplay_config.input_delay,
-            netplay_config.ice_config_path.clone(),
+            device,
+            netplay_config,
             cart::rom::is_system_pal(rom_contents),
         );
         if device.netplay.is_none() {
