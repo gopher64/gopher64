@@ -649,7 +649,9 @@ fn update_ping(
                                     .duration_since(std::time::UNIX_EPOCH)
                                     .unwrap()
                                     .as_millis();
-                                let ping = (now - message.timestamp) as f64 / 2.0; // calculate one-way latency
+                                // for lockstep, we need to calculate the two-way latency
+                                // for rollback, this would be the one-way latency (divide by 2)
+                                let ping = (now - message.timestamp) as f64;
                                 pings.push(ping);
                                 if pings.len() > message.num_of_peers * 4 {
                                     // once we have enough samples, average the 3 highest values
