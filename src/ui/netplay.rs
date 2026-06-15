@@ -118,10 +118,11 @@ fn setup_callbacks(
     close_ping_rx: tokio::sync::broadcast::Receiver<()>,
 ) {
     let weak = app.as_weak();
-    let write_sender_create_session = netplay_write_sender.clone();
+    let netplay_write_sender_create_session = netplay_write_sender.clone();
     let netplay_read_receiver_create_session = netplay_read_receiver.resubscribe();
     let netplay_write_receiver_create_session = netplay_write_receiver.resubscribe();
     let netplay_read_sender_create_session = netplay_read_sender.clone();
+    let close_ping_tx_create_session = close_ping_tx.clone();
     let close_ping_rx_create_session = close_ping_rx.resubscribe();
     app.on_netplay_create_session(
         move |session_name,
@@ -132,13 +133,18 @@ fn setup_callbacks(
               password,
               overclock,
               disable_expansion_pak| {
+            close_connections(
+                &netplay_write_sender_create_session,
+                &netplay_read_sender_create_session,
+                &close_ping_tx_create_session,
+            );
             manage_websocket(
                 netplay_read_sender_create_session.clone(),
                 netplay_write_receiver_create_session.resubscribe(),
             );
 
             create_session(
-                write_sender_create_session.clone(),
+                netplay_write_sender_create_session.clone(),
                 netplay_read_receiver_create_session.resubscribe(),
                 close_ping_rx_create_session.resubscribe(),
                 session_name.to_string(),
@@ -205,12 +211,14 @@ fn setup_callbacks(
     let netplay_read_receiver_join_session_button = netplay_read_receiver.resubscribe();
     let netplay_read_sender_join_session_button = netplay_read_sender.clone();
     let netplay_write_receiver_join_session_button = netplay_write_receiver.resubscribe();
+    let close_ping_tx_join_session_button = close_ping_tx.clone();
     let close_ping_rx_join_session_button = close_ping_rx.resubscribe();
     app.on_join_session_button_clicked(move || {
         let netplay_write_sender = netplay_write_sender_join_session_button.clone();
         let netplay_read_receiver = netplay_read_receiver_join_session_button.resubscribe();
         let netplay_read_sender = netplay_read_sender_join_session_button.clone();
         let netplay_write_receiver = netplay_write_receiver_join_session_button.resubscribe();
+        let close_ping_tx = close_ping_tx_join_session_button.clone();
         let close_ping_rx = close_ping_rx_join_session_button.resubscribe();
         weak_app
             .upgrade_in_event_loop(move |handle| {
@@ -221,6 +229,7 @@ fn setup_callbacks(
                     netplay_read_receiver,
                     netplay_read_sender,
                     netplay_write_receiver,
+                    close_ping_tx,
                     close_ping_rx,
                 );
             })
@@ -243,9 +252,7 @@ fn setup_callbacks(
                 handle.invoke_close_message();
             })
             .unwrap();
-        let _ = netplay_write_sender.send(None); // close current websocket if any
-        let _ = netplay_read_sender.send(None); // close current receiver if any
-        let _ = close_ping_tx.send(()); // close ping
+        close_connections(&netplay_write_sender, &netplay_read_sender, &close_ping_tx);
     });
 
     app.on_netplay_discord_button_clicked(move || {
@@ -254,6 +261,16 @@ fn setup_callbacks(
     app.on_netplay_feedback_button_clicked(move || {
         open_uri("https://github.com/gopher64/gopher64/discussions/453");
     });
+}
+
+fn close_connections(
+    netplay_write_sender: &tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    netplay_read_sender: &tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
+    close_ping_tx: &tokio::sync::broadcast::Sender<()>,
+) {
+    let _ = netplay_write_sender.send(None); // close current websocket if any
+    let _ = netplay_read_sender.send(None); // close current receiver if any
+    let _ = close_ping_tx.send(()); // close ping
 }
 
 fn setup_create_window(app: &AppWindow) {
@@ -825,8 +842,10 @@ fn setup_join_window(
     netplay_read_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    close_ping_tx: tokio::sync::broadcast::Sender<()>,
     close_ping_rx: tokio::sync::broadcast::Receiver<()>,
 ) {
+    close_connections(&netplay_write_sender, &netplay_read_sender, &close_ping_tx);
     manage_websocket(
         netplay_read_sender.clone(),
         netplay_write_receiver.resubscribe(),
