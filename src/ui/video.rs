@@ -184,9 +184,7 @@ pub fn pause_loop(ui: &mut ui::Ui, frame_time: f64) {
     let mut frame_advance = false;
     let mut pause_counter = 0;
     while paused && !frame_advance {
-        tokio::task::block_in_place(|| {
-            std::thread::sleep(std::time::Duration::from_secs_f64(frame_time));
-        });
+        std::thread::sleep(std::time::Duration::from_secs_f64(frame_time));
         ui::input::get(ui, 0, pause_counter); // to gather hotkey input
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
         retroachievements::do_idle();

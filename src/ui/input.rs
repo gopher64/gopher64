@@ -929,9 +929,7 @@ pub fn configure_input_profile(
             text_engine,
             font,
         );
-        tokio::task::block_in_place(|| {
-            std::thread::sleep(std::time::Duration::from_millis(500));
-        });
+        std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
     close_input_profile_window(
