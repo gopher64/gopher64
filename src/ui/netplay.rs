@@ -649,7 +649,9 @@ fn update_ping(
                                     .duration_since(std::time::UNIX_EPOCH)
                                     .unwrap()
                                     .as_millis();
-                                let ping = (now - message.timestamp) as f64 / 2.0; // calculate one-way latency
+                                // for lockstep, we need to calculate the two-way latency
+                                // for rollback, this would be the one-way latency (divide by 2)
+                                let ping = (now - message.timestamp) as f64;
                                 pings.push(ping);
                                 if pings.len() > message.num_of_peers * 4 {
                                     // once we have enough samples, average the 3 highest values
@@ -666,7 +668,7 @@ fn update_ping(
                                             };
                                             let latency_frames = (ping_avg / (1000.0 / refresh_rate)).ceil() as i32;
                                             let recommendation =
-                                                (latency_frames + 1).min(16);
+                                                (latency_frames + 1).min(32);
 
                                             if handle.get_netplay_recommended_delay() == 0 {
                                                 handle.set_netplay_input_delay(recommendation);

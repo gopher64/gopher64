@@ -294,6 +294,9 @@ pub fn process_requests(
         } else {
             // unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the screen doesn't freeze
             process_netplay(device);
+            if device.netplay.as_ref().unwrap().requests.is_empty() {
+                std::thread::sleep(std::time::Duration::from_millis(1));
+            }
         }
     }
 }
