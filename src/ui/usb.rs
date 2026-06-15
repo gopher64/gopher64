@@ -37,6 +37,8 @@ async fn handle_connection(
 
     let mut shutdown_rx_clone = shutdown_rx.clone();
 
+    while usb_rx.try_recv().is_ok() {} // drain stale USB messages
+
     tokio::spawn(async move {
         let mut incoming_buffer = vec![0u8; 4096];
         let mut data_type: Option<u32> = None;
