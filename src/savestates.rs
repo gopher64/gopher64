@@ -237,9 +237,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
                 if now.elapsed() > timeout {
                     break None;
                 }
-                tokio::task::block_in_place(|| {
-                    std::thread::sleep(std::time::Duration::from_millis(1));
-                });
+                std::thread::sleep(std::time::Duration::from_millis(1));
             }
         } else if let Ok(mut pool) = device.savestate.rewind_pool.lock()
             && let Some((_key, state)) = pool.pop_last()

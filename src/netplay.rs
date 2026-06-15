@@ -127,9 +127,7 @@ fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
         if now.elapsed() > timeout {
             panic!("Could not receive message for {name}");
         }
-        tokio::task::block_in_place(|| {
-            std::thread::sleep(std::time::Duration::from_millis(1));
-        });
+        std::thread::sleep(std::time::Duration::from_millis(1));
     }
 }
 
@@ -297,9 +295,7 @@ pub fn process_requests(
             // unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the screen doesn't freeze
             process_netplay(device);
             if device.netplay.as_ref().unwrap().requests.is_empty() {
-                tokio::task::block_in_place(|| {
-                    std::thread::sleep(std::time::Duration::from_millis(1));
-                });
+                std::thread::sleep(std::time::Duration::from_millis(1));
             }
         }
     }
