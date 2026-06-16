@@ -359,6 +359,16 @@ fn advance_frame(device: &mut device::Device) {
     }
 }
 
+fn create_socket(builder: matchbox_socket::WebRtcSocketBuilder) -> matchbox_socket::WebRtcSocket {
+    let (socket, loop_fut) = builder.build();
+    tokio::spawn(async move {
+        if let Err(e) = loop_fut.await {
+            eprintln!("WebRTC loop failed: {}", e);
+        }
+    });
+    return socket;
+}
+
 pub fn init(
     device: &mut device::Device,
     netplay_config: &NetplayConfig,
@@ -380,15 +390,10 @@ pub fn init(
         eprintln!("Using default ICE config");
     }
 
-    let (mut socket, loop_fut) = builder.build();
-    tokio::spawn(async move {
-        if let Err(e) = loop_fut.await {
-            eprintln!("WebRTC loop failed: {}", e);
-        }
-    });
+    let mut socket = create_socket(builder.clone());
 
     let now = std::time::Instant::now();
-    let timeout = std::time::Duration::from_secs(30);
+    let timeout = std::time::Duration::from_secs(10);
     let mut player_numbers = std::collections::BTreeMap::new();
     player_numbers.insert(netplay_config.player_number, None);
 
@@ -411,8 +416,12 @@ pub fn init(
         }
 
         if now.elapsed() > timeout {
-            eprintln!("Could not connect to netplay peers");
-            return None;
+            socket.close();
+            ui::video::onscreen_message(
+                "Could not connect to netplay peers, retrying...",
+                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+            );
+            socket = create_socket(builder.clone());
         }
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::render_frame();
