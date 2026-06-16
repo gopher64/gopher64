@@ -91,7 +91,7 @@ export component NetplayWait inherits Page {
                 }
 
                 Text {
-                    text: NetplayData.player_name == NetplayWaitData.players[0] ? @tr("Setting the input delay too low will cause the game to lag.\nYou can lower the input delay in-game by pressing Alt+[ and raise it with Alt+].") : NetplayWaitData.motd;
+                    text: NetplayData.player_name == NetplayWaitData.players[0] ? @tr("Setting the input delay too low will cause frequent rollbacks.\nYou can lower the input delay in-game by pressing Alt+[ and raise it with Alt+].") : NetplayWaitData.motd;
                     horizontal-alignment: center;
                     wrap: word-wrap;
                 }
@@ -105,7 +105,7 @@ export component NetplayWait inherits Page {
 
                     SpinBox {
                         minimum: 0;
-                        maximum: 32;
+                        maximum: 16;
                         value: NetplayWaitData.input_delay;
                         enabled: NetplayWaitData.recommended_delay != 0;
                         edited => {

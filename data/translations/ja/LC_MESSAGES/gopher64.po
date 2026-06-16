@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-13 07:48+0000\n"
+"POT-Creation-Date: 2026-06-16 10:35+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
@@ -238,7 +238,7 @@ msgctxt "NetplayCreate"
 msgid "Create Session"
 msgstr "セッションを作成"
 
-#: src/ui/gui/netplay_create.slint:105
+#: src/ui/gui/netplay_create.slint:107
 msgctxt "NetplayCreate"
 msgid "Cancel"
 msgstr "キャンセル"
@@ -391,11 +391,11 @@ msgstr "送信"
 #: src/ui/gui/netplay_wait.slint:94
 msgctxt "NetplayWait"
 msgid ""
-"Setting the input delay too low will cause the game to lag.\n"
+"Setting the input delay too low will cause frequent rollbacks.\n"
 "You can lower the input delay in-game by pressing Alt+[ and raise it with "
 "Alt+]."
 msgstr ""
-"入力遅延を低く設定しすぎるとゲームが遅延します。\n"
+"入力遅延を低く設定しすぎると頻繁にロールバックが発生します。\n"
 "Alt+[ でゲーム内の入力遅延を下げ、Alt+] で上げることができます。"
 
 #: src/ui/gui/netplay_wait.slint:101
@@ -403,22 +403,22 @@ msgctxt "NetplayWait"
 msgid "Local Input Delay:"
 msgstr "ローカル入力遅延:"
 
-#: src/ui/gui/netplay_wait.slint:117
+#: src/ui/gui/netplay_wait.slint:118
 msgctxt "NetplayWait"
 msgid "Recommended: "
 msgstr "推奨: "
 
-#: src/ui/gui/netplay_wait.slint:126
+#: src/ui/gui/netplay_wait.slint:127
 msgctxt "NetplayWait"
 msgid "Start Game"
 msgstr "ゲーム開始"
 
-#: src/ui/gui/netplay_wait.slint:126
+#: src/ui/gui/netplay_wait.slint:127
 msgctxt "NetplayWait"
 msgid "Waiting for P2P mesh "
 msgstr "P2Pメッシュ接続待機中 "
 
-#: src/ui/gui/netplay_wait.slint:134
+#: src/ui/gui/netplay_wait.slint:135
 msgctxt "NetplayWait"
 msgid "Cancel"
 msgstr "キャンセル"
