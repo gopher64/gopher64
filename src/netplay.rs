@@ -283,6 +283,7 @@ pub fn process_requests(
                     cell.save(frame, Some(frame), Some(hash));
                 }
                 ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
+                    eprintln!("Rollback not supported");
                     if let Some(frame) = cell.load() {
                         savestates::load_savestate(device, true, Some(frame));
                     }
@@ -294,9 +295,6 @@ pub fn process_requests(
         } else {
             // unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the screen doesn't freeze
             process_netplay(device);
-            if device.netplay.as_ref().unwrap().requests.is_empty() {
-                std::thread::sleep(std::time::Duration::from_millis(1));
-            }
         }
     }
 }
@@ -347,6 +345,13 @@ fn advance_frame(device: &mut device::Device) {
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
+
+    // avoid rollback
+    while netplay.session.current_frame() > netplay.session.confirmed_frame()
+        && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
+    {
+        netplay.session.poll_remote_clients();
+    }
     match netplay.session.advance_frame() {
         Ok(requests) => {
             netplay.requests.extend(requests);
@@ -386,12 +391,6 @@ pub fn init(
         }
     });
 
-    let (disconnected_peers_tx, disconnected_peers_rx) = tokio::sync::mpsc::unbounded_channel();
-    let matchbox_channel = MatchboxChannel {
-        channel: socket.take_channel(0).unwrap(),
-        disconnected_peers: disconnected_peers_tx,
-    };
-    let mut reliable_channel = socket.take_channel(1).unwrap();
     let now = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(30);
     let mut player_numbers = std::collections::BTreeMap::new();
@@ -409,8 +408,8 @@ pub fn init(
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
 
-        send_player_number(&mut reliable_channel, peers, netplay_config.player_number);
-        get_player_numbers(&mut reliable_channel, &mut player_numbers);
+        send_player_number(socket.channel_mut(1), peers, netplay_config.player_number);
+        get_player_numbers(socket.channel_mut(1), &mut player_numbers);
         if player_numbers.len() == netplay_config.number_of_players {
             break;
         }
@@ -437,8 +436,9 @@ pub fn init(
         .with_input_delay(netplay_config.input_delay)
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
-        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
+        //.with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 }) // not compatible with sparse saving mode
         .with_max_prediction_window(16)
+        .with_sparse_saving_mode(true) // not using rollback
         .with_disconnect_timeout(std::time::Duration::from_secs(if cfg!(debug_assertions) {
             10
         } else {
@@ -458,6 +458,13 @@ pub fn init(
                 .unwrap();
         }
     }
+
+    let (disconnected_peers_tx, disconnected_peers_rx) = tokio::sync::mpsc::unbounded_channel();
+    let matchbox_channel = MatchboxChannel {
+        channel: socket.take_channel(0).unwrap(),
+        disconnected_peers: disconnected_peers_tx,
+    };
+    let reliable_channel = socket.take_channel(1).unwrap();
 
     if matchbox_channel.channel.config().max_retransmits != Some(0)
         || matchbox_channel.channel.config().ordered
