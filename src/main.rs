@@ -6,7 +6,8 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 use clap::Parser;
 
 fn main() -> std::io::Result<()> {
-    let close_tx = gopher64::create_runtime();
+    let (close_tx, handle) = gopher64::create_runtime();
+    let _guard = handle.enter();
 
     let args = gopher64::Args::parse();
     let result = gopher64::run(args, std::env::args().count());

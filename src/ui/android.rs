@@ -162,7 +162,8 @@ pub extern "C" fn gopher64_sdl_main(
     argc: std::ffi::c_int,
     argv: *mut *mut std::ffi::c_char,
 ) -> std::ffi::c_int {
-    let close_tx = gopher64::create_runtime();
+    let (close_tx, handle) = gopher64::create_runtime();
+    let _guard = handle.enter();
 
     let raw = argv_to_strings(argc, argv);
     let args = Args::try_parse_from(raw).unwrap();

@@ -104,7 +104,7 @@ fn set_app_id() {
     }
 }
 
-pub fn create_runtime() -> tokio::sync::oneshot::Sender<()> {
+pub fn create_runtime() -> (tokio::sync::oneshot::Sender<()>, tokio::runtime::Handle) {
     let (tx, rx) = std::sync::mpsc::channel();
     let (close_tx, close_rx) = tokio::sync::oneshot::channel::<()>();
 
@@ -114,8 +114,7 @@ pub fn create_runtime() -> tokio::sync::oneshot::Sender<()> {
         rt.block_on(close_rx).unwrap();
     });
 
-    let _guard = rx.recv().unwrap().enter();
-    close_tx
+    (close_tx, rx.recv().unwrap())
 }
 
 pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
@@ -347,7 +346,8 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
 #[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
 fn android_main(app: slint::android::AndroidApp) {
-    let close_tx = create_runtime();
+    let (close_tx, handle) = gopher64::create_runtime();
+    let _guard = handle.enter();
 
     slint::android::init_with_event_listener(app.clone(), move |event| match event {
         slint::android::android_activity::PollEvent::Main(main_event) => match main_event {
