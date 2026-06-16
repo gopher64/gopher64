@@ -397,7 +397,7 @@ msgid ""
 "You can lower the input delay in-game by pressing Alt+[ and raise it with "
 "Alt+]."
 msgstr ""
-"Een te lage invoervertraging zorgt ervoor dat het spel gaat laggen.\n"
+"Een te lage invoervertraging zorgt ervoor dat het spel gaat haperen.\n"
 "Je kunt de invoervertraging in het spel verlagen met Alt+[ en verhogen met "
 "Alt+]."
 

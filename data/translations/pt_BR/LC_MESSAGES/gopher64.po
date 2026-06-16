@@ -398,9 +398,9 @@ msgid ""
 "You can lower the input delay in-game by pressing Alt+[ and raise it with "
 "Alt+]."
 msgstr ""
-"Definir o atraso de entrada muito baixo fará o jogo apresentar lag.\n"
-"Você pode diminuir o atraso de entrada no jogo pressionando Alt+[ e aumentá-"
-"lo com Alt+]."
+"Definir o atraso de entrada muito baixo causará lag no jogo.\n"
+"Você pode diminuir o atraso de entrada no jogo pressionando Alt+[ e "
+"aumentá-lo com Alt+]."
 
 #: src/ui/gui/netplay_wait.slint:101
 msgctxt "NetplayWait"

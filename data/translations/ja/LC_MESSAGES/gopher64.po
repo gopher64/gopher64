@@ -395,7 +395,7 @@ msgid ""
 "You can lower the input delay in-game by pressing Alt+[ and raise it with "
 "Alt+]."
 msgstr ""
-"入力遅延を低く設定しすぎるとゲームがラグくなります。\n"
+"入力遅延を低く設定しすぎるとゲームが遅延します。\n"
 "Alt+[ でゲーム内の入力遅延を下げ、Alt+] で上げることができます。"
 
 #: src/ui/gui/netplay_wait.slint:101
