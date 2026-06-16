@@ -19,15 +19,12 @@ impl ggrs::Config for GgrsConfig {
 
 pub struct MatchboxChannel {
     channel: matchbox_socket::WebRtcChannel,
-    disconnected_peers: tokio::sync::mpsc::UnboundedSender<matchbox_socket::PeerId>,
 }
 
 impl ggrs::NonBlockingSocket<matchbox_socket::PeerId> for MatchboxChannel {
     fn send_to(&mut self, msg: &ggrs::Message, addr: &matchbox_socket::PeerId) {
         let encoded = postcard::to_stdvec(msg).expect("serialization failed");
-        if self.channel.try_send(encoded.into(), *addr).is_err() {
-            self.disconnected_peers.send(*addr).unwrap();
-        }
+        let _ = self.channel.try_send(encoded.into(), *addr);
     }
 
     fn receive_all_messages(&mut self) -> Vec<(matchbox_socket::PeerId, ggrs::Message)> {
@@ -51,6 +48,7 @@ pub struct NetplayConfig {
 }
 
 pub struct Netplay {
+    pub disconnected: bool,
     pub session: ggrs::P2PSession<GgrsConfig>,
     pub reliable_channel: matchbox_socket::WebRtcChannel,
     pub peers: Vec<matchbox_socket::PeerId>,
@@ -62,7 +60,6 @@ pub struct Netplay {
     pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
     pub incoming_message: Vec<u8>,
-    pub disconnected_peers: tokio::sync::mpsc::UnboundedReceiver<matchbox_socket::PeerId>,
     pub ice_config_path: std::path::PathBuf,
 }
 
@@ -254,19 +251,6 @@ pub fn in_rollback(netplay: Option<&Netplay>) -> bool {
     }
 }
 
-fn process_disconnected_peers(netplay: &mut Netplay) {
-    while let Ok(addr) = netplay.disconnected_peers.try_recv() {
-        for handle in netplay.session.handles_by_address(addr) {
-            if netplay.session.disconnect_player(handle).is_ok() {
-                ui::video::onscreen_message(
-                    &format!("Player {} disconnected", handle + 1),
-                    ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-                );
-            }
-        }
-    }
-}
-
 pub fn process_requests(
     device: &mut device::Device,
 ) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
@@ -293,24 +277,21 @@ pub fn process_requests(
                 }
             }
         } else {
-            // unsafe { sdl3_sys::events::SDL_PumpEvents() }; // so the screen doesn't freeze
             process_netplay(device);
         }
     }
 }
 
-fn process_netplay(device: &mut device::Device) {
-    let netplay = device.netplay.as_mut().unwrap();
-    process_disconnected_peers(netplay);
-
+fn poll_clients(netplay: &mut Netplay) {
     netplay.session.poll_remote_clients();
     for event in netplay.session.events() {
         match event {
             ggrs::GgrsEvent::Synchronizing { .. } => {}
             ggrs::GgrsEvent::Synchronized { .. } => {}
             ggrs::GgrsEvent::Disconnected { .. } => {
+                netplay.disconnected = true;
                 ui::video::onscreen_message(
-                    "Lost connection to peer",
+                    "Lost connection to peers",
                     ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
                 );
             }
@@ -332,7 +313,12 @@ fn process_netplay(device: &mut device::Device) {
             }
         }
     }
+}
 
+fn process_netplay(device: &mut device::Device) {
+    let netplay = device.netplay.as_mut().unwrap();
+
+    poll_clients(netplay);
     process_reliable_messages(netplay);
     advance_frame(device);
 }
@@ -350,8 +336,22 @@ fn advance_frame(device: &mut device::Device) {
     while netplay.session.current_frame() > netplay.session.confirmed_frame()
         && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
     {
-        netplay.session.poll_remote_clients();
+        poll_clients(netplay);
     }
+
+    if netplay.disconnected {
+        netplay.requests.push_back(ggrs::GgrsRequest::AdvanceFrame {
+            inputs: vec![
+                (
+                    ui::input::InputData::default(),
+                    ggrs::InputStatus::Disconnected
+                );
+                4
+            ],
+        });
+        return;
+    }
+
     match netplay.session.advance_frame() {
         Ok(requests) => {
             netplay.requests.extend(requests);
@@ -470,10 +470,8 @@ pub fn init(
         }
     }
 
-    let (disconnected_peers_tx, disconnected_peers_rx) = tokio::sync::mpsc::unbounded_channel();
     let matchbox_channel = MatchboxChannel {
         channel: socket.take_channel(0).unwrap(),
-        disconnected_peers: disconnected_peers_tx,
     };
     let reliable_channel = socket.take_channel(1).unwrap();
 
@@ -498,7 +496,7 @@ pub fn init(
     }
 
     Some(Netplay {
-        disconnected_peers: disconnected_peers_rx,
+        disconnected: false,
         incoming_message: vec![],
         input_delay: netplay_config.input_delay,
         session,
