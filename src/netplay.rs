@@ -386,12 +386,6 @@ pub fn init(
         }
     });
 
-    let (disconnected_peers_tx, disconnected_peers_rx) = tokio::sync::mpsc::unbounded_channel();
-    let matchbox_channel = MatchboxChannel {
-        channel: socket.take_channel(0).unwrap(),
-        disconnected_peers: disconnected_peers_tx,
-    };
-    let mut reliable_channel = socket.take_channel(1).unwrap();
     let now = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(30);
     let mut player_numbers = std::collections::BTreeMap::new();
@@ -409,8 +403,12 @@ pub fn init(
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
 
-        send_player_number(&mut reliable_channel, peers, netplay_config.player_number);
-        get_player_numbers(&mut reliable_channel, &mut player_numbers);
+        send_player_number(
+            &mut socket.channel_mut(1),
+            peers,
+            netplay_config.player_number,
+        );
+        get_player_numbers(&mut socket.channel_mut(1), &mut player_numbers);
         if player_numbers.len() == netplay_config.number_of_players {
             break;
         }
@@ -458,6 +456,13 @@ pub fn init(
                 .unwrap();
         }
     }
+
+    let (disconnected_peers_tx, disconnected_peers_rx) = tokio::sync::mpsc::unbounded_channel();
+    let matchbox_channel = MatchboxChannel {
+        channel: socket.take_channel(0).unwrap(),
+        disconnected_peers: disconnected_peers_tx,
+    };
+    let reliable_channel = socket.take_channel(1).unwrap();
 
     if matchbox_channel.channel.config().max_retransmits != Some(0)
         || matchbox_channel.channel.config().ordered
