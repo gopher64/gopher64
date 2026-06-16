@@ -346,7 +346,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
 #[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
 fn android_main(app: slint::android::AndroidApp) {
-    let (close_tx, handle) = gopher64::create_runtime();
+    let (close_tx, handle) = create_runtime();
     let _guard = handle.enter();
 
     slint::android::init_with_event_listener(app.clone(), move |event| match event {
