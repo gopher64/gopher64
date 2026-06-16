@@ -60,7 +60,7 @@ void rdp_update_screen();
 void rdp_render_frame();
 CALL_BACK rdp_check_callback();
 uint64_t rdp_process_commands();
-void rdp_idle();
+void rdp_call_sync();
 void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds);
 void rdp_check_framebuffers(uint32_t address, uint32_t length);
 size_t rdp_state_size();

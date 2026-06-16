@@ -306,10 +306,12 @@ JoystickEvent get_joystick_event() {
   return joystick_event;
 }
 
-void rdp_idle() {
-  processor->idle();
-  sync_signal = 0;
-  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
+void rdp_call_sync() {
+  if (sync_signal) {
+    processor->wait_for_timeline(sync_signal);
+    sync_signal = 0;
+    rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
+  }
 }
 
 static void rdp_new_processor() {

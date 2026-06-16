@@ -165,8 +165,8 @@ pub fn save_state(rdp_state: *mut u8) {
     unsafe { rdp_save_state(rdp_state) }
 }
 
-pub fn idle() {
-    unsafe { rdp_idle() }
+pub fn call_sync() {
+    unsafe { rdp_call_sync() }
 }
 
 pub fn load_state(device: &mut device::Device, rdp_state: *const u8) {
