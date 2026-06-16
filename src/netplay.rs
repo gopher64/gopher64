@@ -436,9 +436,9 @@ pub fn init(
         .with_input_delay(netplay_config.input_delay)
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
-        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
+        //.with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 }) // not compatible with sparse saving mode
         .with_max_prediction_window(16)
-        .with_sparse_saving_mode(false)
+        .with_sparse_saving_mode(true) // not using rollback
         .with_disconnect_timeout(std::time::Duration::from_secs(if cfg!(debug_assertions) {
             10
         } else {
