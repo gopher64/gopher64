@@ -254,9 +254,7 @@ pub fn in_rollback(netplay: Option<&Netplay>) -> bool {
 fn process_disconnected_peers(netplay: &mut Netplay) {
     while let Ok(addr) = netplay.disconnected_peers.try_recv() {
         for handle in netplay.session.handles_by_address(addr) {
-            if let Err(e) = netplay.session.disconnect_player(handle) {
-                eprintln!("Error disconnecting player: {}", e);
-            } else {
+            if netplay.session.disconnect_player(handle).is_ok() {
                 ui::video::onscreen_message(
                     &format!("Player {} disconnected", handle + 1),
                     ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
