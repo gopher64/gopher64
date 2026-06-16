@@ -396,7 +396,7 @@ pub fn init(
 
     let mut socket = create_socket(builder.clone());
 
-    let now = std::time::Instant::now();
+    let mut now = std::time::Instant::now();
     let socket_timeout = std::time::Duration::from_secs_f64(rand::random_range(8.0..10.0));
     let mut player_numbers = std::collections::BTreeMap::new();
 
@@ -427,6 +427,7 @@ pub fn init(
             );
             player_numbers.clear();
             socket = create_socket(builder.clone());
+            now = std::time::Instant::now();
         }
 
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
