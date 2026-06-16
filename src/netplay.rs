@@ -283,7 +283,6 @@ pub fn process_requests(
                     cell.save(frame, Some(frame), Some(hash));
                 }
                 ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
-                    eprintln!("Rollback not supported");
                     if let Some(frame) = cell.load() {
                         savestates::load_savestate(device, true, Some(frame));
                     }
