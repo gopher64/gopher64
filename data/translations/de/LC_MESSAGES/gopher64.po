@@ -397,7 +397,7 @@ msgid ""
 "You can lower the input delay in-game by pressing Alt+[ and raise it with "
 "Alt+]."
 msgstr ""
-"Eine zu niedrige Eingabeverzögerung führt dazu, dass das Spiel laggt.\n"
+"Eine zu niedrige Eingabeverzögerung führt zu Ruckeln im Spiel.\n"
 "Sie können die Eingabeverzögerung im Spiel mit Alt+[ verringern und mit "
 "Alt+] erhöhen."
 
