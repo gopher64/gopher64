@@ -283,6 +283,7 @@ pub fn process_requests(
                     cell.save(frame, Some(frame), Some(hash));
                 }
                 ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
+                    eprintln!("Rollback not supported");
                     if let Some(frame) = cell.load() {
                         savestates::load_savestate(device, true, Some(frame));
                     }
@@ -344,6 +345,8 @@ fn advance_frame(device: &mut device::Device) {
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
+
+    // avoid rollback
     while netplay.session.current_frame() > netplay.session.confirmed_frame()
         && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
     {
@@ -434,7 +437,7 @@ pub fn init(
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
-        .with_max_prediction_window(8)
+        .with_max_prediction_window(16)
         .with_sparse_saving_mode(false)
         .with_disconnect_timeout(std::time::Duration::from_secs(if cfg!(debug_assertions) {
             10
