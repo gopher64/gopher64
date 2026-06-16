@@ -344,6 +344,11 @@ fn advance_frame(device: &mut device::Device) {
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
+    while netplay.session.current_frame() > netplay.session.confirmed_frame()
+        && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
+    {
+        netplay.session.poll_remote_clients();
+    }
     match netplay.session.advance_frame() {
         Ok(requests) => {
             netplay.requests.extend(requests);
@@ -429,7 +434,8 @@ pub fn init(
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
-        .with_max_prediction_window(16)
+        .with_max_prediction_window(8)
+        .with_sparse_saving_mode(false)
         .with_disconnect_timeout(std::time::Duration::from_secs(if cfg!(debug_assertions) {
             10
         } else {
