@@ -409,21 +409,21 @@ pub fn init(
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
 
-        send_player_number(socket.channel_mut(1), peers, netplay_config.player_number);
-        get_player_numbers(socket.channel_mut(1), &mut player_numbers);
-        if player_numbers.len() == netplay_config.number_of_players {
-            break;
-        }
-
-        if now.elapsed() > socket_timeout {
+        if peers.len() == netplay_config.number_of_players - 1 {
+            send_player_number(socket.channel_mut(1), peers, netplay_config.player_number);
+            get_player_numbers(socket.channel_mut(1), &mut player_numbers);
+            if player_numbers.len() == netplay_config.number_of_players {
+                break;
+            }
+        } else if now.elapsed() > socket_timeout {
             socket.close();
             ui::video::onscreen_message(
                 "Could not connect to netplay peers, retrying...",
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
-            player_numbers.clear();
             socket = create_socket(builder.clone());
         }
+
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::render_frame();
         ui::video::update_screen();
