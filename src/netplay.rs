@@ -366,7 +366,7 @@ fn create_socket(builder: matchbox_socket::WebRtcSocketBuilder) -> matchbox_sock
             eprintln!("WebRTC loop failed: {}", e);
         }
     });
-    return socket;
+    socket
 }
 
 pub fn init(
