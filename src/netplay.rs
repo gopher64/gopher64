@@ -393,7 +393,7 @@ pub fn init(
     let mut socket = create_socket(builder.clone());
 
     let now = std::time::Instant::now();
-    let timeout = std::time::Duration::from_secs(10);
+    let socket_timeout = std::time::Duration::from_secs_f64(rand::random_range(8.0..10.0));
     let mut player_numbers = std::collections::BTreeMap::new();
     player_numbers.insert(netplay_config.player_number, None);
 
@@ -415,12 +415,13 @@ pub fn init(
             break;
         }
 
-        if now.elapsed() > timeout {
+        if now.elapsed() > socket_timeout {
             socket.close();
             ui::video::onscreen_message(
                 "Could not connect to netplay peers, retrying...",
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
+            player_numbers.clear();
             socket = create_socket(builder.clone());
         }
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
@@ -479,6 +480,7 @@ pub fn init(
     let mut session = session_builder.start_p2p_session(matchbox_channel).unwrap();
 
     let now = std::time::Instant::now();
+    let timeout = std::time::Duration::from_secs(10);
     while session.current_state() != ggrs::SessionState::Running {
         session.poll_remote_clients();
         if now.elapsed() > timeout {
