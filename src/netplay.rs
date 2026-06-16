@@ -363,6 +363,16 @@ fn advance_frame(device: &mut device::Device) {
     }
 }
 
+fn create_socket(builder: matchbox_socket::WebRtcSocketBuilder) -> matchbox_socket::WebRtcSocket {
+    let (socket, loop_fut) = builder.build();
+    tokio::spawn(async move {
+        if let Err(e) = loop_fut.await {
+            eprintln!("WebRTC loop failed: {}", e);
+        }
+    });
+    socket
+}
+
 pub fn init(
     device: &mut device::Device,
     netplay_config: &NetplayConfig,
@@ -384,17 +394,11 @@ pub fn init(
         eprintln!("Using default ICE config");
     }
 
-    let (mut socket, loop_fut) = builder.build();
-    tokio::spawn(async move {
-        if let Err(e) = loop_fut.await {
-            eprintln!("WebRTC loop failed: {}", e);
-        }
-    });
+    let mut socket = create_socket(builder.clone());
 
     let now = std::time::Instant::now();
-    let timeout = std::time::Duration::from_secs(30);
+    let socket_timeout = std::time::Duration::from_secs_f64(rand::random_range(8.0..10.0));
     let mut player_numbers = std::collections::BTreeMap::new();
-    player_numbers.insert(netplay_config.player_number, None);
 
     ui::video::onscreen_message(
         "Connecting to netplay peers...",
@@ -408,16 +412,23 @@ pub fn init(
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
 
-        send_player_number(socket.channel_mut(1), peers, netplay_config.player_number);
-        get_player_numbers(socket.channel_mut(1), &mut player_numbers);
-        if player_numbers.len() == netplay_config.number_of_players {
-            break;
+        if peers.len() == netplay_config.number_of_players - 1 {
+            player_numbers.insert(netplay_config.player_number, None);
+            send_player_number(socket.channel_mut(1), peers, netplay_config.player_number);
+            get_player_numbers(socket.channel_mut(1), &mut player_numbers);
+            if player_numbers.len() == netplay_config.number_of_players {
+                break;
+            }
+        } else if now.elapsed() > socket_timeout {
+            socket.close();
+            ui::video::onscreen_message(
+                "Could not connect to netplay peers, retrying...",
+                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+            );
+            player_numbers.clear();
+            socket = create_socket(builder.clone());
         }
 
-        if now.elapsed() > timeout {
-            eprintln!("Could not connect to netplay peers");
-            return None;
-        }
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::render_frame();
         ui::video::update_screen();
@@ -474,6 +485,7 @@ pub fn init(
     let mut session = session_builder.start_p2p_session(matchbox_channel).unwrap();
 
     let now = std::time::Instant::now();
+    let timeout = std::time::Duration::from_secs(10);
     while session.current_state() != ggrs::SessionState::Running {
         session.poll_remote_clients();
         if now.elapsed() > timeout {
