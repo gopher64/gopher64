@@ -1,4 +1,5 @@
 use crate::Args;
+use crate::create_runtime;
 use crate::run;
 use crate::ui;
 use clap::Parser;
@@ -158,17 +159,21 @@ fn argv_to_strings(argc: std::ffi::c_int, argv: *mut *mut std::ffi::c_char) -> V
 }
 
 #[unsafe(no_mangle)]
-#[tokio::main]
-pub async extern "C" fn gopher64_sdl_main(
+pub extern "C" fn gopher64_sdl_main(
     argc: std::ffi::c_int,
     argv: *mut *mut std::ffi::c_char,
 ) -> std::ffi::c_int {
+    let (close_tx, handle) = create_runtime();
+    let _guard = handle.enter();
+
     let raw = argv_to_strings(argc, argv);
     let args = Args::try_parse_from(raw).unwrap();
     if let Err(err) = run(args, argc as usize) {
+        close_tx.send(()).unwrap();
         eprintln!("Error running game: {err:?}");
         return 1;
     }
+    close_tx.send(()).unwrap();
     0
 }
 

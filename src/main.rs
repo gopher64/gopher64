@@ -5,8 +5,12 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use clap::Parser;
 
-#[tokio::main]
-async fn main() -> std::io::Result<()> {
+fn main() -> std::io::Result<()> {
+    let (close_tx, handle) = gopher64::create_runtime();
+    let _guard = handle.enter();
+
     let args = gopher64::Args::parse();
-    gopher64::run(args, std::env::args().count())
+    let result = gopher64::run(args, std::env::args().count());
+    close_tx.send(()).unwrap();
+    result
 }
