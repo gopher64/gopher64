@@ -395,7 +395,6 @@ pub fn init(
     let now = std::time::Instant::now();
     let socket_timeout = std::time::Duration::from_secs_f64(rand::random_range(8.0..10.0));
     let mut player_numbers = std::collections::BTreeMap::new();
-    player_numbers.insert(netplay_config.player_number, None);
 
     ui::video::onscreen_message(
         "Connecting to netplay peers...",
@@ -410,6 +409,7 @@ pub fn init(
             .collect::<Vec<matchbox_socket::PeerId>>();
 
         if peers.len() == netplay_config.number_of_players - 1 {
+            player_numbers.insert(netplay_config.player_number, None);
             send_player_number(socket.channel_mut(1), peers, netplay_config.player_number);
             get_player_numbers(socket.channel_mut(1), &mut player_numbers);
             if player_numbers.len() == netplay_config.number_of_players {
@@ -421,6 +421,7 @@ pub fn init(
                 "Could not connect to netplay peers, retrying...",
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
+            player_numbers.clear();
             socket = create_socket(builder.clone());
         }
 
