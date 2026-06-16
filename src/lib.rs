@@ -213,9 +213,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 tx.send(false).unwrap();
             }
 
-            tokio::task::block_in_place(move || {
-                rx.blocking_recv().unwrap();
-            });
+            rx.blocking_recv().unwrap();
 
             ra_config
         } else {
@@ -334,8 +332,17 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
 
 #[cfg(target_os = "android")]
 #[unsafe(no_mangle)]
-#[tokio::main]
-async fn android_main(app: slint::android::AndroidApp) {
+fn android_main(app: slint::android::AndroidApp) {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let (close_tx, close_rx) = tokio::sync::oneshot::channel::<()>();
+
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().expect("Failed to build runtime");
+        tx.send(rt.handle().clone()).unwrap();
+        rt.block_on(close_rx).unwrap();
+    });
+    let _guard = rx.recv().unwrap().enter();
+
     slint::android::init_with_event_listener(app.clone(), move |event| match event {
         slint::android::android_activity::PollEvent::Main(main_event) => match main_event {
             slint::android::android_activity::MainEvent::TerminateWindow { .. } => {
@@ -368,6 +375,7 @@ async fn android_main(app: slint::android::AndroidApp) {
     std::fs::create_dir_all(dirs.data_dir.join("states")).unwrap();
 
     ui::gui::app_window(&app_window, true);
+    close_tx.send(()).unwrap();
     *android::WEAK_SLINT_WINDOW.lock().unwrap() = None;
     *android::ANDROID_APP.lock().unwrap() = None;
 }

@@ -158,17 +158,29 @@ fn argv_to_strings(argc: std::ffi::c_int, argv: *mut *mut std::ffi::c_char) -> V
 }
 
 #[unsafe(no_mangle)]
-#[tokio::main]
-pub async extern "C" fn gopher64_sdl_main(
+
+pub extern "C" fn gopher64_sdl_main(
     argc: std::ffi::c_int,
     argv: *mut *mut std::ffi::c_char,
 ) -> std::ffi::c_int {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let (close_tx, close_rx) = tokio::sync::oneshot::channel::<()>();
+
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().expect("Failed to build runtime");
+        tx.send(rt.handle().clone()).unwrap();
+        rt.block_on(close_rx).unwrap();
+    });
+
+    let _guard = rx.recv().unwrap().enter();
+
     let raw = argv_to_strings(argc, argv);
     let args = Args::try_parse_from(raw).unwrap();
     if let Err(err) = run(args, argc as usize) {
         eprintln!("Error running game: {err:?}");
         return 1;
     }
+    close_tx.send(()).unwrap();
     0
 }
 
