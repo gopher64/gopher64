@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-06-13 07:48+0000\n"
+"POT-Creation-Date: 2026-06-16 10:35+0000\n"
 "PO-Revision-Date: 2026-05-11 18:11-3000\n"
 "Last-Translator: EDUARDO CARVALHO <eduardotcarvalho@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -240,7 +240,7 @@ msgctxt "NetplayCreate"
 msgid "Create Session"
 msgstr "Criar Sessão"
 
-#: src/ui/gui/netplay_create.slint:105
+#: src/ui/gui/netplay_create.slint:107
 msgctxt "NetplayCreate"
 msgid "Cancel"
 msgstr "Cancelar"
@@ -394,35 +394,35 @@ msgstr "Enviar Mensagem"
 #: src/ui/gui/netplay_wait.slint:94
 msgctxt "NetplayWait"
 msgid ""
-"Setting the input delay too low will cause the game to lag.\n"
+"Setting the input delay too low will cause frequent rollbacks.\n"
 "You can lower the input delay in-game by pressing Alt+[ and raise it with "
 "Alt+]."
 msgstr ""
-"Definir o atraso de entrada muito baixo causará lag no jogo.\n"
-"Você pode diminuir o atraso de entrada no jogo pressionando Alt+[ e "
-"aumentá-lo com Alt+]."
+"Definir o atraso de entrada muito baixo causará rollbacks frequentes.\n"
+"Você pode diminuir o atraso de entrada no jogo pressionando Alt+[ e aumentá-"
+"lo com Alt+]."
 
 #: src/ui/gui/netplay_wait.slint:101
 msgctxt "NetplayWait"
 msgid "Local Input Delay:"
 msgstr "Atraso de entrada local:"
 
-#: src/ui/gui/netplay_wait.slint:117
+#: src/ui/gui/netplay_wait.slint:118
 msgctxt "NetplayWait"
 msgid "Recommended: "
 msgstr "Recomendado: "
 
-#: src/ui/gui/netplay_wait.slint:126
+#: src/ui/gui/netplay_wait.slint:127
 msgctxt "NetplayWait"
 msgid "Start Game"
 msgstr "Iniciar jogo"
 
-#: src/ui/gui/netplay_wait.slint:126
+#: src/ui/gui/netplay_wait.slint:127
 msgctxt "NetplayWait"
 msgid "Waiting for P2P mesh "
 msgstr "Aguardando malha P2P "
 
-#: src/ui/gui/netplay_wait.slint:134
+#: src/ui/gui/netplay_wait.slint:135
 msgctxt "NetplayWait"
 msgid "Cancel"
 msgstr "Cancelar"
