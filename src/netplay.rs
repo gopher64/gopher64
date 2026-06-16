@@ -347,14 +347,19 @@ fn advance_frame(device: &mut device::Device) {
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
-    match netplay.session.advance_frame() {
-        Ok(requests) => {
-            netplay.requests.extend(requests);
+    if !netplay.session.in_lockstep_mode()
+        || netplay.session.current_frame() <= netplay.session.confirmed_frame()
+        || netplay.session.confirmed_frame() == ggrs::NULL_FRAME
+    {
+        match netplay.session.advance_frame() {
+            Ok(requests) => {
+                netplay.requests.extend(requests);
+            }
+            Err(ggrs::GgrsError::PredictionThreshold) => {
+                println!("prediction threshold reached");
+            }
+            Err(e) => panic!("{e}"),
         }
-        Err(ggrs::GgrsError::PredictionThreshold) => {
-            println!("prediction threshold reached");
-        }
-        Err(e) => panic!("{e}"),
     }
 }
 
