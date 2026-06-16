@@ -247,7 +247,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     if let Some(netplay) = &mut device.netplay
         && netplay.player_number == 0
     {
-        if callback.decrease_input_delay && netplay.input_delay > 0 {
+        if callback.decrease_input_delay {
             netplay::send_input_delay(netplay, netplay.input_delay - 1);
         } else if callback.increase_input_delay {
             netplay::send_input_delay(netplay, netplay.input_delay + 1);
