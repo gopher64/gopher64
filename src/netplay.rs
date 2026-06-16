@@ -203,6 +203,10 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
 }
 
 pub fn send_input_delay(netplay: &mut Netplay, input_delay: usize) {
+    if input_delay < 1 {
+        return;
+    }
+
     let message = NetplayMessage {
         name: "input_delay".to_string(),
         data: (input_delay as u64).to_be_bytes().to_vec(),
