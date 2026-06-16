@@ -1,5 +1,4 @@
 use crate::device;
-use crate::savestates;
 use crate::ui;
 use sha2::digest::Digest;
 
@@ -271,7 +270,7 @@ pub fn process_requests(
         if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
             match request {
                 ggrs::GgrsRequest::SaveGameState { cell, frame } => {
-                    savestates::create_savestate(device, true, Some(frame));
+                    //savestates::create_savestate(device, true, Some(frame));
 
                     let mut hasher = sha2::Sha256::new();
                     for reg in device.cpu.cop0.regs.as_ref() {
@@ -280,10 +279,10 @@ pub fn process_requests(
                     let hash = u128::from_be_bytes(hasher.finalize()[..16].try_into().unwrap());
                     cell.save(frame, Some(frame), Some(hash));
                 }
-                ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
-                    if let Some(frame) = cell.load() {
-                        savestates::load_savestate(device, true, Some(frame));
-                    }
+                ggrs::GgrsRequest::LoadGameState { cell: _, frame: _ } => {
+                    // if let Some(frame) = cell.load() {
+                    //    savestates::load_savestate(device, true, Some(frame));
+                    // }
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
                     return inputs;
@@ -433,9 +432,8 @@ pub fn init(
         .with_input_delay(netplay_config.input_delay)
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
-        //.with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 }) // not compatible with sparse saving mode
+        .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
         .with_max_prediction_window(16)
-        .with_sparse_saving_mode(true) // not using rollback
         .with_disconnect_timeout(std::time::Duration::from_secs(if cfg!(debug_assertions) {
             10
         } else {
