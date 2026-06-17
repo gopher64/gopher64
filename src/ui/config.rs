@@ -136,17 +136,27 @@ impl Config {
         let dirs = ui::get_dirs();
         let file_path = dirs.config_dir.join("config.json");
         let config_file = std::fs::read(file_path);
+        let mut input_data: Option<Input> = None;
         if let Ok(config_file) = config_file {
             let result = serde_json::from_slice::<Config>(config_file.as_ref());
             if let Ok(mut result) = result {
                 result.write_to_disk = true;
                 return result;
             }
+
+            // try to restore input data from old config file
+            if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&config_file)
+                && let Some(data) = value.get("input")
+                && let Ok(data) = serde_json::from_value::<Input>(data.clone())
+            {
+                input_data = Some(data);
+            }
         }
+
         let mut input_profiles = std::collections::BTreeMap::new();
         input_profiles.insert("default".to_string(), ui::input::get_default_profile());
         Config {
-            input: Input {
+            input: input_data.unwrap_or(Input {
                 input_profile_binding: [
                     "default".to_string(),
                     "default".to_string(),
@@ -160,7 +170,7 @@ impl Config {
                 gb_rom_path: [String::new(), String::new(), String::new(), String::new()],
                 gb_ram_path: [String::new(), String::new(), String::new(), String::new()],
                 emulate_vru: false,
-            },
+            }),
             video: Video {
                 upscale: 1,
                 ssaa: false,
