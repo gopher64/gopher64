@@ -422,7 +422,7 @@ pub fn init(
         } else if now.elapsed() > socket_timeout {
             socket.close();
             ui::video::onscreen_message(
-                "Connecting to netplay peers...\nPlease wait...",
+                "Still connecting to netplay peers...\nPlease wait...",
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
             player_numbers.clear();
