@@ -129,7 +129,7 @@ fn receive_message(netplay: &mut Netplay, name: &str) -> Vec<u8> {
 
 fn send_player_number(
     channel: &mut matchbox_socket::WebRtcChannel,
-    peers: Vec<matchbox_socket::PeerId>,
+    peers: &[matchbox_socket::PeerId],
     player_number: usize,
 ) {
     let message = NetplayMessage {
@@ -138,7 +138,7 @@ fn send_player_number(
     };
     let data = postcard::to_stdvec(&message).unwrap();
     for peer in peers {
-        if let Err(e) = channel.try_send(data.clone().into(), peer) {
+        if let Err(e) = channel.try_send(data.clone().into(), *peer) {
             eprintln!("Failed to send message: {}", e);
         }
     }
@@ -363,6 +363,20 @@ fn advance_frame(device: &mut device::Device) {
     }
 }
 
+fn verify_peers(
+    peers: &[matchbox_socket::PeerId],
+    player_numbers: &std::collections::BTreeMap<usize, Option<matchbox_socket::PeerId>>,
+) -> bool {
+    for (_, peer) in player_numbers.iter() {
+        if let Some(peer) = peer
+            && !peers.contains(peer)
+        {
+            return false;
+        }
+    }
+    true
+}
+
 fn create_socket(builder: matchbox_socket::WebRtcSocketBuilder) -> matchbox_socket::WebRtcSocket {
     let (socket, loop_fut) = builder.build();
     tokio::spawn(async move {
@@ -394,7 +408,9 @@ pub fn init(
         eprintln!("Using default ICE config");
     }
 
-    let mut socket = create_socket(builder.clone());
+    //matchbox seems to crash if you drop the socket
+    //so I am storing them in a Vec so they aren't dropped until the function returns
+    let mut sockets = vec![create_socket(builder.clone())];
 
     let mut now = std::time::Instant::now();
     let socket_timeout = std::time::Duration::from_secs_f64(rand::random_range(6.0..8.0));
@@ -407,6 +423,7 @@ pub fn init(
 
     device.cpu.running = true;
     while device.cpu.running {
+        let socket = sockets.last_mut().unwrap();
         socket.update_peers();
         let peers = socket
             .connected_peers()
@@ -414,9 +431,11 @@ pub fn init(
 
         if peers.len() == netplay_config.number_of_players - 1 {
             player_numbers.insert(netplay_config.player_number, None);
-            send_player_number(socket.channel_mut(1), peers, netplay_config.player_number);
+            send_player_number(socket.channel_mut(1), &peers, netplay_config.player_number);
             get_player_numbers(socket.channel_mut(1), &mut player_numbers);
-            if player_numbers.len() == netplay_config.number_of_players {
+            if player_numbers.len() == netplay_config.number_of_players
+                && verify_peers(&peers, &player_numbers)
+            {
                 break;
             }
         } else if now.elapsed() > socket_timeout {
@@ -426,7 +445,7 @@ pub fn init(
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
             player_numbers.clear();
-            socket = create_socket(builder.clone());
+            sockets.push(create_socket(builder.clone()));
             now = std::time::Instant::now();
         }
 
@@ -470,6 +489,7 @@ pub fn init(
         }
     }
 
+    let socket = sockets.last_mut().unwrap();
     let matchbox_channel = MatchboxChannel {
         channel: socket.take_channel(0).unwrap(),
     };
