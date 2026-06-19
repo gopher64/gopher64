@@ -397,7 +397,7 @@ pub fn init(
     let mut socket = create_socket(builder.clone());
 
     let mut now = std::time::Instant::now();
-    let socket_timeout = std::time::Duration::from_secs_f64(rand::random_range(5.0..8.0));
+    let socket_timeout = std::time::Duration::from_secs_f64(rand::random_range(6.0..8.0));
     let mut player_numbers = std::collections::BTreeMap::new();
 
     ui::video::onscreen_message(
