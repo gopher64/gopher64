@@ -35,14 +35,13 @@ fn check_latest_version(weak: slint::Weak<AppWindow>) {
             let data: Result<GithubData, reqwest::Error> = response.json().await;
 
             let latest_version = match data {
-                Ok(data) => {
-                    if let Ok(github_version) = semver::Version::parse(&data.tag_name[1..]) {
-                        github_version
-                    } else {
-                        eprintln!("Error parsing latest version from GitHub");
+                Ok(data) => match semver::Version::parse(&data.tag_name[1..]) {
+                    Ok(github_version) => github_version,
+                    Err(e) => {
+                        eprintln!("Error parsing latest version from GitHub: {}", e);
                         semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
                     }
-                }
+                },
                 Err(e) => {
                     eprintln!("Error getting latest version from GitHub: {}", e);
                     semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
