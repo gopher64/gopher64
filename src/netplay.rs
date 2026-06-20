@@ -236,17 +236,13 @@ fn check_input_delay(netplay: &mut Netplay) {
     }
 }
 
-fn end_session(netplay: &mut Netplay) {
-    netplay.disconnected = true;
-    ui::video::onscreen_message(
-        "Lost connection to peers",
-        ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
-    );
-}
-
 fn check_disconnect(netplay: &mut Netplay) {
     if netplay.messages.contains_key("disconnect") {
-        end_session(netplay);
+        netplay.disconnected = true;
+        ui::video::onscreen_message(
+            "Player disconnected, session has ended",
+            ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+        );
     }
 }
 
@@ -299,16 +295,16 @@ pub fn process_requests(
 
 fn poll_clients(netplay: &mut Netplay) {
     netplay.session.poll_remote_clients();
-    let events = netplay
-        .session
-        .events()
-        .collect::<Vec<ggrs::GgrsEvent<GgrsConfig>>>();
-    for event in events {
+    for event in netplay.session.events() {
         match event {
             ggrs::GgrsEvent::Synchronizing { .. } => {}
             ggrs::GgrsEvent::Synchronized { .. } => {}
             ggrs::GgrsEvent::Disconnected { .. } => {
-                end_session(netplay);
+                netplay.disconnected = true;
+                ui::video::onscreen_message(
+                    "Lost connection to peer(s)",
+                    ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+                );
             }
             ggrs::GgrsEvent::NetworkInterrupted { .. } => {
                 println!("network interrupted");
