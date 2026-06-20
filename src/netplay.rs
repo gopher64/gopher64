@@ -300,11 +300,13 @@ fn poll_clients(netplay: &mut Netplay) {
             ggrs::GgrsEvent::Synchronizing { .. } => {}
             ggrs::GgrsEvent::Synchronized { .. } => {}
             ggrs::GgrsEvent::Disconnected { .. } => {
-                netplay.disconnected = true;
-                ui::video::onscreen_message(
-                    "Lost connection to peer(s)",
-                    ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
-                );
+                if !netplay.disconnected {
+                    netplay.disconnected = true;
+                    ui::video::onscreen_message(
+                        "Lost connection to peer(s)",
+                        ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+                    );
+                }
             }
             ggrs::GgrsEvent::NetworkInterrupted { .. } => {
                 println!("network interrupted");
