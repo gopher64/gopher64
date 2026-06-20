@@ -441,7 +441,6 @@ pub fn init(
             }
         } else if now.elapsed() > socket_timeout {
             socket.close();
-
             player_numbers.clear();
             sockets.push(create_socket(builder.clone()));
             now = std::time::Instant::now();
