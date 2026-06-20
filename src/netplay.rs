@@ -237,7 +237,7 @@ fn check_input_delay(netplay: &mut Netplay) {
 }
 
 fn check_disconnect(netplay: &mut Netplay) {
-    if netplay.messages.contains_key("disconnect") {
+    if !netplay.disconnected && netplay.messages.remove("disconnect").is_some() {
         netplay.disconnected = true;
         ui::video::onscreen_message(
             "Player disconnected, session has ended",
