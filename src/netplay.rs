@@ -105,6 +105,7 @@ fn process_reliable_messages(netplay: &mut Netplay) {
                     .insert(decoded_message.name, decoded_message.data);
                 netplay.incoming_message.clear();
                 check_input_delay(netplay);
+                check_disconnect(netplay);
             }
         }
     }
@@ -235,6 +236,16 @@ fn check_input_delay(netplay: &mut Netplay) {
     }
 }
 
+fn check_disconnect(netplay: &mut Netplay) {
+    if !netplay.disconnected && netplay.messages.remove("disconnect").is_some() {
+        netplay.disconnected = true;
+        ui::video::onscreen_message(
+            "Player disconnected, session has ended",
+            ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+        );
+    }
+}
+
 fn pending_frames(netplay: &Netplay) -> usize {
     netplay
         .requests
@@ -289,11 +300,13 @@ fn poll_clients(netplay: &mut Netplay) {
             ggrs::GgrsEvent::Synchronizing { .. } => {}
             ggrs::GgrsEvent::Synchronized { .. } => {}
             ggrs::GgrsEvent::Disconnected { .. } => {
-                netplay.disconnected = true;
-                ui::video::onscreen_message(
-                    "Lost connection to peers",
-                    ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
-                );
+                if !netplay.disconnected {
+                    netplay.disconnected = true;
+                    ui::video::onscreen_message(
+                        "Lost connection to peer(s)",
+                        ui::video::MESSAGE_LENGTH_MESSAGE_LONG,
+                    );
+                }
             }
             ggrs::GgrsEvent::NetworkInterrupted { .. } => {
                 println!("network interrupted");
@@ -333,7 +346,8 @@ fn advance_frame(device: &mut device::Device) {
         .unwrap();
 
     // avoid rollback
-    while netplay.session.current_frame() > netplay.session.confirmed_frame()
+    while !netplay.disconnected
+        && netplay.session.current_frame() > netplay.session.confirmed_frame()
         && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
     {
         poll_clients(netplay);
@@ -542,6 +556,15 @@ pub fn init(
     })
 }
 
-pub fn close(netplay: &Netplay) {
+pub fn close(netplay: &mut Netplay) {
+    if !netplay.disconnected {
+        let message = NetplayMessage {
+            name: "disconnect".to_string(),
+            data: vec![],
+        };
+        send_message(netplay, message);
+        std::thread::sleep(std::time::Duration::from_millis(200)); // give the message time to be sent
+    }
+
     let _ = std::fs::remove_file(&netplay.ice_config_path);
 }
