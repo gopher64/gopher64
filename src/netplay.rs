@@ -408,12 +408,13 @@ pub fn init(
         eprintln!("Using default ICE config");
     }
 
-    //matchbox seems to crash if you drop the socket
+    //matchbox seems to crash if you drop the socket right after closing it
     //so I am storing them in a Vec so they aren't dropped until the function returns
     let mut sockets = vec![create_socket(builder.clone())];
 
     let mut now = std::time::Instant::now();
-    let socket_timeout = std::time::Duration::from_secs_f64(rand::random_range(6.0..8.0));
+    let mut message_timer = now;
+    let socket_timeout = std::time::Duration::from_secs_f64(rand::random_range(8.0..10.0));
     let mut player_numbers = std::collections::BTreeMap::new();
 
     ui::video::onscreen_message(
@@ -440,13 +441,18 @@ pub fn init(
             }
         } else if now.elapsed() > socket_timeout {
             socket.close();
+
+            player_numbers.clear();
+            sockets.push(create_socket(builder.clone()));
+            now = std::time::Instant::now();
+        }
+
+        if message_timer.elapsed() > std::time::Duration::from_secs(4) {
             ui::video::onscreen_message(
                 "Still connecting to netplay peers...\nPlease wait...",
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
-            player_numbers.clear();
-            sockets.push(create_socket(builder.clone()));
-            now = std::time::Instant::now();
+            message_timer = std::time::Instant::now();
         }
 
         unsafe { sdl3_sys::events::SDL_PumpEvents() };
