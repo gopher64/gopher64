@@ -41,7 +41,9 @@ Keys are mapped according to [these defaults](https://github.com/gopher64/gopher
 
 ## netplay
 
-Gopher64 supports netplay (online play with others) via cloud hosted servers. You can also run the [server](https://github.com/gopher64/gopher64-netplay-server) yourself on a LAN.
+Gopher64 supports P2P netplay (online play with others).
+
+Please read the [guide](https://github.com/gopher64/gopher64/wiki/Netplay-Guide) before trying out netplay.
 
 ## portable mode
 
