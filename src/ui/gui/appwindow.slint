@@ -385,5 +385,7 @@ export component AppWindow inherits Window {
         NetplayWaitData.connected_peers_count = 0;
         NetplayData.pending_session = false;
         NetplayData.pending_refresh = false;
+        NetplayData.sessions = [];
+        NetplayData.current_session = -1;
     }
 }
