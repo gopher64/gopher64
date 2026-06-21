@@ -61,7 +61,6 @@ slint-build = { version = "1.12", optional = true }
 cc = { version = "1.2", features = ["parallel"] }
 
 [profile.release]
-panic = "abort"
 lto = "thin"
 strip = true
 
@@ -69,7 +68,6 @@ strip = true
 inherits = "release"
 debug = true
 strip = false
-panic = "unwind"
 
 [package.metadata.bundle]
 name = "Gopher64"
