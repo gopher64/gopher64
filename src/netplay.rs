@@ -422,9 +422,7 @@ pub fn init(
         eprintln!("Using default ICE config");
     }
 
-    //matchbox seems to crash if you drop the socket right after closing it
-    //so I am storing them in a Vec so they aren't dropped until the function returns
-    let mut sockets = vec![create_socket(builder.clone())];
+    let mut socket = create_socket(builder.clone());
 
     let mut now = std::time::Instant::now();
     let mut message_timer = now;
@@ -438,7 +436,6 @@ pub fn init(
 
     device.cpu.running = true;
     while device.cpu.running {
-        let socket = sockets.last_mut().unwrap();
         socket.update_peers();
         let peers = socket
             .connected_peers()
@@ -456,7 +453,7 @@ pub fn init(
         } else if now.elapsed() > socket_timeout {
             socket.close();
             player_numbers.clear();
-            sockets.push(create_socket(builder.clone()));
+            socket = create_socket(builder.clone());
             now = std::time::Instant::now();
         }
 
@@ -508,7 +505,6 @@ pub fn init(
         }
     }
 
-    let socket = sockets.last_mut().unwrap();
     let matchbox_channel = MatchboxChannel {
         channel: socket.take_channel(0).unwrap(),
     };
