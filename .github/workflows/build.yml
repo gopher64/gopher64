@@ -34,7 +34,7 @@ jobs:
             arch: linux-aarch64
             llvm: ARM64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
@@ -95,7 +95,7 @@ jobs:
             arch: windows-aarch64
             llvm: woa64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
@@ -163,7 +163,7 @@ jobs:
             arch: macos-aarch64
             llvm: ARM64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
@@ -229,7 +229,7 @@ jobs:
             platform: 33
             ndk: 29.0.14206865
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
