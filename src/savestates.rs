@@ -225,6 +225,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
                 if now.elapsed() > timeout {
                     break None;
                 }
+                std::thread::sleep(std::time::Duration::from_millis(1));
             }
         } else if let Some((_key, state)) = device.savestate.rewind_pool.blocking_lock().pop_last()
         {
