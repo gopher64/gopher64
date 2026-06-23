@@ -13,15 +13,15 @@ const REQUEST_SELECT_ROM: jint = 1;
 const CONFIGURE_INPUT_PROFILE: jint = 2;
 const RUN_ROM: jint = 3;
 
-pub static ANDROID_APP: tokio::sync::Mutex<Option<slint::android::AndroidApp>> =
-    tokio::sync::Mutex::const_new(None);
+pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
+    std::sync::Mutex::new(None);
 
 pub static SELECT_ROM_TX: tokio::sync::Mutex<
     Option<tokio::sync::oneshot::Sender<Option<std::path::PathBuf>>>,
 > = tokio::sync::Mutex::const_new(None);
 
-pub static WEAK_SLINT_WINDOW: tokio::sync::Mutex<Option<slint::Weak<ui::gui::AppWindow>>> =
-    tokio::sync::Mutex::const_new(None);
+pub static WEAK_SLINT_WINDOW: std::sync::Mutex<Option<slint::Weak<ui::gui::AppWindow>>> =
+    std::sync::Mutex::new(None);
 
 bind_java_type! {
     DocumentsContract => "android.provider.DocumentsContract",
@@ -182,7 +182,9 @@ pub fn spawn_configure_input_profile(
     dinput: bool,
     deadzone: i32,
 ) {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         if let Err(err) = get_vm(app).attach_current_thread(|env| {
             start_configure_input_profile_on_jvm(
                 env,
@@ -241,7 +243,9 @@ pub fn run_rom(
     netplay: Option<ui::gui::NetplayDevice>,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         if let Err(err) = get_vm(app).attach_current_thread(|env| {
             start_run_rom_on_jvm(env, app, file_path, game_settings, netplay, weak)
         }) {
@@ -330,7 +334,9 @@ fn get_vm(app: &slint::android::AndroidApp) -> JavaVM {
 }
 
 pub fn decode_path(path: &str) -> String {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         match get_vm(app).attach_current_thread(|env| decode_path_on_jvm(env, path)) {
             Ok(decoded_path) => decoded_path,
             Err(err) => {
@@ -352,7 +358,9 @@ fn decode_path_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<Stri
 
 /// Lists connected gamepads and joysticks using the Android framework.
 pub fn list_controllers() -> Vec<ControllerInfo> {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         match get_vm(app).attach_current_thread(list_controllers_on_jvm) {
             Ok(controllers) => controllers,
             Err(err) => {
@@ -412,7 +420,9 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
 
 /// Opens a URI in the user's default app via [`Intent::ACTION_VIEW`](https://developer.android.com/reference/android/content/Intent#ACTION_VIEW).
 pub fn open_uri(path: &str) {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         let path = path.to_string();
         if let Err(err) = get_vm(app).attach_current_thread(|env| open_uri_on_jvm(env, app, &path))
         {
@@ -440,7 +450,9 @@ fn open_uri_on_jvm(
 }
 
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
-    if let Some(app) = ANDROID_APP.lock().await.as_ref() {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         if let Err(err) = get_vm(app)
             .attach_current_thread(|env| select_rom_on_jvm(env, app, rom_dir.to_string()))
         {
@@ -490,7 +502,9 @@ fn select_rom_on_jvm(
 }
 
 pub fn get_dirs() -> ui::Dirs {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         ui::Dirs {
             config_dir: app.internal_data_path().unwrap().join("config"),
             data_dir: app.external_data_path().unwrap().join("data"),
@@ -521,7 +535,9 @@ pub fn rom_exists(path: &str) -> bool {
 }
 
 pub fn get_file_from_uri(path: &std::path::PathBuf) -> Option<std::fs::File> {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
         let path = path.to_str().unwrap().into();
         match get_vm(app).attach_current_thread(|env| get_file_from_uri_on_jvm(env, app, path)) {
             Ok(file) => file,
@@ -586,7 +602,9 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                             return Ok(());
                         }
 
-                        if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+                        if let Ok(app) = ANDROID_APP.lock()
+                            && let Some(app) = app.as_ref()
+                        {
                             let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
                             let activity = unsafe {
                                 env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)?
@@ -607,7 +625,9 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                     }
                 }
                 CONFIGURE_INPUT_PROFILE => {
-                    if let Some(weak_app_window) = WEAK_SLINT_WINDOW.blocking_lock().as_ref() {
+                    if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
+                        && let Some(weak_app_window) = weak_app_window.as_ref()
+                    {
                         let config = ui::config::Config::new();
                         ui::gui::update_input_profiles(&weak_app_window, &config);
                     }
@@ -629,7 +649,9 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                     {
                         let _ = std::fs::remove_file(cheats_path);
                     }
-                    if let Some(weak_app_window) = WEAK_SLINT_WINDOW.blocking_lock().as_ref() {
+                    if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
+                        && let Some(weak_app_window) = weak_app_window.as_ref()
+                    {
                         weak_app_window
                             .upgrade_in_event_loop(move |handle| {
                                 ui::gui::update_recent_roms(&handle, file_path.into());
