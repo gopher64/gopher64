@@ -105,7 +105,7 @@ fn set_app_id() {
 }
 
 pub fn create_runtime() -> (tokio::sync::oneshot::Sender<()>, tokio::runtime::Handle) {
-    let (tx, rx) = std::sync::mpsc::channel();
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
     let (close_tx, close_rx) = tokio::sync::oneshot::channel::<()>();
 
     std::thread::spawn(move || {
@@ -114,7 +114,7 @@ pub fn create_runtime() -> (tokio::sync::oneshot::Sender<()>, tokio::runtime::Ha
         rt.block_on(close_rx).unwrap();
     });
 
-    (close_tx, rx.recv().unwrap())
+    (close_tx, rx.blocking_recv().unwrap())
 }
 
 pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {

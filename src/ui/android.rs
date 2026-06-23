@@ -13,15 +13,15 @@ const REQUEST_SELECT_ROM: jint = 1;
 const CONFIGURE_INPUT_PROFILE: jint = 2;
 const RUN_ROM: jint = 3;
 
-pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
-    std::sync::Mutex::new(None);
+pub static ANDROID_APP: tokio::sync::Mutex<Option<slint::android::AndroidApp>> =
+    tokio::sync::Mutex::new(None);
 
-pub static SELECT_ROM_TX: std::sync::Mutex<
+pub static SELECT_ROM_TX: tokio::sync::Mutex<
     Option<tokio::sync::oneshot::Sender<Option<std::path::PathBuf>>>,
-> = std::sync::Mutex::new(None);
+> = tokio::sync::Mutex::new(None);
 
-pub static WEAK_SLINT_WINDOW: std::sync::Mutex<Option<slint::Weak<ui::gui::AppWindow>>> =
-    std::sync::Mutex::new(None);
+pub static WEAK_SLINT_WINDOW: tokio::sync::Mutex<Option<slint::Weak<ui::gui::AppWindow>>> =
+    tokio::sync::Mutex::new(None);
 
 bind_java_type! {
     DocumentsContract => "android.provider.DocumentsContract",

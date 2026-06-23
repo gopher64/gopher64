@@ -78,7 +78,7 @@ pub struct Savestate {
     pub last_rewind_saved: f64,
     #[serde(skip)]
     pub rewind_pool:
-        std::sync::Arc<std::sync::Mutex<std::collections::BTreeMap<i32, SavestateData>>>,
+        std::sync::Arc<tokio::sync::Mutex<std::collections::BTreeMap<i32, SavestateData>>>,
 }
 
 pub struct SavestateData {
@@ -88,11 +88,11 @@ pub struct SavestateData {
     ra_state: Vec<u8>,
 }
 
-static DEVICE_CLONE: std::sync::LazyLock<std::sync::Mutex<Box<device::Device>>> =
-    std::sync::LazyLock::new(|| std::sync::Mutex::new(device::Device::new(false)));
+static DEVICE_CLONE: std::sync::LazyLock<tokio::sync::Mutex<Box<device::Device>>> =
+    std::sync::LazyLock::new(|| tokio::sync::Mutex::new(device::Device::new(false)));
 
-static SAVES_CLONE: std::sync::LazyLock<std::sync::Mutex<ui::storage::Saves>> =
-    std::sync::LazyLock::new(|| std::sync::Mutex::new(ui::storage::Saves::default()));
+static SAVES_CLONE: std::sync::LazyLock<tokio::sync::Mutex<ui::storage::Saves>> =
+    std::sync::LazyLock::new(|| tokio::sync::Mutex::new(ui::storage::Saves::default()));
 
 pub fn process_savestates(device: &mut device::Device) {
     let save_rewind = if device.netplay.is_none()
@@ -126,18 +126,10 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool, rewind_frame:
     let mut ra_state: Vec<u8> = vec![0; retroachievements::state_size()];
     retroachievements::save_state(ra_state.as_mut_ptr(), ra_state.len());
 
-    if let Ok(mut device_clone) = DEVICE_CLONE.lock()
-        && let Ok(mut saves_clone) = SAVES_CLONE.lock()
-    {
-        device_clone.clone_state(device);
-        saves_clone.clone_from(&device.ui.storage.saves);
-    } else {
-        ui::video::onscreen_message(
-            "Failed to create savestate",
-            ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-        );
-        return;
-    }
+    DEVICE_CLONE.blocking_lock().clone_state(device);
+    SAVES_CLONE
+        .blocking_lock()
+        .clone_from(&device.ui.storage.saves);
 
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
     let save_state_slot = device.ui.storage.save_state_slot;
@@ -147,39 +139,32 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool, rewind_frame:
         let mut error = false;
 
         if rewind {
-            if let Ok(device_clone) = DEVICE_CLONE.lock()
-                && let Ok(saves_clone) = SAVES_CLONE.lock()
-                && let Ok(mut pool) = rewind_pool.lock()
-            {
-                let mut state = device::Device::new(false);
-                state.clone_state(device_clone.deref());
-                let key = if let Some(key) = rewind_frame {
-                    key
-                } else if let Some(key) = pool.keys().last() {
-                    key + 1
-                } else {
-                    0
-                };
-                pool.insert(
-                    key,
-                    SavestateData {
-                        device: state,
-                        saves: saves_clone.clone(),
-                        rdp_state,
-                        ra_state,
-                    },
-                );
-                if pool.len() > 30 {
-                    pool.pop_first();
-                }
+            let mut pool = rewind_pool.lock().await;
+            let mut state = device::Device::new(false);
+            state.clone_state(DEVICE_CLONE.lock().await.deref());
+            let key = if let Some(key) = rewind_frame {
+                key
+            } else if let Some(key) = pool.keys().last() {
+                key + 1
             } else {
-                error = true;
+                0
+            };
+            pool.insert(
+                key,
+                SavestateData {
+                    device: state,
+                    saves: SAVES_CLONE.lock().await.clone(),
+                    rdp_state,
+                    ra_state,
+                },
+            );
+            if pool.len() > 30 {
+                pool.pop_first();
             }
         } else {
-            let compressed_file = if let Ok(device_clone) = DEVICE_CLONE.lock()
-                && let Ok(saves_clone) = SAVES_CLONE.lock()
-                && let Ok(device_data) = postcard::to_stdvec(device_clone.deref())
-                && let Ok(saves_data) = postcard::to_stdvec(saves_clone.deref())
+            let compressed_file = if let Ok(device_data) =
+                postcard::to_stdvec(DEVICE_CLONE.lock().await.deref())
+                && let Ok(saves_data) = postcard::to_stdvec(SAVES_CLONE.lock().await.deref())
                 && let Ok(compressed_file) = ui::storage::compress_file(&[
                     (&device_data, "device"),
                     (&saves_data, "saves"),
@@ -229,17 +214,15 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
             let timeout = std::time::Duration::from_secs(1);
             let now = std::time::Instant::now();
             loop {
-                if let Ok(mut pool) = device.savestate.rewind_pool.lock()
-                    && pool.contains_key(&rewind_frame)
-                {
+                let mut pool = device.savestate.rewind_pool.blocking_lock();
+                if pool.contains_key(&rewind_frame) {
                     break pool.remove(&rewind_frame);
                 }
                 if now.elapsed() > timeout {
                     break None;
                 }
             }
-        } else if let Ok(mut pool) = device.savestate.rewind_pool.lock()
-            && let Some((_key, state)) = pool.pop_last()
+        } else if let Some((_key, state)) = device.savestate.rewind_pool.blocking_lock().pop_last()
         {
             Some(state)
         } else {
