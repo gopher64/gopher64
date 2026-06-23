@@ -214,13 +214,18 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
             let timeout = std::time::Duration::from_secs(1);
             let now = std::time::Instant::now();
             loop {
-                let mut pool = device.savestate.rewind_pool.blocking_lock();
-                if pool.contains_key(&rewind_frame) {
-                    break pool.remove(&rewind_frame);
+                if let Some(state) = device
+                    .savestate
+                    .rewind_pool
+                    .blocking_lock()
+                    .remove(&rewind_frame)
+                {
+                    break Some(state);
                 }
                 if now.elapsed() > timeout {
                     break None;
                 }
+                std::thread::sleep(std::time::Duration::from_millis(1));
             }
         } else if let Some((_key, state)) = device.savestate.rewind_pool.blocking_lock().pop_last()
         {
