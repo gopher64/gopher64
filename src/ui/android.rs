@@ -182,9 +182,15 @@ pub fn spawn_configure_input_profile(
     dinput: bool,
     deadzone: i32,
 ) {
-    if let Some(vm) = get_vm() {
-        if let Err(err) = vm.attach_current_thread(|env| {
-            start_configure_input_profile_on_jvm(env, profile_name.to_string(), dinput, deadzone)
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+        if let Err(err) = get_vm(app).attach_current_thread(|env| {
+            start_configure_input_profile_on_jvm(
+                env,
+                app,
+                profile_name.to_string(),
+                dinput,
+                deadzone,
+            )
         }) {
             eprintln!("JNI error while starting N64Activity: {err:?}");
         }
@@ -193,43 +199,40 @@ pub fn spawn_configure_input_profile(
 
 fn start_configure_input_profile_on_jvm(
     env: &mut Env<'_>,
+    app: &slint::android::AndroidApp,
     profile_name: String,
     dinput: bool,
     deadzone: i32,
 ) -> jni::errors::Result<()> {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
-        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
-        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+    let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
-        let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
-        let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
+    let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
+    let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
 
-        let args_key = JString::from_str(env, "args")?;
-        let mut args = vec![
-            JString::from_str(env, "--configure-input-profile")?,
-            JString::from_str(env, &profile_name)?,
-            JString::from_str(env, "--deadzone")?,
-            JString::from_str(env, &deadzone.to_string())?,
-        ];
-        if dinput {
-            args.push(JString::from_str(env, "--use-dinput")?);
-        }
-        let empty_arg = JString::from_str(env, "")?;
-        let j_args = JObjectArray::<JString>::new(env, args.len(), empty_arg)?;
-        for (i, arg) in args.iter().enumerate() {
-            j_args.set_element(env, i, arg)?;
-        }
-        let intent = AndroidIntent::new(env)?
-            .set_class_name(env, &package_name, &class_name)?
-            .put_extra_string_array(env, &args_key, &j_args)?;
-
-        activity
-            .as_ref()
-            .start_activity_for_result(env, &intent, CONFIGURE_INPUT_PROFILE)?;
-        Ok(())
-    } else {
-        Err(jni::errors::Error::UninitializedJavaVM)
+    let args_key = JString::from_str(env, "args")?;
+    let mut args = vec![
+        JString::from_str(env, "--configure-input-profile")?,
+        JString::from_str(env, &profile_name)?,
+        JString::from_str(env, "--deadzone")?,
+        JString::from_str(env, &deadzone.to_string())?,
+    ];
+    if dinput {
+        args.push(JString::from_str(env, "--use-dinput")?);
     }
+    let empty_arg = JString::from_str(env, "")?;
+    let j_args = JObjectArray::<JString>::new(env, args.len(), empty_arg)?;
+    for (i, arg) in args.iter().enumerate() {
+        j_args.set_element(env, i, arg)?;
+    }
+    let intent = AndroidIntent::new(env)?
+        .set_class_name(env, &package_name, &class_name)?
+        .put_extra_string_array(env, &args_key, &j_args)?;
+
+    activity
+        .as_ref()
+        .start_activity_for_result(env, &intent, CONFIGURE_INPUT_PROFILE)?;
+    Ok(())
 }
 
 pub fn run_rom(
@@ -238,9 +241,9 @@ pub fn run_rom(
     netplay: Option<ui::gui::NetplayDevice>,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) {
-    if let Some(vm) = get_vm() {
-        if let Err(err) = vm.attach_current_thread(|env| {
-            start_run_rom_on_jvm(env, file_path, game_settings, netplay, weak)
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+        if let Err(err) = get_vm(app).attach_current_thread(|env| {
+            start_run_rom_on_jvm(env, app, file_path, game_settings, netplay, weak)
         }) {
             eprintln!("JNI error while starting N64Activity: {err:?}");
         }
@@ -249,93 +252,86 @@ pub fn run_rom(
 
 fn start_run_rom_on_jvm(
     env: &mut Env<'_>,
+    app: &slint::android::AndroidApp,
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) -> jni::errors::Result<()> {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
-        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
-        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+    let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
-        let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
-        let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
+    let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
+    let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
 
-        let file_path_key = JString::from_str(env, "file_path")?;
-        let file_path = file_path.to_str().unwrap();
-        let cheats_path_key = JString::from_str(env, "cheats_path")?;
-        let cheats_path = app
-            .internal_data_path()
-            .unwrap()
-            .join("cache")
-            .join("cheats.json");
+    let file_path_key = JString::from_str(env, "file_path")?;
+    let file_path = file_path.to_str().unwrap();
+    let cheats_path_key = JString::from_str(env, "cheats_path")?;
+    let cheats_path = app
+        .internal_data_path()
+        .unwrap()
+        .join("cache")
+        .join("cheats.json");
 
-        let args_key = JString::from_str(env, "args")?;
-        let mut args = vec![
-            JString::from_str(env, file_path)?,
-            JString::from_str(env, "--fullscreen")?,
-            JString::from_str(env, "--overclock")?,
-            JString::from_str(env, &game_settings.overclock.to_string())?,
-            JString::from_str(env, "--disable-expansion-pak")?,
-            JString::from_str(env, &game_settings.disable_expansion_pak.to_string())?,
-        ];
+    let args_key = JString::from_str(env, "args")?;
+    let mut args = vec![
+        JString::from_str(env, file_path)?,
+        JString::from_str(env, "--fullscreen")?,
+        JString::from_str(env, "--overclock")?,
+        JString::from_str(env, &game_settings.overclock.to_string())?,
+        JString::from_str(env, "--disable-expansion-pak")?,
+        JString::from_str(env, &game_settings.disable_expansion_pak.to_string())?,
+    ];
 
-        if let Some(netplay) = netplay {
-            args.push(JString::from_str(env, "--netplay-server-addr")?);
-            args.push(JString::from_str(env, &netplay.server_addr)?);
-            args.push(JString::from_str(env, "--netplay-player-number")?);
-            args.push(JString::from_str(env, &netplay.player_number.to_string())?);
-            args.push(JString::from_str(env, "--netplay-number-of-players")?);
-            args.push(JString::from_str(
-                env,
-                &netplay.number_of_players.to_string(),
-            )?);
-            args.push(JString::from_str(env, "--netplay-input-delay")?);
-            args.push(JString::from_str(env, &netplay.input_delay.to_string())?);
-            args.push(JString::from_str(env, "--cheats")?);
-            args.push(JString::from_str(env, cheats_path.to_str().unwrap())?);
+    if let Some(netplay) = netplay {
+        args.push(JString::from_str(env, "--netplay-server-addr")?);
+        args.push(JString::from_str(env, &netplay.server_addr)?);
+        args.push(JString::from_str(env, "--netplay-player-number")?);
+        args.push(JString::from_str(env, &netplay.player_number.to_string())?);
+        args.push(JString::from_str(env, "--netplay-number-of-players")?);
+        args.push(JString::from_str(
+            env,
+            &netplay.number_of_players.to_string(),
+        )?);
+        args.push(JString::from_str(env, "--netplay-input-delay")?);
+        args.push(JString::from_str(env, &netplay.input_delay.to_string())?);
+        args.push(JString::from_str(env, "--cheats")?);
+        args.push(JString::from_str(env, cheats_path.to_str().unwrap())?);
 
-            let f = std::fs::File::create(&cheats_path).unwrap();
-            serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
-        }
-
-        let empty_arg = JString::from_str(env, "")?;
-        let j_args = JObjectArray::<JString>::new(env, args.len(), empty_arg)?;
-        for (i, arg) in args.iter().enumerate() {
-            j_args.set_element(env, i, arg)?;
-        }
-
-        let file_path_string = JString::from_str(env, file_path)?;
-        let cheats_path_string = JString::from_str(env, cheats_path.to_str().unwrap())?;
-        let intent = AndroidIntent::new(env)?
-            .set_class_name(env, &package_name, &class_name)?
-            .put_extra_string(env, &file_path_key, &file_path_string)?
-            .put_extra_string(env, &cheats_path_key, &cheats_path_string)?
-            .put_extra_string_array(env, &args_key, &j_args)?;
-
-        weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
-            .unwrap();
-
-        activity
-            .as_ref()
-            .start_activity_for_result(env, &intent, RUN_ROM)?;
-        Ok(())
-    } else {
-        Err(jni::errors::Error::UninitializedJavaVM)
+        let f = std::fs::File::create(&cheats_path).unwrap();
+        serde_json::to_writer_pretty(f, &game_settings.cheats).unwrap();
     }
+
+    let empty_arg = JString::from_str(env, "")?;
+    let j_args = JObjectArray::<JString>::new(env, args.len(), empty_arg)?;
+    for (i, arg) in args.iter().enumerate() {
+        j_args.set_element(env, i, arg)?;
+    }
+
+    let file_path_string = JString::from_str(env, file_path)?;
+    let cheats_path_string = JString::from_str(env, cheats_path.to_str().unwrap())?;
+    let intent = AndroidIntent::new(env)?
+        .set_class_name(env, &package_name, &class_name)?
+        .put_extra_string(env, &file_path_key, &file_path_string)?
+        .put_extra_string(env, &cheats_path_key, &cheats_path_string)?
+        .put_extra_string_array(env, &args_key, &j_args)?;
+
+    weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
+        .unwrap();
+
+    activity
+        .as_ref()
+        .start_activity_for_result(env, &intent, RUN_ROM)?;
+    Ok(())
 }
 
-fn get_vm() -> Option<JavaVM> {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
-        Some(unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) })
-    } else {
-        None
-    }
+fn get_vm(app: &slint::android::AndroidApp) -> JavaVM {
+    unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
 }
 
 pub fn decode_path(path: &str) -> String {
-    if let Some(vm) = get_vm() {
-        match vm.attach_current_thread(|env| decode_path_on_jvm(env, path)) {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+        match get_vm(app).attach_current_thread(|env| decode_path_on_jvm(env, path)) {
             Ok(decoded_path) => decoded_path,
             Err(err) => {
                 eprintln!("JNI error while decoding path: {err:?}");
@@ -356,8 +352,8 @@ fn decode_path_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<Stri
 
 /// Lists connected gamepads and joysticks using the Android framework.
 pub fn list_controllers() -> Vec<ControllerInfo> {
-    if let Some(vm) = get_vm() {
-        match vm.attach_current_thread(list_controllers_on_jvm) {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
+        match get_vm(app).attach_current_thread(list_controllers_on_jvm) {
             Ok(controllers) => controllers,
             Err(err) => {
                 eprintln!("JNI error while listing controllers: {err:?}");
@@ -416,36 +412,37 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
 
 /// Opens a URI in the user's default app via [`Intent::ACTION_VIEW`](https://developer.android.com/reference/android/content/Intent#ACTION_VIEW).
 pub fn open_uri(path: &str) {
-    if let Some(vm) = get_vm() {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
         let path = path.to_string();
-        if let Err(err) = vm.attach_current_thread(|env| open_uri_on_jvm(env, &path)) {
+        if let Err(err) = get_vm(app).attach_current_thread(|env| open_uri_on_jvm(env, app, &path))
+        {
             eprintln!("JNI error while opening URI: {err:?}");
         }
     }
 }
 
-fn open_uri_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<()> {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
-        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
-        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+fn open_uri_on_jvm(
+    env: &mut Env<'_>,
+    app: &slint::android::AndroidApp,
+    path: &str,
+) -> jni::errors::Result<()> {
+    let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
-        let uri_string = JString::from_str(env, path)?;
-        let uri = AndroidUri::parse(env, &uri_string)?;
+    let uri_string = JString::from_str(env, path)?;
+    let uri = AndroidUri::parse(env, &uri_string)?;
 
-        let action_view = AndroidIntent::ACTION_VIEW(env)?;
-        let intent = AndroidIntent::with_action(env, &action_view)?.set_data(env, &uri)?;
+    let action_view = AndroidIntent::ACTION_VIEW(env)?;
+    let intent = AndroidIntent::with_action(env, &action_view)?.set_data(env, &uri)?;
 
-        activity.as_ref().start_activity(env, &intent)?;
-        Ok(())
-    } else {
-        Err(jni::errors::Error::UninitializedJavaVM)
-    }
+    activity.as_ref().start_activity(env, &intent)?;
+    Ok(())
 }
 
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
-    if let Some(vm) = get_vm() {
-        if let Err(err) =
-            vm.attach_current_thread(|env| select_rom_on_jvm(env, rom_dir.to_string()))
+    if let Some(app) = ANDROID_APP.lock().await.as_ref() {
+        if let Err(err) = get_vm(app)
+            .attach_current_thread(|env| select_rom_on_jvm(env, app, rom_dir.to_string()))
         {
             eprintln!("JNI error while opening URI: {err:?}");
             return None;
@@ -468,28 +465,28 @@ pub async fn select_gb_ram(_player: i32) -> Option<std::path::PathBuf> {
     select_rom(slint::SharedString::new()).await
 }
 
-fn select_rom_on_jvm(env: &mut Env<'_>, rom_dir: String) -> jni::errors::Result<()> {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
-        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
-        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+fn select_rom_on_jvm(
+    env: &mut Env<'_>,
+    app: &slint::android::AndroidApp,
+    rom_dir: String,
+) -> jni::errors::Result<()> {
+    let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
-        let action = AndroidIntent::ACTION_OPEN_DOCUMENT(env)?;
-        let category = AndroidIntent::CATEGORY_OPENABLE(env)?;
-        let mime_type = JString::from_str(env, "*/*")?;
-        let mut intent = AndroidIntent::with_action(env, &action)?
-            .set_type(env, &mime_type)?
-            .add_category(env, &category)?;
-        if !rom_dir.is_empty() {
-            let start_dir = JString::from_str(env, rom_dir)?;
-            let extra_initial_uri = DocumentsContract::EXTRA_INITIAL_URI(env)?;
-            intent = intent.put_extra_string(env, &extra_initial_uri, &start_dir)?;
-        }
-
-        activity.start_activity_for_result(env, &intent, REQUEST_SELECT_ROM)?;
-        Ok(())
-    } else {
-        Err(jni::errors::Error::UninitializedJavaVM)
+    let action = AndroidIntent::ACTION_OPEN_DOCUMENT(env)?;
+    let category = AndroidIntent::CATEGORY_OPENABLE(env)?;
+    let mime_type = JString::from_str(env, "*/*")?;
+    let mut intent = AndroidIntent::with_action(env, &action)?
+        .set_type(env, &mime_type)?
+        .add_category(env, &category)?;
+    if !rom_dir.is_empty() {
+        let start_dir = JString::from_str(env, rom_dir)?;
+        let extra_initial_uri = DocumentsContract::EXTRA_INITIAL_URI(env)?;
+        intent = intent.put_extra_string(env, &extra_initial_uri, &start_dir)?;
     }
+
+    activity.start_activity_for_result(env, &intent, REQUEST_SELECT_ROM)?;
+    Ok(())
 }
 
 pub fn get_dirs() -> ui::Dirs {
@@ -524,9 +521,9 @@ pub fn rom_exists(path: &str) -> bool {
 }
 
 pub fn get_file_from_uri(path: &std::path::PathBuf) -> Option<std::fs::File> {
-    if let Some(vm) = get_vm() {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
         let path = path.to_str().unwrap().into();
-        match vm.attach_current_thread(|env| get_file_from_uri_on_jvm(env, path)) {
+        match get_vm(app).attach_current_thread(|env| get_file_from_uri_on_jvm(env, app, path)) {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("JNI error while opening URI: {err:?}");
@@ -541,30 +538,26 @@ pub fn get_file_from_uri(path: &std::path::PathBuf) -> Option<std::fs::File> {
 
 fn get_file_from_uri_on_jvm(
     env: &mut Env<'_>,
+    app: &slint::android::AndroidApp,
     path: String,
 ) -> jni::errors::Result<Option<std::fs::File>> {
-    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
-        let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
-        let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
-        let path = JString::from_str(env, path)?;
-        let mode = JString::from_str(env, "r")?;
-        let uri = AndroidUri::parse(env, &path)?;
+    let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+    let path = JString::from_str(env, path)?;
+    let mode = JString::from_str(env, "r")?;
+    let uri = AndroidUri::parse(env, &path)?;
 
-        let content_resolver = activity.as_ref().get_content_resolver(env)?;
-        let parcel_file_descriptor = content_resolver.open_file_descriptor(env, &uri, &mode);
-        if let Ok(descriptor) = parcel_file_descriptor
-            && !descriptor.is_null()
-        {
-            let owned_fd = unsafe { std::os::fd::OwnedFd::from_raw_fd(descriptor.detach_fd(env)?) };
-            let file = std::fs::File::from(owned_fd);
-            descriptor.close(env)?;
-            return Ok(Some(file));
-        } else {
-            return Ok(None);
-        }
+    let content_resolver = activity.as_ref().get_content_resolver(env)?;
+    let parcel_file_descriptor = content_resolver.open_file_descriptor(env, &uri, &mode);
+    if let Ok(descriptor) = parcel_file_descriptor
+        && !descriptor.is_null()
+    {
+        let owned_fd = unsafe { std::os::fd::OwnedFd::from_raw_fd(descriptor.detach_fd(env)?) };
+        let file = std::fs::File::from(owned_fd);
+        descriptor.close(env)?;
+        return Ok(Some(file));
     } else {
-        eprintln!("Android app not initialized");
-        return Err(jni::errors::Error::UninitializedJavaVM);
+        return Ok(None);
     }
 }
 
