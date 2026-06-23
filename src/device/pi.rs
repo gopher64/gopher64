@@ -115,6 +115,15 @@ fn get_handler(address: u32) -> PiHandler {
     {
         handler.read = device::cart::sc64::dma_read;
         handler.write = device::cart::sc64::dma_write;
+    } else if cfg!(feature = "ultra64")
+        && address >= 0x18000000
+        && address < 0x18001000
+    {
+        #[cfg(feature = "ultra64")]
+        {
+            handler.read  = device::sgi_dev::dma_read;
+            handler.write = device::sgi_dev::dma_write;
+        }
     } else if address >= device::memory::MM_CART_ROM as u32
         && address < device::memory::MM_PIF_MEM as u32
     {
