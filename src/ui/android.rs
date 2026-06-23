@@ -450,6 +450,9 @@ fn open_uri_on_jvm(
 }
 
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
+    let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
+    SELECT_ROM_TX.lock().await.replace(tx);
+
     if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
     {
@@ -463,8 +466,6 @@ pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathB
         eprintln!("Android app not initialized");
         return None;
     }
-    let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
-    SELECT_ROM_TX.lock().await.replace(tx);
 
     rx.await.unwrap_or(None)
 }
