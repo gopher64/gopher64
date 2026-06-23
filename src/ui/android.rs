@@ -447,14 +447,14 @@ pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathB
             eprintln!("JNI error while opening URI: {err:?}");
             return None;
         }
-        let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
-        SELECT_ROM_TX.lock().await.replace(tx);
-
-        rx.await.unwrap_or(None)
     } else {
         eprintln!("Android app not initialized");
-        None
+        return None;
     }
+    let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
+    SELECT_ROM_TX.lock().await.replace(tx);
+
+    rx.await.unwrap_or(None)
 }
 
 pub async fn select_gb_rom(_player: i32) -> Option<std::path::PathBuf> {
