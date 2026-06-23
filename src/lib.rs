@@ -352,9 +352,7 @@ fn android_main(app: slint::android::AndroidApp) {
     slint::android::init_with_event_listener(app.clone(), move |event| match event {
         slint::android::android_activity::PollEvent::Main(main_event) => match main_event {
             slint::android::android_activity::MainEvent::TerminateWindow { .. } => {
-                if let Ok(weak_app_window) = android::WEAK_SLINT_WINDOW.lock()
-                    && let Some(weak_app_window) = weak_app_window.as_ref()
-                {
+                if let Some(weak_app_window) = android::WEAK_SLINT_WINDOW.blocking_lock().as_ref() {
                     weak_app_window
                         .upgrade_in_event_loop(move |handle| {
                             ui::gui::save_settings(&handle);
@@ -369,9 +367,9 @@ fn android_main(app: slint::android::AndroidApp) {
     })
     .unwrap();
     let app_window = ui::gui::AppWindow::new().unwrap();
-    *android::WEAK_SLINT_WINDOW.lock().unwrap() = Some(app_window.as_weak());
+    *android::WEAK_SLINT_WINDOW.blocking_lock() = Some(app_window.as_weak());
 
-    *android::ANDROID_APP.lock().unwrap() = Some(app);
+    *android::ANDROID_APP.blocking_lock() = Some(app);
 
     let dirs = ui::get_dirs();
 
@@ -382,6 +380,6 @@ fn android_main(app: slint::android::AndroidApp) {
 
     ui::gui::app_window(&app_window, true);
     close_tx.send(()).unwrap();
-    *android::WEAK_SLINT_WINDOW.lock().unwrap() = None;
-    *android::ANDROID_APP.lock().unwrap() = None;
+    *android::WEAK_SLINT_WINDOW.blocking_lock() = None;
+    *android::ANDROID_APP.blocking_lock() = None;
 }
