@@ -142,6 +142,7 @@ fn fps_counter(ui: &mut ui::Ui) {
     });
 }
 
+
 pub fn close(ui: &ui::Ui) {
     unsafe {
         rdp_close();

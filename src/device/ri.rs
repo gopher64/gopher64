@@ -25,6 +25,7 @@ pub fn read_regs(
     let reg = (address & 0xFFFF) >> 2;
     match reg as usize {
         RI_SELECT_REG => {
+            #[cfg(not(feature = "ultra64"))]
             if !device.ri.ram_init {
                 device::cop0::add_cycles(device, device.cpu.clock_rate / 2); // hack, simulate RDRAM initialization
                 device.ri.ram_init = true;

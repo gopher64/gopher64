@@ -46,6 +46,10 @@ pub mod si;
 pub mod tlb;
 pub mod unmapped;
 pub mod vi;
+#[cfg(feature = "ultra64")]
+pub mod ultra_proto;
+#[cfg(feature = "ultra64")]
+pub mod sgi_dev;
 
 pub fn run_game(
     device: &mut Device,
@@ -63,7 +67,17 @@ pub fn run_game(
         device.savestate.load_state = true;
     }
 
-    cart::rom::init(device, rom_contents); // cart needs to come before rdram
+    // In ultra64 mode the cart ROM comes from shm (sgi_dev::init replaces
+    // device.cart.rom); skip rom::init to avoid indexing an empty slice.
+    #[cfg(not(feature = "ultra64"))]
+    cart::rom::init(device, rom_contents);
+    #[cfg(feature = "ultra64")]
+    {
+        if !rom_contents.is_empty() {
+            cart::rom::init(device, rom_contents);
+        }
+        sgi_dev::init(device, 30); // waits up to 30 s for IRIS to create shm
+    }
 
     // rdram pointer is shared with parallel-rdp and retroachievements
     rdram::init(device);
@@ -129,6 +143,8 @@ pub fn run_game(
     ui::input::close(&mut device.ui);
     ui::audio::close(&mut device.ui);
     ui::video::close(&device.ui);
+    #[cfg(feature = "ultra64")]
+    sgi_dev::close(device);
 }
 
 fn set_rng() -> rand::rngs::Xoshiro256PlusPlus {
@@ -293,6 +309,9 @@ pub struct Device {
     pub vru: controller::vru::Vru,
     pub transferpaks: [controller::transferpak::TransferPak; 4],
     pub cheats: cheats::Cheats,
+    #[cfg(feature = "ultra64")]
+    #[serde(skip)]
+    pub sgi_dev: sgi_dev::SgiDev,
 }
 
 pub fn zero_m128i() -> __m128i {
@@ -465,9 +484,9 @@ impl Device {
                 },
             },
             memory: memory::Memory {
-                fast_read: [unmapped::read_mem_fast; 0x2000],
-                memory_map_read: [unmapped::read_mem; 0x2000],
-                memory_map_write: [unmapped::write_mem; 0x2000],
+                fast_read: [unmapped::read_mem_fast; 0x10000],
+                memory_map_read: [unmapped::read_mem; 0x10000],
+                memory_map_write: [unmapped::write_mem; 0x10000],
                 icache: [cache::ICache {
                     valid: false,
                     index: 0,
@@ -605,6 +624,8 @@ impl Device {
                 boot: true,
                 enabled: false,
             },
+            #[cfg(feature = "ultra64")]
+            sgi_dev: sgi_dev::SgiDev::default(),
         })
     }
 }

@@ -41,11 +41,11 @@ pub enum AccessSize {
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Memory {
     #[serde(skip, default = "savestates::default_memory_read_fast")]
-    pub fast_read: [fn(&device::Device, u64, AccessSize) -> u32; 0x2000], // fast_read is used for lookups that try to detect idle loops
+    pub fast_read: [fn(&device::Device, u64, AccessSize) -> u32; 0x10000],
     #[serde(skip, default = "savestates::default_memory_read")]
-    pub memory_map_read: [fn(&mut device::Device, u64, AccessSize) -> u32; 0x2000],
+    pub memory_map_read: [fn(&mut device::Device, u64, AccessSize) -> u32; 0x10000],
     #[serde(skip, default = "savestates::default_memory_write")]
-    pub memory_map_write: [fn(&mut device::Device, u64, u32, u32); 0x2000],
+    pub memory_map_write: [fn(&mut device::Device, u64, u32, u32); 0x10000],
     #[serde(with = "serde_big_array::BigArray")]
     pub icache: [device::cache::ICache; 512],
     #[serde(with = "serde_big_array::BigArray")]
@@ -70,6 +70,13 @@ pub fn translate_address(
             // this is a hack to support 64-bit addresses used by some homebrew
             address |= 0xA0000000;
         } else {
+            #[cfg(feature = "ultra64")]
+            // osMapTLBRdb maps virtual 0xC0000000 → physical 0x80000000 (RDB hardware).
+            // The TLB map normally rejects phys >= 0x20000000, so intercept here directly.
+            if (address as u32) >= 0xC0000000 && (address as u32) < 0xC0010000 {
+                let phys = 0x80000000u64 | ((address as u32) - 0xC0000000) as u64;
+                return (phys, false, false); // uncached
+            }
             return device::tlb::get_physical_address(device, address, access_type);
         }
     }
@@ -113,7 +120,7 @@ pub fn data_write(
 }
 
 pub fn init(device: &mut device::Device) {
-    for i in 0..0x2000 {
+    for i in 0..0x10000 {
         if (MM_RDRAM_DRAM >> 16..=(MM_RDRAM_DRAM + 0x03EFFFFF) >> 16).contains(&i) {
             device.memory.fast_read[i] = device::rdram::read_mem_fast;
             device.memory.memory_map_read[i] = device::rdram::read_mem;
@@ -164,6 +171,22 @@ pub fn init(device: &mut device::Device) {
         {
             device.memory.memory_map_read[i] = device::is_viewer::read_mem;
             device.memory.memory_map_write[i] = device::is_viewer::write_mem;
+        } else if cfg!(feature = "ultra64") && i == 0x1800 {
+            #[cfg(feature = "ultra64")]
+            {
+                device.memory.fast_read[i] = device::sgi_dev::read_mem_fast;
+                device.memory.memory_map_read[i] = device::sgi_dev::read_mem;
+                device.memory.memory_map_write[i] = device::sgi_dev::write_mem;
+            }
+        } else if cfg!(feature = "ultra64") && i == 0x8000 {
+            // osMapTLBRdb maps virtual 0xC0000000 → physical 0x80000000 (uncached).
+            // RDB_BASE_REG = 0xC0000000 uses this TLB entry; RDB_BASE_VIRTUAL_ADDR =
+            // 0x80000000 hits slot 0x0000 via KSEG0 direct-map. Cover both.
+            #[cfg(feature = "ultra64")]
+            {
+                device.memory.memory_map_read[i] = device::sgi_dev::read_mem_rdb;
+                device.memory.memory_map_write[i] = device::sgi_dev::write_mem_rdb;
+            }
         } else if (MM_CART_ROM >> 16..=(MM_CART_ROM + 0x0FBFFFFF) >> 16).contains(&i) {
             device.memory.fast_read[i] = device::cart::rom::read_mem_fast;
             device.memory.memory_map_read[i] = device::cart::rom::read_mem;

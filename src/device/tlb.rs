@@ -122,6 +122,19 @@ pub fn write(device: &mut device::Device, index: u64) {
         device.cpu.cop0.tlb_entries[index as usize].pfn_odd << 12;
 
     tlb_map(device, index);
+
+    #[cfg(feature = "ultra64")]
+    {
+        let e = &device.cpu.cop0.tlb_entries[index as usize];
+        device::sgi_dev::ulog!(
+            "[tlb] write idx={} vpn2={:#010x} mask={:#010x} \
+             even: va={:#010x}-{:#010x} pa={:#010x} v={} d={} \
+             odd:  va={:#010x}-{:#010x} pa={:#010x} v={} d={}",
+            index, e.vpn2 << 13, e.mask,
+            e.start_even, e.end_even, e.phys_even, e.v_even, e.d_even,
+            e.start_odd,  e.end_odd,  e.phys_odd,  e.v_odd,  e.d_odd,
+        );
+    }
 }
 
 pub fn probe(device: &mut device::Device) {
