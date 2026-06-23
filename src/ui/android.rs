@@ -13,15 +13,15 @@ const REQUEST_SELECT_ROM: jint = 1;
 const CONFIGURE_INPUT_PROFILE: jint = 2;
 const RUN_ROM: jint = 3;
 
-pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
-    std::sync::Mutex::new(None);
+pub static ANDROID_APP: tokio::sync::Mutex<Option<slint::android::AndroidApp>> =
+    tokio::sync::Mutex::const_new(None);
 
-pub static SELECT_ROM_TX: std::sync::Mutex<
+pub static SELECT_ROM_TX: tokio::sync::Mutex<
     Option<tokio::sync::oneshot::Sender<Option<std::path::PathBuf>>>,
-> = std::sync::Mutex::new(None);
+> = tokio::sync::Mutex::const_new(None);
 
-pub static WEAK_SLINT_WINDOW: std::sync::Mutex<Option<slint::Weak<ui::gui::AppWindow>>> =
-    std::sync::Mutex::new(None);
+pub static WEAK_SLINT_WINDOW: tokio::sync::Mutex<Option<slint::Weak<ui::gui::AppWindow>>> =
+    tokio::sync::Mutex::const_new(None);
 
 bind_java_type! {
     DocumentsContract => "android.provider.DocumentsContract",
@@ -197,9 +197,7 @@ fn start_configure_input_profile_on_jvm(
     dinput: bool,
     deadzone: i32,
 ) -> jni::errors::Result<()> {
-    if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
         let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
         let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
@@ -256,9 +254,7 @@ fn start_run_rom_on_jvm(
     netplay: Option<ui::gui::NetplayDevice>,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) -> jni::errors::Result<()> {
-    if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
         let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
         let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
@@ -330,9 +326,7 @@ fn start_run_rom_on_jvm(
 }
 
 fn get_vm() -> Option<JavaVM> {
-    if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
         Some(unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) })
     } else {
         None
@@ -431,9 +425,7 @@ pub fn open_uri(path: &str) {
 }
 
 fn open_uri_on_jvm(env: &mut Env<'_>, path: &str) -> jni::errors::Result<()> {
-    if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
         let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
         let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
@@ -459,12 +451,8 @@ pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathB
             return None;
         }
         let (tx, rx) = tokio::sync::oneshot::channel::<Option<std::path::PathBuf>>();
-        if let Ok(mut tx_lock) = SELECT_ROM_TX.lock() {
-            tx_lock.replace(tx);
-        } else {
-            eprintln!("Error locking SELECT_ROM_TX");
-            return None;
-        }
+        SELECT_ROM_TX.lock().await.replace(tx);
+
         rx.await.unwrap_or(None)
     } else {
         eprintln!("Android app not initialized");
@@ -481,9 +469,7 @@ pub async fn select_gb_ram(_player: i32) -> Option<std::path::PathBuf> {
 }
 
 fn select_rom_on_jvm(env: &mut Env<'_>, rom_dir: String) -> jni::errors::Result<()> {
-    if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
         let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
         let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
 
@@ -507,9 +493,7 @@ fn select_rom_on_jvm(env: &mut Env<'_>, rom_dir: String) -> jni::errors::Result<
 }
 
 pub fn get_dirs() -> ui::Dirs {
-    if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
         ui::Dirs {
             config_dir: app.internal_data_path().unwrap().join("config"),
             data_dir: app.external_data_path().unwrap().join("data"),
@@ -559,9 +543,7 @@ fn get_file_from_uri_on_jvm(
     env: &mut Env<'_>,
     path: String,
 ) -> jni::errors::Result<Option<std::fs::File>> {
-    if let Ok(app) = ANDROID_APP.lock()
-        && let Some(app) = app.as_ref()
-    {
+    if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
         let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
         let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
         let path = JString::from_str(env, path)?;
@@ -600,8 +582,7 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
         if result_code == AndroidActivity::RESULT_OK(env)? {
             match request_code {
                 REQUEST_SELECT_ROM => {
-                    if let Ok(mut tx_lock) = SELECT_ROM_TX.lock()
-                        && let Some(tx) = tx_lock.take()
+                    if let Some(tx) = SELECT_ROM_TX.blocking_lock().take()
                         && !intent_data.is_null()
                     {
                         let result_intent =
@@ -612,9 +593,7 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                             return Ok(());
                         }
 
-                        if let Ok(app) = ANDROID_APP.lock()
-                            && let Some(app) = app.as_ref()
-                        {
+                        if let Some(app) = ANDROID_APP.blocking_lock().as_ref() {
                             let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
                             let activity = unsafe {
                                 env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)?
@@ -635,9 +614,7 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                     }
                 }
                 CONFIGURE_INPUT_PROFILE => {
-                    if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
-                        && let Some(weak_app_window) = weak_app_window.as_ref()
-                    {
+                    if let Some(weak_app_window) = WEAK_SLINT_WINDOW.blocking_lock().as_ref() {
                         let config = ui::config::Config::new();
                         ui::gui::update_input_profiles(&weak_app_window, &config);
                     }
@@ -659,9 +636,7 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                     {
                         let _ = std::fs::remove_file(cheats_path);
                     }
-                    if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
-                        && let Some(weak_app_window) = weak_app_window.as_ref()
-                    {
+                    if let Some(weak_app_window) = WEAK_SLINT_WINDOW.blocking_lock().as_ref() {
                         weak_app_window
                             .upgrade_in_event_loop(move |handle| {
                                 ui::gui::update_recent_roms(&handle, file_path.into());

@@ -349,7 +349,7 @@ impl Device {
                 load_state: false,
                 load_rewind: false,
                 last_rewind_saved: 0.0,
-                rewind_pool: std::sync::Arc::new(std::sync::Mutex::new(
+                rewind_pool: std::sync::Arc::new(tokio::sync::Mutex::new(
                     std::collections::BTreeMap::new(),
                 )),
             },
