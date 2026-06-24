@@ -284,10 +284,9 @@ pub fn process_requests(
                     }
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
+                    let session = &device.netplay.as_mut().unwrap().session;
                     //workaround for disabled rollback
-                    if device.netplay.as_mut().unwrap().session.current_frame()
-                        > device.netplay.as_mut().unwrap().session.max_prediction() as i32
-                    {
+                    if session.current_frame() > session.max_prediction() as i32 {
                         return inputs;
                     } else {
                         return vec![
