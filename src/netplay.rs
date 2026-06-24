@@ -278,13 +278,26 @@ pub fn process_requests(
                     let hash = u128::from_be_bytes(hasher.finalize()[..16].try_into().unwrap());
                     cell.save(frame, Some(frame), Some(hash));
                 }
-                ggrs::GgrsRequest::LoadGameState { cell: _, frame: _ } => {
-                    // if let Some(frame) = cell.load() {
-                    //    savestates::load_savestate(device, true, Some(frame));
-                    // }
+                ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
+                    if let Some(_frame) = cell.load() {
+                        //    savestates::load_savestate(device, true, Some(frame));
+                    }
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
-                    return inputs;
+                    //workaround for disabled rollback
+                    if device.netplay.as_mut().unwrap().session.current_frame()
+                        > device.netplay.as_mut().unwrap().session.max_prediction() as i32
+                    {
+                        return inputs;
+                    } else {
+                        return vec![
+                            (
+                                ui::input::InputData::default(),
+                                ggrs::InputStatus::Predicted
+                            );
+                            4
+                        ];
+                    }
                 }
             }
         } else {
@@ -368,10 +381,7 @@ fn advance_frame(device: &mut device::Device) {
 
     match netplay.session.advance_frame() {
         Ok(requests) => {
-            //workaround for disabled rollback
-            if netplay.session.current_frame() > netplay.session.max_prediction() as i32 {
-                netplay.requests.extend(requests);
-            }
+            netplay.requests.extend(requests);
         }
         Err(ggrs::GgrsError::PredictionThreshold) => {
             println!("prediction threshold reached");
