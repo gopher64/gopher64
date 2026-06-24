@@ -442,17 +442,29 @@ pub fn init(
 
     device.cpu.running = true;
     while device.cpu.running {
-        socket.update_peers();
-        let peers = socket
+        if socket
+            .update_peers()
+            .iter()
+            .any(|(_, peer_state)| *peer_state == matchbox_socket::PeerState::Disconnected)
+        {
+            // if someone has disconnected, reset the timeout
+            now = std::time::Instant::now();
+        }
+
+        let connected_peers = socket
             .connected_peers()
             .collect::<Vec<matchbox_socket::PeerId>>();
 
-        if peers.len() == netplay_config.number_of_players - 1 {
+        if connected_peers.len() == netplay_config.number_of_players - 1 {
             player_numbers.insert(netplay_config.player_number, None);
-            send_player_number(socket.channel_mut(1), &peers, netplay_config.player_number);
+            send_player_number(
+                socket.channel_mut(1),
+                &connected_peers,
+                netplay_config.player_number,
+            );
             get_player_numbers(socket.channel_mut(1), &mut player_numbers);
             if player_numbers.len() == netplay_config.number_of_players
-                && verify_peers(&peers, &player_numbers)
+                && verify_peers(&connected_peers, &player_numbers)
             {
                 break;
             }
@@ -465,7 +477,10 @@ pub fn init(
 
         if message_timer.elapsed() > std::time::Duration::from_secs(4) {
             ui::video::onscreen_message(
-                "Still connecting to netplay peers...\nPlease wait...",
+                &format!(
+                    "Still connecting to {} netplay peer(s)...\nPlease wait...",
+                    netplay_config.number_of_players - player_numbers.len()
+                ),
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
             message_timer = std::time::Instant::now();
