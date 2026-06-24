@@ -368,7 +368,10 @@ fn advance_frame(device: &mut device::Device) {
 
     match netplay.session.advance_frame() {
         Ok(requests) => {
-            netplay.requests.extend(requests);
+            //workaround for disabled rollback
+            if netplay.session.current_frame() > netplay.session.max_prediction() as i32 {
+                netplay.requests.extend(requests);
+            }
         }
         Err(ggrs::GgrsError::PredictionThreshold) => {
             println!("prediction threshold reached");
