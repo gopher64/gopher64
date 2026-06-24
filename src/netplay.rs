@@ -278,10 +278,11 @@ pub fn process_requests(
                     let hash = u128::from_be_bytes(hasher.finalize()[..16].try_into().unwrap());
                     cell.save(frame, Some(frame), Some(hash));
                 }
-                ggrs::GgrsRequest::LoadGameState { cell: _, frame: _ } => {
-                    // if let Some(frame) = cell.load() {
-                    //    savestates::load_savestate(device, true, Some(frame));
-                    // }
+                ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
+                    eprintln!("attempting to load game state");
+                    if let Some(_frame) = cell.load() {
+                        //    savestates::load_savestate(device, true, Some(frame));
+                    }
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
                     return inputs;
@@ -338,7 +339,12 @@ fn process_netplay(device: &mut device::Device) {
 
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
-    let local_input = ui::input::get(&mut device.ui, 0, device.speed_limiter.frame_counter);
+    let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32 {
+        ui::input::get(&mut device.ui, 0, device.speed_limiter.frame_counter)
+    } else {
+        //workaround for disabled rollback
+        ui::input::InputData::default()
+    };
     let local_handle = *netplay.session.local_player_handles().first().unwrap();
     netplay
         .session
