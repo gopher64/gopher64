@@ -339,7 +339,12 @@ fn process_netplay(device: &mut device::Device) {
 
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
-    let local_input = ui::input::get(&mut device.ui, 0, device.speed_limiter.frame_counter);
+    let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32 {
+        ui::input::get(&mut device.ui, 0, device.speed_limiter.frame_counter)
+    } else {
+        //workaround for disabled rollback
+        ui::input::InputData::default()
+    };
     let local_handle = *netplay.session.local_player_handles().first().unwrap();
     netplay
         .session
