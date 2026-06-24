@@ -279,24 +279,13 @@ pub fn process_requests(
                     cell.save(frame, Some(frame), Some(hash));
                 }
                 ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
+                    eprintln!("attempting to load game state");
                     if let Some(_frame) = cell.load() {
                         //    savestates::load_savestate(device, true, Some(frame));
                     }
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
-                    let session = &device.netplay.as_mut().unwrap().session;
-                    //workaround for disabled rollback
-                    if session.current_frame() > session.max_prediction() as i32 {
-                        return inputs;
-                    } else {
-                        return vec![
-                            (
-                                ui::input::InputData::default(),
-                                ggrs::InputStatus::Predicted
-                            );
-                            4
-                        ];
-                    }
+                    return inputs;
                 }
             }
         } else {
