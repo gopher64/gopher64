@@ -82,6 +82,11 @@ component SideBarItem inherits Rectangle {
     }
 
     button := SideBarButton {
+        Tooltip {
+            Text {
+                text: root.label;
+            }
+        }
         icon: root.icon;
         selected: root.selected;
         has-focus: root.has-focus;
