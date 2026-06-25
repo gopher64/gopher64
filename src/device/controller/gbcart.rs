@@ -27,6 +27,38 @@ pub struct GbCart {
     pub rtc_base_time: i64,
 }
 
+impl GbCart {
+    /// Clone everything except the ROM; `self.rom` is left untouched.
+    pub fn clone_state_from(&mut self, other: &GbCart) {
+        // Destructure so adding a field to GbCart forces this to be updated.
+        let GbCart {
+            enabled,
+            rom: _,
+            ram,
+            cart_type,
+            ram_enabled,
+            mbc1_mode,
+            ram_bank,
+            rom_bank,
+            rtc_regs,
+            rtc_regs_latch,
+            last_elapsed_time,
+            rtc_base_time,
+        } = other;
+        self.enabled = *enabled;
+        self.ram.clone_from(ram);
+        self.cart_type = *cart_type;
+        self.ram_enabled = *ram_enabled;
+        self.mbc1_mode = *mbc1_mode;
+        self.ram_bank = *ram_bank;
+        self.rom_bank = *rom_bank;
+        self.rtc_regs = *rtc_regs;
+        self.rtc_regs_latch = *rtc_regs_latch;
+        self.last_elapsed_time = *last_elapsed_time;
+        self.rtc_base_time = *rtc_base_time;
+    }
+}
+
 #[derive(Default, Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum CartType {
     #[default]

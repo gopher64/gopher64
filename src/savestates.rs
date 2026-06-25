@@ -5,7 +5,6 @@ use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
-use std::ops::Deref;
 
 struct M128iArrayVisitor<const N: usize>;
 
@@ -99,9 +98,10 @@ pub struct Savestate {
     pub load_state: bool,
     pub load_rewind: bool,
     pub last_rewind_saved: f64,
-    pub rewind_pool:
-        std::sync::Arc<tokio::sync::Mutex<std::collections::BTreeMap<i32, SavestateData>>>,
+    pub rewind_pool: std::collections::BTreeMap<i32, SavestateData>,
 }
+
+const REWIND_POOL_SIZE: usize = 30;
 
 pub struct SavestateData {
     device: Box<device::Device>,
@@ -110,11 +110,16 @@ pub struct SavestateData {
     ra_state: Vec<u8>,
 }
 
-static DEVICE_CLONE: std::sync::LazyLock<tokio::sync::Mutex<Box<device::Device>>> =
-    std::sync::LazyLock::new(|| tokio::sync::Mutex::new(device::Device::new(false)));
-
-static SAVES_CLONE: std::sync::LazyLock<tokio::sync::Mutex<ui::storage::Saves>> =
-    std::sync::LazyLock::new(|| tokio::sync::Mutex::new(ui::storage::Saves::default()));
+impl SavestateData {
+    fn new() -> SavestateData {
+        SavestateData {
+            device: device::Device::new(false),
+            saves: ui::storage::Saves::default(),
+            rdp_state: Vec::new(),
+            ra_state: Vec::new(),
+        }
+    }
+}
 
 pub fn process_savestates(device: &mut device::Device) {
     let save_rewind = if device.netplay.is_none()
@@ -138,82 +143,78 @@ pub fn process_savestates(device: &mut device::Device) {
 }
 
 pub fn create_savestate(device: &mut device::Device, rewind: bool, rewind_frame: Option<i32>) {
-    if !rewind {
-        ui::video::idle();
+    ui::video::idle();
+
+    // Snapshot on the calling thread so each savestate owns its data. A shared staging
+    // buffer would let a later savestate overwrite it before an earlier async task read it.
+    // Rewind snapshots reuse the buffers of the pool entry they replace or evict.
+    let rewind_key = rewind.then(|| {
+        let pool = &device.ui.savestate.rewind_pool;
+        rewind_frame.unwrap_or_else(|| pool.keys().last().map_or(0, |key| key + 1))
+    });
+    let mut state = if let Some(key) = rewind_key {
+        let pool = &mut device.ui.savestate.rewind_pool;
+        pool.remove(&key)
+            .or_else(|| {
+                if pool.len() >= REWIND_POOL_SIZE {
+                    pool.pop_first().map(|(_, state)| state)
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_else(SavestateData::new)
+    } else {
+        SavestateData::new()
+    };
+
+    state.rdp_state.resize(ui::video::state_size(), 0);
+    ui::video::save_state(state.rdp_state.as_mut_ptr());
+
+    state.ra_state.resize(retroachievements::state_size(), 0);
+    retroachievements::save_state(state.ra_state.as_mut_ptr(), state.ra_state.len());
+
+    state.device.clone_state(device);
+    state.saves.copy_from(&device.ui.storage.saves);
+
+    if let Some(key) = rewind_key {
+        device.ui.savestate.rewind_pool.insert(key, state);
+        return;
     }
-
-    let mut rdp_state: Vec<u8> = vec![0; ui::video::state_size()];
-    ui::video::save_state(rdp_state.as_mut_ptr());
-
-    let mut ra_state: Vec<u8> = vec![0; retroachievements::state_size()];
-    retroachievements::save_state(ra_state.as_mut_ptr(), ra_state.len());
-
-    DEVICE_CLONE.blocking_lock().clone_state(device);
-    SAVES_CLONE
-        .blocking_lock()
-        .clone_from(&device.ui.storage.saves);
 
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
     let save_state_slot = device.ui.storage.save_state_slot;
-    let rewind_pool = device.ui.savestate.rewind_pool.clone();
 
     tokio::spawn(async move {
-        let mut error = false;
-
-        if rewind {
-            let mut pool = rewind_pool.lock().await;
-            let mut state = device::Device::new(false);
-            state.clone_state(DEVICE_CLONE.lock().await.deref());
-            let key = if let Some(key) = rewind_frame {
-                key
-            } else if let Some(key) = pool.keys().last() {
-                key + 1
+        let compressed_file = if let Ok(device_data) = postcard::to_stdvec(&state.device)
+            && let Ok(saves_data) = postcard::to_stdvec(&state.saves)
+            && let Ok(compressed_file) = ui::storage::compress_file(&[
+                (&device_data, "device"),
+                (&saves_data, "saves"),
+                (&state.rdp_state, "rdp_state"),
+                (&state.ra_state, "ra_state"),
+            ]) {
+            Some(compressed_file)
+        } else {
+            None
+        };
+        let error = if let Some(compressed_file) = compressed_file {
+            if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
+                eprintln!("Error writing savestate: {}", e);
+                true
             } else {
-                0
-            };
-            pool.insert(
-                key,
-                SavestateData {
-                    device: state,
-                    saves: SAVES_CLONE.lock().await.clone(),
-                    rdp_state,
-                    ra_state,
-                },
-            );
-            if pool.len() > 30 {
-                pool.pop_first();
+                false
             }
         } else {
-            let compressed_file = if let Ok(device_data) =
-                postcard::to_stdvec(DEVICE_CLONE.lock().await.deref())
-                && let Ok(saves_data) = postcard::to_stdvec(SAVES_CLONE.lock().await.deref())
-                && let Ok(compressed_file) = ui::storage::compress_file(&[
-                    (&device_data, "device"),
-                    (&saves_data, "saves"),
-                    (&rdp_state, "rdp_state"),
-                    (&ra_state, "ra_state"),
-                ]) {
-                Some(compressed_file)
-            } else {
-                None
-            };
-            if let Some(compressed_file) = compressed_file {
-                if let Err(e) = tokio::fs::write(save_path, compressed_file).await {
-                    eprintln!("Error writing savestate: {}", e);
-                    error = true;
-                }
-            } else {
-                error = true;
-                eprintln!("Error compressing savestate");
-            }
-        }
+            eprintln!("Error compressing savestate");
+            true
+        };
 
         if error {
             ui::video::onscreen_message(
                 &format!("Failed to create savestate in slot {}", save_state_slot),
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
-        } else if !rewind {
+        } else {
             ui::video::onscreen_message(
                 &format!("Savestate created in slot {}", save_state_slot),
                 ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
@@ -231,163 +232,45 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         return;
     }
 
-    let state_data = if rewind {
-        if let Some(rewind_frame) = rewind_frame {
-            let timeout = std::time::Duration::from_secs(1);
-            let now = std::time::Instant::now();
-            loop {
-                if let Some(state) = device
-                    .ui
-                    .savestate
-                    .rewind_pool
-                    .blocking_lock()
-                    .remove(&rewind_frame)
-                {
-                    break Some(state);
-                }
-                if now.elapsed() > timeout {
-                    break None;
-                }
-                std::thread::sleep(std::time::Duration::from_millis(1));
-            }
-        } else if let Some((_key, state)) =
-            device.ui.savestate.rewind_pool.blocking_lock().pop_last()
+    let loaded = if rewind && let Some(rewind_frame) = rewind_frame {
+        // Keep the entry: GGRS does not re-save the frame it rolls back to, and may
+        // roll back to the same frame again (e.g. late inputs from another player).
+        if let Some(state) = device.ui.savestate.rewind_pool.remove(&rewind_frame) {
+            let loaded = apply_state(device, &state);
+            device.ui.savestate.rewind_pool.insert(rewind_frame, state);
+            loaded
+        } else {
+            false
+        }
+    } else {
+        let state_data = if rewind {
+            device
+                .ui
+                .savestate
+                .rewind_pool
+                .pop_last()
+                .map(|(_key, state)| state)
+        } else if let Ok(savestate) = std::fs::read(&device.ui.storage.paths.savestate_file_path)
+            && let Ok(device_data) = ui::storage::decompress_file(&savestate, "device")
+            && let Ok(saves_data) = ui::storage::decompress_file(&savestate, "saves")
+            && let Ok(rdp_state) = ui::storage::decompress_file(&savestate, "rdp_state")
+            && let Ok(ra_state) = ui::storage::decompress_file(&savestate, "ra_state")
+            && let Ok(state) = postcard::from_bytes::<Box<device::Device>>(&device_data)
+            && let Ok(saves) = postcard::from_bytes(&saves_data)
         {
-            Some(state)
+            Some(SavestateData {
+                device: state,
+                saves,
+                rdp_state,
+                ra_state,
+            })
         } else {
             None
-        }
-    } else if let Ok(savestate) = std::fs::read(&device.ui.storage.paths.savestate_file_path)
-        && let Ok(device_data) = ui::storage::decompress_file(&savestate, "device")
-        && let Ok(saves_data) = ui::storage::decompress_file(&savestate, "saves")
-        && let Ok(rdp_state) = ui::storage::decompress_file(&savestate, "rdp_state")
-        && let Ok(ra_state) = ui::storage::decompress_file(&savestate, "ra_state")
-        && let Ok(state) = postcard::from_bytes::<Box<device::Device>>(&device_data)
-        && let Ok(saves) = postcard::from_bytes(&saves_data)
-    {
-        Some(SavestateData {
-            device: state,
-            saves,
-            rdp_state,
-            ra_state,
-        })
-    } else {
-        None
+        };
+        state_data.is_some_and(|state| apply_state(device, &state))
     };
 
-    if let Some(mut state) = state_data
-        && device.rdram.size == state.device.rdram.size
-    {
-        if device.netplay.is_none() {
-            ui::video::idle();
-        }
-
-        device.ui.savestate.last_rewind_saved = state.device.vi.elapsed_time;
-
-        std::mem::swap(&mut device.rng, &mut state.device.rng);
-
-        std::mem::swap(&mut device.ui.storage.saves, &mut state.saves);
-
-        std::mem::swap(&mut device.cpu, &mut state.device.cpu);
-        std::mem::swap(&mut device.pif, &mut state.device.pif);
-
-        std::mem::swap(&mut device.cart, &mut state.device.cart);
-        std::mem::swap(&mut device.cart.rom, &mut state.device.cart.rom); // ROM is not included in the savestate
-
-        std::mem::swap(&mut device.memory, &mut state.device.memory);
-        std::mem::swap(&mut device.rsp, &mut state.device.rsp);
-        std::mem::swap(&mut device.rdp, &mut state.device.rdp);
-
-        device.rdram.mem.copy_from_slice(&state.device.rdram.mem); // RDRAM address should not change
-        std::mem::swap(&mut device.rdram.regs, &mut state.device.rdram.regs);
-
-        std::mem::swap(&mut device.mi, &mut state.device.mi);
-        std::mem::swap(&mut device.pi, &mut state.device.pi);
-        std::mem::swap(&mut device.vi, &mut state.device.vi);
-        std::mem::swap(&mut device.ai, &mut state.device.ai);
-        std::mem::swap(&mut device.si, &mut state.device.si);
-        std::mem::swap(&mut device.ri, &mut state.device.ri);
-        std::mem::swap(&mut device.vru, &mut state.device.vru);
-        std::mem::swap(&mut device.cheats, &mut state.device.cheats);
-
-        std::mem::swap(&mut device.transferpaks, &mut state.device.transferpaks);
-        for (i, item) in device.transferpaks.iter_mut().enumerate() {
-            std::mem::swap(
-                &mut item.cart.rom,
-                &mut state.device.transferpaks[i].cart.rom,
-            ); // ROM is not included in the savestate
-        }
-
-        device::memory::init(device);
-        if device.mi.regs[device::mi::MI_INIT_MODE_REG] & device::mi::MI_INIT_MODE != 0 {
-            device::rdram::set_write_handler(device, device::rdram::write_mem_repeat);
-        }
-        device::vi::set_expected_refresh_rate(device);
-        device::cpu::map_instructions(device);
-        device::cop0::map_instructions(device);
-        device::cop1::map_instructions(device);
-        device::cop1::set_host_flush_mode(device);
-        device::cop2::map_instructions(device);
-        device::rsp_cpu::map_instructions(device);
-
-        let mut mem_addr = 0x1000;
-        while mem_addr < 0x2000 {
-            let data =
-                u32::from_be_bytes(device.rsp.mem[mem_addr..mem_addr + 4].try_into().unwrap());
-            device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].func =
-                device::rsp_cpu::decode_opcode(device, data);
-            device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].opcode = data;
-            mem_addr += 4;
-        }
-
-        for line_index in 0..512 {
-            for i in 0..8 {
-                device.memory.icache[line_index].instruction[i] =
-                    device::cpu::decode_opcode(device, device.memory.icache[line_index].words[i]);
-            }
-        }
-
-        device::pif::connect_pif_channels(device);
-        for item in device.pif.channels.iter_mut().take(4) {
-            if let Some(handler) = item.pak_handler {
-                if handler.pak_type == device::controller::PakType::RumblePak {
-                    let rumblepak_handler = device::controller::PakHandler {
-                        read: device::controller::rumble::read,
-                        write: device::controller::rumble::write,
-                        pak_type: device::controller::PakType::RumblePak,
-                    };
-                    item.pak_handler = Some(rumblepak_handler);
-                } else if handler.pak_type == device::controller::PakType::MemPak {
-                    let mempak_handler = device::controller::PakHandler {
-                        read: device::controller::mempak::read,
-                        write: device::controller::mempak::write,
-                        pak_type: device::controller::PakType::MemPak,
-                    };
-                    item.pak_handler = Some(mempak_handler);
-                } else if handler.pak_type == device::controller::PakType::TransferPak {
-                    let tpak_handler = device::controller::PakHandler {
-                        read: device::controller::transferpak::read,
-                        write: device::controller::transferpak::write,
-                        pak_type: device::controller::PakType::TransferPak,
-                    };
-                    item.pak_handler = Some(tpak_handler);
-                }
-            }
-        }
-
-        ui::audio::update_freq(device);
-        ui::video::load_state(device, state.rdp_state.as_ptr(), state.rdp_state.len());
-
-        if !state.ra_state.is_empty() {
-            retroachievements::load_state(state.ra_state.as_ptr(), state.ra_state.len());
-        } else {
-            retroachievements::load_state(std::ptr::null(), 0);
-        }
-
-        if device.cheats.enabled {
-            cheats::execute_cheats(device, device.cheats.cheats.clone());
-        }
-
+    if loaded {
         if !rewind {
             ui::video::onscreen_message(
                 &format!(
@@ -419,6 +302,80 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         };
         ui::video::onscreen_message(&message, length);
     }
+}
+
+/// Restore emulator state from `state`. The ROMs are not part of the savestate and are kept.
+fn apply_state(device: &mut device::Device, state: &SavestateData) -> bool {
+    if device.rdram.size != state.device.rdram.size {
+        return false;
+    }
+
+    ui::video::idle();
+
+    device.ui.savestate.last_rewind_saved = state.device.vi.elapsed_time;
+
+    // clone_from keeps the RDRAM allocation (same size), so its address does not change.
+    device.clone_state(&state.device);
+    device.ui.storage.saves.copy_from(&state.saves);
+
+    device::memory::init(device);
+    if device.mi.regs[device::mi::MI_INIT_MODE_REG] & device::mi::MI_INIT_MODE != 0 {
+        device::rdram::set_write_handler(device, device::rdram::write_mem_repeat);
+    }
+    device::vi::set_expected_refresh_rate(device);
+    device::cpu::map_instructions(device);
+    device::cop0::map_instructions(device);
+    device::cop1::map_instructions(device);
+    device::cop1::set_host_flush_mode(device);
+    device::cop2::map_instructions(device);
+    device::rsp_cpu::map_instructions(device);
+
+    let mut mem_addr = 0x1000;
+    while mem_addr < 0x2000 {
+        let data = u32::from_be_bytes(device.rsp.mem[mem_addr..mem_addr + 4].try_into().unwrap());
+        device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].func =
+            device::rsp_cpu::decode_opcode(device, data);
+        device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].opcode = data;
+        mem_addr += 4;
+    }
+
+    for line_index in 0..512 {
+        for i in 0..8 {
+            device.memory.icache[line_index].instruction[i] =
+                device::cpu::decode_opcode(device, device.memory.icache[line_index].words[i]);
+        }
+    }
+
+    device::pif::connect_pif_channels(device);
+    for item in device.pif.channels.iter_mut().take(4) {
+        if let Some(handler) = item.pak_handler.as_mut() {
+            use device::controller::{PakType, mempak, rumble, transferpak};
+            type Handler = fn(&mut device::Device, usize, u16, usize, usize);
+            let (read, write): (Handler, Handler) = match handler.pak_type {
+                PakType::RumblePak => (rumble::read, rumble::write),
+                PakType::MemPak => (mempak::read, mempak::write),
+                PakType::TransferPak => (transferpak::read, transferpak::write),
+                PakType::None => continue,
+            };
+            handler.read = read;
+            handler.write = write;
+        }
+    }
+
+    ui::audio::update_freq(device);
+    ui::video::load_state(device, state.rdp_state.as_ptr(), state.rdp_state.len());
+
+    if !state.ra_state.is_empty() {
+        retroachievements::load_state(state.ra_state.as_ptr(), state.ra_state.len());
+    } else {
+        retroachievements::load_state(std::ptr::null(), 0);
+    }
+
+    if device.cheats.enabled {
+        cheats::execute_cheats(device, device.cheats.cheats.clone());
+    }
+
+    true
 }
 
 pub fn default_pak_handler() -> fn(&mut device::Device, usize, u16, usize, usize) {

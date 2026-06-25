@@ -289,11 +289,11 @@ impl Device {
         self.rng.clone_from(&device.rng);
         self.cpu.clone_from(&device.cpu);
         self.pif.clone_from(&device.pif);
-        self.cart.clone_from(&device.cart);
+        self.cart.clone_state_from(&device.cart);
         self.memory.clone_from(&device.memory);
         self.rsp.clone_from(&device.rsp);
         self.rdp.clone_from(&device.rdp);
-        self.rdram.clone_from(&device.rdram);
+        self.rdram.clone_state_from(&device.rdram);
         self.mi.clone_from(&device.mi);
         self.pi.clone_from(&device.pi);
         self.vi.clone_from(&device.vi);
@@ -301,13 +301,10 @@ impl Device {
         self.si.clone_from(&device.si);
         self.ri.clone_from(&device.ri);
         self.vru.clone_from(&device.vru);
-        self.transferpaks.clone_from(&device.transferpaks);
-        self.cheats.clone_from(&device.cheats);
-
-        self.cart.rom = Vec::new();
-        for transferpak in self.transferpaks.iter_mut() {
-            transferpak.cart.rom = Vec::new();
+        for (dst, src) in self.transferpaks.iter_mut().zip(device.transferpaks.iter()) {
+            dst.clone_state_from(src);
         }
+        self.cheats.clone_from(&device.cheats);
     }
 
     pub fn new(with_ui: bool) -> Box<Device> {
