@@ -387,7 +387,7 @@ fn verify_peers(
     peers: &[matchbox_socket::PeerId],
     player_numbers: &std::collections::BTreeMap<usize, Option<matchbox_socket::PeerId>>,
 ) -> bool {
-    for (_, peer) in player_numbers.iter() {
+    for peer in player_numbers.values() {
         if let Some(peer) = peer
             && !peers.contains(peer)
         {
