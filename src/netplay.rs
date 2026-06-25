@@ -1,4 +1,5 @@
 use crate::device;
+use crate::savestates;
 use crate::ui;
 use sha2::digest::Digest;
 
@@ -269,7 +270,7 @@ pub fn process_requests(
         if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
             match request {
                 ggrs::GgrsRequest::SaveGameState { cell, frame } => {
-                    //savestates::create_savestate(device, true, Some(frame));
+                    savestates::create_savestate(device, true, Some(frame));
 
                     let mut hasher = sha2::Sha256::new();
                     for reg in device.cpu.cop0.regs.as_ref() {
@@ -280,8 +281,8 @@ pub fn process_requests(
                 }
                 ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
                     eprintln!("attempting to load game state");
-                    if let Some(_frame) = cell.load() {
-                        //    savestates::load_savestate(device, true, Some(frame));
+                    if let Some(frame) = cell.load() {
+                        savestates::load_savestate(device, true, Some(frame));
                     }
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
@@ -339,25 +340,12 @@ fn process_netplay(device: &mut device::Device) {
 
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
-    let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32 {
-        ui::input::get(&mut device.ui, 0)
-    } else {
-        //workaround for disabled rollback
-        ui::input::InputData::default()
-    };
+    let local_input = ui::input::get(&mut device.ui, 0);
     let local_handle = *netplay.session.local_player_handles().first().unwrap();
     netplay
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
-
-    // avoid rollback
-    while !netplay.disconnected
-        && netplay.session.current_frame() > netplay.session.confirmed_frame()
-        && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
-    {
-        poll_clients(netplay);
-    }
 
     if netplay.disconnected {
         netplay.requests.push_back(ggrs::GgrsRequest::AdvanceFrame {
@@ -504,7 +492,7 @@ pub fn init(
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
-        .with_max_prediction_window(16)
+        .with_max_prediction_window(0)
         .with_disconnect_timeout(std::time::Duration::from_secs(if cfg!(debug_assertions) {
             10
         } else {
