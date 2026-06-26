@@ -253,6 +253,22 @@ pub fn in_delay_slot_taken(device: &device::Device) -> bool {
 pub fn run(device: &mut device::Device) {
     device.cpu.running = true;
     while device.cpu.running {
+        #[cfg(feature = "ultra64")]
+        {
+            use std::sync::atomic::Ordering;
+            // NMI is non-maskable — fires immediately regardless of IE/IM bits.
+            // Call reset_event directly rather than raising CAUSE.IP4 and waiting.
+            if device.sgi_dev.nmi_pending.swap(false, Ordering::Acquire) {
+                device::sgi_dev::ulog!("[ultra64/cpu] NMI firing at pc={:#010x}", device.cpu.pc);
+                device::exceptions::reset_event(device);
+            }
+            if device.sgi_dev.hard_reset_pending.load(Ordering::Acquire) {
+                device::sgi_dev::ulog!("[ultra64/cpu] hard RESET — breaking cpu loop for full reinit");
+                // Leave hard_reset_pending=true so run_game's caller can detect it
+                // and restart the full initialization sequence (rdram, video, pif, etc).
+                device.cpu.running = false;
+            }
+        }
         device.cpu.gpr[0] = 0; // gpr 0 is read only
         let (cached, err);
         (device.cpu.pc_phys, cached, err) = device::memory::translate_address(
@@ -272,6 +288,17 @@ pub fn run(device: &mut device::Device) {
                 device.cpu.pc_phys,
                 device::memory::AccessSize::Word,
             );
+            // #[cfg(feature = "ultra64")]
+            // {
+            //     let pc = device.cpu.pc;
+            //     let pc32 = pc as u32;
+            //     let in_ipl1 = pc32 >= 0xBFC00000 && pc32 <= 0xBFC000D3;
+            //     let in_ipl2 = pc32 >= 0xA4001000 && pc32 <= 0xA400171B;
+            //     let in_ipl3 = pc32 >= 0xA4000040 && pc32 <= 0xA4000FFF;
+            //     if in_ipl1 || in_ipl2 || in_ipl3 {
+            //         device::sgi_dev::ulog!("[ultra64/trace] pc={:#010x} op={:#010x}", pc, opcode);
+            //     }
+            // }
             device::cpu::decode_opcode(device, opcode)(device, opcode);
         }
 

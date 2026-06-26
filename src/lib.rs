@@ -16,7 +16,7 @@ use ui::android;
 
 /// N64 emulator
 #[derive(Parser, Debug)]
-#[command(author, version=env!("GIT_DESCRIBE"), about, long_about = None, arg_required_else_help = if cfg!(feature = "gui") { false } else { true })]
+#[command(author, version=env!("GIT_DESCRIBE"), about, long_about = None, arg_required_else_help = if cfg!(feature = "gui") || cfg!(feature = "ultra64") { false } else { true })]
 pub struct Args {
     pub game: Option<String>,
     #[arg(short, long)]
@@ -126,6 +126,35 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
     std::fs::create_dir_all(dirs.data_dir.join("states"))?;
 
     ui::sdl_hints();
+
+    #[cfg(feature = "ultra64")]
+    if args.game.is_none() {
+        use std::sync::atomic::Ordering;
+        ui::disable_auto_update_joysticks();
+        loop {
+            let mut device = device::Device::new(true);
+            device::run_game(
+                &mut device,
+                &[],
+                ui::GameSettings {
+                    overclock: false,
+                    disable_expansion_pak: false,
+                    cheats: rustc_hash::FxHashMap::default(),
+                    load_savestate_slot: None,
+                },
+                retroachievements::RAConfig::default(),
+                None,
+            );
+            // If hard_reset_pending is set, run_game exited due to a board reset.
+            // Drop the old Device entirely and create a fresh one for the next game.
+            if device.sgi_dev.hard_reset_pending.swap(false, Ordering::AcqRel) {
+                eprintln!("[ultra64] hard reset: restarting run_game");
+                continue;
+            }
+            break;
+        }
+        return Ok(());
+    }
 
     if let Some(game) = args.game {
         ui::disable_auto_update_joysticks();
