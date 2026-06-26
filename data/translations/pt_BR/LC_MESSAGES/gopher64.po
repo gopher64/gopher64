@@ -180,7 +180,7 @@ msgstr "Abrir ROM"
 #: src/ui/gui/localgame_page.slint:37
 msgctxt "LocalGame"
 msgid "Open Saves Folder"
-msgstr "Abrir Partes de Saves"
+msgstr "Abrir Pasta de Saves"
 
 #: src/ui/gui/localgame_page.slint:54
 msgctxt "LocalGame"
