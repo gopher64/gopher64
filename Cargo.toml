@@ -26,7 +26,7 @@ mimalloc = "0.1"
 regex = "1.11"
 tokio-tungstenite = { version = "0.29", features = ["native-tls-vendored"] }
 matchbox_socket = "0.14"
-ggrs = { git = "https://github.com/gschup/ggrs.git", features = ["sync-send"] }
+ggrs = { version = "0.13", features = ["sync-send"] }
 rustc-hash = "2.1"
 futures = "0.3"
 rand = { version = "0.10", features = ["serde"] }
