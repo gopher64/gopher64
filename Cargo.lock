@@ -351,9 +351,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.102"
+version = "1.0.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
+checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
 
 [[package]]
 name = "arbitrary"
@@ -2618,8 +2618,9 @@ dependencies = [
 
 [[package]]
 name = "ggrs"
-version = "0.12.0"
-source = "git+https://github.com/gschup/ggrs.git#d260417700bef25482ba0861587905f643385e14"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "672a16c1d778ad2d7a6218700ba0863a9e510e9446b08f3644460a9884aed048"
 dependencies = [
  "bincode 1.3.3",
  "bitfield-rle",
