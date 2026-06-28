@@ -28,6 +28,7 @@ tokio-tungstenite = { version = "0.29", features = ["native-tls-vendored"] }
 matchbox_socket = "0.14"
 ggrs = { version = "0.13", features = ["sync-send"] }
 rustc-hash = "2.1"
+parking_lot = "0.12"
 futures = "0.3"
 rand = { version = "0.10", features = ["serde"] }
 fatfs = "0.3"
@@ -36,6 +37,7 @@ postcard = { version = "1.1", features = ["use-std"] }
 clap = { version = "4.5", features = ["derive"] }
 reqwest = { version = "0.13", default-features = false, features = ["native-tls-vendored", "charset", "http2", "system-proxy", "json", "query"] }
 discord-rich-presence = "1.1"
+crc32fast = "1"
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "unstable-winit-030", "backend-winit", "renderer-femtovg-wgpu", "accessibility"], optional = true }

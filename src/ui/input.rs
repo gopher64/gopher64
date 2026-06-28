@@ -32,6 +32,294 @@ pub const DEADZONE_DEFAULT: i32 = 5;
 
 pub const UNKNOWN_CONTROLLER_NAME: &str = "Unknown controller";
 
+const KEY_LABELS: [(&str, usize); PROFILE_SIZE] = [
+    ("A", A_BUTTON),
+    ("B", B_BUTTON),
+    ("Start", START_BUTTON),
+    ("D Up", U_DPAD),
+    ("D Down", D_DPAD),
+    ("D Left", L_DPAD),
+    ("D Right", R_DPAD),
+    ("C Up", U_CBUTTON),
+    ("C Down", D_CBUTTON),
+    ("C Left", L_CBUTTON),
+    ("C Right", R_CBUTTON),
+    ("L", L_TRIG),
+    ("R", R_TRIG),
+    ("Z", Z_TRIG),
+    ("Control Stick Up", AXIS_UP),
+    ("Control Stick Down", AXIS_DOWN),
+    ("Control Stick Left", AXIS_LEFT),
+    ("Control Stick Right", AXIS_RIGHT),
+    ("Hotkey Activator", HOTKEY),
+];
+
+// Maps a key token from the Slint capture overlay to an SDL scancode.
+// A single ASCII letter is upper-cased; everything else is treated as an SDL
+// scancode name ("Up", "Return", "Left Shift", digits, ...).
+#[cfg(all(feature = "gui", not(target_os = "android")))]
+pub fn slint_text_to_scancode(text: &str) -> Option<i32> {
+    if text.is_empty() {
+        return None;
+    }
+    let name = if text.chars().count() == 1 && text.chars().next().unwrap().is_ascii_alphabetic() {
+        text.to_uppercase()
+    } else {
+        text.to_string()
+    };
+    let c = std::ffi::CString::new(name).ok()?;
+    let scancode = unsafe { sdl3_sys::keyboard::SDL_GetScancodeFromName(c.as_ptr()) };
+    if scancode == sdl3_sys::scancode::SDL_SCANCODE_UNKNOWN {
+        None
+    } else {
+        Some(i32::from(scancode))
+    }
+}
+
+// In-process, in-window input-profile capture. Replaces the standalone SDL
+// configuration window in the GUI: gamepad/joystick input is polled from SDL
+// each tick via `poll_pad`, keyboard input arrives through `capture_key` from
+// the Slint overlay's FocusScope. All methods run on the UI thread.
+#[cfg(all(feature = "gui", not(target_os = "android")))]
+pub struct ProfileCapture {
+    profile: String,
+    dinput: bool,
+    deadzone: i32,
+    index: usize,
+    open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick>,
+    open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad>,
+    keys: [ui::config::InputKeyButton; PROFILE_SIZE],
+    controller_buttons: [ui::config::InputKeyButton; PROFILE_SIZE],
+    controller_axis: [ui::config::InputControllerAxis; PROFILE_SIZE],
+    joystick_buttons: [ui::config::InputKeyButton; PROFILE_SIZE],
+    joystick_hat: [ui::config::InputJoystickHat; PROFILE_SIZE],
+    joystick_axis: [ui::config::InputControllerAxis; PROFILE_SIZE],
+    last_joystick_axis_result: ui::config::InputControllerAxis,
+}
+
+#[cfg(all(feature = "gui", not(target_os = "android")))]
+impl ProfileCapture {
+    pub fn new(profile: String, dinput: bool, deadzone: i32) -> ProfileCapture {
+        ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+        let mut open_joysticks = Vec::new();
+        let mut open_controllers = Vec::new();
+        for joystick in get_joysticks().iter() {
+            if !dinput {
+                let controller = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(*joystick) };
+                if !controller.is_null() {
+                    open_controllers.push(controller);
+                }
+            } else {
+                let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(*joystick) };
+                if !joystick.is_null() {
+                    open_joysticks.push(joystick);
+                }
+            }
+        }
+        unsafe {
+            sdl3_sys::events::SDL_PumpEvents();
+            sdl3_sys::events::SDL_FlushEvents(
+                u32::from(sdl3_sys::events::SDL_EVENT_FIRST),
+                u32::from(sdl3_sys::events::SDL_EVENT_LAST),
+            );
+        }
+        let key = ui::config::InputKeyButton {
+            enabled: false,
+            id: 0,
+        };
+        let axis = ui::config::InputControllerAxis {
+            enabled: false,
+            id: 0,
+            axis: 0,
+            initial_state: 0,
+        };
+        let hat = ui::config::InputJoystickHat {
+            enabled: false,
+            id: 0,
+            direction: 0,
+        };
+        ProfileCapture {
+            profile,
+            dinput,
+            deadzone,
+            index: 0,
+            open_joysticks,
+            open_controllers,
+            keys: [key; PROFILE_SIZE],
+            controller_buttons: [key; PROFILE_SIZE],
+            controller_axis: [axis; PROFILE_SIZE],
+            joystick_buttons: [key; PROFILE_SIZE],
+            joystick_hat: [hat; PROFILE_SIZE],
+            joystick_axis: [axis; PROFILE_SIZE],
+            last_joystick_axis_result: axis,
+        }
+    }
+
+    pub fn current_label(&self) -> &'static str {
+        if self.index < PROFILE_SIZE {
+            KEY_LABELS[self.index].0
+        } else {
+            ""
+        }
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn is_done(&self) -> bool {
+        self.index >= PROFILE_SIZE
+    }
+
+    pub fn capture_key(&mut self, scancode: i32) {
+        if self.is_done() {
+            return;
+        }
+        let slot = KEY_LABELS[self.index].1;
+        self.keys[slot] = ui::config::InputKeyButton {
+            enabled: true,
+            id: scancode,
+        };
+        self.index += 1;
+    }
+
+    pub fn poll_pad(&mut self) -> bool {
+        if self.is_done() {
+            return false;
+        }
+        let slot = KEY_LABELS[self.index].1;
+        let mut advanced = false;
+        unsafe { sdl3_sys::events::SDL_PumpEvents() };
+        let mut event: sdl3_sys::events::SDL_Event = Default::default();
+        while !advanced && unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
+            let t = event.event_type();
+            if t == sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN {
+                if !self.open_controllers.is_empty() {
+                    self.controller_buttons[slot] = ui::config::InputKeyButton {
+                        enabled: true,
+                        id: i32::from(unsafe { event.gbutton.button }),
+                    };
+                    advanced = true;
+                }
+            } else if t == sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION {
+                let axis_value = unsafe { event.gaxis.value };
+                let axis = unsafe { event.gaxis.axis };
+                if !self.open_controllers.is_empty()
+                    && axis_value.saturating_abs() > (i16::MAX as i32 * 3 / 4) as i16
+                {
+                    let result = ui::config::InputControllerAxis {
+                        enabled: true,
+                        id: axis as i32,
+                        axis: axis_value / axis_value.saturating_abs(),
+                        initial_state: 0,
+                    };
+                    if result != self.last_joystick_axis_result {
+                        self.controller_axis[slot] = result;
+                        self.last_joystick_axis_result = result;
+                        advanced = true;
+                    }
+                }
+            } else if t == sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN {
+                if !self.open_joysticks.is_empty() {
+                    self.joystick_buttons[slot] = ui::config::InputKeyButton {
+                        enabled: true,
+                        id: i32::from(unsafe { event.jbutton.button }),
+                    };
+                    advanced = true;
+                }
+            } else if t == sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION {
+                let state = unsafe { event.jhat.value };
+                let hat = unsafe { event.jhat.hat };
+                if !self.open_joysticks.is_empty() && state != sdl3_sys::joystick::SDL_HAT_CENTERED
+                {
+                    self.joystick_hat[slot] = ui::config::InputJoystickHat {
+                        enabled: true,
+                        id: hat as i32,
+                        direction: state,
+                    };
+                    advanced = true;
+                }
+            } else if t == sdl3_sys::events::SDL_EVENT_JOYSTICK_AXIS_MOTION {
+                let axis_value = unsafe { event.jaxis.value };
+                let axis = unsafe { event.jaxis.axis };
+                let mut initial_state = 0;
+                let has_initial_state = unsafe {
+                    sdl3_sys::joystick::SDL_GetJoystickAxisInitialState(
+                        sdl3_sys::joystick::SDL_GetJoystickFromID(event.jaxis.which),
+                        axis as i32,
+                        &mut initial_state,
+                    )
+                };
+                initial_state = if has_initial_state {
+                    if initial_state < i16::MIN / 2 {
+                        i16::MIN
+                    } else if initial_state > i16::MAX / 2 {
+                        i16::MAX
+                    } else {
+                        0
+                    }
+                } else {
+                    0
+                };
+                if !self.open_joysticks.is_empty()
+                    && axis_value.abs_diff(initial_state) > (u16::MAX / 4)
+                {
+                    let result = ui::config::InputControllerAxis {
+                        enabled: true,
+                        id: axis as i32,
+                        axis: axis_value / axis_value.saturating_abs(),
+                        initial_state,
+                    };
+                    let same_trigger = self.last_joystick_axis_result.id == result.id
+                        && self.last_joystick_axis_result.initial_state != 0;
+                    if result != self.last_joystick_axis_result && !same_trigger {
+                        self.joystick_axis[slot] = result;
+                        self.last_joystick_axis_result = result;
+                        advanced = true;
+                    }
+                }
+            }
+        }
+        if advanced {
+            self.index += 1;
+        }
+        advanced
+    }
+
+    fn close_handles(&mut self) {
+        for joystick in self.open_joysticks.drain(..) {
+            unsafe { sdl3_sys::joystick::SDL_CloseJoystick(joystick) }
+        }
+        for controller in self.open_controllers.drain(..) {
+            unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller) }
+        }
+    }
+
+    pub fn finish_and_save(mut self) {
+        self.close_handles();
+        let new_profile = ui::config::InputProfile {
+            keys: self.keys,
+            controller_buttons: self.controller_buttons,
+            controller_axis: self.controller_axis,
+            joystick_buttons: self.joystick_buttons,
+            joystick_hat: self.joystick_hat,
+            joystick_axis: self.joystick_axis,
+            dinput: self.dinput,
+            deadzone: self.deadzone,
+        };
+        let mut config = ui::config::Config::new();
+        config
+            .input
+            .input_profiles
+            .insert(self.profile.clone(), new_profile);
+        // `config` drops here, persisting the new profile to disk.
+    }
+
+    pub fn cancel(mut self) {
+        self.close_handles();
+    }
+}
+
 #[derive(Default)]
 pub struct Controllers {
     pub rumble: bool,
@@ -705,27 +993,7 @@ pub fn configure_input_profile(
         panic!("Could not show window")
     }
 
-    let key_labels: [(&str, usize); PROFILE_SIZE] = [
-        ("A", A_BUTTON),
-        ("B", B_BUTTON),
-        ("Start", START_BUTTON),
-        ("D Up", U_DPAD),
-        ("D Down", D_DPAD),
-        ("D Left", L_DPAD),
-        ("D Right", R_DPAD),
-        ("C Up", U_CBUTTON),
-        ("C Down", D_CBUTTON),
-        ("C Left", L_CBUTTON),
-        ("C Right", R_CBUTTON),
-        ("L", L_TRIG),
-        ("R", R_TRIG),
-        ("Z", Z_TRIG),
-        ("Control Stick Up", AXIS_UP),
-        ("Control Stick Down", AXIS_DOWN),
-        ("Control Stick Left", AXIS_LEFT),
-        ("Control Stick Right", AXIS_RIGHT),
-        ("Hotkey Activator", HOTKEY),
-    ];
+    let key_labels = KEY_LABELS;
 
     let mut new_keys = [ui::config::InputKeyButton {
         enabled: false,

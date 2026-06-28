@@ -1,0 +1,67 @@
+// theme.slint — Design tokens for the Gopher64 UI.
+//
+// Single source of truth for colour, type, spacing and motion. Every other
+// component reads `Theme.*` so the whole app can be re-skinned from here.
+//
+// Palette: deep charcoal/slate surfaces with the four classic N64 controller
+// button colours used *only* for emphasis (focus, active nav, highlights).
+
+export global Theme {
+    // appearance mode — toggled at runtime, persisted to config
+    in-out property <bool> dark: true;
+
+    // ---- surfaces ----
+    out property <color> bg: root.dark ? #0e1116 : #f4f5f7;              // app background
+    out property <color> surface: root.dark ? #161b22 : #ffffff;        // cards / panels
+    out property <color> surface-variant: root.dark ? #1c222c : #eceef2; // inset fields / chips
+    out property <color> surface-hi: root.dark ? #232b37 : #e4e7ec;     // hover / raised
+    out property <color> border: root.dark ? #2a323e : #d9dde4;         // hairlines
+    out property <color> border-strong: root.dark ? #6e7d90 : #767f8d;  // control outlines (>=3:1)
+    out property <color> nav-bg: root.dark ? #0a0c10 : #ebedf1;         // sidebar / bottom bar
+
+    // ---- text ----
+    out property <color> text: root.dark ? #e8ebf1 : #1a1f28;           // primary
+    out property <color> text-muted: root.dark ? #98a3b5 : #5b6470;     // secondary
+    out property <color> text-faint: root.dark ? #7c879a : #6b7280;     // disabled / hints
+    out property <color> on-accent: #ffffff;
+
+    // ---- N64 accent colours (WCAG-tuned per theme) ----
+    out property <color> accent: root.dark ? #2f6ad6 : #2563eb;       // controller blue — fills / focus / borders
+    out property <color> accent-text: root.dark ? #6fa6f7 : #1d4ed8;  // accent used AS text (needs 4.5:1)
+    out property <color> yellow: root.dark ? #f5c518 : #a16207;       // C buttons yellow — favourites / warn
+    out property <color> green: root.dark ? #36b37e : #15803d;        // success / connected
+
+    // ---- typography ----
+    out property <length> font-display: 22px;
+    out property <length> font-title: 17px;
+    out property <length> font-body: 14px;
+    out property <length> font-small: 12px;
+    out property <length> font-micro: 11px;
+    out property <int> w-medium: 500;
+    out property <int> w-semibold: 600;
+    out property <int> w-bold: 700;
+
+    // ---- spacing scale ----
+    out property <length> sp-1: 4px;
+    out property <length> sp-2: 8px;
+    out property <length> sp-3: 12px;
+    out property <length> sp-4: 16px;
+    out property <length> sp-5: 24px;
+    out property <length> sp-6: 32px;
+
+    // ---- radii ----
+    out property <length> r-sm: 6px;
+    out property <length> r-md: 10px;
+    out property <length> r-lg: 14px;
+    out property <length> r-pill: 999px;
+
+    // ---- motion ----
+    out property <duration> dur: 150ms;
+
+    // ---- layout metrics ----
+    out property <length> rail-w: 224px;   // expanded sidebar (landscape, wide)
+    out property <length> rail-w-compact: 68px; // icon-only rail (landscape, narrow)
+    out property <length> bar-h: 64px;     // bottom bar (portrait / handheld)
+    out property <length> card-w: 192px;   // ROM card
+    out property <length> card-h: 176px;
+}

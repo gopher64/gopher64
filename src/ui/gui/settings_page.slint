@@ -1,9 +1,18 @@
-// Copyright © SixtyFPS GmbH <info@slint.dev>
-// SPDX-License-Identifier: MIT
+// settings_page.slint — Tabbed settings: Emulation · Video · Input.
+//
+// SettingsData keeps EVERY field the Rust backend already binds (gui.rs
+// settings_window / save_settings), so no Rust changes are required.
+// Aspect Ratio reuses the existing `widescreen` bool (no new backend field).
+//
+// The Input tab embeds the existing ControllerConfig / InputProfileDialog
+// verbatim and forwards their callbacks, so controller setup is unchanged.
 
-import { ComboBox, HorizontalBox, VerticalBox, Switch } from "std-widgets.slint";
-import { Page } from "page.slint";
-
+import { Theme } from "theme.slint";
+import { Toggle, SegTabs, SettingRow, SectionCard } from "widgets.slint";
+import { ComboBox } from "std-widgets.slint";
+import { ControllerConfig } from "controller_page.slint";
+import { InputProfileDialog, InputProfileData } from "input_profile.slint";
+import { ComboBox, ScrollView } from "std-widgets.slint";
 export global SettingsData {
     in-out property <bool> integer_scaling;
     in-out property <bool> ssaa;
@@ -13,129 +22,199 @@ export global SettingsData {
     in-out property <bool> apply_crt_shader;
     in-out property <bool> overclock_n64_cpu;
     in-out property <bool> disable_expansion_pak;
-    in-out property <int> resolution;
+    in-out property <int> resolution;       // 0:1x 1:2x 2:4x 3:8x
     in-out property <bool> emulate_usb;
     in-out property <bool> rewind;
     in-out property <bool> emulate_vru;
     in-out property <string> rom_dir;
 }
 
-export component Settings inherits Page {
-    title: @tr("Settings");
+export component Settings inherits Rectangle {
+    // forwarded to the AppWindow-level callbacks gui.rs already handles
+    callback input_profile_button_clicked;
+    callback input_profile_creation_button_clicked;
+    callback transferpak_toggled(int, bool);
+    callback controller_window_created;
 
-    VerticalBox {
-        alignment: start;
-        HorizontalBox {
-            alignment: center;
-            VerticalBox {
+    property <int> tab: 0;
+    background: Theme.bg;
+
+    VerticalLayout {
+        width: 100%;
+        height: 100%;
+
+        VerticalLayout {
+            padding-left: Theme.sp-6;
+            padding-right: Theme.sp-6;
+            padding-top: Theme.sp-5;
+            padding-bottom: Theme.sp-3;
+            Text {
+                text: @tr("Settings");
+                color: Theme.text;
+                font-size: Theme.font-display;
+                font-weight: Theme.w-bold;
+            }
+        }
+
+        HorizontalLayout {
+            padding-left: Theme.sp-6;
+            padding-right: Theme.sp-6;
+            padding-bottom: Theme.sp-3;
+            alignment: start;
+            SegTabs {
+                tabs: [@tr("Emulation"), @tr("Video"), @tr("Input")];
+                current <=> root.tab;
+            }
+        }
+
+        Rectangle { height: 1px; background: Theme.border; }
+
+        // ---- Emulation / Video (scrolling forms) ----
+        if root.tab != 2: ScrollView {
+            vertical-stretch: 1;
+            VerticalLayout {
+                width: 100%;
+                padding: Theme.sp-6;
+                spacing: Theme.sp-4;
                 alignment: start;
-                HorizontalBox {
-                    alignment: start;
-                    Text {
-                        text: @tr("Resolution:");
-                        vertical-alignment: center;
-                    }
 
-                    ComboBox {
-                        model: ["1x", "2x", "4x", "8x"];
-                        current-index: SettingsData.resolution;
-                        selected => {
-                            SettingsData.resolution = self.current-index;
+                if root.tab == 0: SectionCard {
+                    title: @tr("Emulation");
+
+                    SettingRow {
+                        title: @tr("Overclock N64 CPU");
+                        description: @tr("Raises the CPU clock. May cause bugs in some games.");
+                        Toggle {
+                            checked: SettingsData.overclock_n64_cpu;
+                            toggled(v) => { SettingsData.overclock_n64_cpu = v; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Disable Expansion Pak");
+                        description: @tr("Emulate the base 4 MB of RDRAM only.");
+                        Toggle {
+                            checked: SettingsData.disable_expansion_pak;
+                            toggled(v) => { SettingsData.disable_expansion_pak = v; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Enable Rewind");
+                        description: @tr("Hold the rewind hotkey to step back up to ~30 seconds.");
+                        Toggle {
+                            checked: SettingsData.rewind;
+                            toggled(v) => { SettingsData.rewind = v; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Emulate UNFLoader");
+                        description: @tr("USB debug output for homebrew development.");
+                        Toggle {
+                            checked: SettingsData.emulate_usb;
+                            toggled(v) => { SettingsData.emulate_usb = v; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Emulate VRU");
+                        description: @tr("Voice Recognition Unit (e.g. Hey You, Pikachu!).");
+                        Toggle {
+                            checked: SettingsData.emulate_vru;
+                            toggled(v) => { SettingsData.emulate_vru = v; }
                         }
                     }
                 }
 
-                Switch {
-                    text: @tr("SSAA downscaling");
-                    checked: SettingsData.ssaa;
-                    toggled => {
-                        SettingsData.ssaa = self.checked;
+                if root.tab == 1: SectionCard {
+                    title: @tr("Video");
+
+                    SettingRow {
+                        title: @tr("Upscaling");
+                        description: @tr("Internal render-resolution multiplier.");
+                        ComboBox {
+                            min-width: 150px;
+                            model: ["1x", "2x", "4x", "8x"];
+                            current-index: SettingsData.resolution;
+                            selected => { SettingsData.resolution = self.current-index; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Aspect Ratio");
+                        description: @tr("16:9 stretches the image to fill widescreen displays.");
+                        ComboBox {
+                            min-width: 150px;
+                            model: [@tr("4:3 (Original)"), @tr("16:9 (Widescreen)")];
+                            current-index: SettingsData.widescreen ? 1 : 0;
+                            selected => { SettingsData.widescreen = self.current-index == 1; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("SSAA Downscaling");
+                        description: @tr("Supersample then downscale for smoother edges.");
+                        Toggle {
+                            checked: SettingsData.ssaa;
+                            toggled(v) => { SettingsData.ssaa = v; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Integer Scaling");
+                        description: @tr("Scale only by whole multiples to keep pixels crisp.");
+                        Toggle {
+                            checked: SettingsData.integer_scaling;
+                            toggled(v) => { SettingsData.integer_scaling = v; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("CRT Shader");
+                        description: @tr("Scanline / aperture filter for a retro CRT look.");
+                        Toggle {
+                            checked: SettingsData.apply_crt_shader;
+                            toggled(v) => { SettingsData.apply_crt_shader = v; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Fullscreen");
+                        Toggle {
+                            checked: SettingsData.fullscreen;
+                            toggled(v) => { SettingsData.fullscreen = v; }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("VSync");
+                        description: @tr("Sync to the display refresh to avoid tearing.");
+                        Toggle {
+                            checked: SettingsData.vsync;
+                            toggled(v) => { SettingsData.vsync = v; }
+                        }
                     }
                 }
 
-                Switch {
-                    text: @tr("Integer Scaling");
-                    checked: SettingsData.integer_scaling;
-                    toggled => {
-                        SettingsData.integer_scaling = self.checked;
+                if root.tab == 1: SectionCard {
+                    title: @tr("Appearance");
+                    SettingRow {
+                        title: @tr("Dark Mode");
+                        description: @tr("Switch between the dark and light colour themes.");
+                        Toggle {
+                            checked: Theme.dark;
+                            toggled(v) => { Theme.dark = v; }
+                        }
                     }
                 }
+            }
+        }
 
-                Switch {
-                    text: @tr("Fullscreen");
-                    checked: SettingsData.fullscreen;
-                    toggled => {
-                        SettingsData.fullscreen = self.checked;
-                    }
-                }
-
-                Switch {
-                    text: @tr("Widescreen (stretch)");
-                    checked: SettingsData.widescreen;
-                    toggled => {
-                        SettingsData.widescreen = self.checked;
-                    }
-                }
-
-                Switch {
-                    text: @tr("VSync");
-                    checked: SettingsData.vsync;
-                    toggled => {
-                        SettingsData.vsync = self.checked;
-                    }
-                }
-
-                Switch {
-                    text: @tr("Apply CRT shader");
-                    checked: SettingsData.apply_crt_shader;
-                    toggled => {
-                        SettingsData.apply_crt_shader = self.checked;
-                    }
-                }
-
-                Rectangle {
-                    height: 20px;
-                }
-
-                Switch {
-                    text: @tr("Overclock N64 CPU (may cause bugs)");
-                    checked: SettingsData.overclock_n64_cpu;
-                    toggled => {
-                        SettingsData.overclock_n64_cpu = self.checked;
-                    }
-                }
-
-                Switch {
-                    text: @tr("Disable Expansion Pak");
-                    checked: SettingsData.disable_expansion_pak;
-                    toggled => {
-                        SettingsData.disable_expansion_pak = self.checked;
-                    }
-                }
-
-                Switch {
-                    text: @tr("Enable Rewind");
-                    checked: SettingsData.rewind;
-                    toggled => {
-                        SettingsData.rewind = self.checked;
-                    }
-                }
-
-                Switch {
-                    text: @tr("Emulate UNFLoader");
-                    checked: SettingsData.emulate_usb;
-                    toggled => {
-                        SettingsData.emulate_usb = self.checked;
-                    }
-                }
-
-                Switch {
-                    text: @tr("Emulate VRU");
-                    checked: SettingsData.emulate_vru;
-                    toggled => {
-                        SettingsData.emulate_vru = self.checked;
-                    }
-                }
+        // ---- Input tab: existing controller UI, embedded ----
+        if root.tab == 2: Rectangle {
+            vertical-stretch: 1;
+            if !InputProfileData.show_input_profile: ControllerConfig {
+                width: 100%;
+                height: 100%;
+                input_profile_button_clicked => { root.input_profile_button_clicked(); }
+                transferpak_toggled(player, enabled) => { root.transferpak_toggled(player, enabled); }
+                controller_window_created => { root.controller_window_created(); }
+            }
+            if InputProfileData.show_input_profile: InputProfileDialog {
+                width: 100%;
+                height: 100%;
+                profile_creation_button_clicked => { root.input_profile_creation_button_clicked(); }
             }
         }
     }

@@ -45,6 +45,10 @@ pub struct Input {
     pub emulate_vru: bool,
 }
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Video {
     pub upscale: u32,
@@ -54,6 +58,8 @@ pub struct Video {
     pub widescreen: bool,
     pub vsync: bool,
     pub crt: bool,
+    #[serde(default = "default_true")]
+    pub dark_theme: bool,
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -76,6 +82,11 @@ pub struct Config {
     pub emulation: Emulation,
     pub rom_dir: std::path::PathBuf,
     pub recent_roms: Vec<String>,
+    #[serde(default)]
+    pub favorites: Vec<String>,
+    #[cfg(target_os = "macos")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub macos_rom_dir_bookmark: Option<Vec<u8>>,
     #[serde(skip)]
     write_to_disk: bool,
 }
@@ -179,6 +190,7 @@ impl Config {
                 widescreen: false,
                 vsync: true,
                 crt: false,
+                dark_theme: true,
             },
             emulation: Emulation {
                 overclock: false,
@@ -188,6 +200,9 @@ impl Config {
             },
             rom_dir: std::path::PathBuf::new(),
             recent_roms: Vec::new(),
+            favorites: Vec::new(),
+            #[cfg(target_os = "macos")]
+            macos_rom_dir_bookmark: None,
             write_to_disk: true,
         }
     }

@@ -122,6 +122,17 @@ fn main() {
         panic!("unknown arch")
     };
 
+    // macOS: compile the security-scoped bookmark shim (GUI-only). Keeps the
+    // user-picked ROM folder accessible across launches under the App Sandbox.
+    if os == "macos" && std::env::var("CARGO_FEATURE_GUI").is_ok() {
+        cc::Build::new()
+            .file("src/ui/macos_bookmark.m")
+            .flag("-fobjc-arc")
+            .compile("gopher64_macos_bookmark");
+        println!("cargo::rustc-link-lib=framework=Foundation");
+        println!("cargo::rerun-if-changed=src/ui/macos_bookmark.m");
+    }
+
     volk_build.flag(opt_flag);
     rdp_build.flag(opt_flag);
     simd_build.flag(opt_flag);

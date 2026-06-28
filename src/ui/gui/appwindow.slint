@@ -1,23 +1,33 @@
-// Copyright © SixtyFPS GmbH <info@slint.dev>
-// SPDX-License-Identifier: MIT
+// appwindow.slint — Application shell.
+//
+// The data contract (callbacks + <=> aliases + public functions) is kept
+// byte-identical to the original so the existing Rust (src/ui/gui.rs and
+// friends) binds with no changes. Only the shell + page presentation changed.
+//
+// New (optional) surface for the redesigned Library — see binding notes:
+//   callback library_filter_changed(string, int)
+//   callback toggle_favorite(string)
+//   property games / library_search / library_filter / region
 
-import { Palette, StandardButton, VerticalBox, HorizontalBox } from "std-widgets.slint";
-import { LocalGame, ControllerConfig, Netplay, Cheats, RetroAchievements, Settings, About } from "pages.slint";
-import { SideBar } from "side_bar.slint";
-import { SettingsData } from "settings_page.slint";
-import { RAData } from "retroachievements_page.slint";
-import { AboutData } from "about_page.slint";
-import { ControllerData } from "controller_page.slint";
-import { State } from "localgame_page.slint";
-import { CheatsData } from "cheat_page.slint";
-import { InputProfileDialog, InputProfileData } from "input_profile.slint";
-import { NetplayData } from "netplay_page.slint";
-export { VruDialog } from "vru_dialog.slint";
+import { Palette, VerticalBox, HorizontalBox, StandardButton } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { NavItem, PushButton, BtnKind } from "widgets.slint";
+
+import { Library, State, LibraryData } from "localgame_page.slint";
+import { Settings, SettingsData } from "settings_page.slint";
+import { RetroAchievements, RAData } from "retroachievements_page.slint";
+import { Netplay, NetplayData } from "netplay_page.slint";
+import { NetplayWait, NetplayWaitData } from "netplay_wait.slint";
 import { NetplayCreate } from "netplay_create.slint";
 import { NetplayJoin } from "netplay_join.slint";
-import { NetplayWait, NetplayWaitData } from "netplay_wait.slint";
+import { Cheats, CheatsData } from "cheat_page.slint";
+import { About, AboutData } from "about_page.slint";
+import { ControllerData } from "controller_page.slint";
+import { InputProfileData } from "input_profile.slint";
+export { VruDialog } from "vru_dialog.slint";
 
 export component AppWindow inherits Window {
+    // ---- callbacks (unchanged contract) ----
     callback wiki_button_clicked;
     callback discord_button_clicked;
     callback newversion_button_clicked;
@@ -29,7 +39,7 @@ export component AppWindow inherits Window {
     callback saves_folder_button_clicked;
     callback input_profile_button_clicked;
     callback input_profile_creation_button_clicked;
-    callback transferpak_toggled(int,bool);
+    callback transferpak_toggled(int, bool);
     callback create_session_button_clicked;
     callback join_session_button_clicked;
     callback netplay_discord_button_clicked;
@@ -47,8 +57,19 @@ export component AppWindow inherits Window {
     callback ra_button_clicked(string);
     callback ra_games_clicked;
     callback ra_show_profile_clicked;
-    callback ra_toggled(bool,bool,bool,bool,bool);
+    callback ra_toggled(bool, bool, bool, bool, bool);
     callback controller_window_created;
+    callback input_key_captured(string);
+    callback input_capture_cancel;
+
+    // ---- new callbacks for the Library grid ----
+    callback library_filter_changed(string, int);
+    callback toggle_favorite(string);
+    callback library_scan_folder;
+    callback launch_game(string, int);
+    callback detail_opened(string);
+
+    // ---- aliases (unchanged contract) ----
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
     in-out property ra_username <=> RAData.ra_username;
@@ -89,6 +110,21 @@ export component AppWindow inherits Window {
     in-out property game_running <=> State.game_running;
     in-out property is_android <=> State.is_android;
     in-out property recent_roms <=> State.recent_roms;
+    in-out property games <=> LibraryData.games;               // NEW
+    in-out property library_search <=> LibraryData.search_text; // NEW
+    in-out property library_filter <=> LibraryData.active_filter; // NEW
+    in-out property library_selected <=> LibraryData.selected;
+    in-out property library_columns <=> LibraryData.columns;
+    in-out property library_detail_open <=> LibraryData.detail_open;
+    in-out property library_detail_slot <=> LibraryData.detail_slot;
+    in-out property library_detail_slots <=> LibraryData.detail_slots;
+    in-out property library_detail_tab <=> LibraryData.detail_tab;
+    in-out property library_detail_hero <=> LibraryData.detail_hero;
+    in-out property library_detail_has_hero <=> LibraryData.detail_has_hero;
+    in-out property library_detail_snap <=> LibraryData.detail_snap;
+    in-out property library_detail_has_snap <=> LibraryData.detail_has_snap;
+    in-out property library_detail_title_art <=> LibraryData.detail_title_art;
+    in-out property library_detail_has_title <=> LibraryData.detail_has_title;
     in-out property cheat_game_name <=> CheatsData.cheat_game_name;
     in-out property cheat_game_crc <=> CheatsData.cheat_game_crc;
     in-out property cheats <=> CheatsData.cheats;
@@ -97,6 +133,10 @@ export component AppWindow inherits Window {
     in-out property input_profile_name <=> InputProfileData.profile_name;
     in-out property input_dinput <=> InputProfileData.dinput;
     in-out property show_input_profile <=> InputProfileData.show_input_profile;
+    in-out property capturing <=> InputProfileData.capturing;
+    in-out property capture_label <=> InputProfileData.capture_label;
+    in-out property capture_index <=> InputProfileData.capture_index;
+    in-out property capture_total <=> InputProfileData.capture_total;
 
     in-out property show_netplay_wait_session <=> NetplayData.show_wait_session;
     in-out property show_netplay_create_session <=> NetplayData.show_create_session;
@@ -120,11 +160,19 @@ export component AppWindow inherits Window {
     in-out property netplay_recommended_delay <=> NetplayWaitData.recommended_delay;
     in-out property netplay_game_pal <=> NetplayWaitData.game_pal;
     in-out property netplay_connected_peers_count <=> NetplayWaitData.connected_peers_count;
+    in-out property dark_theme <=> Theme.dark;
 
+    // ---- shell state ----
+    out property <int> nav: 0;   // 0 Library 1 Netplay 2 Achievements 3 Settings 4 Cheats 5 About
     private property <string> popup_message;
     private property <bool> popup_has_close;
+    property <bool> dark-mode: Theme.dark;
+
     private property <bool> is-portrait: root.width < root.height;
-    private property <length> bar-thickness: 56px;
+    private property <bool> compact: !root.is-portrait && root.width < 880px;
+    private property <length> rail-w: root.compact ? Theme.rail-w-compact : Theme.rail-w;
+    private property <length> bar-h: Theme.bar-h;
+
     private property <length> safe-left: root.safe-area-insets.left;
     private property <length> safe-top: root.safe-area-insets.top;
     private property <length> safe-right: root.safe-area-insets.right;
@@ -134,237 +182,461 @@ export component AppWindow inherits Window {
 
     min-width: 320px;
     min-height: 240px;
-    preferred-width: 800px;
-    preferred-height: 650px;
+    preferred-width: 980px;
+    preferred-height: 680px;
     title: "Gopher64";
     icon: @image-url("../../../data/icon/gopher64.png");
+    background: Theme.bg;
 
-    side-bar := SideBar {
-        portrait: root.is-portrait;
-        title: "Gopher64";
-        model: [
-        {
-            icon: @image-url("../../../data/ui/icons/local_game.svg"),
-            label: @tr("Menu" => "Local Game"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/controller.svg"),
-            label: @tr("Menu" => "Controller Config"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/netplay.svg"),
-            label: @tr("Menu" => "Netplay"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/cheats.svg"),
-            label: @tr("Menu" => "Cheats"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/achievements.svg"),
-            label: @tr("Menu" => "RetroAchievements"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/settings.svg"),
-            label: @tr("Menu" => "Settings"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/about.svg"),
-            label: @tr("Menu" => "About"),
-        },
-        ];
-        x: root.safe-left;
-        y: root.is-portrait ? parent.height - root.bar-thickness - root.safe-bottom : root.safe-top;
-        width: root.is-portrait ? root.safe-width : root.bar-thickness;
-        height: root.is-portrait ? root.bar-thickness : root.safe-height;
+    init => {
+        Palette.color-scheme = Theme.dark ? ColorScheme.dark : ColorScheme.light;
+    }
+    changed dark-mode => {
+        Palette.color-scheme = self.dark-mode ? ColorScheme.dark : ColorScheme.light;
     }
 
+    // ===== Left rail (landscape) =====
+    if !root.is-portrait: Rectangle {
+        x: root.safe-left;
+        y: root.safe-top;
+        width: root.rail-w;
+        height: root.safe-height;
+        background: Theme.nav-bg;
+        Rectangle { x: parent.width - 1px; width: 1px; background: Theme.border; }
+
+        VerticalLayout {
+            padding: Theme.sp-3;
+            spacing: Theme.sp-1;
+
+            // brand
+            HorizontalLayout {
+                padding-left: root.compact ? 0px : Theme.sp-2;
+                padding-top: Theme.sp-2;
+                padding-bottom: Theme.sp-3;
+                spacing: Theme.sp-2;
+                alignment: root.compact ? center : start;
+                Image {
+                    source: @image-url("../../../data/icon/gopher64.png");
+                    width: 28px;
+                    height: 28px;
+                }
+                if !root.compact: Text {
+                    text: "Gopher64";
+                    color: Theme.text;
+                    font-size: Theme.font-title;
+                    font-weight: Theme.w-bold;
+                    vertical-alignment: center;
+                }
+            }
+
+            NavItem {
+                label: @tr("Menu" => "Library");
+                icon: @image-url("../../../data/ui/icons/local_game.svg");
+                compact: root.compact;
+                active: root.nav == 0;
+                clicked => { root.nav = 0; }
+            }
+            NavItem {
+                label: @tr("Menu" => "Netplay");
+                icon: @image-url("../../../data/ui/icons/netplay.svg");
+                compact: root.compact;
+                active: root.nav == 1;
+                clicked => { root.nav = 1; }
+            }
+            NavItem {
+                label: @tr("Menu" => "Achievements");
+                icon: @image-url("../../../data/ui/icons/achievements.svg");
+                compact: root.compact;
+                active: root.nav == 2;
+                clicked => { root.nav = 2; }
+            }
+            NavItem {
+                label: @tr("Menu" => "Settings");
+                icon: @image-url("../../../data/ui/icons/settings.svg");
+                compact: root.compact;
+                active: root.nav == 3;
+                clicked => { root.nav = 3; }
+            }
+
+            Rectangle { vertical-stretch: 1; }
+
+            NavItem {
+                label: @tr("Menu" => "Cheats");
+                icon: @image-url("../../../data/ui/icons/cheats.svg");
+                compact: root.compact;
+                active: root.nav == 4;
+                clicked => { root.nav = 4; }
+            }
+            NavItem {
+                label: @tr("Menu" => "About");
+                icon: @image-url("../../../data/ui/icons/about.svg");
+                compact: root.compact;
+                active: root.nav == 5;
+                clicked => { root.nav = 5; }
+            }
+        }
+    }
+
+
+    // ===== Content area =====
     content-area := Rectangle {
         clip: true;
-        x: root.is-portrait ? root.safe-left : root.safe-left + root.bar-thickness;
+        x: root.is-portrait ? root.safe-left : root.safe-left + root.rail-w;
         y: root.safe-top;
-        width: root.is-portrait ? root.safe-width : root.safe-width - root.bar-thickness;
-        height: root.is-portrait ? root.safe-height - root.bar-thickness : root.safe-height;
+        width: root.is-portrait ? root.safe-width : root.safe-width - root.rail-w;
+        height: root.is-portrait ? root.safe-height - root.bar-h : root.safe-height;
+        background: Theme.bg;
 
-        if(side-bar.current-item == 0): LocalGame {
+        if root.nav == 0: Library {
             width: 100%;
             height: 100%;
-            open_rom_button_clicked => {
-                open_rom_button_clicked();
-            }
-            saves_folder_button_clicked => {
-                saves_folder_button_clicked();
-            }
-            newversion_button_clicked => {
-                newversion_button_clicked();
-            }
-            recent_rom_button_clicked(rom) => {
-                recent_rom_button_clicked(rom);
-            }
+            open_rom_button_clicked => { root.open_rom_button_clicked(); }
+            saves_folder_button_clicked => { root.saves_folder_button_clicked(); }
+            recent_rom_button_clicked(rom) => { root.recent_rom_button_clicked(rom); }
+            toggle_favorite(path) => { root.toggle_favorite(path); }
+            library_filter_changed(s, f) => { root.library_filter_changed(s, f); }
+            library_scan_folder => { root.library_scan_folder(); }
+            launch_game(p, s) => { root.launch_game(p, s); }
+            detail_opened(p) => { root.detail_opened(p); }
+            open_achievements_settings => { root.nav = 2; }
         }
-        if(side-bar.current-item == 1 && !show_input_profile): ControllerConfig {
+
+        if root.nav == 1 && !NetplayData.show_wait_session && !NetplayData.show_create_session && !NetplayData.show_join_session: Netplay {
             width: 100%;
             height: 100%;
-            input_profile_button_clicked => {
-                input_profile_button_clicked();
-            }
-            transferpak_toggled(player,enabled) => {
-                transferpak_toggled(player,enabled);
-            }
-            controller_window_created => {
-                controller_window_created();
-            }
+            create_session_button_clicked => { root.create_session_button_clicked(); }
+            join_session_button_clicked => { root.join_session_button_clicked(); }
+            netplay_discord_button_clicked => { root.netplay_discord_button_clicked(); }
+            netplay_feedback_button_clicked => { root.netplay_feedback_button_clicked(); }
         }
-        if(side-bar.current-item == 1 && show_input_profile): InputProfileDialog {
+        if root.nav == 1 && NetplayData.show_wait_session: NetplayWait {
             width: 100%;
             height: 100%;
-            profile_creation_button_clicked => {
-                input_profile_creation_button_clicked();
-            }
+            send_chat_message(message) => { root.netplay_send_chat_message(message); }
+            begin_game(a) => { root.netplay_begin_game(a); }
+            close => { root.netplay_close(); }
         }
-        if(side-bar.current-item == 2 && !show_netplay_wait_session && !show_netplay_create_session && !show_netplay_join_session): Netplay {
+        if root.nav == 1 && NetplayData.show_create_session && !NetplayData.show_wait_session: NetplayCreate {
             width: 100%;
             height: 100%;
-            create_session_button_clicked => {
-                create_session_button_clicked();
-            }
-            join_session_button_clicked => {
-                join_session_button_clicked();
-            }
-            netplay_discord_button_clicked => {
-                netplay_discord_button_clicked();
-            }
-            netplay_feedback_button_clicked => {
-                netplay_feedback_button_clicked();
-            }
+            select_rom(rom_dir) => { root.netplay_select_rom(rom_dir); }
+            create_session(a, b, c, d, e, f, g, h) => { root.netplay_create_session(a, b, c, d, e, f, g, h); }
+            close => { root.netplay_close(); }
         }
-        if(side-bar.current-item == 2 && show_netplay_wait_session): NetplayWait {
+        if root.nav == 1 && NetplayData.show_join_session && !NetplayData.show_wait_session: NetplayJoin {
             width: 100%;
             height: 100%;
-            send_chat_message(message) => {
-                netplay_send_chat_message(message);
-            }
-            begin_game(a) => {
-                netplay_begin_game(a);
-            }
-            close => {
-                netplay_close();
-            }
+            refresh_sessions => { root.netplay_refresh_sessions(); }
+            select_rom(rom_dir) => { root.netplay_select_rom(rom_dir); }
+            join_session(a, b, c, d) => { root.netplay_join_session(a, b, c, d); }
+            close => { root.netplay_close(); }
         }
-        if(side-bar.current-item == 2 && show_netplay_create_session && !show_netplay_wait_session): NetplayCreate {
+
+        if root.nav == 2: RetroAchievements {
             width: 100%;
             height: 100%;
-            select_rom(rom_dir) => {
-                netplay_select_rom(rom_dir);
+            ra_button_clicked(password) => { root.ra_button_clicked(password); }
+            ra_toggled(enabled, hardcore, challenge, leaderboard, rich_presence) => {
+                root.ra_toggled(enabled, hardcore, challenge, leaderboard, rich_presence);
             }
-            create_session(a, b, c, d, e, f, g, h) => {
-                netplay_create_session(a,b,c,d,e,f,g,h);
-            }
-            close => {
-                netplay_close();
-            }
+            ra_games_clicked => { root.ra_games_clicked(); }
+            ra_show_profile_clicked => { root.ra_show_profile_clicked(); }
         }
-        if(side-bar.current-item == 2 && show_netplay_join_session && !show_netplay_wait_session): NetplayJoin {
+
+        if root.nav == 3: Settings {
             width: 100%;
             height: 100%;
-            refresh_sessions => {
-                netplay_refresh_sessions();
-            }
-            select_rom(rom_dir) => {
-                netplay_select_rom(rom_dir);
-            }
-            join_session(a, b, c, d) => {
-                netplay_join_session(a,b,c,d);
-            }
-            close => {
-                netplay_close();
-            }
+            input_profile_button_clicked => { root.input_profile_button_clicked(); }
+            input_profile_creation_button_clicked => { root.input_profile_creation_button_clicked(); }
+            transferpak_toggled(player, enabled) => { root.transferpak_toggled(player, enabled); }
+            controller_window_created => { root.controller_window_created(); }
         }
-        if(side-bar.current-item == 3): Cheats {
+
+        if root.nav == 4: Cheats {
             width: 100%;
             height: 100%;
-            cheats_select_rom_clicked(rom_dir) => {
-                cheats_select_rom_clicked(rom_dir);
-            }
-            cheats_clear_clicked => {
-                cheats_clear_clicked();
-            }
+            cheats_select_rom_clicked(rom_dir) => { root.cheats_select_rom_clicked(rom_dir); }
+            cheats_clear_clicked => { root.cheats_clear_clicked(); }
             cheat_toggled(game_crc, cheat_name, option, enabled) => {
-                cheat_toggled(game_crc,cheat_name,option,enabled);
+                root.cheat_toggled(game_crc, cheat_name, option, enabled);
             }
         }
-        if(side-bar.current-item == 4): RetroAchievements {
+
+        if root.nav == 5: About {
             width: 100%;
             height: 100%;
-            ra_button_clicked(password) => {
-                ra_button_clicked(password);
-            }
-            ra_toggled(enabled,hardcore,challenge,leaderboard,rich_presence) => {
-                ra_toggled(enabled,hardcore,challenge,leaderboard,rich_presence);
-            }
-            ra_games_clicked => {
-                ra_games_clicked();
-            }
-            ra_show_profile_clicked => {
-                ra_show_profile_clicked();
-            }
+            wiki_button_clicked => { root.wiki_button_clicked(); }
+            discord_button_clicked => { root.discord_button_clicked(); }
+            newversion_button_clicked => { root.newversion_button_clicked(); }
+            patreon_button_clicked => { root.patreon_button_clicked(); }
+            github_sponsors_button_clicked => { root.github_sponsors_button_clicked(); }
+            source_code_button_clicked => { root.source_code_button_clicked(); }
         }
-        if(side-bar.current-item == 5): Settings {
-            width: 100%;
-            height: 100%;
-        }
-        if(side-bar.current-item == 6): About {
-            width: 100%;
-            height: 100%;
-            wiki_button_clicked => {
-                wiki_button_clicked();
-            }
-            discord_button_clicked => {
-                discord_button_clicked();
-            }
-            newversion_button_clicked => {
-                newversion_button_clicked();
-            }
-            patreon_button_clicked => {
-                patreon_button_clicked();
-            }
-            github_sponsors_button_clicked => {
-                github_sponsors_button_clicked();
-            }
-            source_code_button_clicked => {
-                source_code_button_clicked();
-            }
-        }
+
         popup := PopupWindow {
             close-policy: no-auto-close;
+            x: 0;
+            y: 0;
+            width: content-area.width;
+            height: content-area.height;
             Rectangle {
-                height:100%;
                 width: 100%;
-                background: Palette.background;
-                VerticalBox {
-                    alignment: center;
-                    HorizontalBox{
-                        alignment: center;
+                height: 100%;
+                background: Theme.bg.with-alpha(0.7);
+                card := Rectangle {
+                    width: Math.min(parent.width - 2 * Theme.sp-6, 420px);
+                    height: col.preferred-height;
+                    background: Theme.surface;
+                    border-radius: Theme.r-lg;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    col := VerticalLayout {
+                        padding: Theme.sp-5;
+                        spacing: Theme.sp-4;
                         Text {
-                            text: popup_message;
+                            text: root.popup_message;
+                            color: Theme.text;
+                            font-size: Theme.font-body;
+                            horizontal-alignment: center;
+                            wrap: word-wrap;
                         }
-                    }
-                    if (popup_has_close):HorizontalBox{
-                        alignment: center;
-                        StandardButton {
-                            kind: ok;
-                            clicked() => {
-                                popup.close();
+                        if root.popup_has_close: HorizontalBox {
+                            alignment: center;
+                            StandardButton {
+                                kind: ok;
+                                clicked => { popup.close(); }
                             }
                         }
                     }
                 }
             }
-            x: content-area.x;
-            y: content-area.y;
-            height: content-area.height;
-            width: content-area.width;
         }
     }
+
+    // ===== Bottom bar (portrait / handheld) — declared AFTER content-area so taps reach it =====
+    if root.is-portrait: Rectangle {
+        x: root.safe-left;
+        y: root.height - root.bar-h - root.safe-bottom;
+        width: root.safe-width;
+        height: root.bar-h;
+        background: Theme.nav-bg;
+        Rectangle { y: 0; height: 1px; background: Theme.border; }
+
+        HorizontalLayout {
+            padding: 4px;
+            spacing: 2px;
+            NavItem {
+                horizontal-stretch: 1;
+                portrait: true;
+                label: @tr("Menu" => "Library");
+                icon: @image-url("../../../data/ui/icons/local_game.svg");
+                active: root.nav == 0;
+                clicked => { root.nav = 0; }
+            }
+            NavItem {
+                horizontal-stretch: 1;
+                portrait: true;
+                label: @tr("Menu" => "Netplay");
+                icon: @image-url("../../../data/ui/icons/netplay.svg");
+                active: root.nav == 1;
+                clicked => { root.nav = 1; }
+            }
+            NavItem {
+                horizontal-stretch: 1;
+                portrait: true;
+                label: @tr("Menu" => "Awards");
+                icon: @image-url("../../../data/ui/icons/achievements.svg");
+                active: root.nav == 2;
+                clicked => { root.nav = 2; }
+            }
+            NavItem {
+                horizontal-stretch: 1;
+                portrait: true;
+                label: @tr("Menu" => "Settings");
+                icon: @image-url("../../../data/ui/icons/settings.svg");
+                active: root.nav == 3;
+                clicked => { root.nav = 3; }
+            }
+            NavItem {
+                horizontal-stretch: 1;
+                portrait: true;
+                label: @tr("Menu" => "Cheats");
+                icon: @image-url("../../../data/ui/icons/cheats.svg");
+                active: root.nav == 4;
+                clicked => { root.nav = 4; }
+            }
+            NavItem {
+                horizontal-stretch: 1;
+                portrait: true;
+                label: @tr("Menu" => "About");
+                icon: @image-url("../../../data/ui/icons/about.svg");
+                active: root.nav == 5;
+                clicked => { root.nav = 5; }
+            }
+        }
+    }
+
+    // ---- in-window input-profile capture overlay ----
+    if InputProfileData.capturing: Rectangle {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        background: Theme.bg.with-alpha(0.85);
+
+        TouchArea { }   // swallow clicks to the background
+
+        capture-focus := FocusScope {
+            init => { self.focus(); }
+            key-pressed(event) => {
+                if (event.text == Key.Escape) {
+                    root.input_capture_cancel();
+                } else if (event.text == Key.UpArrow) {
+                    root.input_key_captured("Up");
+                } else if (event.text == Key.DownArrow) {
+                    root.input_key_captured("Down");
+                } else if (event.text == Key.LeftArrow) {
+                    root.input_key_captured("Left");
+                } else if (event.text == Key.RightArrow) {
+                    root.input_key_captured("Right");
+                } else if (event.text == Key.Return) {
+                    root.input_key_captured("Return");
+                } else if (event.text == Key.Tab) {
+                    root.input_key_captured("Tab");
+                } else if (event.text == Key.Backspace) {
+                    root.input_key_captured("Backspace");
+                } else if (event.text == Key.Space) {
+                    root.input_key_captured("Space");
+                } else if (event.text == Key.Shift) {
+                    root.input_key_captured("Left Shift");
+                } else if (event.text == Key.Control) {
+                    root.input_key_captured("Left Ctrl");
+                } else if (event.text != "") {
+                    root.input_key_captured(event.text);
+                }
+                accept
+            }
+        }
+
+        Rectangle {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            width: Math.min(parent.width - 2 * Theme.sp-6, 460px);
+            height: ccol.preferred-height;
+            background: Theme.surface;
+            border-radius: Theme.r-lg;
+            border-width: 1px;
+            border-color: Theme.border;
+            ccol := VerticalLayout {
+                padding: Theme.sp-6;
+                spacing: Theme.sp-3;
+                Text {
+                    text: @tr("Set binding") + " " + (InputProfileData.capture_index + 1) + " / " + InputProfileData.capture_total;
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: @tr("Press a key or controller input for:");
+                    color: Theme.text;
+                    font-size: Theme.font-body;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+                // N64 controller reference — highlights the input being mapped
+                HorizontalLayout {
+                    alignment: center;
+                    img := Rectangle {
+                        property <float> hx:
+                            InputProfileData.capture_label == "A" ? 0.734
+                            : InputProfileData.capture_label == "B" ? 0.672
+                            : InputProfileData.capture_label == "Start" ? 0.505
+                            : InputProfileData.capture_label == "D Up" ? 0.222
+                            : InputProfileData.capture_label == "D Down" ? 0.222
+                            : InputProfileData.capture_label == "D Left" ? 0.182
+                            : InputProfileData.capture_label == "D Right" ? 0.262
+                            : InputProfileData.capture_label == "C Up" ? 0.789
+                            : InputProfileData.capture_label == "C Down" ? 0.789
+                            : InputProfileData.capture_label == "C Left" ? 0.745
+                            : InputProfileData.capture_label == "C Right" ? 0.830
+                            : InputProfileData.capture_label == "L" ? 0.225
+                            : InputProfileData.capture_label == "R" ? 0.775
+                            : InputProfileData.capture_label == "Z" ? 0.500
+                            : InputProfileData.capture_label == "Control Stick Up" ? 0.509
+                            : InputProfileData.capture_label == "Control Stick Down" ? 0.509
+                            : InputProfileData.capture_label == "Control Stick Left" ? 0.461
+                            : InputProfileData.capture_label == "Control Stick Right" ? 0.556
+                            : 0.5;
+                        property <float> hy:
+                            InputProfileData.capture_label == "A" ? 0.596
+                            : InputProfileData.capture_label == "B" ? 0.492
+                            : InputProfileData.capture_label == "Start" ? 0.505
+                            : InputProfileData.capture_label == "D Up" ? 0.378
+                            : InputProfileData.capture_label == "D Down" ? 0.547
+                            : InputProfileData.capture_label == "D Left" ? 0.462
+                            : InputProfileData.capture_label == "D Right" ? 0.462
+                            : InputProfileData.capture_label == "C Up" ? 0.349
+                            : InputProfileData.capture_label == "C Down" ? 0.492
+                            : InputProfileData.capture_label == "C Left" ? 0.417
+                            : InputProfileData.capture_label == "C Right" ? 0.417
+                            : InputProfileData.capture_label == "L" ? 0.100
+                            : InputProfileData.capture_label == "R" ? 0.100
+                            : InputProfileData.capture_label == "Z" ? 0.610
+                            : InputProfileData.capture_label == "Control Stick Up" ? 0.703
+                            : InputProfileData.capture_label == "Control Stick Down" ? 0.872
+                            : InputProfileData.capture_label == "Control Stick Left" ? 0.781
+                            : InputProfileData.capture_label == "Control Stick Right" ? 0.781
+                            : 0.5;
+                        property <bool> has_marker: InputProfileData.capture_label != "Hotkey Activator" && InputProfileData.capture_label != "";
+                        width: Math.min(parent.width, 360px);
+                        height: self.width * 0.5581;
+                        border-radius: Theme.r-md;
+                        clip: true;
+                        background: #000000;
+                        Image {
+                            source: @image-url("../../../data/ui/controller.png");
+                            width: 100%;
+                            height: 100%;
+                            image-fit: contain;
+                        }
+                        if img.has_marker: Rectangle {
+                            x: img.hx * img.width - self.width / 2;
+                            y: img.hy * img.height - self.height / 2;
+                            width: 50px;
+                            height: 50px;
+                            border-radius: self.width / 2;
+                            border-width: 3px;
+                            border-color: Theme.accent;
+                            background: Theme.accent.with-alpha(0.22);
+                        }
+                    }
+                }
+                Text {
+                    text: InputProfileData.capture_label;
+                    color: Theme.accent;
+                    font-size: Theme.font-display;
+                    font-weight: Theme.w-bold;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    text: @tr("Press Esc to cancel");
+                    color: Theme.text-faint;
+                    font-size: Theme.font-small;
+                    horizontal-alignment: center;
+                }
+                HorizontalLayout {
+                    alignment: center;
+                    PushButton {
+                        text: @tr("Cancel");
+                        kind: BtnKind.ghost;
+                        clicked => { root.input_capture_cancel(); }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- public functions (unchanged contract) ----
     public function show_message(message: string, has_close: bool) {
         popup_message = message;
         popup_has_close = has_close;
