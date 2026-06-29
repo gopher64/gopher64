@@ -499,22 +499,22 @@ msgstr "Auflösung:"
 #: src/ui/gui/settings_page.slint:52
 msgctxt "Settings"
 msgid "Theme:"
-msgstr ""
+msgstr "Thema:"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "System"
-msgstr ""
+msgstr "System"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Dark"
-msgstr ""
+msgstr "Dunkel"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Light"
-msgstr ""
+msgstr "Hell"
 
 #: src/ui/gui/settings_page.slint:66
 msgctxt "Settings"

@@ -500,22 +500,22 @@ msgstr "Résolution :"
 #: src/ui/gui/settings_page.slint:52
 msgctxt "Settings"
 msgid "Theme:"
-msgstr ""
+msgstr "Thème :"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "System"
-msgstr ""
+msgstr "Système"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Dark"
-msgstr ""
+msgstr "Sombre"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Light"
-msgstr ""
+msgstr "Clair"
 
 #: src/ui/gui/settings_page.slint:66
 msgctxt "Settings"

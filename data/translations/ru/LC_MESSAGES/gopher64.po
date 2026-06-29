@@ -498,22 +498,22 @@ msgstr "Разрешение:"
 #: src/ui/gui/settings_page.slint:52
 msgctxt "Settings"
 msgid "Theme:"
-msgstr ""
+msgstr "Тема:"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "System"
-msgstr ""
+msgstr "Система"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Dark"
-msgstr ""
+msgstr "Тёмная"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Light"
-msgstr ""
+msgstr "Светлая"
 
 #: src/ui/gui/settings_page.slint:66
 msgctxt "Settings"

@@ -496,22 +496,22 @@ msgstr "解像度："
 #: src/ui/gui/settings_page.slint:52
 msgctxt "Settings"
 msgid "Theme:"
-msgstr ""
+msgstr "テーマ:"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "System"
-msgstr ""
+msgstr "システム"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Dark"
-msgstr ""
+msgstr "ダーク"
 
 #: src/ui/gui/settings_page.slint:57
 msgctxt "Settings"
 msgid "Light"
-msgstr ""
+msgstr "ライト"
 
 #: src/ui/gui/settings_page.slint:66
 msgctxt "Settings"
