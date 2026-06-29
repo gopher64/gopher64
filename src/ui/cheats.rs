@@ -3,17 +3,21 @@ use crate::ui::gui::AppWindow;
 use crate::{cheats, device};
 use slint::ComponentHandle;
 
-pub fn cheats_window(app: &AppWindow) {
+pub fn cheats_window(
+    app: &AppWindow,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
     let weak = app.as_weak();
     app.on_cheats_select_rom_clicked(move |rom_dir| {
         let select_rom = ui::gui::select_rom(rom_dir);
         let weak = weak.clone();
+        let no_intro_map = no_intro_map.clone();
         tokio::spawn(async move {
             if let Some(file) = select_rom.await
                 && let Some(rom_contents) = device::get_rom_contents(&file)
             {
                 let game_crc = ui::storage::get_game_crc(&rom_contents);
-                let game_name = ui::storage::get_game_name(&rom_contents);
+                let game_name = ui::gui::get_nointro_name(&rom_contents, no_intro_map).await;
                 weak.upgrade_in_event_loop(move |handle| {
                     handle.set_cheat_game_name(game_name.into());
                 })

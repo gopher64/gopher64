@@ -1,3 +1,4 @@
+use crate::device;
 use crate::retroachievements;
 use crate::ui;
 #[cfg(target_os = "android")]
@@ -521,7 +522,16 @@ fn about_window(app: &AppWindow) {
     }
 }
 
-pub fn app_window(app: &AppWindow, is_android: bool) {
+pub fn app_window(
+    app: &AppWindow,
+    is_android: bool,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
+    let no_intro_map_clone = no_intro_map.clone();
+    tokio::spawn(async move {
+        load_no_intro(no_intro_map_clone).await;
+    });
+
     retroachievements::init_client(false, false, false);
     app.set_is_android(is_android);
     about_window(app);
@@ -532,8 +542,8 @@ pub fn app_window(app: &AppWindow, is_android: bool) {
         controller_window(app, &config);
         local_game_window(app, &config);
     }
-    ui::netplay::netplay_window(app);
-    ui::cheats::cheats_window(app);
+    ui::netplay::netplay_window(app, no_intro_map.clone());
+    ui::cheats::cheats_window(app, no_intro_map);
 
     #[cfg(not(target_os = "android"))]
     {
@@ -655,6 +665,55 @@ pub fn update_recent_roms(app: &AppWindow, file_path: std::path::PathBuf) {
         }
     }
     app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(recent_roms)));
+}
+
+pub async fn get_nointro_name(
+    rom: &[u8],
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) -> String {
+    let hash = device::cart::rom::calculate_hash(rom).to_lowercase();
+    if let Some(name) = no_intro_map.lock().await.get(&hash) {
+        name.clone()
+    } else {
+        ui::storage::get_game_name(rom)
+    }
+}
+
+async fn load_no_intro(
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
+    let mut reader = quick_xml::Reader::from_str(include_str!(
+        "../../data/ui/Nintendo - Nintendo 64 (DB Export) (20260609-194259).xml"
+    ));
+    let mut buf = Vec::new();
+    let mut current_game = String::new();
+    let mut map = no_intro_map.lock().await;
+    loop {
+        match reader.read_event_into_async(&mut buf).await {
+            Ok(quick_xml::events::Event::Start(e)) => {
+                if e.name().as_ref() == b"game"
+                    && let Ok(Some(name_attribute)) = e.try_get_attribute("name")
+                    && let Ok(name) = String::from_utf8(name_attribute.value.into_owned())
+                {
+                    current_game = name;
+                }
+            }
+            Ok(quick_xml::events::Event::Empty(e)) => {
+                if e.name().as_ref() == b"file"
+                    && let Ok(Some(format_attribute)) = e.try_get_attribute("format")
+                    && format_attribute.value.as_ref() == b"BigEndian"
+                    && let Ok(Some(sha256_attribute)) = e.try_get_attribute("sha256")
+                    && let Ok(sha256) = String::from_utf8(sha256_attribute.value.into_owned())
+                {
+                    map.insert(sha256.to_lowercase(), current_game.clone());
+                }
+            }
+            Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
+            Ok(quick_xml::events::Event::Eof) => break,
+            _ => (),
+        }
+        buf.clear();
+    }
 }
 
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {
