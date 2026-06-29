@@ -108,6 +108,80 @@ fn rom_exists(path: &str) -> bool {
     return android::rom_exists(path);
 }
 
+// Box-art library: filename stem doubles as the display title + box-art match key.
+fn rom_title(path: &str) -> String {
+    std::path::Path::new(&decode_path(path))
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_string()
+}
+
+fn game_entries(paths: &[String]) -> Vec<GameEntry> {
+    paths
+        .iter()
+        .map(|p| GameEntry {
+            path: p.as_str().into(),
+            title: rom_title(p).into(),
+            art: slint::Image::default(),
+            has_art: false,
+        })
+        .collect()
+}
+
+fn set_games(app: &AppWindow, paths: &[String]) {
+    app.set_games(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(game_entries(paths)),
+    )));
+}
+
+// Walk a folder (recursively) for ROMs, including zip/7z archives.
+#[cfg(not(target_os = "android"))]
+fn scan_roms(dir: &std::path::Path) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(d) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&d) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                stack.push(p);
+            } else if let Some(ext) = p.extension().and_then(|e| e.to_str())
+                && N64_EXTENSIONS.contains(&ext)
+            {
+                out.push(p.to_string_lossy().to_string());
+            }
+        }
+    }
+    out.sort();
+    out
+}
+
+// Download box art for each game off-thread, updating its row as art arrives.
+async fn fetch_art(weak: slint::Weak<AppWindow>, paths: Vec<String>) {
+    if paths.is_empty() {
+        return;
+    }
+    let index = ui::boxart::load_index().await;
+    for (i, path) in paths.iter().enumerate() {
+        let Some(png) = ui::boxart::resolve_art(&index, &rom_title(path)).await else {
+            continue;
+        };
+        let _ = weak.upgrade_in_event_loop(move |h| {
+            let games = h.get_games();
+            if let Ok(img) = slint::Image::load_from_path(&png)
+                && let Some(mut g) = games.row_data(i)
+            {
+                g.art = img;
+                g.has_art = true;
+                games.set_row_data(i, g);
+            }
+        });
+    }
+}
+
 fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
@@ -130,6 +204,24 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
         ),
     )));
 
+    // Box-art library: scanned ROM folder on desktop, recent ROMs on Android.
+    #[cfg(not(target_os = "android"))]
+    let game_paths: Vec<String> =
+        if !config.rom_dir.as_os_str().is_empty() && config.rom_dir.is_dir() {
+            scan_roms(&config.rom_dir)
+        } else {
+            Vec::new()
+        };
+    #[cfg(target_os = "android")]
+    let game_paths: Vec<String> = config
+        .recent_roms
+        .iter()
+        .filter(|x| rom_exists(x))
+        .cloned()
+        .collect();
+    set_games(app, &game_paths);
+    tokio::spawn(fetch_art(app.as_weak(), game_paths));
+
     let weak = app.as_weak();
     app.on_open_rom_button_clicked(move || {
         weak.upgrade_in_event_loop(move |handle| {
@@ -147,11 +239,47 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
         .unwrap();
     });
 
+    let weak = app.as_weak();
+    app.on_launch_game(move |path| {
+        weak.upgrade_in_event_loop(move |handle| {
+            run_with_path(handle.as_weak(), std::path::PathBuf::from(path.to_string()));
+        })
+        .unwrap();
+    });
+
     #[cfg(not(target_os = "android"))]
     {
         let saves_path = ui::get_dirs().data_dir.join("saves");
         app.on_saves_folder_button_clicked(move || {
             open_uri(&saves_path);
+        });
+
+        let weak_scan = app.as_weak();
+        app.on_scan_folder_clicked(move || {
+            let start = weak_scan
+                .upgrade()
+                .map(|h| h.get_rom_dir())
+                .unwrap_or_default();
+            let weak_inner = weak_scan.clone();
+            tokio::spawn(async move {
+                let dialog = if !start.is_empty() && std::fs::exists(&start).unwrap_or(false) {
+                    rfd::AsyncFileDialog::new().set_directory(&start)
+                } else {
+                    rfd::AsyncFileDialog::new()
+                };
+                if let Some(folder) = dialog.set_title("Select ROM Folder").pick_folder().await {
+                    let dir = folder.path().to_path_buf();
+                    let paths = scan_roms(&dir);
+                    let dir_str = dir.to_string_lossy().to_string();
+                    let scan_paths = paths.clone();
+                    let _ = weak_inner.upgrade_in_event_loop(move |h| {
+                        h.set_rom_dir(dir_str.into());
+                        save_settings(&h);
+                        set_games(&h, &scan_paths);
+                    });
+                    fetch_art(weak_inner, paths).await;
+                }
+            });
         });
 
         file_dropped(app);

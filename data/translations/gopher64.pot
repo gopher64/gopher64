@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-06-16 12:26+0000\n"
+"POT-Creation-Date: 2026-06-29 08:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,37 +47,37 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:148
+#: src/ui/gui/appwindow.slint:151
 msgctxt "Menu"
 msgid "Local Game"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:152
+#: src/ui/gui/appwindow.slint:155
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:156
+#: src/ui/gui/appwindow.slint:159
 msgctxt "Menu"
 msgid "Netplay"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:160
+#: src/ui/gui/appwindow.slint:163
 msgctxt "Menu"
 msgid "Cheats"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:164
+#: src/ui/gui/appwindow.slint:167
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:168
+#: src/ui/gui/appwindow.slint:171
 msgctxt "Menu"
 msgid "Settings"
 msgstr ""
 
-#: src/ui/gui/appwindow.slint:172
+#: src/ui/gui/appwindow.slint:175
 msgctxt "Menu"
 msgid "About"
 msgstr ""
@@ -167,22 +167,32 @@ msgctxt "InputProfileDialog"
 msgid "Cancel"
 msgstr ""
 
-#: src/ui/gui/localgame_page.slint:19
+#: src/ui/gui/localgame_page.slint:30
 msgctxt "LocalGame"
 msgid "Local Game"
 msgstr ""
 
-#: src/ui/gui/localgame_page.slint:26
+#: src/ui/gui/localgame_page.slint:37
 msgctxt "LocalGame"
 msgid "Open ROM"
 msgstr ""
 
-#: src/ui/gui/localgame_page.slint:37
+#: src/ui/gui/localgame_page.slint:44
+msgctxt "LocalGame"
+msgid "Scan Folder"
+msgstr ""
+
+#: src/ui/gui/localgame_page.slint:55
 msgctxt "LocalGame"
 msgid "Open Saves Folder"
 msgstr ""
 
-#: src/ui/gui/localgame_page.slint:54
+#: src/ui/gui/localgame_page.slint:69
+msgctxt "LocalGame"
+msgid "Library"
+msgstr ""
+
+#: src/ui/gui/localgame_page.slint:105
 msgctxt "LocalGame"
 msgid "Recent ROMs"
 msgstr ""

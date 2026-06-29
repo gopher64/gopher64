@@ -27,6 +27,8 @@ export component AppWindow inherits Window {
     callback source_code_button_clicked;
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
+    callback scan_folder_clicked;
+    callback launch_game(string);
     callback input_profile_button_clicked;
     callback input_profile_creation_button_clicked;
     callback transferpak_toggled(int,bool);
@@ -89,6 +91,7 @@ export component AppWindow inherits Window {
     in-out property game_running <=> State.game_running;
     in-out property is_android <=> State.is_android;
     in-out property recent_roms <=> State.recent_roms;
+    in-out property games <=> State.games;
     in-out property cheat_game_name <=> CheatsData.cheat_game_name;
     in-out property cheat_game_crc <=> CheatsData.cheat_game_crc;
     in-out property cheats <=> CheatsData.cheats;
@@ -199,6 +202,12 @@ export component AppWindow inherits Window {
             }
             recent_rom_button_clicked(rom) => {
                 recent_rom_button_clicked(rom);
+            }
+            scan_folder_clicked => {
+                scan_folder_clicked();
+            }
+            launch_game(path) => {
+                launch_game(path);
             }
         }
         if(side-bar.current-item == 1 && !show_input_profile): ControllerConfig {

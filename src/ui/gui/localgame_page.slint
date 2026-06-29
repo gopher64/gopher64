@@ -1,14 +1,23 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Button, HorizontalBox, VerticalBox, GroupBox } from "std-widgets.slint";
+import { Button, HorizontalBox, VerticalBox, GroupBox, Palette } from "std-widgets.slint";
 import { Page } from "page.slint";
 import { AboutData, NewVersionButton } from "about_page.slint";
+
+export struct GameEntry {
+    path: string,
+    title: string,
+    art: image,
+    has-art: bool,
+}
 
 export global State {
     in-out property <bool> game_running;
     in-out property <bool> is_android;
     in-out property <[{a:string, b:string}]> recent_roms;
+    // Scanned (desktop) / recent (Android) games shown with box art.
+    in-out property <[GameEntry]> games;
 }
 
 export component LocalGame inherits Page {
@@ -16,6 +25,8 @@ export component LocalGame inherits Page {
     callback saves_folder_button_clicked;
     callback newversion_button_clicked;
     callback recent_rom_button_clicked(string);
+    callback scan_folder_clicked;
+    callback launch_game(string);
     title: @tr("Local Game");
 
     VerticalBox {
@@ -27,6 +38,13 @@ export component LocalGame inherits Page {
                 enabled: !State.game_running;
                 clicked => {
                     open_rom_button_clicked();
+                }
+            }
+            if !State.is_android: Button {
+                text: @tr("Scan Folder");
+                enabled: !State.game_running;
+                clicked => {
+                    scan_folder_clicked();
                 }
             }
         }
@@ -46,6 +64,39 @@ export component LocalGame inherits Page {
                 newversion_button_clicked();
             }
         }
+
+        if State.games.length > 0: GroupBox {
+            title: @tr("Library");
+            VerticalLayout {
+                spacing: 4px;
+                for game in State.games: Rectangle {
+                    height: 68px;
+                    border-radius: 4px;
+                    background: touch.has-hover ? Palette.alternate-background : transparent;
+                    touch := TouchArea {
+                        enabled: !State.game_running;
+                        clicked => {
+                            root.launch_game(game.path);
+                        }
+                    }
+                    HorizontalBox {
+                        Image {
+                            width: 44px;
+                            height: 60px;
+                            image-fit: contain;
+                            source: game.art;
+                        }
+                        Text {
+                            text: game.title;
+                            vertical-alignment: center;
+                            horizontal-alignment: left;
+                            overflow: elide;
+                        }
+                    }
+                }
+            }
+        }
+
         Rectangle { }
 
         if State.recent_roms.length>0:HorizontalBox {
