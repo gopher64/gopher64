@@ -49,6 +49,8 @@ export component AppWindow inherits Window {
     callback ra_show_profile_clicked;
     callback ra_toggled(bool,bool,bool,bool,bool);
     callback controller_window_created;
+    callback input_key_captured(string);
+    callback input_capture_cancel;
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
     in-out property ra_username <=> RAData.ra_username;
@@ -97,6 +99,10 @@ export component AppWindow inherits Window {
     in-out property input_profile_name <=> InputProfileData.profile_name;
     in-out property input_dinput <=> InputProfileData.dinput;
     in-out property show_input_profile <=> InputProfileData.show_input_profile;
+    in-out property capturing <=> InputProfileData.capturing;
+    in-out property capture_label <=> InputProfileData.capture_label;
+    in-out property capture_index <=> InputProfileData.capture_index;
+    in-out property capture_total <=> InputProfileData.capture_total;
 
     in-out property show_netplay_wait_session <=> NetplayData.show_wait_session;
     in-out property show_netplay_create_session <=> NetplayData.show_create_session;
@@ -363,6 +369,89 @@ export component AppWindow inherits Window {
             y: content-area.y;
             height: content-area.height;
             width: content-area.width;
+        }
+    }
+
+    // ---- in-window input-profile capture overlay (std-widgets Palette, no theme) ----
+    if InputProfileData.capturing: Rectangle {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        background: Palette.background.with-alpha(0.9);
+
+        TouchArea {
+            width: 100%;
+            height: 100%;
+        } // swallow clicks to the background
+
+        FocusScope {
+            init => {
+                self.focus();
+            }
+            key-pressed(event) => {
+                if (event.text == Key.Escape) {
+                    root.input_capture_cancel();
+                } else if (event.text == Key.UpArrow) {
+                    root.input_key_captured("Up");
+                } else if (event.text == Key.DownArrow) {
+                    root.input_key_captured("Down");
+                } else if (event.text == Key.LeftArrow) {
+                    root.input_key_captured("Left");
+                } else if (event.text == Key.RightArrow) {
+                    root.input_key_captured("Right");
+                } else if (event.text == Key.Return) {
+                    root.input_key_captured("Return");
+                } else if (event.text == Key.Tab) {
+                    root.input_key_captured("Tab");
+                } else if (event.text == Key.Backspace) {
+                    root.input_key_captured("Backspace");
+                } else if (event.text == Key.Space) {
+                    root.input_key_captured("Space");
+                } else if (event.text == Key.Shift) {
+                    root.input_key_captured("Left Shift");
+                } else if (event.text == Key.Control) {
+                    root.input_key_captured("Left Ctrl");
+                } else if (event.text != "") {
+                    root.input_key_captured(event.text);
+                }
+                accept
+            }
+        }
+
+        Rectangle {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            width: Math.min(parent.width - 48px, 460px);
+            height: ccol.preferred-height;
+            background: Palette.alternate-background;
+            border-radius: 8px;
+            border-width: 1px;
+            border-color: Palette.border;
+            ccol := VerticalLayout {
+                padding: 24px;
+                spacing: 12px;
+                Text {
+                    text: @tr("Press input for {} ({}/{})", InputProfileData.capture_label, InputProfileData.capture_index + 1, InputProfileData.capture_total);
+                    color: Palette.foreground;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+                Text {
+                    text: @tr("Press Esc to cancel");
+                    color: Palette.foreground;
+                    horizontal-alignment: center;
+                }
+                HorizontalLayout {
+                    alignment: center;
+                    StandardButton {
+                        kind: cancel;
+                        clicked => {
+                            root.input_capture_cancel();
+                        }
+                    }
+                }
+            }
         }
     }
     public function show_message(message: string, has_close: bool) {

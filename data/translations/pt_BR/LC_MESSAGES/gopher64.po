@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-06-16 12:26+0000\n"
+"POT-Creation-Date: 2026-06-29 10:42+0000\n"
 "PO-Revision-Date: 2026-05-11 18:11-3000\n"
 "Last-Translator: EDUARDO CARVALHO <eduardotcarvalho@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,40 +47,50 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Doações (via GitHub)"
 
-#: src/ui/gui/appwindow.slint:148
+#: src/ui/gui/appwindow.slint:154
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Jogo Local"
 
-#: src/ui/gui/appwindow.slint:152
+#: src/ui/gui/appwindow.slint:158
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Configurar Controle"
 
-#: src/ui/gui/appwindow.slint:156
+#: src/ui/gui/appwindow.slint:162
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/appwindow.slint:160
+#: src/ui/gui/appwindow.slint:166
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Trapaças"
 
-#: src/ui/gui/appwindow.slint:164
+#: src/ui/gui/appwindow.slint:170
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:168
+#: src/ui/gui/appwindow.slint:174
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Configurações"
 
-#: src/ui/gui/appwindow.slint:172
+#: src/ui/gui/appwindow.slint:178
 msgctxt "Menu"
 msgid "About"
 msgstr "Sobre"
+
+#: src/ui/gui/appwindow.slint:435
+msgctxt "AppWindow"
+msgid "Press input for {} ({}/{})"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:441
+msgctxt "AppWindow"
+msgid "Press Esc to cancel"
+msgstr ""
 
 #: src/ui/gui/cheat_page.slint:15
 msgctxt "Cheats"
@@ -137,32 +147,32 @@ msgctxt "ControllerConfig"
 msgid "Controller Assignment"
 msgstr "Atribuição do controle"
 
-#: src/ui/gui/input_profile.slint:12
+#: src/ui/gui/input_profile.slint:16
 msgctxt "InputProfileDialog"
 msgid "Create/Modify Input Profile"
 msgstr "Criar/Modificar Perfil de Comandos"
 
-#: src/ui/gui/input_profile.slint:25
+#: src/ui/gui/input_profile.slint:29
 msgctxt "InputProfileDialog"
 msgid "Enter profile name to create or modify"
 msgstr "Insira o nome de perfil para criar ou modificar"
 
-#: src/ui/gui/input_profile.slint:38
+#: src/ui/gui/input_profile.slint:42
 msgctxt "InputProfileDialog"
 msgid "Deadzone Percentage"
 msgstr "Porcentagem de Zona-morta"
 
-#: src/ui/gui/input_profile.slint:61
+#: src/ui/gui/input_profile.slint:65
 msgctxt "InputProfileDialog"
 msgid "Use DirectInput"
 msgstr "Usar DirectInput"
 
-#: src/ui/gui/input_profile.slint:74
+#: src/ui/gui/input_profile.slint:78
 msgctxt "InputProfileDialog"
 msgid "Start Profile Creation Wizard"
 msgstr "Iniciar Assistente de Criação de Perfil"
 
-#: src/ui/gui/input_profile.slint:82
+#: src/ui/gui/input_profile.slint:86
 msgctxt "InputProfileDialog"
 msgid "Cancel"
 msgstr "Cancelar"
@@ -399,8 +409,8 @@ msgid ""
 "Alt+]."
 msgstr ""
 "Definir o atraso de entrada muito baixo causará lag no jogo.\n"
-"Você pode diminuir o atraso de entrada no jogo pressionando Alt+[ e "
-"aumentá-lo com Alt+]."
+"Você pode diminuir o atraso de entrada no jogo pressionando Alt+[ e aumentá-"
+"lo com Alt+]."
 
 #: src/ui/gui/netplay_wait.slint:101
 msgctxt "NetplayWait"

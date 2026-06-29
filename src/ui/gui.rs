@@ -241,6 +241,41 @@ fn clear_gb_paths(weak: &slint::Weak<AppWindow>, player: i32) {
     .unwrap();
 }
 
+#[cfg(not(target_os = "android"))]
+fn update_capture_ui(
+    weak: &slint::Weak<AppWindow>,
+    capture_state: &std::rc::Rc<std::cell::RefCell<Option<ui::input::ProfileCapture>>>,
+    capture_timer: &std::rc::Rc<std::cell::RefCell<Option<slint::Timer>>>,
+) {
+    let done = {
+        let mut guard = capture_state.borrow_mut();
+        match guard.as_mut() {
+            Some(capture) if capture.is_done() => true,
+            Some(capture) => {
+                if let Some(handle) = weak.upgrade() {
+                    handle.set_capture_label(capture.current_label().into());
+                    handle.set_capture_index(capture.index() as i32);
+                }
+                false
+            }
+            None => false,
+        }
+    };
+    if done {
+        if let Some(capture) = capture_state.borrow_mut().take() {
+            capture.finish_and_save();
+        }
+        if let Some(timer) = capture_timer.borrow().as_ref() {
+            timer.stop();
+        }
+        if let Some(handle) = weak.upgrade() {
+            handle.set_capturing(false);
+            let config = ui::config::Config::new();
+            update_input_profiles(&handle.as_weak(), &config);
+        }
+    }
+}
+
 fn controller_window(app: &AppWindow, config: &ui::config::Config) {
     #[cfg(not(target_os = "android"))]
     ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
@@ -352,50 +387,84 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
             .unwrap();
     });
     let weak_app = app.as_weak();
+    #[cfg(not(target_os = "android"))]
+    let capture_state: std::rc::Rc<std::cell::RefCell<Option<ui::input::ProfileCapture>>> =
+        std::rc::Rc::new(std::cell::RefCell::new(None));
+    #[cfg(not(target_os = "android"))]
+    let capture_timer: std::rc::Rc<std::cell::RefCell<Option<slint::Timer>>> =
+        std::rc::Rc::new(std::cell::RefCell::new(None));
+    #[cfg(not(target_os = "android"))]
+    let cs_create = capture_state.clone();
+    #[cfg(not(target_os = "android"))]
+    let ct_create = capture_timer.clone();
     app.on_input_profile_creation_button_clicked(move || {
+        let handle = weak_app.unwrap();
+        let profile_name = handle.get_input_profile_name().to_string();
+        let dinput = handle.get_input_dinput();
+        let deadzone = handle.get_input_deadzone();
+        handle.set_show_input_profile(false);
+
+        #[cfg(target_os = "android")]
+        ui::android::spawn_configure_input_profile(profile_name.into(), dinput, deadzone);
+
         #[cfg(not(target_os = "android"))]
-        let weak_app2 = weak_app.clone();
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                let profile_name = handle.get_input_profile_name();
-                let dinput = handle.get_input_dinput();
-                let deadzone = handle.get_input_deadzone();
-                handle.set_show_input_profile(false);
+        {
+            if profile_name.is_empty() || profile_name == "default" {
+                return;
+            }
+            let capture = ui::input::ProfileCapture::new(profile_name, dinput, deadzone);
+            handle.set_capture_label(capture.current_label().into());
+            handle.set_capture_index(0);
+            handle.set_capturing(true);
+            *cs_create.borrow_mut() = Some(capture);
 
-                #[cfg(target_os = "android")]
-                ui::android::spawn_configure_input_profile(profile_name, dinput, deadzone);
-
-                #[cfg(not(target_os = "android"))]
-                tokio::spawn(async move {
-                    let cli_path = std::env::current_exe()
-                        .unwrap()
-                        .parent()
-                        .unwrap()
-                        .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
-                    let cmd_path = if cfg!(target_os = "macos") && cli_path.exists() {
-                        cli_path
-                    } else {
-                        std::env::current_exe().unwrap()
-                    };
-                    let mut command = tokio::process::Command::new(cmd_path);
-                    command.args([
-                        "--configure-input-profile",
-                        &profile_name,
-                        "--deadzone",
-                        &deadzone.to_string(),
-                    ]);
-                    if dinput {
-                        command.arg("--use-dinput");
+            let weak_poll = handle.as_weak();
+            let cs_poll = cs_create.clone();
+            let ct_poll = ct_create.clone();
+            let timer = slint::Timer::default();
+            timer.start(
+                slint::TimerMode::Repeated,
+                std::time::Duration::from_millis(16),
+                move || {
+                    if let Some(capture) = cs_poll.borrow_mut().as_mut() {
+                        capture.poll_pad();
                     }
-                    if !command.status().await.unwrap().success() {
-                        eprintln!("Failed to configure input profile");
-                    }
-                    let config = ui::config::Config::new();
-                    update_input_profiles(&weak_app2, &config);
-                });
-            })
-            .unwrap();
+                    update_capture_ui(&weak_poll, &cs_poll, &ct_poll);
+                },
+            );
+            *ct_create.borrow_mut() = Some(timer);
+        }
     });
+
+    #[cfg(not(target_os = "android"))]
+    {
+        let weak_key = app.as_weak();
+        let cs_key = capture_state.clone();
+        let ct_key = capture_timer.clone();
+        app.on_input_key_captured(move |text| {
+            if let Some(capture) = cs_key.borrow_mut().as_mut()
+                && let Some(scancode) = ui::input::slint_text_to_scancode(&text)
+            {
+                capture.capture_key(scancode);
+            }
+            update_capture_ui(&weak_key, &cs_key, &ct_key);
+        });
+
+        let weak_cancel = app.as_weak();
+        let cs_cancel = capture_state.clone();
+        let ct_cancel = capture_timer.clone();
+        app.on_input_capture_cancel(move || {
+            if let Some(capture) = cs_cancel.borrow_mut().take() {
+                capture.cancel();
+            }
+            if let Some(timer) = ct_cancel.borrow().as_ref() {
+                timer.stop();
+            }
+            if let Some(handle) = weak_cancel.upgrade() {
+                handle.set_capturing(false);
+            }
+        });
+    }
 
     let weak_app2 = app.as_weak();
     app.on_transferpak_toggled(move |player, enabled| {

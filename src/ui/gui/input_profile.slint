@@ -6,6 +6,10 @@ export global InputProfileData {
     in-out property <string> profile_name;
     in-out property <int> deadzone;
     in-out property <bool> show_input_profile;
+    in-out property <bool> capturing;
+    in-out property <string> capture_label;
+    in-out property <int> capture_index;
+    in-out property <int> capture_total: 19;
 }
 
 export component InputProfileDialog inherits Page {

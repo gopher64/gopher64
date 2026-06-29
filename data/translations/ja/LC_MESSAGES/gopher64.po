@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-16 12:26+0000\n"
+"POT-Creation-Date: 2026-06-29 10:42+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
@@ -47,40 +47,50 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "GitHubで寄付"
 
-#: src/ui/gui/appwindow.slint:148
+#: src/ui/gui/appwindow.slint:154
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "ローカルゲーム"
 
-#: src/ui/gui/appwindow.slint:152
+#: src/ui/gui/appwindow.slint:158
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "コントローラー設定"
 
-#: src/ui/gui/appwindow.slint:156
+#: src/ui/gui/appwindow.slint:162
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "ネットプレイ"
 
-#: src/ui/gui/appwindow.slint:160
+#: src/ui/gui/appwindow.slint:166
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "チート"
 
-#: src/ui/gui/appwindow.slint:164
+#: src/ui/gui/appwindow.slint:170
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:168
+#: src/ui/gui/appwindow.slint:174
 msgctxt "Menu"
 msgid "Settings"
 msgstr "設定"
 
-#: src/ui/gui/appwindow.slint:172
+#: src/ui/gui/appwindow.slint:178
 msgctxt "Menu"
 msgid "About"
 msgstr "バージョン情報"
+
+#: src/ui/gui/appwindow.slint:435
+msgctxt "AppWindow"
+msgid "Press input for {} ({}/{})"
+msgstr ""
+
+#: src/ui/gui/appwindow.slint:441
+msgctxt "AppWindow"
+msgid "Press Esc to cancel"
+msgstr ""
 
 #: src/ui/gui/cheat_page.slint:15
 msgctxt "Cheats"
@@ -137,32 +147,32 @@ msgctxt "ControllerConfig"
 msgid "Controller Assignment"
 msgstr "コントローラー割り当て"
 
-#: src/ui/gui/input_profile.slint:12
+#: src/ui/gui/input_profile.slint:16
 msgctxt "InputProfileDialog"
 msgid "Create/Modify Input Profile"
 msgstr "入力プロファイルの作成／変更"
 
-#: src/ui/gui/input_profile.slint:25
+#: src/ui/gui/input_profile.slint:29
 msgctxt "InputProfileDialog"
 msgid "Enter profile name to create or modify"
 msgstr "作成または変更するプロファイル名を入力"
 
-#: src/ui/gui/input_profile.slint:38
+#: src/ui/gui/input_profile.slint:42
 msgctxt "InputProfileDialog"
 msgid "Deadzone Percentage"
 msgstr "デッドゾーン（％）"
 
-#: src/ui/gui/input_profile.slint:61
+#: src/ui/gui/input_profile.slint:65
 msgctxt "InputProfileDialog"
 msgid "Use DirectInput"
 msgstr "DirectInputを使用"
 
-#: src/ui/gui/input_profile.slint:74
+#: src/ui/gui/input_profile.slint:78
 msgctxt "InputProfileDialog"
 msgid "Start Profile Creation Wizard"
 msgstr "プロファイル作成ウィザードを開始"
 
-#: src/ui/gui/input_profile.slint:82
+#: src/ui/gui/input_profile.slint:86
 msgctxt "InputProfileDialog"
 msgid "Cancel"
 msgstr "キャンセル"
