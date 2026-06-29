@@ -179,6 +179,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_widescreen(config.video.widescreen);
     app.set_vsync(config.video.vsync);
     app.set_apply_crt_shader(config.video.crt);
+    app.set_theme(config.video.theme);
     app.set_overclock_n64_cpu(config.emulation.overclock);
     app.set_disable_expansion_pak(config.emulation.disable_expansion_pak);
     app.set_emulate_usb(config.emulation.usb);
@@ -451,6 +452,7 @@ pub fn save_settings(app: &AppWindow) {
     config.video.widescreen = app.get_widescreen();
     config.video.vsync = app.get_vsync();
     config.video.crt = app.get_apply_crt_shader();
+    config.video.theme = app.get_theme();
     config.emulation.overclock = app.get_overclock_n64_cpu();
     config.emulation.disable_expansion_pak = app.get_disable_expansion_pak();
     config.emulation.usb = app.get_emulate_usb();

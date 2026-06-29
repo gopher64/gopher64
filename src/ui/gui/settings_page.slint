@@ -14,6 +14,7 @@ export global SettingsData {
     in-out property <bool> overclock_n64_cpu;
     in-out property <bool> disable_expansion_pak;
     in-out property <int> resolution;
+    in-out property <int> theme;
     in-out property <bool> emulate_usb;
     in-out property <bool> rewind;
     in-out property <bool> emulate_vru;
@@ -41,6 +42,22 @@ export component Settings inherits Page {
                         current-index: SettingsData.resolution;
                         selected => {
                             SettingsData.resolution = self.current-index;
+                        }
+                    }
+                }
+
+                HorizontalBox {
+                    alignment: start;
+                    Text {
+                        text: @tr("Theme:");
+                        vertical-alignment: center;
+                    }
+
+                    ComboBox {
+                        model: [@tr("System"), @tr("Dark"), @tr("Light")];
+                        current-index: SettingsData.theme;
+                        selected => {
+                            SettingsData.theme = self.current-index;
                         }
                     }
                 }
