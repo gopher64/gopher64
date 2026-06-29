@@ -334,8 +334,10 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         #[cfg(feature = "gui")]
         {
             let app = ui::gui::AppWindow::new().unwrap();
+            let no_intro_map =
+                std::sync::Arc::new(tokio::sync::Mutex::new(rustc_hash::FxHashMap::default()));
             set_app_id();
-            ui::gui::app_window(&app, false);
+            ui::gui::app_window(&app, false, no_intro_map);
         }
     }
 

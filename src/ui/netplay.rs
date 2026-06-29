@@ -65,13 +65,17 @@ struct NetplayPingMessage {
     num_of_peers: usize,
 }
 
-fn select_rom(weak: slint::Weak<AppWindow>, rom_dir: slint::SharedString) {
+fn select_rom(
+    weak: slint::Weak<AppWindow>,
+    rom_dir: slint::SharedString,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
     let select_rom = ui::gui::select_rom(rom_dir);
     tokio::spawn(async move {
         if let Some(file) = select_rom.await {
             if let Some(rom_contents) = device::get_rom_contents(&file) {
                 let hash = device::cart::rom::calculate_hash(&rom_contents);
-                let mut game_name = ui::storage::get_game_name(&rom_contents);
+                let mut game_name = ui::gui::get_nointro_name(&rom_contents, no_intro_map).await;
                 let pal = device::cart::rom::is_system_pal(&rom_contents);
                 let game_crc = ui::storage::get_game_crc(&rom_contents);
                 let cheats = ui::config::Cheats::new();
@@ -116,6 +120,7 @@ fn setup_callbacks(
     netplay_write_receiver: &tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     close_ping_tx: &tokio::sync::broadcast::Sender<()>,
     close_ping_rx: &tokio::sync::broadcast::Receiver<()>,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
 ) {
     let weak = app.as_weak();
     let netplay_write_sender_create_session = netplay_write_sender.clone();
@@ -238,7 +243,7 @@ fn setup_callbacks(
 
     let weak_app = app.as_weak();
     app.on_netplay_select_rom(move |rom_dir| {
-        select_rom(weak_app.clone(), rom_dir);
+        select_rom(weak_app.clone(), rom_dir, no_intro_map.clone());
     });
 
     let weak_app = app.as_weak();
@@ -992,7 +997,10 @@ fn setup_join_window(
     app.invoke_netplay_refresh_sessions();
 }
 
-pub fn netplay_window(app: &AppWindow) {
+pub fn netplay_window(
+    app: &AppWindow,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
     let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
         tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
@@ -1016,5 +1024,6 @@ pub fn netplay_window(app: &AppWindow) {
         &netplay_write_receiver,
         &close_ping_tx,
         &close_ping_rx,
+        no_intro_map,
     );
 }
