@@ -261,13 +261,15 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
                 .map(|h| h.get_rom_dir())
                 .unwrap_or_default();
             let weak_inner = weak_scan.clone();
+            let dialog = if !start.is_empty() && std::fs::exists(&start).unwrap_or(false) {
+                rfd::AsyncFileDialog::new().set_directory(&start)
+            } else {
+                rfd::AsyncFileDialog::new()
+            }
+            .set_title("Select ROM Folder")
+            .pick_folder();
             tokio::spawn(async move {
-                let dialog = if !start.is_empty() && std::fs::exists(&start).unwrap_or(false) {
-                    rfd::AsyncFileDialog::new().set_directory(&start)
-                } else {
-                    rfd::AsyncFileDialog::new()
-                };
-                if let Some(folder) = dialog.set_title("Select ROM Folder").pick_folder().await {
+                if let Some(folder) = dialog.await {
                     let dir = folder.path().to_path_buf();
                     let paths = scan_roms(&dir);
                     let dir_str = dir.to_string_lossy().to_string();

@@ -178,10 +178,9 @@ msgid "Open ROM"
 msgstr "ROMを開く"
 
 #: src/ui/gui/localgame_page.slint:44
-#, fuzzy
 msgctxt "LocalGame"
 msgid "Scan Folder"
-msgstr "セーブフォルダーを開く"
+msgstr "フォルダーをスキャン"
 
 #: src/ui/gui/localgame_page.slint:55
 msgctxt "LocalGame"
@@ -191,7 +190,7 @@ msgstr "セーブフォルダーを開く"
 #: src/ui/gui/localgame_page.slint:69
 msgctxt "LocalGame"
 msgid "Library"
-msgstr ""
+msgstr "ライブラリ"
 
 #: src/ui/gui/localgame_page.slint:105
 msgctxt "LocalGame"

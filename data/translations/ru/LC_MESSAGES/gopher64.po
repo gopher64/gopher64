@@ -178,10 +178,9 @@ msgid "Open ROM"
 msgstr "Открыть ROM"
 
 #: src/ui/gui/localgame_page.slint:44
-#, fuzzy
 msgctxt "LocalGame"
 msgid "Scan Folder"
-msgstr "Открыть папку сохранений"
+msgstr "Сканировать папку"
 
 #: src/ui/gui/localgame_page.slint:55
 msgctxt "LocalGame"
@@ -191,7 +190,7 @@ msgstr "Открыть папку сохранений"
 #: src/ui/gui/localgame_page.slint:69
 msgctxt "LocalGame"
 msgid "Library"
-msgstr ""
+msgstr "Библиотека"
 
 #: src/ui/gui/localgame_page.slint:105
 msgctxt "LocalGame"
