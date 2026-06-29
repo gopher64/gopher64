@@ -687,6 +687,7 @@ async fn load_no_intro(
     ));
     let mut buf = Vec::new();
     let mut current_game = String::new();
+    let mut map = no_intro_map.lock().await;
     loop {
         match reader.read_event_into_async(&mut buf).await {
             Ok(quick_xml::events::Event::Start(e)) => match e.name().as_ref() {
@@ -706,10 +707,7 @@ async fn load_no_intro(
                         && let Ok(Some(sha256_attribute)) = e.try_get_attribute("sha256")
                         && let Ok(sha256) = String::from_utf8(sha256_attribute.value.into_owned())
                     {
-                        no_intro_map
-                            .lock()
-                            .await
-                            .insert(sha256.to_lowercase(), current_game.clone());
+                        map.insert(sha256.to_lowercase(), current_game.clone());
                     }
                 }
                 _ => (),
