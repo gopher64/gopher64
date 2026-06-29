@@ -85,12 +85,12 @@ msgstr "Sobre"
 #: src/ui/gui/appwindow.slint:435
 msgctxt "AppWindow"
 msgid "Press input for {} ({}/{})"
-msgstr ""
+msgstr "Pressione a entrada para {} ({}/{})"
 
 #: src/ui/gui/appwindow.slint:441
 msgctxt "AppWindow"
 msgid "Press Esc to cancel"
-msgstr ""
+msgstr "Pressione Esc para cancelar"
 
 #: src/ui/gui/cheat_page.slint:15
 msgctxt "Cheats"
