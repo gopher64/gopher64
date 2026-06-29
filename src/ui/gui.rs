@@ -690,28 +690,24 @@ async fn load_no_intro(
     let mut map = no_intro_map.lock().await;
     loop {
         match reader.read_event_into_async(&mut buf).await {
-            Ok(quick_xml::events::Event::Start(e)) => match e.name().as_ref() {
-                b"game" => {
-                    if let Ok(Some(name_attribute)) = e.try_get_attribute("name")
-                        && let Ok(name) = String::from_utf8(name_attribute.value.into_owned())
-                    {
-                        current_game = name;
-                    }
+            Ok(quick_xml::events::Event::Start(e)) => {
+                if e.name().as_ref() == b"game"
+                    && let Ok(Some(name_attribute)) = e.try_get_attribute("name")
+                    && let Ok(name) = String::from_utf8(name_attribute.value.into_owned())
+                {
+                    current_game = name;
                 }
-                _ => (),
-            },
-            Ok(quick_xml::events::Event::Empty(e)) => match e.name().as_ref() {
-                b"file" => {
-                    if let Ok(Some(format_attribute)) = e.try_get_attribute("format")
-                        && format_attribute.value.as_ref() == b"BigEndian"
-                        && let Ok(Some(sha256_attribute)) = e.try_get_attribute("sha256")
-                        && let Ok(sha256) = String::from_utf8(sha256_attribute.value.into_owned())
-                    {
-                        map.insert(sha256.to_lowercase(), current_game.clone());
-                    }
+            }
+            Ok(quick_xml::events::Event::Empty(e)) => {
+                if e.name().as_ref() == b"file"
+                    && let Ok(Some(format_attribute)) = e.try_get_attribute("format")
+                    && format_attribute.value.as_ref() == b"BigEndian"
+                    && let Ok(Some(sha256_attribute)) = e.try_get_attribute("sha256")
+                    && let Ok(sha256) = String::from_utf8(sha256_attribute.value.into_owned())
+                {
+                    map.insert(sha256.to_lowercase(), current_game.clone());
                 }
-                _ => (),
-            },
+            }
             Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
             Ok(quick_xml::events::Event::Eof) => break,
             _ => (),

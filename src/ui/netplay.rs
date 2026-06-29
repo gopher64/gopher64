@@ -112,6 +112,7 @@ fn select_rom(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn setup_callbacks(
     app: &AppWindow,
     netplay_write_sender: &tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,

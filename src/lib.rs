@@ -382,7 +382,9 @@ fn android_main(app: slint::android::AndroidApp) {
     std::fs::create_dir_all(dirs.data_dir.join("saves")).unwrap();
     std::fs::create_dir_all(dirs.data_dir.join("states")).unwrap();
 
-    ui::gui::app_window(&app_window, true);
+    let no_intro_map =
+        std::sync::Arc::new(tokio::sync::Mutex::new(rustc_hash::FxHashMap::default()));
+    ui::gui::app_window(&app_window, true, no_intro_map);
     close_tx.send(()).unwrap();
     *android::WEAK_SLINT_WINDOW.lock().unwrap() = None;
     *android::ANDROID_APP.lock().unwrap() = None;
