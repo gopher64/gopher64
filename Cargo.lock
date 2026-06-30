@@ -5709,7 +5709,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2474bd2e5029e7ccb6abb2ba48cf2383a333851dedf495901544281590c7da7f"
 dependencies = [
  "memchr",
- "tokio",
 ]
 
 [[package]]
