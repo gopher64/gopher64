@@ -1,9 +1,10 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Button, HorizontalBox, VerticalBox, GroupBox, Palette } from "std-widgets.slint";
+import { Button, HorizontalBox, VerticalBox, GroupBox, Palette, LineEdit } from "std-widgets.slint";
 import { Page } from "page.slint";
 import { AboutData, NewVersionButton } from "about_page.slint";
+import { RAData } from "retroachievements_page.slint";
 
 export struct GameEntry {
     path: string,
@@ -11,15 +12,38 @@ export struct GameEntry {
     art: image,
     has-art: bool,
     favorite: bool,
+    homebrew: bool,
+    // Resolved libretro (No-Intro) filename — keyed identically across box art /
+    // snaps / titles; carried so the detail view can fetch media without re-hashing.
+    art-name: string,
 }
 
 export global State {
     in-out property <bool> game_running;
     in-out property <bool> is_android;
     in-out property <[{a:string, b:string}]> recent_roms;
-    // Scanned (desktop) / recent (Android) games shown with box art.
+    // Displayed (search/filter-applied) games; `all_games` is the full library.
     in-out property <[GameEntry]> games;
+    in-out property <[GameEntry]> all_games;
     in-out property <[string]> favorites;
+    in-out property <string> search;
+    in-out property <int> active_filter;   // 0 All · 1 Favorites · 2 Homebrew
+    // Game detail view.
+    in-out property <bool> detail_open;
+    in-out property <string> detail_path;
+    in-out property <string> detail_title;
+    in-out property <bool> detail_favorite;
+    in-out property <image> detail_art;
+    in-out property <bool> detail_has_art;
+    in-out property <image> detail_hero;
+    in-out property <bool> detail_has_hero;
+    in-out property <image> detail_snap;
+    in-out property <bool> detail_has_snap;
+    in-out property <image> detail_title_art;
+    in-out property <bool> detail_has_title;
+    in-out property <[bool]> detail_slots;
+    in-out property <int> detail_slot;      // -1 = fresh
+    in-out property <int> detail_tab;       // 0 Overview · 1 Achievements · 2 Media
 }
 
 export component LocalGame inherits Page {
@@ -28,11 +52,15 @@ export component LocalGame inherits Page {
     callback newversion_button_clicked;
     callback recent_rom_button_clicked(string);
     callback scan_folder_clicked;
-    callback launch_game(string);
+    callback launch_game(string, int);
     callback toggle_favorite(string);
+    callback detail_opened(string);
+    callback library_filter_changed(string, int);
+    callback open_achievements;
     title: @tr("Local Game");
 
-    VerticalBox {
+    // ---------------- library view ----------------
+    if !State.detail_open: VerticalBox {
         alignment: start;
         HorizontalBox {
             alignment: center;
@@ -87,6 +115,45 @@ export component LocalGame inherits Page {
 
         Rectangle { }
 
+        // search + filters
+        if State.all_games.length > 0: HorizontalBox {
+            LineEdit {
+                placeholder-text: @tr("Search games…");
+                text: State.search;
+                edited(t) => {
+                    State.search = t;
+                    root.library_filter_changed(t, State.active_filter);
+                }
+            }
+        }
+        if State.all_games.length > 0: HorizontalBox {
+            alignment: start;
+            Button {
+                text: @tr("All");
+                primary: State.active_filter == 0;
+                clicked => {
+                    State.active_filter = 0;
+                    root.library_filter_changed(State.search, 0);
+                }
+            }
+            Button {
+                text: @tr("Favorites");
+                primary: State.active_filter == 1;
+                clicked => {
+                    State.active_filter = 1;
+                    root.library_filter_changed(State.search, 1);
+                }
+            }
+            Button {
+                text: @tr("Homebrew");
+                primary: State.active_filter == 2;
+                clicked => {
+                    State.active_filter = 2;
+                    root.library_filter_changed(State.search, 2);
+                }
+            }
+        }
+
         if State.games.length > 0: GroupBox {
             title: @tr("Library");
             VerticalLayout {
@@ -98,7 +165,7 @@ export component LocalGame inherits Page {
                     touch := TouchArea {
                         enabled: !State.game_running;
                         clicked => {
-                            root.launch_game(game.path);
+                            root.detail_opened(game.path);
                         }
                     }
                     HorizontalBox {
@@ -129,6 +196,233 @@ export component LocalGame inherits Page {
                                 color: game.favorite ? Palette.accent-background : Palette.foreground;
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        // a search / filter is active but matched nothing
+        if State.all_games.length > 0 && State.games.length == 0: HorizontalBox {
+            alignment: center;
+            Text {
+                text: @tr("No games match the current filter.");
+                color: Palette.foreground;
+            }
+        }
+    }
+
+    // ---------------- detail view ----------------
+    if State.detail_open: VerticalBox {
+        alignment: start;
+        spacing: 8px;
+
+        HorizontalBox {
+            alignment: start;
+            Button {
+                text: @tr("Back");
+                clicked => {
+                    State.detail_open = false;
+                }
+            }
+        }
+
+        // hero banner: gameplay snap / title screen, else box art
+        Rectangle {
+            height: 200px;
+            border-radius: 6px;
+            clip: true;
+            background: Palette.alternate-background;
+            if State.detail_has_hero: Image {
+                source: State.detail_hero;
+                image-fit: contain;
+                width: 100%;
+                height: 100%;
+            }
+            if !State.detail_has_hero && State.detail_has_art: Image {
+                source: State.detail_art;
+                image-fit: contain;
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        Text {
+            text: State.detail_title;
+            font-size: 18px;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+
+        // tabs
+        HorizontalBox {
+            alignment: center;
+            Button {
+                text: @tr("Overview");
+                primary: State.detail_tab == 0;
+                clicked => {
+                    State.detail_tab = 0;
+                }
+            }
+            Button {
+                text: @tr("Achievements");
+                primary: State.detail_tab == 1;
+                clicked => {
+                    State.detail_tab = 1;
+                }
+            }
+            Button {
+                text: @tr("Media");
+                primary: State.detail_tab == 2;
+                clicked => {
+                    State.detail_tab = 2;
+                }
+            }
+        }
+
+        // ---- Overview ----
+        if State.detail_tab == 0: VerticalBox {
+            spacing: 8px;
+            HorizontalBox {
+                alignment: center;
+                Button {
+                    text: @tr("Play");
+                    primary: true;
+                    enabled: !State.game_running;
+                    clicked => {
+                        State.detail_open = false;
+                        root.launch_game(State.detail_path, State.detail_slot);
+                    }
+                }
+                Button {
+                    text: State.detail_favorite ? @tr("★ Favorited") : @tr("☆ Favorite");
+                    clicked => {
+                        root.toggle_favorite(State.detail_path);
+                    }
+                }
+            }
+            GroupBox {
+                title: @tr("Load Save State on Launch");
+                VerticalLayout {
+                    spacing: 4px;
+                    HorizontalBox {
+                        alignment: start;
+                        Button {
+                            text: @tr("Fresh");
+                            primary: State.detail_slot == -1;
+                            clicked => {
+                                State.detail_slot = -1;
+                            }
+                        }
+                    }
+                    GridLayout {
+                        spacing: 4px;
+                        for exists[n] in State.detail_slots: Button {
+                            row: n >= 5 ? 1 : 0;
+                            col: n >= 5 ? n - 5 : n;
+                            text: exists ? "● \{n}" : "\{n}";
+                            enabled: exists && !State.game_running;
+                            primary: State.detail_slot == n;
+                            clicked => {
+                                State.detail_slot = n;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ---- Achievements ----
+        if State.detail_tab == 1: VerticalBox {
+            spacing: 8px;
+            alignment: start;
+            if RAData.enabled: VerticalBox {
+                spacing: 4px;
+                Text {
+                    text: @tr("RetroAchievements is on.");
+                    font-size: 14px;
+                    color: Palette.foreground;
+                }
+                Text {
+                    text: @tr("Achievements, leaderboards and rich presence are tracked live while you play this game.");
+                    wrap: word-wrap;
+                    color: Palette.foreground;
+                }
+                Text {
+                    text: RAData.current_user_message;
+                    overflow: elide;
+                    color: Palette.foreground;
+                }
+            }
+            if !RAData.enabled: VerticalBox {
+                spacing: 8px;
+                alignment: start;
+                Text {
+                    text: @tr("RetroAchievements is off. Turn it on to track achievements, leaderboards and Discord presence.");
+                    wrap: word-wrap;
+                    color: Palette.foreground;
+                }
+                HorizontalBox {
+                    alignment: start;
+                    Button {
+                        text: @tr("Open RetroAchievements");
+                        clicked => {
+                            State.detail_open = false;
+                            root.open_achievements();
+                        }
+                    }
+                }
+            }
+        }
+
+        // ---- Media ----
+        if State.detail_tab == 2: VerticalBox {
+            spacing: 8px;
+            if !State.detail_has_art && !State.detail_has_snap && !State.detail_has_title: Text {
+                text: @tr("No media available.");
+                color: Palette.foreground;
+            }
+            HorizontalBox {
+                alignment: start;
+                if State.detail_has_snap: VerticalBox {
+                    spacing: 2px;
+                    Image {
+                        width: 200px;
+                        height: 140px;
+                        image-fit: contain;
+                        source: State.detail_snap;
+                    }
+                    Text {
+                        text: @tr("Screenshot");
+                        horizontal-alignment: center;
+                        color: Palette.foreground;
+                    }
+                }
+                if State.detail_has_title: VerticalBox {
+                    spacing: 2px;
+                    Image {
+                        width: 200px;
+                        height: 140px;
+                        image-fit: contain;
+                        source: State.detail_title_art;
+                    }
+                    Text {
+                        text: @tr("Title Screen");
+                        horizontal-alignment: center;
+                        color: Palette.foreground;
+                    }
+                }
+                if State.detail_has_art: VerticalBox {
+                    spacing: 2px;
+                    Image {
+                        width: 105px;
+                        height: 140px;
+                        image-fit: contain;
+                        source: State.detail_art;
+                    }
+                    Text {
+                        text: @tr("Box Art");
+                        horizontal-alignment: center;
+                        color: Palette.foreground;
                     }
                 }
             }
