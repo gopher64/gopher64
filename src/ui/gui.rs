@@ -690,14 +690,20 @@ async fn load_no_intro(
     ));
     let mut current_game = String::new();
     let mut map = no_intro_map.lock().await;
+    let mut xml_version = quick_xml::XmlVersion::Implicit1_0;
     loop {
         match reader.read_event() {
+            Ok(quick_xml::events::Event::Decl(e)) => {
+                if let Ok(version) = e.xml_version() {
+                    xml_version = version;
+                }
+            }
             Ok(quick_xml::events::Event::Start(e)) => {
                 if e.name().as_ref() == b"game"
                     && let Ok(Some(name_attribute)) = e.try_get_attribute("name")
-                    && let Ok(name) = String::from_utf8(name_attribute.value.into_owned())
+                    && let Ok(normalized_value) = name_attribute.normalized_value(xml_version)
                 {
-                    current_game = name;
+                    current_game = normalized_value.into_owned();
                 }
             }
             Ok(quick_xml::events::Event::End(e)) => {
@@ -708,12 +714,13 @@ async fn load_no_intro(
             Ok(quick_xml::events::Event::Empty(e)) => {
                 if e.name().as_ref() == b"file"
                     && let Ok(Some(format_attribute)) = e.try_get_attribute("format")
-                    && format_attribute.value.as_ref() == b"BigEndian"
+                    && let Ok(normalized_value) = format_attribute.normalized_value(xml_version)
+                    && normalized_value.as_ref() == "BigEndian"
                     && let Ok(Some(sha256_attribute)) = e.try_get_attribute("sha256")
-                    && let Ok(sha256) = String::from_utf8(sha256_attribute.value.into_owned())
+                    && let Ok(normalized_sha256) = sha256_attribute.normalized_value(xml_version)
                     && !current_game.is_empty()
                 {
-                    map.insert(sha256.to_lowercase(), current_game.clone());
+                    map.insert(normalized_sha256.to_lowercase(), current_game.clone());
                 }
             }
             Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
