@@ -294,10 +294,15 @@ fn scan_roms(dir: &std::path::Path) -> Vec<String> {
             continue;
         };
         for entry in entries.flatten() {
+            // file_type() does not follow symlinks, so a symlink cycle can't loop us.
+            let Ok(ft) = entry.file_type() else {
+                continue;
+            };
             let p = entry.path();
-            if p.is_dir() {
+            if ft.is_dir() {
                 stack.push(p);
-            } else if let Some(ext) = p.extension().and_then(|e| e.to_str())
+            } else if ft.is_file()
+                && let Some(ext) = p.extension().and_then(|e| e.to_str())
                 && N64_EXTENSIONS.contains(&ext)
             {
                 out.push(p.to_string_lossy().to_string());
@@ -1009,6 +1014,9 @@ pub fn run_rom(
             "--disable-expansion-pak",
             &game_settings.disable_expansion_pak.to_string(),
         ]);
+        if let Some(slot) = game_settings.load_savestate_slot {
+            command.args(["--load-state", &slot.to_string()]);
+        }
         let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
         if let Some(netplay_device) = netplay {
             let f = std::fs::File::create(&cheats_path).unwrap();
