@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-06-16 12:26+0000\n"
+"POT-Creation-Date: 2026-06-29 10:49+0000\n"
 "PO-Revision-Date: 2026-05-11 18:11-3000\n"
 "Last-Translator: EDUARDO CARVALHO <eduardotcarvalho@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,37 +47,37 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Doações (via GitHub)"
 
-#: src/ui/gui/appwindow.slint:148
+#: src/ui/gui/appwindow.slint:164
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Jogo Local"
 
-#: src/ui/gui/appwindow.slint:152
+#: src/ui/gui/appwindow.slint:168
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Configurar Controle"
 
-#: src/ui/gui/appwindow.slint:156
+#: src/ui/gui/appwindow.slint:172
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/appwindow.slint:160
+#: src/ui/gui/appwindow.slint:176
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Trapaças"
 
-#: src/ui/gui/appwindow.slint:164
+#: src/ui/gui/appwindow.slint:180
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:168
+#: src/ui/gui/appwindow.slint:184
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Configurações"
 
-#: src/ui/gui/appwindow.slint:172
+#: src/ui/gui/appwindow.slint:188
 msgctxt "Menu"
 msgid "About"
 msgstr "Sobre"
@@ -399,8 +399,8 @@ msgid ""
 "Alt+]."
 msgstr ""
 "Definir o atraso de entrada muito baixo causará lag no jogo.\n"
-"Você pode diminuir o atraso de entrada no jogo pressionando Alt+[ e "
-"aumentá-lo com Alt+]."
+"Você pode diminuir o atraso de entrada no jogo pressionando Alt+[ e aumentá-"
+"lo com Alt+]."
 
 #: src/ui/gui/netplay_wait.slint:101
 msgctxt "NetplayWait"
@@ -487,67 +487,87 @@ msgctxt "RetroAchievements"
 msgid "View Supported Games"
 msgstr "Ver Jogos com Suporte"
 
-#: src/ui/gui/settings_page.slint:24
+#: src/ui/gui/settings_page.slint:25
 msgctxt "Settings"
 msgid "Settings"
 msgstr "Configurações"
 
-#: src/ui/gui/settings_page.slint:35
+#: src/ui/gui/settings_page.slint:36
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr "Resolução:"
 
-#: src/ui/gui/settings_page.slint:49
+#: src/ui/gui/settings_page.slint:52
+msgctxt "Settings"
+msgid "Theme:"
+msgstr "Tema:"
+
+#: src/ui/gui/settings_page.slint:57
+msgctxt "Settings"
+msgid "System"
+msgstr "Sistema"
+
+#: src/ui/gui/settings_page.slint:57
+msgctxt "Settings"
+msgid "Dark"
+msgstr "Escuro"
+
+#: src/ui/gui/settings_page.slint:57
+msgctxt "Settings"
+msgid "Light"
+msgstr "Claro"
+
+#: src/ui/gui/settings_page.slint:66
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr "Redução de SSAA"
 
-#: src/ui/gui/settings_page.slint:57
+#: src/ui/gui/settings_page.slint:74
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr "Proporção Íntegra"
 
-#: src/ui/gui/settings_page.slint:65
+#: src/ui/gui/settings_page.slint:82
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr "Tela Cheia"
 
-#: src/ui/gui/settings_page.slint:73
+#: src/ui/gui/settings_page.slint:90
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr "Widescreen (esticar)"
 
-#: src/ui/gui/settings_page.slint:81
+#: src/ui/gui/settings_page.slint:98
 msgctxt "Settings"
 msgid "VSync"
 msgstr "VSync"
 
-#: src/ui/gui/settings_page.slint:89
+#: src/ui/gui/settings_page.slint:106
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr "Aplicar filtro de CRT"
 
-#: src/ui/gui/settings_page.slint:101
+#: src/ui/gui/settings_page.slint:118
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr "Overclock da CPU do N64 (pode causar bugs)"
 
-#: src/ui/gui/settings_page.slint:109
+#: src/ui/gui/settings_page.slint:126
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "Desabilitar Expansion Pak"
 
-#: src/ui/gui/settings_page.slint:117
+#: src/ui/gui/settings_page.slint:134
 msgctxt "Settings"
 msgid "Enable Rewind"
 msgstr "Habilitar rebobinamento"
 
-#: src/ui/gui/settings_page.slint:125
+#: src/ui/gui/settings_page.slint:142
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
 msgstr "Emular UNFLoader"
 
-#: src/ui/gui/settings_page.slint:133
+#: src/ui/gui/settings_page.slint:150
 msgctxt "Settings"
 msgid "Emulate VRU"
 msgstr "Emular VRU"

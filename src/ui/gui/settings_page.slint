@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { ComboBox, HorizontalBox, VerticalBox, Switch } from "std-widgets.slint";
+import { GridBox, ComboBox, HorizontalBox, VerticalBox, Switch } from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export global SettingsData {
@@ -14,6 +14,7 @@ export global SettingsData {
     in-out property <bool> overclock_n64_cpu;
     in-out property <bool> disable_expansion_pak;
     in-out property <int> resolution;
+    in-out property <int> theme;
     in-out property <bool> emulate_usb;
     in-out property <bool> rewind;
     in-out property <bool> emulate_vru;
@@ -29,19 +30,34 @@ export component Settings inherits Page {
             alignment: center;
             VerticalBox {
                 alignment: start;
-                HorizontalBox {
-                    alignment: start;
-                    Text {
-                        text: @tr("Resolution:");
-                        vertical-alignment: center;
-                    }
-
-                    ComboBox {
-                        model: ["1x", "2x", "4x", "8x"];
-                        current-index: SettingsData.resolution;
-                        selected => {
-                            SettingsData.resolution = self.current-index;
+                GridBox {
+                    Row {
+                        Text {
+                            text: @tr("Resolution:");
+                            vertical-alignment: center;
                         }
+                        ComboBox {
+                            model: ["1x", "2x", "4x", "8x"];
+                            current-index: SettingsData.resolution;
+                            selected => {
+                                SettingsData.resolution = self.current-index;
+                            }
+                        }
+                        Rectangle {}
+                    }
+                    Row {
+                        Text {
+                            text: @tr("Theme:");
+                            vertical-alignment: center;
+                        }
+                        ComboBox {
+                            model: [@tr("System"), @tr("Dark"), @tr("Light")];
+                            current-index: SettingsData.theme;
+                            selected => {
+                                SettingsData.theme = self.current-index;
+                            }
+                        }
+                        Rectangle {}
                     }
                 }
 
