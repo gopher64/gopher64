@@ -1,0 +1,540 @@
+// widgets.slint — Reusable styled atoms for the Gopher64 UI.
+//
+// These carry the brand look (accent colours, motion, rounded surfaces).
+// Text entry / selection / numeric input deliberately reuse std-widgets
+// (LineEdit / ComboBox / SpinBox / ScrollView) — no point re-implementing a
+// caret or a popup. We only force them dark via Palette.color-scheme.
+
+import { Theme } from "theme.slint";
+import { ScrollView } from "std-widgets.slint";
+
+export enum BtnKind { primary, ghost }
+
+// ---- Toggle: an animated on/off switch in the accent colour ----
+export component Toggle inherits Rectangle {
+    in property <bool> checked;
+    in property <bool> enabled: true;
+    callback toggled(bool);
+
+    width: 44px;
+    height: 26px;
+    border-radius: self.height / 2;
+    background: root.checked ? Theme.accent : Theme.surface-hi;
+    border-width: 1px;
+    border-color: root.checked ? Theme.accent : Theme.border-strong;
+    opacity: root.enabled ? 1.0 : 0.4;
+    animate background, border-color { duration: Theme.dur; }
+
+    knob := Rectangle {
+        width: 20px;
+        height: 20px;
+        border-radius: self.width / 2;
+        background: white;
+        y: (parent.height - self.height) / 2;
+        x: root.checked ? parent.width - self.width - 3px : 3px;
+        animate x { duration: Theme.dur; easing: ease-in-out; }
+    }
+
+    fs := FocusScope {
+        enabled: root.enabled;
+        key-pressed(e) => {
+            if (e.text == Key.Return || e.text == " ") { root.toggled(!root.checked); return accept; }
+            return reject;
+        }
+    }
+    Rectangle {   // keyboard focus ring
+        border-radius: parent.border-radius;
+        border-width: 2px;
+        border-color: root.checked ? Theme.on-accent : Theme.accent;
+        opacity: fs.has-focus ? 1.0 : 0.0;
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => { fs.focus(); root.toggled(!root.checked); }
+    }
+}
+
+// ---- PushButton: text button, two intents ----
+export component PushButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> enabled: true;
+    in property <BtnKind> kind: BtnKind.primary;
+    callback clicked;
+
+    property <bool> ghost: root.kind == BtnKind.ghost;
+    property <color> focus-ring: root.ghost ? Theme.accent : Theme.on-accent;
+
+    height: 38px;
+    min-width: 96px;
+    horizontal-stretch: 0;
+    border-radius: Theme.r-md;
+    background: root.ghost ? transparent : (ta.pressed ? Theme.accent.darker(0.15) : Theme.accent);
+    border-width: root.ghost ? 1px : 0px;
+    border-color: Theme.border-strong;
+    opacity: root.enabled ? 1.0 : 0.4;
+    animate background { duration: Theme.dur; }
+
+    hl := Rectangle {
+        border-radius: parent.border-radius;
+        background: root.ghost ? Theme.text : white;
+        opacity: 0;
+        animate opacity { duration: Theme.dur; }
+    }
+
+    HorizontalLayout {
+        padding-left: Theme.sp-4;
+        padding-right: Theme.sp-4;
+        alignment: center;
+        Text {
+            text: root.text;
+            color: root.ghost ? Theme.text : Theme.on-accent;
+            font-size: Theme.font-body;
+            font-weight: Theme.w-semibold;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+        }
+    }
+
+    fs := FocusScope {
+        enabled: root.enabled;
+        key-pressed(e) => {
+            if (e.text == Key.Return || e.text == " ") { root.clicked(); return accept; }
+            return reject;
+        }
+    }
+    Rectangle {   // keyboard focus ring
+        border-radius: parent.border-radius;
+        border-width: 2px;
+        border-color: root.focus-ring;
+        opacity: fs.has-focus ? 1.0 : 0.0;
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => { fs.focus(); root.clicked(); }
+    }
+
+    states [
+        pressed when ta.pressed: { hl.opacity: 0.16; }
+        hover when ta.has-hover: { hl.opacity: root.ghost ? 0.08 : 0.10; }
+    ]
+}
+
+// ---- Chip: pill-shaped filter tag ----
+export component Chip inherits Rectangle {
+    in property <string> text;
+    in property <bool> active: false;
+    in property <bool> enabled: true;
+    callback clicked;
+
+    height: 32px;
+    horizontal-stretch: 0;
+    border-radius: Theme.r-pill;
+    background: root.active ? Theme.accent.with-alpha(0.16) : Theme.surface-variant;
+    border-width: 1px;
+    border-color: root.active ? Theme.accent : Theme.border;
+    width: row.preferred-width;
+    animate background, border-color { duration: Theme.dur; }
+    opacity: root.enabled ? 1.0 : 0.35;
+
+    row := HorizontalLayout {
+        padding-left: Theme.sp-4;
+        padding-right: Theme.sp-4;
+        alignment: center;
+        Text {
+            text: root.text;
+            color: root.active ? Theme.accent-text : Theme.text-muted;
+            font-size: Theme.font-small;
+            font-weight: Theme.w-medium;
+            vertical-alignment: center;
+        }
+    }
+
+    fs := FocusScope {
+        enabled: root.enabled;
+        key-pressed(e) => {
+            if (e.text == Key.Return || e.text == " ") { root.clicked(); return accept; }
+            return reject;
+        }
+    }
+    Rectangle {   // keyboard focus ring
+        border-radius: parent.border-radius;
+        border-width: 2px;
+        border-color: Theme.accent;
+        opacity: fs.has-focus ? 1.0 : 0.0;
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => { fs.focus(); root.clicked(); }
+    }
+}
+
+// ---- Badge: tiny status pill ----
+export component Badge inherits Rectangle {
+    in property <string> text;
+    in property <color> tint: Theme.accent;
+
+    height: 20px;
+    border-radius: Theme.r-sm;
+    background: root.tint.with-alpha(0.18);
+    border-width: 1px;
+    border-color: root.tint.with-alpha(0.5);
+    width: row.preferred-width;
+
+    row := HorizontalLayout {
+        padding-left: 7px;
+        padding-right: 7px;
+        Text {
+            text: root.text;
+            color: root.tint;
+            font-size: Theme.font-micro;
+            font-weight: Theme.w-semibold;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// ---- NavItem: one sidebar entry (rail, compact-rail or bottom-bar) ----
+export component NavItem inherits Rectangle {
+    in property <string> label;
+    in property <image> icon;
+    in property <bool> active: false;
+    in property <bool> compact: false;   // icon-only rail
+    in property <bool> portrait: false;  // bottom bar (icon over label)
+    callback clicked;
+
+    height: root.portrait ? Theme.bar-h - 8px : 46px;
+    border-radius: Theme.r-md;
+    background: root.active ? Theme.accent.with-alpha(0.14) : transparent;
+    accessible-role: tab;
+    accessible-label: root.label;
+    accessible-item-selected: root.active;
+    animate background { duration: Theme.dur; }
+
+    // accent marker on the left edge in rail mode
+    if !root.portrait && root.active: Rectangle {
+        x: 0;
+        width: 3px;
+        height: parent.height * 0.5;
+        y: (parent.height - self.height) / 2;
+        background: Theme.accent;
+        border-radius: 2px;
+    }
+
+    // bottom-bar layout
+    if root.portrait: VerticalLayout {
+        alignment: center;
+        spacing: 3px;
+        Image {
+            source: root.icon;
+            colorize: root.active ? Theme.accent : Theme.text-muted;
+            width: 22px;
+            height: 22px;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: root.label;
+            color: root.active ? Theme.accent-text : Theme.text-muted;
+            font-size: Theme.font-micro;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+    }
+
+    // rail layout (icon + optional label)
+    if !root.portrait: HorizontalLayout {
+        padding-left: root.compact ? 0px : Theme.sp-3;
+        padding-right: root.compact ? 0px : Theme.sp-3;
+        spacing: Theme.sp-3;
+        alignment: root.compact ? center : start;
+        Image {
+            source: root.icon;
+            colorize: root.active ? Theme.accent : Theme.text-muted;
+            width: 20px;
+            height: 20px;
+        }
+        if !root.compact: Text {
+            text: root.label;
+            color: root.active ? Theme.text : Theme.text-muted;
+            font-size: Theme.font-body;
+            font-weight: root.active ? Theme.w-semibold : Theme.w-medium;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+    }
+
+    fs := FocusScope {
+        key-pressed(e) => {
+            if (e.text == Key.Return || e.text == " ") { root.clicked(); return accept; }
+            return reject;
+        }
+    }
+    Rectangle {   // keyboard focus ring
+        border-radius: parent.border-radius;
+        border-width: 2px;
+        border-color: Theme.accent;
+        opacity: fs.has-focus ? 1.0 : 0.0;
+    }
+    ta := TouchArea {
+        clicked => { fs.focus(); root.clicked(); }
+    }
+}
+
+// ---- GameCard: one ROM in the library grid ----
+export component GameCard inherits Rectangle {
+    in property <string> title;
+    in property <string> subtitle;
+    in property <image> art;
+    in property <bool> has-art: false;
+    in property <bool> favorite: false;
+    in property <bool> running: false;
+    in property <bool> enabled: true;
+    in property <bool> selected: false;
+    callback clicked;
+    callback fav_clicked;
+
+    border-radius: Theme.r-lg;
+    background: Theme.surface;
+    border-width: root.selected ? 2px : 1px;
+    border-color: root.selected ? Theme.accent : (ta.has-hover ? Theme.border-strong : Theme.border);
+    clip: true;
+    opacity: root.enabled ? 1.0 : 0.5;
+    animate border-color { duration: Theme.dur; }
+
+    VerticalLayout {
+        // box-art area (image, or gradient + initial fallback)
+        Rectangle {
+            height: 112px;
+            background: @linear-gradient(135deg, Theme.surface-hi, Theme.surface-variant);
+            clip: true;
+            if root.has-art: Image {
+                source: root.art;
+                image-fit: cover;
+                width: 100%;
+                height: 100%;
+            }
+            if !root.has-art: Rectangle {
+                // asset-free cartridge silhouette
+                width: 52px;
+                height: 64px;
+                border-radius: 6px;
+                background: Theme.surface-hi;
+                border-width: 1px;
+                border-color: Theme.border-strong;
+                Rectangle {
+                    width: 36px;
+                    height: 24px;
+                    y: 11px;
+                    border-radius: 3px;
+                    background: Theme.surface-variant;
+                }
+                Rectangle {
+                    width: 28px;
+                    height: 6px;
+                    y: parent.height - 13px;
+                    border-radius: 2px;
+                    background: Theme.bg;
+                }
+            }
+        }
+
+        VerticalLayout {
+            padding: Theme.sp-3;
+            spacing: 2px;
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-size: Theme.font-body;
+                font-weight: Theme.w-semibold;
+                overflow: elide;
+            }
+            Text {
+                text: root.subtitle;
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+        }
+    }
+
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+
+    // "PLAYING" badge while the game runs
+    if root.running: Badge {
+        x: Theme.sp-2;
+        y: Theme.sp-2;
+        text: "PLAYING";
+        tint: Theme.green;
+    }
+
+    // favourite star (its own touch area, sits above the card touch area)
+    fav := Rectangle {
+        x: parent.width - self.width - Theme.sp-2;
+        y: Theme.sp-2;
+        width: 28px;
+        height: 28px;
+        border-radius: Theme.r-sm;
+        background: fav-ta.has-hover ? #00000055 : transparent;
+        Text {
+            text: root.favorite ? "★" : "☆";
+            color: root.favorite ? Theme.yellow : Theme.text;
+            font-size: 18px;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+        fav-ta := TouchArea {
+            clicked => { root.fav_clicked(); }
+        }
+    }
+}
+
+// ---- SegTabs: segmented control for tabbed panels ----
+export component SegTabs inherits Rectangle {
+    in property <[string]> tabs;
+    in-out property <int> current: 0;
+
+    height: 40px;
+    horizontal-stretch: 0;
+    border-radius: Theme.r-md;
+    background: Theme.surface-variant;
+    border-width: 1px;
+    border-color: Theme.border;
+    width: row.preferred-width;
+
+    row := HorizontalLayout {
+        padding: 4px;
+        spacing: 4px;
+        for t[i] in root.tabs: Rectangle {
+            min-width: 104px;
+            border-radius: Theme.r-sm;
+            background: i == root.current ? Theme.surface-hi : transparent;
+            border-width: i == root.current ? 1px : 0px;
+            border-color: Theme.border-strong;
+            animate background { duration: Theme.dur; }
+            Text {
+                text: t;
+                color: i == root.current ? Theme.text : Theme.text-muted;
+                font-size: Theme.font-body;
+                font-weight: i == root.current ? Theme.w-semibold : Theme.w-medium;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            TouchArea {
+                clicked => { root.current = i; }
+            }
+        }
+    }
+}
+
+// ---- SettingRow: label + description on the left, a control on the right ----
+export component SettingRow inherits Rectangle {
+    in property <string> title;
+    in property <string> description;
+    in property <bool> enabled: true;
+
+    height: row.preferred-height;
+    background: transparent;
+
+    row := HorizontalLayout {
+        padding-top: Theme.sp-3;
+        padding-bottom: Theme.sp-3;
+        spacing: Theme.sp-4;
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.title;
+                color: root.enabled ? Theme.text : Theme.text-faint;
+                font-size: Theme.font-body;
+                font-weight: Theme.w-medium;
+            }
+            if root.description != "": Text {
+                text: root.description;
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            horizontal-stretch: 0;
+            @children
+        }
+    }
+}
+
+// ---- SectionCard: titled surface panel that stacks its children ----
+export component SectionCard inherits Rectangle {
+    in property <string> title;
+
+    background: Theme.surface;
+    border-radius: Theme.r-lg;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: Theme.sp-4;
+        spacing: Theme.sp-1;
+        if root.title != "": Text {
+            text: root.title;
+            color: Theme.text;
+            font-size: Theme.font-title;
+            font-weight: Theme.w-semibold;
+        }
+        if root.title != "": Rectangle {
+            height: 1px;
+            background: Theme.border;
+        }
+        VerticalLayout {
+            padding-top: Theme.sp-1;
+            spacing: 2px;
+            @children
+        }
+    }
+}
+
+// ---- PageScaffold: standard page header + scrollable body ----
+export component PageScaffold inherits Rectangle {
+    in property <string> title;
+    in property <string> subtitle;
+
+    background: Theme.bg;
+
+    VerticalLayout {
+        width: 100%;
+        height: 100%;
+
+        VerticalLayout {
+            padding-left: Theme.sp-6;
+            padding-right: Theme.sp-6;
+            padding-top: Theme.sp-5;
+            padding-bottom: Theme.sp-4;
+            spacing: 2px;
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-size: Theme.font-display;
+                font-weight: Theme.w-bold;
+            }
+            if root.subtitle != "": Text {
+                text: root.subtitle;
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+            }
+        }
+        Rectangle { height: 1px; background: Theme.border; }
+        ScrollView {
+            vertical-stretch: 1;
+            VerticalLayout {
+                width: 100%;
+                padding: Theme.sp-6;
+                spacing: Theme.sp-4;
+                alignment: start;
+                @children
+            }
+        }
+    }
+}

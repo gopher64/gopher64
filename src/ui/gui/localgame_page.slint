@@ -1,64 +1,626 @@
-// Copyright © SixtyFPS GmbH <info@slint.dev>
-// SPDX-License-Identifier: MIT
+// localgame_page.slint — the ROM Library (card grid + search + filter tags).
+//
+// Filename kept so `controller_page` / `netplay_page` keep resolving
+// `import { State } from "localgame_page.slint"`.
+//
+// Binding model:
+//   State.recent_roms      kept for back-compat (gui.rs already sets it)
+//   LibraryData.games      the grid model (Rust populates; see binding notes)
+//   recent_rom_button_clicked(path)  reused to launch a game (existing handler)
 
-import { Button, HorizontalBox, VerticalBox, GroupBox } from "std-widgets.slint";
-import { Page } from "page.slint";
-import { AboutData, NewVersionButton } from "about_page.slint";
+import { Theme } from "theme.slint";
+import { GameCard, Chip, PushButton, BtnKind, SegTabs } from "widgets.slint";
+import { LineEdit, ScrollView } from "std-widgets.slint";
+import { RAData } from "retroachievements_page.slint";
+
+export struct GameEntry {
+    path: string,       // launch path — passed to recent_rom_button_clicked
+    title: string,      // display name
+    subtitle: string,   // e.g. "USA · 1 player" (free-form)
+    favorite: bool,
+    art: image,
+    has-art: bool,      // true when `art` holds real box art
+}
 
 export global State {
     in-out property <bool> game_running;
     in-out property <bool> is_android;
-    in-out property <[{a:string, b:string}]> recent_roms;
+    // Legacy recent list (path, filename) — still populated by gui.rs.
+    in-out property <[{a: string, b: string}]> recent_roms;
 }
 
-export component LocalGame inherits Page {
+export global LibraryData {
+    in-out property <[GameEntry]> games;
+    in-out property <string> search_text;
+    in-out property <int> active_filter;   // 0 All · 1 Favorites · 2 Recent · 3 Homebrew
+    in-out property <int> selected: 0;
+    in-out property <int> columns: 1;
+    in-out property <bool> detail_open;
+    in-out property <int> detail_slot: -1;
+    in-out property <[bool]> detail_slots;   // per-slot save-state existence (10 bools)
+    in-out property <int> detail_tab;          // 0 Overview · 1 Achievements · 2 Media
+    in-out property <image> detail_hero;
+    in-out property <bool> detail_has_hero;
+    in-out property <image> detail_snap;
+    in-out property <bool> detail_has_snap;
+    in-out property <image> detail_title_art;
+    in-out property <bool> detail_has_title;
+}
+
+export component LocalGame inherits Rectangle {
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
-    callback newversion_button_clicked;
-    callback recent_rom_button_clicked(string);
-    title: @tr("Local Game");
+    callback recent_rom_button_clicked(string);     // launch by path (reused handler)
+    callback toggle_favorite(string);               // path
+    callback library_filter_changed(string, int);   // (search_text, active_filter)
+    callback library_scan_folder;
+    callback launch_game(string, int);              // (path, savestate slot; -1 = fresh)
+    callback detail_opened(string);                 // fired when detail opens — compute slot availability
+    callback open_achievements_settings;        // navigate to the Achievements page
 
-    VerticalBox {
-        alignment: start;
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Open ROM");
-                enabled: !State.game_running;
-                clicked => {
-                    open_rom_button_clicked();
-                }
-            }
-        }
+    background: Theme.bg;
 
-        if !State.is_android:HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Open Saves Folder");
-                clicked => {
-                    saves_folder_button_clicked();
-                }
-            }
-        }
+    VerticalLayout {
+        width: 100%;
+        height: 100%;
 
-        if AboutData.has_update:NewVersionButton {
-            newversion_button_clicked => {
-                newversion_button_clicked();
-            }
-        }
-        Rectangle { }
+        // ---- header: title + search + actions ----
+        VerticalLayout {
+            padding-left: Theme.sp-6;
+            padding-right: Theme.sp-6;
+            padding-top: Theme.sp-5;
+            padding-bottom: Theme.sp-4;
+            spacing: Theme.sp-4;
 
-        if State.recent_roms.length>0:HorizontalBox {
-            alignment: center;
-            GroupBox {
-                title: @tr("Recent ROMs");
+            // wide: single row (title · search · actions) — desktop look preserved
+            if root.width >= 760px: HorizontalLayout {
+                spacing: Theme.sp-4;
+                alignment: stretch;
+
                 VerticalLayout {
-                    alignment: space-between;
-                    for rom in State.recent_roms: Button {
-                        text: rom.b;
+                    horizontal-stretch: 1;
+                    alignment: center;
+                    spacing: 2px;
+                    Text {
+                        text: @tr("Library");
+                        color: Theme.text;
+                        font-size: Theme.font-display;
+                        font-weight: Theme.w-bold;
+                    }
+                    Text {
+                        text: LibraryData.games.length + " " + @tr("games");
+                        color: Theme.text-muted;
+                        font-size: Theme.font-small;
+                    }
+                }
+
+                LineEdit {
+                    horizontal-stretch: 1;
+                    min-width: 180px;
+                    placeholder-text: @tr("Search games…");
+                    text: LibraryData.search_text;
+                    edited(t) => {
+                        LibraryData.search_text = t;
+                        root.library_filter_changed(t, LibraryData.active_filter);
+                    }
+                }
+
+                if !State.is_android: PushButton {
+                    text: @tr("Saves Folder");
+                    kind: BtnKind.ghost;
+                    clicked => { root.saves_folder_button_clicked(); }
+                }
+                if !State.is_android: PushButton {
+                    text: @tr("Scan Folder");
+                    kind: BtnKind.ghost;
+                    clicked => { root.library_scan_folder(); }
+                }
+                PushButton {
+                    text: @tr("Open ROM");
+                    enabled: !State.game_running;
+                    clicked => { root.open_rom_button_clicked(); }
+                }
+            }
+
+            // narrow (portrait / handheld): stack into rows so nothing clips
+            if root.width < 760px: VerticalLayout {
+                spacing: Theme.sp-3;
+
+                VerticalLayout {
+                    spacing: 2px;
+                    Text {
+                        text: @tr("Library");
+                        color: Theme.text;
+                        font-size: Theme.font-display;
+                        font-weight: Theme.w-bold;
+                    }
+                    Text {
+                        text: LibraryData.games.length + " " + @tr("games");
+                        color: Theme.text-muted;
+                        font-size: Theme.font-small;
+                    }
+                }
+
+                LineEdit {
+                    placeholder-text: @tr("Search games…");
+                    text: LibraryData.search_text;
+                    edited(t) => {
+                        LibraryData.search_text = t;
+                        root.library_filter_changed(t, LibraryData.active_filter);
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: Theme.sp-2;
+                    alignment: start;
+                    if !State.is_android: PushButton {
+                        text: @tr("Saves Folder");
+                        kind: BtnKind.ghost;
+                        clicked => { root.saves_folder_button_clicked(); }
+                    }
+                    if !State.is_android: PushButton {
+                        text: @tr("Scan Folder");
+                        kind: BtnKind.ghost;
+                        clicked => { root.library_scan_folder(); }
+                    }
+                    PushButton {
+                        text: @tr("Open ROM");
+                        enabled: !State.game_running;
+                        clicked => { root.open_rom_button_clicked(); }
+                    }
+                }
+            }
+
+            // ---- filter chips ----
+            HorizontalLayout {
+                spacing: Theme.sp-2;
+                alignment: start;
+                Chip {
+                    text: @tr("All");
+                    active: LibraryData.active_filter == 0;
+                    clicked => {
+                        LibraryData.active_filter = 0;
+                        root.library_filter_changed(LibraryData.search_text, 0);
+                    }
+                }
+                Chip {
+                    text: @tr("Favorites");
+                    active: LibraryData.active_filter == 1;
+                    clicked => {
+                        LibraryData.active_filter = 1;
+                        root.library_filter_changed(LibraryData.search_text, 1);
+                    }
+                }
+                Chip {
+                    text: @tr("Recent");
+                    active: LibraryData.active_filter == 2;
+                    clicked => {
+                        LibraryData.active_filter = 2;
+                        root.library_filter_changed(LibraryData.search_text, 2);
+                    }
+                }
+                Chip {
+                    text: @tr("Homebrew");
+                    active: LibraryData.active_filter == 3;
+                    clicked => {
+                        LibraryData.active_filter = 3;
+                        root.library_filter_changed(LibraryData.search_text, 3);
+                    }
+                }
+            }
+        }
+
+        Rectangle { height: 1px; background: Theme.border; }
+
+        // ---- empty state ----
+        if LibraryData.games.length == 0: VerticalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            spacing: Theme.sp-4;
+
+            // a filter / search is active but matched nothing
+            if !(LibraryData.search_text == "" && LibraryData.active_filter == 0): HorizontalLayout {
+                alignment: center;
+                Text {
+                    text: LibraryData.search_text != "" ? @tr("No games match your search") : @tr("No games to show here");
+                    color: Theme.text-muted;
+                    font-size: Theme.font-title;
+                }
+            }
+
+            // first-run onboarding: empty library, no active filter or search
+            if LibraryData.search_text == "" && LibraryData.active_filter == 0: VerticalLayout {
+                alignment: center;
+                spacing: Theme.sp-4;
+                HorizontalLayout {
+                    alignment: center;
+                    Image {
+                        source: @image-url("../../../data/icon/gopher64.png");
+                        width: 96px;
+                        height: 96px;
+                    }
+                }
+                HorizontalLayout {
+                    alignment: center;
+                    Text {
+                        text: @tr("Welcome to Gopher64");
+                        color: Theme.text;
+                        font-size: Theme.font-display;
+                        font-weight: Theme.w-bold;
+                        horizontal-alignment: center;
+                    }
+                }
+                HorizontalLayout {
+                    alignment: center;
+                    Text {
+                        width: Math.min(root.width - 2 * Theme.sp-6, 480px);
+                        text: State.is_android
+                            ? @tr("Open a ROM to start building your library.")
+                            : @tr("Add your N64 games to get started — scan a folder to build your library, or open a single ROM.");
+                        color: Theme.text-muted;
+                        font-size: Theme.font-body;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                    }
+                }
+                HorizontalLayout {
+                    alignment: center;
+                    spacing: Theme.sp-2;
+                    if !State.is_android: PushButton {
+                        text: @tr("Scan ROM Folder");
+                        enabled: !State.game_running;
+                        clicked => { root.library_scan_folder(); }
+                    }
+                    PushButton {
+                        text: @tr("Open ROM");
+                        kind: State.is_android ? BtnKind.primary : BtnKind.ghost;
+                        enabled: !State.game_running;
+                        clicked => { root.open_rom_button_clicked(); }
+                    }
+                }
+            }
+        }
+
+        // ---- responsive card grid (keyboard / controller navigable) ----
+        if LibraryData.games.length > 0: FocusScope {
+            vertical-stretch: 1;
+            init => {
+                self.focus();
+            }
+            key-pressed(event) => {
+                if (event.text == Key.RightArrow) {
+                    LibraryData.selected = Math.min(LibraryData.selected + 1, LibraryData.games.length - 1);
+                    return accept;
+                }
+                if (event.text == Key.LeftArrow) {
+                    LibraryData.selected = Math.max(LibraryData.selected - 1, 0);
+                    return accept;
+                }
+                if (event.text == Key.DownArrow) {
+                    LibraryData.selected = Math.min(LibraryData.selected + LibraryData.columns, LibraryData.games.length - 1);
+                    return accept;
+                }
+                if (event.text == Key.UpArrow) {
+                    LibraryData.selected = Math.max(LibraryData.selected - LibraryData.columns, 0);
+                    return accept;
+                }
+                if (event.text == Key.Return && LibraryData.games.length > 0) {
+                    root.detail_opened(LibraryData.games[LibraryData.selected].path);
+                    return accept;
+                }
+                return reject;
+            }
+            scroll := ScrollView {
+                width: 100%;
+                height: 100%;
+                viewport-height: grid.height;
+                grid := Rectangle {
+                    width: 100%;
+                    property <length> pad: Theme.sp-6;
+                    property <length> gap: Theme.sp-4;
+                    property <length> cw: Theme.card-w;
+                    property <length> ch: Theme.card-h;
+                    property <int> count: LibraryData.games.length;
+                    property <float> colsf: Math.max(1, Math.floor((self.width - 2 * self.pad + self.gap) / (self.cw + self.gap)));
+                    property <int> sel: LibraryData.selected;
+                    height: 2 * self.pad + Math.ceil(self.count / self.colsf) * (self.ch + self.gap) - self.gap;
+
+                    changed colsf => {
+                        LibraryData.columns = Math.max(1, Math.round(self.colsf));
+                    }
+                    // keep the selected card in view
+                    changed sel => {
+                        if (self.pad + Math.floor(self.sel / LibraryData.columns) * (self.ch + self.gap) < -scroll.viewport-y) {
+                            scroll.viewport-y = -(self.pad + Math.floor(self.sel / LibraryData.columns) * (self.ch + self.gap));
+                        } else if (self.pad + Math.floor(self.sel / LibraryData.columns) * (self.ch + self.gap) + self.ch > -scroll.viewport-y + scroll.visible-height) {
+                            scroll.viewport-y = -(self.pad + Math.floor(self.sel / LibraryData.columns) * (self.ch + self.gap) + self.ch - scroll.visible-height);
+                        }
+                    }
+
+                    for game[i] in LibraryData.games: GameCard {
+                        x: parent.pad + Math.mod(i, parent.colsf) * (parent.cw + parent.gap);
+                        y: parent.pad + Math.floor(i / parent.colsf) * (parent.ch + parent.gap);
+                        width: parent.cw;
+                        height: parent.ch;
+                        title: game.title;
+                        subtitle: game.subtitle;
+                        art: game.art;
+                        has-art: game.has-art;
+                        favorite: game.favorite;
+                        selected: i == LibraryData.selected;
+                        running: State.game_running;
                         enabled: !State.game_running;
                         clicked => {
-                            recent_rom_button_clicked(rom.a);
+                            LibraryData.selected = i;
+                            root.detail_opened(game.path);
+                        }
+                        fav_clicked => {
+                            root.toggle_favorite(game.path);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- game detail view ----
+    if LibraryData.detail_open && LibraryData.games.length > 0: detail := Rectangle {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        background: Theme.bg.with-alpha(0.92);
+        property <int> di: Math.min(LibraryData.selected, LibraryData.games.length - 1);
+        property <GameEntry> g: LibraryData.games[self.di];
+
+        TouchArea { }   // swallow background clicks
+
+        FocusScope {
+            init => { self.focus(); }
+            key-pressed(event) => {
+                if (event.text == Key.Escape) {
+                    LibraryData.detail_open = false;
+                } else if (event.text == Key.Return) {
+                    LibraryData.detail_open = false;
+                    root.launch_game(detail.g.path, LibraryData.detail_slot);
+                }
+                accept
+            }
+        }
+
+        card := Rectangle {
+            property <bool> narrow: self.width < 480px;
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            width: Math.min(parent.width - 2 * Theme.sp-4, 720px);
+            height: Math.min(col.preferred-height, parent.height - 2 * Theme.sp-4);
+            background: Theme.surface;
+            border-radius: Theme.r-lg;
+            border-width: 1px;
+            border-color: Theme.border;
+            clip: true;
+
+            col := VerticalLayout {
+                // ---- hero banner (gameplay snap / title screen, else box art) ----
+                Rectangle {
+                    height: card.narrow ? 150px : 220px;
+                    clip: true;
+                    background: @linear-gradient(135deg, Theme.surface-hi, Theme.surface-variant);
+                    if LibraryData.detail_has_hero: Image {
+                        source: LibraryData.detail_hero;
+                        image-fit: cover;
+                        width: 100%;
+                        height: 100%;
+                    }
+                    if !LibraryData.detail_has_hero && detail.g.has-art: Image {
+                        source: detail.g.art;
+                        image-fit: contain;
+                        width: 100%;
+                        height: 100%;
+                    }
+                    Rectangle {
+                        width: 100%;
+                        height: 100%;
+                        background: @linear-gradient(180deg, #00000000 45%, #000000d0 100%);
+                    }
+                    VerticalLayout {
+                        alignment: end;
+                        padding-left: Theme.sp-5;
+                        padding-right: Theme.sp-5;
+                        padding-bottom: Theme.sp-4;
+                        spacing: 2px;
+                        Text {
+                            text: detail.g.title;
+                            color: #ffffff;
+                            font-size: Theme.font-display;
+                            font-weight: Theme.w-bold;
+                            wrap: word-wrap;
+                        }
+                        if detail.g.subtitle != "": Text {
+                            text: detail.g.subtitle;
+                            color: #ffffffcc;
+                            font-size: Theme.font-small;
+                        }
+                    }
+                    close_ta := TouchArea {
+                        x: parent.width - 36px - Theme.sp-3;
+                        y: Theme.sp-3;
+                        width: 36px;
+                        height: 36px;
+                        clicked => { LibraryData.detail_open = false; }
+                        Rectangle {
+                            width: 36px;
+                            height: 36px;
+                            border-radius: 18px;
+                            background: close_ta.has-hover ? #000000aa : #00000066;
+                            Text {
+                                text: "✕";
+                                color: #ffffff;
+                                font-size: Theme.font-body;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+
+                // ---- tabs ----
+                HorizontalLayout {
+                    padding-left: Theme.sp-5;
+                    padding-right: Theme.sp-5;
+                    padding-top: Theme.sp-4;
+                    alignment: start;
+                    SegTabs {
+                        tabs: [@tr("Overview"), @tr("Achievements"), @tr("Media")];
+                        current <=> LibraryData.detail_tab;
+                    }
+                }
+
+                // ---- tab content ----
+                VerticalLayout {
+                    padding: Theme.sp-5;
+                    spacing: Theme.sp-4;
+                    alignment: start;
+
+                    if LibraryData.detail_tab == 0: VerticalLayout {
+                        spacing: Theme.sp-4;
+                        HorizontalLayout {
+                            spacing: Theme.sp-2;
+                            alignment: start;
+                            PushButton {
+                                text: @tr("Play");
+                                enabled: !State.game_running;
+                                clicked => {
+                                    LibraryData.detail_open = false;
+                                    root.launch_game(detail.g.path, LibraryData.detail_slot);
+                                }
+                            }
+                            PushButton {
+                                text: detail.g.favorite ? @tr("★ Favorited") : @tr("☆ Favorite");
+                                kind: BtnKind.ghost;
+                                clicked => { root.toggle_favorite(detail.g.path); }
+                            }
+                        }
+                        Text {
+                            text: @tr("Load save state on launch:");
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                        }
+                        ScrollView {
+                            height: 40px;
+                            HorizontalLayout {
+                                spacing: Theme.sp-2;
+                                Chip {
+                                    text: @tr("Fresh");
+                                    active: LibraryData.detail_slot == -1;
+                                    clicked => { LibraryData.detail_slot = -1; }
+                                }
+                                for s in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]: Chip {
+                                    text: s + "";
+                                    active: LibraryData.detail_slot == s;
+                                    enabled: LibraryData.detail_slots[s];
+                                    clicked => { LibraryData.detail_slot = s; }
+                                }
+                            }
+                        }
+                    }
+
+                    // status + CTA; live per-game progress needs an RA API hook (follow-up)
+                    if LibraryData.detail_tab == 1: VerticalLayout {
+                        spacing: Theme.sp-3;
+                        alignment: start;
+                        if RAData.enabled: VerticalLayout {
+                            spacing: Theme.sp-2;
+                            Text {
+                                text: @tr("RetroAchievements is on.");
+                                color: Theme.text;
+                                font-size: Theme.font-body;
+                                font-weight: Theme.w-semibold;
+                            }
+                            Text {
+                                text: @tr("Achievements, leaderboards and rich presence are tracked live while you play this game.");
+                                color: Theme.text-muted;
+                                font-size: Theme.font-small;
+                                wrap: word-wrap;
+                            }
+                            Text {
+                                text: RAData.current_user_message;
+                                color: Theme.text-muted;
+                                font-size: Theme.font-small;
+                                overflow: elide;
+                            }
+                        }
+                        if !RAData.enabled: VerticalLayout {
+                            spacing: Theme.sp-3;
+                            alignment: start;
+                            Text {
+                                text: @tr("RetroAchievements is off. Turn it on to track achievements, leaderboards and Discord presence.");
+                                color: Theme.text-muted;
+                                font-size: Theme.font-small;
+                                wrap: word-wrap;
+                            }
+                            HorizontalLayout {
+                                alignment: start;
+                                PushButton {
+                                    text: @tr("Open RetroAchievements");
+                                    clicked => {
+                                        LibraryData.detail_open = false;
+                                        root.open_achievements_settings();
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if LibraryData.detail_tab == 2: VerticalLayout {
+                        spacing: Theme.sp-3;
+                        if !detail.g.has-art && !LibraryData.detail_has_snap && !LibraryData.detail_has_title: Text {
+                            text: @tr("No media available.");
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small;
+                        }
+                        ScrollView {
+                            height: 164px;
+                            HorizontalLayout {
+                                spacing: Theme.sp-3;
+                                alignment: start;
+                                if LibraryData.detail_has_snap: VerticalLayout {
+                                    spacing: 2px;
+                                    Rectangle {
+                                        width: 200px;
+                                        height: 140px;
+                                        clip: true;
+                                        border-radius: Theme.r-md;
+                                        background: Theme.surface-hi;
+                                        Image { source: LibraryData.detail_snap; image-fit: cover; width: 100%; height: 100%; }
+                                    }
+                                    Text { text: @tr("Screenshot"); color: Theme.text-muted; font-size: Theme.font-micro; }
+                                }
+                                if LibraryData.detail_has_title: VerticalLayout {
+                                    spacing: 2px;
+                                    Rectangle {
+                                        width: 200px;
+                                        height: 140px;
+                                        clip: true;
+                                        border-radius: Theme.r-md;
+                                        background: Theme.surface-hi;
+                                        Image { source: LibraryData.detail_title_art; image-fit: cover; width: 100%; height: 100%; }
+                                    }
+                                    Text { text: @tr("Title screen"); color: Theme.text-muted; font-size: Theme.font-micro; }
+                                }
+                                if detail.g.has-art: VerticalLayout {
+                                    spacing: 2px;
+                                    Rectangle {
+                                        width: 105px;
+                                        height: 140px;
+                                        clip: true;
+                                        border-radius: Theme.r-md;
+                                        background: Theme.surface-hi;
+                                        Image { source: detail.g.art; image-fit: contain; width: 100%; height: 100%; }
+                                    }
+                                    Text { text: @tr("Box art"); color: Theme.text-muted; font-size: Theme.font-micro; }
+                                }
+                            }
                         }
                     }
                 }

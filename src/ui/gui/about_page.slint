@@ -1,98 +1,55 @@
-// Copyright © SixtyFPS GmbH <info@slint.dev>
-// SPDX-License-Identifier: MIT
+// about_page.slint — About / links / donate. AboutData global + callbacks preserved.
 
-import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
-import { Page } from "page.slint";
+import { Theme } from "theme.slint";
+import { PageScaffold, SectionCard, PushButton, BtnKind } from "widgets.slint";
 
 export global AboutData {
     in property <string> version;
     in property <bool> has_update;
 }
 
-export component NewVersionButton {
-    callback newversion_button_clicked;
-    HorizontalBox {
-        alignment: center;
-        Button {
-            text: @tr("New version available! Click here to download");
-            primary: true;
-            clicked => {
-                newversion_button_clicked();
-            }
-        }
-    }
-}
-
-export component About inherits Page {
+export component About inherits Rectangle {
     callback wiki_button_clicked;
     callback discord_button_clicked;
     callback newversion_button_clicked;
     callback patreon_button_clicked;
     callback github_sponsors_button_clicked;
     callback source_code_button_clicked;
-    title: @tr("About");
 
-    VerticalBox {
-        alignment: start;
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Wiki");
-                clicked => {
-                    wiki_button_clicked();
-                }
+    background: Theme.bg;
+
+    PageScaffold {
+        title: @tr("About");
+        subtitle: "Gopher64 · " + AboutData.version;
+
+        if AboutData.has_update: SectionCard {
+            title: @tr("Update available");
+            PushButton {
+                text: @tr("New version available! Click here to download");
+                kind: BtnKind.primary;
+                clicked => { root.newversion_button_clicked(); }
             }
         }
 
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Discord Server");
-                clicked => {
-                    discord_button_clicked();
-                }
+        SectionCard {
+            title: @tr("Community");
+            HorizontalLayout {
+                spacing: Theme.sp-3;
+                alignment: start;
+                PushButton { text: @tr("Wiki"); kind: BtnKind.ghost; clicked => { root.wiki_button_clicked(); } }
+                PushButton { text: @tr("Discord Server"); kind: BtnKind.ghost; clicked => { root.discord_button_clicked(); } }
+                PushButton { text: @tr("Source Code"); kind: BtnKind.ghost; clicked => { root.source_code_button_clicked(); } }
             }
         }
 
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Source Code");
-                clicked => {
-                    source_code_button_clicked();
-                }
+        SectionCard {
+            title: @tr("Support development");
+            HorizontalLayout {
+                spacing: Theme.sp-3;
+                alignment: start;
+                PushButton { text: @tr("Donate (via Patreon)"); clicked => { root.patreon_button_clicked(); } }
+                PushButton { text: @tr("Donate (via GitHub)"); clicked => { root.github_sponsors_button_clicked(); } }
             }
         }
-
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Donate (via Patreon)");
-                clicked => {
-                    patreon_button_clicked();
-                }
-            }
-
-            Button {
-                text: @tr("Donate (via GitHub)");
-                clicked => {
-                    github_sponsors_button_clicked();
-                }
-            }
-        }
-
-        HorizontalBox {
-            alignment: center;
-            Text {
-                text: AboutData.version;
-            }
-        }
-
-        if AboutData.has_update:NewVersionButton {
-            newversion_button_clicked => {
-                newversion_button_clicked();
-            }
-        }
-        Rectangle { }
     }
 }

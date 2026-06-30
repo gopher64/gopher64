@@ -2,6 +2,8 @@
 pub mod android;
 pub mod audio;
 #[cfg(feature = "gui")]
+pub mod boxart;
+#[cfg(feature = "gui")]
 pub mod cheats;
 pub mod config;
 #[cfg(feature = "gui")]
@@ -26,6 +28,7 @@ pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLoc
             env!("CARGO_PKG_NAME"),
             env!("GIT_DESCRIBE")
         ))
+        .timeout(std::time::Duration::from_secs(30))
         .build()
         .unwrap()
 });

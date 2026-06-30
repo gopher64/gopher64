@@ -122,6 +122,7 @@ fn main() {
         panic!("unknown arch")
     };
 
+
     volk_build.flag(opt_flag);
     rdp_build.flag(opt_flag);
     simd_build.flag(opt_flag);

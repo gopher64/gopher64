@@ -1,6 +1,10 @@
-import { VerticalBox, HorizontalBox, TextEdit, SpinBox, GroupBox, LineEdit, Button, GridBox, ScrollView } from "std-widgets.slint";
+// netplay_wait.slint — Netplay waiting room (player roster, chat, input delay).
+// Logic/bindings preserved verbatim; only the presentation is restyled.
+
+import { TextEdit, SpinBox, LineEdit } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { PageScaffold, SectionCard, PushButton, Badge, BtnKind } from "widgets.slint";
 import { NetplayData } from "netplay_page.slint";
-import { Page } from "page.slint";
 
 export global NetplayWaitData {
     in-out property <string> motd;
@@ -13,130 +17,150 @@ export global NetplayWaitData {
     in-out property <int> connected_peers_count;
 }
 
-export component NetplayWait inherits Page {
-    title: @tr("Netplay: Waiting Room");
+component PlayerSlot inherits Rectangle {
+    in property <int> number;
+    in property <string> name;
+    horizontal-stretch: 1;
+    height: 58px;
+    border-radius: Theme.r-md;
+    background: Theme.surface-variant;
+    border-width: 1px;
+    border-color: root.name == "" ? Theme.border : Theme.green.with-alpha(0.45);
+
+    HorizontalLayout {
+        padding-left: Theme.sp-3;
+        padding-right: Theme.sp-3;
+        spacing: Theme.sp-3;
+        Badge {
+            y: (parent.height - self.height) / 2;
+            text: "P" + root.number;
+            tint: root.name == "" ? Theme.text-faint : Theme.accent;
+        }
+        Text {
+            text: root.name == "" ? @tr("Waiting…") : root.name;
+            color: root.name == "" ? Theme.text-faint : Theme.text;
+            font-size: Theme.font-body;
+            font-weight: Theme.w-medium;
+            vertical-alignment: center;
+            overflow: elide;
+            horizontal-stretch: 1;
+        }
+    }
+}
+
+export component NetplayWait inherits Rectangle {
     callback send_chat_message(string);
     callback begin_game(int);
     callback close;
-    VerticalBox {
-        alignment: start;
-        HorizontalBox {
-            alignment: center;
-            VerticalBox {
-                alignment: start;
-                horizontal-stretch: 0;
-                Text {
-                    text: @tr("Session Name:") + " " + NetplayData.session_name;
-                    font-size: 15px;
-                    horizontal-alignment: center;
-                }
 
-                Text {
-                    text: @tr("Game Name:") + " " + NetplayData.game_name;
-                    font-size: 15px;
-                    horizontal-alignment: center;
-                }
+    property <bool> is-host: NetplayData.player_name == NetplayWaitData.players[0];
+    property <bool> mesh-complete: NetplayWaitData.players.length == (NetplayWaitData.connected_peers_count + 1);
 
-                HorizontalBox {
-                    alignment: center;
-                    GridBox {
-                        Row {
-                            Text {
-                                text: @tr("Player 1:") + " " + NetplayWaitData.players[0];
-                            }
+    background: Theme.bg;
 
-                            Text {
-                                text: @tr("Player 2:") + " " + NetplayWaitData.players[1];
-                            }
-                        }
+    PageScaffold {
+        title: @tr("Waiting Room");
+        subtitle: NetplayData.session_name + "  ·  " + NetplayData.game_name;
 
-                        Row {
-                            Text {
-                                text: @tr("Player 3:") + " " + NetplayWaitData.players[2];
-                            }
+        SectionCard {
+            title: @tr("Players");
+            HorizontalLayout {
+                spacing: Theme.sp-2;
+                PlayerSlot { number: 1; name: NetplayWaitData.players[0]; }
+                PlayerSlot { number: 2; name: NetplayWaitData.players[1]; }
+            }
+            Rectangle { height: Theme.sp-2; }
+            HorizontalLayout {
+                spacing: Theme.sp-2;
+                PlayerSlot { number: 3; name: NetplayWaitData.players[2]; }
+                PlayerSlot { number: 4; name: NetplayWaitData.players[3]; }
+            }
+        }
 
-                            Text {
-                                text: @tr("Player 4:") + " " + NetplayWaitData.players[3];
-                            }
-                        }
-                    }
-                }
-
-                TextEdit {
-                    read-only: true;
-                    min-height: 110px;
-                    text: NetplayWaitData.chat_text;
-                }
-
-                HorizontalBox {
-                    chat_message := LineEdit {
-                        placeholder-text: @tr("Enter chat message");
-                        key-released(event) => {
-                            if (event.text == Key.Return && chat_message.text != "") {
-                                send_chat_message(chat_message.text);
-                                chat_message.text = "";
-                            }
-                            accept
-                        }
-                    }
-
-                    Button {
-                        text: @tr("Send Message");
-                        enabled: chat_message.text != "";
-                        clicked => {
-                            send_chat_message(chat_message.text);
+        SectionCard {
+            title: @tr("Chat");
+            TextEdit {
+                read-only: true;
+                min-height: 120px;
+                text: NetplayWaitData.chat_text;
+            }
+            Rectangle { height: Theme.sp-2; }
+            HorizontalLayout {
+                spacing: Theme.sp-2;
+                chat_message := LineEdit {
+                    placeholder-text: @tr("Enter chat message");
+                    horizontal-stretch: 1;
+                    key-released(event) => {
+                        if (event.text == Key.Return && chat_message.text != "") {
+                            root.send_chat_message(chat_message.text);
                             chat_message.text = "";
                         }
+                        accept
                     }
                 }
+                PushButton {
+                    text: @tr("Send");
+                    enabled: chat_message.text != "";
+                    clicked => {
+                        root.send_chat_message(chat_message.text);
+                        chat_message.text = "";
+                    }
+                }
+            }
+        }
 
+        // Host-only input delay control; everyone else sees the MOTD.
+        if root.is-host: SectionCard {
+            title: @tr("Input Delay");
+            Text {
+                text: @tr("Lower delay feels more responsive but risks rollback stutter on a slow connection.");
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+            Rectangle { height: Theme.sp-2; }
+            HorizontalLayout {
+                spacing: Theme.sp-3;
+                alignment: start;
+                SpinBox {
+                    minimum: 1;
+                    maximum: 16;
+                    value: NetplayWaitData.input_delay;
+                    enabled: NetplayWaitData.recommended_delay != 0;
+                    edited => { NetplayWaitData.input_delay = self.value; }
+                }
                 Text {
-                    text: NetplayData.player_name == NetplayWaitData.players[0] ? @tr("Setting the input delay too low will cause the game to lag.\nYou can lower the input delay in-game by pressing Alt+[ and raise it with Alt+].") : NetplayWaitData.motd;
-                    horizontal-alignment: center;
-                    wrap: word-wrap;
+                    text: @tr("Recommended:") + " " + (NetplayWaitData.recommended_delay == 0 ? @tr("calculating…") : NetplayWaitData.recommended_delay);
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    vertical-alignment: center;
                 }
-                if NetplayData.player_name == NetplayWaitData.players[0]: HorizontalBox {
-                    alignment: center;
-                    Text {
-                        text: @tr("Local Input Delay:");
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
+            }
+        }
+        if !root.is-host: SectionCard {
+            title: @tr("Message of the Day");
+            Text {
+                text: NetplayWaitData.motd;
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+        }
 
-                    SpinBox {
-                        minimum: 1;
-                        maximum: 16;
-                        value: NetplayWaitData.input_delay;
-                        enabled: NetplayWaitData.recommended_delay != 0;
-                        edited => {
-                            NetplayWaitData.input_delay = self.value;
-                        }
-
-                    }
-
-                    Text {
-                        text: @tr("Recommended: ") + (NetplayWaitData.recommended_delay == 0 ? "Calculating..." : NetplayWaitData.recommended_delay);
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
-                }
-                HorizontalBox {
-                    alignment: center;
-                    Button {
-                        property <bool> mesh_complete: NetplayWaitData.players.length == (NetplayWaitData.connected_peers_count + 1);
-                        text: mesh_complete ? @tr("Start Game") : @tr("Waiting for P2P mesh ") + (NetplayWaitData.connected_peers_count + 1) + "/" + NetplayWaitData.players.length;
-                        enabled: NetplayWaitData.players[0] == NetplayData.player_name && NetplayWaitData.can_start && NetplayWaitData.recommended_delay != 0 && mesh_complete;
-                        clicked => {
-                            NetplayWaitData.can_start = false;
-                            begin_game(NetplayWaitData.input_delay);
-                        }
-                    }
-                    Button {
-                        text: @tr("Cancel");
-                        clicked => {
-                            close();
-                        }
-                    }
+        HorizontalLayout {
+            spacing: Theme.sp-2;
+            alignment: end;
+            PushButton {
+                text: @tr("Cancel");
+                kind: BtnKind.ghost;
+                clicked => { root.close(); }
+            }
+            PushButton {
+                text: root.mesh-complete ? @tr("Start Game") : @tr("Waiting for peers") + " " + (NetplayWaitData.connected_peers_count + 1) + "/" + NetplayWaitData.players.length;
+                enabled: root.is-host && NetplayWaitData.can_start && NetplayWaitData.recommended_delay != 0 && root.mesh-complete;
+                clicked => {
+                    NetplayWaitData.can_start = false;
+                    root.begin_game(NetplayWaitData.input_delay);
                 }
             }
         }

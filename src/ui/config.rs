@@ -45,6 +45,10 @@ pub struct Input {
     pub emulate_vru: bool,
 }
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Video {
     pub upscale: u32,
@@ -54,6 +58,8 @@ pub struct Video {
     pub widescreen: bool,
     pub vsync: bool,
     pub crt: bool,
+    #[serde(default = "default_true")]
+    pub dark_theme: bool,
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -74,6 +80,8 @@ pub struct Ui {
     pub theme: i32,
     pub rom_dir: std::path::PathBuf,
     pub recent_roms: Vec<String>,
+    #[serde(default)]
+    pub favorites: Vec<String>,
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
@@ -185,6 +193,7 @@ impl Config {
                 widescreen: false,
                 vsync: true,
                 crt: false,
+                dark_theme: true,
             },
             emulation: Emulation {
                 overclock: false,
@@ -196,6 +205,7 @@ impl Config {
                 theme: 0,
                 rom_dir: std::path::PathBuf::new(),
                 recent_roms: Vec::new(),
+                favorites: Vec::new(),
             },
             write_to_disk: true,
         }

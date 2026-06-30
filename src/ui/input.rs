@@ -647,6 +647,59 @@ fn close_input_profile_window(
     }
 }
 
+fn clear_profile_input(
+    value: usize,
+    keys: &mut [ui::config::InputKeyButton; PROFILE_SIZE],
+    controller_buttons: &mut [ui::config::InputKeyButton; PROFILE_SIZE],
+    controller_axis: &mut [ui::config::InputControllerAxis; PROFILE_SIZE],
+    joystick_buttons: &mut [ui::config::InputKeyButton; PROFILE_SIZE],
+    joystick_hat: &mut [ui::config::InputJoystickHat; PROFILE_SIZE],
+    joystick_axis: &mut [ui::config::InputControllerAxis; PROFILE_SIZE],
+) {
+    keys[value].enabled = false;
+    controller_buttons[value].enabled = false;
+    controller_axis[value].enabled = false;
+    joystick_buttons[value].enabled = false;
+    joystick_hat[value].enabled = false;
+    joystick_axis[value].enabled = false;
+}
+
+fn binding_label(
+    value: usize,
+    keys: &[ui::config::InputKeyButton; PROFILE_SIZE],
+    controller_buttons: &[ui::config::InputKeyButton; PROFILE_SIZE],
+    controller_axis: &[ui::config::InputControllerAxis; PROFILE_SIZE],
+    joystick_buttons: &[ui::config::InputKeyButton; PROFILE_SIZE],
+    joystick_hat: &[ui::config::InputJoystickHat; PROFILE_SIZE],
+    joystick_axis: &[ui::config::InputControllerAxis; PROFILE_SIZE],
+) -> String {
+    if keys[value].enabled {
+        format!("Key {}", keys[value].id)
+    } else if controller_buttons[value].enabled {
+        format!("Button {}", controller_buttons[value].id)
+    } else if controller_axis[value].enabled {
+        let sign = if controller_axis[value].axis >= 0 {
+            "+"
+        } else {
+            "-"
+        };
+        format!("Axis {}{sign}", controller_axis[value].id)
+    } else if joystick_buttons[value].enabled {
+        format!("Joystick Button {}", joystick_buttons[value].id)
+    } else if joystick_hat[value].enabled {
+        format!("Hat {}", joystick_hat[value].id)
+    } else if joystick_axis[value].enabled {
+        let sign = if joystick_axis[value].axis >= 0 {
+            "+"
+        } else {
+            "-"
+        };
+        format!("Joystick Axis {}{sign}", joystick_axis[value].id)
+    } else {
+        "(unset)".to_string()
+    }
+}
+
 pub fn configure_input_profile(
     config: &mut ui::config::Config,
     profile: String,
@@ -757,13 +810,6 @@ pub fn configure_input_profile(
         initial_state: 0,
     }; PROFILE_SIZE];
 
-    let mut last_joystick_axis_result = ui::config::InputControllerAxis {
-        enabled: false,
-        id: 0,
-        axis: 0,
-        initial_state: 0,
-    };
-
     let image_bytes = include_bytes!("../../data/ui/controller.png");
     let image = unsafe {
         sdl3_image_sys::image::IMG_LoadPNG_IO(sdl3_sys::everything::SDL_IOFromConstMem(
@@ -786,7 +832,92 @@ pub fn configure_input_profile(
         )
     };
 
-    for (key, value) in key_labels.iter() {
+    // Pre-load the existing profile so editing only re-captures the inputs the
+    // user picks (the wizard used to start blank, wiping every binding).
+    if let Some(existing) = config.input.input_profiles.get(&profile) {
+        new_keys = existing.keys;
+        new_controller_buttons = existing.controller_buttons;
+        new_controller_axis = existing.controller_axis;
+        new_joystick_buttons = existing.joystick_buttons;
+        new_joystick_hat = existing.joystick_hat;
+        new_joystick_axis = existing.joystick_axis;
+    }
+
+    // A smaller font so every input fits as a list in the 852x480 window.
+    let list_font = unsafe {
+        let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
+        sdl3_ttf_sys::ttf::TTF_OpenFontIO(
+            sdl3_sys::everything::SDL_IOFromConstMem(
+                font_bytes.as_ptr() as *const std::ffi::c_void,
+                font_bytes.len(),
+            ),
+            true,
+            16.0,
+        )
+    };
+
+    // Navigable list: each input (plus a trailing "Save & Exit") shown with its
+    // current binding. Arrow keys move, Enter (re)binds the highlighted input,
+    // Esc quits without saving. Only the inputs the user picks are changed.
+    let save_index = PROFILE_SIZE;
+    let mut selected: usize = 0;
+    let mut saved = false;
+
+    'menu: loop {
+        let mut rows: Vec<String> = key_labels
+            .iter()
+            .map(|(label, value)| {
+                format!(
+                    "{label}: {}",
+                    binding_label(
+                        *value,
+                        &new_keys,
+                        &new_controller_buttons,
+                        &new_controller_axis,
+                        &new_joystick_buttons,
+                        &new_joystick_hat,
+                        &new_joystick_axis,
+                    )
+                )
+            })
+            .collect();
+        rows.push("Save & Exit".to_string());
+        ui::video::draw_profile_menu(&rows, selected, renderer, text_engine, list_font);
+
+        let mut event: sdl3_sys::events::SDL_Event = Default::default();
+        if !unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
+            continue;
+        }
+        if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
+            break 'menu;
+        }
+        if event.event_type() != sdl3_sys::events::SDL_EVENT_KEY_DOWN || unsafe { event.key.repeat }
+        {
+            continue;
+        }
+        let scancode = unsafe { event.key.scancode };
+        let count = (PROFILE_SIZE + 1) as i32;
+        if scancode == sdl3_sys::scancode::SDL_SCANCODE_UP {
+            selected = (selected as i32 - 1).rem_euclid(count) as usize;
+            continue;
+        } else if scancode == sdl3_sys::scancode::SDL_SCANCODE_DOWN {
+            selected = (selected as i32 + 1).rem_euclid(count) as usize;
+            continue;
+        } else if scancode == sdl3_sys::scancode::SDL_SCANCODE_ESCAPE
+            || scancode == sdl3_sys::scancode::SDL_SCANCODE_AC_BACK
+        {
+            break 'menu;
+        } else if scancode != sdl3_sys::scancode::SDL_SCANCODE_RETURN {
+            continue;
+        }
+        if selected == save_index {
+            saved = true;
+            break 'menu;
+        }
+
+        // Capture mode for the highlighted input.
+        let value = key_labels[selected].1;
+        let label = key_labels[selected].0;
         unsafe {
             sdl3_sys::events::SDL_PumpEvents();
             sdl3_sys::events::SDL_FlushEvents(
@@ -794,11 +925,10 @@ pub fn configure_input_profile(
                 u32::from(sdl3_sys::events::SDL_EVENT_LAST),
             );
         }
-
         let mut key_set = false;
         while !key_set {
             ui::video::draw_text(
-                format!("Select binding for: {key}").as_str(),
+                format!("Press input for: {label}   (Esc to cancel)").as_str(),
                 renderer,
                 image_texture,
                 text_engine,
@@ -806,28 +936,28 @@ pub fn configure_input_profile(
             );
             let mut event: sdl3_sys::events::SDL_Event = Default::default();
             while !key_set && unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
-                if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED
-                    || (event.event_type() == sdl3_sys::events::SDL_EVENT_KEY_DOWN
-                        && unsafe { event.key.scancode }
-                            == sdl3_sys::scancode::SDL_SCANCODE_AC_BACK)
-                {
-                    close_input_profile_window(
-                        open_joysticks,
-                        open_controllers,
-                        renderer,
-                        text_engine,
-                        font,
-                        image_texture,
-                        window,
-                    );
-                    return;
+                if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
+                    break 'menu;
                 } else if event.event_type() == sdl3_sys::events::SDL_EVENT_KEY_DOWN {
-                    if unsafe {
+                    if unsafe { event.key.scancode } == sdl3_sys::scancode::SDL_SCANCODE_ESCAPE
+                        || unsafe { event.key.scancode } == sdl3_sys::scancode::SDL_SCANCODE_AC_BACK
+                    {
+                        key_set = true;
+                    } else if unsafe {
                         !event.key.repeat
                             && event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_LALT
                             && event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_RALT
                     } {
-                        new_keys[*value] = ui::config::InputKeyButton {
+                        clear_profile_input(
+                            value,
+                            &mut new_keys,
+                            &mut new_controller_buttons,
+                            &mut new_controller_axis,
+                            &mut new_joystick_buttons,
+                            &mut new_joystick_hat,
+                            &mut new_joystick_axis,
+                        );
+                        new_keys[value] = ui::config::InputKeyButton {
                             enabled: true,
                             id: i32::from(unsafe { event.key.scancode }),
                         };
@@ -835,7 +965,16 @@ pub fn configure_input_profile(
                     }
                 } else if event.event_type() == sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN {
                     if !open_controllers.is_empty() {
-                        new_controller_buttons[*value] = ui::config::InputKeyButton {
+                        clear_profile_input(
+                            value,
+                            &mut new_keys,
+                            &mut new_controller_buttons,
+                            &mut new_controller_axis,
+                            &mut new_joystick_buttons,
+                            &mut new_joystick_hat,
+                            &mut new_joystick_axis,
+                        );
+                        new_controller_buttons[value] = ui::config::InputKeyButton {
                             enabled: true,
                             id: i32::from(unsafe { event.gbutton.button }),
                         };
@@ -853,15 +992,30 @@ pub fn configure_input_profile(
                             axis: axis_value / axis_value.saturating_abs(),
                             initial_state: 0,
                         };
-                        if result != last_joystick_axis_result {
-                            new_controller_axis[*value] = result;
-                            last_joystick_axis_result = result;
-                            key_set = true
-                        }
+                        clear_profile_input(
+                            value,
+                            &mut new_keys,
+                            &mut new_controller_buttons,
+                            &mut new_controller_axis,
+                            &mut new_joystick_buttons,
+                            &mut new_joystick_hat,
+                            &mut new_joystick_axis,
+                        );
+                        new_controller_axis[value] = result;
+                        key_set = true
                     }
                 } else if event.event_type() == sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN {
                     if !open_joysticks.is_empty() {
-                        new_joystick_buttons[*value] = ui::config::InputKeyButton {
+                        clear_profile_input(
+                            value,
+                            &mut new_keys,
+                            &mut new_controller_buttons,
+                            &mut new_controller_axis,
+                            &mut new_joystick_buttons,
+                            &mut new_joystick_hat,
+                            &mut new_joystick_axis,
+                        );
+                        new_joystick_buttons[value] = ui::config::InputKeyButton {
                             enabled: true,
                             id: i32::from(unsafe { event.jbutton.button }),
                         };
@@ -871,7 +1025,16 @@ pub fn configure_input_profile(
                     let state = unsafe { event.jhat.value };
                     let hat = unsafe { event.jhat.hat };
                     if !open_joysticks.is_empty() && state != sdl3_sys::joystick::SDL_HAT_CENTERED {
-                        new_joystick_hat[*value] = ui::config::InputJoystickHat {
+                        clear_profile_input(
+                            value,
+                            &mut new_keys,
+                            &mut new_controller_buttons,
+                            &mut new_controller_axis,
+                            &mut new_joystick_buttons,
+                            &mut new_joystick_hat,
+                            &mut new_joystick_axis,
+                        );
+                        new_joystick_hat[value] = ui::config::InputJoystickHat {
                             enabled: true,
                             id: hat as i32,
                             direction: state,
@@ -911,26 +1074,24 @@ pub fn configure_input_profile(
                             axis: axis_value / axis_value.saturating_abs(),
                             initial_state,
                         };
-                        let same_trigger = last_joystick_axis_result.id == result.id
-                            && last_joystick_axis_result.initial_state != 0;
-                        if result != last_joystick_axis_result && !same_trigger {
-                            new_joystick_axis[*value] = result;
-                            last_joystick_axis_result = result;
-                            key_set = true
-                        }
+                        clear_profile_input(
+                            value,
+                            &mut new_keys,
+                            &mut new_controller_buttons,
+                            &mut new_controller_axis,
+                            &mut new_joystick_buttons,
+                            &mut new_joystick_hat,
+                            &mut new_joystick_axis,
+                        );
+                        new_joystick_axis[value] = result;
+                        key_set = true
                     }
                 }
             }
         }
-        ui::video::draw_text(
-            "Binding set, please wait...",
-            renderer,
-            image_texture,
-            text_engine,
-            font,
-        );
-        std::thread::sleep(std::time::Duration::from_millis(500));
     }
+
+    unsafe { sdl3_ttf_sys::ttf::TTF_CloseFont(list_font) };
 
     close_input_profile_window(
         open_joysticks,
@@ -942,17 +1103,19 @@ pub fn configure_input_profile(
         window,
     );
 
-    let new_profile = ui::config::InputProfile {
-        keys: new_keys,
-        controller_buttons: new_controller_buttons,
-        controller_axis: new_controller_axis,
-        joystick_buttons: new_joystick_buttons,
-        joystick_hat: new_joystick_hat,
-        joystick_axis: new_joystick_axis,
-        dinput,
-        deadzone,
-    };
-    config.input.input_profiles.insert(profile, new_profile);
+    if saved {
+        let new_profile = ui::config::InputProfile {
+            keys: new_keys,
+            controller_buttons: new_controller_buttons,
+            controller_axis: new_controller_axis,
+            joystick_buttons: new_joystick_buttons,
+            joystick_hat: new_joystick_hat,
+            joystick_axis: new_joystick_axis,
+            dinput,
+            deadzone,
+        };
+        config.input.input_profiles.insert(profile, new_profile);
+    }
 }
 
 pub fn get_default_profile() -> ui::config::InputProfile {

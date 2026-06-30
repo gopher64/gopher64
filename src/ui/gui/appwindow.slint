@@ -8,9 +8,10 @@ import { SettingsData } from "settings_page.slint";
 import { RAData } from "retroachievements_page.slint";
 import { AboutData } from "about_page.slint";
 import { ControllerData } from "controller_page.slint";
-import { State } from "localgame_page.slint";
+    import { State, LibraryData } from "localgame_page.slint";
 import { CheatsData } from "cheat_page.slint";
 import { InputProfileDialog, InputProfileData } from "input_profile.slint";
+import { Theme } from "theme.slint";
 import { NetplayData } from "netplay_page.slint";
 export { VruDialog } from "vru_dialog.slint";
 import { NetplayCreate } from "netplay_create.slint";
@@ -27,6 +28,11 @@ export component AppWindow inherits Window {
     callback source_code_button_clicked;
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
+    callback toggle_favorite(string);
+    callback library_filter_changed(string, int);
+    callback library_scan_folder;
+    callback launch_game(string, int);
+    callback detail_opened(string);
     callback input_profile_button_clicked;
     callback input_profile_creation_button_clicked;
     callback transferpak_toggled(int,bool);
@@ -90,6 +96,22 @@ export component AppWindow inherits Window {
     in-out property game_running <=> State.game_running;
     in-out property is_android <=> State.is_android;
     in-out property recent_roms <=> State.recent_roms;
+    in-out property games <=> LibraryData.games;
+    in-out property library_search <=> LibraryData.search_text;
+    in-out property library_filter <=> LibraryData.active_filter;
+    in-out property library_selected <=> LibraryData.selected;
+    in-out property library_columns <=> LibraryData.columns;
+    in-out property library_detail_open <=> LibraryData.detail_open;
+    in-out property library_detail_slot <=> LibraryData.detail_slot;
+    in-out property library_detail_slots <=> LibraryData.detail_slots;
+    in-out property library_detail_tab <=> LibraryData.detail_tab;
+    in-out property library_detail_hero <=> LibraryData.detail_hero;
+    in-out property library_detail_has_hero <=> LibraryData.detail_has_hero;
+    in-out property library_detail_snap <=> LibraryData.detail_snap;
+    in-out property library_detail_has_snap <=> LibraryData.detail_has_snap;
+    in-out property library_detail_title_art <=> LibraryData.detail_title_art;
+    in-out property library_detail_has_title <=> LibraryData.detail_has_title;
+    in-out property <int> nav <=> side-bar.current-item;
     in-out property cheat_game_name <=> CheatsData.cheat_game_name;
     in-out property cheat_game_crc <=> CheatsData.cheat_game_crc;
     in-out property cheats <=> CheatsData.cheats;
@@ -135,10 +157,13 @@ export component AppWindow inherits Window {
     function apply_theme() {
         if (root.theme == 1) {
             Palette.color-scheme = ColorScheme.dark;
+            Theme.dark = true;
         } else if (root.theme == 2) {
             Palette.color-scheme = ColorScheme.light;
+            Theme.dark = false;
         } else {
             Palette.color-scheme = ColorScheme.unknown;
+            Theme.dark = true;
         }
     }
     init => {
@@ -210,11 +235,26 @@ export component AppWindow inherits Window {
             saves_folder_button_clicked => {
                 saves_folder_button_clicked();
             }
-            newversion_button_clicked => {
-                newversion_button_clicked();
-            }
             recent_rom_button_clicked(rom) => {
                 recent_rom_button_clicked(rom);
+            }
+            toggle_favorite(path) => {
+                toggle_favorite(path);
+            }
+            library_filter_changed(s, f) => {
+                library_filter_changed(s, f);
+            }
+            library_scan_folder => {
+                library_scan_folder();
+            }
+            launch_game(p, s) => {
+                launch_game(p, s);
+            }
+            detail_opened(p) => {
+                detail_opened(p);
+            }
+            open_achievements_settings => {
+                side-bar.current-item = 4;
             }
         }
         if(side-bar.current-item == 1 && !show_input_profile): ControllerConfig {

@@ -1,8 +1,8 @@
-// Copyright © SixtyFPS GmbH <info@slint.dev>
-// SPDX-License-Identifier: MIT
+// netplay_page.slint — Netplay landing (host / join entry points).
+// NetplayData global keeps every field gui.rs / netplay.rs bind to.
 
-import { StandardButton, VerticalBox, HorizontalBox, Button, LineEdit } from "std-widgets.slint";
-import { Page } from "page.slint";
+import { Theme } from "theme.slint";
+import { PageScaffold, SectionCard, PushButton, BtnKind } from "widgets.slint";
 import { State } from "localgame_page.slint";
 
 export global NetplayData {
@@ -23,55 +23,78 @@ export global NetplayData {
     in-out property <bool> show_join_session;
 }
 
-export component Netplay inherits Page {
+export component Netplay inherits Rectangle {
     callback create_session_button_clicked;
     callback join_session_button_clicked;
     callback netplay_discord_button_clicked;
     callback netplay_feedback_button_clicked;
-    title: @tr("Netplay");
 
-    VerticalBox {
-        alignment: start;
-        HorizontalBox {
-            alignment: center;
-            Button {
-                enabled: !State.game_running;
-                text: @tr("Create Session");
-                clicked => {
-                    create_session_button_clicked();
+    background: Theme.bg;
+
+    PageScaffold {
+        title: @tr("Netplay");
+        subtitle: @tr("Peer-to-peer online play · GGRS rollback netcode");
+
+        HorizontalLayout {
+            spacing: Theme.sp-4;
+
+            SectionCard {
+                horizontal-stretch: 1;
+                title: @tr("Host a Session");
+                Text {
+                    text: @tr("Create a session, pick a ROM, and share the session name with your friends.");
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    wrap: word-wrap;
+                }
+                Rectangle { height: Theme.sp-3; }
+                PushButton {
+                    text: @tr("Create Session");
+                    enabled: !State.game_running;
+                    clicked => { root.create_session_button_clicked(); }
+                }
+            }
+
+            SectionCard {
+                horizontal-stretch: 1;
+                title: @tr("Join a Session");
+                Text {
+                    text: @tr("Browse open sessions and connect to a host that is already waiting.");
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small;
+                    wrap: word-wrap;
+                }
+                Rectangle { height: Theme.sp-3; }
+                PushButton {
+                    text: @tr("Browse Sessions");
+                    enabled: !State.game_running;
+                    clicked => { root.join_session_button_clicked(); }
                 }
             }
         }
 
-        HorizontalBox {
-            alignment: center;
-            Button {
-                enabled: !State.game_running;
-                text: @tr("Join Session");
-                clicked => {
-                    join_session_button_clicked();
-                }
+        SectionCard {
+            title: @tr("How input delay works");
+            Text {
+                text: @tr("Rollback netcode hides latency by predicting remote input. Once peers connect you set a local input delay in the waiting room — the recommended value is computed from your ping. You can also adjust it in-game with Alt+[ and Alt+].");
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
             }
         }
 
-        Rectangle {
-            height: 20px;
-        }
-
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Netplay Discord Channel");
-                clicked => {
-                    netplay_discord_button_clicked();
-                }
+        HorizontalLayout {
+            spacing: Theme.sp-2;
+            alignment: start;
+            PushButton {
+                text: @tr("Netplay Discord");
+                kind: BtnKind.ghost;
+                clicked => { root.netplay_discord_button_clicked(); }
             }
-
-            Button {
+            PushButton {
                 text: @tr("Provide Feedback");
-                clicked => {
-                    netplay_feedback_button_clicked();
-                }
+                kind: BtnKind.ghost;
+                clicked => { root.netplay_feedback_button_clicked(); }
             }
         }
     }
