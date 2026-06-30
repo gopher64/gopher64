@@ -310,3 +310,46 @@ pub fn draw_text(
         sdl3_ttf_sys::ttf::TTF_DestroyText(ttf_text);
     }
 }
+
+pub fn draw_profile_menu(
+    rows: &[String],
+    selected: usize,
+    renderer: *mut sdl3_sys::render::SDL_Renderer,
+    text_engine: *mut sdl3_ttf_sys::ttf::TTF_TextEngine,
+    font: *mut sdl3_ttf_sys::ttf::TTF_Font,
+) {
+    unsafe {
+        let (mut w, mut h) = (0, 0);
+        sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h);
+        sdl3_sys::render::SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        sdl3_sys::everything::SDL_RenderClear(renderer);
+
+        let line_h = sdl3_ttf_sys::ttf::TTF_GetFontHeight(font);
+        let total = line_h * rows.len() as i32;
+        let mut y = ((h - total) / 2).max(0);
+        for (i, row) in rows.iter().enumerate() {
+            if i == selected {
+                sdl3_sys::render::SDL_SetRenderDrawColor(renderer, 50, 100, 180, 255);
+                let highlight = sdl3_sys::rect::SDL_FRect {
+                    x: 0.0,
+                    y: y as f32,
+                    w: w as f32,
+                    h: line_h as f32,
+                };
+                sdl3_sys::render::SDL_RenderFillRect(renderer, &highlight);
+            }
+            let c_text = std::ffi::CString::new(row.as_str()).unwrap();
+            let ttf_text = sdl3_ttf_sys::ttf::TTF_CreateText(text_engine, font, c_text.as_ptr(), 0);
+            let (mut text_w, mut text_h) = (0, 0);
+            sdl3_ttf_sys::ttf::TTF_GetTextSize(ttf_text, &mut text_w, &mut text_h);
+            sdl3_ttf_sys::ttf::TTF_DrawRendererText(
+                ttf_text,
+                (w / 2 - text_w / 2) as f32,
+                (y + (line_h - text_h) / 2) as f32,
+            );
+            sdl3_ttf_sys::ttf::TTF_DestroyText(ttf_text);
+            y += line_h;
+        }
+        sdl3_sys::render::SDL_RenderPresent(renderer);
+    }
+}
