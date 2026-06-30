@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-29 10:49+0000\n"
+"POT-Creation-Date: 2026-06-30 09:43+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
@@ -488,85 +488,95 @@ msgctxt "Settings"
 msgid "Settings"
 msgstr "設定"
 
-#: src/ui/gui/settings_page.slint:36
+#: src/ui/gui/settings_page.slint:32
+msgctxt "Settings"
+msgid "Game"
+msgstr "ゲーム"
+
+#: src/ui/gui/settings_page.slint:38
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr "解像度："
 
-#: src/ui/gui/settings_page.slint:52
-msgctxt "Settings"
-msgid "Theme:"
-msgstr "テーマ:"
-
-#: src/ui/gui/settings_page.slint:57
-msgctxt "Settings"
-msgid "System"
-msgstr "システム"
-
-#: src/ui/gui/settings_page.slint:57
-msgctxt "Settings"
-msgid "Dark"
-msgstr "ダーク"
-
-#: src/ui/gui/settings_page.slint:57
-msgctxt "Settings"
-msgid "Light"
-msgstr "ライト"
-
-#: src/ui/gui/settings_page.slint:66
+#: src/ui/gui/settings_page.slint:51
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr "SSAAダウンスケール"
 
-#: src/ui/gui/settings_page.slint:74
+#: src/ui/gui/settings_page.slint:59
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr "整数倍スケーリング"
 
-#: src/ui/gui/settings_page.slint:82
+#: src/ui/gui/settings_page.slint:67
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr "全画面表示"
 
-#: src/ui/gui/settings_page.slint:90
+#: src/ui/gui/settings_page.slint:75
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr "ワイド画面（伸ばす）"
 
-#: src/ui/gui/settings_page.slint:98
+#: src/ui/gui/settings_page.slint:83
 msgctxt "Settings"
 msgid "VSync"
 msgstr "垂直同期（VSync）"
 
-#: src/ui/gui/settings_page.slint:106
+#: src/ui/gui/settings_page.slint:91
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr "CRTシェーダーを適用"
 
-#: src/ui/gui/settings_page.slint:118
+#: src/ui/gui/settings_page.slint:103
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr "N64のCPUをオーバークロック（不具合の原因になることがあります）"
 
-#: src/ui/gui/settings_page.slint:126
+#: src/ui/gui/settings_page.slint:111
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "拡張パックを無効にする"
 
-#: src/ui/gui/settings_page.slint:134
+#: src/ui/gui/settings_page.slint:119
 msgctxt "Settings"
 msgid "Enable Rewind"
 msgstr "巻き戻しを有効にする"
 
-#: src/ui/gui/settings_page.slint:142
+#: src/ui/gui/settings_page.slint:127
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
 msgstr "UNFLoaderをエミュレート"
 
-#: src/ui/gui/settings_page.slint:150
+#: src/ui/gui/settings_page.slint:135
 msgctxt "Settings"
 msgid "Emulate VRU"
 msgstr "VRUをエミュレート"
+
+#: src/ui/gui/settings_page.slint:144
+msgctxt "Settings"
+msgid "UI"
+msgstr "UI"
+
+#: src/ui/gui/settings_page.slint:150
+msgctxt "Settings"
+msgid "Theme:"
+msgstr "テーマ:"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "System"
+msgstr "システム"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "Dark"
+msgstr "ダーク"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "Light"
+msgstr "ライト"
 
 #: src/ui/gui/vru_dialog.slint:7
 msgctxt "VruDialog"
