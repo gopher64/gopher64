@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-29 10:49+0000\n"
+"POT-Creation-Date: 2026-06-30 09:43+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: French (France)\n"
@@ -492,85 +492,95 @@ msgctxt "Settings"
 msgid "Settings"
 msgstr "Paramètres"
 
-#: src/ui/gui/settings_page.slint:36
+#: src/ui/gui/settings_page.slint:32
+msgctxt "Settings"
+msgid "Game"
+msgstr "Jeu"
+
+#: src/ui/gui/settings_page.slint:38
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr "Résolution :"
 
-#: src/ui/gui/settings_page.slint:52
-msgctxt "Settings"
-msgid "Theme:"
-msgstr "Thème :"
-
-#: src/ui/gui/settings_page.slint:57
-msgctxt "Settings"
-msgid "System"
-msgstr "Système"
-
-#: src/ui/gui/settings_page.slint:57
-msgctxt "Settings"
-msgid "Dark"
-msgstr "Sombre"
-
-#: src/ui/gui/settings_page.slint:57
-msgctxt "Settings"
-msgid "Light"
-msgstr "Clair"
-
-#: src/ui/gui/settings_page.slint:66
+#: src/ui/gui/settings_page.slint:51
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr "Réduction SSAA"
 
-#: src/ui/gui/settings_page.slint:74
+#: src/ui/gui/settings_page.slint:59
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr "Mise à l'échelle par entiers"
 
-#: src/ui/gui/settings_page.slint:82
+#: src/ui/gui/settings_page.slint:67
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr "Plein écran"
 
-#: src/ui/gui/settings_page.slint:90
+#: src/ui/gui/settings_page.slint:75
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr "Écran large (étiré)"
 
-#: src/ui/gui/settings_page.slint:98
+#: src/ui/gui/settings_page.slint:83
 msgctxt "Settings"
 msgid "VSync"
 msgstr "Synchro verticale"
 
-#: src/ui/gui/settings_page.slint:106
+#: src/ui/gui/settings_page.slint:91
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr "Appliquer le filtre CRT"
 
-#: src/ui/gui/settings_page.slint:118
+#: src/ui/gui/settings_page.slint:103
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr "Surcharger le CPU N64 (risque de bugs)"
 
-#: src/ui/gui/settings_page.slint:126
+#: src/ui/gui/settings_page.slint:111
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "Désactiver l'Expansion Pak"
 
-#: src/ui/gui/settings_page.slint:134
+#: src/ui/gui/settings_page.slint:119
 msgctxt "Settings"
 msgid "Enable Rewind"
 msgstr "Activer le rembobinage"
 
-#: src/ui/gui/settings_page.slint:142
+#: src/ui/gui/settings_page.slint:127
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
 msgstr "Émuler UNFLoader"
 
-#: src/ui/gui/settings_page.slint:150
+#: src/ui/gui/settings_page.slint:135
 msgctxt "Settings"
 msgid "Emulate VRU"
 msgstr "Émuler le VRU"
+
+#: src/ui/gui/settings_page.slint:144
+msgctxt "Settings"
+msgid "UI"
+msgstr "Interface"
+
+#: src/ui/gui/settings_page.slint:150
+msgctxt "Settings"
+msgid "Theme:"
+msgstr "Thème :"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "System"
+msgstr "Système"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "Dark"
+msgstr "Sombre"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "Light"
+msgstr "Clair"
 
 #: src/ui/gui/vru_dialog.slint:7
 msgctxt "VruDialog"
