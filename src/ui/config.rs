@@ -140,6 +140,37 @@ fn write_config(config: &Config) {
     }
 }
 
+// Migrate the earlier #1129 layout (rom_dir/recent_roms/favorites at the top
+// level, before they moved under `ui`) into `ui`, so upgrading from that build
+// doesn't silently drop them. Only fills empty `ui` fields, so main's `ui`
+// layout is left untouched.
+fn migrate_legacy_ui(config: &mut Config, raw: &[u8]) {
+    let Ok(v) = serde_json::from_slice::<serde_json::Value>(raw) else {
+        return;
+    };
+    if config.ui.rom_dir.as_os_str().is_empty()
+        && let Some(s) = v.get("rom_dir").and_then(|x| x.as_str())
+    {
+        config.ui.rom_dir = s.into();
+    }
+    if config.ui.recent_roms.is_empty()
+        && let Some(a) = v.get("recent_roms").and_then(|x| x.as_array())
+    {
+        config.ui.recent_roms = a
+            .iter()
+            .filter_map(|x| x.as_str().map(String::from))
+            .collect();
+    }
+    if config.ui.favorites.is_empty()
+        && let Some(a) = v.get("favorites").and_then(|x| x.as_array())
+    {
+        config.ui.favorites = a
+            .iter()
+            .filter_map(|x| x.as_str().map(String::from))
+            .collect();
+    }
+}
+
 impl Config {
     pub fn new() -> Config {
         let dirs = ui::get_dirs();
@@ -150,6 +181,7 @@ impl Config {
             let result = serde_json::from_slice::<Config>(config_file.as_ref());
             if let Ok(mut result) = result {
                 result.write_to_disk = true;
+                migrate_legacy_ui(&mut result, config_file.as_ref());
                 return result;
             }
 
@@ -203,5 +235,30 @@ impl Config {
             },
             write_to_disk: true,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn migrates_legacy_top_level_ui_fields() {
+        let raw =
+            br#"{"rom_dir":"/roms","recent_roms":["/roms/a.z64"],"favorites":["/roms/b.z64"]}"#;
+        let mut cfg = Config::default();
+        migrate_legacy_ui(&mut cfg, raw);
+        assert_eq!(cfg.ui.rom_dir, std::path::PathBuf::from("/roms"));
+        assert_eq!(cfg.ui.recent_roms, vec!["/roms/a.z64".to_string()]);
+        assert_eq!(cfg.ui.favorites, vec!["/roms/b.z64".to_string()]);
+    }
+
+    #[test]
+    fn leaves_main_ui_layout_untouched() {
+        let raw = br#"{"ui":{"rom_dir":"/keep","recent_roms":[],"favorites":[]}}"#;
+        let mut cfg = Config::default();
+        cfg.ui.rom_dir = std::path::PathBuf::from("/keep");
+        migrate_legacy_ui(&mut cfg, raw);
+        assert_eq!(cfg.ui.rom_dir, std::path::PathBuf::from("/keep"));
     }
 }
