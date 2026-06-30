@@ -685,11 +685,10 @@ async fn load_no_intro(
     let mut reader = quick_xml::Reader::from_str(include_str!(
         "../../data/ui/Nintendo - Nintendo 64 (DB Export) (20260609-194259).xml"
     ));
-    let mut buf = Vec::new();
     let mut current_game = String::new();
     let mut map = no_intro_map.lock().await;
     loop {
-        match reader.read_event_into_async(&mut buf).await {
+        match reader.read_event() {
             Ok(quick_xml::events::Event::Start(e)) => {
                 if e.name().as_ref() == b"game"
                     && let Ok(Some(name_attribute)) = e.try_get_attribute("name")
@@ -698,12 +697,18 @@ async fn load_no_intro(
                     current_game = name;
                 }
             }
+            Ok(quick_xml::events::Event::End(e)) => {
+                if e.name().as_ref() == b"game" {
+                    current_game.clear();
+                }
+            }
             Ok(quick_xml::events::Event::Empty(e)) => {
                 if e.name().as_ref() == b"file"
                     && let Ok(Some(format_attribute)) = e.try_get_attribute("format")
                     && format_attribute.value.as_ref() == b"BigEndian"
                     && let Ok(Some(sha256_attribute)) = e.try_get_attribute("sha256")
                     && let Ok(sha256) = String::from_utf8(sha256_attribute.value.into_owned())
+                    && !current_game.is_empty()
                 {
                     map.insert(sha256.to_lowercase(), current_game.clone());
                 }
@@ -712,7 +717,6 @@ async fn load_no_intro(
             Ok(quick_xml::events::Event::Eof) => break,
             _ => (),
         }
-        buf.clear();
     }
 }
 
