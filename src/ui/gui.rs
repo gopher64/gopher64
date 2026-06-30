@@ -117,7 +117,7 @@ fn rom_title(path: &str) -> String {
         .to_string()
 }
 
-fn game_entries(paths: &[String]) -> Vec<GameEntry> {
+fn game_entries(paths: &[String], favorites: &std::collections::HashSet<String>) -> Vec<GameEntry> {
     paths
         .iter()
         .map(|p| GameEntry {
@@ -125,13 +125,16 @@ fn game_entries(paths: &[String]) -> Vec<GameEntry> {
             title: rom_title(p).into(),
             art: slint::Image::default(),
             has_art: false,
+            favorite: favorites.contains(p),
         })
         .collect()
 }
 
 fn set_games(app: &AppWindow, paths: &[String]) {
+    let favorites: std::collections::HashSet<String> =
+        app.get_favorites().iter().map(|s| s.to_string()).collect();
     app.set_games(slint::ModelRc::from(std::rc::Rc::new(
-        slint::VecModel::from(game_entries(paths)),
+        slint::VecModel::from(game_entries(paths, &favorites)),
     )));
 }
 
@@ -203,6 +206,15 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
                 .collect::<Vec<(slint::SharedString, slint::SharedString)>>(),
         ),
     )));
+    app.set_favorites(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(
+            config
+                .favorites
+                .iter()
+                .map(|s| s.as_str().into())
+                .collect::<Vec<slint::SharedString>>(),
+        ),
+    )));
 
     // Box-art library. Desktop scans the ROM folder off the UI thread (a recursive
     // std::fs walk must never block GUI startup); Android lists recent ROMs.
@@ -257,6 +269,33 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     app.on_launch_game(move |path| {
         weak.upgrade_in_event_loop(move |handle| {
             run_with_path(handle.as_weak(), std::path::PathBuf::from(path.to_string()));
+        })
+        .unwrap();
+    });
+
+    let weak = app.as_weak();
+    app.on_toggle_favorite(move |path| {
+        weak.upgrade_in_event_loop(move |handle| {
+            let mut favorites: Vec<slint::SharedString> = handle.get_favorites().iter().collect();
+            if let Some(i) = favorites.iter().position(|f| f.as_str() == path.as_str()) {
+                favorites.remove(i);
+            } else {
+                favorites.push(path.clone());
+            }
+            handle.set_favorites(slint::ModelRc::from(std::rc::Rc::new(
+                slint::VecModel::from(favorites),
+            )));
+            let games = handle.get_games();
+            for i in 0..games.row_count() {
+                if let Some(mut g) = games.row_data(i)
+                    && g.path.as_str() == path.as_str()
+                {
+                    g.favorite = !g.favorite;
+                    games.set_row_data(i, g);
+                    break;
+                }
+            }
+            save_settings(&handle);
         })
         .unwrap();
     });
@@ -594,6 +633,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
 pub fn save_settings(app: &AppWindow) {
     let mut config = ui::config::Config::new();
     config.rom_dir = app.get_rom_dir().to_string().into();
+    config.favorites = app.get_favorites().iter().map(|s| s.to_string()).collect();
     config.video.integer_scaling = app.get_integer_scaling();
     config.video.ssaa = app.get_ssaa();
     config.video.fullscreen = app.get_fullscreen();

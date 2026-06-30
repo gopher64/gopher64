@@ -74,8 +74,12 @@ pub struct Config {
     pub input: Input,
     pub video: Video,
     pub emulation: Emulation,
+    #[serde(default)]
     pub rom_dir: std::path::PathBuf,
+    #[serde(default)]
     pub recent_roms: Vec<String>,
+    #[serde(default)]
+    pub favorites: Vec<String>,
     #[serde(skip)]
     write_to_disk: bool,
 }
@@ -188,6 +192,7 @@ impl Config {
             },
             rom_dir: std::path::PathBuf::new(),
             recent_roms: Vec::new(),
+            favorites: Vec::new(),
             write_to_disk: true,
         }
     }

@@ -29,6 +29,7 @@ export component AppWindow inherits Window {
     callback saves_folder_button_clicked;
     callback scan_folder_clicked;
     callback launch_game(string);
+    callback toggle_favorite(string);
     callback input_profile_button_clicked;
     callback input_profile_creation_button_clicked;
     callback transferpak_toggled(int,bool);
@@ -92,6 +93,7 @@ export component AppWindow inherits Window {
     in-out property is_android <=> State.is_android;
     in-out property recent_roms <=> State.recent_roms;
     in-out property games <=> State.games;
+    in-out property favorites <=> State.favorites;
     in-out property cheat_game_name <=> CheatsData.cheat_game_name;
     in-out property cheat_game_crc <=> CheatsData.cheat_game_crc;
     in-out property cheats <=> CheatsData.cheats;
@@ -208,6 +210,9 @@ export component AppWindow inherits Window {
             }
             launch_game(path) => {
                 launch_game(path);
+            }
+            toggle_favorite(path) => {
+                toggle_favorite(path);
             }
         }
         if(side-bar.current-item == 1 && !show_input_profile): ControllerConfig {
