@@ -65,6 +65,25 @@ export component LocalGame inherits Page {
             }
         }
 
+        if State.recent_roms.length>0:HorizontalBox {
+            alignment: center;
+            GroupBox {
+                title: @tr("Recent ROMs");
+                VerticalLayout {
+                    alignment: space-between;
+                    for rom in State.recent_roms: Button {
+                        text: rom.b;
+                        enabled: !State.game_running;
+                        clicked => {
+                            recent_rom_button_clicked(rom.a);
+                        }
+                    }
+                }
+            }
+        }
+
+        Rectangle { }
+
         if State.games.length > 0: GroupBox {
             title: @tr("Library");
             VerticalLayout {
@@ -91,25 +110,6 @@ export component LocalGame inherits Page {
                             vertical-alignment: center;
                             horizontal-alignment: left;
                             overflow: elide;
-                        }
-                    }
-                }
-            }
-        }
-
-        Rectangle { }
-
-        if State.recent_roms.length>0:HorizontalBox {
-            alignment: center;
-            GroupBox {
-                title: @tr("Recent ROMs");
-                VerticalLayout {
-                    alignment: space-between;
-                    for rom in State.recent_roms: Button {
-                        text: rom.b;
-                        enabled: !State.game_running;
-                        clicked => {
-                            recent_rom_button_clicked(rom.a);
                         }
                     }
                 }

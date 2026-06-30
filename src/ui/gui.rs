@@ -204,23 +204,37 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
         ),
     )));
 
-    // Box-art library: scanned ROM folder on desktop, recent ROMs on Android.
+    // Box-art library. Desktop scans the ROM folder off the UI thread (a recursive
+    // std::fs walk must never block GUI startup); Android lists recent ROMs.
     #[cfg(not(target_os = "android"))]
-    let game_paths: Vec<String> =
-        if !config.rom_dir.as_os_str().is_empty() && config.rom_dir.is_dir() {
-            scan_roms(&config.rom_dir)
-        } else {
-            Vec::new()
-        };
+    {
+        set_games(app, &[]);
+        let rom_dir = config.rom_dir.clone();
+        let weak = app.as_weak();
+        tokio::spawn(async move {
+            let paths = if !rom_dir.as_os_str().is_empty() && rom_dir.is_dir() {
+                tokio::task::spawn_blocking(move || scan_roms(&rom_dir))
+                    .await
+                    .unwrap_or_default()
+            } else {
+                Vec::new()
+            };
+            let shown = paths.clone();
+            let _ = weak.upgrade_in_event_loop(move |h| set_games(&h, &shown));
+            fetch_art(weak, paths).await;
+        });
+    }
     #[cfg(target_os = "android")]
-    let game_paths: Vec<String> = config
-        .recent_roms
-        .iter()
-        .filter(|x| rom_exists(x))
-        .cloned()
-        .collect();
-    set_games(app, &game_paths);
-    tokio::spawn(fetch_art(app.as_weak(), game_paths));
+    {
+        let game_paths: Vec<String> = config
+            .recent_roms
+            .iter()
+            .filter(|x| rom_exists(x))
+            .cloned()
+            .collect();
+        set_games(app, &game_paths);
+        tokio::spawn(fetch_art(app.as_weak(), game_paths));
+    }
 
     let weak = app.as_weak();
     app.on_open_rom_button_clicked(move || {
@@ -271,7 +285,12 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
             tokio::spawn(async move {
                 if let Some(folder) = dialog.await {
                     let dir = folder.path().to_path_buf();
-                    let paths = scan_roms(&dir);
+                    let paths = {
+                        let d = dir.clone();
+                        tokio::task::spawn_blocking(move || scan_roms(&d))
+                            .await
+                            .unwrap_or_default()
+                    };
                     let dir_str = dir.to_string_lossy().to_string();
                     let scan_paths = paths.clone();
                     let _ = weak_inner.upgrade_in_event_loop(move |h| {
