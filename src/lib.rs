@@ -163,9 +163,9 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
 
         let mut device = device::Device::new(true);
 
-        device.ui.config.recent_roms.retain(|x| *x != game);
-        device.ui.config.recent_roms.insert(0, game);
-        device.ui.config.recent_roms.truncate(5);
+        device.ui.config.ui.recent_roms.retain(|x| *x != game);
+        device.ui.config.ui.recent_roms.insert(0, game);
+        device.ui.config.ui.recent_roms.truncate(5);
 
         if args.fullscreen {
             device.ui.video.fullscreen = true;

@@ -113,6 +113,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
             config
+                .ui
                 .recent_roms
                 .iter()
                 .filter(|x| rom_exists(x))
@@ -180,7 +181,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_widescreen(config.video.widescreen);
     app.set_vsync(config.video.vsync);
     app.set_apply_crt_shader(config.video.crt);
-    app.set_theme(config.video.theme);
+    app.set_theme(config.ui.theme);
     app.set_overclock_n64_cpu(config.emulation.overclock);
     app.set_disable_expansion_pak(config.emulation.disable_expansion_pak);
     app.set_emulate_usb(config.emulation.usb);
@@ -194,7 +195,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     };
     app.set_resolution(combobox_value);
 
-    if let Some(rom_dir_str) = config.rom_dir.to_str() {
+    if let Some(rom_dir_str) = config.ui.rom_dir.to_str() {
         app.set_rom_dir(rom_dir_str.into());
     }
 }
@@ -446,14 +447,14 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
 
 pub fn save_settings(app: &AppWindow) {
     let mut config = ui::config::Config::new();
-    config.rom_dir = app.get_rom_dir().to_string().into();
+    config.ui.rom_dir = app.get_rom_dir().to_string().into();
     config.video.integer_scaling = app.get_integer_scaling();
     config.video.ssaa = app.get_ssaa();
     config.video.fullscreen = app.get_fullscreen();
     config.video.widescreen = app.get_widescreen();
     config.video.vsync = app.get_vsync();
     config.video.crt = app.get_apply_crt_shader();
-    config.video.theme = app.get_theme();
+    config.ui.theme = app.get_theme();
     config.emulation.overclock = app.get_overclock_n64_cpu();
     config.emulation.disable_expansion_pak = app.get_disable_expansion_pak();
     config.emulation.usb = app.get_emulate_usb();
