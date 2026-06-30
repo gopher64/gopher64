@@ -10,7 +10,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: src/ui/gui/about_page.slint:17
 msgctxt "NewVersionButton"
@@ -200,7 +200,7 @@ msgstr "Nome da Sessão:"
 #: src/ui/gui/netplay_create.slint:26
 msgctxt "NetplayCreate"
 msgid "Enter session name"
-msgstr "Insira nome da sessão:"
+msgstr "Insira nome da sessão"
 
 #: src/ui/gui/netplay_create.slint:36
 msgctxt "NetplayCreate"
@@ -364,7 +364,7 @@ msgstr "Nome do Jogo:"
 #: src/ui/gui/netplay_wait.slint:45
 msgctxt "NetplayWait"
 msgid "Player 1:"
-msgstr "Jogador 1"
+msgstr "Jogador 1:"
 
 #: src/ui/gui/netplay_wait.slint:49
 msgctxt "NetplayWait"
