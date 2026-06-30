@@ -70,16 +70,21 @@ pub struct Cheats {
 }
 
 #[derive(Default, serde::Serialize, serde::Deserialize)]
+pub struct Ui {
+    pub theme: i32,
+    pub rom_dir: std::path::PathBuf,
+    pub recent_roms: Vec<String>,
+    #[serde(default)]
+    pub favorites: Vec<String>,
+}
+
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub input: Input,
     pub video: Video,
     pub emulation: Emulation,
     #[serde(default)]
-    pub rom_dir: std::path::PathBuf,
-    #[serde(default)]
-    pub recent_roms: Vec<String>,
-    #[serde(default)]
-    pub favorites: Vec<String>,
+    pub ui: Ui,
     #[serde(skip)]
     write_to_disk: bool,
 }
@@ -190,9 +195,12 @@ impl Config {
                 usb: false,
                 rewind: false,
             },
-            rom_dir: std::path::PathBuf::new(),
-            recent_roms: Vec::new(),
-            favorites: Vec::new(),
+            ui: Ui {
+                theme: 0,
+                rom_dir: std::path::PathBuf::new(),
+                recent_roms: Vec::new(),
+                favorites: Vec::new(),
+            },
             write_to_disk: true,
         }
     }

@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-30 03:05+0000\n"
+"POT-Creation-Date: 2026-06-30 20:50+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
@@ -47,37 +47,37 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "GitHubで寄付"
 
-#: src/ui/gui/appwindow.slint:173
+#: src/ui/gui/appwindow.slint:189
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "ローカルゲーム"
 
-#: src/ui/gui/appwindow.slint:177
+#: src/ui/gui/appwindow.slint:193
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "コントローラー設定"
 
-#: src/ui/gui/appwindow.slint:181
+#: src/ui/gui/appwindow.slint:197
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "ネットプレイ"
 
-#: src/ui/gui/appwindow.slint:185
+#: src/ui/gui/appwindow.slint:201
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "チート"
 
-#: src/ui/gui/appwindow.slint:189
+#: src/ui/gui/appwindow.slint:205
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:193
+#: src/ui/gui/appwindow.slint:209
 msgctxt "Menu"
 msgid "Settings"
 msgstr "設定"
 
-#: src/ui/gui/appwindow.slint:197
+#: src/ui/gui/appwindow.slint:213
 msgctxt "Menu"
 msgid "About"
 msgstr "バージョン情報"
@@ -277,14 +277,18 @@ msgctxt "LocalGame"
 msgid ""
 "Achievements, leaderboards and rich presence are tracked live while you play "
 "this game."
-msgstr "実績、リーダーボード、リッチプレゼンスは、このゲームをプレイ中にライブで追跡されます。"
+msgstr ""
+"実績、リーダーボード、リッチプレゼンスは、このゲームをプレイ中にライブで追跡"
+"されます。"
 
 #: src/ui/gui/localgame_page.slint:360
 msgctxt "LocalGame"
 msgid ""
 "RetroAchievements is off. Turn it on to track achievements, leaderboards and "
 "Discord presence."
-msgstr "RetroAchievementsは無効です。有効にすると、実績、リーダーボード、Discordプレゼンスを追跡できます。"
+msgstr ""
+"RetroAchievementsは無効です。有効にすると、実績、リーダーボード、Discordプレ"
+"ゼンスを追跡できます。"
 
 #: src/ui/gui/localgame_page.slint:367
 msgctxt "LocalGame"
@@ -607,70 +611,100 @@ msgctxt "RetroAchievements"
 msgid "View Supported Games"
 msgstr "対応ゲームを表示"
 
-#: src/ui/gui/settings_page.slint:24
+#: src/ui/gui/settings_page.slint:25
 msgctxt "Settings"
 msgid "Settings"
 msgstr "設定"
 
-#: src/ui/gui/settings_page.slint:35
+#: src/ui/gui/settings_page.slint:32
+msgctxt "Settings"
+msgid "Game"
+msgstr "ゲーム"
+
+#: src/ui/gui/settings_page.slint:38
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr "解像度："
 
-#: src/ui/gui/settings_page.slint:49
+#: src/ui/gui/settings_page.slint:51
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr "SSAAダウンスケール"
 
-#: src/ui/gui/settings_page.slint:57
+#: src/ui/gui/settings_page.slint:59
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr "整数倍スケーリング"
 
-#: src/ui/gui/settings_page.slint:65
+#: src/ui/gui/settings_page.slint:67
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr "全画面表示"
 
-#: src/ui/gui/settings_page.slint:73
+#: src/ui/gui/settings_page.slint:75
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr "ワイド画面（伸ばす）"
 
-#: src/ui/gui/settings_page.slint:81
+#: src/ui/gui/settings_page.slint:83
 msgctxt "Settings"
 msgid "VSync"
 msgstr "垂直同期（VSync）"
 
-#: src/ui/gui/settings_page.slint:89
+#: src/ui/gui/settings_page.slint:91
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr "CRTシェーダーを適用"
 
-#: src/ui/gui/settings_page.slint:101
+#: src/ui/gui/settings_page.slint:103
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr "N64のCPUをオーバークロック（不具合の原因になることがあります）"
 
-#: src/ui/gui/settings_page.slint:109
+#: src/ui/gui/settings_page.slint:111
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "拡張パックを無効にする"
 
-#: src/ui/gui/settings_page.slint:117
+#: src/ui/gui/settings_page.slint:119
 msgctxt "Settings"
 msgid "Enable Rewind"
 msgstr "巻き戻しを有効にする"
 
-#: src/ui/gui/settings_page.slint:125
+#: src/ui/gui/settings_page.slint:127
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
 msgstr "UNFLoaderをエミュレート"
 
-#: src/ui/gui/settings_page.slint:133
+#: src/ui/gui/settings_page.slint:135
 msgctxt "Settings"
 msgid "Emulate VRU"
 msgstr "VRUをエミュレート"
+
+#: src/ui/gui/settings_page.slint:144
+msgctxt "Settings"
+msgid "UI"
+msgstr "UI"
+
+#: src/ui/gui/settings_page.slint:150
+msgctxt "Settings"
+msgid "Theme:"
+msgstr "テーマ:"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "System"
+msgstr "システム"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "Dark"
+msgstr "ダーク"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "Light"
+msgstr "ライト"
 
 #: src/ui/gui/vru_dialog.slint:7
 msgctxt "VruDialog"

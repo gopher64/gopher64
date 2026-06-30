@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-30 03:05+0000\n"
+"POT-Creation-Date: 2026-06-30 20:50+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: Gemini\n"
 "Language-Team: Spanish (Spain)\n"
@@ -47,37 +47,37 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Donar (a través de GitHub)"
 
-#: src/ui/gui/appwindow.slint:173
+#: src/ui/gui/appwindow.slint:189
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Juego local"
 
-#: src/ui/gui/appwindow.slint:177
+#: src/ui/gui/appwindow.slint:193
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Config. del mando"
 
-#: src/ui/gui/appwindow.slint:181
+#: src/ui/gui/appwindow.slint:197
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/appwindow.slint:185
+#: src/ui/gui/appwindow.slint:201
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Trucos"
 
-#: src/ui/gui/appwindow.slint:189
+#: src/ui/gui/appwindow.slint:205
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:193
+#: src/ui/gui/appwindow.slint:209
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Ajustes"
 
-#: src/ui/gui/appwindow.slint:197
+#: src/ui/gui/appwindow.slint:213
 msgctxt "Menu"
 msgid "About"
 msgstr "Acerca de"
@@ -277,14 +277,18 @@ msgctxt "LocalGame"
 msgid ""
 "Achievements, leaderboards and rich presence are tracked live while you play "
 "this game."
-msgstr "Los logros, las clasificaciones y la presencia enriquecida se registran en vivo mientras juegas a este juego."
+msgstr ""
+"Los logros, las clasificaciones y la presencia enriquecida se registran en "
+"vivo mientras juegas a este juego."
 
 #: src/ui/gui/localgame_page.slint:360
 msgctxt "LocalGame"
 msgid ""
 "RetroAchievements is off. Turn it on to track achievements, leaderboards and "
 "Discord presence."
-msgstr "RetroAchievements está desactivado. Actívalo para registrar logros, clasificaciones y presencia en Discord."
+msgstr ""
+"RetroAchievements está desactivado. Actívalo para registrar logros, "
+"clasificaciones y presencia en Discord."
 
 #: src/ui/gui/localgame_page.slint:367
 msgctxt "LocalGame"
@@ -611,70 +615,100 @@ msgctxt "RetroAchievements"
 msgid "View Supported Games"
 msgstr "Ver juegos compatibles"
 
-#: src/ui/gui/settings_page.slint:24
+#: src/ui/gui/settings_page.slint:25
 msgctxt "Settings"
 msgid "Settings"
 msgstr "Ajustes"
 
-#: src/ui/gui/settings_page.slint:35
+#: src/ui/gui/settings_page.slint:32
+msgctxt "Settings"
+msgid "Game"
+msgstr "Juego"
+
+#: src/ui/gui/settings_page.slint:38
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr "Resolución:"
 
-#: src/ui/gui/settings_page.slint:49
+#: src/ui/gui/settings_page.slint:51
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr "Reducción de escala SSAA"
 
-#: src/ui/gui/settings_page.slint:57
+#: src/ui/gui/settings_page.slint:59
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr "Escalado por enteros"
 
-#: src/ui/gui/settings_page.slint:65
+#: src/ui/gui/settings_page.slint:67
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr "Pantalla completa"
 
-#: src/ui/gui/settings_page.slint:73
+#: src/ui/gui/settings_page.slint:75
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr "Pantalla ancha (estirado)"
 
-#: src/ui/gui/settings_page.slint:81
+#: src/ui/gui/settings_page.slint:83
 msgctxt "Settings"
 msgid "VSync"
 msgstr "Sincronización vertical (VSync)"
 
-#: src/ui/gui/settings_page.slint:89
+#: src/ui/gui/settings_page.slint:91
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr "Aplicar sombreador CRT"
 
-#: src/ui/gui/settings_page.slint:101
+#: src/ui/gui/settings_page.slint:103
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr "Overclock CPU N64 (puede causar errores)"
 
-#: src/ui/gui/settings_page.slint:109
+#: src/ui/gui/settings_page.slint:111
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "Desactivar Expansion Pak"
 
-#: src/ui/gui/settings_page.slint:117
+#: src/ui/gui/settings_page.slint:119
 msgctxt "Settings"
 msgid "Enable Rewind"
 msgstr "Activar rebobinado"
 
-#: src/ui/gui/settings_page.slint:125
+#: src/ui/gui/settings_page.slint:127
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
 msgstr "Emular UNFLoader"
 
-#: src/ui/gui/settings_page.slint:133
+#: src/ui/gui/settings_page.slint:135
 msgctxt "Settings"
 msgid "Emulate VRU"
 msgstr "Emular VRU"
+
+#: src/ui/gui/settings_page.slint:144
+msgctxt "Settings"
+msgid "UI"
+msgstr "Interfaz"
+
+#: src/ui/gui/settings_page.slint:150
+msgctxt "Settings"
+msgid "Theme:"
+msgstr "Tema:"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "System"
+msgstr "Sistema"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "Dark"
+msgstr "Oscuro"
+
+#: src/ui/gui/settings_page.slint:154
+msgctxt "Settings"
+msgid "Light"
+msgstr "Claro"
 
 #: src/ui/gui/vru_dialog.slint:7
 msgctxt "VruDialog"

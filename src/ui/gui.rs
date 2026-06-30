@@ -1,3 +1,4 @@
+use crate::device;
 use crate::retroachievements;
 use crate::ui;
 #[cfg(target_os = "android")]
@@ -308,37 +309,40 @@ fn scan_roms(dir: &std::path::Path) -> Vec<String> {
 }
 
 // Resolve box art + homebrew flag for each game off-thread, updating its row as
-// results arrive. CRC-primary matching; the whole-ROM read for the CRC runs in
-// spawn_blocking (never the UI thread), cached by file signature across runs.
-async fn fetch_art(weak: slint::Weak<AppWindow>, paths: Vec<String>) {
+// results arrive. The whole-ROM read runs in spawn_blocking and the hash runs in
+// this async task (never the UI thread) — the maintainer's startup-freeze fix.
+async fn fetch_art(
+    weak: slint::Weak<AppWindow>,
+    paths: Vec<String>,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
     if paths.is_empty() {
         return;
     }
-    let index = ui::boxart::load_index().await;
-    let crc_index = ui::boxart::load_crc_index().await;
-    let mut cache = ui::boxart::load_crc_cache();
     let mut last = std::time::Instant::now();
     for (i, path) in paths.iter().enumerate() {
-        let crc = match ui::boxart::cached_crc(&cache, path) {
-            Some(c) => Some(c),
-            None => {
-                let p = path.clone();
-                match tokio::task::spawn_blocking(move || ui::boxart::compute_crc(&p)).await {
-                    Ok(Some((s, t, c))) => {
-                        cache.insert(path.clone(), (s, t, c));
-                        Some(c)
-                    }
-                    _ => None,
-                }
-            }
+        let p = path.clone();
+        let Ok(Some(rom)) = tokio::task::spawn_blocking(move || {
+            device::get_rom_contents(&std::path::PathBuf::from(p))
+        })
+        .await
+        else {
+            continue;
         };
-        let homebrew = ui::boxart::is_homebrew(&crc_index, crc);
-        let filename = ui::boxart::resolve_filename(&index, &crc_index, crc, &rom_title(path));
-        let png = match &filename {
-            Some(f) => ui::boxart::download_art(f).await,
-            None => None,
+        let name = get_nointro_name(&rom, no_intro_map.clone()).await;
+        // Homebrew = ROM hash absent from the No-Intro map. This re-hashes the ROM
+        // (get_nointro_name also hashes); fine on this background scan task — fold
+        // into one map lookup if startup scan time ever matters.
+        let hash = device::cart::rom::calculate_hash(&rom).to_lowercase();
+        let homebrew = !no_intro_map.lock().await.contains_key(&hash);
+        let (png, art_name): (Option<std::path::PathBuf>, slint::SharedString) = if name.is_empty()
+        {
+            (None, slint::SharedString::new())
+        } else {
+            let filename = ui::boxart::escaped_filename(&name);
+            let png = ui::boxart::download_art(&filename).await;
+            (png, filename.into())
         };
-        let art_name: slint::SharedString = filename.unwrap_or_default().into();
         let row_path = path.clone();
         let _ = weak.upgrade_in_event_loop(move |h| {
             let all = h.get_all_games();
@@ -362,14 +366,18 @@ async fn fetch_art(weak: slint::Weak<AppWindow>, paths: Vec<String>) {
             last = std::time::Instant::now();
         }
     }
-    ui::boxart::save_crc_cache(&cache);
     let _ = weak.upgrade_in_event_loop(|h| apply_filter(&h));
 }
 
-fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
+fn local_game_window(
+    app: &AppWindow,
+    config: &ui::config::Config,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
     app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
             config
+                .ui
                 .recent_roms
                 .iter()
                 .filter(|x| rom_exists(x))
@@ -390,6 +398,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_favorites(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
             config
+                .ui
                 .favorites
                 .iter()
                 .map(|s| s.as_str().into())
@@ -402,8 +411,9 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     #[cfg(not(target_os = "android"))]
     {
         set_all_games(app, &[]);
-        let rom_dir = config.rom_dir.clone();
+        let rom_dir = config.ui.rom_dir.clone();
         let weak = app.as_weak();
+        let map = no_intro_map.clone();
         tokio::spawn(async move {
             let paths = if !rom_dir.as_os_str().is_empty() && rom_dir.is_dir() {
                 tokio::task::spawn_blocking(move || scan_roms(&rom_dir))
@@ -414,19 +424,20 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
             };
             let shown = paths.clone();
             let _ = weak.upgrade_in_event_loop(move |h| set_all_games(&h, &shown));
-            fetch_art(weak, paths).await;
+            fetch_art(weak, paths, map).await;
         });
     }
     #[cfg(target_os = "android")]
     {
         let game_paths: Vec<String> = config
+            .ui
             .recent_roms
             .iter()
             .filter(|x| rom_exists(x))
             .cloned()
             .collect();
         set_all_games(app, &game_paths);
-        tokio::spawn(fetch_art(app.as_weak(), game_paths));
+        tokio::spawn(fetch_art(app.as_weak(), game_paths, no_intro_map.clone()));
     }
 
     let weak = app.as_weak();
@@ -534,6 +545,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
             }
             .set_title("Select ROM Folder")
             .pick_folder();
+            let map = no_intro_map.clone();
             tokio::spawn(async move {
                 if let Some(folder) = dialog.await {
                     let dir = folder.path().to_path_buf();
@@ -550,7 +562,7 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
                         save_settings(&h);
                         set_all_games(&h, &scan_paths);
                     });
-                    fetch_art(weak_inner, paths).await;
+                    fetch_art(weak_inner, paths, map).await;
                 }
             });
         });
@@ -580,6 +592,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     app.set_widescreen(config.video.widescreen);
     app.set_vsync(config.video.vsync);
     app.set_apply_crt_shader(config.video.crt);
+    app.set_theme(config.ui.theme);
     app.set_overclock_n64_cpu(config.emulation.overclock);
     app.set_disable_expansion_pak(config.emulation.disable_expansion_pak);
     app.set_emulate_usb(config.emulation.usb);
@@ -593,7 +606,7 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     };
     app.set_resolution(combobox_value);
 
-    if let Some(rom_dir_str) = config.rom_dir.to_str() {
+    if let Some(rom_dir_str) = config.ui.rom_dir.to_str() {
         app.set_rom_dir(rom_dir_str.into());
     }
 }
@@ -845,14 +858,15 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
 
 pub fn save_settings(app: &AppWindow) {
     let mut config = ui::config::Config::new();
-    config.rom_dir = app.get_rom_dir().to_string().into();
-    config.favorites = app.get_favorites().iter().map(|s| s.to_string()).collect();
+    config.ui.rom_dir = app.get_rom_dir().to_string().into();
+    config.ui.favorites = app.get_favorites().iter().map(|s| s.to_string()).collect();
     config.video.integer_scaling = app.get_integer_scaling();
     config.video.ssaa = app.get_ssaa();
     config.video.fullscreen = app.get_fullscreen();
     config.video.widescreen = app.get_widescreen();
     config.video.vsync = app.get_vsync();
     config.video.crt = app.get_apply_crt_shader();
+    config.ui.theme = app.get_theme();
     config.emulation.overclock = app.get_overclock_n64_cpu();
     config.emulation.disable_expansion_pak = app.get_disable_expansion_pak();
     config.emulation.usb = app.get_emulate_usb();
@@ -923,7 +937,16 @@ fn about_window(app: &AppWindow) {
     }
 }
 
-pub fn app_window(app: &AppWindow, is_android: bool) {
+pub fn app_window(
+    app: &AppWindow,
+    is_android: bool,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
+    let no_intro_map_clone = no_intro_map.clone();
+    tokio::spawn(async move {
+        load_no_intro(no_intro_map_clone).await;
+    });
+
     retroachievements::init_client(false, false, false);
     app.set_is_android(is_android);
     about_window(app);
@@ -932,10 +955,10 @@ pub fn app_window(app: &AppWindow, is_android: bool) {
         let config = ui::config::Config::new();
         settings_window(app, &config);
         controller_window(app, &config);
-        local_game_window(app, &config);
+        local_game_window(app, &config, no_intro_map.clone());
     }
-    ui::netplay::netplay_window(app);
-    ui::cheats::cheats_window(app);
+    ui::netplay::netplay_window(app, no_intro_map.clone());
+    ui::cheats::cheats_window(app, no_intro_map);
 
     #[cfg(not(target_os = "android"))]
     {
@@ -1057,6 +1080,66 @@ pub fn update_recent_roms(app: &AppWindow, file_path: std::path::PathBuf) {
         }
     }
     app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(recent_roms)));
+}
+
+pub async fn get_nointro_name(
+    rom: &[u8],
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) -> String {
+    let hash = device::cart::rom::calculate_hash(rom).to_lowercase();
+    if let Some(name) = no_intro_map.lock().await.get(&hash) {
+        name.clone()
+    } else {
+        ui::storage::get_game_name(rom)
+    }
+}
+
+async fn load_no_intro(
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
+    let mut reader = quick_xml::Reader::from_str(include_str!(
+        "../../data/ui/Nintendo - Nintendo 64 (DB Export) (20260609-194259).xml"
+    ));
+    let mut current_game = String::new();
+    let mut map = no_intro_map.lock().await;
+    let mut xml_version = quick_xml::XmlVersion::Implicit1_0;
+    loop {
+        match reader.read_event() {
+            Ok(quick_xml::events::Event::Decl(e)) => {
+                if let Ok(version) = e.xml_version() {
+                    xml_version = version;
+                }
+            }
+            Ok(quick_xml::events::Event::Start(e)) => {
+                if e.name().as_ref() == b"game"
+                    && let Ok(Some(name_attribute)) = e.try_get_attribute("name")
+                    && let Ok(normalized_value) = name_attribute.normalized_value(xml_version)
+                {
+                    current_game = normalized_value.into_owned();
+                }
+            }
+            Ok(quick_xml::events::Event::End(e)) => {
+                if e.name().as_ref() == b"game" {
+                    current_game.clear();
+                }
+            }
+            Ok(quick_xml::events::Event::Empty(e)) => {
+                if e.name().as_ref() == b"file"
+                    && let Ok(Some(format_attribute)) = e.try_get_attribute("format")
+                    && let Ok(normalized_value) = format_attribute.normalized_value(xml_version)
+                    && normalized_value.as_ref() == "BigEndian"
+                    && let Ok(Some(sha256_attribute)) = e.try_get_attribute("sha256")
+                    && let Ok(normalized_sha256) = sha256_attribute.normalized_value(xml_version)
+                    && !current_game.is_empty()
+                {
+                    map.insert(normalized_sha256.to_lowercase(), current_game.clone());
+                }
+            }
+            Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
+            Ok(quick_xml::events::Event::Eof) => break,
+            _ => (),
+        }
+    }
 }
 
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {

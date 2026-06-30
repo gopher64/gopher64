@@ -70,6 +70,7 @@ export component AppWindow inherits Window {
     out property ra_not_logged_in <=> RAData.not_logged_in;
     in-out property integer_scaling <=> SettingsData.integer_scaling;
     in-out property ssaa <=> SettingsData.ssaa;
+    in-out property theme <=> SettingsData.theme;
     in-out property fullscreen <=> SettingsData.fullscreen;
     in-out property widescreen <=> SettingsData.widescreen;
     in-out property vsync <=> SettingsData.vsync;
@@ -156,6 +157,21 @@ export component AppWindow inherits Window {
     private property <length> safe-bottom: root.safe-area-insets.bottom;
     private property <length> safe-width: root.width - root.safe-left - root.safe-right;
     private property <length> safe-height: root.height - root.safe-top - root.safe-bottom;
+    function apply_theme() {
+        if (root.theme == 1) {
+            Palette.color-scheme = ColorScheme.dark;
+        } else if (root.theme == 2) {
+            Palette.color-scheme = ColorScheme.light;
+        } else {
+            Palette.color-scheme = ColorScheme.unknown;
+        }
+    }
+    init => {
+        apply_theme();
+    }
+    changed theme => {
+        apply_theme();
+    }
 
     min-width: 320px;
     min-height: 240px;
