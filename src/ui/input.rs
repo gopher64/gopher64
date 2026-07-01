@@ -1026,6 +1026,13 @@ fn wait_nav_action(
     None
 }
 
+/// Sign (+1 / -1) of an axis deflection relative to its resting state.
+/// Avoids the 0/0 panic of `v / v.abs()` and never returns 0 (a 0 sign would
+/// dead-bind the input, since in-game uses `axis_position * axis > 0`).
+fn axis_sign(axis_value: i16, initial_state: i16) -> i16 {
+    if axis_value >= initial_state { 1 } else { -1 }
+}
+
 /// Listen for ONE capture event, reusing the per-device arms. A raw input is
 /// stored into `bindings` (returning `Bound`); Esc/East/back cancel or quit;
 /// axis arms honor `await_axis_neutral` and re-arm it after binding an axis.
@@ -1106,7 +1113,7 @@ fn wait_capture(
             let result = ui::config::InputControllerAxis {
                 enabled: true,
                 id: axis as i32,
-                axis: axis_value / axis_value.saturating_abs(),
+                axis: axis_sign(axis_value, 0),
                 initial_state: 0,
             };
             clear_profile_input(
@@ -1192,7 +1199,7 @@ fn wait_capture(
             let result = ui::config::InputControllerAxis {
                 enabled: true,
                 id: axis as i32,
-                axis: axis_value / axis_value.saturating_abs(),
+                axis: axis_sign(axis_value, initial_state),
                 initial_state,
             };
             clear_profile_input(
@@ -1373,6 +1380,10 @@ pub fn configure_input_profile(
     // Gamepad left-Y position for edge-triggered list navigation.
     let mut last_axis_y: i16 = 0;
 
+    // Drain anything still held from the click that opened this window so it
+    // cannot auto-bind the first guided input.
+    debounce();
+
     'ui: loop {
         let ticks = unsafe { sdl3_sys::timer::SDL_GetTicks() };
         let glow = key_labels
@@ -1448,13 +1459,13 @@ pub fn configure_input_profile(
                 ) {
                     CaptureOutcome::Bound => {
                         let t = advance(&mut state, Action::Bound);
-                        if t.begin_capture {
+                        if t.begin_capture && !await_axis_neutral {
                             debounce();
                         }
                     }
                     CaptureOutcome::Cancel => {
                         let t = advance(&mut state, Action::Cancel);
-                        if t.begin_capture {
+                        if t.begin_capture && !await_axis_neutral {
                             debounce();
                         }
                     }
@@ -2009,5 +2020,15 @@ mod menu_tests {
         assert_eq!(s.selected, 6);
         assert!(!s.dirty);
         assert!(!t.begin_capture);
+    }
+
+    #[test]
+    fn axis_sign_never_zero_and_matches_direction() {
+        assert_eq!(axis_sign(0, 0), 1); // the old 0/0 panic case
+        assert_eq!(axis_sign(30000, 0), 1);
+        assert_eq!(axis_sign(-30000, 0), -1);
+        assert_eq!(axis_sign(0, i16::MIN), 1); // MIN-resting axis reaching 0 → positive
+        assert_eq!(axis_sign(0, i16::MAX), -1); // MAX-resting axis reaching 0 → negative
+        assert_ne!(axis_sign(0, 0), 0);
     }
 }

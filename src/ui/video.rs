@@ -497,6 +497,9 @@ pub fn draw_review_list(
         draw_glow(ctx.renderer, glow, ticks_ms);
 
         let line_h: f32 = 24.0;
+        // Rows (and their touch hit-rects, incl. the popped Save row) stay in a
+        // left panel so they never sit under the right-aligned legend/warning.
+        let list_w: f32 = 470.0;
         let fh = sdl3_ttf_sys::ttf::TTF_GetFontHeight(ctx.list_font) as f32;
         sdl3_sys::render::SDL_SetRenderDrawBlendMode(
             ctx.renderer,
@@ -509,7 +512,7 @@ pub fn draw_review_list(
             let rect = sdl3_sys::rect::SDL_FRect {
                 x: 0.0,
                 y,
-                w: CANVAS_W as f32,
+                w: list_w,
                 h: line_h,
             };
             if i == selected {
