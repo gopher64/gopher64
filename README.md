@@ -68,7 +68,7 @@ flatpak run --filesystem=host:ro io.github.gopher64.gopher64 /path/to/rom.z64
 
 ## contributing
 
-I would prefer that people did not submit PRs that are vibe coded and/or co-authored by AI agents. If you are going to submit a PR, and especially if you are going to submit a PR that is AI-assisted, it should be scoped to a single feature/improvement.
+PRs that are vibe coded and/or co-authored by AI agents (Plan/Agent mode) are not permitted. If you are going to submit a PR, it should be scoped to a single feature/improvement.
 
 Please contact me via a GitHub issue or Discord (loganmc10) before doing substantial work on a PR.
 
