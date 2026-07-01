@@ -828,6 +828,31 @@ fn advance(state: &mut MenuState, action: Action) -> Transition {
     t
 }
 
+/// Glow location for an input as fractions of the 852×480 logical canvas:
+/// `(center_x, center_y, radius)` where radius is a fraction of canvas width.
+/// `None` for inputs with no controller-art location (the hotkey activator).
+fn glow_center(input: usize) -> Option<(f32, f32, f32)> {
+    let spot = match input {
+        A_BUTTON => (0.715, 0.595, 0.045),
+        B_BUTTON => (0.655, 0.495, 0.045),
+        START_BUTTON => (0.505, 0.515, 0.040),
+        U_DPAD => (0.215, 0.355, 0.030),
+        D_DPAD => (0.215, 0.525, 0.030),
+        L_DPAD => (0.165, 0.445, 0.030),
+        R_DPAD => (0.265, 0.445, 0.030),
+        U_CBUTTON => (0.800, 0.320, 0.028),
+        D_CBUTTON => (0.800, 0.500, 0.028),
+        L_CBUTTON => (0.755, 0.415, 0.028),
+        R_CBUTTON => (0.845, 0.415, 0.028),
+        L_TRIG => (0.220, 0.110, 0.048),
+        R_TRIG => (0.780, 0.110, 0.048),
+        Z_TRIG => (0.500, 0.630, 0.042),
+        AXIS_UP | AXIS_DOWN | AXIS_LEFT | AXIS_RIGHT => (0.475, 0.755, 0.060),
+        _ => return None, // HOTKEY and any future input
+    };
+    Some(spot)
+}
+
 pub fn configure_input_profile(
     config: &mut ui::config::Config,
     profile: String,
@@ -1719,5 +1744,43 @@ mod menu_tests {
         let t = advance(&mut s, Action::Quit); // arms again, does not exit
         assert!(!t.exit);
         assert!(s.quit_armed);
+    }
+
+    #[test]
+    fn every_pad_input_has_an_in_bounds_glow() {
+        for input in 0..PROFILE_SIZE {
+            if input == HOTKEY {
+                assert!(glow_center(input).is_none(), "hotkey has no pad location");
+                continue;
+            }
+            let (cx, cy, r) = glow_center(input).expect("pad input must glow");
+            assert!((0.0..=1.0).contains(&cx) && (0.0..=1.0).contains(&cy));
+            assert!(r > 0.0 && r < 0.2);
+            // rect stays within the canvas
+            assert!(cx - r >= 0.0 && cx + r <= 1.0);
+        }
+    }
+
+    #[test]
+    fn list_cancel_when_dirty_arms_then_exits() {
+        let mut s = MenuState::entry(true);
+        s.dirty = true;
+        let t1 = advance(&mut s, Action::Cancel);
+        assert!(!t1.exit);
+        assert!(s.quit_armed);
+        let t2 = advance(&mut s, Action::Cancel);
+        assert!(t2.exit);
+    }
+
+    #[test]
+    fn single_capture_cancel_returns_to_list_without_dirty() {
+        let mut s = MenuState::entry(true);
+        s.selected = 6;
+        advance(&mut s, Action::Confirm); // -> single capture
+        let t = advance(&mut s, Action::Cancel);
+        assert_eq!(s.screen, Screen::List);
+        assert_eq!(s.selected, 6);
+        assert!(!s.dirty);
+        assert!(!t.begin_capture);
     }
 }
