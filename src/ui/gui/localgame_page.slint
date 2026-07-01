@@ -156,11 +156,19 @@ export component LocalGame inherits Page {
 
         if State.games.length > 0: GroupBox {
             title: @tr("Library");
-            VerticalLayout {
-                spacing: 4px;
-                for game in State.games: Rectangle {
-                    height: 68px;
-                    border-radius: 4px;
+            grid := Rectangle {
+                width: 100%;
+                property <length> card-w: 132px;
+                property <length> card-h: 190px;
+                property <length> gap: 8px;
+                property <int> cols: Math.max(1, Math.floor((self.width + self.gap) / (self.card-w + self.gap)));
+                height: Math.ceil(State.games.length / self.cols) * (self.card-h + self.gap);
+                for game[i] in State.games: Rectangle {
+                    x: Math.mod(i, grid.cols) * (grid.card-w + grid.gap);
+                    y: Math.floor(i / grid.cols) * (grid.card-h + grid.gap);
+                    width: grid.card-w;
+                    height: grid.card-h;
+                    border-radius: 6px;
                     background: touch.has-hover ? Palette.alternate-background : transparent;
                     touch := TouchArea {
                         enabled: !State.game_running;
@@ -168,32 +176,41 @@ export component LocalGame inherits Page {
                             root.detail_opened(game.path);
                         }
                     }
-                    HorizontalBox {
+                    VerticalLayout {
+                        padding: 6px;
+                        spacing: 4px;
                         Image {
-                            width: 44px;
-                            height: 60px;
+                            vertical-stretch: 1;
                             image-fit: contain;
                             source: game.art;
                         }
                         Text {
                             text: game.title;
+                            height: 34px;
+                            horizontal-alignment: center;
                             vertical-alignment: center;
-                            horizontal-alignment: left;
+                            wrap: word-wrap;
                             overflow: elide;
-                            horizontal-stretch: 1;
                         }
-                        TouchArea {
-                            width: 32px;
-                            enabled: !State.game_running;
-                            clicked => {
-                                root.toggle_favorite(game.path);
-                            }
+                    }
+                    star := TouchArea {
+                        x: parent.width - self.width - 4px;
+                        y: 4px;
+                        width: 28px;
+                        height: 28px;
+                        enabled: !State.game_running;
+                        clicked => {
+                            root.toggle_favorite(game.path);
+                        }
+                        Rectangle {
+                            border-radius: 4px;
+                            background: #00000066;
                             Text {
                                 text: game.favorite ? "★" : "☆";
-                                font-size: 20px;
-                                vertical-alignment: center;
+                                font-size: 18px;
                                 horizontal-alignment: center;
-                                color: game.favorite ? Palette.accent-background : Palette.foreground;
+                                vertical-alignment: center;
+                                color: game.favorite ? Palette.accent-background : white;
                             }
                         }
                     }
