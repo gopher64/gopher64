@@ -304,6 +304,7 @@ fn scan_roms(dir: &std::path::Path) -> Vec<String> {
             } else if ft.is_file()
                 && let Some(ext) = p.extension().and_then(|e| e.to_str())
                 && N64_EXTENSIONS.contains(&ext)
+                && crate::device::is_n64_rom(&p)
             {
                 out.push(p.to_string_lossy().to_string());
             }
