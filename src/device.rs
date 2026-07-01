@@ -260,7 +260,7 @@ pub fn get_rom_contents(file_path: &std::path::PathBuf) -> Option<Vec<u8>> {
 /// stray `.bin`, junk archives) out of the library scan without decompressing
 /// whole ROMs (7z aside — its streaming reader must be drained to advance) or
 /// panicking on malformed files.
-#[cfg(feature = "gui")]
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 pub fn is_n64_rom(file_path: &std::path::Path) -> bool {
     fn is_n64_magic(m: &[u8]) -> bool {
         m.len() >= 4
