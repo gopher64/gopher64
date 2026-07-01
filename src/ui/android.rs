@@ -718,20 +718,17 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnFo
 >(
     mut unowned_env: EnvUnowned<'caller>,
     _class: JClass<'caller>,
-    uris: JObjectArray<'caller>,
+    uris: JString<'caller>,
 ) {
     let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
-        let mut paths: Vec<String> = Vec::new();
-        if !uris.is_null() {
-            let len = env.get_array_length(&uris)?;
-            for i in 0..len {
-                let element = env.get_object_array_element(&uris, i)?;
-                if !element.is_null() {
-                    let s: JString = element.into();
-                    paths.push(env.get_string(&s)?.to_string());
-                }
-            }
-        }
+        // Newline-joined content-URIs from the Kotlin SAF walk (URIs never contain
+        // newlines; the Kotlin param is a non-null String). Empty string -> none.
+        let joined = uris.try_to_string(env)?;
+        let paths: Vec<String> = joined
+            .split('\n')
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .collect();
         if let Ok(weak) = WEAK_SLINT_WINDOW.lock()
             && let Some(weak) = weak.as_ref()
         {

@@ -268,9 +268,14 @@ pub fn apply_scanned_folder(weak: &slint::Weak<AppWindow>, paths: Vec<String>) {
     let Some(map) = NO_INTRO_MAP.get().cloned() else {
         return;
     };
-    let shown = paths.clone();
-    let _ = weak.upgrade_in_event_loop(move |h| set_all_games(&h, &shown));
-    tokio::spawn(fetch_art(weak.clone(), paths, map));
+    // Runs on the JVM callback thread, which has no ambient Tokio runtime — do both
+    // the model update and the spawn inside the event loop (that thread entered the
+    // runtime in android_main), so tokio::spawn can't panic off-runtime.
+    let weak2 = weak.clone();
+    let _ = weak.upgrade_in_event_loop(move |h| {
+        set_all_games(&h, &paths);
+        tokio::spawn(fetch_art(weak2, paths, map));
+    });
 }
 
 // Library filter predicate (0 All · 1 Favorites · 2 Homebrew) + substring search.

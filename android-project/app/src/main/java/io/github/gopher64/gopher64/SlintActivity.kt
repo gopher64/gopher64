@@ -20,10 +20,10 @@ class SlintActivity : NativeActivity() {
 
     private external fun nativeOnActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
 
-    // Delivers the flat list of ROM document-URIs found under a picked folder tree
-    // back to Rust (the whole SAF walk stays in Kotlin — far less error-prone than
-    // blind JNI Cursor bindings).
-    private external fun nativeOnFolderScanned(uris: Array<String>)
+    // Delivers the ROM document-URIs found under a picked folder tree back to Rust,
+    // one per line (content-URIs never contain newlines). The whole SAF walk stays
+    // in Kotlin — far less error-prone than blind JNI Cursor bindings.
+    private external fun nativeOnFolderScanned(uris: String)
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -38,9 +38,9 @@ class SlintActivity : NativeActivity() {
                 )
                 val found = ArrayList<String>()
                 scanTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri), found)
-                nativeOnFolderScanned(found.toTypedArray())
+                nativeOnFolderScanned(found.joinToString("\n"))
             } else {
-                nativeOnFolderScanned(emptyArray())
+                nativeOnFolderScanned("")
             }
             return
         }
