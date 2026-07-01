@@ -260,6 +260,7 @@ pub fn get_rom_contents(file_path: &std::path::PathBuf) -> Option<Vec<u8>> {
 /// stray `.bin`, junk archives) out of the library scan without decompressing
 /// whole ROMs (7z aside — its streaming reader must be drained to advance) or
 /// panicking on malformed files.
+#[cfg(feature = "gui")]
 pub fn is_n64_rom(file_path: &std::path::Path) -> bool {
     fn is_n64_magic(m: &[u8]) -> bool {
         m.len() >= 4
@@ -292,7 +293,7 @@ pub fn is_n64_rom(file_path: &std::path::Path) -> bool {
             let Ok(mut entry) = archive.by_index(i) else {
                 continue;
             };
-            let is_n64_ext = entry.enclosed_name().is_some_and(|p| has_n64_ext(p));
+            let is_n64_ext = entry.enclosed_name().is_some_and(has_n64_ext);
             if is_n64_ext {
                 let mut magic = [0u8; 4];
                 return entry.read_exact(&mut magic).is_ok() && is_n64_magic(&magic);
