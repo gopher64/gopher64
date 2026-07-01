@@ -714,7 +714,7 @@ enum Screen {
 /// Device-agnostic navigation intents. Raw keyboard/gamepad/joystick/touch
 /// events all decode to these before reaching `advance`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum Action {
+pub(crate) enum Action {
     Up,
     Down,
     /// Enter / gamepad South / joystick button 0 / tap a row.
@@ -1029,7 +1029,7 @@ fn wait_nav_action(
 /// Sign (+1 / -1) of an axis deflection relative to its resting state.
 /// Avoids the 0/0 panic of `v / v.abs()` and never returns 0 (a 0 sign would
 /// dead-bind the input, since in-game uses `axis_position * axis > 0`).
-fn axis_sign(axis_value: i16, initial_state: i16) -> i16 {
+pub(crate) fn axis_sign(axis_value: i16, initial_state: i16) -> i16 {
     if axis_value >= initial_state { 1 } else { -1 }
 }
 
