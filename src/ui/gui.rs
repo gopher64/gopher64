@@ -249,6 +249,30 @@ fn set_all_games(app: &AppWindow, paths: &[String]) {
     apply_filter(app);
 }
 
+// Shared No-Intro map for the Android SAF folder-scan JNI callback, which can't be
+// handed the Arc as a parameter. OnceLock (not LazyLock): the value is the specific
+// runtime Arc created in lib.rs and shared with load_no_intro/netplay/cheats — a
+// fresh LazyLock-built map would never be populated.
+#[cfg(target_os = "android")]
+static NO_INTRO_MAP: std::sync::OnceLock<
+    std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+> = std::sync::OnceLock::new();
+
+// Android SAF folder-scan result sink: Kotlin walks the picked document tree and
+// hands back ROM content-URIs (via nativeOnFolderScanned); show them and fetch box
+// art off the UI thread. `fetch_art`'s cache degrades to a no-op on Android
+// (content-URIs have no stat), so every launch re-identifies — acceptable given the
+// user re-picks the folder; a persisted-tree startup re-walk is a follow-up.
+#[cfg(target_os = "android")]
+pub fn apply_scanned_folder(weak: &slint::Weak<AppWindow>, paths: Vec<String>) {
+    let Some(map) = NO_INTRO_MAP.get().cloned() else {
+        return;
+    };
+    let shown = paths.clone();
+    let _ = weak.upgrade_in_event_loop(move |h| set_all_games(&h, &shown));
+    tokio::spawn(fetch_art(weak.clone(), paths, map));
+}
+
 // Library filter predicate (0 All · 1 Favorites · 2 Homebrew) + substring search.
 fn game_matches(title_lc: &str, needle: &str, filter: i32, favorite: bool, homebrew: bool) -> bool {
     (needle.is_empty() || title_lc.contains(needle))
@@ -325,22 +349,37 @@ async fn fetch_art(
     if paths.is_empty() {
         return;
     }
+    let mut cache = ui::library_cache::LibraryCache::load();
     let mut last = std::time::Instant::now();
     for (i, path) in paths.iter().enumerate() {
-        let p = path.clone();
-        let Ok(Some(rom)) = tokio::task::spawn_blocking(move || {
-            device::get_rom_contents(&std::path::PathBuf::from(p))
-        })
-        .await
-        else {
-            continue;
+        // Fast path: unchanged file (size+mtime match) reuses the cached name +
+        // homebrew flag, skipping the whole ROM read + SHA-256. This is the win for
+        // rescans of a large folder.
+        let sig = ui::library_cache::file_signature(std::path::Path::new(path));
+        let (name, homebrew) = if let Some((size, mtime_ns)) = sig
+            && let Some(entry) = cache.get_fresh(path, size, mtime_ns)
+        {
+            (entry.name.clone(), entry.homebrew)
+        } else {
+            let p = path.clone();
+            let Ok(Some(rom)) = tokio::task::spawn_blocking(move || {
+                device::get_rom_contents(&std::path::PathBuf::from(p))
+            })
+            .await
+            else {
+                continue;
+            };
+            // One hash, one map lock -> both name and homebrew (was two hashes).
+            let hash = device::cart::rom::calculate_hash(&rom).to_lowercase();
+            let (name, homebrew) = match no_intro_map.lock().await.get(&hash) {
+                Some(n) => (n.clone(), false),
+                None => (ui::storage::get_game_name(&rom), true),
+            };
+            if let Some((size, mtime_ns)) = sig {
+                cache.insert(path.clone(), size, mtime_ns, hash, name.clone(), homebrew);
+            }
+            (name, homebrew)
         };
-        let name = get_nointro_name(&rom, no_intro_map.clone()).await;
-        // Homebrew = ROM hash absent from the No-Intro map. This re-hashes the ROM
-        // (get_nointro_name also hashes); fine on this background scan task — fold
-        // into one map lookup if startup scan time ever matters.
-        let hash = device::cart::rom::calculate_hash(&rom).to_lowercase();
-        let homebrew = !no_intro_map.lock().await.contains_key(&hash);
         let (png, art_name): (Option<std::path::PathBuf>, slint::SharedString) = if name.is_empty()
         {
             (None, slint::SharedString::new())
@@ -372,7 +411,79 @@ async fn fetch_art(
             last = std::time::Instant::now();
         }
     }
+    // Drop entries for files no longer scanned so the cache can't grow unbounded.
+    let live: std::collections::HashSet<String> = paths.iter().cloned().collect();
+    cache.retain_paths(&live);
+    cache.save();
     let _ = weak.upgrade_in_event_loop(|h| apply_filter(&h));
+}
+
+// Scan `dir` off the UI thread, show the rows, then resolve art (cache-backed).
+// Shared by startup, manual Scan Folder, and the live watcher.
+#[cfg(not(target_os = "android"))]
+async fn rescan_and_fetch(
+    weak: slint::Weak<AppWindow>,
+    dir: std::path::PathBuf,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
+    let paths = tokio::task::spawn_blocking(move || scan_roms(&dir))
+        .await
+        .unwrap_or_default();
+    let shown = paths.clone();
+    let _ = weak.upgrade_in_event_loop(move |h| set_all_games(&h, &shown));
+    fetch_art(weak, paths, no_intro_map).await;
+}
+
+// Live folder watcher: keeps the library in sync while the app is open (desktop
+// only — Android SAF content-URIs aren't visible to inotify/FSEvents). Kept alive
+// in a static; replacing it drops the previous watcher and closes its channel, so
+// the old debounce thread exits. A change coalesces a 1s burst into one rescan;
+// rescans never write the watched folder, so they can't self-trigger.
+#[cfg(not(target_os = "android"))]
+static FOLDER_WATCHER: std::sync::LazyLock<std::sync::Mutex<Option<notify::RecommendedWatcher>>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(None));
+
+#[cfg(not(target_os = "android"))]
+fn watch_folder(
+    weak: slint::Weak<AppWindow>,
+    dir: std::path::PathBuf,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
+    use notify::Watcher;
+    let Ok(handle) = tokio::runtime::Handle::try_current() else {
+        return;
+    };
+    let (tx, rx) = std::sync::mpsc::channel::<()>();
+    let mut watcher =
+        match notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
+            if res.is_ok() {
+                let _ = tx.send(());
+            }
+        }) {
+            Ok(w) => w,
+            Err(_) => return,
+        };
+    if watcher
+        .watch(&dir, notify::RecursiveMode::Recursive)
+        .is_err()
+    {
+        return;
+    }
+    if let Ok(mut slot) = FOLDER_WATCHER.lock() {
+        *slot = Some(watcher);
+    }
+    std::thread::spawn(move || {
+        while rx.recv().is_ok() {
+            while rx
+                .recv_timeout(std::time::Duration::from_millis(1000))
+                .is_ok()
+            {}
+            let weak = weak.clone();
+            let dir = dir.clone();
+            let map = no_intro_map.clone();
+            handle.spawn(rescan_and_fetch(weak, dir, map));
+        }
+    });
 }
 
 fn local_game_window(
@@ -421,16 +532,11 @@ fn local_game_window(
         let weak = app.as_weak();
         let map = no_intro_map.clone();
         tokio::spawn(async move {
-            let paths = if !rom_dir.as_os_str().is_empty() && rom_dir.is_dir() {
-                tokio::task::spawn_blocking(move || scan_roms(&rom_dir))
-                    .await
-                    .unwrap_or_default()
-            } else {
-                Vec::new()
-            };
-            let shown = paths.clone();
-            let _ = weak.upgrade_in_event_loop(move |h| set_all_games(&h, &shown));
-            fetch_art(weak, paths, map).await;
+            if !rom_dir.as_os_str().is_empty() && rom_dir.is_dir() {
+                rescan_and_fetch(weak.clone(), rom_dir.clone(), map.clone()).await;
+                // Keep the library live-synced while the app is open.
+                watch_folder(weak, rom_dir, map);
+            }
         });
     }
     #[cfg(target_os = "android")]
@@ -444,6 +550,17 @@ fn local_game_window(
             .collect();
         set_all_games(app, &game_paths);
         tokio::spawn(fetch_art(app.as_weak(), game_paths, no_intro_map.clone()));
+
+        // SAF folder-tree picker: Kotlin walks the tree -> nativeOnFolderScanned ->
+        // apply_scanned_folder (which reads NO_INTRO_MAP set in app_window).
+        let weak_scan = app.as_weak();
+        app.on_scan_folder_clicked(move || {
+            let start = weak_scan
+                .upgrade()
+                .map(|h| h.get_rom_dir().to_string())
+                .unwrap_or_default();
+            ui::android::select_rom_folder(start);
+        });
     }
 
     let weak = app.as_weak();
@@ -555,20 +672,14 @@ fn local_game_window(
             tokio::spawn(async move {
                 if let Some(folder) = dialog.await {
                     let dir = folder.path().to_path_buf();
-                    let paths = {
-                        let d = dir.clone();
-                        tokio::task::spawn_blocking(move || scan_roms(&d))
-                            .await
-                            .unwrap_or_default()
-                    };
                     let dir_str = dir.to_string_lossy().to_string();
-                    let scan_paths = paths.clone();
                     let _ = weak_inner.upgrade_in_event_loop(move |h| {
                         h.set_rom_dir(dir_str.into());
                         save_settings(&h);
-                        set_all_games(&h, &scan_paths);
                     });
-                    fetch_art(weak_inner, paths, map).await;
+                    rescan_and_fetch(weak_inner.clone(), dir.clone(), map.clone()).await;
+                    // Live-sync the newly picked folder while the app is open.
+                    watch_folder(weak_inner, dir, map);
                 }
             });
         });
@@ -952,6 +1063,11 @@ pub fn app_window(
     tokio::spawn(async move {
         load_no_intro(no_intro_map_clone).await;
     });
+
+    // The Android SAF folder-scan JNI callback (nativeOnFolderScanned) needs the
+    // No-Intro map but can't be handed it as a param, so publish it here.
+    #[cfg(target_os = "android")]
+    let _ = NO_INTRO_MAP.set(no_intro_map.clone());
 
     retroachievements::init_client(false, false, false);
     app.set_is_android(is_android);

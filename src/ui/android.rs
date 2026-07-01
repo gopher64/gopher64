@@ -12,6 +12,7 @@ use std::os::fd::FromRawFd;
 const REQUEST_SELECT_ROM: jint = 1;
 const CONFIGURE_INPUT_PROFILE: jint = 2;
 const RUN_ROM: jint = 3;
+const SELECT_ROM_FOLDER: jint = 4;
 
 pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
     std::sync::Mutex::new(None);
@@ -58,6 +59,8 @@ bind_java_type! {
         static ACTION_VIEW: JString,
         #[allow(non_snake_case)]
         static ACTION_OPEN_DOCUMENT: JString,
+        #[allow(non_snake_case)]
+        static ACTION_OPEN_DOCUMENT_TREE: JString,
         #[allow(non_snake_case)]
         static CATEGORY_OPENABLE: JString,
         #[allow(non_snake_case)]
@@ -470,6 +473,43 @@ pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathB
     rx.await.unwrap_or(None)
 }
 
+/// Launch the SAF folder-tree picker (ACTION_OPEN_DOCUMENT_TREE). Results arrive
+/// asynchronously via `nativeOnFolderScanned` (Kotlin walks the tree and hands back
+/// the ROM document-URIs), so this only fires the intent.
+pub fn select_rom_folder(rom_dir: String) {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        if let Err(err) =
+            get_vm(app).attach_current_thread(|env| select_rom_folder_on_jvm(env, app, rom_dir))
+        {
+            eprintln!("JNI error while opening folder picker: {err:?}");
+        }
+    } else {
+        eprintln!("Android app not initialized");
+    }
+}
+
+fn select_rom_folder_on_jvm(
+    env: &mut Env<'_>,
+    app: &slint::android::AndroidApp,
+    rom_dir: String,
+) -> jni::errors::Result<()> {
+    let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+
+    let action = AndroidIntent::ACTION_OPEN_DOCUMENT_TREE(env)?;
+    let mut intent = AndroidIntent::with_action(env, &action)?;
+    if !rom_dir.is_empty() {
+        let start_dir = JString::from_str(env, rom_dir)?;
+        let extra_initial_uri = DocumentsContract::EXTRA_INITIAL_URI(env)?;
+        intent = intent.put_extra_string(env, &extra_initial_uri, &start_dir)?;
+    }
+
+    activity.start_activity_for_result(env, &intent, SELECT_ROM_FOLDER)?;
+    Ok(())
+}
+
 pub async fn select_gb_rom(_player: i32) -> Option<std::path::PathBuf> {
     select_rom(slint::SharedString::new()).await
 }
@@ -663,6 +703,39 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                 }
                 _ => {}
             }
+        }
+        Ok(())
+    });
+    outcome.resolve::<jni::errors::ThrowRuntimeExAndDefault>()
+}
+
+/// Receives the ROM document-URIs found by the Kotlin SAF tree walk and hands them
+/// to the library layer (which fetches box art off the UI thread). Called on the
+/// JVM thread after the user picks a folder.
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnFolderScanned<
+    'caller,
+>(
+    mut unowned_env: EnvUnowned<'caller>,
+    _class: JClass<'caller>,
+    uris: JObjectArray<'caller>,
+) {
+    let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
+        let mut paths: Vec<String> = Vec::new();
+        if !uris.is_null() {
+            let len = env.get_array_length(&uris)?;
+            for i in 0..len {
+                let element = env.get_object_array_element(&uris, i)?;
+                if !element.is_null() {
+                    let s: JString = element.into();
+                    paths.push(env.get_string(&s)?.to_string());
+                }
+            }
+        }
+        if let Ok(weak) = WEAK_SLINT_WINDOW.lock()
+            && let Some(weak) = weak.as_ref()
+        {
+            ui::gui::apply_scanned_folder(weak, paths);
         }
         Ok(())
     });

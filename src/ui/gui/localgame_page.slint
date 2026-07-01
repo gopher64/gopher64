@@ -71,7 +71,7 @@ export component LocalGame inherits Page {
                     open_rom_button_clicked();
                 }
             }
-            if !State.is_android: Button {
+            Button {
                 text: @tr("Scan Folder");
                 enabled: !State.game_running;
                 clicked => {

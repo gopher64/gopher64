@@ -10,6 +10,8 @@ pub mod config;
 pub mod gui;
 pub mod input;
 #[cfg(feature = "gui")]
+pub mod library_cache;
+#[cfg(feature = "gui")]
 pub mod netplay;
 #[cfg(feature = "gui")]
 pub mod retroachievements;

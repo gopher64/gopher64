@@ -6,7 +6,7 @@ rust-version = "1.96.0"
 
 [features]
 default = ["gui"]
-gui = ["dep:rfd", "dep:slint", "dep:open", "dep:slint-build"]
+gui = ["dep:rfd", "dep:slint", "dep:open", "dep:slint-build", "dep:notify"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -42,6 +42,7 @@ quick-xml = "0.40"
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "unstable-winit-030", "backend-winit", "renderer-femtovg-wgpu", "accessibility"], optional = true }
 rfd = {version = "0.17", optional = true }
 dirs = "6.0"
+notify = { version = "8.2", optional = true }
 open = { version = "5.3", optional = true }
 sdl3-sys = { version = "0.6", features = ["build-from-source-static"] }
 sdl3-ttf-sys = { version = "0.6", features = ["build-static-vendored", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }

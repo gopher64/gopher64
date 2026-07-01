@@ -310,14 +310,17 @@ pub fn is_n64_rom(file_path: &std::path::Path) -> bool {
             return false;
         };
         let mut valid = false;
-        let mut decided = false;
         let _ = archive.for_each_entries(
             &mut |entry: &sevenz_rust2::ArchiveEntry, reader: &mut dyn std::io::Read| {
-                if !decided && has_n64_ext(std::path::PathBuf::from(entry.name())) {
-                    decided = true;
+                // First N64-extension entry decides it. Stop iterating once found
+                // instead of draining the rest of the archive — validating 4 magic
+                // bytes must not decompress every entry.
+                if has_n64_ext(std::path::PathBuf::from(entry.name())) {
                     let mut magic = [0u8; 4];
                     valid = reader.read_exact(&mut magic).is_ok() && is_n64_magic(&magic);
+                    return Ok(false);
                 }
+                // Non-matching entry: drain to advance the streaming reader.
                 std::io::copy(reader, &mut std::io::sink())?;
                 Ok(true)
             },
