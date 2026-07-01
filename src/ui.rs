@@ -7,7 +7,7 @@ pub mod config;
 #[cfg(feature = "gui")]
 pub mod gui;
 pub mod input;
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 pub(crate) mod input_capture;
 #[cfg(feature = "gui")]
 pub mod netplay;

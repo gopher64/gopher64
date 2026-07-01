@@ -622,7 +622,7 @@ pub fn clear_bindings(config: &mut ui::config::Config) {
     }
 }
 
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 fn clear_profile_input(
     value: usize,
     keys: &mut [ui::config::InputKeyButton; PROFILE_SIZE],
@@ -640,7 +640,7 @@ fn clear_profile_input(
     joystick_axis[value].enabled = false;
 }
 
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 fn binding_label(
     value: usize,
     keys: &[ui::config::InputKeyButton; PROFILE_SIZE],
@@ -678,7 +678,7 @@ fn binding_label(
 }
 
 /// Display labels for the review list / capture prompt, in wizard order.
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 pub(crate) const KEY_LABELS: [(&str, usize); PROFILE_SIZE] = [
     ("A", A_BUTTON),
     ("B", B_BUTTON),
@@ -702,10 +702,10 @@ pub(crate) const KEY_LABELS: [(&str, usize); PROFILE_SIZE] = [
 ];
 
 /// The "Save & Exit" row sits one past the last input in the review list.
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 pub(crate) const SAVE_ROW: usize = PROFILE_SIZE;
 
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum Screen {
     /// Reviewing the input list (navigable).
@@ -716,7 +716,7 @@ pub(crate) enum Screen {
 
 /// Device-agnostic navigation intents. Raw keyboard/gamepad/joystick/touch
 /// events all decode to these before reaching `advance`.
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum Action {
     Up,
@@ -725,13 +725,14 @@ pub(crate) enum Action {
     Confirm,
     /// Esc / gamepad East / on-screen ✕. Skips in capture, quits in list.
     Cancel,
-    /// Window close / Android back (`AC_BACK`).
+    /// Close request from the wizard shell (e.g. window close). Honors the
+    /// dirty-quit guard like `Cancel`, but never merely skips a capture.
     Quit,
     /// A raw input was successfully captured (caller performed the binding).
     Bound,
 }
 
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) struct MenuState {
     pub(crate) screen: Screen,
@@ -745,7 +746,7 @@ pub(crate) struct MenuState {
     pub(crate) quit_armed: bool,
 }
 
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 impl MenuState {
     pub(crate) fn entry(existing_profile: bool) -> Self {
         MenuState {
@@ -764,7 +765,7 @@ impl MenuState {
     }
 }
 
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub(crate) struct Transition {
     /// Close the window.
@@ -776,8 +777,8 @@ pub(crate) struct Transition {
 }
 
 /// Pure state transition. `action` is the decoded intent; returns side-effect
-/// signals for the SDL shell to act on.
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+/// signals for the platform shell to act on.
+#[cfg(feature = "gui")]
 pub(crate) fn advance(state: &mut MenuState, action: Action) -> Transition {
     let mut t = Transition::default();
     // Any non-quit-like action disarms a pending dirty-quit.
@@ -843,7 +844,7 @@ pub(crate) fn advance(state: &mut MenuState, action: Action) -> Transition {
 /// Glow location for an input as fractions of the 852×480 logical canvas:
 /// `(center_x, center_y, radius)` where radius is a fraction of canvas width.
 /// `None` for inputs with no controller-art location (the hotkey activator).
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 pub(crate) fn glow_center(input: usize) -> Option<(f32, f32, f32)> {
     let spot = match input {
         A_BUTTON => (0.715, 0.595, 0.045),
@@ -869,7 +870,7 @@ pub(crate) fn glow_center(input: usize) -> Option<(f32, f32, f32)> {
 /// The six per-input binding arrays, bundled so the capture helpers stay within
 /// clippy's argument budget. Field-disjoint borrows keep `clear_profile_input`
 /// and `binding_label` callable on individual arrays.
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 pub(crate) struct Bindings {
     keys: [ui::config::InputKeyButton; PROFILE_SIZE],
     controller_buttons: [ui::config::InputKeyButton; PROFILE_SIZE],
@@ -879,7 +880,7 @@ pub(crate) struct Bindings {
     joystick_axis: [ui::config::InputControllerAxis; PROFILE_SIZE],
 }
 
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 impl Bindings {
     pub(crate) fn empty() -> Self {
         Bindings {
@@ -973,6 +974,7 @@ impl Bindings {
             CaptureEvent::JoyButton(id) => {
                 self.joystick_buttons[value] = ui::config::InputKeyButton { enabled: true, id };
             }
+            #[cfg(not(target_os = "android"))]
             CaptureEvent::JoyHat { id, direction } => {
                 self.joystick_hat[value] = ui::config::InputJoystickHat {
                     enabled: true,
@@ -1022,7 +1024,7 @@ impl Bindings {
 /// Sign (+1 / -1) of an axis deflection relative to its resting state.
 /// Avoids the 0/0 panic of `v / v.abs()` and never returns 0 (a 0 sign would
 /// dead-bind the input, since in-game uses `axis_position * axis > 0`).
-#[cfg(all(feature = "gui", not(target_os = "android")))]
+#[cfg(feature = "gui")]
 pub(crate) fn axis_sign(axis_value: i16, initial_state: i16) -> i16 {
     if axis_value >= initial_state { 1 } else { -1 }
 }
@@ -1374,7 +1376,7 @@ pub fn close(ui: &mut ui::Ui) {
     }
 }
 
-#[cfg(all(test, feature = "gui", not(target_os = "android")))]
+#[cfg(all(test, feature = "gui"))]
 mod menu_tests {
     use super::*;
 
