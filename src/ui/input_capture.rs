@@ -10,7 +10,7 @@ use crate::ui::input::{Action, axis_sign};
 
 /// One classified raw input during binding capture. `Key` carries an SDL
 /// scancode id (what profiles store); the SDL arms mirror the binding types in
-/// `ui::config`; `Nav` carries a decoded navigation intent.
+/// `ui::config`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum CaptureEvent {
     Key(i32),
@@ -29,7 +29,6 @@ pub(crate) enum CaptureEvent {
         sign: i16,
         initial_state: i16,
     },
-    Nav(Action),
 }
 
 /// Slint logical key text (see i-slint-common `key_codes.rs`) → SDL scancode
@@ -598,7 +597,7 @@ mod tests {
         assert_eq!(classify_sdl_nav(&joy_button_event(1)), None);
     }
 
-    // --- CaptureEvent variants produced by the UI layer (Slint keys, nav) ---
+    // --- CaptureEvent variants produced by the UI layer (Slint keys) ---
 
     #[test]
     fn ui_layer_variants_construct_and_compare() {
@@ -607,9 +606,9 @@ mod tests {
             key,
             CaptureEvent::Key(i32::from(sdl3_sys::scancode::SDL_SCANCODE_A))
         );
-        let nav = CaptureEvent::Nav(
-            classify_sdl_nav(&key_event(sdl3_sys::scancode::SDL_SCANCODE_ESCAPE, false)).unwrap(),
+        assert_eq!(
+            classify_sdl_nav(&key_event(sdl3_sys::scancode::SDL_SCANCODE_ESCAPE, false)),
+            Some(Action::Cancel)
         );
-        assert_eq!(nav, CaptureEvent::Nav(Action::Cancel));
     }
 }

@@ -16,6 +16,8 @@ export { VruDialog } from "vru_dialog.slint";
 import { NetplayCreate } from "netplay_create.slint";
 import { NetplayJoin } from "netplay_join.slint";
 import { NetplayWait, NetplayWaitData } from "netplay_wait.slint";
+import { ProfileWizard, ProfileWizardData } from "profile_wizard.slint";
+export { ProfileWizardData }
 
 export component AppWindow inherits Window {
     callback wiki_button_clicked;
@@ -97,6 +99,7 @@ export component AppWindow inherits Window {
     in-out property input_profile_name <=> InputProfileData.profile_name;
     in-out property input_dinput <=> InputProfileData.dinput;
     in-out property show_input_profile <=> InputProfileData.show_input_profile;
+    in-out property <bool> show_profile_wizard;
 
     in-out property show_netplay_wait_session <=> NetplayData.show_wait_session;
     in-out property show_netplay_create_session <=> NetplayData.show_create_session;
@@ -201,7 +204,7 @@ export component AppWindow inherits Window {
                 recent_rom_button_clicked(rom);
             }
         }
-        if(side-bar.current-item == 1 && !show_input_profile): ControllerConfig {
+        if(side-bar.current-item == 1 && !show_input_profile && !show_profile_wizard): ControllerConfig {
             width: 100%;
             height: 100%;
             input_profile_button_clicked => {
@@ -214,12 +217,16 @@ export component AppWindow inherits Window {
                 controller_window_created();
             }
         }
-        if(side-bar.current-item == 1 && show_input_profile): InputProfileDialog {
+        if(side-bar.current-item == 1 && show_input_profile && !show_profile_wizard): InputProfileDialog {
             width: 100%;
             height: 100%;
             profile_creation_button_clicked => {
                 input_profile_creation_button_clicked();
             }
+        }
+        if(side-bar.current-item == 1 && show_profile_wizard): ProfileWizard {
+            width: 100%;
+            height: 100%;
         }
         if(side-bar.current-item == 2 && !show_netplay_wait_session && !show_netplay_create_session && !show_netplay_join_session): Netplay {
             width: 100%;

@@ -7,7 +7,7 @@
 // by Rust via ProfileWizardData; input is captured Rust-side (SDL on desktop,
 // JNI on Android) and keyboard via the FocusScope below.
 
-struct ProfileRow {
+export struct ProfileRow {
     label: string,
     binding: string,
     bound: bool,
@@ -40,6 +40,8 @@ export component ProfileWizard inherits Rectangle {
     background: #0b0d10;
     forward-focus: fs;
 
+    init => { fs.focus(); }
+
     // Soft pulsing glow opacity (~1 Hz, motion-safe: slow ease, small region).
     property <float> pulse: 1.0;
     states [
@@ -49,7 +51,9 @@ export component ProfileWizard inherits Rectangle {
 
     fs := FocusScope {
         key-pressed(e) => {
-            ProfileWizardData.key_pressed(e.text);
+            if (!e.repeat) {
+                ProfileWizardData.key_pressed(e.text);
+            }
             accept
         }
     }
@@ -133,7 +137,11 @@ export component ProfileWizard inherits Rectangle {
             TouchArea {
                 height: 28px;
                 clicked => { ProfileWizardData.tap_save(); }
-                Text { x: 8px; text: @tr("▶ Save & Exit"); color: #7fb2ff; font-size: 14px; vertical-alignment: center; }
+                Rectangle {
+                    background: ProfileWizardData.selected == ProfileWizardData.rows.length ? #2f64b4 : transparent;
+                    border-radius: 4px;
+                    Text { x: 8px; text: @tr("▶ Save & Exit"); color: ProfileWizardData.selected == ProfileWizardData.rows.length ? #eaf2ff : #7fb2ff; font-size: 14px; vertical-alignment: center; }
+                }
             }
         }
     }
@@ -144,8 +152,9 @@ export component ProfileWizard inherits Rectangle {
         text: ProfileWizardData.warning; color: #ffcf6b; font-size: 13px; wrap: word-wrap;
     }
 
-    // on-screen cancel ✕, below the header so it never overlaps the title
-    if ProfileWizardData.mode == 1: TouchArea {
+    // on-screen cancel ✕ (skip in capture, quit in review), below the header
+    // so it never overlaps the title
+    TouchArea {
         x: parent.width - 48px; y: 50px; width: 40px; height: 40px;
         clicked => { ProfileWizardData.tap_cancel(); }
         Rectangle {

@@ -2796,7 +2796,6 @@ dependencies = [
  "reqwest",
  "rfd",
  "rustc-hash 2.1.2",
- "sdl3-image-sys",
  "sdl3-src",
  "sdl3-sys",
  "sdl3-ttf-sys",
@@ -6440,26 +6439,6 @@ dependencies = [
  "memmap2",
  "smithay-client-toolkit 0.19.2",
  "tiny-skia 0.11.4",
-]
-
-[[package]]
-name = "sdl3-image-src"
-version = "3.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe273101c7dab94551183212eee9adef1a7bf274d407f0b7bfe72482960ab25c"
-
-[[package]]
-name = "sdl3-image-sys"
-version = "0.6.4+SDL-image-3.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a445f781b39a1c1bc751f5f4612191e0402006e35ad5d02d9193281afad1cf4"
-dependencies = [
- "cmake",
- "pkg-config",
- "rpkg-config",
- "sdl3-image-src",
- "sdl3-sys",
- "vcpkg",
 ]
 
 [[package]]

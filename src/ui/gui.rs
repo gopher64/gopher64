@@ -352,51 +352,23 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
             })
             .unwrap();
     });
-    let weak_app = app.as_weak();
-    app.on_input_profile_creation_button_clicked(move || {
-        #[cfg(not(target_os = "android"))]
-        let weak_app2 = weak_app.clone();
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                let profile_name = handle.get_input_profile_name();
-                let dinput = handle.get_input_dinput();
-                let deadzone = handle.get_input_deadzone();
-                handle.set_show_input_profile(false);
-
-                #[cfg(target_os = "android")]
-                ui::android::spawn_configure_input_profile(profile_name, dinput, deadzone);
-
-                #[cfg(not(target_os = "android"))]
-                tokio::spawn(async move {
-                    let cli_path = std::env::current_exe()
-                        .unwrap()
-                        .parent()
-                        .unwrap()
-                        .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
-                    let cmd_path = if cfg!(target_os = "macos") && cli_path.exists() {
-                        cli_path
-                    } else {
-                        std::env::current_exe().unwrap()
-                    };
-                    let mut command = tokio::process::Command::new(cmd_path);
-                    command.args([
-                        "--configure-input-profile",
-                        &profile_name,
-                        "--deadzone",
-                        &deadzone.to_string(),
-                    ]);
-                    if dinput {
-                        command.arg("--use-dinput");
-                    }
-                    if !command.status().await.unwrap().success() {
-                        eprintln!("Failed to configure input profile");
-                    }
-                    let config = ui::config::Config::new();
-                    update_input_profiles(&weak_app2, &config);
-                });
-            })
-            .unwrap();
-    });
+    #[cfg(target_os = "android")]
+    {
+        let weak_app = app.as_weak();
+        app.on_input_profile_creation_button_clicked(move || {
+            weak_app
+                .upgrade_in_event_loop(move |handle| {
+                    let profile_name = handle.get_input_profile_name();
+                    let dinput = handle.get_input_dinput();
+                    let deadzone = handle.get_input_deadzone();
+                    handle.set_show_input_profile(false);
+                    ui::android::spawn_configure_input_profile(profile_name, dinput, deadzone);
+                })
+                .unwrap();
+        });
+    }
+    #[cfg(not(target_os = "android"))]
+    wizard::init(app);
 
     let weak_app2 = app.as_weak();
     app.on_transferpak_toggled(move |player, enabled| {
@@ -787,4 +759,480 @@ fn open_rom(app: &AppWindow) {
             );
         }
     });
+}
+
+/// In-app input-profile wizard: drives the pure menu state machine in
+/// `ui::input` from the Slint event loop. Raw gamepad/joystick input is pumped
+/// from SDL by a 16 ms `slint::Timer` (no SDL window — the GAMEPAD subsystem
+/// plus the background-events hint deliver device events windowless), keyboard
+/// arrives through the wizard's FocusScope, and taps through its TouchAreas.
+/// Replaces the old standalone SDL window (`configure_input_profile`).
+#[cfg(not(target_os = "android"))]
+mod wizard {
+    use super::{AppWindow, ProfileRow, ProfileWizardData, update_input_profiles};
+    use crate::ui;
+    use crate::ui::input;
+    use crate::ui::input_capture::{self, CaptureEvent};
+    use slint::ComponentHandle;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    /// Ignore raw/key input for this long after entering a capture step, so
+    /// the input that triggered capture (or a still-held key) does not
+    /// immediately re-bind — the pump-friendly version of the old `debounce`.
+    const DEBOUNCE_MS: u64 = 150;
+
+    struct Session {
+        state: input::MenuState,
+        bindings: input::Bindings,
+        profile_name: String,
+        dinput: bool,
+        deadzone: i32,
+        /// Skip axis events until the stick returns near neutral (set after
+        /// binding an axis so a still-deflected stick does not instantly
+        /// re-bind).
+        await_axis_neutral: bool,
+        /// Gamepad left-Y position for edge-triggered list navigation.
+        last_axis_y: i16,
+        /// SDL tick until which capture input is ignored (debounce window).
+        ignore_until: u64,
+        open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick>,
+        open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad>,
+    }
+
+    impl Session {
+        /// Flush queued SDL events and open the ~150 ms ignore window.
+        fn debounce(&mut self) {
+            unsafe {
+                sdl3_sys::events::SDL_PumpEvents();
+                sdl3_sys::events::SDL_FlushEvents(
+                    u32::from(sdl3_sys::events::SDL_EVENT_FIRST),
+                    u32::from(sdl3_sys::events::SDL_EVENT_LAST),
+                );
+            }
+            self.ignore_until = unsafe { sdl3_sys::timer::SDL_GetTicks() } + DEBOUNCE_MS;
+        }
+    }
+
+    type Shared = Rc<RefCell<Option<Session>>>;
+
+    /// Wire the wizard's callbacks once at startup. The session and pump
+    /// timer live behind `Rc`s shared by every callback; everything runs on
+    /// the Slint event-loop thread.
+    pub(super) fn init(app: &AppWindow) {
+        let session: Shared = Rc::new(RefCell::new(None));
+        let timer = Rc::new(slint::Timer::default());
+
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            app.on_input_profile_creation_button_clicked(move || {
+                let Some(handle) = weak.upgrade() else { return };
+                open(&handle, &session, &timer);
+            });
+        }
+
+        let wiz = app.global::<ProfileWizardData>();
+
+        // Keyboard from the wizard's FocusScope: bind in capture (Esc skips),
+        // navigate in review.
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_key_pressed(move |text| {
+                let Some(handle) = weak.upgrade() else { return };
+                let action = {
+                    let mut guard = session.borrow_mut();
+                    let Some(s) = guard.as_mut() else { return };
+                    let Some(scancode) = input_capture::slint_key_to_scancode(&text) else {
+                        return;
+                    };
+                    match s.state.screen {
+                        input::Screen::Capture => {
+                            if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_ESCAPE) {
+                                input::Action::Cancel
+                            } else if unsafe { sdl3_sys::timer::SDL_GetTicks() } < s.ignore_until {
+                                return;
+                            } else {
+                                let value = input::KEY_LABELS[s.state.selected].1;
+                                s.bindings.bind(value, CaptureEvent::Key(scancode));
+                                input::Action::Bound
+                            }
+                        }
+                        input::Screen::List => {
+                            if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_UP) {
+                                input::Action::Up
+                            } else if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_DOWN) {
+                                input::Action::Down
+                            } else if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_RETURN)
+                            {
+                                input::Action::Confirm
+                            } else if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_ESCAPE)
+                            {
+                                input::Action::Cancel
+                            } else {
+                                return;
+                            }
+                        }
+                    }
+                };
+                dispatch(&handle, &session, &timer, action);
+            });
+        }
+
+        // Explicit navigation intents (Android JNI will feed these too).
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_nav(move |code| {
+                let Some(handle) = weak.upgrade() else { return };
+                let action = match code {
+                    0 => input::Action::Up,
+                    1 => input::Action::Down,
+                    2 => input::Action::Confirm,
+                    3 => input::Action::Cancel,
+                    _ => input::Action::Quit,
+                };
+                dispatch(&handle, &session, &timer, action);
+            });
+        }
+
+        // Tap a row to select it; tap the selected row again to rebind.
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_tap_row(move |i| {
+                let Some(handle) = weak.upgrade() else { return };
+                let confirm = {
+                    let mut guard = session.borrow_mut();
+                    let Some(s) = guard.as_mut() else { return };
+                    if s.state.screen != input::Screen::List {
+                        return;
+                    }
+                    let i = i as usize;
+                    if s.state.selected == i {
+                        true
+                    } else {
+                        s.state.selected = i;
+                        false
+                    }
+                };
+                if confirm {
+                    dispatch(&handle, &session, &timer, input::Action::Confirm);
+                } else {
+                    render(&handle, &session);
+                }
+            });
+        }
+
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_tap_save(move || {
+                let Some(handle) = weak.upgrade() else { return };
+                {
+                    let mut guard = session.borrow_mut();
+                    let Some(s) = guard.as_mut() else { return };
+                    if s.state.screen != input::Screen::List {
+                        return;
+                    }
+                    s.state.selected = input::SAVE_ROW;
+                }
+                dispatch(&handle, &session, &timer, input::Action::Confirm);
+            });
+        }
+
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_tap_cancel(move || {
+                let Some(handle) = weak.upgrade() else { return };
+                dispatch(&handle, &session, &timer, input::Action::Cancel);
+            });
+        }
+    }
+
+    /// Start the wizard for the dialog's profile name / dinput / deadzone.
+    fn open(handle: &AppWindow, session: &Shared, timer: &Rc<slint::Timer>) {
+        let profile_name = handle.get_input_profile_name().to_string();
+        let dinput = handle.get_input_dinput();
+        let deadzone = handle.get_input_deadzone();
+        handle.set_show_input_profile(false);
+        // The dialog's button is disabled for these; keep the old CLI guard.
+        if profile_name.is_empty() || profile_name == "default" {
+            return;
+        }
+
+        // Mirror how the old SDL window opened devices: gamepads normally,
+        // raw joysticks for DirectInput.
+        let mut open_joysticks = Vec::new();
+        let mut open_controllers = Vec::new();
+        for joystick in input::get_joysticks() {
+            if dinput {
+                let j = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick) };
+                if !j.is_null() {
+                    open_joysticks.push(j);
+                }
+            } else {
+                let c = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick) };
+                if !c.is_null() {
+                    open_controllers.push(c);
+                }
+            }
+        }
+
+        let config = ui::config::Config::new();
+        let existing = config.input.input_profiles.get(&profile_name);
+        // Pre-load the existing profile so editing only re-captures the
+        // inputs the user picks; a new profile starts the guided flow.
+        let bindings = existing.map_or_else(input::Bindings::empty, input::Bindings::from_profile);
+        let state = input::MenuState::entry(existing.is_some());
+
+        let mut s = Session {
+            state,
+            bindings,
+            profile_name: profile_name.clone(),
+            dinput,
+            deadzone,
+            await_axis_neutral: false,
+            last_axis_y: 0,
+            ignore_until: 0,
+            open_joysticks,
+            open_controllers,
+        };
+        // Drain anything still held from the click that opened the wizard so
+        // it cannot auto-bind the first guided input.
+        s.debounce();
+        *session.borrow_mut() = Some(s);
+
+        handle
+            .global::<ProfileWizardData>()
+            .set_profile_name(profile_name.into());
+        render(handle, session);
+        handle.set_show_profile_wizard(true);
+
+        let weak = handle.as_weak();
+        let session = session.clone();
+        let timer_weak = Rc::downgrade(timer);
+        timer.start(
+            slint::TimerMode::Repeated,
+            std::time::Duration::from_millis(16),
+            move || {
+                let (Some(handle), Some(timer)) = (weak.upgrade(), timer_weak.upgrade()) else {
+                    return;
+                };
+                pump(&handle, &session, &timer);
+            },
+        );
+    }
+
+    /// One 16 ms tick: drain queued SDL events into bindings / nav actions.
+    fn pump(handle: &AppWindow, session: &Shared, timer: &Rc<slint::Timer>) {
+        let mut event: sdl3_sys::events::SDL_Event = Default::default();
+        while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
+            let action = {
+                let mut guard = session.borrow_mut();
+                let Some(s) = guard.as_mut() else { return };
+                translate(s, &event)
+            };
+            if let Some(action) = action {
+                dispatch(handle, session, timer, action);
+            }
+        }
+    }
+
+    /// Whether this event is on the axis stream captures bind from (gamepad
+    /// axes normally, raw joystick axes for DirectInput) — the stream the
+    /// axis-neutral latch gates.
+    fn is_axis_event(event: &sdl3_sys::events::SDL_Event, dinput: bool) -> bool {
+        let et = event.event_type();
+        if dinput {
+            et == sdl3_sys::events::SDL_EVENT_JOYSTICK_AXIS_MOTION
+        } else {
+            et == sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION
+        }
+    }
+
+    /// Classify one raw SDL event against the current screen. Applies
+    /// bindings and the debounce / axis-neutral gates exactly as the old
+    /// `wait_capture` / `wait_nav_action` did; returns the action to
+    /// `advance` with.
+    fn translate(s: &mut Session, event: &sdl3_sys::events::SDL_Event) -> Option<input::Action> {
+        match s.state.screen {
+            input::Screen::Capture => {
+                // East / back skips even during the debounce window.
+                if input_capture::classify_sdl_nav(event) == Some(input::Action::Cancel) {
+                    return Some(input::Action::Cancel);
+                }
+                if unsafe { sdl3_sys::timer::SDL_GetTicks() } < s.ignore_until {
+                    return None;
+                }
+                let axis_event = is_axis_event(event, s.dinput);
+                match input_capture::classify_sdl_event(event, s.dinput) {
+                    Some(ev) => {
+                        if axis_event && s.await_axis_neutral {
+                            return None; // stick still deflected from the last bind
+                        }
+                        if axis_event {
+                            s.await_axis_neutral = true;
+                        }
+                        let value = input::KEY_LABELS[s.state.selected].1;
+                        s.bindings.bind(value, ev);
+                        Some(input::Action::Bound)
+                    }
+                    None => {
+                        // A below-threshold deflection on the bindable axis
+                        // stream re-arms axis capture (the old neutral gate).
+                        if axis_event {
+                            s.await_axis_neutral = false;
+                        }
+                        None
+                    }
+                }
+            }
+            input::Screen::List => {
+                let et = event.event_type();
+                if et == sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION {
+                    // Gamepad left-Y navigates on threshold crossings only.
+                    let (axis, v) = unsafe { (event.gaxis.axis, event.gaxis.value) };
+                    if i32::from(axis) == sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_LEFTY.value() {
+                        let thresh = (i16::MAX as i32 * 3 / 4) as i16;
+                        let was_neutral = s.last_axis_y.saturating_abs() <= thresh;
+                        s.last_axis_y = v;
+                        if was_neutral && v < -thresh {
+                            return Some(input::Action::Up);
+                        } else if was_neutral && v > thresh {
+                            return Some(input::Action::Down);
+                        }
+                    }
+                    return None;
+                }
+                input_capture::classify_sdl_nav(event)
+            }
+        }
+    }
+
+    /// Run one decoded action through `advance` and act on the transition.
+    fn dispatch(
+        handle: &AppWindow,
+        session: &Shared,
+        timer: &Rc<slint::Timer>,
+        action: input::Action,
+    ) {
+        let exit = {
+            let mut guard = session.borrow_mut();
+            let Some(s) = guard.as_mut() else { return };
+            let was_capture = s.state.screen == input::Screen::Capture;
+            let t = input::advance(&mut s.state, action);
+            if t.begin_capture {
+                if was_capture {
+                    // Guided auto-advance: the old loop only debounced when
+                    // the axis-neutral latch was clear.
+                    if !s.await_axis_neutral {
+                        s.debounce();
+                    }
+                } else {
+                    // Entering capture from the list re-arms axes and debounces.
+                    s.await_axis_neutral = false;
+                    s.debounce();
+                }
+            }
+            t.exit.then_some(t.save)
+        };
+        match exit {
+            Some(save) => finish(handle, session, timer, save),
+            None => render(handle, session),
+        }
+    }
+
+    /// Mirror the session into `ProfileWizardData`.
+    fn render(handle: &AppWindow, session: &Shared) {
+        let guard = session.borrow();
+        let Some(s) = guard.as_ref() else { return };
+        let wiz = handle.global::<ProfileWizardData>();
+
+        match s.state.screen {
+            input::Screen::Capture => {
+                wiz.set_mode(0);
+                wiz.set_capture_label(input::KEY_LABELS[s.state.selected].0.into());
+                let next = if s.state.guided {
+                    input::KEY_LABELS
+                        .get(s.state.selected + 1)
+                        .map_or("", |&(label, _)| label)
+                } else {
+                    ""
+                };
+                wiz.set_next_label(next.into());
+                wiz.set_progress_index(s.state.selected as i32 + 1);
+                wiz.set_progress_total(input::PROFILE_SIZE as i32);
+            }
+            input::Screen::List => {
+                wiz.set_mode(1);
+                let rows: Vec<ProfileRow> = input::KEY_LABELS
+                    .iter()
+                    .map(|&(label, value)| ProfileRow {
+                        label: label.into(),
+                        binding: s.bindings.label(value).into(),
+                        bound: s.bindings.is_bound(value),
+                    })
+                    .collect();
+                wiz.set_rows(slint::ModelRc::from(std::rc::Rc::new(
+                    slint::VecModel::from(rows),
+                )));
+                wiz.set_selected(s.state.selected as i32);
+                wiz.set_warning(
+                    if s.state.quit_armed {
+                        "unsaved changes - quit again to discard"
+                    } else {
+                        ""
+                    }
+                    .into(),
+                );
+            }
+        }
+
+        match input::KEY_LABELS
+            .get(s.state.selected)
+            .and_then(|&(_, value)| input::glow_center(value))
+        {
+            Some((cx, cy, _)) => {
+                wiz.set_glow_cx(cx);
+                wiz.set_glow_cy(cy);
+                wiz.set_glow_visible(true);
+            }
+            None => wiz.set_glow_visible(false),
+        }
+    }
+
+    /// Close the wizard: release SDL devices, optionally persist the profile
+    /// (via `Config`'s write-on-drop, as the old CLI did), stop the pump and
+    /// return to the controller page.
+    fn finish(handle: &AppWindow, session: &Shared, timer: &Rc<slint::Timer>, save: bool) {
+        timer.stop();
+        let Some(s) = session.borrow_mut().take() else {
+            return;
+        };
+        for joystick in &s.open_joysticks {
+            unsafe { sdl3_sys::joystick::SDL_CloseJoystick(*joystick) };
+        }
+        for controller in &s.open_controllers {
+            unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(*controller) };
+        }
+        if save {
+            let mut config = ui::config::Config::new();
+            config
+                .input
+                .input_profiles
+                .insert(s.profile_name, s.bindings.to_profile(s.dinput, s.deadzone));
+            update_input_profiles(&handle.as_weak(), &config);
+            // `config` drops here and writes config.json to disk.
+        }
+        handle.set_show_profile_wizard(false);
+    }
 }

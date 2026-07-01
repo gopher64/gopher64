@@ -622,31 +622,7 @@ pub fn clear_bindings(config: &mut ui::config::Config) {
     }
 }
 
-fn close_input_profile_window(
-    open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick>,
-    open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad>,
-    renderer: *mut sdl3_sys::render::SDL_Renderer,
-    text_engine: *mut sdl3_ttf_sys::ttf::TTF_TextEngine,
-    font: *mut sdl3_ttf_sys::ttf::TTF_Font,
-    texture: *mut sdl3_sys::render::SDL_Texture,
-    window: *mut sdl3_sys::video::SDL_Window,
-) {
-    for joystick in open_joysticks {
-        unsafe { sdl3_sys::joystick::SDL_CloseJoystick(joystick) }
-    }
-    for controller in open_controllers {
-        unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller) }
-    }
-
-    unsafe {
-        sdl3_sys::render::SDL_DestroyTexture(texture);
-        sdl3_ttf_sys::ttf::TTF_CloseFont(font);
-        sdl3_ttf_sys::ttf::TTF_DestroyRendererTextEngine(text_engine);
-        sdl3_sys::render::SDL_DestroyRenderer(renderer);
-        sdl3_sys::video::SDL_DestroyWindow(window);
-    }
-}
-
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 fn clear_profile_input(
     value: usize,
     keys: &mut [ui::config::InputKeyButton; PROFILE_SIZE],
@@ -664,6 +640,7 @@ fn clear_profile_input(
     joystick_axis[value].enabled = false;
 }
 
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 fn binding_label(
     value: usize,
     keys: &[ui::config::InputKeyButton; PROFILE_SIZE],
@@ -700,11 +677,37 @@ fn binding_label(
     }
 }
 
-/// The "Save & Exit" row sits one past the last input in the review list.
-const SAVE_ROW: usize = PROFILE_SIZE;
+/// Display labels for the review list / capture prompt, in wizard order.
+#[cfg(all(feature = "gui", not(target_os = "android")))]
+pub(crate) const KEY_LABELS: [(&str, usize); PROFILE_SIZE] = [
+    ("A", A_BUTTON),
+    ("B", B_BUTTON),
+    ("Start", START_BUTTON),
+    ("D Up", U_DPAD),
+    ("D Down", D_DPAD),
+    ("D Left", L_DPAD),
+    ("D Right", R_DPAD),
+    ("C Up", U_CBUTTON),
+    ("C Down", D_CBUTTON),
+    ("C Left", L_CBUTTON),
+    ("C Right", R_CBUTTON),
+    ("L", L_TRIG),
+    ("R", R_TRIG),
+    ("Z", Z_TRIG),
+    ("Control Stick Up", AXIS_UP),
+    ("Control Stick Down", AXIS_DOWN),
+    ("Control Stick Left", AXIS_LEFT),
+    ("Control Stick Right", AXIS_RIGHT),
+    ("Hotkey Activator", HOTKEY),
+];
 
+/// The "Save & Exit" row sits one past the last input in the review list.
+#[cfg(all(feature = "gui", not(target_os = "android")))]
+pub(crate) const SAVE_ROW: usize = PROFILE_SIZE;
+
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum Screen {
+pub(crate) enum Screen {
     /// Reviewing the input list (navigable).
     List,
     /// Listening for an input to bind.
@@ -713,6 +716,7 @@ enum Screen {
 
 /// Device-agnostic navigation intents. Raw keyboard/gamepad/joystick/touch
 /// events all decode to these before reaching `advance`.
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum Action {
     Up,
@@ -727,21 +731,23 @@ pub(crate) enum Action {
     Bound,
 }
 
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-struct MenuState {
-    screen: Screen,
+pub(crate) struct MenuState {
+    pub(crate) screen: Screen,
     /// True during the guided flow (auto-advance through every input).
-    guided: bool,
+    pub(crate) guided: bool,
     /// List: row `0..=SAVE_ROW`. Capture: the input row `0..PROFILE_SIZE` being bound.
-    selected: usize,
+    pub(crate) selected: usize,
     /// A binding has changed since the window opened.
-    dirty: bool,
+    pub(crate) dirty: bool,
     /// A dirty quit has been requested once; a second quit discards.
-    quit_armed: bool,
+    pub(crate) quit_armed: bool,
 }
 
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 impl MenuState {
-    fn entry(existing_profile: bool) -> Self {
+    pub(crate) fn entry(existing_profile: bool) -> Self {
         MenuState {
             // New/empty profile → jump straight into the guided flow;
             // editing an existing profile → start on the review list.
@@ -758,19 +764,21 @@ impl MenuState {
     }
 }
 
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
-struct Transition {
+pub(crate) struct Transition {
     /// Close the window.
-    exit: bool,
+    pub(crate) exit: bool,
     /// Persist the profile (only true alongside `exit`).
-    save: bool,
+    pub(crate) save: bool,
     /// Begin a fresh capture listen (caller debounces first).
-    begin_capture: bool,
+    pub(crate) begin_capture: bool,
 }
 
 /// Pure state transition. `action` is the decoded intent; returns side-effect
 /// signals for the SDL shell to act on.
-fn advance(state: &mut MenuState, action: Action) -> Transition {
+#[cfg(all(feature = "gui", not(target_os = "android")))]
+pub(crate) fn advance(state: &mut MenuState, action: Action) -> Transition {
     let mut t = Transition::default();
     // Any non-quit-like action disarms a pending dirty-quit.
     if action != Action::Quit && action != Action::Cancel {
@@ -835,7 +843,8 @@ fn advance(state: &mut MenuState, action: Action) -> Transition {
 /// Glow location for an input as fractions of the 852×480 logical canvas:
 /// `(center_x, center_y, radius)` where radius is a fraction of canvas width.
 /// `None` for inputs with no controller-art location (the hotkey activator).
-fn glow_center(input: usize) -> Option<(f32, f32, f32)> {
+#[cfg(all(feature = "gui", not(target_os = "android")))]
+pub(crate) fn glow_center(input: usize) -> Option<(f32, f32, f32)> {
     let spot = match input {
         A_BUTTON => (0.715, 0.595, 0.045),
         B_BUTTON => (0.655, 0.495, 0.045),
@@ -857,10 +866,11 @@ fn glow_center(input: usize) -> Option<(f32, f32, f32)> {
     Some(spot)
 }
 
-/// The six per-input binding arrays, bundled so the capture helper stays within
+/// The six per-input binding arrays, bundled so the capture helpers stay within
 /// clippy's argument budget. Field-disjoint borrows keep `clear_profile_input`
 /// and `binding_label` callable on individual arrays.
-struct Bindings {
+#[cfg(all(feature = "gui", not(target_os = "android")))]
+pub(crate) struct Bindings {
     keys: [ui::config::InputKeyButton; PROFILE_SIZE],
     controller_buttons: [ui::config::InputKeyButton; PROFILE_SIZE],
     controller_axis: [ui::config::InputControllerAxis; PROFILE_SIZE],
@@ -869,8 +879,9 @@ struct Bindings {
     joystick_axis: [ui::config::InputControllerAxis; PROFILE_SIZE],
 }
 
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 impl Bindings {
-    fn empty() -> Self {
+    pub(crate) fn empty() -> Self {
         Bindings {
             keys: [ui::config::InputKeyButton {
                 enabled: false,
@@ -903,610 +914,117 @@ impl Bindings {
             }; PROFILE_SIZE],
         }
     }
-}
 
-/// Outcome of a single capture-mode listen tick.
-enum CaptureOutcome {
-    /// A raw input was captured and stored in `Bindings`.
-    Bound,
-    /// Esc / gamepad East / on-screen ✕ tap → skip this input.
-    Cancel,
-    /// Window close / Android back → quit.
-    Quit,
-    /// Nothing decisive this tick (redraw for the pulse animation).
-    Idle,
-}
+    /// Bindings preloaded from an existing profile, so editing only
+    /// re-captures the inputs the user picks.
+    pub(crate) fn from_profile(profile: &ui::config::InputProfile) -> Self {
+        Bindings {
+            keys: profile.keys,
+            controller_buttons: profile.controller_buttons,
+            controller_axis: profile.controller_axis,
+            joystick_buttons: profile.joystick_buttons,
+            joystick_hat: profile.joystick_hat,
+            joystick_axis: profile.joystick_axis,
+        }
+    }
 
-fn point_in(rect: &sdl3_sys::rect::SDL_FRect, x: f32, y: f32) -> bool {
-    x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h
-}
+    /// Assemble the persisted profile, exactly as the old SDL window saved it.
+    pub(crate) fn to_profile(&self, dinput: bool, deadzone: i32) -> ui::config::InputProfile {
+        ui::config::InputProfile {
+            keys: self.keys,
+            controller_buttons: self.controller_buttons,
+            controller_axis: self.controller_axis,
+            joystick_buttons: self.joystick_buttons,
+            joystick_hat: self.joystick_hat,
+            joystick_axis: self.joystick_axis,
+            dinput,
+            deadzone,
+        }
+    }
 
-/// Drain queued events, then ignore all input for ~150 ms so the input that
-/// triggered capture (or a still-held key) does not immediately re-bind.
-fn debounce() {
-    unsafe {
-        sdl3_sys::events::SDL_PumpEvents();
-        sdl3_sys::events::SDL_FlushEvents(
-            u32::from(sdl3_sys::events::SDL_EVENT_FIRST),
-            u32::from(sdl3_sys::events::SDL_EVENT_LAST),
+    /// Store one captured input for `value`: clear every per-device slot, then
+    /// set the matching array — the same clear+set the old `wait_capture` did.
+    pub(crate) fn bind(&mut self, value: usize, ev: ui::input_capture::CaptureEvent) {
+        use ui::input_capture::CaptureEvent;
+        clear_profile_input(
+            value,
+            &mut self.keys,
+            &mut self.controller_buttons,
+            &mut self.controller_axis,
+            &mut self.joystick_buttons,
+            &mut self.joystick_hat,
+            &mut self.joystick_axis,
         );
+        match ev {
+            CaptureEvent::Key(id) => {
+                self.keys[value] = ui::config::InputKeyButton { enabled: true, id };
+            }
+            CaptureEvent::GamepadButton(id) => {
+                self.controller_buttons[value] = ui::config::InputKeyButton { enabled: true, id };
+            }
+            CaptureEvent::GamepadAxis { id, sign } => {
+                self.controller_axis[value] = ui::config::InputControllerAxis {
+                    enabled: true,
+                    id,
+                    axis: sign,
+                    initial_state: 0,
+                };
+            }
+            CaptureEvent::JoyButton(id) => {
+                self.joystick_buttons[value] = ui::config::InputKeyButton { enabled: true, id };
+            }
+            CaptureEvent::JoyHat { id, direction } => {
+                self.joystick_hat[value] = ui::config::InputJoystickHat {
+                    enabled: true,
+                    id,
+                    direction,
+                };
+            }
+            CaptureEvent::JoyAxis {
+                id,
+                sign,
+                initial_state,
+            } => {
+                self.joystick_axis[value] = ui::config::InputControllerAxis {
+                    enabled: true,
+                    id,
+                    axis: sign,
+                    initial_state,
+                };
+            }
+        }
     }
-    let start = unsafe { sdl3_sys::timer::SDL_GetTicks() };
-    let mut ev: sdl3_sys::events::SDL_Event = Default::default();
-    while unsafe { sdl3_sys::timer::SDL_GetTicks() } - start < 150 {
-        while unsafe { sdl3_sys::events::SDL_PollEvent(&mut ev) } {}
-        unsafe { sdl3_sys::timer::SDL_Delay(5) };
-    }
-}
 
-/// Decode ONE navigation event (any input method) into an `Action`. Taps mutate
-/// `state.selected` directly (tap-to-select, tap-selected-again to confirm);
-/// `last_axis_y` tracks the gamepad stick so Up/Down fire only on threshold
-/// crossings.
-fn wait_nav_action(
-    renderer: *mut sdl3_sys::render::SDL_Renderer,
-    hit: &ui::video::ListHitAreas,
-    state: &mut MenuState,
-    last_axis_y: &mut i16,
-) -> Option<Action> {
-    let mut event: sdl3_sys::events::SDL_Event = Default::default();
-    if !unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
-        return None;
+    /// Human-readable binding for the review list ("Key 4", "(unset)", ...).
+    pub(crate) fn label(&self, value: usize) -> String {
+        binding_label(
+            value,
+            &self.keys,
+            &self.controller_buttons,
+            &self.controller_axis,
+            &self.joystick_buttons,
+            &self.joystick_hat,
+            &self.joystick_axis,
+        )
     }
-    let et = event.event_type();
-    if et == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
-        return Some(Action::Quit);
-    } else if et == sdl3_sys::events::SDL_EVENT_KEY_DOWN && !unsafe { event.key.repeat } {
-        let sc = unsafe { event.key.scancode };
-        if sc == sdl3_sys::scancode::SDL_SCANCODE_UP {
-            return Some(Action::Up);
-        } else if sc == sdl3_sys::scancode::SDL_SCANCODE_DOWN {
-            return Some(Action::Down);
-        } else if sc == sdl3_sys::scancode::SDL_SCANCODE_RETURN {
-            return Some(Action::Confirm);
-        } else if sc == sdl3_sys::scancode::SDL_SCANCODE_ESCAPE
-            || sc == sdl3_sys::scancode::SDL_SCANCODE_AC_BACK
-        {
-            return Some(Action::Cancel);
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN {
-        let b = i32::from(unsafe { event.gbutton.button });
-        if b == sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_DPAD_UP.value() {
-            return Some(Action::Up);
-        } else if b == sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_DPAD_DOWN.value() {
-            return Some(Action::Down);
-        } else if b == sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_SOUTH.value() {
-            return Some(Action::Confirm);
-        } else if b == sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_EAST.value() {
-            return Some(Action::Cancel);
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION {
-        let axis = i32::from(unsafe { event.gaxis.axis });
-        if axis == sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_LEFTY.value() {
-            let v = unsafe { event.gaxis.value };
-            let thresh = (i16::MAX as i32 * 3 / 4) as i16;
-            let was_neutral = last_axis_y.saturating_abs() <= thresh;
-            *last_axis_y = v;
-            if was_neutral && v < -thresh {
-                return Some(Action::Up);
-            } else if was_neutral && v > thresh {
-                return Some(Action::Down);
-            }
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION {
-        let state_hat = unsafe { event.jhat.value };
-        if state_hat == sdl3_sys::joystick::SDL_HAT_UP {
-            return Some(Action::Up);
-        } else if state_hat == sdl3_sys::joystick::SDL_HAT_DOWN {
-            return Some(Action::Down);
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN {
-        if unsafe { event.jbutton.button } == 0 {
-            return Some(Action::Confirm);
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_FINGER_DOWN {
-        unsafe { sdl3_sys::render::SDL_ConvertEventToRenderCoordinates(renderer, &mut event) };
-        let (x, y) = unsafe { (event.tfinger.x, event.tfinger.y) };
-        if point_in(&hit.cancel, x, y) {
-            return Some(Action::Cancel);
-        } else if point_in(&hit.save, x, y) {
-            state.selected = SAVE_ROW;
-            return Some(Action::Confirm);
-        }
-        for (i, r) in hit.rows.iter().enumerate() {
-            if point_in(r, x, y) {
-                if state.selected == i {
-                    return Some(Action::Confirm);
-                }
-                state.selected = i;
-                return None;
-            }
-        }
+
+    /// Whether any device slot is bound for `value`.
+    pub(crate) fn is_bound(&self, value: usize) -> bool {
+        self.keys[value].enabled
+            || self.controller_buttons[value].enabled
+            || self.controller_axis[value].enabled
+            || self.joystick_buttons[value].enabled
+            || self.joystick_hat[value].enabled
+            || self.joystick_axis[value].enabled
     }
-    None
 }
 
 /// Sign (+1 / -1) of an axis deflection relative to its resting state.
 /// Avoids the 0/0 panic of `v / v.abs()` and never returns 0 (a 0 sign would
 /// dead-bind the input, since in-game uses `axis_position * axis > 0`).
+#[cfg(all(feature = "gui", not(target_os = "android")))]
 pub(crate) fn axis_sign(axis_value: i16, initial_state: i16) -> i16 {
     if axis_value >= initial_state { 1 } else { -1 }
-}
-
-/// Listen for ONE capture event, reusing the per-device arms. A raw input is
-/// stored into `bindings` (returning `Bound`); Esc/East/back cancel or quit;
-/// axis arms honor `await_axis_neutral` and re-arm it after binding an axis.
-fn wait_capture(
-    value: usize,
-    bindings: &mut Bindings,
-    await_axis_neutral: &mut bool,
-    has_controller: bool,
-    has_joystick: bool,
-) -> CaptureOutcome {
-    let mut event: sdl3_sys::events::SDL_Event = Default::default();
-    if !unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
-        return CaptureOutcome::Idle;
-    }
-    let et = event.event_type();
-    if et == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED {
-        return CaptureOutcome::Quit;
-    } else if et == sdl3_sys::events::SDL_EVENT_FINGER_DOWN {
-        // Touch has no bindable input; a tap skips (matches the footer legend),
-        // so a touch-only device can still advance/exit the guided flow.
-        return CaptureOutcome::Cancel;
-    } else if et == sdl3_sys::events::SDL_EVENT_KEY_DOWN {
-        let sc = unsafe { event.key.scancode };
-        if sc == sdl3_sys::scancode::SDL_SCANCODE_ESCAPE
-            || sc == sdl3_sys::scancode::SDL_SCANCODE_AC_BACK
-        {
-            return CaptureOutcome::Cancel;
-        } else if unsafe {
-            !event.key.repeat
-                && sc != sdl3_sys::scancode::SDL_SCANCODE_LALT
-                && sc != sdl3_sys::scancode::SDL_SCANCODE_RALT
-        } {
-            clear_profile_input(
-                value,
-                &mut bindings.keys,
-                &mut bindings.controller_buttons,
-                &mut bindings.controller_axis,
-                &mut bindings.joystick_buttons,
-                &mut bindings.joystick_hat,
-                &mut bindings.joystick_axis,
-            );
-            bindings.keys[value] = ui::config::InputKeyButton {
-                enabled: true,
-                id: i32::from(sc),
-            };
-            return CaptureOutcome::Bound;
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN {
-        if i32::from(unsafe { event.gbutton.button })
-            == sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_EAST.value()
-        {
-            return CaptureOutcome::Cancel;
-        } else if has_controller {
-            clear_profile_input(
-                value,
-                &mut bindings.keys,
-                &mut bindings.controller_buttons,
-                &mut bindings.controller_axis,
-                &mut bindings.joystick_buttons,
-                &mut bindings.joystick_hat,
-                &mut bindings.joystick_axis,
-            );
-            bindings.controller_buttons[value] = ui::config::InputKeyButton {
-                enabled: true,
-                id: i32::from(unsafe { event.gbutton.button }),
-            };
-            return CaptureOutcome::Bound;
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION {
-        let axis_value = unsafe { event.gaxis.value };
-        let axis = unsafe { event.gaxis.axis };
-        let past = axis_value.saturating_abs() > (i16::MAX as i32 * 3 / 4) as i16;
-        if *await_axis_neutral {
-            if !past {
-                *await_axis_neutral = false;
-            }
-        } else if has_controller && past {
-            let result = ui::config::InputControllerAxis {
-                enabled: true,
-                id: axis as i32,
-                axis: axis_sign(axis_value, 0),
-                initial_state: 0,
-            };
-            clear_profile_input(
-                value,
-                &mut bindings.keys,
-                &mut bindings.controller_buttons,
-                &mut bindings.controller_axis,
-                &mut bindings.joystick_buttons,
-                &mut bindings.joystick_hat,
-                &mut bindings.joystick_axis,
-            );
-            bindings.controller_axis[value] = result;
-            *await_axis_neutral = true;
-            return CaptureOutcome::Bound;
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN {
-        if has_joystick {
-            clear_profile_input(
-                value,
-                &mut bindings.keys,
-                &mut bindings.controller_buttons,
-                &mut bindings.controller_axis,
-                &mut bindings.joystick_buttons,
-                &mut bindings.joystick_hat,
-                &mut bindings.joystick_axis,
-            );
-            bindings.joystick_buttons[value] = ui::config::InputKeyButton {
-                enabled: true,
-                id: i32::from(unsafe { event.jbutton.button }),
-            };
-            return CaptureOutcome::Bound;
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION {
-        let hat_state = unsafe { event.jhat.value };
-        let hat = unsafe { event.jhat.hat };
-        if has_joystick && hat_state != sdl3_sys::joystick::SDL_HAT_CENTERED {
-            clear_profile_input(
-                value,
-                &mut bindings.keys,
-                &mut bindings.controller_buttons,
-                &mut bindings.controller_axis,
-                &mut bindings.joystick_buttons,
-                &mut bindings.joystick_hat,
-                &mut bindings.joystick_axis,
-            );
-            bindings.joystick_hat[value] = ui::config::InputJoystickHat {
-                enabled: true,
-                id: hat as i32,
-                direction: hat_state,
-            };
-            return CaptureOutcome::Bound;
-        }
-    } else if et == sdl3_sys::events::SDL_EVENT_JOYSTICK_AXIS_MOTION {
-        let axis_value = unsafe { event.jaxis.value };
-        let axis = unsafe { event.jaxis.axis };
-
-        let mut initial_state = 0;
-        let has_initial_state = unsafe {
-            sdl3_sys::joystick::SDL_GetJoystickAxisInitialState(
-                sdl3_sys::joystick::SDL_GetJoystickFromID(event.jaxis.which),
-                axis as i32,
-                &mut initial_state,
-            )
-        };
-        initial_state = if has_initial_state {
-            if initial_state < i16::MIN / 2 {
-                i16::MIN
-            } else if initial_state > i16::MAX / 2 {
-                i16::MAX
-            } else {
-                0
-            }
-        } else {
-            0
-        };
-
-        let past = axis_value.abs_diff(initial_state) > (u16::MAX / 4);
-        if *await_axis_neutral {
-            if !past {
-                *await_axis_neutral = false;
-            }
-        } else if has_joystick && past {
-            let result = ui::config::InputControllerAxis {
-                enabled: true,
-                id: axis as i32,
-                axis: axis_sign(axis_value, initial_state),
-                initial_state,
-            };
-            clear_profile_input(
-                value,
-                &mut bindings.keys,
-                &mut bindings.controller_buttons,
-                &mut bindings.controller_axis,
-                &mut bindings.joystick_buttons,
-                &mut bindings.joystick_hat,
-                &mut bindings.joystick_axis,
-            );
-            bindings.joystick_axis[value] = result;
-            *await_axis_neutral = true;
-            return CaptureOutcome::Bound;
-        }
-    }
-    CaptureOutcome::Idle
-}
-
-pub fn configure_input_profile(
-    config: &mut ui::config::Config,
-    profile: String,
-    dinput: bool,
-    deadzone: i32,
-) {
-    ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
-    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
-    ui::ttf_init();
-
-    if profile == "default" {
-        eprintln!("Profile name cannot be default");
-        return;
-    }
-    if profile.is_empty() {
-        eprintln!("Profile name cannot be empty");
-        return;
-    }
-    let mut open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick> = Vec::new();
-    let mut open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad> = Vec::new();
-
-    for joystick in get_joysticks().iter() {
-        if !dinput {
-            let controller = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(*joystick) };
-            if !controller.is_null() {
-                open_controllers.push(controller);
-            }
-        } else {
-            let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(*joystick) };
-            if !joystick.is_null() {
-                open_joysticks.push(joystick);
-            }
-        }
-    }
-
-    let title = std::ffi::CString::new("configure input profile").unwrap();
-    let mut window: *mut sdl3_sys::video::SDL_Window = std::ptr::null_mut();
-    let mut renderer: *mut sdl3_sys::render::SDL_Renderer = std::ptr::null_mut();
-    #[cfg(target_os = "android")]
-    let window_flags = sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
-    #[cfg(not(target_os = "android"))]
-    let window_flags = sdl3_sys::video::SDL_WindowFlags(0);
-    if !unsafe {
-        sdl3_sys::render::SDL_CreateWindowAndRenderer(
-            title.as_ptr(),
-            852,
-            480,
-            window_flags,
-            &mut window,
-            &mut renderer,
-        )
-    } {
-        panic!("Could not create window and renderer")
-    }
-    if !unsafe { sdl3_sys::video::SDL_ShowWindow(window) } {
-        panic!("Could not show window")
-    }
-    ui::video::set_logical_canvas(renderer);
-
-    let key_labels: [(&str, usize); PROFILE_SIZE] = [
-        ("A", A_BUTTON),
-        ("B", B_BUTTON),
-        ("Start", START_BUTTON),
-        ("D Up", U_DPAD),
-        ("D Down", D_DPAD),
-        ("D Left", L_DPAD),
-        ("D Right", R_DPAD),
-        ("C Up", U_CBUTTON),
-        ("C Down", D_CBUTTON),
-        ("C Left", L_CBUTTON),
-        ("C Right", R_CBUTTON),
-        ("L", L_TRIG),
-        ("R", R_TRIG),
-        ("Z", Z_TRIG),
-        ("Control Stick Up", AXIS_UP),
-        ("Control Stick Down", AXIS_DOWN),
-        ("Control Stick Left", AXIS_LEFT),
-        ("Control Stick Right", AXIS_RIGHT),
-        ("Hotkey Activator", HOTKEY),
-    ];
-
-    let mut bindings = Bindings::empty();
-
-    let image_bytes = include_bytes!("../../data/ui/controller.png");
-    let image = unsafe {
-        sdl3_image_sys::image::IMG_LoadPNG_IO(sdl3_sys::everything::SDL_IOFromConstMem(
-            image_bytes.as_ptr() as *const std::ffi::c_void,
-            image_bytes.len(),
-        ))
-    };
-    let image_texture = unsafe { sdl3_sys::render::SDL_CreateTextureFromSurface(renderer, image) };
-    unsafe { sdl3_sys::surface::SDL_DestroySurface(image) };
-    let text_engine = unsafe { sdl3_ttf_sys::ttf::TTF_CreateRendererTextEngine(renderer) };
-    let font = unsafe {
-        let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
-        sdl3_ttf_sys::ttf::TTF_OpenFontIO(
-            sdl3_sys::everything::SDL_IOFromConstMem(
-                font_bytes.as_ptr() as *const std::ffi::c_void,
-                font_bytes.len(),
-            ),
-            true,
-            35.0,
-        )
-    };
-
-    // Pre-load the existing profile so editing only re-captures the inputs the
-    // user picks (the wizard used to start blank, wiping every binding).
-    if let Some(existing) = config.input.input_profiles.get(&profile) {
-        bindings.keys = existing.keys;
-        bindings.controller_buttons = existing.controller_buttons;
-        bindings.controller_axis = existing.controller_axis;
-        bindings.joystick_buttons = existing.joystick_buttons;
-        bindings.joystick_hat = existing.joystick_hat;
-        bindings.joystick_axis = existing.joystick_axis;
-    }
-
-    // A smaller font so every input fits as a list in the 852x480 window.
-    let list_font = unsafe {
-        let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
-        sdl3_ttf_sys::ttf::TTF_OpenFontIO(
-            sdl3_sys::everything::SDL_IOFromConstMem(
-                font_bytes.as_ptr() as *const std::ffi::c_void,
-                font_bytes.len(),
-            ),
-            true,
-            16.0,
-        )
-    };
-
-    // Two renderer contexts: the capture prompt uses the big font, the review
-    // list the small one; both share the renderer, pad texture and text engine.
-    let capture_ctx = ui::video::ProfileCtx {
-        renderer,
-        image_texture,
-        text_engine,
-        font,
-        list_font,
-    };
-    let list_ctx = ui::video::ProfileCtx {
-        renderer,
-        image_texture,
-        text_engine,
-        font,
-        list_font,
-    };
-
-    let has_controller = !open_controllers.is_empty();
-    let has_joystick = !open_joysticks.is_empty();
-
-    // New/empty profile → guided capture of every input; editing an existing
-    // one → start on the navigable review list.
-    let existing = config.input.input_profiles.contains_key(&profile);
-    let mut state = MenuState::entry(existing);
-    let saved;
-
-    // Skip axis events until the stick returns near neutral (set after binding
-    // an axis so a still-deflected stick does not instantly re-bind).
-    let mut await_axis_neutral = false;
-    // Gamepad left-Y position for edge-triggered list navigation.
-    let mut last_axis_y: i16 = 0;
-
-    // Drain anything still held from the click that opened this window so it
-    // cannot auto-bind the first guided input.
-    debounce();
-
-    'ui: loop {
-        let ticks = unsafe { sdl3_sys::timer::SDL_GetTicks() };
-        let glow = key_labels
-            .get(state.selected)
-            .and_then(|(_, v)| glow_center(*v));
-
-        match state.screen {
-            Screen::List => {
-                let mut rows: Vec<String> = key_labels
-                    .iter()
-                    .map(|(label, value)| {
-                        format!(
-                            "{label}: {}",
-                            binding_label(
-                                *value,
-                                &bindings.keys,
-                                &bindings.controller_buttons,
-                                &bindings.controller_axis,
-                                &bindings.joystick_buttons,
-                                &bindings.joystick_hat,
-                                &bindings.joystick_axis,
-                            )
-                        )
-                    })
-                    .collect();
-                rows.push("Save & Exit".to_string());
-                let warning = state
-                    .quit_armed
-                    .then_some("unsaved changes - quit again to discard");
-                let hit = ui::video::draw_review_list(
-                    &list_ctx,
-                    &rows,
-                    state.selected,
-                    glow,
-                    warning,
-                    ticks,
-                );
-                if let Some(action) = wait_nav_action(renderer, &hit, &mut state, &mut last_axis_y)
-                {
-                    let t = advance(&mut state, action);
-                    if t.exit {
-                        saved = t.save;
-                        break 'ui;
-                    }
-                    if t.begin_capture {
-                        debounce();
-                        await_axis_neutral = false;
-                    }
-                }
-            }
-            Screen::Capture => {
-                let (label, value) = key_labels[state.selected];
-                let next = if state.guided {
-                    key_labels.get(state.selected + 1).map(|(l, _)| *l)
-                } else {
-                    None
-                };
-                ui::video::draw_capture(
-                    &capture_ctx,
-                    label,
-                    next,
-                    state.selected,
-                    PROFILE_SIZE,
-                    glow,
-                    ticks,
-                );
-                match wait_capture(
-                    value,
-                    &mut bindings,
-                    &mut await_axis_neutral,
-                    has_controller,
-                    has_joystick,
-                ) {
-                    CaptureOutcome::Bound => {
-                        let t = advance(&mut state, Action::Bound);
-                        if t.begin_capture && !await_axis_neutral {
-                            debounce();
-                        }
-                    }
-                    CaptureOutcome::Cancel => {
-                        let t = advance(&mut state, Action::Cancel);
-                        if t.begin_capture && !await_axis_neutral {
-                            debounce();
-                        }
-                    }
-                    CaptureOutcome::Quit => {
-                        let t = advance(&mut state, Action::Quit);
-                        if t.exit {
-                            saved = t.save;
-                            break 'ui;
-                        }
-                    }
-                    CaptureOutcome::Idle => {}
-                }
-            }
-        }
-    }
-
-    unsafe { sdl3_ttf_sys::ttf::TTF_CloseFont(list_font) };
-
-    close_input_profile_window(
-        open_joysticks,
-        open_controllers,
-        renderer,
-        text_engine,
-        font,
-        image_texture,
-        window,
-    );
-
-    if saved {
-        let new_profile = ui::config::InputProfile {
-            keys: bindings.keys,
-            controller_buttons: bindings.controller_buttons,
-            controller_axis: bindings.controller_axis,
-            joystick_buttons: bindings.joystick_buttons,
-            joystick_hat: bindings.joystick_hat,
-            joystick_axis: bindings.joystick_axis,
-            dinput,
-            deadzone,
-        };
-        config.input.input_profiles.insert(profile, new_profile);
-    }
 }
 
 pub fn get_default_profile() -> ui::config::InputProfile {
@@ -1720,7 +1238,7 @@ pub fn get_default_profile() -> ui::config::InputProfile {
     }
 }
 
-fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
+pub(crate) fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
     let mut num_joysticks = 0;
     let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };
@@ -1856,7 +1374,7 @@ pub fn close(ui: &mut ui::Ui) {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "gui", not(target_os = "android")))]
 mod menu_tests {
     use super::*;
 
