@@ -700,6 +700,134 @@ fn binding_label(
     }
 }
 
+/// The "Save & Exit" row sits one past the last input in the review list.
+const SAVE_ROW: usize = PROFILE_SIZE;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Screen {
+    /// Reviewing the input list (navigable).
+    List,
+    /// Listening for an input to bind.
+    Capture,
+}
+
+/// Device-agnostic navigation intents. Raw keyboard/gamepad/joystick/touch
+/// events all decode to these before reaching `advance`.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Action {
+    Up,
+    Down,
+    /// Enter / gamepad South / joystick button 0 / tap a row.
+    Confirm,
+    /// Esc / gamepad East / on-screen ✕. Skips in capture, quits in list.
+    Cancel,
+    /// Window close / Android back (`AC_BACK`).
+    Quit,
+    /// A raw input was successfully captured (caller performed the binding).
+    Bound,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+struct MenuState {
+    screen: Screen,
+    /// True during the guided flow (auto-advance through every input).
+    guided: bool,
+    /// List: row `0..=SAVE_ROW`. Capture: the input row `0..PROFILE_SIZE` being bound.
+    selected: usize,
+    /// A binding has changed since the window opened.
+    dirty: bool,
+    /// A dirty quit has been requested once; a second quit discards.
+    quit_armed: bool,
+}
+
+impl MenuState {
+    fn entry(existing_profile: bool) -> Self {
+        MenuState {
+            // New/empty profile → jump straight into the guided flow;
+            // editing an existing profile → start on the review list.
+            screen: if existing_profile { Screen::List } else { Screen::Capture },
+            guided: !existing_profile,
+            selected: 0,
+            dirty: false,
+            quit_armed: false,
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+struct Transition {
+    /// Close the window.
+    exit: bool,
+    /// Persist the profile (only true alongside `exit`).
+    save: bool,
+    /// Begin a fresh capture listen (caller debounces first).
+    begin_capture: bool,
+}
+
+/// Pure state transition. `action` is the decoded intent; returns side-effect
+/// signals for the SDL shell to act on.
+fn advance(state: &mut MenuState, action: Action) -> Transition {
+    let mut t = Transition::default();
+    // Any non-quit-like action disarms a pending dirty-quit.
+    if action != Action::Quit && action != Action::Cancel {
+        state.quit_armed = false;
+    }
+    match state.screen {
+        Screen::List => match action {
+            Action::Up => state.selected = (state.selected + SAVE_ROW) % (SAVE_ROW + 1),
+            Action::Down => state.selected = (state.selected + 1) % (SAVE_ROW + 1),
+            Action::Confirm => {
+                if state.selected == SAVE_ROW {
+                    t.save = true;
+                    t.exit = true;
+                } else {
+                    state.screen = Screen::Capture;
+                    state.guided = false;
+                    t.begin_capture = true;
+                }
+            }
+            // Esc/East in the list quits (with the dirty guard).
+            Action::Cancel | Action::Quit => {
+                if state.dirty && !state.quit_armed {
+                    state.quit_armed = true;
+                } else {
+                    t.exit = true;
+                }
+            }
+            Action::Bound => {}
+        },
+        Screen::Capture => match action {
+            Action::Bound | Action::Cancel => {
+                if action == Action::Bound {
+                    state.dirty = true;
+                }
+                if state.guided {
+                    if state.selected + 1 >= PROFILE_SIZE {
+                        state.screen = Screen::List;
+                        state.guided = false;
+                        state.selected = 0;
+                    } else {
+                        state.selected += 1;
+                        t.begin_capture = true;
+                    }
+                } else {
+                    state.screen = Screen::List;
+                }
+            }
+            Action::Quit => {
+                if state.dirty && !state.quit_armed {
+                    state.quit_armed = true;
+                    state.screen = Screen::List;
+                } else {
+                    t.exit = true;
+                }
+            }
+            Action::Up | Action::Down | Action::Confirm => {}
+        },
+    }
+    t
+}
+
 pub fn configure_input_profile(
     config: &mut ui::config::Config,
     profile: String,
@@ -1462,5 +1590,134 @@ pub fn close(ui: &mut ui::Ui) {
             unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller.game_controller) }
             controller.game_controller = std::ptr::null_mut();
         }
+    }
+}
+
+#[cfg(test)]
+mod menu_tests {
+    use super::*;
+
+    #[test]
+    fn entry_new_profile_starts_guided_capture() {
+        let s = MenuState::entry(false);
+        assert_eq!(s.screen, Screen::Capture);
+        assert!(s.guided);
+        assert_eq!(s.selected, 0);
+    }
+
+    #[test]
+    fn entry_existing_profile_starts_list() {
+        let s = MenuState::entry(true);
+        assert_eq!(s.screen, Screen::List);
+        assert!(!s.guided);
+        assert_eq!(s.selected, 0);
+    }
+
+    #[test]
+    fn list_up_wraps_to_save_row() {
+        let mut s = MenuState::entry(true);
+        advance(&mut s, Action::Up);
+        assert_eq!(s.selected, SAVE_ROW);
+    }
+
+    #[test]
+    fn list_down_from_save_row_wraps_to_zero() {
+        let mut s = MenuState::entry(true);
+        s.selected = SAVE_ROW;
+        advance(&mut s, Action::Down);
+        assert_eq!(s.selected, 0);
+    }
+
+    #[test]
+    fn list_confirm_on_input_row_enters_single_capture() {
+        let mut s = MenuState::entry(true);
+        s.selected = 3;
+        let t = advance(&mut s, Action::Confirm);
+        assert_eq!(s.screen, Screen::Capture);
+        assert!(!s.guided);
+        assert_eq!(s.selected, 3);
+        assert!(t.begin_capture);
+        assert!(!t.save && !t.exit);
+    }
+
+    #[test]
+    fn list_confirm_on_save_row_saves_and_exits() {
+        let mut s = MenuState::entry(true);
+        s.selected = SAVE_ROW;
+        let t = advance(&mut s, Action::Confirm);
+        assert!(t.save && t.exit);
+    }
+
+    #[test]
+    fn single_capture_bound_returns_to_list_same_row() {
+        let mut s = MenuState::entry(true);
+        s.selected = 5;
+        advance(&mut s, Action::Confirm); // -> capture
+        let t = advance(&mut s, Action::Bound);
+        assert_eq!(s.screen, Screen::List);
+        assert_eq!(s.selected, 5);
+        assert!(s.dirty);
+        assert!(!t.begin_capture);
+    }
+
+    #[test]
+    fn guided_bound_advances_and_re_captures() {
+        let mut s = MenuState::entry(false); // guided, selected 0
+        let t = advance(&mut s, Action::Bound);
+        assert_eq!(s.screen, Screen::Capture);
+        assert!(s.guided);
+        assert_eq!(s.selected, 1);
+        assert!(t.begin_capture);
+        assert!(s.dirty);
+    }
+
+    #[test]
+    fn guided_skip_advances_without_dirty() {
+        let mut s = MenuState::entry(false);
+        let t = advance(&mut s, Action::Cancel);
+        assert_eq!(s.selected, 1);
+        assert!(s.screen == Screen::Capture && s.guided);
+        assert!(t.begin_capture);
+        assert!(!s.dirty);
+    }
+
+    #[test]
+    fn guided_past_last_input_drops_to_list() {
+        let mut s = MenuState::entry(false);
+        s.selected = PROFILE_SIZE - 1; // last input
+        advance(&mut s, Action::Bound);
+        assert_eq!(s.screen, Screen::List);
+        assert!(!s.guided);
+        assert_eq!(s.selected, 0);
+    }
+
+    #[test]
+    fn clean_quit_exits_immediately() {
+        let mut s = MenuState::entry(true);
+        let t = advance(&mut s, Action::Quit);
+        assert!(t.exit);
+    }
+
+    #[test]
+    fn dirty_quit_arms_then_discards_on_second() {
+        let mut s = MenuState::entry(true);
+        s.dirty = true;
+        let t1 = advance(&mut s, Action::Quit);
+        assert!(!t1.exit);
+        assert!(s.quit_armed);
+        let t2 = advance(&mut s, Action::Quit);
+        assert!(t2.exit);
+    }
+
+    #[test]
+    fn any_action_disarms_quit() {
+        let mut s = MenuState::entry(true);
+        s.dirty = true;
+        advance(&mut s, Action::Quit); // arm
+        advance(&mut s, Action::Down); // disarm
+        assert!(!s.quit_armed);
+        let t = advance(&mut s, Action::Quit); // arms again, does not exit
+        assert!(!t.exit);
+        assert!(s.quit_armed);
     }
 }
