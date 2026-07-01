@@ -159,7 +159,7 @@ void ra_welcome(const char **game_title, const char **game_image_url) {
 
   int message_length = snprintf(
       buffer, sizeof(buffer), "%s\nMode: %s\n", game->title,
-      rc_client_get_hardcore_enabled(g_client) ? "Hardcore" : "Softcore");
+      rc_client_get_hardcore_enabled(g_client) ? "Hardcore" : "Casual");
 
   if (summary.num_core_achievements != 0) {
     snprintf(buffer + message_length, sizeof(buffer) - message_length,

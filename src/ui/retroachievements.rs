@@ -20,7 +20,7 @@ pub fn ra_window(app: &ui::gui::AppWindow) {
     }
 
     if !cfg!(ra_hardcore_enabled) {
-        app.set_ra_softcore_only(true);
+        app.set_ra_casual_only(true);
     }
 
     if app.get_ra_enabled() && !app.get_ra_username().is_empty() {
