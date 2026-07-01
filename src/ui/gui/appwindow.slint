@@ -27,6 +27,11 @@ export component AppWindow inherits Window {
     callback source_code_button_clicked;
     callback open_rom_button_clicked;
     callback saves_folder_button_clicked;
+    callback scan_folder_clicked;
+    callback launch_game(string, int);
+    callback detail_opened(string);
+    callback library_filter_changed(string, int);
+    callback toggle_favorite(string);
     callback input_profile_button_clicked;
     callback input_profile_creation_button_clicked;
     callback transferpak_toggled(int,bool);
@@ -90,6 +95,26 @@ export component AppWindow inherits Window {
     in-out property game_running <=> State.game_running;
     in-out property is_android <=> State.is_android;
     in-out property recent_roms <=> State.recent_roms;
+    in-out property games <=> State.games;
+    in-out property favorites <=> State.favorites;
+    in-out property library_search <=> State.search;
+    in-out property library_filter <=> State.active_filter;
+    in-out property all_games <=> State.all_games;
+    in-out property detail_open <=> State.detail_open;
+    in-out property detail_path <=> State.detail_path;
+    in-out property detail_title <=> State.detail_title;
+    in-out property detail_favorite <=> State.detail_favorite;
+    in-out property detail_art <=> State.detail_art;
+    in-out property detail_has_art <=> State.detail_has_art;
+    in-out property detail_hero <=> State.detail_hero;
+    in-out property detail_has_hero <=> State.detail_has_hero;
+    in-out property detail_snap <=> State.detail_snap;
+    in-out property detail_has_snap <=> State.detail_has_snap;
+    in-out property detail_title_art <=> State.detail_title_art;
+    in-out property detail_has_title <=> State.detail_has_title;
+    in-out property detail_slots <=> State.detail_slots;
+    in-out property detail_slot <=> State.detail_slot;
+    in-out property detail_tab <=> State.detail_tab;
     in-out property cheat_game_name <=> CheatsData.cheat_game_name;
     in-out property cheat_game_crc <=> CheatsData.cheat_game_crc;
     in-out property cheats <=> CheatsData.cheats;
@@ -215,6 +240,24 @@ export component AppWindow inherits Window {
             }
             recent_rom_button_clicked(rom) => {
                 recent_rom_button_clicked(rom);
+            }
+            scan_folder_clicked => {
+                scan_folder_clicked();
+            }
+            launch_game(path, slot) => {
+                launch_game(path, slot);
+            }
+            toggle_favorite(path) => {
+                toggle_favorite(path);
+            }
+            detail_opened(path) => {
+                detail_opened(path);
+            }
+            library_filter_changed(search, filter) => {
+                library_filter_changed(search, filter);
+            }
+            open_achievements => {
+                side-bar.current-item = 4;
             }
         }
         if(side-bar.current-item == 1 && !show_input_profile): ControllerConfig {

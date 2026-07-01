@@ -2,6 +2,8 @@
 pub mod android;
 pub mod audio;
 #[cfg(feature = "gui")]
+pub mod boxart;
+#[cfg(feature = "gui")]
 pub mod cheats;
 pub mod config;
 #[cfg(feature = "gui")]
