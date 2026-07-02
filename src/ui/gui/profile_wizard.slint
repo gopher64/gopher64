@@ -82,14 +82,14 @@ export component ProfileWizard inherits Rectangle {
         HorizontalLayout {
             padding-left: 20px; padding-right: 64px;   // room so title never sits under the ✕
             Text {
-                text: @tr("Profile: {}", ProfileWizardData.profile_name);
+                text: "Profile: \{ProfileWizardData.profile_name}";
                 color: #e8eef5; font-size: 15px; font-weight: 700; vertical-alignment: center;
             }
             Rectangle {}
             Text {
                 text: ProfileWizardData.mode == 0
-                    ? @tr("Binding {} / {}", ProfileWizardData.progress_index, ProfileWizardData.progress_total)
-                    : @tr("Review");
+                    ? "Binding \{ProfileWizardData.progress_index} / \{ProfileWizardData.progress_total}"
+                    : "Review";
                 color: #7fb2ff; font-size: 14px; vertical-alignment: center;
             }
         }
@@ -98,13 +98,13 @@ export component ProfileWizard inherits Rectangle {
     // ===== guided capture =====
     if ProfileWizardData.mode == 0: VerticalLayout {
         y: 78px; height: 150px; alignment: start; spacing: 6px;
-        Text { text: @tr("press the input for"); color: #9aa6b4; font-size: 15px; horizontal-alignment: center; }
+        Text { text: "press the input for"; color: #9aa6b4; font-size: 15px; horizontal-alignment: center; }
         Text { text: ProfileWizardData.capture_label; color: white; font-size: 52px; font-weight: 800; horizontal-alignment: center; }
         HorizontalLayout {
             alignment: center;
             Rectangle {
                 background: #ffd54a; border-radius: 5px; height: 24px; width: 104px;
-                Text { text: @tr("listening"); color: #1a1400; font-size: 13px; font-weight: 700;
+                Text { text: "listening"; color: #1a1400; font-size: 13px; font-weight: 700;
                        horizontal-alignment: center; vertical-alignment: center; }
             }
         }
@@ -139,7 +139,7 @@ export component ProfileWizard inherits Rectangle {
                 Rectangle {
                     background: ProfileWizardData.selected == ProfileWizardData.rows.length ? #2f64b4 : transparent;
                     border-radius: 4px;
-                    Text { x: 8px; text: @tr("▶ Save & Exit"); color: ProfileWizardData.selected == ProfileWizardData.rows.length ? #eaf2ff : #7fb2ff; font-size: 14px; vertical-alignment: center; }
+                    Text { x: 8px; text: "▶ Save & Exit"; color: ProfileWizardData.selected == ProfileWizardData.rows.length ? #eaf2ff : #7fb2ff; font-size: 14px; vertical-alignment: center; }
                 }
             }
         }
@@ -169,18 +169,18 @@ export component ProfileWizard inherits Rectangle {
         HorizontalLayout {
             padding-left: 20px; padding-right: 20px; spacing: 24px;
             Text {
-                text: ProfileWizardData.mode == 0 ? @tr("press any input") : @tr("↑ / ↓  or  D-pad : move");
+                text: ProfileWizardData.mode == 0 ? "press any input" : "↑ / ↓  or  D-pad : move";
                 color: #cdd7e3; font-size: 12px; vertical-alignment: center;
             }
             Text {
-                text: ProfileWizardData.mode == 0 ? @tr("Esc / East / tap ✕ : skip") : @tr("Enter / South : rebind");
+                text: ProfileWizardData.mode == 0 ? "Esc / East / tap ✕ : skip" : "Enter / South : rebind";
                 color: #8b97a6; font-size: 12px; vertical-alignment: center;
             }
             Rectangle {}
             Text {
                 text: ProfileWizardData.mode == 0
-                    ? (ProfileWizardData.next_label != "" ? @tr("next: {}", ProfileWizardData.next_label) : @tr("last input"))
-                    : @tr("Save & Exit to finish");
+                    ? (ProfileWizardData.next_label != "" ? "next: \{ProfileWizardData.next_label}" : "last input")
+                    : "Save & Exit to finish";
                 color: #8b97a6; font-size: 12px; vertical-alignment: center;
             }
         }
