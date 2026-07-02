@@ -340,7 +340,7 @@ fn process_netplay(device: &mut device::Device) {
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
     let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32 {
-        ui::input::get(&mut device.ui, 0, device.speed_limiter.frame_counter)
+        ui::input::get(&mut device.ui, 0)
     } else {
         //workaround for disabled rollback
         ui::input::InputData::default()
@@ -486,7 +486,6 @@ pub fn init(
             message_timer = std::time::Instant::now();
         }
 
-        unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::render_frame();
         ui::video::update_screen();
         std::thread::sleep(std::time::Duration::from_millis(10));

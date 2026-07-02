@@ -335,11 +335,11 @@ static void rdp_new_processor() {
                                         gfx_info.RDRAM_SIZE / 2, flags);
   g_tmem = processor->get_tmem();
   if (!g_tmem) {
-    printf("Failed to get tmem\n");
+    LOGE("Failed to get tmem\n");
   }
   g_hidden_rdram = processor->begin_read_hidden_rdram();
   if (!g_hidden_rdram) {
-    printf("Failed to get hidden_rdram\n");
+    LOGE("Failed to get hidden_rdram\n");
   }
 
   sync_signal = 0;
@@ -376,7 +376,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   SDL_SyncWindow(window);
   bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
   if (!result) {
-    printf("Could not add event watch.\n");
+    LOGE("Could not add event watch.\n");
     return;
   }
 
@@ -692,7 +692,10 @@ void rdp_update_screen() {
   if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
     return;
   }
-  wsi->end_frame();
+  if (!wsi->end_frame()) {
+    LOGE("End frame failed\n");
+    SDL_PumpEvents(); // For Android to trigger pause event
+  }
   wsi->begin_frame();
 }
 
@@ -787,7 +790,7 @@ uint32_t pixel_size(uint32_t pixel_type, uint32_t area) {
   case 3:
     return area * 4;
   default:
-    printf("Invalid pixel size: %u\n", pixel_type);
+    LOGE("Invalid pixel size: %u\n", pixel_type);
     return 0;
   }
 }
