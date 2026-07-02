@@ -24,7 +24,6 @@ class N64Activity : SDLActivity() {
     override fun getLibraries(): Array<String> = arrayOf(
         "SDL3",
         "SDL3_ttf",
-        "SDL3_image",
         "gopher64"
     )
 
