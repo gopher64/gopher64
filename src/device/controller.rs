@@ -59,7 +59,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
             let input = if let Some(netplay) = &mut device.netplay {
                 netplay.inputs[channel].0
             } else {
-                ui::input::get(&mut device.ui, channel, device.speed_limiter.frame_counter)
+                ui::input::get(&mut device.ui, channel)
             };
 
             device.pif.ram[offset..offset + 4].copy_from_slice(&input.data.to_ne_bytes());

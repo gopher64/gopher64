@@ -46,7 +46,7 @@ uint32_t SDL_WSIPlatform::get_surface_height() {
 
 bool SDL_WSIPlatform::alive(Vulkan::WSI &wsi) { return true; }
 
-void SDL_WSIPlatform::poll_input() {}
+void SDL_WSIPlatform::poll_input() { SDL_PumpEvents(); }
 
 void SDL_WSIPlatform::poll_input_async(Granite::InputTrackerHandler *handler) {}
 

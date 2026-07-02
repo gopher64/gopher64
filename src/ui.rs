@@ -49,7 +49,6 @@ unsafe impl Sync for Audio {}
 #[derive(Default)]
 pub struct Input {
     pub keyboard_state: *const bool,
-    pub last_polled: u64,
     pub controllers: [input::Controllers; 4],
 }
 
@@ -120,16 +119,6 @@ pub fn sdl_hints() {
     }
 }
 
-pub fn disable_auto_update_joysticks() {
-    unsafe {
-        let hint = std::ffi::CString::new("0").unwrap();
-        sdl3_sys::everything::SDL_SetHint(
-            sdl3_sys::everything::SDL_HINT_AUTO_UPDATE_JOYSTICKS,
-            hint.as_ptr(),
-        );
-    }
-}
-
 pub fn sdl_init(flag: sdl3_sys::init::SDL_InitFlags) {
     unsafe {
         if sdl3_sys::init::SDL_WasInit(flag) == 0 && !sdl3_sys::init::SDL_InitSubSystem(flag) {
@@ -195,7 +184,6 @@ impl Ui {
         let (vis_tx, vis_rx) = tokio::sync::mpsc::unbounded_channel();
         Ui {
             input: Input {
-                last_polled: 0,
                 controllers: [
                     input::Controllers {
                         game_controller: std::ptr::null_mut(),
