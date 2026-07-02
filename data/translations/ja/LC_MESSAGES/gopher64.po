@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-30 09:43+0000\n"
+"POT-Creation-Date: 2026-06-30 20:50+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
@@ -47,37 +47,37 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "GitHubで寄付"
 
-#: src/ui/gui/appwindow.slint:164
+#: src/ui/gui/appwindow.slint:189
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "ローカルゲーム"
 
-#: src/ui/gui/appwindow.slint:168
+#: src/ui/gui/appwindow.slint:193
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "コントローラー設定"
 
-#: src/ui/gui/appwindow.slint:172
+#: src/ui/gui/appwindow.slint:197
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "ネットプレイ"
 
-#: src/ui/gui/appwindow.slint:176
+#: src/ui/gui/appwindow.slint:201
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "チート"
 
-#: src/ui/gui/appwindow.slint:180
+#: src/ui/gui/appwindow.slint:205
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:184
+#: src/ui/gui/appwindow.slint:209
 msgctxt "Menu"
 msgid "Settings"
 msgstr "設定"
 
-#: src/ui/gui/appwindow.slint:188
+#: src/ui/gui/appwindow.slint:213
 msgctxt "Menu"
 msgid "About"
 msgstr "バージョン情報"
@@ -167,25 +167,153 @@ msgctxt "InputProfileDialog"
 msgid "Cancel"
 msgstr "キャンセル"
 
-#: src/ui/gui/localgame_page.slint:19
+#: src/ui/gui/localgame_page.slint:60
 msgctxt "LocalGame"
 msgid "Local Game"
 msgstr "ローカルゲーム"
 
-#: src/ui/gui/localgame_page.slint:26
+#: src/ui/gui/localgame_page.slint:68
 msgctxt "LocalGame"
 msgid "Open ROM"
 msgstr "ROMを開く"
 
-#: src/ui/gui/localgame_page.slint:37
+#: src/ui/gui/localgame_page.slint:75
+msgctxt "LocalGame"
+msgid "Scan Folder"
+msgstr "フォルダーをスキャン"
+
+#: src/ui/gui/localgame_page.slint:86
 msgctxt "LocalGame"
 msgid "Open Saves Folder"
 msgstr "セーブフォルダーを開く"
 
-#: src/ui/gui/localgame_page.slint:54
+#: src/ui/gui/localgame_page.slint:102
 msgctxt "LocalGame"
 msgid "Recent ROMs"
 msgstr "最近使ったROM"
+
+#: src/ui/gui/localgame_page.slint:121
+msgctxt "LocalGame"
+msgid "Search games…"
+msgstr "ゲームを検索…"
+
+#: src/ui/gui/localgame_page.slint:132
+msgctxt "LocalGame"
+msgid "All"
+msgstr "すべて"
+
+#: src/ui/gui/localgame_page.slint:140
+msgctxt "LocalGame"
+msgid "Favorites"
+msgstr "お気に入り"
+
+#: src/ui/gui/localgame_page.slint:148
+msgctxt "LocalGame"
+msgid "Homebrew"
+msgstr "自作"
+
+#: src/ui/gui/localgame_page.slint:158
+msgctxt "LocalGame"
+msgid "Library"
+msgstr "ライブラリ"
+
+#: src/ui/gui/localgame_page.slint:208
+msgctxt "LocalGame"
+msgid "No games match the current filter."
+msgstr "現在のフィルターに一致するゲームがありません。"
+
+#: src/ui/gui/localgame_page.slint:222
+msgctxt "LocalGame"
+msgid "Back"
+msgstr "戻る"
+
+#: src/ui/gui/localgame_page.slint:260
+msgctxt "LocalGame"
+msgid "Overview"
+msgstr "概要"
+
+#: src/ui/gui/localgame_page.slint:267
+msgctxt "LocalGame"
+msgid "Achievements"
+msgstr "実績"
+
+#: src/ui/gui/localgame_page.slint:274
+msgctxt "LocalGame"
+msgid "Media"
+msgstr "メディア"
+
+#: src/ui/gui/localgame_page.slint:288
+msgctxt "LocalGame"
+msgid "Play"
+msgstr "プレイ"
+
+#: src/ui/gui/localgame_page.slint:297
+msgctxt "LocalGame"
+msgid "★ Favorited"
+msgstr "★ お気に入り済み"
+
+#: src/ui/gui/localgame_page.slint:297
+msgctxt "LocalGame"
+msgid "☆ Favorite"
+msgstr "☆ お気に入り"
+
+#: src/ui/gui/localgame_page.slint:304
+msgctxt "LocalGame"
+msgid "Load Save State on Launch"
+msgstr "起動時にセーブステートを読み込む"
+
+#: src/ui/gui/localgame_page.slint:310
+msgctxt "LocalGame"
+msgid "Fresh"
+msgstr "新規"
+
+#: src/ui/gui/localgame_page.slint:341
+msgctxt "LocalGame"
+msgid "RetroAchievements is on."
+msgstr "RetroAchievementsは有効です。"
+
+#: src/ui/gui/localgame_page.slint:346
+msgctxt "LocalGame"
+msgid ""
+"Achievements, leaderboards and rich presence are tracked live while you play "
+"this game."
+msgstr ""
+"実績、リーダーボード、リッチプレゼンスは、このゲームをプレイ中にライブで追跡"
+"されます。"
+
+#: src/ui/gui/localgame_page.slint:360
+msgctxt "LocalGame"
+msgid ""
+"RetroAchievements is off. Turn it on to track achievements, leaderboards and "
+"Discord presence."
+msgstr ""
+"RetroAchievementsは無効です。有効にすると、実績、リーダーボード、Discordプレ"
+"ゼンスを追跡できます。"
+
+#: src/ui/gui/localgame_page.slint:367
+msgctxt "LocalGame"
+msgid "Open RetroAchievements"
+msgstr "RetroAchievementsを開く"
+
+#: src/ui/gui/localgame_page.slint:381
+msgctxt "LocalGame"
+msgid "No media available."
+msgstr "メディアがありません。"
+
+#: src/ui/gui/localgame_page.slint:395
+msgctxt "LocalGame"
+msgid "Screenshot"
+msgstr "スクリーンショット"
+
+#: src/ui/gui/localgame_page.slint:409
+msgctxt "LocalGame"
+msgid "Title Screen"
+msgstr "タイトル画面"
+
+#: src/ui/gui/localgame_page.slint:423
+msgctxt "LocalGame"
+msgid "Box Art"
+msgstr "ボックスアート"
 
 #: src/ui/gui/netplay_create.slint:7
 msgctxt "NetplayCreate"

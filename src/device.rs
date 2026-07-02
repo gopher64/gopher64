@@ -254,6 +254,87 @@ pub fn get_rom_contents(file_path: &std::path::PathBuf) -> Option<Vec<u8>> {
     }
 }
 
+/// Non-panicking check that `file_path` holds an N64 ROM: checks the 4-byte N64
+/// header (z64/v64/n64 byte orders) of the raw file, or of the first
+/// N64-extension entry inside a zip/7z. Keeps non-N64 files (other-system ROMs,
+/// stray `.bin`, junk archives) out of the library scan without decompressing
+/// whole ROMs (7z aside — its streaming reader must be drained to advance) or
+/// panicking on malformed files.
+#[cfg(all(feature = "gui", not(target_os = "android")))]
+pub fn is_n64_rom(file_path: &std::path::Path) -> bool {
+    fn is_n64_magic(m: &[u8]) -> bool {
+        m.len() >= 4
+            && matches!(
+                u32::from_be_bytes([m[0], m[1], m[2], m[3]]),
+                0x80371240 | 0x37804012 | 0x40123780
+            )
+    }
+    fn has_n64_ext(name: impl AsRef<std::path::Path>) -> bool {
+        name.as_ref()
+            .extension()
+            .and_then(|x| x.to_str())
+            .is_some_and(|x| N64_EXTENSIONS_UNCOMPRESSED.contains(&x))
+    }
+
+    let ext = file_path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or_default();
+
+    if ext.eq_ignore_ascii_case("zip") {
+        let Ok(file) = std::fs::File::open(file_path) else {
+            return false;
+        };
+        let Ok(mut archive) = zip::ZipArchive::new(file) else {
+            return false;
+        };
+        // The first N64-extension entry decides it (matches get_rom_contents).
+        for i in 0..archive.len() {
+            let Ok(mut entry) = archive.by_index(i) else {
+                continue;
+            };
+            let is_n64_ext = entry.enclosed_name().is_some_and(has_n64_ext);
+            if is_n64_ext {
+                let mut magic = [0u8; 4];
+                return entry.read_exact(&mut magic).is_ok() && is_n64_magic(&magic);
+            }
+        }
+        false
+    } else if ext.eq_ignore_ascii_case("7z") {
+        let Ok(file) = std::fs::File::open(file_path) else {
+            return false;
+        };
+        let Ok(mut archive) =
+            sevenz_rust2::ArchiveReader::new(file, sevenz_rust2::Password::empty())
+        else {
+            return false;
+        };
+        let mut valid = false;
+        let _ = archive.for_each_entries(
+            &mut |entry: &sevenz_rust2::ArchiveEntry, reader: &mut dyn std::io::Read| {
+                // First N64-extension entry decides it. Stop iterating once found
+                // instead of draining the rest of the archive — validating 4 magic
+                // bytes must not decompress every entry.
+                if has_n64_ext(std::path::PathBuf::from(entry.name())) {
+                    let mut magic = [0u8; 4];
+                    valid = reader.read_exact(&mut magic).is_ok() && is_n64_magic(&magic);
+                    return Ok(false);
+                }
+                // Non-matching entry: drain to advance the streaming reader.
+                std::io::copy(reader, &mut std::io::sink())?;
+                Ok(true)
+            },
+        );
+        valid
+    } else {
+        let Ok(mut file) = std::fs::File::open(file_path) else {
+            return false;
+        };
+        let mut magic = [0u8; 4];
+        file.read_exact(&mut magic).is_ok() && is_n64_magic(&magic)
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct SpeedLimiter {
     pub limit_freq: u64,
