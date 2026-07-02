@@ -276,37 +276,3 @@ pub fn onscreen_message(message: &str, milliseconds: MESSAGE_LENGTH) {
         rdp_onscreen_message(c_message.as_ptr(), milliseconds)
     };
 }
-
-pub fn draw_text(
-    text: &str,
-    renderer: *mut sdl3_sys::render::SDL_Renderer,
-    image_texture: *mut sdl3_sys::render::SDL_Texture,
-    text_engine: *mut sdl3_ttf_sys::ttf::TTF_TextEngine,
-    font: *mut sdl3_ttf_sys::ttf::TTF_Font,
-) {
-    unsafe {
-        let (mut w, mut h) = (0, 0);
-        sdl3_sys::render::SDL_GetRenderOutputSize(renderer, &mut w, &mut h);
-
-        let c_text = std::ffi::CString::new(text).unwrap();
-        let ttf_text = sdl3_ttf_sys::ttf::TTF_CreateText(text_engine, font, c_text.as_ptr(), 0);
-
-        sdl3_sys::everything::SDL_RenderClear(renderer);
-        let rect = sdl3_sys::rect::SDL_FRect {
-            x: 0.0,
-            y: 0.0,
-            w: w as f32,
-            h: (h - sdl3_ttf_sys::ttf::TTF_GetFontHeight(font)) as f32,
-        };
-        sdl3_sys::render::SDL_RenderTexture(renderer, image_texture, std::ptr::null(), &rect);
-        let (mut text_w, mut text_h) = (0, 0);
-        sdl3_ttf_sys::ttf::TTF_GetTextSize(ttf_text, &mut text_w, &mut text_h);
-        sdl3_ttf_sys::ttf::TTF_DrawRendererText(
-            ttf_text,
-            (w / 2 - text_w / 2) as f32,
-            (h - text_h) as f32,
-        );
-        sdl3_sys::render::SDL_RenderPresent(renderer);
-        sdl3_ttf_sys::ttf::TTF_DestroyText(ttf_text);
-    }
-}

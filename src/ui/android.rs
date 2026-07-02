@@ -5,12 +5,11 @@ use crate::ui;
 use clap::Parser;
 use jni::objects::{JClass, JObject, JObjectArray, JString};
 use jni::refs::Global;
-use jni::sys::jint;
+use jni::sys::{jfloat, jint};
 use jni::{Env, EnvUnowned, JavaVM, bind_java_type};
 use std::os::fd::FromRawFd;
 
 const REQUEST_SELECT_ROM: jint = 1;
-const CONFIGURE_INPUT_PROFILE: jint = 2;
 const RUN_ROM: jint = 3;
 
 pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
@@ -177,64 +176,67 @@ pub extern "C" fn gopher64_sdl_main(
     0
 }
 
-pub fn spawn_configure_input_profile(
-    profile_name: slint::SharedString,
-    dinput: bool,
-    deadzone: i32,
-) {
+bind_java_type! {
+    SlintActivity => "io.github.gopher64.gopher64.SlintActivity",
+    methods {
+        fn set_capture_active(active: bool) -> (),
+    },
+}
+
+/// Toggle `SlintActivity`'s input-capture forwarding (dispatch overrides +
+/// focused overlay). Called by the wizard on the Slint event-loop thread
+/// when a capture session opens/closes.
+pub fn set_capture_active(active: bool) {
     if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
     {
         if let Err(err) = get_vm(app).attach_current_thread(|env| {
-            start_configure_input_profile_on_jvm(
-                env,
-                app,
-                profile_name.to_string(),
-                dinput,
-                deadzone,
-            )
+            let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+            let activity =
+                unsafe { env.as_cast_raw::<Global<SlintActivity>>(&raw_activity_global)? };
+            activity.as_ref().set_capture_active(env, active)
         }) {
-            eprintln!("JNI error while starting N64Activity: {err:?}");
+            eprintln!("JNI error while toggling input capture: {err:?}");
         }
     }
 }
 
-fn start_configure_input_profile_on_jvm(
-    env: &mut Env<'_>,
-    app: &slint::android::AndroidApp,
-    profile_name: String,
-    dinput: bool,
-    deadzone: i32,
-) -> jni::errors::Result<()> {
-    let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
-    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
-
-    let package_name = JString::from_str(env, "io.github.gopher64.gopher64")?;
-    let class_name = JString::from_str(env, "io.github.gopher64.gopher64.N64Activity")?;
-
-    let args_key = JString::from_str(env, "args")?;
-    let mut args = vec![
-        JString::from_str(env, "--configure-input-profile")?,
-        JString::from_str(env, &profile_name)?,
-        JString::from_str(env, "--deadzone")?,
-        JString::from_str(env, &deadzone.to_string())?,
-    ];
-    if dinput {
-        args.push(JString::from_str(env, "--use-dinput")?);
+/// Input forwarded by `SlintActivity.nativeOnCaptureInput` while capture is
+/// active. Runs on an Android UI/binder thread — hop to the Slint event loop
+/// and feed the wizard. `type` discriminates: 0 = key (ACTION_DOWN, repeat 0;
+/// `code` = Android keycode, `value` unused), 1 = motion axis (`code` =
+/// `MotionEvent.AXIS_*`, `value` normalized to -1..=1 exactly like
+/// `SDLControllerManager`, `action` = resting-position sign -1/0/+1).
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnCaptureInput<
+    'caller,
+>(
+    _unowned_env: EnvUnowned<'caller>,
+    _class: JClass<'caller>,
+    _device_id: jint,
+    source: jint,
+    r#type: jint,
+    code: jint,
+    value: jfloat,
+    action: jint,
+) {
+    let ev = match r#type {
+        0 => ui::input_capture::AndroidEvent::Key {
+            source,
+            keycode: code,
+        },
+        1 => ui::input_capture::AndroidEvent::Axis {
+            axis: code,
+            value,
+            rest: action.clamp(-1, 1) as i8,
+        },
+        _ => return,
+    };
+    if let Err(err) =
+        slint::invoke_from_event_loop(move || ui::gui::wizard::apply_android_input(ev))
+    {
+        eprintln!("Dropping capture input (event loop not running): {err:?}");
     }
-    let empty_arg = JString::from_str(env, "")?;
-    let j_args = JObjectArray::<JString>::new(env, args.len(), empty_arg)?;
-    for (i, arg) in args.iter().enumerate() {
-        j_args.set_element(env, i, arg)?;
-    }
-    let intent = AndroidIntent::new(env)?
-        .set_class_name(env, &package_name, &class_name)?
-        .put_extra_string_array(env, &args_key, &j_args)?;
-
-    activity
-        .as_ref()
-        .start_activity_for_result(env, &intent, CONFIGURE_INPUT_PROFILE)?;
-    Ok(())
 }
 
 pub fn run_rom(
@@ -623,14 +625,6 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                             eprintln!("Android app not initialized");
                             return Ok(());
                         }
-                    }
-                }
-                CONFIGURE_INPUT_PROFILE => {
-                    if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
-                        && let Some(weak_app_window) = weak_app_window.as_ref()
-                    {
-                        let config = ui::config::Config::new();
-                        ui::gui::update_input_profiles(&weak_app_window, &config);
                     }
                 }
                 RUN_ROM => {

@@ -1,0 +1,188 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+// In-app input-profile configuration ("Spotlight"): a dimmed N64 controller
+// backdrop with a soft pulsing glow on the input being bound (guided mode) or
+// on the selected input (review mode), plus a navigable list. Driven entirely
+// by Rust via ProfileWizardData; input is captured Rust-side (SDL on desktop,
+// JNI on Android) and keyboard via the FocusScope below.
+
+export struct ProfileRow {
+    label: string,
+    binding: string,
+    bound: bool,
+}
+
+export global ProfileWizardData {
+    in property <int> mode;              // 0 = guided capture, 1 = review list
+    in property <string> profile_name;
+    in property <string> capture_label;  // e.g. "A"
+    in property <string> next_label;     // e.g. "B" ("" when none)
+    in property <int> progress_index;    // 1-based
+    in property <int> progress_total;
+    in property <float> glow_cx;         // 0..1 of width
+    in property <float> glow_cy;         // 0..1 of height
+    in property <bool> glow_visible;
+    in property <[ProfileRow]> rows;
+    in property <int> selected;
+    in property <string> warning;        // "" when none
+
+    // Rust drives these; UI taps/keys call back out.
+    callback nav(int);        // Action code: 0 Up,1 Down,2 Confirm,3 Cancel,4 Quit
+    callback key_pressed(string);
+    callback tap_row(int);
+    callback tap_save();
+    callback tap_cancel();
+}
+
+export component ProfileWizard inherits Rectangle {
+    background: #0b0d10;
+    forward-focus: fs;
+
+    init => { fs.focus(); }
+
+    // Soft pulsing glow opacity (~1 Hz, motion-safe: slow ease, small region).
+    property <float> pulse: 1.0;
+    states [
+        on when true: { pulse: 0.45; }
+    ]
+    animate pulse { duration: 1000ms; iteration-count: -1; easing: ease-in-out; }
+
+    fs := FocusScope {
+        key-pressed(e) => {
+            if (!e.repeat) {
+                ProfileWizardData.key_pressed(e.text);
+            }
+            accept
+        }
+    }
+
+    // --- dimmed controller backdrop ---
+    Image {
+        x: 0; y: 0; width: parent.width; height: parent.height;
+        image-fit: fill;
+        source: @image-url("../../../data/ui/controller.png");
+        opacity: ProfileWizardData.mode == 0 ? 0.30 : 0.16;
+    }
+
+    // --- soft radial glow on the target/selected button ---
+    if ProfileWizardData.glow_visible: Rectangle {
+        property <length> d: 0.16 * root.width;
+        width: d; height: d; border-radius: d / 2;
+        x: root.width * ProfileWizardData.glow_cx - self.d / 2;
+        y: root.height * ProfileWizardData.glow_cy - self.d / 2;
+        background: @radial-gradient(circle, #ffd54acc 0%, #ffd54a66 32%, #ffd54a00 68%);
+        opacity: root.pulse;
+    }
+
+    // --- header ---
+    Rectangle {
+        x: 0; y: 0; width: parent.width; height: 44px;
+        background: #141a22e6;
+        HorizontalLayout {
+            padding-left: 20px; padding-right: 64px;   // room so title never sits under the ✕
+            Text {
+                text: "Profile: \{ProfileWizardData.profile_name}";
+                color: #e8eef5; font-size: 15px; font-weight: 700; vertical-alignment: center;
+            }
+            Rectangle {}
+            Text {
+                text: ProfileWizardData.mode == 0
+                    ? "Binding \{ProfileWizardData.progress_index} / \{ProfileWizardData.progress_total}"
+                    : "Review";
+                color: #7fb2ff; font-size: 14px; vertical-alignment: center;
+            }
+        }
+    }
+
+    // ===== guided capture =====
+    if ProfileWizardData.mode == 0: VerticalLayout {
+        y: 78px; height: 150px; alignment: start; spacing: 6px;
+        Text { text: "press the input for"; color: #9aa6b4; font-size: 15px; horizontal-alignment: center; }
+        Text { text: ProfileWizardData.capture_label; color: white; font-size: 52px; font-weight: 800; horizontal-alignment: center; }
+        HorizontalLayout {
+            alignment: center;
+            Rectangle {
+                background: #ffd54a; border-radius: 5px; height: 24px; width: 104px;
+                Text { text: "listening"; color: #1a1400; font-size: 13px; font-weight: 700;
+                       horizontal-alignment: center; vertical-alignment: center; }
+            }
+        }
+    }
+
+    // ===== review list (left ~52%) =====
+    if ProfileWizardData.mode == 1: Rectangle {
+        x: 0; y: 44px; width: 0.52 * parent.width; height: parent.height - 44px;
+        background: #090d13d9;
+        VerticalLayout {
+            padding: 6px; spacing: 0px;
+            for row[i] in ProfileWizardData.rows: TouchArea {
+                height: 24px;
+                clicked => { ProfileWizardData.tap_row(i); }
+                Rectangle {
+                    background: i == ProfileWizardData.selected ? #2f64b4 : transparent;
+                    border-radius: 4px;
+                    HorizontalLayout {
+                        padding-left: 8px; padding-right: 8px;
+                        Text { text: row.label; color: i == ProfileWizardData.selected ? #eaf2ff : #c6d0dc;
+                               font-size: 14px; vertical-alignment: center; }
+                        Rectangle {}
+                        Text { text: row.binding;
+                               color: i == ProfileWizardData.selected ? #eaf2ff : (row.bound ? #7dd88b : #5c6675);
+                               font-size: 14px; vertical-alignment: center; }
+                    }
+                }
+            }
+            TouchArea {
+                height: 28px;
+                clicked => { ProfileWizardData.tap_save(); }
+                Rectangle {
+                    background: ProfileWizardData.selected == ProfileWizardData.rows.length ? #2f64b4 : transparent;
+                    border-radius: 4px;
+                    Text { x: 8px; text: "▶ Save & Exit"; color: ProfileWizardData.selected == ProfileWizardData.rows.length ? #eaf2ff : #7fb2ff; font-size: 14px; vertical-alignment: center; }
+                }
+            }
+        }
+    }
+
+    // right-half warning (review mode)
+    if ProfileWizardData.mode == 1 && ProfileWizardData.warning != "": Text {
+        x: parent.width * 0.54; y: 54px; width: parent.width * 0.42;
+        text: ProfileWizardData.warning; color: #ffcf6b; font-size: 13px; wrap: word-wrap;
+    }
+
+    // on-screen cancel ✕ (skip in capture, quit in review), below the header
+    // so it never overlaps the title
+    TouchArea {
+        x: parent.width - 48px; y: 50px; width: 40px; height: 40px;
+        clicked => { ProfileWizardData.tap_cancel(); }
+        Rectangle {
+            background: #1e1e1eeb; border-radius: 6px; border-width: 2px; border-color: #dc5050;
+            Text { text: "✕"; color: #dc5050; font-size: 22px; horizontal-alignment: center; vertical-alignment: center; }
+        }
+    }
+
+    // --- footer legend ---
+    Rectangle {
+        x: 0; y: parent.height - 30px; width: parent.width; height: 30px;
+        background: #0a0e14f0;
+        HorizontalLayout {
+            padding-left: 20px; padding-right: 20px; spacing: 24px;
+            Text {
+                text: ProfileWizardData.mode == 0 ? "press any input" : "↑ / ↓  or  D-pad : move";
+                color: #cdd7e3; font-size: 12px; vertical-alignment: center;
+            }
+            Text {
+                text: ProfileWizardData.mode == 0 ? "Esc / East / tap ✕ : skip" : "Enter / South : rebind";
+                color: #8b97a6; font-size: 12px; vertical-alignment: center;
+            }
+            Rectangle {}
+            Text {
+                text: ProfileWizardData.mode == 0
+                    ? (ProfileWizardData.next_label != "" ? "next: \{ProfileWizardData.next_label}" : "last input")
+                    : "Save & Exit to finish";
+                color: #8b97a6; font-size: 12px; vertical-alignment: center;
+            }
+        }
+    }
+}

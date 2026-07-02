@@ -8,6 +8,8 @@ pub mod config;
 pub mod gui;
 pub mod input;
 #[cfg(feature = "gui")]
+pub(crate) mod input_capture;
+#[cfg(feature = "gui")]
 pub mod netplay;
 #[cfg(feature = "gui")]
 pub mod retroachievements;

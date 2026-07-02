@@ -38,20 +38,6 @@ pub struct Args {
     #[arg(
         long,
         value_name = "PROFILE_NAME",
-        help = "Create a new input profile (keyboard/gamepad mappings)"
-    )]
-    pub configure_input_profile: Option<String>,
-    #[arg(long, help = "Use DirectInput when configuring a new input profile")]
-    pub use_dinput: bool,
-    #[arg(
-        long,
-        value_name = "DEADZONE_PERCENTAGE",
-        help = "Used along with --configure-input-profile to set the deadzone for analog sticks"
-    )]
-    pub deadzone: Option<i32>,
-    #[arg(
-        long,
-        value_name = "PROFILE_NAME",
         help = "Must also specify --port. Used to bind a previously created profile to a port"
     )]
     pub bind_input_profile: Option<String>,
@@ -285,49 +271,37 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
     } else if arg_count > 1 {
         let mut config = ui::config::Config::new();
 
-        if let Some(profile) = args.configure_input_profile {
-            ui::input::configure_input_profile(
-                &mut config,
-                profile,
-                args.use_dinput,
-                args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
-            );
-
-            ui::sdl_close();
+        if args.clear_input_bindings {
+            ui::input::clear_bindings(&mut config);
             return Ok(());
+        }
+        if let Some(port) = args.port
+            && !(1..=4).contains(&port)
+        {
+            return Err(Error::other("Port must be between 1 and 4"));
+        }
+
+        ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
+
+        if args.list_controllers {
+            let controllers = ui::input::get_controller_names();
+            for (i, controller) in controllers.iter().enumerate() {
+                println!("Controller {i}: {controller}");
+            }
         } else {
-            if args.clear_input_bindings {
-                ui::input::clear_bindings(&mut config);
-                return Ok(());
+            if let Some(assign_controller) = args.assign_controller {
+                let Some(port) = args.port else {
+                    ui::sdl_close();
+                    return Err(Error::other("Must specify port number"));
+                };
+                ui::input::assign_controller(&mut config, assign_controller - 1, port);
             }
-            if let Some(port) = args.port
-                && !(1..=4).contains(&port)
-            {
-                return Err(Error::other("Port must be between 1 and 4"));
-            }
-
-            ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
-
-            if args.list_controllers {
-                let controllers = ui::input::get_controller_names();
-                for (i, controller) in controllers.iter().enumerate() {
-                    println!("Controller {i}: {controller}");
-                }
-            } else {
-                if let Some(assign_controller) = args.assign_controller {
-                    let Some(port) = args.port else {
-                        ui::sdl_close();
-                        return Err(Error::other("Must specify port number"));
-                    };
-                    ui::input::assign_controller(&mut config, assign_controller - 1, port);
-                }
-                if let Some(profile) = args.bind_input_profile {
-                    let Some(port) = args.port else {
-                        ui::sdl_close();
-                        return Err(Error::other("Must specify port number"));
-                    };
-                    ui::input::bind_input_profile(&mut config, profile, port);
-                }
+            if let Some(profile) = args.bind_input_profile {
+                let Some(port) = args.port else {
+                    ui::sdl_close();
+                    return Err(Error::other("Must specify port number"));
+                };
+                ui::input::bind_input_profile(&mut config, profile, port);
             }
         }
     } else {

@@ -354,51 +354,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
             })
             .unwrap();
     });
-    let weak_app = app.as_weak();
-    app.on_input_profile_creation_button_clicked(move || {
-        #[cfg(not(target_os = "android"))]
-        let weak_app2 = weak_app.clone();
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                let profile_name = handle.get_input_profile_name();
-                let dinput = handle.get_input_dinput();
-                let deadzone = handle.get_input_deadzone();
-                handle.set_show_input_profile(false);
-
-                #[cfg(target_os = "android")]
-                ui::android::spawn_configure_input_profile(profile_name, dinput, deadzone);
-
-                #[cfg(not(target_os = "android"))]
-                tokio::spawn(async move {
-                    let cli_path = std::env::current_exe()
-                        .unwrap()
-                        .parent()
-                        .unwrap()
-                        .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
-                    let cmd_path = if cfg!(target_os = "macos") && cli_path.exists() {
-                        cli_path
-                    } else {
-                        std::env::current_exe().unwrap()
-                    };
-                    let mut command = tokio::process::Command::new(cmd_path);
-                    command.args([
-                        "--configure-input-profile",
-                        &profile_name,
-                        "--deadzone",
-                        &deadzone.to_string(),
-                    ]);
-                    if dinput {
-                        command.arg("--use-dinput");
-                    }
-                    if !command.status().await.unwrap().success() {
-                        eprintln!("Failed to configure input profile");
-                    }
-                    let config = ui::config::Config::new();
-                    update_input_profiles(&weak_app2, &config);
-                });
-            })
-            .unwrap();
-    });
+    wizard::init(app);
 
     let weak_app2 = app.as_weak();
     app.on_transferpak_toggled(move |player, enabled| {
@@ -801,4 +757,534 @@ fn open_rom(app: &AppWindow) {
             );
         }
     });
+}
+
+/// In-app input-profile wizard: drives the pure menu state machine in
+/// `ui::input` from the Slint event loop. Raw controller input arrives
+/// per-platform: on desktop a 16 ms `slint::Timer` pumps SDL (no SDL window —
+/// the GAMEPAD subsystem plus the background-events hint deliver device
+/// events windowless); on Android `SlintActivity` forwards events over JNI
+/// into [`apply_android_input`] (SDL is NOT initialized in that process).
+/// Keyboard arrives through the wizard's FocusScope, and taps through its
+/// TouchAreas. Replaces the old standalone SDL window
+/// (`configure_input_profile`) and the old Android config `N64Activity`.
+pub(crate) mod wizard {
+    use super::{AppWindow, ProfileRow, ProfileWizardData, update_input_profiles};
+    use crate::ui;
+    use crate::ui::input;
+    use crate::ui::input_capture::{self, CaptureEvent};
+    use slint::ComponentHandle;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    /// Ignore raw/key input for this long after entering a capture step, so
+    /// the input that triggered capture (or a still-held key) does not
+    /// immediately re-bind — the pump-friendly version of the old `debounce`.
+    const DEBOUNCE_MS: u64 = 150;
+
+    struct Session {
+        state: input::MenuState,
+        bindings: input::Bindings,
+        profile_name: String,
+        dinput: bool,
+        deadzone: i32,
+        /// Skip axis events until the stick returns near neutral (set after
+        /// binding an axis so a still-deflected stick does not instantly
+        /// re-bind).
+        await_axis_neutral: bool,
+        /// Left-Y position for edge-triggered list navigation.
+        last_axis_y: i16,
+        /// Instant until which capture input is ignored (debounce window).
+        ignore_until: std::time::Instant,
+        #[cfg(not(target_os = "android"))]
+        open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick>,
+        #[cfg(not(target_os = "android"))]
+        open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad>,
+    }
+
+    impl Session {
+        /// Open the ~150 ms ignore window; on desktop also flush queued SDL
+        /// events. (No SDL calls on Android — SDL is not initialized there.)
+        fn debounce(&mut self) {
+            #[cfg(not(target_os = "android"))]
+            unsafe {
+                sdl3_sys::events::SDL_PumpEvents();
+                sdl3_sys::events::SDL_FlushEvents(
+                    u32::from(sdl3_sys::events::SDL_EVENT_FIRST),
+                    u32::from(sdl3_sys::events::SDL_EVENT_LAST),
+                );
+            }
+            self.ignore_until =
+                std::time::Instant::now() + std::time::Duration::from_millis(DEBOUNCE_MS);
+        }
+    }
+
+    type Shared = Rc<RefCell<Option<Session>>>;
+
+    /// Wire the wizard's callbacks once at startup. The session and pump
+    /// timer live behind `Rc`s shared by every callback; everything runs on
+    /// the Slint event-loop thread.
+    pub(super) fn init(app: &AppWindow) {
+        let session: Shared = Rc::new(RefCell::new(None));
+        let timer = Rc::new(slint::Timer::default());
+
+        // Let the JNI feed reach the session from the event-loop thread.
+        #[cfg(target_os = "android")]
+        ANDROID_WIZARD.with(|w| {
+            *w.borrow_mut() = Some((app.as_weak(), session.clone(), timer.clone()));
+        });
+
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            app.on_input_profile_creation_button_clicked(move || {
+                let Some(handle) = weak.upgrade() else { return };
+                open(&handle, &session, &timer);
+            });
+        }
+
+        let wiz = app.global::<ProfileWizardData>();
+
+        // Keyboard from the wizard's FocusScope: bind in capture (Esc skips),
+        // navigate in review.
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_key_pressed(move |text| {
+                let Some(handle) = weak.upgrade() else { return };
+                let action = {
+                    let mut guard = session.borrow_mut();
+                    let Some(s) = guard.as_mut() else { return };
+                    let Some(scancode) = input_capture::slint_key_to_scancode(&text) else {
+                        return;
+                    };
+                    match s.state.screen {
+                        input::Screen::Capture => {
+                            if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_ESCAPE) {
+                                input::Action::Cancel
+                            } else if std::time::Instant::now() < s.ignore_until {
+                                return;
+                            } else {
+                                let value = input::KEY_LABELS[s.state.selected].1;
+                                s.bindings.bind(value, CaptureEvent::Key(scancode));
+                                input::Action::Bound
+                            }
+                        }
+                        input::Screen::List => {
+                            if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_UP) {
+                                input::Action::Up
+                            } else if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_DOWN) {
+                                input::Action::Down
+                            } else if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_RETURN)
+                            {
+                                input::Action::Confirm
+                            } else if scancode == i32::from(sdl3_sys::scancode::SDL_SCANCODE_ESCAPE)
+                            {
+                                input::Action::Cancel
+                            } else {
+                                return;
+                            }
+                        }
+                    }
+                };
+                dispatch(&handle, &session, &timer, action);
+            });
+        }
+
+        // Explicit navigation intents from the UI layer (unused today; kept
+        // as the wizard's generic entry point for e.g. hardware-back wiring).
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_nav(move |code| {
+                let Some(handle) = weak.upgrade() else { return };
+                let action = match code {
+                    0 => input::Action::Up,
+                    1 => input::Action::Down,
+                    2 => input::Action::Confirm,
+                    3 => input::Action::Cancel,
+                    _ => input::Action::Quit,
+                };
+                dispatch(&handle, &session, &timer, action);
+            });
+        }
+
+        // Tap a row to select it; tap the selected row again to rebind.
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_tap_row(move |i| {
+                let Some(handle) = weak.upgrade() else { return };
+                let confirm = {
+                    let mut guard = session.borrow_mut();
+                    let Some(s) = guard.as_mut() else { return };
+                    if s.state.screen != input::Screen::List {
+                        return;
+                    }
+                    let i = i as usize;
+                    if s.state.selected == i {
+                        true
+                    } else {
+                        s.state.selected = i;
+                        false
+                    }
+                };
+                if confirm {
+                    dispatch(&handle, &session, &timer, input::Action::Confirm);
+                } else {
+                    render(&handle, &session);
+                }
+            });
+        }
+
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_tap_save(move || {
+                let Some(handle) = weak.upgrade() else { return };
+                {
+                    let mut guard = session.borrow_mut();
+                    let Some(s) = guard.as_mut() else { return };
+                    if s.state.screen != input::Screen::List {
+                        return;
+                    }
+                    s.state.selected = input::SAVE_ROW;
+                }
+                dispatch(&handle, &session, &timer, input::Action::Confirm);
+            });
+        }
+
+        {
+            let session = session.clone();
+            let timer = timer.clone();
+            let weak = app.as_weak();
+            wiz.on_tap_cancel(move || {
+                let Some(handle) = weak.upgrade() else { return };
+                dispatch(&handle, &session, &timer, input::Action::Cancel);
+            });
+        }
+    }
+
+    /// Start the wizard for the dialog's profile name / dinput / deadzone.
+    fn open(handle: &AppWindow, session: &Shared, timer: &Rc<slint::Timer>) {
+        let profile_name = handle.get_input_profile_name().to_string();
+        let dinput = handle.get_input_dinput();
+        let deadzone = handle.get_input_deadzone();
+        handle.set_show_input_profile(false);
+        // The dialog's button is disabled for these; keep the old CLI guard.
+        if profile_name.is_empty() || profile_name == "default" {
+            return;
+        }
+
+        // Mirror how the old SDL window opened devices: gamepads normally,
+        // raw joysticks for DirectInput. Desktop only — on Android SDL is not
+        // initialized in this process; input arrives from Kotlin over JNI.
+        #[cfg(not(target_os = "android"))]
+        let (open_joysticks, open_controllers) = {
+            let mut open_joysticks = Vec::new();
+            let mut open_controllers = Vec::new();
+            for joystick in input::get_joysticks() {
+                if dinput {
+                    let j = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick) };
+                    if !j.is_null() {
+                        open_joysticks.push(j);
+                    }
+                } else {
+                    let c = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(joystick) };
+                    if !c.is_null() {
+                        open_controllers.push(c);
+                    }
+                }
+            }
+            (open_joysticks, open_controllers)
+        };
+
+        let config = ui::config::Config::new();
+        let existing = config.input.input_profiles.get(&profile_name);
+        // Pre-load the existing profile so editing only re-captures the
+        // inputs the user picks; a new profile starts the guided flow.
+        let bindings = existing.map_or_else(input::Bindings::empty, input::Bindings::from_profile);
+        let state = input::MenuState::entry(existing.is_some());
+
+        let mut s = Session {
+            state,
+            bindings,
+            profile_name: profile_name.clone(),
+            dinput,
+            deadzone,
+            await_axis_neutral: false,
+            last_axis_y: 0,
+            ignore_until: std::time::Instant::now(),
+            #[cfg(not(target_os = "android"))]
+            open_joysticks,
+            #[cfg(not(target_os = "android"))]
+            open_controllers,
+        };
+        // Drain anything still held from the click that opened the wizard so
+        // it cannot auto-bind the first guided input.
+        s.debounce();
+        *session.borrow_mut() = Some(s);
+
+        handle
+            .global::<ProfileWizardData>()
+            .set_profile_name(profile_name.into());
+        render(handle, session);
+        handle.set_show_profile_wizard(true);
+
+        #[cfg(not(target_os = "android"))]
+        {
+            let weak = handle.as_weak();
+            let session = session.clone();
+            let timer_weak = Rc::downgrade(timer);
+            timer.start(
+                slint::TimerMode::Repeated,
+                std::time::Duration::from_millis(16),
+                move || {
+                    let (Some(handle), Some(timer)) = (weak.upgrade(), timer_weak.upgrade()) else {
+                        return;
+                    };
+                    pump(&handle, &session, &timer);
+                },
+            );
+        }
+        // Android: no SDL pump; tell Kotlin to start forwarding controller
+        // input (dispatch overrides + a focused capture overlay).
+        #[cfg(target_os = "android")]
+        {
+            let _ = timer;
+            ui::android::set_capture_active(true);
+        }
+    }
+
+    /// One 16 ms tick: drain queued SDL events into bindings / nav actions.
+    #[cfg(not(target_os = "android"))]
+    fn pump(handle: &AppWindow, session: &Shared, timer: &Rc<slint::Timer>) {
+        let mut event: sdl3_sys::events::SDL_Event = Default::default();
+        while unsafe { sdl3_sys::events::SDL_PollEvent(&mut event) } {
+            let action = {
+                let mut guard = session.borrow_mut();
+                let Some(s) = guard.as_mut() else { return };
+                let decoded = input_capture::decode_sdl(&event, s.dinput);
+                translate(s, &decoded)
+            };
+            if let Some(action) = action {
+                dispatch(handle, session, timer, action);
+            }
+        }
+    }
+
+    /// Per-event-loop-thread hook for the Android JNI feed: set by `init`,
+    /// read by [`apply_android_input`].
+    #[cfg(target_os = "android")]
+    type AndroidHook = (slint::Weak<AppWindow>, Shared, Rc<slint::Timer>);
+    #[cfg(target_os = "android")]
+    thread_local! {
+        static ANDROID_WIZARD: RefCell<Option<AndroidHook>> = const { RefCell::new(None) };
+    }
+
+    /// Feed one JNI-forwarded input through the SAME decode → policy →
+    /// dispatch path the desktop pump uses. Must run on the Slint event-loop
+    /// thread (`slint::invoke_from_event_loop`); a no-op while no session is
+    /// open (Kotlin only forwards while capture is active, but late events
+    /// can still race `finish`).
+    #[cfg(target_os = "android")]
+    pub(crate) fn apply_android_input(ev: input_capture::AndroidEvent) {
+        let Some((weak, session, timer)) = ANDROID_WIZARD.with(|w| w.borrow().clone()) else {
+            return;
+        };
+        let Some(handle) = weak.upgrade() else { return };
+        let action = {
+            let mut guard = session.borrow_mut();
+            let Some(s) = guard.as_mut() else { return };
+            let decoded = input_capture::decode_android(&ev, s.dinput);
+            translate(s, &decoded)
+        };
+        if let Some(action) = action {
+            dispatch(&handle, &session, &timer, action);
+        }
+    }
+
+    /// Apply one platform-decoded event against the current screen: the
+    /// debounce / axis-neutral gates around binding, and edge-triggered
+    /// left-Y list navigation. One deliberate divergence from the old
+    /// SDL-window loop: East/back skips a capture even during the debounce
+    /// window (the old flush simply discarded it).
+    fn translate(s: &mut Session, d: &input_capture::Decoded) -> Option<input::Action> {
+        match s.state.screen {
+            input::Screen::Capture => {
+                // East / back skips, bypassing the debounce window.
+                if d.nav == Some(input::Action::Cancel) {
+                    return Some(input::Action::Cancel);
+                }
+                if std::time::Instant::now() < s.ignore_until {
+                    return None;
+                }
+                match d.bind {
+                    Some(ev) => {
+                        if d.axis_stream && s.await_axis_neutral {
+                            return None; // stick still deflected from the last bind
+                        }
+                        if d.axis_stream {
+                            s.await_axis_neutral = true;
+                        }
+                        let value = input::KEY_LABELS[s.state.selected].1;
+                        s.bindings.bind(value, ev);
+                        Some(input::Action::Bound)
+                    }
+                    None => {
+                        // A below-threshold deflection on the bindable axis
+                        // stream re-arms axis capture (the old neutral gate).
+                        if d.axis_stream {
+                            s.await_axis_neutral = false;
+                        }
+                        None
+                    }
+                }
+            }
+            input::Screen::List => {
+                if let Some(v) = d.list_y {
+                    // Left-Y navigates on threshold crossings only.
+                    let thresh = (i16::MAX as i32 * 3 / 4) as i16;
+                    let was_neutral = s.last_axis_y.saturating_abs() <= thresh;
+                    s.last_axis_y = v;
+                    if was_neutral && v < -thresh {
+                        return Some(input::Action::Up);
+                    } else if was_neutral && v > thresh {
+                        return Some(input::Action::Down);
+                    }
+                    return None;
+                }
+                d.nav
+            }
+        }
+    }
+
+    /// Run one decoded action through `advance` and act on the transition.
+    fn dispatch(
+        handle: &AppWindow,
+        session: &Shared,
+        timer: &Rc<slint::Timer>,
+        action: input::Action,
+    ) {
+        let exit = {
+            let mut guard = session.borrow_mut();
+            let Some(s) = guard.as_mut() else { return };
+            let was_capture = s.state.screen == input::Screen::Capture;
+            let t = input::advance(&mut s.state, action);
+            if t.begin_capture {
+                if was_capture {
+                    // Guided auto-advance: the old loop only debounced when
+                    // the axis-neutral latch was clear.
+                    if !s.await_axis_neutral {
+                        s.debounce();
+                    }
+                } else {
+                    // Entering capture from the list re-arms axes and debounces.
+                    s.await_axis_neutral = false;
+                    s.debounce();
+                }
+            }
+            t.exit.then_some(t.save)
+        };
+        match exit {
+            Some(save) => finish(handle, session, timer, save),
+            None => render(handle, session),
+        }
+    }
+
+    /// Mirror the session into `ProfileWizardData`.
+    fn render(handle: &AppWindow, session: &Shared) {
+        let guard = session.borrow();
+        let Some(s) = guard.as_ref() else { return };
+        let wiz = handle.global::<ProfileWizardData>();
+
+        match s.state.screen {
+            input::Screen::Capture => {
+                wiz.set_mode(0);
+                wiz.set_capture_label(input::KEY_LABELS[s.state.selected].0.into());
+                let next = if s.state.guided {
+                    input::KEY_LABELS
+                        .get(s.state.selected + 1)
+                        .map_or("", |&(label, _)| label)
+                } else {
+                    ""
+                };
+                wiz.set_next_label(next.into());
+                wiz.set_progress_index(s.state.selected as i32 + 1);
+                wiz.set_progress_total(input::PROFILE_SIZE as i32);
+            }
+            input::Screen::List => {
+                wiz.set_mode(1);
+                let rows: Vec<ProfileRow> = input::KEY_LABELS
+                    .iter()
+                    .map(|&(label, value)| ProfileRow {
+                        label: label.into(),
+                        binding: s.bindings.label(value).into(),
+                        bound: s.bindings.is_bound(value),
+                    })
+                    .collect();
+                wiz.set_rows(slint::ModelRc::from(std::rc::Rc::new(
+                    slint::VecModel::from(rows),
+                )));
+                wiz.set_selected(s.state.selected as i32);
+                wiz.set_warning(
+                    if s.state.quit_armed {
+                        "unsaved changes - quit again to discard"
+                    } else {
+                        ""
+                    }
+                    .into(),
+                );
+            }
+        }
+
+        match input::KEY_LABELS
+            .get(s.state.selected)
+            .and_then(|&(_, value)| input::glow_center(value))
+        {
+            Some((cx, cy, _)) => {
+                wiz.set_glow_cx(cx);
+                wiz.set_glow_cy(cy);
+                wiz.set_glow_visible(true);
+            }
+            None => wiz.set_glow_visible(false),
+        }
+    }
+
+    /// Close the wizard: release capture (SDL devices on desktop, the Kotlin
+    /// forwarder on Android), optionally persist the profile (via `Config`'s
+    /// write-on-drop, as the old CLI did), stop the pump and return to the
+    /// controller page.
+    fn finish(handle: &AppWindow, session: &Shared, timer: &Rc<slint::Timer>, save: bool) {
+        timer.stop();
+        let Some(s) = session.borrow_mut().take() else {
+            return;
+        };
+        #[cfg(not(target_os = "android"))]
+        {
+            for joystick in &s.open_joysticks {
+                unsafe { sdl3_sys::joystick::SDL_CloseJoystick(*joystick) };
+            }
+            for controller in &s.open_controllers {
+                unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(*controller) };
+            }
+        }
+        #[cfg(target_os = "android")]
+        ui::android::set_capture_active(false);
+        if save {
+            let mut config = ui::config::Config::new();
+            config
+                .input
+                .input_profiles
+                .insert(s.profile_name, s.bindings.to_profile(s.dinput, s.deadzone));
+            update_input_profiles(&handle.as_weak(), &config);
+            // `config` drops here and writes config.json to disk.
+        }
+        handle.set_show_profile_wizard(false);
+    }
 }
