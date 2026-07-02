@@ -486,7 +486,6 @@ pub fn init(
             message_timer = std::time::Instant::now();
         }
 
-        unsafe { sdl3_sys::events::SDL_PumpEvents() };
         ui::video::render_frame();
         ui::video::update_screen();
         std::thread::sleep(std::time::Duration::from_millis(10));
