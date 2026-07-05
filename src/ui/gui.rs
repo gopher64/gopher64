@@ -347,7 +347,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
     app.on_input_profile_button_clicked(move || {
         weak_app
             .upgrade_in_event_loop(move |handle| {
-                handle.set_input_deadzone(ui::input::DEADZONE_DEFAULT);
+                handle.set_input_deadzone(ui::input_profile::DEADZONE_DEFAULT);
                 handle.set_input_profile_name(String::new().into());
                 handle.set_input_dinput(false);
                 handle.set_show_input_profile(true);

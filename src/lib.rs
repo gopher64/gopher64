@@ -284,11 +284,11 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         let mut config = ui::config::Config::new();
 
         if let Some(profile) = args.configure_input_profile {
-            ui::input::configure_input_profile(
+            ui::input_profile::configure_input_profile(
                 &mut config,
                 profile,
                 args.use_dinput,
-                args.deadzone.unwrap_or(ui::input::DEADZONE_DEFAULT),
+                args.deadzone.unwrap_or(ui::input_profile::DEADZONE_DEFAULT),
             );
 
             ui::sdl_close();

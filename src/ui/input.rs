@@ -2,33 +2,10 @@ use std::ops::Neg;
 
 use crate::ui;
 
-const R_DPAD: usize = 0;
-const L_DPAD: usize = 1;
-const D_DPAD: usize = 2;
-const U_DPAD: usize = 3;
-const START_BUTTON: usize = 4;
-const Z_TRIG: usize = 5;
-const B_BUTTON: usize = 6;
-const A_BUTTON: usize = 7;
-const R_CBUTTON: usize = 8;
-const L_CBUTTON: usize = 9;
-const D_CBUTTON: usize = 10;
-const U_CBUTTON: usize = 11;
-const R_TRIG: usize = 12;
-const L_TRIG: usize = 13;
-const AXIS_LEFT: usize = 14;
-const AXIS_RIGHT: usize = 15;
-const AXIS_UP: usize = 16;
-const AXIS_DOWN: usize = 17;
-const HOTKEY: usize = 18;
-pub const PROFILE_SIZE: usize = 19;
-
 const X_AXIS_SHIFT: usize = 16;
 const Y_AXIS_SHIFT: usize = 24;
 
 const MAX_AXIS_VALUE: f64 = 85.0;
-
-pub const DEADZONE_DEFAULT: i32 = 5;
 
 pub const UNKNOWN_CONTROLLER_NAME: &str = "Unknown controller";
 
@@ -83,196 +60,158 @@ fn normalize_axis_position(axis_position: i16) -> f64 {
     axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64
 }
 
-fn set_axis_from_joystick(
+fn set_axis(
     profile: &ui::config::InputProfile,
     joystick: *mut sdl3_sys::joystick::SDL_Joystick,
-) -> (f64, f64) {
-    let mut x = 0.0;
-    let mut y = 0.0;
-    if profile.joystick_axis[AXIS_LEFT].enabled {
-        let axis_position = unsafe {
-            sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_LEFT].id)
-        };
-        if axis_position as isize * profile.joystick_axis[AXIS_LEFT].axis as isize > 0 {
-            x = normalize_axis_position(axis_position);
-        }
-    }
-    if profile.joystick_axis[AXIS_RIGHT].enabled {
-        let axis_position = unsafe {
-            sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_RIGHT].id)
-        };
-        if axis_position as isize * profile.joystick_axis[AXIS_RIGHT].axis as isize > 0 {
-            x = normalize_axis_position(axis_position);
-        }
-    }
-    if profile.joystick_axis[AXIS_DOWN].enabled {
-        let axis_position = unsafe {
-            sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_DOWN].id)
-        };
-        if axis_position as isize * profile.joystick_axis[AXIS_DOWN].axis as isize > 0 {
-            y = normalize_axis_position(axis_position).neg();
-        }
-    }
-    if profile.joystick_axis[AXIS_UP].enabled {
-        let axis_position = unsafe {
-            sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile.joystick_axis[AXIS_UP].id)
-        };
-        if axis_position as isize * profile.joystick_axis[AXIS_UP].axis as isize > 0 {
-            y = normalize_axis_position(axis_position).neg();
-        }
-    }
-    (x, y)
-}
-
-fn set_axis_from_controller(
-    profile: &ui::config::InputProfile,
     controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
-) -> (f64, f64) {
-    let mut x = 0.0;
-    let mut y = 0.0;
-    if profile.controller_axis[AXIS_LEFT].enabled {
-        let axis_position = unsafe {
-            sdl3_sys::gamepad::SDL_GetGamepadAxis(
-                controller,
-                sdl3_sys::gamepad::SDL_GamepadAxis(profile.controller_axis[AXIS_LEFT].id),
-            )
-        };
-        if axis_position as isize * profile.controller_axis[AXIS_LEFT].axis as isize > 0 {
-            x = normalize_axis_position(axis_position);
-        }
-    }
-    if profile.controller_axis[AXIS_RIGHT].enabled {
-        let axis_position = unsafe {
-            sdl3_sys::gamepad::SDL_GetGamepadAxis(
-                controller,
-                sdl3_sys::gamepad::SDL_GamepadAxis(profile.controller_axis[AXIS_RIGHT].id),
-            )
-        };
-        if axis_position as isize * profile.controller_axis[AXIS_RIGHT].axis as isize > 0 {
-            x = normalize_axis_position(axis_position);
-        }
-    }
-    if profile.controller_axis[AXIS_DOWN].enabled {
-        let axis_position = unsafe {
-            sdl3_sys::gamepad::SDL_GetGamepadAxis(
-                controller,
-                sdl3_sys::gamepad::SDL_GamepadAxis(profile.controller_axis[AXIS_DOWN].id),
-            )
-        };
-        if axis_position as isize * profile.controller_axis[AXIS_DOWN].axis as isize > 0 {
-            y = normalize_axis_position(axis_position).neg();
-        }
-    }
-    if profile.controller_axis[AXIS_UP].enabled {
-        let axis_position = unsafe {
-            sdl3_sys::gamepad::SDL_GetGamepadAxis(
-                controller,
-                sdl3_sys::gamepad::SDL_GamepadAxis(profile.controller_axis[AXIS_UP].id),
-            )
-        };
-        if axis_position as isize * profile.controller_axis[AXIS_UP].axis as isize > 0 {
-            y = normalize_axis_position(axis_position).neg();
-        }
-    }
-    (x, y)
-}
-
-fn set_axis_from_keys(
-    profile: &ui::config::InputProfile,
     keyboard_state: *const bool,
 ) -> (f64, f64) {
     let mut x = 0.0;
     let mut y = 0.0;
-    if profile.keys[AXIS_LEFT].enabled
-        && unsafe { *keyboard_state.offset(profile.keys[AXIS_LEFT].id as isize) }
-    {
-        x = -MAX_AXIS_VALUE
+    let axes = [
+        ui::input_profile::AXIS_LEFT,
+        ui::input_profile::AXIS_RIGHT,
+        ui::input_profile::AXIS_DOWN,
+        ui::input_profile::AXIS_UP,
+    ];
+    let mut has_deadzone = false;
+    for axis in axes {
+        for input in profile.inputs[axis].iter() {
+            if !controller.is_null()
+                && let Some(ui::config::InputItem::ControllerAxis(controller_axis)) = input
+            {
+                let axis_position = unsafe {
+                    sdl3_sys::gamepad::SDL_GetGamepadAxis(
+                        controller,
+                        sdl3_sys::gamepad::SDL_GamepadAxis(controller_axis.id),
+                    )
+                };
+                if axis_position as isize * controller_axis.axis as isize > 0 {
+                    let axis_value = if axis == ui::input_profile::AXIS_LEFT
+                        || axis == ui::input_profile::AXIS_RIGHT
+                    {
+                        &mut x
+                    } else {
+                        &mut y
+                    };
+                    *axis_value = normalize_axis_position(axis_position);
+                    has_deadzone = true;
+                }
+            } else if !joystick.is_null()
+                && let Some(ui::config::InputItem::JoystickAxis(joystick_axis)) = input
+            {
+                let axis_position =
+                    unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, joystick_axis.id) };
+                if axis_position as isize * joystick_axis.axis as isize > 0 {
+                    let axis_value = if axis == ui::input_profile::AXIS_LEFT
+                        || axis == ui::input_profile::AXIS_RIGHT
+                    {
+                        &mut x
+                    } else {
+                        &mut y
+                    };
+                    *axis_value = normalize_axis_position(axis_position);
+                    has_deadzone = true;
+                }
+            } else if let Some(ui::config::InputItem::Key(key)) = input
+                && unsafe { *keyboard_state.offset(key.id as isize) }
+            {
+                match axis {
+                    ui::input_profile::AXIS_LEFT => x = -MAX_AXIS_VALUE,
+                    ui::input_profile::AXIS_RIGHT => x = MAX_AXIS_VALUE,
+                    ui::input_profile::AXIS_DOWN => y = MAX_AXIS_VALUE,
+                    ui::input_profile::AXIS_UP => y = -MAX_AXIS_VALUE,
+                    _ => unreachable!(),
+                }
+            }
+        }
     }
-    if profile.keys[AXIS_RIGHT].enabled
-        && unsafe { *keyboard_state.offset(profile.keys[AXIS_RIGHT].id as isize) }
-    {
-        x = MAX_AXIS_VALUE
-    }
-    if profile.keys[AXIS_DOWN].enabled
-        && unsafe { *keyboard_state.offset(profile.keys[AXIS_DOWN].id as isize) }
-    {
-        y = -MAX_AXIS_VALUE
-    }
-    if profile.keys[AXIS_UP].enabled
-        && unsafe { *keyboard_state.offset(profile.keys[AXIS_UP].id as isize) }
-    {
-        y = MAX_AXIS_VALUE
+
+    y = y.neg();
+    if has_deadzone {
+        apply_deadzone(&mut x, &mut y, profile.deadzone);
     }
     (x, y)
 }
 
-fn set_buttons_from_joystick(
-    profile: &ui::config::InputProfile,
-    i: usize,
+fn is_controller_button_pressed(
+    input: &Option<ui::config::InputItem>,
     joystick: *mut sdl3_sys::joystick::SDL_Joystick,
-    keys: &mut u32,
-) {
-    let profile_joystick_button = profile.joystick_buttons[i];
-    if profile_joystick_button.enabled {
-        *keys |= (unsafe {
-            sdl3_sys::joystick::SDL_GetJoystickButton(joystick, profile_joystick_button.id)
-        } as u32)
-            << i;
-    }
-
-    let profile_joystick_hat = profile.joystick_hat[i];
-    if profile_joystick_hat.enabled
-        && (unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, profile_joystick_hat.id) }
-            & profile_joystick_hat.direction)
-            != 0
-    {
-        *keys |= 1 << i;
-    }
-
-    let profile_joystick_axis = profile.joystick_axis[i];
-    if profile_joystick_axis.enabled {
-        let axis_position =
-            unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, profile_joystick_axis.id) };
-        if (axis_position as isize * profile_joystick_axis.axis as isize > 0
-            || profile_joystick_axis.initial_state != 0)
-            && axis_position.abs_diff(profile_joystick_axis.initial_state) > (u16::MAX / 4)
+    controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
+) -> bool {
+    if !controller.is_null() {
+        if let Some(ui::config::InputItem::ControllerButton(controller_button)) = input
+            && unsafe {
+                sdl3_sys::gamepad::SDL_GetGamepadButton(
+                    controller,
+                    sdl3_sys::gamepad::SDL_GamepadButton(controller_button.id),
+                )
+            }
         {
-            *keys |= 1 << i;
+            return true;
+        }
+        if let Some(ui::config::InputItem::ControllerAxis(controller_axis)) = input {
+            let axis_position = unsafe {
+                sdl3_sys::gamepad::SDL_GetGamepadAxis(
+                    controller,
+                    sdl3_sys::gamepad::SDL_GamepadAxis(controller_axis.id),
+                )
+            };
+            if axis_position as isize * controller_axis.axis as isize > 0
+                && axis_position.saturating_abs() > i16::MAX / 2
+            {
+                return true;
+            }
+        }
+    } else if !joystick.is_null() {
+        if let Some(ui::config::InputItem::JoystickButton(joystick_button)) = input
+            && unsafe { sdl3_sys::joystick::SDL_GetJoystickButton(joystick, joystick_button.id) }
+        {
+            return true;
+        }
+        if let Some(ui::config::InputItem::JoystickHat(joystick_hat)) = input
+            && (unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, joystick_hat.id) }
+                & joystick_hat.direction)
+                != 0
+        {
+            return true;
+        }
+        if let Some(ui::config::InputItem::JoystickAxis(joystick_axis)) = input {
+            let axis_position =
+                unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, joystick_axis.id) };
+            if (axis_position as isize * joystick_axis.axis as isize > 0
+                || joystick_axis.initial_state != 0)
+                && axis_position.abs_diff(joystick_axis.initial_state) > (u16::MAX / 4)
+            {
+                return true;
+            }
         }
     }
+    false
 }
 
-fn set_buttons_from_controller(
+fn set_buttons(
     profile: &ui::config::InputProfile,
-    i: usize,
+    joystick: *mut sdl3_sys::joystick::SDL_Joystick,
     controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
-    keys: &mut u32,
-) {
-    let profile_controller_button = profile.controller_buttons[i];
-    if profile_controller_button.enabled {
-        *keys |= (unsafe {
-            sdl3_sys::gamepad::SDL_GetGamepadButton(
-                controller,
-                sdl3_sys::gamepad::SDL_GamepadButton(profile_controller_button.id),
-            )
-        } as u32)
-            << i;
-    }
-
-    let profile_controller_axis = profile.controller_axis[i];
-    if profile_controller_axis.enabled {
-        let axis_position = unsafe {
-            sdl3_sys::gamepad::SDL_GetGamepadAxis(
-                controller,
-                sdl3_sys::gamepad::SDL_GamepadAxis(profile_controller_axis.id),
-            )
-        };
-        if axis_position as isize * profile_controller_axis.axis as isize > 0
-            && axis_position.saturating_abs() > i16::MAX / 2
-        {
-            *keys |= 1 << i;
+    keyboard_state: *const bool,
+    alt_pressed: bool,
+) -> u32 {
+    let mut keys = 0;
+    for i in 0..14 {
+        for input in profile.inputs[i].iter() {
+            if let Some(ui::config::InputItem::Key(key)) = input
+                && !alt_pressed
+                && unsafe { *keyboard_state.offset(key.id as isize) }
+            {
+                keys |= 1 << i;
+            }
+            if is_controller_button_pressed(input, joystick, controller) {
+                keys |= 1 << i;
+            }
         }
     }
+    keys
 }
 
 pub fn set_rumble(ui: &ui::Ui, channel: usize, rumble: u8) {
@@ -307,44 +246,12 @@ fn hotkey_pressed(
     joystick: *mut sdl3_sys::joystick::SDL_Joystick,
     controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
 ) -> bool {
-    let controller_button = profile.controller_buttons[HOTKEY];
-    let controller_axis = profile.controller_axis[HOTKEY];
-    let joystick_button = profile.joystick_buttons[HOTKEY];
-    let joystick_hat = profile.joystick_hat[HOTKEY];
-    let joystick_axis = profile.joystick_axis[HOTKEY];
-
-    let mut pressed = false;
-    if controller_button.enabled && !controller.is_null() {
-        pressed = unsafe {
-            sdl3_sys::gamepad::SDL_GetGamepadButton(
-                controller,
-                sdl3_sys::gamepad::SDL_GamepadButton(controller_button.id),
-            )
-        };
-    } else if controller_axis.enabled && !controller.is_null() {
-        let axis_position = unsafe {
-            sdl3_sys::gamepad::SDL_GetGamepadAxis(
-                controller,
-                sdl3_sys::gamepad::SDL_GamepadAxis(controller_axis.id),
-            )
-        };
-        pressed = axis_position as isize * controller_axis.axis as isize > 0
-            && axis_position.saturating_abs() > i16::MAX / 2
-    } else if joystick_button.enabled && !joystick.is_null() {
-        pressed =
-            unsafe { sdl3_sys::joystick::SDL_GetJoystickButton(joystick, joystick_button.id) };
-    } else if joystick_hat.enabled && !joystick.is_null() {
-        pressed = (unsafe { sdl3_sys::joystick::SDL_GetJoystickHat(joystick, joystick_hat.id) }
-            & joystick_hat.direction)
-            != 0;
-    } else if joystick_axis.enabled && !joystick.is_null() {
-        let axis_position =
-            unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, joystick_axis.id) };
-        pressed = (axis_position as isize * joystick_axis.axis as isize > 0
-            || joystick_axis.initial_state != 0)
-            && axis_position.abs_diff(joystick_axis.initial_state) > (u16::MAX / 4)
+    for input in profile.inputs[ui::input_profile::HOTKEY].iter() {
+        if is_controller_button_pressed(input, joystick, controller) {
+            return true;
+        }
     }
-    pressed
+    false
 }
 
 pub fn get_controller_names() -> Vec<String> {
@@ -446,7 +353,9 @@ fn handle_joystick_events(ui: &mut ui::Ui) {
 }
 
 fn handle_hotkeys(keys: u32, last_key_state: u32) {
-    if keys & (1 << L_TRIG) != 0 && last_key_state & (1 << L_TRIG) == 0 {
+    if keys & (1 << ui::input_profile::L_TRIG) != 0
+        && last_key_state & (1 << ui::input_profile::L_TRIG) == 0
+    {
         unsafe {
             sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
                 user: sdl3_sys::events::SDL_UserEvent {
@@ -457,7 +366,9 @@ fn handle_hotkeys(keys: u32, last_key_state: u32) {
             })
         };
     }
-    if keys & (1 << R_TRIG) != 0 && last_key_state & (1 << R_TRIG) == 0 {
+    if keys & (1 << ui::input_profile::R_TRIG) != 0
+        && last_key_state & (1 << ui::input_profile::R_TRIG) == 0
+    {
         unsafe {
             sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
                 user: sdl3_sys::events::SDL_UserEvent {
@@ -468,7 +379,9 @@ fn handle_hotkeys(keys: u32, last_key_state: u32) {
             })
         };
     }
-    if keys & (1 << START_BUTTON) != 0 && last_key_state & (1 << START_BUTTON) == 0 {
+    if keys & (1 << ui::input_profile::START_BUTTON) != 0
+        && last_key_state & (1 << ui::input_profile::START_BUTTON) == 0
+    {
         unsafe {
             sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
                 user: sdl3_sys::events::SDL_UserEvent {
@@ -479,7 +392,9 @@ fn handle_hotkeys(keys: u32, last_key_state: u32) {
             })
         };
     }
-    if keys & (1 << Z_TRIG) != 0 && last_key_state & (1 << Z_TRIG) == 0 {
+    if keys & (1 << ui::input_profile::Z_TRIG) != 0
+        && last_key_state & (1 << ui::input_profile::Z_TRIG) == 0
+    {
         unsafe {
             sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
                 user: sdl3_sys::events::SDL_UserEvent {
@@ -490,7 +405,9 @@ fn handle_hotkeys(keys: u32, last_key_state: u32) {
             })
         };
     }
-    if keys & (1 << L_CBUTTON) != 0 && last_key_state & (1 << L_CBUTTON) == 0 {
+    if keys & (1 << ui::input_profile::L_CBUTTON) != 0
+        && last_key_state & (1 << ui::input_profile::L_CBUTTON) == 0
+    {
         unsafe {
             sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
                 user: sdl3_sys::events::SDL_UserEvent {
@@ -514,7 +431,6 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
             pak_change_pressed: false,
         };
     };
-    let mut keys = 0;
     let controller = ui.input.controllers[channel].game_controller;
     let joystick = ui.input.controllers[channel].joystick;
 
@@ -529,37 +445,15 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
                 .offset(i32::from(sdl3_sys::scancode::SDL_SCANCODE_RALT) as isize)
     };
 
-    for i in 0..14 {
-        if profile_name != "default" || channel == 0 {
-            let profile_key = profile.keys[i];
-            if profile_key.enabled && !alt_pressed {
-                keys |= (unsafe { *ui.input.keyboard_state.offset(profile_key.id as isize) }
-                    as u32)
-                    << i;
-            }
-        }
+    let mut keys = set_buttons(
+        profile,
+        joystick,
+        controller,
+        ui.input.keyboard_state,
+        alt_pressed,
+    );
 
-        if !controller.is_null() {
-            set_buttons_from_controller(profile, i, controller, &mut keys);
-        } else if !joystick.is_null() {
-            set_buttons_from_joystick(profile, i, joystick, &mut keys);
-        }
-    }
-
-    let mut x: f64 = 0.0;
-    let mut y: f64 = 0.0;
-
-    if profile_name != "default" || channel == 0 {
-        (x, y) = set_axis_from_keys(profile, ui.input.keyboard_state);
-    }
-
-    if !controller.is_null() {
-        (x, y) = set_axis_from_controller(profile, controller);
-        apply_deadzone(&mut x, &mut y, profile.deadzone);
-    } else if !joystick.is_null() {
-        (x, y) = set_axis_from_joystick(profile, joystick);
-        apply_deadzone(&mut x, &mut y, profile.deadzone);
-    }
+    let (mut x, mut y) = set_axis(profile, joystick, controller, ui.input.keyboard_state);
     bound_axis(&mut x, &mut y);
 
     keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
@@ -572,14 +466,20 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
         handle_hotkeys(keys, last_key_state);
         InputData {
             data: 0,
-            pak_change_pressed: keys & (1 << B_BUTTON) != 0,
+            pak_change_pressed: keys & (1 << ui::input_profile::B_BUTTON) != 0,
         }
     } else {
-        let key = profile.keys[HOTKEY];
+        let mut pak_change_pressed = false;
+        for input in profile.inputs[ui::input_profile::HOTKEY].iter() {
+            if let Some(ui::config::InputItem::Key(key)) = input
+                && unsafe { *ui.input.keyboard_state.offset(key.id as isize) }
+            {
+                pak_change_pressed = true;
+            }
+        }
         InputData {
             data: keys,
-            pak_change_pressed: key.enabled
-                && unsafe { *ui.input.keyboard_state.offset(key.id as isize) },
+            pak_change_pressed,
         }
     }
 }
@@ -617,551 +517,7 @@ pub fn clear_bindings(config: &mut ui::config::Config) {
     }
 }
 
-fn close_input_profile_window(
-    open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick>,
-    open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad>,
-    renderer: *mut sdl3_sys::render::SDL_Renderer,
-    text_engine: *mut sdl3_ttf_sys::ttf::TTF_TextEngine,
-    font: *mut sdl3_ttf_sys::ttf::TTF_Font,
-    texture: *mut sdl3_sys::render::SDL_Texture,
-    window: *mut sdl3_sys::video::SDL_Window,
-) {
-    for joystick in open_joysticks {
-        unsafe { sdl3_sys::joystick::SDL_CloseJoystick(joystick) }
-    }
-    for controller in open_controllers {
-        unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller) }
-    }
-
-    unsafe {
-        sdl3_sys::render::SDL_DestroyTexture(texture);
-        sdl3_ttf_sys::ttf::TTF_CloseFont(font);
-        sdl3_ttf_sys::ttf::TTF_DestroyRendererTextEngine(text_engine);
-        sdl3_sys::render::SDL_DestroyRenderer(renderer);
-        sdl3_sys::video::SDL_DestroyWindow(window);
-    }
-}
-
-pub fn configure_input_profile(
-    config: &mut ui::config::Config,
-    profile: String,
-    dinput: bool,
-    deadzone: i32,
-) {
-    ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
-    ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
-    ui::ttf_init();
-
-    if profile == "default" {
-        eprintln!("Profile name cannot be default");
-        return;
-    }
-    if profile.is_empty() {
-        eprintln!("Profile name cannot be empty");
-        return;
-    }
-    let mut open_joysticks: Vec<*mut sdl3_sys::joystick::SDL_Joystick> = Vec::new();
-    let mut open_controllers: Vec<*mut sdl3_sys::gamepad::SDL_Gamepad> = Vec::new();
-
-    for joystick in get_joysticks().iter() {
-        if !dinput {
-            let controller = unsafe { sdl3_sys::gamepad::SDL_OpenGamepad(*joystick) };
-            if !controller.is_null() {
-                open_controllers.push(controller);
-            }
-        } else {
-            let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(*joystick) };
-            if !joystick.is_null() {
-                open_joysticks.push(joystick);
-            }
-        }
-    }
-
-    let title = std::ffi::CString::new("configure input profile").unwrap();
-    let mut window: *mut sdl3_sys::video::SDL_Window = std::ptr::null_mut();
-    let mut renderer: *mut sdl3_sys::render::SDL_Renderer = std::ptr::null_mut();
-    #[cfg(target_os = "android")]
-    let window_flags = sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
-    #[cfg(not(target_os = "android"))]
-    let window_flags = sdl3_sys::video::SDL_WindowFlags(0);
-    if !unsafe {
-        sdl3_sys::render::SDL_CreateWindowAndRenderer(
-            title.as_ptr(),
-            852,
-            480,
-            window_flags,
-            &mut window,
-            &mut renderer,
-        )
-    } {
-        panic!("Could not create window and renderer")
-    }
-    if !unsafe { sdl3_sys::video::SDL_ShowWindow(window) } {
-        panic!("Could not show window")
-    }
-
-    let key_labels: [(&str, usize); PROFILE_SIZE] = [
-        ("A", A_BUTTON),
-        ("B", B_BUTTON),
-        ("Start", START_BUTTON),
-        ("D Up", U_DPAD),
-        ("D Down", D_DPAD),
-        ("D Left", L_DPAD),
-        ("D Right", R_DPAD),
-        ("C Up", U_CBUTTON),
-        ("C Down", D_CBUTTON),
-        ("C Left", L_CBUTTON),
-        ("C Right", R_CBUTTON),
-        ("L", L_TRIG),
-        ("R", R_TRIG),
-        ("Z", Z_TRIG),
-        ("Control Stick Up", AXIS_UP),
-        ("Control Stick Down", AXIS_DOWN),
-        ("Control Stick Left", AXIS_LEFT),
-        ("Control Stick Right", AXIS_RIGHT),
-        ("Hotkey Activator", HOTKEY),
-    ];
-
-    let mut new_keys = [ui::config::InputKeyButton {
-        enabled: false,
-        id: 0,
-    }; PROFILE_SIZE];
-    let mut new_joystick_buttons = [ui::config::InputKeyButton {
-        enabled: false,
-        id: 0,
-    }; PROFILE_SIZE];
-    let mut new_joystick_hat = [ui::config::InputJoystickHat {
-        enabled: false,
-        id: 0,
-        direction: 0,
-    }; PROFILE_SIZE];
-    let mut new_joystick_axis = [ui::config::InputControllerAxis {
-        enabled: false,
-        id: 0,
-        axis: 0,
-        initial_state: 0,
-    }; PROFILE_SIZE];
-    let mut new_controller_buttons = [ui::config::InputKeyButton {
-        enabled: false,
-        id: 0,
-    }; PROFILE_SIZE];
-    let mut new_controller_axis = [ui::config::InputControllerAxis {
-        enabled: false,
-        id: 0,
-        axis: 0,
-        initial_state: 0,
-    }; PROFILE_SIZE];
-
-    let mut last_joystick_axis_result = ui::config::InputControllerAxis {
-        enabled: false,
-        id: 0,
-        axis: 0,
-        initial_state: 0,
-    };
-
-    let image_bytes = include_bytes!("../../data/ui/controller.png");
-    let image = unsafe {
-        sdl3_image_sys::image::IMG_LoadPNG_IO(sdl3_sys::everything::SDL_IOFromConstMem(
-            image_bytes.as_ptr() as *const std::ffi::c_void,
-            image_bytes.len(),
-        ))
-    };
-    let image_texture = unsafe { sdl3_sys::render::SDL_CreateTextureFromSurface(renderer, image) };
-    unsafe { sdl3_sys::surface::SDL_DestroySurface(image) };
-    let text_engine = unsafe { sdl3_ttf_sys::ttf::TTF_CreateRendererTextEngine(renderer) };
-    let font = unsafe {
-        let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
-        sdl3_ttf_sys::ttf::TTF_OpenFontIO(
-            sdl3_sys::everything::SDL_IOFromConstMem(
-                font_bytes.as_ptr() as *const std::ffi::c_void,
-                font_bytes.len(),
-            ),
-            true,
-            35.0,
-        )
-    };
-
-    for (key, value) in key_labels.iter() {
-        unsafe {
-            sdl3_sys::events::SDL_PumpEvents();
-            sdl3_sys::events::SDL_FlushEvents(
-                u32::from(sdl3_sys::events::SDL_EVENT_FIRST),
-                u32::from(sdl3_sys::events::SDL_EVENT_LAST),
-            );
-        }
-
-        let mut key_set = false;
-        while !key_set {
-            ui::video::draw_text(
-                format!("Select binding for: {key}").as_str(),
-                renderer,
-                image_texture,
-                text_engine,
-                font,
-            );
-            let mut event: sdl3_sys::events::SDL_Event = Default::default();
-            while !key_set && unsafe { sdl3_sys::events::SDL_WaitEventTimeout(&mut event, 100) } {
-                if event.event_type() == sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED
-                    || (event.event_type() == sdl3_sys::events::SDL_EVENT_KEY_DOWN
-                        && unsafe { event.key.scancode }
-                            == sdl3_sys::scancode::SDL_SCANCODE_AC_BACK)
-                {
-                    close_input_profile_window(
-                        open_joysticks,
-                        open_controllers,
-                        renderer,
-                        text_engine,
-                        font,
-                        image_texture,
-                        window,
-                    );
-                    return;
-                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_KEY_DOWN {
-                    if unsafe {
-                        !event.key.repeat
-                            && event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_LALT
-                            && event.key.scancode != sdl3_sys::scancode::SDL_SCANCODE_RALT
-                    } {
-                        new_keys[*value] = ui::config::InputKeyButton {
-                            enabled: true,
-                            id: i32::from(unsafe { event.key.scancode }),
-                        };
-                        key_set = true
-                    }
-                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN {
-                    if !open_controllers.is_empty() {
-                        new_controller_buttons[*value] = ui::config::InputKeyButton {
-                            enabled: true,
-                            id: i32::from(unsafe { event.gbutton.button }),
-                        };
-                        key_set = true
-                    }
-                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION {
-                    let axis_value = unsafe { event.gaxis.value };
-                    let axis = unsafe { event.gaxis.axis };
-                    if !open_controllers.is_empty()
-                        && axis_value.saturating_abs() > (i16::MAX as i32 * 3 / 4) as i16
-                    {
-                        let result = ui::config::InputControllerAxis {
-                            enabled: true,
-                            id: axis as i32,
-                            axis: axis_value / axis_value.saturating_abs(),
-                            initial_state: 0,
-                        };
-                        if result != last_joystick_axis_result {
-                            new_controller_axis[*value] = result;
-                            last_joystick_axis_result = result;
-                            key_set = true
-                        }
-                    }
-                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_JOYSTICK_BUTTON_DOWN {
-                    if !open_joysticks.is_empty() {
-                        new_joystick_buttons[*value] = ui::config::InputKeyButton {
-                            enabled: true,
-                            id: i32::from(unsafe { event.jbutton.button }),
-                        };
-                        key_set = true
-                    }
-                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_JOYSTICK_HAT_MOTION {
-                    let state = unsafe { event.jhat.value };
-                    let hat = unsafe { event.jhat.hat };
-                    if !open_joysticks.is_empty() && state != sdl3_sys::joystick::SDL_HAT_CENTERED {
-                        new_joystick_hat[*value] = ui::config::InputJoystickHat {
-                            enabled: true,
-                            id: hat as i32,
-                            direction: state,
-                        };
-                        key_set = true
-                    }
-                } else if event.event_type() == sdl3_sys::events::SDL_EVENT_JOYSTICK_AXIS_MOTION {
-                    let axis_value = unsafe { event.jaxis.value };
-                    let axis = unsafe { event.jaxis.axis };
-
-                    let mut initial_state = 0;
-                    let has_initial_state = unsafe {
-                        sdl3_sys::joystick::SDL_GetJoystickAxisInitialState(
-                            sdl3_sys::joystick::SDL_GetJoystickFromID(event.jaxis.which),
-                            axis as i32,
-                            &mut initial_state,
-                        )
-                    };
-                    initial_state = if has_initial_state {
-                        if initial_state < i16::MIN / 2 {
-                            i16::MIN
-                        } else if initial_state > i16::MAX / 2 {
-                            i16::MAX
-                        } else {
-                            0
-                        }
-                    } else {
-                        0
-                    };
-
-                    if !open_joysticks.is_empty()
-                        && axis_value.abs_diff(initial_state) > (u16::MAX / 4)
-                    {
-                        let result = ui::config::InputControllerAxis {
-                            enabled: true,
-                            id: axis as i32,
-                            axis: axis_value / axis_value.saturating_abs(),
-                            initial_state,
-                        };
-                        let same_trigger = last_joystick_axis_result.id == result.id
-                            && last_joystick_axis_result.initial_state != 0;
-                        if result != last_joystick_axis_result && !same_trigger {
-                            new_joystick_axis[*value] = result;
-                            last_joystick_axis_result = result;
-                            key_set = true
-                        }
-                    }
-                }
-            }
-        }
-        ui::video::draw_text(
-            "Binding set, please wait...",
-            renderer,
-            image_texture,
-            text_engine,
-            font,
-        );
-        std::thread::sleep(std::time::Duration::from_millis(500));
-    }
-
-    close_input_profile_window(
-        open_joysticks,
-        open_controllers,
-        renderer,
-        text_engine,
-        font,
-        image_texture,
-        window,
-    );
-
-    let new_profile = ui::config::InputProfile {
-        keys: new_keys,
-        controller_buttons: new_controller_buttons,
-        controller_axis: new_controller_axis,
-        joystick_buttons: new_joystick_buttons,
-        joystick_hat: new_joystick_hat,
-        joystick_axis: new_joystick_axis,
-        dinput,
-        deadzone,
-    };
-    config.input.input_profiles.insert(profile, new_profile);
-}
-
-pub fn get_default_profile() -> ui::config::InputProfile {
-    let mut default_controller_buttons = [ui::config::InputKeyButton {
-        enabled: false,
-        id: 0,
-    }; PROFILE_SIZE];
-    let mut default_controller_axis = [ui::config::InputControllerAxis {
-        enabled: false,
-        id: 0,
-        axis: 0,
-        initial_state: 0,
-    }; PROFILE_SIZE];
-    let mut default_keys = [ui::config::InputKeyButton {
-        enabled: false,
-        id: 0,
-    }; PROFILE_SIZE];
-    default_keys[R_DPAD] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_D),
-    };
-    default_keys[L_DPAD] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_A),
-    };
-    default_keys[D_DPAD] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_S),
-    };
-    default_keys[U_DPAD] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_W),
-    };
-    default_keys[START_BUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_RETURN),
-    };
-    default_keys[Z_TRIG] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_Z),
-    };
-    default_keys[B_BUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_LCTRL),
-    };
-    default_keys[A_BUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_LSHIFT),
-    };
-    default_keys[R_CBUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_L),
-    };
-    default_keys[L_CBUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_J),
-    };
-    default_keys[D_CBUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_K),
-    };
-    default_keys[U_CBUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_I),
-    };
-    default_keys[R_TRIG] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_C),
-    };
-    default_keys[L_TRIG] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_X),
-    };
-    default_keys[AXIS_LEFT] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_LEFT),
-    };
-    default_keys[AXIS_RIGHT] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_RIGHT),
-    };
-    default_keys[AXIS_UP] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_UP),
-    };
-    default_keys[AXIS_DOWN] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_DOWN),
-    };
-    default_keys[HOTKEY] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::scancode::SDL_SCANCODE_COMMA),
-    };
-
-    default_controller_buttons[R_DPAD] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_DPAD_RIGHT),
-    };
-    default_controller_buttons[L_DPAD] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_DPAD_LEFT),
-    };
-    default_controller_buttons[D_DPAD] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_DPAD_DOWN),
-    };
-    default_controller_buttons[U_DPAD] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_DPAD_UP),
-    };
-    default_controller_buttons[START_BUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_START),
-    };
-    default_controller_axis[Z_TRIG] = ui::config::InputControllerAxis {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_LEFT_TRIGGER),
-        axis: 1,
-        initial_state: 0,
-    };
-    default_controller_buttons[B_BUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_WEST),
-    };
-    default_controller_buttons[A_BUTTON] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_SOUTH),
-    };
-    default_controller_axis[R_CBUTTON] = ui::config::InputControllerAxis {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_RIGHTX),
-        axis: 1,
-        initial_state: 0,
-    };
-    default_controller_axis[L_CBUTTON] = ui::config::InputControllerAxis {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_RIGHTX),
-        axis: -1,
-        initial_state: 0,
-    };
-    default_controller_axis[D_CBUTTON] = ui::config::InputControllerAxis {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_RIGHTY),
-        axis: 1,
-        initial_state: 0,
-    };
-    default_controller_axis[U_CBUTTON] = ui::config::InputControllerAxis {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_RIGHTY),
-        axis: -1,
-        initial_state: 0,
-    };
-    default_controller_buttons[R_TRIG] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER),
-    };
-    default_controller_buttons[L_TRIG] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_LEFT_SHOULDER),
-    };
-    default_controller_axis[AXIS_LEFT] = ui::config::InputControllerAxis {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_LEFTX),
-        axis: -1,
-        initial_state: 0,
-    };
-    default_controller_axis[AXIS_RIGHT] = ui::config::InputControllerAxis {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_LEFTX),
-        axis: 1,
-        initial_state: 0,
-    };
-    default_controller_axis[AXIS_UP] = ui::config::InputControllerAxis {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_LEFTY),
-        axis: -1,
-        initial_state: 0,
-    };
-    default_controller_axis[AXIS_DOWN] = ui::config::InputControllerAxis {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_AXIS_LEFTY),
-        axis: 1,
-        initial_state: 0,
-    };
-    default_controller_buttons[HOTKEY] = ui::config::InputKeyButton {
-        enabled: true,
-        id: i32::from(sdl3_sys::gamepad::SDL_GAMEPAD_BUTTON_BACK),
-    };
-
-    ui::config::InputProfile {
-        keys: default_keys,
-        controller_buttons: default_controller_buttons,
-        controller_axis: default_controller_axis,
-        joystick_buttons: [ui::config::InputKeyButton {
-            enabled: false,
-            id: 0,
-        }; PROFILE_SIZE],
-        joystick_hat: [ui::config::InputJoystickHat {
-            enabled: false,
-            id: 0,
-            direction: 0,
-        }; PROFILE_SIZE],
-        joystick_axis: [ui::config::InputControllerAxis {
-            enabled: false,
-            id: 0,
-            axis: 0,
-            initial_state: 0,
-        }; PROFILE_SIZE],
-        dinput: false,
-        deadzone: DEADZONE_DEFAULT,
-    }
-}
-
-fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
+pub fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
     unsafe { sdl3_sys::events::SDL_PumpEvents() };
     let mut num_joysticks = 0;
     let sdl_joysticks = unsafe { sdl3_sys::joystick::SDL_GetJoysticks(&mut num_joysticks) };

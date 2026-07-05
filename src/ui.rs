@@ -7,6 +7,7 @@ pub mod config;
 #[cfg(feature = "gui")]
 pub mod gui;
 pub mod input;
+pub mod input_profile;
 #[cfg(feature = "gui")]
 pub mod netplay;
 #[cfg(feature = "gui")]

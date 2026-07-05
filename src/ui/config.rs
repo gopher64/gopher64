@@ -1,34 +1,36 @@
 use crate::ui;
 
-#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct InputKeyButton {
-    pub enabled: bool,
     pub id: i32,
 }
 
-#[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(PartialEq, Clone, serde::Serialize, serde::Deserialize)]
 pub struct InputControllerAxis {
-    pub enabled: bool,
     pub id: i32,
     pub axis: i16,
     pub initial_state: i16,
 }
 
-#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct InputJoystickHat {
-    pub enabled: bool,
     pub id: i32,
     pub direction: u8,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub enum InputItem {
+    Key(InputKeyButton),
+    ControllerButton(InputKeyButton),
+    ControllerAxis(InputControllerAxis),
+    JoystickButton(InputKeyButton),
+    JoystickHat(InputJoystickHat),
+    JoystickAxis(InputControllerAxis),
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct InputProfile {
-    pub keys: [InputKeyButton; ui::input::PROFILE_SIZE],
-    pub controller_buttons: [InputKeyButton; ui::input::PROFILE_SIZE],
-    pub controller_axis: [InputControllerAxis; ui::input::PROFILE_SIZE],
-    pub joystick_buttons: [InputKeyButton; ui::input::PROFILE_SIZE],
-    pub joystick_hat: [InputJoystickHat; ui::input::PROFILE_SIZE],
-    pub joystick_axis: [InputControllerAxis; ui::input::PROFILE_SIZE],
+    pub inputs: [[Option<InputItem>; 2]; ui::input_profile::PROFILE_SIZE],
     pub dinput: bool,
     pub deadzone: i32,
 }
@@ -160,7 +162,10 @@ impl Config {
         }
 
         let mut input_profiles = std::collections::BTreeMap::new();
-        input_profiles.insert("default".to_string(), ui::input::get_default_profile());
+        input_profiles.insert(
+            "default".to_string(),
+            ui::input_profile::get_default_profile(),
+        );
         Config {
             input: input_data.unwrap_or(Input {
                 input_profile_binding: [
