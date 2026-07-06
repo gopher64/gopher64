@@ -22,6 +22,8 @@ pub struct Args {
     #[arg(short, long)]
     pub fullscreen: bool,
     #[arg(long)]
+    pub widescreen: bool,
+    #[arg(long)]
     pub overclock: Option<bool>,
     #[arg(long)]
     pub disable_expansion_pak: Option<bool>,
@@ -170,6 +172,13 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         } else {
             device.ui.video.fullscreen = device.ui.config.video.fullscreen;
         }
+
+        if args.widescreen {
+            device.ui.video.widescreen = true;
+        } else{
+            device.ui.video.widescreen = device.ui.config.video.widescreen; 
+        }
+        
         let overclock = args
             .overclock
             .unwrap_or(device.ui.config.emulation.overclock);

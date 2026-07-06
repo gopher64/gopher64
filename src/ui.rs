@@ -68,6 +68,7 @@ pub struct Storage {
 pub struct Video {
     pub window: *mut sdl3_sys::video::SDL_Window,
     pub fullscreen: bool,
+    pub widescreen: bool,
     pub fps_tx: Option<tokio::sync::mpsc::UnboundedSender<bool>>,
     pub fps_rx: Option<tokio::sync::mpsc::UnboundedReceiver<bool>>,
     pub vis_tx: Option<tokio::sync::mpsc::UnboundedSender<bool>>,
@@ -267,6 +268,7 @@ impl Ui {
             video: Video {
                 window: std::ptr::null_mut(),
                 fullscreen: false,
+                widescreen: false,
                 fps_tx: Some(fps_tx),
                 fps_rx: Some(fps_rx),
                 vis_tx: Some(vis_tx),
