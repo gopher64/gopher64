@@ -176,7 +176,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         if args.widescreen {
             device.ui.video.widescreen = true;
         } else {
-            device.ui.video.widescreen = device.ui.config.video.widescreen; 
+            device.ui.video.widescreen = device.ui.config.video.widescreen;
         }
 
         let overclock = args
