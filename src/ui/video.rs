@@ -20,8 +20,8 @@ fn build_gfx_info(device: &mut device::Device, netplay: bool) -> GFX_INFO {
         DPC_END_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_END_REG],
         DPC_STATUS_REG: &mut device.rdp.regs_dpc[device::rdp::DPC_STATUS_REG],
         PAL: device.cart.pal,
-        widescreen: device.ui.config.video.widescreen,
         fullscreen: device.ui.video.fullscreen,
+        widescreen: device.ui.video.widescreen,
         vsync: if !netplay {
             device.ui.config.video.vsync
         } else {
@@ -56,14 +56,14 @@ pub fn init(device: &mut device::Device, netplay: bool) {
         2
     };
     if device.cart.pal {
-        window_width = if device.ui.config.video.widescreen {
+        window_width = if device.ui.video.widescreen {
             PAL_WIDESCREEN_WIDTH * scale
         } else {
             PAL_STANDARD_WIDTH * scale
         };
         window_height = PAL_HEIGHT * scale;
     } else {
-        window_width = if device.ui.config.video.widescreen {
+        window_width = if device.ui.video.widescreen {
             NTSC_WIDESCREEN_WIDTH * scale
         } else {
             NTSC_STANDARD_WIDTH * scale
