@@ -88,6 +88,7 @@ fn set_next_event(device: &mut device::Device) {
         if i.enabled && i.count < device.cpu.next_event_count {
             device.cpu.next_event_count = i.count;
             device.cpu.next_event = pos;
+            return;
         }
     }
 }
