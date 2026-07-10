@@ -39,6 +39,21 @@ https://github.com/gopher64/gopher64/wiki
 
 Keys are mapped according to [these defaults](https://github.com/gopher64/gopher64/wiki/Default-Keyboard-Setup). Xbox-style controllers also have a [default mapping applied](https://github.com/gopher64/gopher64/wiki/Default-Gamepad-Setup).
 
+## GameCube controller (Wii U USB adapter)
+
+Gopher64 can read GameCube controllers through the Nintendo Wii U / Switch USB GameCube adapter (and compatible clones that enumerate as VID `057E` PID `0337`), the same hardware Dolphin uses.
+
+Setup:
+* **Windows:** install the WinUSB driver with [Zadig](https://zadig.akeo.ie/). Select the adapter (`057E:0337`) and install **WinUSB** specifically (not libusbK or libusb-win32). The adapter ports only appear in the controller configuration once this driver is installed.
+* **Linux:** grant access with a udev rule, e.g. put `SUBSYSTEM=="usb", ATTRS{idVendor}=="057e", ATTRS{idProduct}=="0337", MODE="0666"` in `/etc/udev/rules.d/51-gcadapter.rules`, then `sudo udevadm control --reload-rules && sudo udevadm trigger`.
+* **macOS:** no driver needed.
+
+Usage:
+* In the controller configuration, assign one of the "GameCube Adapter Port 1-4" entries to an N64 port and enable that port.
+* The mapping is fixed: A→A, B→B, Start→Start, D-pad→D-pad, GameCube L trigger→N64 Z, R trigger→N64 R, Z→N64 L, C-stick→C-buttons, main stick→N64 stick. The bound input profile contributes only its deadzone.
+* GameCube **X** is the hotkey modifier (like the gamepad Back button): hold it with another button for save/load state and other shortcuts. Hold **X + B** to cycle the controller pak; switch to the Rumble Pak this way to feel rumble (the default pak does not rumble).
+* Rumble on the official adapter requires its second (black) USB plug to be connected to a powered port; wireless WaveBird controllers never rumble.
+
 ## netplay
 
 Gopher64 supports P2P netplay (online play with others).
