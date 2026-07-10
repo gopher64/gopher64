@@ -4,6 +4,7 @@ pub mod audio;
 #[cfg(feature = "gui")]
 pub mod cheats;
 pub mod config;
+pub mod gca;
 #[cfg(feature = "gui")]
 pub mod gui;
 pub mod input;
@@ -51,6 +52,9 @@ unsafe impl Sync for Audio {}
 pub struct Input {
     pub keyboard_state: *const bool,
     pub controllers: [input::Controllers; 4],
+    // Lazily started when a channel is assigned to an adapter port; owns the USB
+    // reader thread. `None` until then, and on Android (no-op stub).
+    pub gca: Option<gca::Adapter>,
 }
 
 unsafe impl Send for Input {}
@@ -193,6 +197,7 @@ impl Ui {
                         rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
+                        gca_port: None,
                     },
                     input::Controllers {
                         game_controller: std::ptr::null_mut(),
@@ -200,6 +205,7 @@ impl Ui {
                         rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
+                        gca_port: None,
                     },
                     input::Controllers {
                         game_controller: std::ptr::null_mut(),
@@ -207,6 +213,7 @@ impl Ui {
                         rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
+                        gca_port: None,
                     },
                     input::Controllers {
                         game_controller: std::ptr::null_mut(),
@@ -214,9 +221,11 @@ impl Ui {
                         rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
+                        gca_port: None,
                     },
                 ],
                 keyboard_state: std::ptr::null_mut(),
+                gca: None,
             },
             storage: Storage {
                 save_state_slot: 0,

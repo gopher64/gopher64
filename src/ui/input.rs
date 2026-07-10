@@ -7,7 +7,15 @@ const Y_AXIS_SHIFT: usize = 24;
 
 const MAX_AXIS_VALUE: f64 = 85.0;
 
+// Fraction of full C-stick travel past which a C-button registers.
+const GC_CSTICK_THRESHOLD: f64 = 0.5;
+
 pub const UNKNOWN_CONTROLLER_NAME: &str = "Unknown controller";
+
+// Sentinel device "path" stored in `controller_assignment` for an adapter port,
+// e.g. "gca:0".."gca:3". Distinguishes adapter pseudo-devices from SDL paths.
+pub const GCA_PATH_PREFIX: &str = "gca:";
+pub const GCA_PORT_COUNT: usize = 4;
 
 #[derive(Default)]
 pub struct Controllers {
@@ -16,6 +24,9 @@ pub struct Controllers {
     pub joystick: *mut sdl3_sys::joystick::SDL_Joystick,
     pub guid: sdl3_sys::guid::SDL_GUID,
     pub last_key_state: u32,
+    // `Some(port)` when this channel reads from adapter port `port` instead of
+    // an SDL device. Set by `init()` from a `gca:` controller assignment.
+    pub gca_port: Option<usize>,
 }
 
 #[derive(Default, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
@@ -218,6 +229,12 @@ pub fn set_rumble(ui: &ui::Ui, channel: usize, rumble: u8) {
     if !ui.input.controllers[channel].rumble {
         return;
     }
+    if let Some(port) = ui.input.controllers[channel].gca_port {
+        if let Some(adapter) = &ui.input.gca {
+            adapter.set_rumble(port, rumble & 1 != 0);
+        }
+        return;
+    }
     let controller = ui.input.controllers[channel].game_controller;
     let joystick = ui.input.controllers[channel].joystick;
     if !controller.is_null() {
@@ -260,7 +277,13 @@ pub fn get_controller_names() -> Vec<String> {
 
     #[cfg(not(target_os = "android"))]
     {
-        let mut controllers: Vec<String> = vec![];
+        let mut controllers: Vec<String> = vec!["None".to_string()];
+
+        if ui::gca::adapter_present() {
+            for port in 1..=GCA_PORT_COUNT {
+                controllers.push(format!("GameCube Adapter Port {port}"));
+            }
+        }
 
         for joystick in get_joysticks().iter() {
             let name = unsafe { sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick) };
@@ -270,7 +293,6 @@ pub fn get_controller_names() -> Vec<String> {
                 unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
             });
         }
-        controllers.insert(0, "None".into());
 
         controllers
     }
@@ -283,7 +305,13 @@ pub fn get_controller_paths() -> Vec<String> {
 
     #[cfg(not(target_os = "android"))]
     {
-        let mut controller_paths: Vec<String> = vec![];
+        let mut controller_paths: Vec<String> = vec![String::new()];
+
+        if ui::gca::adapter_present() {
+            for port in 0..GCA_PORT_COUNT {
+                controller_paths.push(format!("{GCA_PATH_PREFIX}{port}"));
+            }
+        }
 
         for joystick in get_joysticks().iter() {
             let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
@@ -293,7 +321,6 @@ pub fn get_controller_paths() -> Vec<String> {
                 unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string()
             });
         }
-        controller_paths.insert(0, String::new());
 
         controller_paths
     }
@@ -304,6 +331,10 @@ fn handle_joystick_events(ui: &mut ui::Ui) {
     if joystick_event.joystick_id != 0 {
         let joystick_id = sdl3_sys::joystick::SDL_JoystickID(joystick_event.joystick_id);
         for (i, controller) in ui.input.controllers.iter_mut().enumerate() {
+            if controller.gca_port.is_some() {
+                // Adapter-backed channels do not use SDL devices.
+                continue;
+            }
             if joystick_event.connected {
                 if let Some(profile) = ui
                     .config
@@ -420,8 +451,122 @@ fn handle_hotkeys(keys: u32, last_key_state: u32) {
     }
 }
 
+// Pack the rounded stick axes into the N64 key bitfield. The `as i8 as u8`
+// round-trip reinterprets the signed value as a two's-complement byte.
+fn pack_axes(keys: &mut u32, x: f64, y: f64) {
+    *keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
+    *keys |= (y.round() as i8 as u8 as u32) << Y_AXIS_SHIFT;
+}
+
+// Map a GameCube adapter port's state to the N64 button/axis bitfield, reusing
+// the same deadzone/bounding pipeline as the SDL path.
+fn gc_keys(state: &ui::gca::GcPortState, cal: &ui::gca::GcCalibration, deadzone: i32) -> u32 {
+    if !state.connected {
+        return 0;
+    }
+    let mut keys: u32 = 0;
+    if state.a() {
+        keys |= 1 << ui::input_profile::A_BUTTON;
+    }
+    if state.b() {
+        keys |= 1 << ui::input_profile::B_BUTTON;
+    }
+    if state.start() {
+        keys |= 1 << ui::input_profile::START_BUTTON;
+    }
+    if state.l() {
+        keys |= 1 << ui::input_profile::Z_TRIG; // GC L click -> N64 Z
+    }
+    if state.r() {
+        keys |= 1 << ui::input_profile::R_TRIG; // GC R click -> N64 R
+    }
+    if state.z() {
+        keys |= 1 << ui::input_profile::L_TRIG; // GC Z -> N64 L
+    }
+    if state.dpad_up() {
+        keys |= 1 << ui::input_profile::U_DPAD;
+    }
+    if state.dpad_down() {
+        keys |= 1 << ui::input_profile::D_DPAD;
+    }
+    if state.dpad_left() {
+        keys |= 1 << ui::input_profile::L_DPAD;
+    }
+    if state.dpad_right() {
+        keys |= 1 << ui::input_profile::R_DPAD;
+    }
+
+    let (cstick_x, cstick_y) = ui::gca::protocol::gc_cstick(state, cal);
+    if cstick_x > GC_CSTICK_THRESHOLD {
+        keys |= 1 << ui::input_profile::R_CBUTTON;
+    }
+    if cstick_x < -GC_CSTICK_THRESHOLD {
+        keys |= 1 << ui::input_profile::L_CBUTTON;
+    }
+    if cstick_y > GC_CSTICK_THRESHOLD {
+        keys |= 1 << ui::input_profile::U_CBUTTON;
+    }
+    if cstick_y < -GC_CSTICK_THRESHOLD {
+        keys |= 1 << ui::input_profile::D_CBUTTON;
+    }
+
+    let (mut x, mut y) = ui::gca::protocol::gc_stick(state, cal);
+    x *= MAX_AXIS_VALUE;
+    y *= MAX_AXIS_VALUE;
+    apply_deadzone(&mut x, &mut y, deadzone);
+    bound_axis(&mut x, &mut y);
+    pack_axes(&mut keys, x, y);
+    keys
+}
+
+// Read a GameCube adapter port and produce N64 input, mirroring the SDL path's
+// hotkey handling (GC X is the hotkey activator).
+fn gca_input(ui: &mut ui::Ui, channel: usize, port: usize) -> InputData {
+    let deadzone = ui
+        .config
+        .input
+        .input_profiles
+        .get(&ui.config.input.input_profile_binding[channel])
+        .map_or(ui::input_profile::DEADZONE_DEFAULT, |profile| {
+            profile.deadzone
+        });
+
+    // Copy the snapshot out so the immutable borrow of `ui.input.gca` is released
+    // before we mutate `ui.input.controllers`.
+    let (state, cal) = match &ui.input.gca {
+        Some(adapter) => adapter.port_state(port),
+        None => {
+            return InputData {
+                data: 0,
+                pak_change_pressed: false,
+            };
+        }
+    };
+
+    let keys = gc_keys(&state, &cal, deadzone);
+    let last_key_state = ui.input.controllers[channel].last_key_state;
+    ui.input.controllers[channel].last_key_state = keys;
+
+    if state.x() {
+        handle_hotkeys(keys, last_key_state);
+        InputData {
+            data: 0,
+            pak_change_pressed: keys & (1 << ui::input_profile::B_BUTTON) != 0,
+        }
+    } else {
+        InputData {
+            data: keys,
+            pak_change_pressed: false,
+        }
+    }
+}
+
 pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     handle_joystick_events(ui);
+
+    if let Some(port) = ui.input.controllers[channel].gca_port {
+        return gca_input(ui, channel, port);
+    }
 
     let profile_name = &ui.config.input.input_profile_binding[channel];
     let Some(profile) = ui.config.input.input_profiles.get(profile_name) else {
@@ -456,8 +601,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     let (mut x, mut y) = set_axis(profile, joystick, controller, ui.input.keyboard_state);
     bound_axis(&mut x, &mut y);
 
-    keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;
-    keys |= (y.round() as i8 as u8 as u32) << Y_AXIS_SHIFT;
+    pack_axes(&mut keys, x, y);
 
     let last_key_state = ui.input.controllers[channel].last_key_state;
     ui.input.controllers[channel].last_key_state = keys;
@@ -485,12 +629,28 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 }
 
 pub fn assign_controller(config: &mut ui::config::Config, controller: i32, port: usize) {
-    let joysticks = get_joysticks();
     if controller < 0 {
         config.input.controller_assignment[port - 1] = None;
-    } else if controller < joysticks.len() as i32 {
-        let path =
-            unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(joysticks[controller as usize]) };
+        return;
+    }
+
+    // Order must match get_controller_names(): None, adapter ports (when an
+    // adapter is present), then SDL joysticks.
+    let adapter_count = if ui::gca::adapter_present() {
+        GCA_PORT_COUNT as i32
+    } else {
+        0
+    };
+    if controller < adapter_count {
+        config.input.controller_assignment[port - 1] =
+            Some(format!("{GCA_PATH_PREFIX}{controller}"));
+        return;
+    }
+
+    let joysticks = get_joysticks();
+    let sdl_index = (controller - adapter_count) as usize;
+    if sdl_index < joysticks.len() {
+        let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(joysticks[sdl_index]) };
         if !path.is_null() {
             config.input.controller_assignment[port - 1] =
                 Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string() });
@@ -545,6 +705,19 @@ pub fn init(ui: &mut ui::Ui) {
         if let Some(controller_assignment) = &ui.config.input.controller_assignment[i]
             && ui.config.input.controller_enabled[i]
         {
+            if let Some(port) = controller_assignment
+                .strip_prefix(GCA_PATH_PREFIX)
+                .and_then(|index| index.parse::<usize>().ok())
+                && port < GCA_PORT_COUNT
+            {
+                if ui.input.gca.is_none() {
+                    ui.input.gca = Some(ui::gca::Adapter::start());
+                }
+                ui.input.controllers[i].gca_port = Some(port);
+                ui.input.controllers[i].rumble = true;
+                continue;
+            }
+
             let mut joystick_id = sdl3_sys::everything::SDL_JoystickID(0);
 
             for joystick in get_joysticks().iter() {
@@ -641,6 +814,7 @@ pub fn init(ui: &mut ui::Ui) {
 }
 
 pub fn close(ui: &mut ui::Ui) {
+    ui.input.gca = None; // stops and joins the adapter reader thread
     for controller in ui.input.controllers.iter_mut() {
         if !controller.joystick.is_null() {
             unsafe { sdl3_sys::joystick::SDL_CloseJoystick(controller.joystick) }
@@ -650,5 +824,97 @@ pub fn close(ui: &mut ui::Ui) {
             unsafe { sdl3_sys::gamepad::SDL_CloseGamepad(controller.game_controller) }
             controller.game_controller = std::ptr::null_mut();
         }
+        controller.gca_port = None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ui::gca::{GcCalibration, GcPortState};
+    use crate::ui::input_profile::{
+        A_BUTTON, B_BUTTON, DEADZONE_DEFAULT, L_TRIG, R_CBUTTON, R_TRIG, U_CBUTTON, U_DPAD, Z_TRIG,
+    };
+
+    // A connected pad with both sticks resting on a 0x80 origin, so calibrated
+    // sticks read zero and only the requested buttons show up in the output.
+    fn centered(b1: u8, b2: u8) -> GcPortState {
+        GcPortState {
+            connected: true,
+            b1,
+            b2,
+            stick_x: 0x80,
+            stick_y: 0x80,
+            cstick_x: 0x80,
+            cstick_y: 0x80,
+        }
+    }
+
+    fn centered_cal() -> GcCalibration {
+        GcCalibration {
+            origin_x: 0x80,
+            origin_y: 0x80,
+            origin_cx: 0x80,
+            origin_cy: 0x80,
+        }
+    }
+
+    #[test]
+    fn disconnected_port_maps_to_nothing() {
+        let keys = gc_keys(
+            &GcPortState::default(),
+            &GcCalibration::default(),
+            DEADZONE_DEFAULT,
+        );
+        assert_eq!(keys, 0);
+    }
+
+    #[test]
+    fn triggers_cross_map_to_n64() {
+        let cal = centered_cal();
+        // GC L click (b2 bit 3) -> N64 Z.
+        assert_eq!(
+            gc_keys(&centered(0, 1 << 3), &cal, DEADZONE_DEFAULT),
+            1 << Z_TRIG
+        );
+        // GC Z (b2 bit 1) -> N64 L.
+        assert_eq!(
+            gc_keys(&centered(0, 1 << 1), &cal, DEADZONE_DEFAULT),
+            1 << L_TRIG
+        );
+        // GC R click (b2 bit 2) -> N64 R.
+        assert_eq!(
+            gc_keys(&centered(0, 1 << 2), &cal, DEADZONE_DEFAULT),
+            1 << R_TRIG
+        );
+    }
+
+    #[test]
+    fn face_and_dpad_pass_through() {
+        let cal = centered_cal();
+        assert_eq!(
+            gc_keys(&centered(1 << 0, 0), &cal, DEADZONE_DEFAULT),
+            1 << A_BUTTON
+        );
+        assert_eq!(
+            gc_keys(&centered(1 << 1, 0), &cal, DEADZONE_DEFAULT),
+            1 << B_BUTTON
+        );
+        assert_eq!(
+            gc_keys(&centered(1 << 7, 0), &cal, DEADZONE_DEFAULT),
+            1 << U_DPAD
+        );
+    }
+
+    #[test]
+    fn cstick_past_threshold_sets_cbuttons() {
+        let cal = centered_cal();
+        let mut right = centered(0, 0);
+        right.cstick_x = 0xff; // (0xff - 0x80) / 0x7f ~= +1.0, past +0.5
+        assert_eq!(gc_keys(&right, &cal, DEADZONE_DEFAULT), 1 << R_CBUTTON);
+
+        let mut up = centered(0, 0);
+        up.cstick_y = 0xff;
+        assert_eq!(gc_keys(&up, &cal, DEADZONE_DEFAULT), 1 << U_CBUTTON);
     }
 }
