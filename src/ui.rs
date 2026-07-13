@@ -106,13 +106,9 @@ pub struct Ui {
 }
 
 pub fn sdl_hints() {
-    #[cfg(target_os = "linux")]
     unsafe {
-        std::env::set_var("DRI_PRIME", "1");
         std::env::set_var("__NV_PRIME_RENDER_OFFLOAD", "1");
-    }
 
-    unsafe {
         let hint = std::ffi::CString::new("1").unwrap();
         sdl3_sys::everything::SDL_SetHint(
             sdl3_sys::everything::SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,
