@@ -48,6 +48,7 @@ export component Cheats inherits Page {
         Rectangle { }
 
         for data in CheatsData.cheats: VerticalBox {
+            height: self.min-height;
             Text {
                 text: data.cheat_name;
                 font-size: 16px;
@@ -76,7 +77,6 @@ export component Cheats inherits Page {
                     cheat_toggled(CheatsData.cheat_game_crc,data.cheat_name,item.option,self.checked);
                 }
             }
-            Rectangle { }
         }
 
         if CheatsData.cheats.length == 0 && CheatsData.cheat_game_name != "": Text {
