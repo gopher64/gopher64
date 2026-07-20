@@ -2,12 +2,16 @@
 pub mod android;
 pub mod audio;
 #[cfg(feature = "gui")]
+pub mod boxart;
+#[cfg(feature = "gui")]
 pub mod cheats;
 pub mod config;
 #[cfg(feature = "gui")]
 pub mod gui;
 pub mod input;
 pub mod input_profile;
+#[cfg(feature = "gui")]
+pub mod library_cache;
 #[cfg(feature = "gui")]
 pub mod netplay;
 #[cfg(feature = "gui")]

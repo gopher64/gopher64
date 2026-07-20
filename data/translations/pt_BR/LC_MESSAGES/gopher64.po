@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-06-30 09:43+0000\n"
+"POT-Creation-Date: 2026-06-30 20:50+0000\n"
 "PO-Revision-Date: 2026-05-11 18:11-3000\n"
 "Last-Translator: EDUARDO CARVALHO <eduardotcarvalho@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
 #: src/ui/gui/about_page.slint:17
 msgctxt "NewVersionButton"
@@ -47,37 +47,37 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Doações (via GitHub)"
 
-#: src/ui/gui/appwindow.slint:164
+#: src/ui/gui/appwindow.slint:189
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Jogo Local"
 
-#: src/ui/gui/appwindow.slint:168
+#: src/ui/gui/appwindow.slint:193
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Configurar Controle"
 
-#: src/ui/gui/appwindow.slint:172
+#: src/ui/gui/appwindow.slint:197
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Netplay"
 
-#: src/ui/gui/appwindow.slint:176
+#: src/ui/gui/appwindow.slint:201
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Trapaças"
 
-#: src/ui/gui/appwindow.slint:180
+#: src/ui/gui/appwindow.slint:205
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:184
+#: src/ui/gui/appwindow.slint:209
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Configurações"
 
-#: src/ui/gui/appwindow.slint:188
+#: src/ui/gui/appwindow.slint:213
 msgctxt "Menu"
 msgid "About"
 msgstr "Sobre"
@@ -167,25 +167,153 @@ msgctxt "InputProfileDialog"
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: src/ui/gui/localgame_page.slint:19
+#: src/ui/gui/localgame_page.slint:60
 msgctxt "LocalGame"
 msgid "Local Game"
 msgstr "Jogo Local"
 
-#: src/ui/gui/localgame_page.slint:26
+#: src/ui/gui/localgame_page.slint:68
 msgctxt "LocalGame"
 msgid "Open ROM"
 msgstr "Abrir ROM"
 
-#: src/ui/gui/localgame_page.slint:37
+#: src/ui/gui/localgame_page.slint:75
+msgctxt "LocalGame"
+msgid "Scan Folder"
+msgstr "Escanear pasta"
+
+#: src/ui/gui/localgame_page.slint:86
 msgctxt "LocalGame"
 msgid "Open Saves Folder"
 msgstr "Abrir Pasta de Saves"
 
-#: src/ui/gui/localgame_page.slint:54
+#: src/ui/gui/localgame_page.slint:102
 msgctxt "LocalGame"
 msgid "Recent ROMs"
 msgstr "ROMs Recentes"
+
+#: src/ui/gui/localgame_page.slint:121
+msgctxt "LocalGame"
+msgid "Search games…"
+msgstr "Buscar jogos…"
+
+#: src/ui/gui/localgame_page.slint:132
+msgctxt "LocalGame"
+msgid "All"
+msgstr "Todos"
+
+#: src/ui/gui/localgame_page.slint:140
+msgctxt "LocalGame"
+msgid "Favorites"
+msgstr "Favoritos"
+
+#: src/ui/gui/localgame_page.slint:148
+msgctxt "LocalGame"
+msgid "Homebrew"
+msgstr "Homebrew"
+
+#: src/ui/gui/localgame_page.slint:158
+msgctxt "LocalGame"
+msgid "Library"
+msgstr "Biblioteca"
+
+#: src/ui/gui/localgame_page.slint:208
+msgctxt "LocalGame"
+msgid "No games match the current filter."
+msgstr "Nenhum jogo corresponde ao filtro atual."
+
+#: src/ui/gui/localgame_page.slint:222
+msgctxt "LocalGame"
+msgid "Back"
+msgstr "Voltar"
+
+#: src/ui/gui/localgame_page.slint:260
+msgctxt "LocalGame"
+msgid "Overview"
+msgstr "Visão geral"
+
+#: src/ui/gui/localgame_page.slint:267
+msgctxt "LocalGame"
+msgid "Achievements"
+msgstr "Conquistas"
+
+#: src/ui/gui/localgame_page.slint:274
+msgctxt "LocalGame"
+msgid "Media"
+msgstr "Mídia"
+
+#: src/ui/gui/localgame_page.slint:288
+msgctxt "LocalGame"
+msgid "Play"
+msgstr "Jogar"
+
+#: src/ui/gui/localgame_page.slint:297
+msgctxt "LocalGame"
+msgid "★ Favorited"
+msgstr "★ Favorito"
+
+#: src/ui/gui/localgame_page.slint:297
+msgctxt "LocalGame"
+msgid "☆ Favorite"
+msgstr "☆ Favoritar"
+
+#: src/ui/gui/localgame_page.slint:304
+msgctxt "LocalGame"
+msgid "Load Save State on Launch"
+msgstr "Carregar save state ao iniciar"
+
+#: src/ui/gui/localgame_page.slint:310
+msgctxt "LocalGame"
+msgid "Fresh"
+msgstr "Novo"
+
+#: src/ui/gui/localgame_page.slint:341
+msgctxt "LocalGame"
+msgid "RetroAchievements is on."
+msgstr "RetroAchievements está ativado."
+
+#: src/ui/gui/localgame_page.slint:346
+msgctxt "LocalGame"
+msgid ""
+"Achievements, leaderboards and rich presence are tracked live while you play "
+"this game."
+msgstr ""
+"Conquistas, placares e rich presence são registrados ao vivo enquanto você "
+"joga este jogo."
+
+#: src/ui/gui/localgame_page.slint:360
+msgctxt "LocalGame"
+msgid ""
+"RetroAchievements is off. Turn it on to track achievements, leaderboards and "
+"Discord presence."
+msgstr ""
+"RetroAchievements está desativado. Ative-o para registrar conquistas, "
+"placares e presença no Discord."
+
+#: src/ui/gui/localgame_page.slint:367
+msgctxt "LocalGame"
+msgid "Open RetroAchievements"
+msgstr "Abrir RetroAchievements"
+
+#: src/ui/gui/localgame_page.slint:381
+msgctxt "LocalGame"
+msgid "No media available."
+msgstr "Nenhuma mídia disponível."
+
+#: src/ui/gui/localgame_page.slint:395
+msgctxt "LocalGame"
+msgid "Screenshot"
+msgstr "Captura de tela"
+
+#: src/ui/gui/localgame_page.slint:409
+msgctxt "LocalGame"
+msgid "Title Screen"
+msgstr "Tela de título"
+
+#: src/ui/gui/localgame_page.slint:423
+msgctxt "LocalGame"
+msgid "Box Art"
+msgstr "Capa"
 
 #: src/ui/gui/netplay_create.slint:7
 msgctxt "NetplayCreate"
@@ -200,7 +328,7 @@ msgstr "Nome da Sessão:"
 #: src/ui/gui/netplay_create.slint:26
 msgctxt "NetplayCreate"
 msgid "Enter session name"
-msgstr "Insira nome da sessão"
+msgstr "Insira nome da sessão:"
 
 #: src/ui/gui/netplay_create.slint:36
 msgctxt "NetplayCreate"
@@ -364,7 +492,7 @@ msgstr "Nome do Jogo:"
 #: src/ui/gui/netplay_wait.slint:45
 msgctxt "NetplayWait"
 msgid "Player 1:"
-msgstr "Jogador 1:"
+msgstr "Jogador 1"
 
 #: src/ui/gui/netplay_wait.slint:49
 msgctxt "NetplayWait"
