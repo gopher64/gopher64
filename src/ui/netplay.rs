@@ -294,9 +294,10 @@ fn manage_websocket(
         .unwrap_or("wss://netplay.gopher64.com".to_string())
         .into_client_request()
         .unwrap();
-    request
-        .headers_mut()
-        .insert("Authorization", env!("NETPLAY_ID").parse().unwrap());
+    request.headers_mut().insert(
+        "Authorization",
+        obfstr::obfstr!(env!("NETPLAY_ID")).parse().unwrap(),
+    );
     tokio::spawn(async move {
         match tokio::time::timeout(
             std::time::Duration::from_secs(3),
