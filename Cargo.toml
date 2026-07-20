@@ -2,7 +2,7 @@
 name = "gopher64"
 version = "1.1.34"
 edition = "2024"
-rust-version = "1.97.0"
+rust-version = "1.97.1"
 
 [features]
 default = ["gui"]
@@ -24,7 +24,7 @@ spin_sleep = "1.3"
 encoding_rs = "0.8"
 mimalloc = "0.1"
 regex = "1.11"
-tokio-tungstenite = { version = "0.29", features = ["native-tls-vendored"] }
+tokio-tungstenite = { version = "0.30", features = ["native-tls-vendored"] }
 matchbox_socket = "0.14"
 ggrs = { version = "0.13", features = ["sync-send"] }
 rustc-hash = "2.1"
