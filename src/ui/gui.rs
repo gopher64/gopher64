@@ -67,7 +67,7 @@ pub fn open_uri(path: impl AsRef<std::ffi::OsStr>) {
     }
 }
 
-fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
+fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf, load_slot: Option<u32>) {
     let weak2 = weak.clone();
     weak.upgrade_in_event_loop(move |handle| {
         if handle.get_game_running() {
@@ -81,7 +81,7 @@ fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
                 overclock: handle.get_overclock_n64_cpu(),
                 disable_expansion_pak: handle.get_disable_expansion_pak(),
                 cheats: rustc_hash::FxHashMap::default(), // will be filled in later
-                load_savestate_slot: None,
+                load_savestate_slot: load_slot,
             },
             None,
             weak2,
@@ -90,13 +90,119 @@ fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
     .unwrap();
 }
 
+// Which save-state slots (0-9) already have data on disk for this ROM. Mirrors the
+// emulator's path: states/<game-name-or-id>-<sha256(rom)>.state<slot>. Reads +
+// hashes the whole ROM, so it MUST be called inside spawn_blocking.
+fn savestate_slots(path: &str) -> Vec<bool> {
+    let Some(rom) = crate::device::get_rom_contents(&std::path::PathBuf::from(path)) else {
+        return vec![false; 10];
+    };
+    let hash = crate::device::cart::rom::calculate_hash(&rom);
+    let name = ui::storage::get_game_name(&rom);
+    let prefix = if name.is_empty() {
+        let id = String::from_utf8_lossy(&rom[0x3B..0x3E]);
+        if id.contains('\0') {
+            "UNK".to_string()
+        } else {
+            id.into_owned()
+        }
+    } else {
+        name
+    };
+    let states = ui::get_dirs().data_dir.join("states");
+    (0..10)
+        .map(|slot| states.join(format!("{prefix}-{hash}.state{slot}")).exists())
+        .collect()
+}
+
+// Open the game detail view for `path`: title/box-art come from the already-loaded
+// library row; save-state slots and snap/title media are filled in off-thread.
+fn open_detail(handle: &AppWindow, path: &str) {
+    handle.set_detail_tab(0);
+    handle.set_detail_slot(-1);
+    handle.set_detail_slots(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(vec![false; 10]),
+    )));
+    // Clear stale media; the box art (carried by the row) is the hero fallback.
+    handle.set_detail_hero(slint::Image::default());
+    handle.set_detail_has_hero(false);
+    handle.set_detail_snap(slint::Image::default());
+    handle.set_detail_has_snap(false);
+    handle.set_detail_title_art(slint::Image::default());
+    handle.set_detail_has_title(false);
+
+    let all = handle.get_all_games();
+    let row = (0..all.row_count())
+        .filter_map(|i| all.row_data(i))
+        .find(|g| g.path.as_str() == path);
+    let art_name = if let Some(g) = row {
+        handle.set_detail_title(g.title.clone());
+        handle.set_detail_art(g.art.clone());
+        handle.set_detail_has_art(g.has_art);
+        handle.set_detail_favorite(g.favorite);
+        g.art_name.to_string()
+    } else {
+        handle.set_detail_title(rom_title(path).into());
+        handle.set_detail_art(slint::Image::default());
+        handle.set_detail_has_art(false);
+        handle.set_detail_favorite(false);
+        String::new()
+    };
+    handle.set_detail_path(path.into());
+    handle.set_detail_open(true);
+
+    let weak = handle.as_weak();
+    let path = path.to_string();
+    tokio::spawn(async move {
+        // Save-state availability: whole-ROM read + hash must stay off the UI thread.
+        let p = path.clone();
+        if let Ok(slots) = tokio::task::spawn_blocking(move || savestate_slots(&p)).await {
+            let p = path.clone();
+            let _ = weak.upgrade_in_event_loop(move |h| {
+                if h.get_detail_open() && h.get_detail_path().as_str() == p {
+                    h.set_detail_slots(slint::ModelRc::from(std::rc::Rc::new(
+                        slint::VecModel::from(slots),
+                    )));
+                }
+            });
+        }
+        // Gameplay snap + title screen (async network I/O; fine on the runtime).
+        if !art_name.is_empty() {
+            let (snap, title) = ui::boxart::download_media(&art_name).await;
+            let _ = weak.upgrade_in_event_loop(move |h| {
+                if !h.get_detail_open() || h.get_detail_path().as_str() != path {
+                    return;
+                }
+                let snap = snap
+                    .as_deref()
+                    .and_then(|p| slint::Image::load_from_path(p).ok());
+                let title = title
+                    .as_deref()
+                    .and_then(|p| slint::Image::load_from_path(p).ok());
+                if let Some(img) = &snap {
+                    h.set_detail_snap(img.clone());
+                    h.set_detail_has_snap(true);
+                }
+                if let Some(img) = &title {
+                    h.set_detail_title_art(img.clone());
+                    h.set_detail_has_title(true);
+                }
+                if let Some(img) = snap.or(title) {
+                    h.set_detail_hero(img);
+                    h.set_detail_has_hero(true);
+                }
+            });
+        }
+    });
+}
+
 #[cfg(not(target_os = "android"))]
 fn file_dropped(app: &AppWindow) {
     let weak = app.as_weak();
     app.window()
         .on_winit_window_event(move |_winit_window, event| {
             if let slint::winit_030::winit::event::WindowEvent::DroppedFile(path) = event {
-                run_with_path(weak.clone(), path.to_path_buf());
+                run_with_path(weak.clone(), path.to_path_buf(), None);
             }
             slint::winit_030::EventResult::Propagate
         });
@@ -109,7 +215,171 @@ fn rom_exists(path: &str) -> bool {
     return android::rom_exists(path);
 }
 
-fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
+// Box-art library: filename stem doubles as the display title + box-art match key.
+fn rom_title(path: &str) -> String {
+    std::path::Path::new(&decode_path(path))
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_string()
+}
+
+fn game_entries(paths: &[String], favorites: &std::collections::HashSet<String>) -> Vec<GameEntry> {
+    paths
+        .iter()
+        .map(|p| GameEntry {
+            path: p.as_str().into(),
+            title: rom_title(p).into(),
+            art: slint::Image::default(),
+            has_art: false,
+            favorite: favorites.contains(p),
+            homebrew: false,
+            art_name: slint::SharedString::new(),
+        })
+        .collect()
+}
+
+// Set the full (unfiltered) library, then apply the active search/filter to it.
+fn set_all_games(app: &AppWindow, paths: &[String]) {
+    let favorites: std::collections::HashSet<String> =
+        app.get_favorites().iter().map(|s| s.to_string()).collect();
+    app.set_all_games(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(game_entries(paths, &favorites)),
+    )));
+    apply_filter(app);
+}
+
+// Library filter predicate (0 All · 1 Favorites · 2 Homebrew) + substring search.
+fn game_matches(title_lc: &str, needle: &str, filter: i32, favorite: bool, homebrew: bool) -> bool {
+    (needle.is_empty() || title_lc.contains(needle))
+        && match filter {
+            1 => favorite,
+            2 => homebrew,
+            _ => true,
+        }
+}
+
+// Rebuild the displayed `games` model from `all_games` using the current search +
+// filter. Cheap (images are ref-counted); runs on every keystroke / filter click.
+fn apply_filter(app: &AppWindow) {
+    let needle = app.get_library_search().to_lowercase();
+    let filter = app.get_library_filter();
+    let all = app.get_all_games();
+    let mut shown = Vec::new();
+    for i in 0..all.row_count() {
+        if let Some(g) = all.row_data(i)
+            && game_matches(
+                &g.title.to_lowercase(),
+                &needle,
+                filter,
+                g.favorite,
+                g.homebrew,
+            )
+        {
+            shown.push(g);
+        }
+    }
+    app.set_games(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(shown),
+    )));
+}
+
+// Walk a folder (recursively) for ROMs, including zip/7z archives.
+#[cfg(not(target_os = "android"))]
+fn scan_roms(dir: &std::path::Path) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(d) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&d) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            // file_type() does not follow symlinks, so a symlink cycle can't loop us.
+            let Ok(ft) = entry.file_type() else {
+                continue;
+            };
+            let p = entry.path();
+            if ft.is_dir() {
+                stack.push(p);
+            } else if ft.is_file()
+                && let Some(ext) = p.extension().and_then(|e| e.to_str())
+                && N64_EXTENSIONS.contains(&ext)
+                && crate::device::is_n64_rom(&p)
+            {
+                out.push(p.to_string_lossy().to_string());
+            }
+        }
+    }
+    out.sort();
+    out
+}
+
+// Resolve box art + homebrew flag for each game off-thread, updating its row as
+// results arrive. The whole-ROM read runs in spawn_blocking and the hash runs in
+// this async task (never the UI thread) — the maintainer's startup-freeze fix.
+async fn fetch_art(
+    weak: slint::Weak<AppWindow>,
+    paths: Vec<String>,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
+    if paths.is_empty() {
+        return;
+    }
+    let mut last = std::time::Instant::now();
+    for (i, path) in paths.iter().enumerate() {
+        let p = path.clone();
+        let Ok(Some(rom)) = tokio::task::spawn_blocking(move || {
+            device::get_rom_contents(&std::path::PathBuf::from(p))
+        })
+        .await
+        else {
+            continue;
+        };
+        let name = get_nointro_name(&rom, no_intro_map.clone()).await;
+        // Homebrew = ROM hash absent from the No-Intro map. This re-hashes the ROM
+        // (get_nointro_name also hashes); fine on this background scan task — fold
+        // into one map lookup if startup scan time ever matters.
+        let hash = device::cart::rom::calculate_hash(&rom).to_lowercase();
+        let homebrew = !no_intro_map.lock().await.contains_key(&hash);
+        let (png, art_name): (Option<std::path::PathBuf>, slint::SharedString) = if name.is_empty()
+        {
+            (None, slint::SharedString::new())
+        } else {
+            let filename = ui::boxart::escaped_filename(&name);
+            let png = ui::boxart::download_art(&filename).await;
+            (png, filename.into())
+        };
+        let row_path = path.clone();
+        let _ = weak.upgrade_in_event_loop(move |h| {
+            let all = h.get_all_games();
+            if let Some(mut g) = all.row_data(i)
+                && g.path.as_str() == row_path
+            {
+                if let Some(img) = png
+                    .as_deref()
+                    .and_then(|p| slint::Image::load_from_path(p).ok())
+                {
+                    g.art = img;
+                    g.has_art = true;
+                }
+                g.homebrew = homebrew;
+                g.art_name = art_name;
+                all.set_row_data(i, g);
+            }
+        });
+        if last.elapsed() > std::time::Duration::from_millis(400) {
+            let _ = weak.upgrade_in_event_loop(|h| apply_filter(&h));
+            last = std::time::Instant::now();
+        }
+    }
+    let _ = weak.upgrade_in_event_loop(|h| apply_filter(&h));
+}
+
+fn local_game_window(
+    app: &AppWindow,
+    config: &ui::config::Config,
+    no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+) {
     app.set_recent_roms(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(
             config
@@ -131,6 +401,50 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
                 .collect::<Vec<(slint::SharedString, slint::SharedString)>>(),
         ),
     )));
+    app.set_favorites(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(
+            config
+                .ui
+                .favorites
+                .iter()
+                .map(|s| s.as_str().into())
+                .collect::<Vec<slint::SharedString>>(),
+        ),
+    )));
+
+    // Box-art library. Desktop scans the ROM folder off the UI thread (a recursive
+    // std::fs walk must never block GUI startup); Android lists recent ROMs.
+    #[cfg(not(target_os = "android"))]
+    {
+        set_all_games(app, &[]);
+        let rom_dir = config.ui.rom_dir.clone();
+        let weak = app.as_weak();
+        let map = no_intro_map.clone();
+        tokio::spawn(async move {
+            let paths = if !rom_dir.as_os_str().is_empty() && rom_dir.is_dir() {
+                tokio::task::spawn_blocking(move || scan_roms(&rom_dir))
+                    .await
+                    .unwrap_or_default()
+            } else {
+                Vec::new()
+            };
+            let shown = paths.clone();
+            let _ = weak.upgrade_in_event_loop(move |h| set_all_games(&h, &shown));
+            fetch_art(weak, paths, map).await;
+        });
+    }
+    #[cfg(target_os = "android")]
+    {
+        let game_paths: Vec<String> = config
+            .ui
+            .recent_roms
+            .iter()
+            .filter(|x| rom_exists(x))
+            .cloned()
+            .collect();
+        set_all_games(app, &game_paths);
+        tokio::spawn(fetch_art(app.as_weak(), game_paths, no_intro_map.clone()));
+    }
 
     let weak = app.as_weak();
     app.on_open_rom_button_clicked(move || {
@@ -144,7 +458,74 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
     let weak = app.as_weak();
     app.on_recent_rom_button_clicked(move |rom| {
         weak.upgrade_in_event_loop(move |handle| {
-            run_with_path(handle.as_weak(), std::path::PathBuf::from(rom.to_string()));
+            run_with_path(
+                handle.as_weak(),
+                std::path::PathBuf::from(rom.to_string()),
+                None,
+            );
+        })
+        .unwrap();
+    });
+
+    let weak = app.as_weak();
+    app.on_launch_game(move |path, slot| {
+        weak.upgrade_in_event_loop(move |handle| {
+            let load_slot = if slot >= 0 { Some(slot as u32) } else { None };
+            run_with_path(
+                handle.as_weak(),
+                std::path::PathBuf::from(path.to_string()),
+                load_slot,
+            );
+        })
+        .unwrap();
+    });
+
+    let weak = app.as_weak();
+    app.on_detail_opened(move |path| {
+        weak.upgrade_in_event_loop(move |handle| {
+            open_detail(&handle, path.as_str());
+        })
+        .unwrap();
+    });
+
+    let weak = app.as_weak();
+    app.on_library_filter_changed(move |_, _| {
+        weak.upgrade_in_event_loop(|handle| apply_filter(&handle))
+            .unwrap();
+    });
+
+    let weak = app.as_weak();
+    app.on_toggle_favorite(move |path| {
+        weak.upgrade_in_event_loop(move |handle| {
+            let mut favorites: Vec<slint::SharedString> = handle.get_favorites().iter().collect();
+            let fav_now = match favorites.iter().position(|f| f.as_str() == path.as_str()) {
+                Some(i) => {
+                    favorites.remove(i);
+                    false
+                }
+                None => {
+                    favorites.push(path.clone());
+                    true
+                }
+            };
+            handle.set_favorites(slint::ModelRc::from(std::rc::Rc::new(
+                slint::VecModel::from(favorites),
+            )));
+            let all = handle.get_all_games();
+            for i in 0..all.row_count() {
+                if let Some(mut g) = all.row_data(i)
+                    && g.path.as_str() == path.as_str()
+                {
+                    g.favorite = fav_now;
+                    all.set_row_data(i, g);
+                    break;
+                }
+            }
+            if handle.get_detail_path().as_str() == path.as_str() {
+                handle.set_detail_favorite(fav_now);
+            }
+            save_settings(&handle);
+            apply_filter(&handle);
         })
         .unwrap();
     });
@@ -154,6 +535,42 @@ fn local_game_window(app: &AppWindow, config: &ui::config::Config) {
         let saves_path = ui::get_dirs().data_dir.join("saves");
         app.on_saves_folder_button_clicked(move || {
             open_uri(&saves_path);
+        });
+
+        let weak_scan = app.as_weak();
+        app.on_scan_folder_clicked(move || {
+            let start = weak_scan
+                .upgrade()
+                .map(|h| h.get_rom_dir())
+                .unwrap_or_default();
+            let weak_inner = weak_scan.clone();
+            let dialog = if !start.is_empty() && std::fs::exists(&start).unwrap_or(false) {
+                rfd::AsyncFileDialog::new().set_directory(&start)
+            } else {
+                rfd::AsyncFileDialog::new()
+            }
+            .set_title("Select ROM Folder")
+            .pick_folder();
+            let map = no_intro_map.clone();
+            tokio::spawn(async move {
+                if let Some(folder) = dialog.await {
+                    let dir = folder.path().to_path_buf();
+                    let paths = {
+                        let d = dir.clone();
+                        tokio::task::spawn_blocking(move || scan_roms(&d))
+                            .await
+                            .unwrap_or_default()
+                    };
+                    let dir_str = dir.to_string_lossy().to_string();
+                    let scan_paths = paths.clone();
+                    let _ = weak_inner.upgrade_in_event_loop(move |h| {
+                        h.set_rom_dir(dir_str.into());
+                        save_settings(&h);
+                        set_all_games(&h, &scan_paths);
+                    });
+                    fetch_art(weak_inner, paths, map).await;
+                }
+            });
         });
 
         file_dropped(app);
@@ -448,6 +865,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
 pub fn save_settings(app: &AppWindow) {
     let mut config = ui::config::Config::new();
     config.ui.rom_dir = app.get_rom_dir().to_string().into();
+    config.ui.favorites = app.get_favorites().iter().map(|s| s.to_string()).collect();
     config.video.integer_scaling = app.get_integer_scaling();
     config.video.ssaa = app.get_ssaa();
     config.video.fullscreen = app.get_fullscreen();
@@ -543,7 +961,7 @@ pub fn app_window(
         let config = ui::config::Config::new();
         settings_window(app, &config);
         controller_window(app, &config);
-        local_game_window(app, &config);
+        local_game_window(app, &config, no_intro_map.clone());
     }
     ui::netplay::netplay_window(app, no_intro_map.clone());
     ui::cheats::cheats_window(app, no_intro_map);
@@ -597,6 +1015,9 @@ pub fn run_rom(
             "--disable-expansion-pak",
             &game_settings.disable_expansion_pak.to_string(),
         ]);
+        if let Some(slot) = game_settings.load_savestate_slot {
+            command.args(["--load-state", &slot.to_string()]);
+        }
         let cheats_path = ui::get_dirs().cache_dir.join("cheats.json");
         if let Some(netplay_device) = netplay {
             let f = std::fs::File::create(&cheats_path).unwrap();
@@ -801,4 +1222,50 @@ fn open_rom(app: &AppWindow) {
             );
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn library_filter_arms() {
+        // (title_lc, needle, filter, favorite, homebrew)
+        assert!(game_matches("mario", "", 0, false, false)); // All shows everything
+        assert!(game_matches("mario", "", 1, true, false));
+        assert!(!game_matches("mario", "", 1, false, false)); // Favorites
+        assert!(game_matches("mario", "", 2, false, true));
+        assert!(!game_matches("mario", "", 2, false, false)); // Homebrew
+        assert!(game_matches("mario kart", "kart", 0, false, false));
+        assert!(!game_matches("zelda", "kart", 0, false, false)); // search excludes non-matches
+    }
+
+    // Proves savestate_slots() reproduces the emulator's own on-disk path
+    // (storage.rs writes `states/<prefix>-<sha256>.state<slot>`).
+    #[test]
+    fn savestate_slot_detection_matches_emulator_path() {
+        // Minimal valid z64 ROM: big-endian magic + a header name at 0x20.
+        let mut rom = vec![0u8; 0x1000];
+        rom[0..4].copy_from_slice(&0x8037_1240u32.to_be_bytes());
+        rom[0x20..0x2A].copy_from_slice(b"G64TESTROM");
+        let rom_path = std::env::temp_dir().join("g64_parity_slot_test.z64");
+        std::fs::write(&rom_path, &rom).unwrap();
+
+        // Independently build the slot-3 path the way storage.rs does, and create it.
+        let contents = crate::device::get_rom_contents(&rom_path).unwrap();
+        let hash = crate::device::cart::rom::calculate_hash(&contents);
+        let name = ui::storage::get_game_name(&contents);
+        let states = ui::get_dirs().data_dir.join("states");
+        std::fs::create_dir_all(&states).unwrap();
+        let slot3 = states.join(format!("{name}-{hash}.state3"));
+        std::fs::write(&slot3, b"x").unwrap();
+
+        let slots = savestate_slots(rom_path.to_str().unwrap());
+        let _ = std::fs::remove_file(&slot3);
+        let _ = std::fs::remove_file(&rom_path);
+
+        assert_eq!(slots.len(), 10);
+        assert!(slots[3], "slot 3 was written and must be detected");
+        assert!(!slots[0] && !slots[5], "unwritten slots stay empty");
+    }
 }
