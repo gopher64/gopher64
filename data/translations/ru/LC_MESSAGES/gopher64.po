@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gopher64\n"
-"POT-Creation-Date: 2026-06-30 09:43+0000\n"
+"POT-Creation-Date: 2026-08-03 15:22+0000\n"
 "PO-Revision-Date: 2026-05-11 12:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Russian\n"
@@ -48,349 +48,363 @@ msgctxt "About"
 msgid "Donate (via GitHub)"
 msgstr "Пожертвовать (через GitHub)"
 
-#: src/ui/gui/appwindow.slint:164
+#: src/ui/gui/appwindow.slint:177
 msgctxt "Menu"
 msgid "Local Game"
 msgstr "Локальная игра"
 
-#: src/ui/gui/appwindow.slint:168
+#: src/ui/gui/appwindow.slint:181
 msgctxt "Menu"
 msgid "Controller Config"
 msgstr "Настройка контроллера"
 
-#: src/ui/gui/appwindow.slint:172
+#: src/ui/gui/appwindow.slint:185
 msgctxt "Menu"
 msgid "Netplay"
 msgstr "Сетевая игра"
 
-#: src/ui/gui/appwindow.slint:176
+#: src/ui/gui/appwindow.slint:189
 msgctxt "Menu"
 msgid "Cheats"
 msgstr "Читы"
 
-#: src/ui/gui/appwindow.slint:180
+#: src/ui/gui/appwindow.slint:193
 msgctxt "Menu"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/appwindow.slint:184
+#: src/ui/gui/appwindow.slint:197
 msgctxt "Menu"
 msgid "Settings"
 msgstr "Настройки"
 
-#: src/ui/gui/appwindow.slint:188
+#: src/ui/gui/appwindow.slint:201
 msgctxt "Menu"
 msgid "About"
 msgstr "О программе"
 
-#: src/ui/gui/cheat_page.slint:15
+#: src/ui/gui/cheat_page.slint:28
 msgctxt "Cheats"
 msgid "Cheats"
 msgstr "Читы"
 
-#: src/ui/gui/cheat_page.slint:25
+#: src/ui/gui/cheat_page.slint:38
 msgctxt "Cheats"
 msgid "Select ROM"
 msgstr "Выбрать ROM"
 
-#: src/ui/gui/cheat_page.slint:41
+#: src/ui/gui/cheat_page.slint:54
 msgctxt "Cheats"
 msgid "Clear Cheats For All ROMs"
 msgstr "Очистить читы для всех ROMов"
 
-#: src/ui/gui/cheat_page.slint:83
+#: src/ui/gui/cheat_page.slint:96
 msgctxt "Cheats"
 msgid "No Cheats Available"
 msgstr "Читы недоступны"
 
-#: src/ui/gui/controller_page.slint:80
+#: src/ui/gui/controller_page.slint:87
 msgctxt "ControllerSettingsGrid"
 msgid "Enabled"
 msgstr "Включено"
 
-#: src/ui/gui/controller_page.slint:93
+#: src/ui/gui/controller_page.slint:100
 msgctxt "ControllerSettingsGrid"
 msgid "Transfer Pak"
 msgstr "Transfer Pak"
 
-#: src/ui/gui/controller_page.slint:107
+#: src/ui/gui/controller_page.slint:114
 msgctxt "ControllerSettingsGrid"
 msgid "Profile"
 msgstr "Профиль"
 
-#: src/ui/gui/controller_page.slint:157
+#: src/ui/gui/controller_page.slint:164
 msgctxt "ControllerConfig"
 msgid "Controller Configuration"
 msgstr "Настройка контроллера"
 
-#: src/ui/gui/controller_page.slint:171
+#: src/ui/gui/controller_page.slint:178
 msgctxt "ControllerConfig"
 msgid "Configure Input Profile"
 msgstr "Настроить профиль ввода"
 
-#: src/ui/gui/controller_page.slint:180
+#: src/ui/gui/controller_page.slint:187
 msgctxt "ControllerConfig"
 msgid "Controller Settings"
 msgstr "Настройки контроллера"
 
-#: src/ui/gui/controller_page.slint:190
+#: src/ui/gui/controller_page.slint:197
 msgctxt "ControllerConfig"
 msgid "Controller Assignment"
 msgstr "Назначение контроллера"
 
-#: src/ui/gui/input_profile.slint:12
+#: src/ui/gui/input_profile.slint:19
 msgctxt "InputProfileDialog"
 msgid "Create/Modify Input Profile"
 msgstr "Создать/изменить профиль ввода"
 
-#: src/ui/gui/input_profile.slint:25
+#: src/ui/gui/input_profile.slint:32
 msgctxt "InputProfileDialog"
 msgid "Enter profile name to create or modify"
 msgstr "Введите имя профиля для создания или изменения"
 
-#: src/ui/gui/input_profile.slint:38
+#: src/ui/gui/input_profile.slint:45
 msgctxt "InputProfileDialog"
 msgid "Deadzone Percentage"
 msgstr "Процент мёртвой зоны"
 
-#: src/ui/gui/input_profile.slint:61
+#: src/ui/gui/input_profile.slint:68
 msgctxt "InputProfileDialog"
 msgid "Use DirectInput"
 msgstr "Использовать DirectInput"
 
-#: src/ui/gui/input_profile.slint:74
+#: src/ui/gui/input_profile.slint:81
 msgctxt "InputProfileDialog"
 msgid "Start Profile Creation Wizard"
 msgstr "Запустить мастер создания профиля"
 
-#: src/ui/gui/input_profile.slint:82
+#: src/ui/gui/input_profile.slint:90
 msgctxt "InputProfileDialog"
 msgid "Cancel"
 msgstr "Отмена"
 
-#: src/ui/gui/localgame_page.slint:19
+#: src/ui/gui/input_profile.slint:101
+msgctxt "InputProfileDialog"
+msgid ""
+"When using DirectInput and/or keyboard, navigate the dialog using the arrow "
+"keys.\n"
+"Press Enter to begin binding a button/axis.\n"
+"Press Delete to remove a binding.\n"
+"\n"
+"When using a PlayStation-style controller, navigate the dialog using the D-"
+"pad.\n"
+"Press the South/East button to begin binding a button/axis.\n"
+"Press the North/West button to remove a binding."
+msgstr ""
+
+#: src/ui/gui/localgame_page.slint:24
 msgctxt "LocalGame"
 msgid "Local Game"
 msgstr "Локальная игра"
 
-#: src/ui/gui/localgame_page.slint:26
+#: src/ui/gui/localgame_page.slint:31
 msgctxt "LocalGame"
 msgid "Open ROM"
 msgstr "Открыть ROM"
 
-#: src/ui/gui/localgame_page.slint:37
+#: src/ui/gui/localgame_page.slint:42
 msgctxt "LocalGame"
 msgid "Open Saves Folder"
 msgstr "Открыть папку сохранений"
 
-#: src/ui/gui/localgame_page.slint:54
+#: src/ui/gui/localgame_page.slint:59
 msgctxt "LocalGame"
 msgid "Recent ROMs"
 msgstr "Недавние ROMы"
 
-#: src/ui/gui/netplay_create.slint:7
+#: src/ui/gui/netplay_create.slint:16
 msgctxt "NetplayCreate"
 msgid "Netplay: Create Session"
 msgstr "Сетевая игра: Создать сессию"
 
-#: src/ui/gui/netplay_create.slint:22
+#: src/ui/gui/netplay_create.slint:31
 msgctxt "NetplayCreate"
 msgid "Session Name:"
 msgstr "Имя сессии:"
 
-#: src/ui/gui/netplay_create.slint:26
+#: src/ui/gui/netplay_create.slint:35
 msgctxt "NetplayCreate"
 msgid "Enter session name"
 msgstr "Введите имя сессии"
 
-#: src/ui/gui/netplay_create.slint:36
+#: src/ui/gui/netplay_create.slint:45
 msgctxt "NetplayCreate"
 msgid "Password (Optional):"
 msgstr "Пароль (необязательно):"
 
-#: src/ui/gui/netplay_create.slint:40
+#: src/ui/gui/netplay_create.slint:49
 msgctxt "NetplayCreate"
 msgid "Enter session password"
 msgstr "Введите пароль сессии"
 
-#: src/ui/gui/netplay_create.slint:51
+#: src/ui/gui/netplay_create.slint:60
 msgctxt "NetplayCreate"
 msgid "Player Name:"
 msgstr "Имя игрока:"
 
-#: src/ui/gui/netplay_create.slint:55
+#: src/ui/gui/netplay_create.slint:64
 msgctxt "NetplayCreate"
 msgid "Enter player name"
 msgstr "Введите имя игрока"
 
-#: src/ui/gui/netplay_create.slint:66
+#: src/ui/gui/netplay_create.slint:75
 msgctxt "NetplayCreate"
 msgid "Select ROM"
 msgstr "Выбрать ROM"
 
-#: src/ui/gui/netplay_create.slint:82
+#: src/ui/gui/netplay_create.slint:91
 msgctxt "NetplayCreate"
 msgid ""
 "This game has cheats enabled. Cheats will be synchronized with other players."
 msgstr ""
 "Для этой игры включены читы. Читы будут синхронизированы с другими игроками."
 
-#: src/ui/gui/netplay_create.slint:91
+#: src/ui/gui/netplay_create.slint:100
 msgctxt "NetplayCreate"
 msgid "Create Session"
 msgstr "Создать сессию"
 
-#: src/ui/gui/netplay_create.slint:107
+#: src/ui/gui/netplay_create.slint:117
 msgctxt "NetplayCreate"
 msgid "Cancel"
 msgstr "Отмена"
 
-#: src/ui/gui/netplay_join.slint:7
+#: src/ui/gui/netplay_join.slint:15
 msgctxt "NetplayJoin"
 msgid "Netplay: Join Session"
 msgstr "Сетевая игра: Присоединиться к сессии"
 
-#: src/ui/gui/netplay_join.slint:18
+#: src/ui/gui/netplay_join.slint:26
 msgctxt "NetplayJoin"
 msgid "Player Name (required):"
 msgstr "Имя игрока (обязательно):"
 
-#: src/ui/gui/netplay_join.slint:22
+#: src/ui/gui/netplay_join.slint:30
 msgctxt "NetplayJoin"
 msgid "Enter player name"
 msgstr "Введите имя игрока"
 
-#: src/ui/gui/netplay_join.slint:31
+#: src/ui/gui/netplay_join.slint:39
 msgctxt "NetplayJoin"
 msgid "Password (if required)"
 msgstr "Пароль (если требуется)"
 
-#: src/ui/gui/netplay_join.slint:42
+#: src/ui/gui/netplay_join.slint:51
 msgctxt "NetplayJoin"
 msgid "Select ROM"
 msgstr "Выбрать ROM"
 
-#: src/ui/gui/netplay_join.slint:57
+#: src/ui/gui/netplay_join.slint:66
 msgctxt "NetplayJoin"
 msgid "Refreshing session list, please wait..."
 msgstr "Обновление списка сессий, пожалуйста, подождите..."
 
-#: src/ui/gui/netplay_join.slint:62
+#: src/ui/gui/netplay_join.slint:71
 msgctxt "NetplayJoin"
 msgid "Click on a session below to select it"
 msgstr "Нажмите на сессию ниже, чтобы выбрать её"
 
-#: src/ui/gui/netplay_join.slint:67
+#: src/ui/gui/netplay_join.slint:76
 msgctxt "NetplayJoin"
 msgid "No sessions available. Please refresh to check again."
 msgstr "Нет доступных сессий. Пожалуйста, обновите, чтобы проверить снова."
 
-#: src/ui/gui/netplay_join.slint:73
+#: src/ui/gui/netplay_join.slint:82
 msgctxt "NetplayJoin"
 msgid "Session Name"
 msgstr "Имя сессии"
 
-#: src/ui/gui/netplay_join.slint:74
+#: src/ui/gui/netplay_join.slint:83
 msgctxt "NetplayJoin"
 msgid "Game Name"
 msgstr "Название игры"
 
-#: src/ui/gui/netplay_join.slint:75
+#: src/ui/gui/netplay_join.slint:84
 msgctxt "NetplayJoin"
 msgid "Password"
 msgstr "Пароль"
 
-#: src/ui/gui/netplay_join.slint:76
+#: src/ui/gui/netplay_join.slint:85
 msgctxt "NetplayJoin"
 msgid "Cheats"
 msgstr "Читы"
 
-#: src/ui/gui/netplay_join.slint:90
+#: src/ui/gui/netplay_join.slint:99
 msgctxt "NetplayJoin"
 msgid "Refresh Session List"
 msgstr "Обновить список сессий"
 
-#: src/ui/gui/netplay_join.slint:105
+#: src/ui/gui/netplay_join.slint:114
 msgctxt "NetplayJoin"
 msgid "Join Session"
 msgstr "Присоединиться к сессии"
 
-#: src/ui/gui/netplay_join.slint:117
+#: src/ui/gui/netplay_join.slint:127
 msgctxt "NetplayJoin"
 msgid "Cancel"
 msgstr "Отмена"
 
-#: src/ui/gui/netplay_page.slint:31
+#: src/ui/gui/netplay_page.slint:37
 msgctxt "Netplay"
 msgid "Netplay"
 msgstr "Сетевая игра"
 
-#: src/ui/gui/netplay_page.slint:39
+#: src/ui/gui/netplay_page.slint:45
 msgctxt "Netplay"
 msgid "Create Session"
 msgstr "Создать сессию"
 
-#: src/ui/gui/netplay_page.slint:50
+#: src/ui/gui/netplay_page.slint:56
 msgctxt "Netplay"
 msgid "Join Session"
 msgstr "Присоединиться к сессии"
 
-#: src/ui/gui/netplay_page.slint:64
+#: src/ui/gui/netplay_page.slint:70
 msgctxt "Netplay"
 msgid "Netplay Discord Channel"
 msgstr "Канал Discord для сетевой игры"
 
-#: src/ui/gui/netplay_page.slint:71
+#: src/ui/gui/netplay_page.slint:77
 msgctxt "Netplay"
 msgid "Provide Feedback"
 msgstr "Оставить отзыв"
 
-#: src/ui/gui/netplay_wait.slint:17
+#: src/ui/gui/netplay_wait.slint:27
 msgctxt "NetplayWait"
 msgid "Netplay: Waiting Room"
 msgstr "Сетевая игра: Комната ожидания"
 
-#: src/ui/gui/netplay_wait.slint:29
+#: src/ui/gui/netplay_wait.slint:39
 msgctxt "NetplayWait"
 msgid "Session Name:"
 msgstr "Имя сессии:"
 
-#: src/ui/gui/netplay_wait.slint:35
+#: src/ui/gui/netplay_wait.slint:45
 msgctxt "NetplayWait"
 msgid "Game Name:"
 msgstr "Название игры:"
 
-#: src/ui/gui/netplay_wait.slint:45
+#: src/ui/gui/netplay_wait.slint:55
 msgctxt "NetplayWait"
 msgid "Player 1:"
 msgstr "Игрок 1:"
 
-#: src/ui/gui/netplay_wait.slint:49
+#: src/ui/gui/netplay_wait.slint:59
 msgctxt "NetplayWait"
 msgid "Player 2:"
 msgstr "Игрок 2:"
 
-#: src/ui/gui/netplay_wait.slint:55
+#: src/ui/gui/netplay_wait.slint:65
 msgctxt "NetplayWait"
 msgid "Player 3:"
 msgstr "Игрок 3:"
 
-#: src/ui/gui/netplay_wait.slint:59
+#: src/ui/gui/netplay_wait.slint:69
 msgctxt "NetplayWait"
 msgid "Player 4:"
 msgstr "Игрок 4:"
 
-#: src/ui/gui/netplay_wait.slint:73
+#: src/ui/gui/netplay_wait.slint:83
 msgctxt "NetplayWait"
 msgid "Enter chat message"
 msgstr "Введите сообщение чата"
 
-#: src/ui/gui/netplay_wait.slint:84
+#: src/ui/gui/netplay_wait.slint:94
 msgctxt "NetplayWait"
 msgid "Send Message"
 msgstr "Отправить сообщение"
 
-#: src/ui/gui/netplay_wait.slint:94
+#: src/ui/gui/netplay_wait.slint:104
 msgctxt "NetplayWait"
 msgid ""
 "Setting the input delay too low will cause the game to lag.\n"
@@ -401,182 +415,182 @@ msgstr ""
 "Вы можете уменьшить задержку ввода в игре, нажав Alt+[, и увеличить её с "
 "помощью Alt+]."
 
-#: src/ui/gui/netplay_wait.slint:101
+#: src/ui/gui/netplay_wait.slint:112
 msgctxt "NetplayWait"
 msgid "Local Input Delay:"
 msgstr "Локальная задержка ввода:"
 
-#: src/ui/gui/netplay_wait.slint:118
+#: src/ui/gui/netplay_wait.slint:129
 msgctxt "NetplayWait"
 msgid "Recommended: "
 msgstr "Рекомендуется: "
 
-#: src/ui/gui/netplay_wait.slint:127
+#: src/ui/gui/netplay_wait.slint:138
 msgctxt "NetplayWait"
 msgid "Start Game"
 msgstr "Начать игру"
 
-#: src/ui/gui/netplay_wait.slint:127
+#: src/ui/gui/netplay_wait.slint:138
 msgctxt "NetplayWait"
 msgid "Waiting for P2P mesh "
 msgstr "Ожидание P2P-сети "
 
-#: src/ui/gui/netplay_wait.slint:135
+#: src/ui/gui/netplay_wait.slint:147
 msgctxt "NetplayWait"
 msgid "Cancel"
 msgstr "Отмена"
 
-#: src/ui/gui/retroachievements_page.slint:19
+#: src/ui/gui/retroachievements_page.slint:25
 msgctxt "RAData"
 msgid "Not currently logged in"
 msgstr "В данный момент не выполнен вход"
 
-#: src/ui/gui/retroachievements_page.slint:27
+#: src/ui/gui/retroachievements_page.slint:33
 msgctxt "RetroAchievements"
 msgid "RetroAchievements"
 msgstr "RetroAchievements"
 
-#: src/ui/gui/retroachievements_page.slint:36
+#: src/ui/gui/retroachievements_page.slint:42
 msgctxt "RetroAchievements"
 msgid "Enabled"
 msgstr "Включено"
 
-#: src/ui/gui/retroachievements_page.slint:51
+#: src/ui/gui/retroachievements_page.slint:58
 msgctxt "RetroAchievements"
 msgid "Hardcore mode"
 msgstr "Хардкорный режим"
 
-#: src/ui/gui/retroachievements_page.slint:60
+#: src/ui/gui/retroachievements_page.slint:67
 msgctxt "RetroAchievements"
 msgid "Challenge Indicators"
 msgstr "Индикаторы испытаний"
 
-#: src/ui/gui/retroachievements_page.slint:69
+#: src/ui/gui/retroachievements_page.slint:77
 msgctxt "RetroAchievements"
 msgid "Leaderboard Trackers"
 msgstr "Трекеры таблицы лидеров"
 
-#: src/ui/gui/retroachievements_page.slint:78
+#: src/ui/gui/retroachievements_page.slint:87
 msgctxt "RetroAchievements"
 msgid "Discord Rich Presence"
 msgstr "Расширенный статус Discord"
 
-#: src/ui/gui/retroachievements_page.slint:96
+#: src/ui/gui/retroachievements_page.slint:107
 msgctxt "RetroAchievements"
 msgid "View Profile"
 msgstr "Просмотреть профиль"
 
-#: src/ui/gui/retroachievements_page.slint:106
+#: src/ui/gui/retroachievements_page.slint:118
 msgctxt "RetroAchievements"
 msgid "Username"
 msgstr "Имя пользователя"
 
-#: src/ui/gui/retroachievements_page.slint:116
+#: src/ui/gui/retroachievements_page.slint:128
 msgctxt "RetroAchievements"
 msgid "Password"
 msgstr "Пароль"
 
-#: src/ui/gui/retroachievements_page.slint:125
+#: src/ui/gui/retroachievements_page.slint:138
 msgctxt "RetroAchievements"
 msgid "Login"
 msgstr "Войти"
 
-#: src/ui/gui/retroachievements_page.slint:141
+#: src/ui/gui/retroachievements_page.slint:156
 msgctxt "RetroAchievements"
 msgid "View Supported Games"
 msgstr "Просмотреть поддерживаемые игры"
 
-#: src/ui/gui/settings_page.slint:25
+#: src/ui/gui/settings_page.slint:31
 msgctxt "Settings"
 msgid "Settings"
 msgstr "Настройки"
 
-#: src/ui/gui/settings_page.slint:32
+#: src/ui/gui/settings_page.slint:38
 msgctxt "Settings"
 msgid "Game"
 msgstr "Игра"
 
-#: src/ui/gui/settings_page.slint:38
+#: src/ui/gui/settings_page.slint:44
 msgctxt "Settings"
 msgid "Resolution:"
 msgstr "Разрешение:"
 
-#: src/ui/gui/settings_page.slint:51
+#: src/ui/gui/settings_page.slint:58
 msgctxt "Settings"
 msgid "SSAA downscaling"
 msgstr "SSAA даунскейлинг"
 
-#: src/ui/gui/settings_page.slint:59
+#: src/ui/gui/settings_page.slint:66
 msgctxt "Settings"
 msgid "Integer Scaling"
 msgstr "Целочисленное масштабирование"
 
-#: src/ui/gui/settings_page.slint:67
+#: src/ui/gui/settings_page.slint:74
 msgctxt "Settings"
 msgid "Fullscreen"
 msgstr "Полноэкранный режим"
 
-#: src/ui/gui/settings_page.slint:75
+#: src/ui/gui/settings_page.slint:82
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
 msgstr "Широкоэкранный режим (растянуто)"
 
-#: src/ui/gui/settings_page.slint:83
+#: src/ui/gui/settings_page.slint:90
 msgctxt "Settings"
 msgid "VSync"
 msgstr "Вертикальная синхронизация"
 
-#: src/ui/gui/settings_page.slint:91
+#: src/ui/gui/settings_page.slint:98
 msgctxt "Settings"
 msgid "Apply CRT shader"
 msgstr "Применить шейдер ЭЛТ"
 
-#: src/ui/gui/settings_page.slint:103
+#: src/ui/gui/settings_page.slint:110
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
 msgstr "Разгон процессора N64 (может вызвать ошибки)"
 
-#: src/ui/gui/settings_page.slint:111
+#: src/ui/gui/settings_page.slint:118
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
 msgstr "Отключить Expansion Pak"
 
-#: src/ui/gui/settings_page.slint:119
+#: src/ui/gui/settings_page.slint:126
 msgctxt "Settings"
 msgid "Enable Rewind"
 msgstr "Включить перемотку назад"
 
-#: src/ui/gui/settings_page.slint:127
+#: src/ui/gui/settings_page.slint:134
 msgctxt "Settings"
 msgid "Emulate UNFLoader"
 msgstr "Эмулировать UNFLoader"
 
-#: src/ui/gui/settings_page.slint:135
+#: src/ui/gui/settings_page.slint:142
 msgctxt "Settings"
 msgid "Emulate VRU"
 msgstr "Эмулировать VRU"
 
-#: src/ui/gui/settings_page.slint:144
+#: src/ui/gui/settings_page.slint:152
 msgctxt "Settings"
 msgid "UI"
 msgstr "Интерфейс"
 
-#: src/ui/gui/settings_page.slint:150
+#: src/ui/gui/settings_page.slint:158
 msgctxt "Settings"
 msgid "Theme:"
 msgstr "Тема:"
 
-#: src/ui/gui/settings_page.slint:154
+#: src/ui/gui/settings_page.slint:163
 msgctxt "Settings"
 msgid "System"
 msgstr "Система"
 
-#: src/ui/gui/settings_page.slint:154
+#: src/ui/gui/settings_page.slint:163
 msgctxt "Settings"
 msgid "Dark"
 msgstr "Тёмная"
 
-#: src/ui/gui/settings_page.slint:154
+#: src/ui/gui/settings_page.slint:163
 msgctxt "Settings"
 msgid "Light"
 msgstr "Светлая"
