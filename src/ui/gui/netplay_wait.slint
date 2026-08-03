@@ -1,4 +1,14 @@
-import { VerticalBox, HorizontalBox, TextEdit, SpinBox, GroupBox, LineEdit, Button, GridBox, ScrollView } from "std-widgets.slint";
+import {
+    VerticalBox,
+    HorizontalBox,
+    TextEdit,
+    SpinBox,
+    GroupBox,
+    LineEdit,
+    Button,
+    GridBox,
+    ScrollView,
+} from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 import { Page } from "page.slint";
 
@@ -95,6 +105,7 @@ export component NetplayWait inherits Page {
                     horizontal-alignment: center;
                     wrap: word-wrap;
                 }
+
                 if NetplayData.player_name == NetplayWaitData.players[0]: HorizontalBox {
                     alignment: center;
                     Text {
@@ -112,7 +123,6 @@ export component NetplayWait inherits Page {
                         edited => {
                             NetplayWaitData.input_delay = self.value;
                         }
-
                     }
 
                     Text {
@@ -132,6 +142,7 @@ export component NetplayWait inherits Page {
                             begin_game(NetplayWaitData.input_delay);
                         }
                     }
+
                     Button {
                         text: @tr("Cancel");
                         clicked => {

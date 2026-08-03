@@ -1,14 +1,27 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { ListView, HorizontalBox, VerticalBox, Button, GroupBox, Switch, CheckBox } from "std-widgets.slint";
+import {
+    ListView,
+    HorizontalBox,
+    VerticalBox,
+    Button,
+    GroupBox,
+    Switch,
+    CheckBox,
+} from "std-widgets.slint";
 import { Page } from "page.slint";
 import { SettingsData } from "settings_page.slint";
 
 export global CheatsData {
     in-out property <string> cheat_game_name;
     in-out property <string> cheat_game_crc;
-    in-out property <[{cheat_name:string, notes:string, enabled:bool, options:[{option:string, enabled:bool}]}]> cheats;
+    in-out property <[{
+        cheat_name: string,
+        notes: string,
+        enabled: bool,
+        options: [{ option: string, enabled: bool }]
+    }]> cheats;
 }
 
 export component Cheats inherits Page {

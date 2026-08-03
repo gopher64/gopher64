@@ -1,7 +1,13 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { GroupBox, ComboBox, HorizontalBox, VerticalBox, Switch } from "std-widgets.slint";
+import {
+    GroupBox,
+    ComboBox,
+    HorizontalBox,
+    VerticalBox,
+    Switch,
+} from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export global SettingsData {
@@ -38,6 +44,7 @@ export component Settings inherits Page {
                             text: @tr("Resolution:");
                             vertical-alignment: center;
                         }
+
                         ComboBox {
                             model: ["1x", "2x", "4x", "8x"];
                             current-index: SettingsData.resolution;
@@ -140,6 +147,7 @@ export component Settings inherits Page {
                     }
                 }
             }
+
             GroupBox {
                 title: @tr("UI");
                 VerticalBox {
@@ -150,6 +158,7 @@ export component Settings inherits Page {
                             text: @tr("Theme:");
                             vertical-alignment: center;
                         }
+
                         ComboBox {
                             model: [@tr("System"), @tr("Dark"), @tr("Light")];
                             current-index: SettingsData.theme;
@@ -158,6 +167,7 @@ export component Settings inherits Page {
                             }
                         }
                     }
+
                     Rectangle {
                         height: 40px; // so the combobox isn't cut off
                     }

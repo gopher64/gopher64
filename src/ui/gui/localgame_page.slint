@@ -1,14 +1,19 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Button, HorizontalBox, VerticalBox, GroupBox } from "std-widgets.slint";
+import {
+    Button,
+    HorizontalBox,
+    VerticalBox,
+    GroupBox,
+} from "std-widgets.slint";
 import { Page } from "page.slint";
 import { AboutData, NewVersionButton } from "about_page.slint";
 
 export global State {
     in-out property <bool> game_running;
     in-out property <bool> is_android;
-    in-out property <[{a:string, b:string}]> recent_roms;
+    in-out property <[{ a: string, b: string }]> recent_roms;
 }
 
 export component LocalGame inherits Page {
@@ -48,7 +53,7 @@ export component LocalGame inherits Page {
         }
         Rectangle { }
 
-        if State.recent_roms.length>0:HorizontalBox {
+        if State.recent_roms.length > 0:HorizontalBox {
             alignment: center;
             GroupBox {
                 title: @tr("Recent ROMs");

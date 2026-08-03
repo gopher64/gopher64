@@ -1,7 +1,13 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { LineEdit, Switch, Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
+import {
+    LineEdit,
+    Switch,
+    Button,
+    HorizontalBox,
+    VerticalBox,
+} from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export global RAData {
@@ -21,7 +27,7 @@ export global RAData {
 
 export component RetroAchievements inherits Page {
     callback ra_button_clicked(string);
-    callback ra_toggled(bool,bool,bool,bool,bool);
+    callback ra_toggled(bool, bool, bool, bool, bool);
     callback ra_games_clicked;
     callback ra_show_profile_clicked;
     title: @tr("RetroAchievements");
@@ -47,6 +53,7 @@ export component RetroAchievements inherits Page {
                         ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
                     }
                 }
+
                 if !RAData.ra_casual_only: Switch {
                     text: @tr("Hardcore mode");
                     checked: RAData.hardcore;
@@ -65,6 +72,7 @@ export component RetroAchievements inherits Page {
                         ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
                     }
                 }
+
                 Switch {
                     text: @tr("Leaderboard Trackers");
                     checked: RAData.leaderboard;
@@ -74,6 +82,7 @@ export component RetroAchievements inherits Page {
                         ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
                     }
                 }
+
                 Switch {
                     text: @tr("Discord Rich Presence");
                     checked: RAData.rich_presence;
@@ -85,12 +94,14 @@ export component RetroAchievements inherits Page {
                 }
             }
         }
+
         HorizontalBox {
             alignment: center;
             Text {
                 text: RAData.current_user_message;
                 vertical-alignment: center;
             }
+
             if RAData.ra_show_profile:Button {
                 enabled: RAData.enabled;
                 text: @tr("View Profile");
@@ -99,6 +110,7 @@ export component RetroAchievements inherits Page {
                 }
             }
         }
+
         HorizontalBox {
             alignment: center;
             username_widget := LineEdit {
@@ -108,8 +120,8 @@ export component RetroAchievements inherits Page {
                 edited(text) => {
                     RAData.ra_username = text;
                 }
-
             }
+
             password_widget := LineEdit {
                 enabled: RAData.enabled;
                 input-type: password;
@@ -119,6 +131,7 @@ export component RetroAchievements inherits Page {
                 }
             }
         }
+
         HorizontalBox {
             alignment: center;
             Button {
@@ -132,9 +145,11 @@ export component RetroAchievements inherits Page {
                 }
             }
         }
+
         Rectangle {
             height: 20px;
         }
+
         HorizontalBox {
             alignment: center;
             Button {
