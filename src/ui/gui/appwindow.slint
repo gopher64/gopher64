@@ -1,8 +1,21 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Palette, StandardButton, VerticalBox, HorizontalBox } from "std-widgets.slint";
-import { LocalGame, ControllerConfig, Netplay, Cheats, RetroAchievements, Settings, About } from "pages.slint";
+import {
+    Palette,
+    StandardButton,
+    VerticalBox,
+    HorizontalBox,
+} from "std-widgets.slint";
+import {
+    LocalGame,
+    ControllerConfig,
+    Netplay,
+    Cheats,
+    RetroAchievements,
+    Settings,
+    About,
+} from "pages.slint";
 import { SideBar } from "side_bar.slint";
 import { SettingsData } from "settings_page.slint";
 import { RAData } from "retroachievements_page.slint";
@@ -12,7 +25,7 @@ import { State } from "localgame_page.slint";
 import { CheatsData } from "cheat_page.slint";
 import { InputProfileDialog, InputProfileData } from "input_profile.slint";
 import { NetplayData } from "netplay_page.slint";
-export { VruDialog } from "vru_dialog.slint";
+export { VruDialog }from "vru_dialog.slint";
 import { NetplayCreate } from "netplay_create.slint";
 import { NetplayJoin } from "netplay_join.slint";
 import { NetplayWait, NetplayWaitData } from "netplay_wait.slint";
@@ -29,7 +42,7 @@ export component AppWindow inherits Window {
     callback saves_folder_button_clicked;
     callback input_profile_button_clicked;
     callback input_profile_creation_button_clicked;
-    callback transferpak_toggled(int,bool);
+    callback transferpak_toggled(int, bool);
     callback create_session_button_clicked;
     callback join_session_button_clicked;
     callback netplay_discord_button_clicked;
@@ -47,7 +60,7 @@ export component AppWindow inherits Window {
     callback ra_button_clicked(string);
     callback ra_games_clicked;
     callback ra_show_profile_clicked;
-    callback ra_toggled(bool,bool,bool,bool,bool);
+    callback ra_toggled(bool, bool, bool, bool, bool);
     callback controller_window_created;
     in property version <=> AboutData.version;
     in property has_update <=> AboutData.has_update;
@@ -159,34 +172,34 @@ export component AppWindow inherits Window {
         portrait: root.is-portrait;
         title: "Gopher64";
         model: [
-        {
-            icon: @image-url("../../../data/ui/icons/local_game.svg"),
-            label: @tr("Menu" => "Local Game"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/controller.svg"),
-            label: @tr("Menu" => "Controller Config"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/netplay.svg"),
-            label: @tr("Menu" => "Netplay"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/cheats.svg"),
-            label: @tr("Menu" => "Cheats"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/achievements.svg"),
-            label: @tr("Menu" => "RetroAchievements"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/settings.svg"),
-            label: @tr("Menu" => "Settings"),
-        },
-        {
-            icon: @image-url("../../../data/ui/icons/about.svg"),
-            label: @tr("Menu" => "About"),
-        },
+            {
+                icon: @image-url("../../../data/ui/icons/local_game.svg"),
+                label: @tr("Menu" => "Local Game"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/controller.svg"),
+                label: @tr("Menu" => "Controller Config"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/netplay.svg"),
+                label: @tr("Menu" => "Netplay"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/cheats.svg"),
+                label: @tr("Menu" => "Cheats"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/achievements.svg"),
+                label: @tr("Menu" => "RetroAchievements"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/settings.svg"),
+                label: @tr("Menu" => "Settings"),
+            },
+            {
+                icon: @image-url("../../../data/ui/icons/about.svg"),
+                label: @tr("Menu" => "About"),
+            },
         ];
         x: root.safe-left;
         y: root.is-portrait ? parent.height - root.bar-thickness - root.safe-bottom : root.safe-top;
@@ -223,7 +236,7 @@ export component AppWindow inherits Window {
             input_profile_button_clicked => {
                 input_profile_button_clicked();
             }
-            transferpak_toggled(player,enabled) => {
+            transferpak_toggled(player, enabled) => {
                 transferpak_toggled(player,enabled);
             }
             controller_window_created => {
@@ -314,7 +327,7 @@ export component AppWindow inherits Window {
             ra_button_clicked(password) => {
                 ra_button_clicked(password);
             }
-            ra_toggled(enabled,hardcore,challenge,leaderboard,rich_presence) => {
+            ra_toggled(enabled, hardcore, challenge, leaderboard, rich_presence) => {
                 ra_toggled(enabled,hardcore,challenge,leaderboard,rich_presence);
             }
             ra_games_clicked => {
@@ -353,18 +366,19 @@ export component AppWindow inherits Window {
         popup := PopupWindow {
             close-policy: no-auto-close;
             Rectangle {
-                height:100%;
+                height: 100%;
                 width: 100%;
                 background: Palette.background;
                 VerticalBox {
                     alignment: center;
-                    HorizontalBox{
+                    HorizontalBox {
                         alignment: center;
                         Text {
                             text: popup_message;
                         }
                     }
-                    if (popup_has_close):HorizontalBox{
+
+                    if (popup_has_close):HorizontalBox {
                         alignment: center;
                         StandardButton {
                             kind: ok;
@@ -375,12 +389,14 @@ export component AppWindow inherits Window {
                     }
                 }
             }
+
             x: content-area.x;
             y: content-area.y;
             height: content-area.height;
             width: content-area.width;
         }
     }
+
     public function show_message(message: string, has_close: bool) {
         popup_message = message;
         popup_has_close = has_close;

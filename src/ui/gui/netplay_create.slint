@@ -1,4 +1,13 @@
-import { Palette, StandardButton, LineEdit, HorizontalBox, VerticalBox, Button, ComboBox, ScrollView } from "std-widgets.slint";
+import {
+    Palette,
+    StandardButton,
+    LineEdit,
+    HorizontalBox,
+    VerticalBox,
+    Button,
+    ComboBox,
+    ScrollView,
+} from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 import { SettingsData } from "settings_page.slint";
 import { Page } from "page.slint";
@@ -103,6 +112,7 @@ export component NetplayCreate inherits Page {
                             SettingsData.disable_expansion_pak);
                         }
                     }
+
                     Button {
                         text: @tr("Cancel");
                         clicked => {
@@ -110,6 +120,7 @@ export component NetplayCreate inherits Page {
                         }
                     }
                 }
+
                 Rectangle { }
             }
         }

@@ -1,4 +1,12 @@
-import { VerticalBox, LineEdit, StandardTableView, HorizontalBox, ComboBox, Button, ScrollView } from "std-widgets.slint";
+import {
+    VerticalBox,
+    LineEdit,
+    StandardTableView,
+    HorizontalBox,
+    ComboBox,
+    Button,
+    ScrollView,
+} from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 import { SettingsData } from "settings_page.slint";
 import { Page } from "page.slint";
@@ -37,7 +45,8 @@ export component NetplayJoin inherits Page {
             }
 
             VerticalBox {
-                Rectangle {}
+                Rectangle { }
+
                 if NetplayData.game_name == "": Button {
                     text: @tr("Select ROM");
                     clicked => {
@@ -70,10 +79,10 @@ export component NetplayJoin inherits Page {
         }
         StandardTableView {
             columns: [
-            { title: @tr("Session Name") },
-            { title: @tr("Game Name") },
-            { title: @tr("Password") },
-            { title: @tr("Cheats") }
+                { title: @tr("Session Name") },
+                { title: @tr("Game Name") },
+                { title: @tr("Password") },
+                { title: @tr("Cheats") }
             ];
             rows: NetplayData.sessions;
             current-row: NetplayData.current_session;
@@ -113,6 +122,7 @@ export component NetplayJoin inherits Page {
                     NetplayData.password);
                 }
             }
+
             Button {
                 text: @tr("Cancel");
                 clicked => {

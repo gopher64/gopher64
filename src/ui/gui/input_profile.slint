@@ -1,4 +1,11 @@
-import { HorizontalBox, VerticalBox, Button, LineEdit, Switch, Slider } from "std-widgets.slint";
+import {
+    HorizontalBox,
+    VerticalBox,
+    Button,
+    LineEdit,
+    Switch,
+    Slider,
+} from "std-widgets.slint";
 import { Page } from "page.slint";
 
 export global InputProfileData {
@@ -77,12 +84,21 @@ export component InputProfileDialog inherits Page {
                     profile_creation_button_clicked();
                 }
             }
+
             Button {
                 vertical-stretch: 0;
                 text: @tr("Cancel");
                 clicked => {
                     InputProfileData.show_input_profile = false;
                 }
+            }
+        }
+
+        HorizontalBox {
+            Text {
+                wrap: word-wrap;
+                horizontal-alignment: center;
+                text: @tr("When using DirectInput and/or keyboard, navigate the dialog using the arrow keys.\nPress Enter to begin binding a button/axis.\nPress Delete to remove a binding.\n\nWhen using a PlayStation-style controller, navigate the dialog using the D-pad.\nPress the South/East button to begin binding a button/axis.\nPress the North/West button to remove a binding.");
             }
         }
     }
