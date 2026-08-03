@@ -3,6 +3,7 @@ use crate::netplay::RtcIceServerConfig;
 use crate::ui;
 use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings};
 use futures::{SinkExt, StreamExt};
+use sha2::digest::Digest;
 use slint::ComponentHandle;
 use slint::Model;
 use tokio_tungstenite::tungstenite::Bytes;
@@ -294,10 +295,23 @@ fn manage_websocket(
         .unwrap_or("wss://netplay.gopher64.com".to_string())
         .into_client_request()
         .unwrap();
-    request.headers_mut().insert(
-        "Authorization",
-        obfstr::obfstr!(env!("NETPLAY_ID")).parse().unwrap(),
-    );
+
+    let mut hasher = sha2::Sha256::new();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+    hasher.update(obfstr::obfstr!(env!("NETPLAY_ID")));
+    hasher.update(now.to_string());
+    let hash: String = hasher
+        .finalize()
+        .iter()
+        .map(|b| format!("{:02X}", b))
+        .collect();
+    request
+        .headers_mut()
+        .insert("Authorization", format!("{hash}_{now}").parse().unwrap());
+
     tokio::spawn(async move {
         match tokio::time::timeout(
             std::time::Duration::from_secs(3),
