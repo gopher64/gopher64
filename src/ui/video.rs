@@ -48,28 +48,32 @@ pub fn init(device: &mut device::Device, netplay: bool) {
         flags |= sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
     }
 
-    let window_width;
-    let window_height;
     let scale = if device.ui.config.video.upscale > 1 && !device.ui.config.video.ssaa {
         device.ui.config.video.upscale as i32
     } else {
         2
     };
-    if device.cart.pal {
-        window_width = if device.ui.video.widescreen {
-            PAL_WIDESCREEN_WIDTH * scale
-        } else {
-            PAL_STANDARD_WIDTH * scale
-        };
-        window_height = PAL_HEIGHT * scale;
+
+    let (window_width, window_height) = if device.cart.pal {
+        (
+            if device.ui.video.widescreen {
+                PAL_WIDESCREEN_WIDTH * scale
+            } else {
+                PAL_STANDARD_WIDTH * scale
+            },
+            PAL_HEIGHT * scale,
+        )
     } else {
-        window_width = if device.ui.video.widescreen {
-            NTSC_WIDESCREEN_WIDTH * scale
-        } else {
-            NTSC_STANDARD_WIDTH * scale
-        };
-        window_height = NTSC_HEIGHT * scale;
-    }
+        (
+            if device.ui.video.widescreen {
+                NTSC_WIDESCREEN_WIDTH * scale
+            } else {
+                NTSC_STANDARD_WIDTH * scale
+            },
+            NTSC_HEIGHT * scale,
+        )
+    };
+
     device.ui.video.window = unsafe {
         sdl3_sys::video::SDL_CreateWindow(window_title.as_ptr(), window_width, window_height, flags)
     };

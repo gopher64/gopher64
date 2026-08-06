@@ -50,25 +50,24 @@ pub fn process(device: &mut device::Device, channel: usize) {
 
     match cmd {
         JCMD_RESET | JCMD_STATUS => {
-            let eeprom_type;
-            if device
+            let eeprom_type = if device
                 .ui
                 .storage
                 .save_type
                 .contains(&ui::storage::SaveTypes::Eeprom16k)
             {
-                eeprom_type = JDT_EEPROM_16K;
+                JDT_EEPROM_16K
             } else if device
                 .ui
                 .storage
                 .save_type
                 .contains(&ui::storage::SaveTypes::Eeprom4k)
             {
-                eeprom_type = JDT_EEPROM_4K;
+                JDT_EEPROM_4K
             } else {
                 device.pif.ram[device.pif.channels[channel].rx.unwrap()] |= 0x80;
                 return;
-            }
+            };
 
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = eeprom_type as u8;
             device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 1] =
