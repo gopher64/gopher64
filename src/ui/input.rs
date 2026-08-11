@@ -603,13 +603,8 @@ pub fn init(ui: &mut ui::Ui) {
                         if properties == 0 {
                             eprintln!("could not get gamepad properties");
                         }
-                        ui.input.controllers[i].rumble = unsafe {
-                            sdl3_sys::properties::SDL_GetBooleanProperty(
-                                properties,
-                                sdl3_sys::gamepad::SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN,
-                                false,
-                            )
-                        };
+                        ui.input.controllers[i].rumble =
+                            unsafe { sdl3_sys::gamepad::SDL_RumbleGamepad(gamepad, 0, 0, 0) };
                     }
                 } else {
                     let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) };
@@ -624,13 +619,8 @@ pub fn init(ui: &mut ui::Ui) {
                         if properties == 0 {
                             eprintln!("could not get joystick properties");
                         }
-                        ui.input.controllers[i].rumble = unsafe {
-                            sdl3_sys::properties::SDL_GetBooleanProperty(
-                                properties,
-                                sdl3_sys::joystick::SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN,
-                                false,
-                            )
-                        };
+                        ui.input.controllers[i].rumble =
+                            unsafe { sdl3_sys::joystick::SDL_RumbleJoystick(joystick, 0, 0, 0) };
                     }
                 }
             } else {
