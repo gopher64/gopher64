@@ -192,28 +192,24 @@ impl Ui {
                     input::Controllers {
                         game_controller: std::ptr::null_mut(),
                         joystick: std::ptr::null_mut(),
-                        rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
                     },
                     input::Controllers {
                         game_controller: std::ptr::null_mut(),
                         joystick: std::ptr::null_mut(),
-                        rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
                     },
                     input::Controllers {
                         game_controller: std::ptr::null_mut(),
                         joystick: std::ptr::null_mut(),
-                        rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
                     },
                     input::Controllers {
                         game_controller: std::ptr::null_mut(),
                         joystick: std::ptr::null_mut(),
-                        rumble: false,
                         guid: sdl3_sys::guid::SDL_GUID::default(),
                         last_key_state: 0,
                     },

@@ -11,7 +11,6 @@ pub const UNKNOWN_CONTROLLER_NAME: &str = "Unknown controller";
 
 #[derive(Default)]
 pub struct Controllers {
-    pub rumble: bool,
     pub game_controller: *mut sdl3_sys::gamepad::SDL_Gamepad,
     pub joystick: *mut sdl3_sys::joystick::SDL_Joystick,
     pub guid: sdl3_sys::guid::SDL_GUID,
@@ -215,9 +214,6 @@ fn set_buttons(
 }
 
 pub fn set_rumble(ui: &ui::Ui, channel: usize, rumble: u8) {
-    if !ui.input.controllers[channel].rumble {
-        return;
-    }
     let controller = ui.input.controllers[channel].game_controller;
     let joystick = ui.input.controllers[channel].joystick;
     if !controller.is_null() {
@@ -598,18 +594,6 @@ pub fn init(ui: &mut ui::Ui) {
                         ui.input.controllers[i].game_controller = gamepad;
                         ui.input.controllers[i].guid =
                             unsafe { sdl3_sys::gamepad::SDL_GetGamepadGUIDForID(joystick_id) };
-                        let properties =
-                            unsafe { sdl3_sys::gamepad::SDL_GetGamepadProperties(gamepad) };
-                        if properties == 0 {
-                            eprintln!("could not get gamepad properties");
-                        }
-                        ui.input.controllers[i].rumble = unsafe {
-                            sdl3_sys::properties::SDL_GetBooleanProperty(
-                                properties,
-                                sdl3_sys::gamepad::SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN,
-                                false,
-                            )
-                        };
                     }
                 } else {
                     let joystick = unsafe { sdl3_sys::joystick::SDL_OpenJoystick(joystick_id) };
@@ -619,18 +603,6 @@ pub fn init(ui: &mut ui::Ui) {
                         ui.input.controllers[i].joystick = joystick;
                         ui.input.controllers[i].guid =
                             unsafe { sdl3_sys::joystick::SDL_GetJoystickGUIDForID(joystick_id) };
-                        let properties =
-                            unsafe { sdl3_sys::joystick::SDL_GetJoystickProperties(joystick) };
-                        if properties == 0 {
-                            eprintln!("could not get joystick properties");
-                        }
-                        ui.input.controllers[i].rumble = unsafe {
-                            sdl3_sys::properties::SDL_GetBooleanProperty(
-                                properties,
-                                sdl3_sys::joystick::SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN,
-                                false,
-                            )
-                        };
                     }
                 }
             } else {
