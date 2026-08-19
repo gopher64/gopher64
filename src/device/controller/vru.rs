@@ -853,6 +853,10 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("pirate-sword"),
         ),
         (
+            String::from("03B101AA02F10045000303C603FC0126030000060390"),
+            String::from("pirate-sword"),
+        ),
+        (
             String::from("03C301D403FC0126030000060390"),
             String::from("toy-sword"),
         ),
