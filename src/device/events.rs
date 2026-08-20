@@ -59,7 +59,7 @@ fn get_event_handler(name: usize) -> fn(&mut device::Device) {
         EVENT_TYPE_PI => device::pi::dma_event,
         EVENT_TYPE_DP => device::rdp::rdp_interrupt_event,
         EVENT_TYPE_SP => device::rsp_interface::rsp_event,
-        EVENT_TYPE_INT => device::exceptions::interrupt_exception,
+        EVENT_TYPE_INT => device::exceptions::check_pending_interrupts,
         EVENT_TYPE_SPDMA => device::rsp_interface::fifo_pop,
         EVENT_TYPE_COMPARE => device::cop0::compare_event,
         EVENT_TYPE_VRU => device::controller::vru::vru_talking_event,
