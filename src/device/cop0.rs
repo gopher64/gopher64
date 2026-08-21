@@ -236,7 +236,6 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
 
 pub fn compare_event(device: &mut device::Device) {
     device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] |= device::cop0::COP0_CAUSE_IP7;
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] &= !device::cop0::COP0_CAUSE_EXCCODE_MASK;
 
     device::events::create_event_at(
         device,
