@@ -14,8 +14,6 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
 
     if device.mi.regs[device::mi::MI_INTR_REG] & device.mi.regs[device::mi::MI_INTR_MASK_REG] != 0 {
         device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] |= device::cop0::COP0_CAUSE_IP2;
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] &=
-            !device::cop0::COP0_CAUSE_EXCCODE_MASK;
     }
 
     if (device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG]
@@ -35,6 +33,7 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
 }
 
 pub fn interrupt_exception(device: &mut device::Device) {
+    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] &= !device::cop0::COP0_CAUSE_EXCCODE_MASK;
     exception_general(device, 0x180);
 }
 
