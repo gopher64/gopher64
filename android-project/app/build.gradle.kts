@@ -103,8 +103,9 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     workingDir = rootDir.parentFile
 
     val osName = System.getProperty("os.name").lowercase()
+    val isWindows = osName.contains("win")
     val hostOs = when {
-        osName.contains("win") -> "windows-x86_64"
+        isWindows -> "windows-x86_64"
         else -> "linux-x86_64"
     }
 
@@ -112,14 +113,19 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     var ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath
 
     val toolchainPath = "$ndkDir/build/cmake/android.toolchain.cmake"
-    val ndkLlvmBin = "$ndkDir/toolchains/llvm/prebuilt/$hostOs/bin"
+
+    val llvmDir = file("$ndkDir/toolchains/llvm/prebuilt/$hostOs")
+    val ndkLlvmBin = file("$llvmDir/bin").absolutePath
+    val ndkLlvmLib = file("$llvmDir/musl/lib").absolutePath
+
+    val libClangPath = if (isWindows) ndkLlvmBin else ndkLlvmLib
 
     environment("CMAKE_TOOLCHAIN_FILE", toolchainPath)
     environment("ANDROID_NDK_HOME", "$ndkDir")
     environment("ANDROID_NDK_ROOT", "$ndkDir")
-    environment("LIBCLANG_PATH", ndkLlvmBin)
+    environment("LIBCLANG_PATH", libClangPath)
 
-    if (osName.contains("win")) {
+    if (isWindows) {
         environment("CMAKE_GENERATOR", "Ninja")
         val currentPath = System.getenv("PATH") ?: System.getenv("Path") ?: ""
         environment("PATH", "$ndkLlvmBin;$currentPath")
