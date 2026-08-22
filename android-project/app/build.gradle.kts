@@ -92,16 +92,38 @@ fun semverToVersionCode(version: String): Int {
 }
 
 val ndkBuild = tasks.register<Exec>("ndkBuild") {
+    inputs.dir(rootDir.parentFile.resolve("src"))
+    inputs.file(rootDir.parentFile.resolve("Cargo.toml"))
+    inputs.file(rootDir.parentFile.resolve("Cargo.lock"))
+
+    outputs.dir("$rootDir/app/src/debug/jniLibs")
+    outputs.dir("$rootDir/app/src/release/jniLibs")
+
     val isRelease = gradle.startParameter.taskNames.any { it.endsWith("Release", ignoreCase = true) }
     workingDir = rootDir.parentFile
-    val toolchainPath = "$rootDir/android.toolchain.cmake"
-    environment("CMAKE_TOOLCHAIN_FILE", toolchainPath)
+
+    val osName = System.getProperty("os.name").lowercase()
+    val hostOs = when {
+        osName.contains("win") -> "windows-x86_64"
+        else -> "linux-x86_64"
+    }
 
     var minSdk = android.defaultConfig.minSdk
     var ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath
+
+    val toolchainPath = "$ndkDir/build/cmake/android.toolchain.cmake"
+    val ndkLlvmBin = "$ndkDir/toolchains/llvm/prebuilt/$hostOs/bin"
+
+    environment("CMAKE_TOOLCHAIN_FILE", toolchainPath)
     environment("ANDROID_NDK_HOME", "$ndkDir")
     environment("ANDROID_NDK_ROOT", "$ndkDir")
-    environment("LIBCLANG_PATH", "$ndkDir/toolchains/llvm/prebuilt/linux-x86_64/musl/lib")
+    environment("LIBCLANG_PATH", ndkLlvmBin)
+
+    if (osName.contains("win")) {
+        environment("CMAKE_GENERATOR", "Ninja")
+        val currentPath = System.getenv("PATH") ?: System.getenv("Path") ?: ""
+        environment("PATH", "$ndkLlvmBin;$currentPath")
+    }
 
     val jniType = if (isRelease) "release" else "debug"
     val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs"
@@ -114,6 +136,7 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
         "-t", "x86_64",
         "-o", jniLibsFolder,
         "build", "--lib",
+        "-vv",
         "--profile", if (isRelease) "release" else "dev",
     )
 }
