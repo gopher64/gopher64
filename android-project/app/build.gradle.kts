@@ -147,7 +147,7 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     )
 }
 
-val sdlLibsArm64 = tasks.register<Copy>("sdlLibsArm64") {
+val sdlLibsArm64 = tasks.register("sdlLibsArm64") {
     val isRelease = gradle.startParameter.taskNames.any { it.endsWith("Release", ignoreCase = true) }
     val jniType = if (isRelease) "release" else "debug"
     val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs/arm64-v8a"
@@ -157,7 +157,7 @@ val sdlLibsArm64 = tasks.register<Copy>("sdlLibsArm64") {
     include("libSDL*")
 }
 
-val sdlLibsX64 = tasks.register<Copy>("sdlLibsX64") {
+val sdlLibsX64 = tasks.register("sdlLibsX64") {
     val isRelease = gradle.startParameter.taskNames.any { it.endsWith("Release", ignoreCase = true) }
     val jniType = if (isRelease) "release" else "debug"
     val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs/x86_64"
