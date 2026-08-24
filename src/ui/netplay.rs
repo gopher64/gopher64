@@ -312,6 +312,8 @@ fn manage_websocket(
         .headers_mut()
         .insert("Authorization", format!("{hash}_{now}").parse().unwrap());
 
+    ui::install_default_crypto_provider();
+
     tokio::spawn(async move {
         match tokio::time::timeout(
             std::time::Duration::from_secs(3),
