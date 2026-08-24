@@ -35,12 +35,13 @@ pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLoc
 
     #[cfg(target_os = "android")]
     {
-        builder = builder.tls_certs_only(
-            rustls_native_certs::load_native_certs()
-                .unwrap()
-                .into_iter()
-                .map(|a| reqwest::tls::Certificate::from_der(&a).unwrap()),
-        );
+        let root_store = rustls::RootCertStore {
+            roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
+        };
+        let tls = rustls::ClientConfig::builder()
+            .with_root_certificates(root_store)
+            .with_no_client_auth();
+        builder = builder.tls_backend_preconfigured(tls);
     }
 
     builder.build().unwrap()
