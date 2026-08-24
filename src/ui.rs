@@ -20,15 +20,37 @@ pub mod vru;
 
 pub const APP_ID: &str = "io.github.gopher64.gopher64";
 
+pub fn install_default_crypto_provider() {
+    if rustls::crypto::CryptoProvider::get_default().is_none() {
+        rustls::crypto::ring::default_provider()
+            .install_default()
+            .expect("Failed to install default rustls crypto provider");
+    }
+}
+
 pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
-    reqwest::Client::builder()
-        .user_agent(format!(
-            "{}/{}",
-            env!("CARGO_PKG_NAME"),
-            env!("GIT_DESCRIBE")
-        ))
-        .build()
-        .unwrap()
+    install_default_crypto_provider();
+
+    let mut builder = reqwest::Client::builder();
+
+    builder = builder.user_agent(format!(
+        "{}/{}",
+        env!("CARGO_PKG_NAME"),
+        env!("GIT_DESCRIBE")
+    ));
+
+    #[cfg(target_os = "android")]
+    {
+        let root_store = rustls::RootCertStore {
+            roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
+        };
+        let tls = rustls::ClientConfig::builder()
+            .with_root_certificates(root_store)
+            .with_no_client_auth();
+        builder = builder.tls_backend_preconfigured(tls);
+    }
+
+    builder.build().unwrap()
 });
 
 #[derive(Default, Clone)]
