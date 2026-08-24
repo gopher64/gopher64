@@ -21,6 +21,10 @@ pub mod vru;
 pub const APP_ID: &str = "io.github.gopher64.gopher64";
 
 pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install default rustls crypto provider");
+
     let mut builder = reqwest::Client::builder();
 
     builder = builder.user_agent(format!(
