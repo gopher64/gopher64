@@ -699,7 +699,7 @@ async fn load_no_intro(
                 }
             }
             Ok(quick_xml::events::Event::Start(e)) => {
-                if e.name().as_ref() == b"game"
+                if e.name().as_ref() == "game"
                     && let Ok(Some(name_attribute)) = e.try_get_attribute("name")
                     && let Ok(normalized_value) = name_attribute.normalized_value(xml_version)
                 {
@@ -707,12 +707,12 @@ async fn load_no_intro(
                 }
             }
             Ok(quick_xml::events::Event::End(e)) => {
-                if e.name().as_ref() == b"game" {
+                if e.name().as_ref() == "game" {
                     current_game.clear();
                 }
             }
             Ok(quick_xml::events::Event::Empty(e)) => {
-                if e.name().as_ref() == b"file"
+                if e.name().as_ref() == "file"
                     && let Ok(Some(format_attribute)) = e.try_get_attribute("format")
                     && let Ok(normalized_value) = format_attribute.normalized_value(xml_version)
                     && normalized_value.as_ref() == "BigEndian"
