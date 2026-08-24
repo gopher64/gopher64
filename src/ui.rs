@@ -29,7 +29,8 @@ pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLoc
 
     #[cfg(target_os = "android")]
     builder.tls_certs_only(
-        webpki_roots::TLS_SERVER_ROOTS
+        rustls_native_certs::load_native_certs()
+            .unwrap()
             .into_iter()
             .map(|a| reqwest::tls::Certificate::from_der(&a).unwrap()),
     );
