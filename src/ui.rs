@@ -21,19 +21,23 @@ pub mod vru;
 pub const APP_ID: &str = "io.github.gopher64.gopher64";
 
 pub static WEB_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
-    let builder = reqwest::Client::builder().user_agent(format!(
+    let mut builder = reqwest::Client::builder();
+
+    builder = builder.user_agent(format!(
         "{}/{}",
         env!("CARGO_PKG_NAME"),
         env!("GIT_DESCRIBE")
     ));
 
     #[cfg(target_os = "android")]
-    builder.tls_certs_only(
-        rustls_native_certs::load_native_certs()
-            .unwrap()
-            .into_iter()
-            .map(|a| reqwest::tls::Certificate::from_der(&a).unwrap()),
-    );
+    {
+        builder = builder.tls_certs_only(
+            rustls_native_certs::load_native_certs()
+                .unwrap()
+                .into_iter()
+                .map(|a| reqwest::tls::Certificate::from_der(&a).unwrap()),
+        );
+    }
 
     builder.build().unwrap()
 });
