@@ -157,6 +157,10 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     callback.emu_running = false;
   } else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running) {
     wsi_platform->do_resize();
+  } else if (event->type == SDL_EVENT_WINDOW_MINIMIZED) {
+    callback.paused = true;
+  } else if (event->type == SDL_EVENT_WINDOW_RESTORED) {
+    callback.paused = false;
   } else if (event->type == SDL_EVENT_KEY_DOWN && !event->key.repeat) {
     SDL_Event user_event;
     switch (event->key.scancode) {
