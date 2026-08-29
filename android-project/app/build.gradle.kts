@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 import java.util.Properties
 import java.io.FileInputStream
+import org.gradle.internal.os.OperatingSystem
 
 plugins {
     alias(libs.plugins.android.application)
@@ -96,12 +97,18 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     workingDir = rootDir.parentFile
     val toolchainPath = "$rootDir/android.toolchain.cmake"
     environment("CMAKE_TOOLCHAIN_FILE", toolchainPath)
+    environment("CMAKE_GENERATOR", "Ninja")
 
     var minSdk = android.defaultConfig.minSdk
     var ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath
     environment("ANDROID_NDK_HOME", "$ndkDir")
     environment("ANDROID_NDK_ROOT", "$ndkDir")
-    environment("LIBCLANG_PATH", "$ndkDir/toolchains/llvm/prebuilt/linux-x86_64/musl/lib")
+    val libClangPath = if (OperatingSystem.current().isWindows) {
+        "$ndkDir/toolchains/llvm/prebuilt/windows-x86_64/bin"
+    } else {
+        "$ndkDir/toolchains/llvm/prebuilt/linux-x86_64/musl/lib"
+    }
+    environment("LIBCLANG_PATH", libClangPath)
 
     val jniType = if (isRelease) "release" else "debug"
     val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs"
