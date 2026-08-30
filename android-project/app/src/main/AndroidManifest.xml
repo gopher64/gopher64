@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.vulkan.version" android:required="true"
         android:version="0x00401000" />
@@ -17,27 +16,34 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".Gopher64Application"
         android:icon="@mipmap/ic_launcher"
         android:label="Gopher64"
         android:appCategory="game"
         android:hardwareAccelerated="true">
+
         <activity android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:name=".SlintActivity" android:exported="true">
+
             <meta-data android:name="android.app.lib_name" android:value="gopher64" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity android:name=".N64Activity"
             android:launchMode="singleTop"
             android:configChanges="layoutDirection|locale|grammaticalGender|fontScale|fontWeightAdjustment|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:preferMinimalPostProcessing="true"
             android:exported="false">
+
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
         </activity>
-    </application>
 
+        <service android:name=".services.LoggerService" android:process=":logger_service"/>
+    </application>
 </manifest>
