@@ -69,7 +69,7 @@ flatpak run --filesystem=host:ro io.github.gopher64.gopher64 /path/to/rom.z64
 
 ### build dependencies
 ####  Ubuntu 25
-1. [install the SDL3 dependencies](https://wiki.libsdl.org/SDL3/README-linux#build-dependencies)
+1. [Install the SDL3 dependencies](https://wiki.libsdl.org/SDL3/README-linux#build-dependencies)
 2. ```
     sudo apt install clang llvm
     ```
