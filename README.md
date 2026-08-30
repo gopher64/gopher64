@@ -59,7 +59,7 @@ flatpak run --filesystem=host:ro io.github.gopher64.gopher64 /path/to/rom.z64
 
 ## building and usage
 
-1. [Install dependencies](https://github.com/gopher64/gopher64#build-dependencies)
+1. [Install dependencies](#build-dependencies)
 2. [Install rust](https://www.rust-lang.org/tools/install)
 3. `git clone --recursive https://github.com/gopher64/gopher64.git`
 4. `cd gopher64`
@@ -91,5 +91,3 @@ Free code signing for the Windows release is provided by [SignPath.io](https://a
 During online netplay sessions, the server logs your IP address and basic session information (game title and session name) for operational purposes. No additional personal data is collected or stored.
 
 If you enable the RetroAchievements feature, some data is sent to their systems. Please see their terms [here](https://retroachievements.org/terms).
-
-
