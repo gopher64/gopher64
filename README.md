@@ -59,12 +59,20 @@ flatpak run --filesystem=host:ro io.github.gopher64.gopher64 /path/to/rom.z64
 
 ## building and usage
 
-1. Linux only: [install the SDL3 dependencies](https://wiki.libsdl.org/SDL3/README-linux#build-dependencies)
+1. [Install dependencies](https://github.com/gopher64/gopher64#build-dependencies)
 2. [Install rust](https://www.rust-lang.org/tools/install)
 3. `git clone --recursive https://github.com/gopher64/gopher64.git`
 4. `cd gopher64`
-5. `cargo build --release`
-6. `./target/release/gopher64 /path/to/rom.z64`
+5. `git submodule update --init --recursive`
+6. `cargo build --release`
+7. `./target/release/gopher64 /path/to/rom.z64`
+
+### build dependencies
+####  Ubuntu 25
+1. [install the SDL3 dependencies](https://wiki.libsdl.org/SDL3/README-linux#build-dependencies)
+2. ```
+    sudo apt install clang llvm
+    ```
 
 ## contributing
 
@@ -83,3 +91,5 @@ Free code signing for the Windows release is provided by [SignPath.io](https://a
 During online netplay sessions, the server logs your IP address and basic session information (game title and session name) for operational purposes. No additional personal data is collected or stored.
 
 If you enable the RetroAchievements feature, some data is sent to their systems. Please see their terms [here](https://retroachievements.org/terms).
+
+
