@@ -1261,6 +1261,14 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("farther-right"),
         ),
         (
+            String::from("03F0025803F0006600030360000303C6"),
+            String::from("farfetch'd"),
+        ),
+        (
+            String::from("03D802F400870006036F0024"),
+            String::from("krabby"),
+        ),
+        (
             String::from("039F020A02E2006903F0000303C6"),
             String::from("go-left"),
         ),
