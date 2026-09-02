@@ -258,13 +258,21 @@ jobs:
         run: |
           cargo install cargo-ndk
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
+          ./gradlew bundle${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
           mkdir output
           cp app/build/outputs/apk/${{ env.BUILD_DIR }}/app-${{ env.BUILD_DIR }}.apk output/gopher64-android.apk
-      - name: Upload file
+          cp app/build/outputs/bundle/${{ env.BUILD_DIR }}/app-${{ env.BUILD_DIR }}.aab output/gopher64-android.aab
+      - name: Upload apk
         uses: actions/upload-artifact@v7
         with:
-          name: gopher64-android
+          name: gopher64-android-apk
           path: android-project/output/gopher64-android.apk
+          archive: false
+      - name: Upload aab
+        uses: actions/upload-artifact@v7
+        with:
+          name: gopher64-android-aab
+          path: android-project/output/gopher64-android.aab
           archive: false
 
   collect-artifacts:
@@ -281,6 +289,9 @@ jobs:
           skip-decompress: true
           merge-multiple: true
           path: release-artifacts
+      - name: Remove android aab
+        run: |
+          rm -f release-artifacts/gopher64-android.aab
       - name: Add files to release
         uses: softprops/action-gh-release@v3
         with:
