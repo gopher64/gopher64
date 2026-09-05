@@ -349,70 +349,37 @@ fn handle_joystick_events(ui: &mut ui::Ui) {
 }
 
 fn handle_hotkeys(keys: u32, last_key_state: u32) {
+    let mut event: sdl3_sys::events::SDL_Event = Default::default();
+    event.user.r#type = u32::from(sdl3_sys::events::SDL_EVENT_USER);
     if keys & (1 << ui::input_profile::L_TRIG) != 0
         && last_key_state & (1 << ui::input_profile::L_TRIG) == 0
     {
-        unsafe {
-            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
-                user: sdl3_sys::events::SDL_UserEvent {
-                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
-                    code: 1, //save state
-                    ..Default::default()
-                },
-            })
-        };
+        event.user.code = 1; //save state
+        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
     }
     if keys & (1 << ui::input_profile::R_TRIG) != 0
         && last_key_state & (1 << ui::input_profile::R_TRIG) == 0
     {
-        unsafe {
-            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
-                user: sdl3_sys::events::SDL_UserEvent {
-                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
-                    code: 2, //load state
-                    ..Default::default()
-                },
-            })
-        };
+        event.user.code = 2; //load state
+        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
     }
     if keys & (1 << ui::input_profile::START_BUTTON) != 0
         && last_key_state & (1 << ui::input_profile::START_BUTTON) == 0
     {
-        unsafe {
-            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
-                user: sdl3_sys::events::SDL_UserEvent {
-                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
-                    code: 3, //exit game
-                    ..Default::default()
-                },
-            })
-        };
+        event.user.code = 3; //exit game
+        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
     }
     if keys & (1 << ui::input_profile::Z_TRIG) != 0
         && last_key_state & (1 << ui::input_profile::Z_TRIG) == 0
     {
-        unsafe {
-            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
-                user: sdl3_sys::events::SDL_UserEvent {
-                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
-                    code: 4, //fast forward
-                    ..Default::default()
-                },
-            })
-        };
+        event.user.code = 4; //fast forward
+        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
     }
     if keys & (1 << ui::input_profile::L_CBUTTON) != 0
         && last_key_state & (1 << ui::input_profile::L_CBUTTON) == 0
     {
-        unsafe {
-            sdl3_sys::events::SDL_PushEvent(&mut sdl3_sys::events::SDL_Event {
-                user: sdl3_sys::events::SDL_UserEvent {
-                    r#type: u32::from(sdl3_sys::events::SDL_EVENT_USER),
-                    code: 5, //load rewind
-                    ..Default::default()
-                },
-            })
-        };
+        event.user.code = 5; //load rewind
+        unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
     }
 }
 

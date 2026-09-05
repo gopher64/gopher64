@@ -45,14 +45,14 @@ slint = { version = "1.16", default-features = false, features = ["compat-1-2", 
 rfd = {version = "0.17", optional = true }
 dirs = "6.0"
 open = { version = "5.3", optional = true }
-sdl3-sys = { version = "0.6", features = ["build-from-source-static"] }
-sdl3-ttf-sys = { version = "0.6", features = ["build-static-vendored", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
+sdl3-sys = { version = "0.7", features = ["build-from-source-static"] }
+sdl3-ttf-sys = { version = "0.7", features = ["build-static-vendored", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "backend-android-activity-06", "accessibility"], optional = true }
 jni = "0.22"
-sdl3-sys = { version = "0.6", features = ["build-from-source"] }
-sdl3-ttf-sys = { version = "0.6", features = ["build-from-source", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
+sdl3-sys = { version = "0.7", features = ["build-from-source"] }
+sdl3-ttf-sys = { version = "0.7", features = ["build-from-source", "no-sdlttf-harfbuzz", "no-sdlttf-plutosvg"] }
 webpki-roots = "1.0"
 
 [build-dependencies]
