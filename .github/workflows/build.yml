@@ -226,7 +226,7 @@ jobs:
         include:
           - os: ubuntu-24.04
             platform: 33
-            ndk: 29.0.14206865
+            ndk: 30.0.16248370
     steps:
       - uses: actions/checkout@v7
         with:
