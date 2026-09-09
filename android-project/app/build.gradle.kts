@@ -106,7 +106,7 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     val libClangPath = if (OperatingSystem.current().isWindows) {
         "$ndkDir/toolchains/llvm/prebuilt/windows-x86_64/bin"
     } else {
-        "$ndkDir/toolchains/llvm/prebuilt/linux-x86_64/musl/lib"
+        "$ndkDir/toolchains/llvm/prebuilt/linux-x86_64/lib"
     }
     environment("LIBCLANG_PATH", libClangPath)
 
