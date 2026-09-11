@@ -77,7 +77,7 @@ pub fn configure_input_profile(
     #[cfg(target_os = "android")]
     let window_flags = sdl3_sys::video::SDL_WINDOW_FULLSCREEN;
     #[cfg(not(target_os = "android"))]
-    let window_flags = sdl3_sys::video::SDL_WindowFlags(0);
+    let window_flags = sdl3_sys::video::SDL_WINDOW_RESIZABLE;
     if !unsafe {
         sdl3_sys::render::SDL_CreateWindowAndRenderer(
             title.as_ptr(),
