@@ -444,7 +444,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   }
 
   float scale = SDL_GetWindowDisplayScale(window);
-  printf("scale: %f\n", scale);
   message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true,
                                 message_font_size * scale);
   achievement_challenge_indicator_font =
