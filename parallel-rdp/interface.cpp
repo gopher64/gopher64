@@ -122,6 +122,9 @@ static uint64_t sync_signal;
 static TTF_Font *message_font;
 static std::queue<Message> messages;
 
+static float message_font_size = 25.0;
+static float achievement_challenge_indicator_font_size = 12.0;
+
 static TTF_Font *achievement_challenge_indicator_font;
 static std::vector<const char *> achievement_challenge_indicators;
 static Vulkan::ImageHandle achievement_challenge_indicator_image;
@@ -159,6 +162,14 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
               event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) &&
              callback.emu_running) {
     wsi_platform->do_resize();
+    float scale = SDL_GetWindowDisplayScale(window);
+    if (message_font) {
+      TTF_SetFontSize(message_font, message_font_size * scale);
+    }
+    if (achievement_challenge_indicator_font) {
+      TTF_SetFontSize(achievement_challenge_indicator_font,
+                      achievement_challenge_indicator_font_size * scale);
+    }
   } else if (event->type == SDL_EVENT_WINDOW_MINIMIZED) {
     callback.paused = true;
   } else if (event->type == SDL_EVENT_WINDOW_RESTORED) {
@@ -434,10 +445,11 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   }
 
   float scale = SDL_GetWindowDisplayScale(window);
-  message_font =
-      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 25.0 * scale);
+  message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true,
+                                message_font_size * scale);
   achievement_challenge_indicator_font =
-      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 12.0 * scale);
+      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true,
+                     achievement_challenge_indicator_font_size * scale);
   if (!message_font || !achievement_challenge_indicator_font) {
     rdp_close();
     return;
