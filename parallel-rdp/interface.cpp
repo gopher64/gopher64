@@ -155,7 +155,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
     callback.paused = false;
     callback.emu_running = false;
-  } else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running) {
+  } else if ((event->type == SDL_EVENT_WINDOW_RESIZED ||
+              event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) &&
+             callback.emu_running) {
     wsi_platform->do_resize();
   } else if (event->type == SDL_EVENT_WINDOW_MINIMIZED) {
     callback.paused = true;
@@ -503,7 +505,7 @@ static void calculate_viewport(float *x, float *y, float *width, float *height,
       gfx_info.widescreen ? display_height * 16 / 9 : display_height * 4 / 3;
 
   int w, h;
-  SDL_GetWindowSize(window, &w, &h);
+  SDL_GetWindowSizeInPixels(window, &w, &h);
 
   if (gfx_info.integer_scaling) {
     // Integer scaling path

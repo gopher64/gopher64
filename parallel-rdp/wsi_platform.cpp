@@ -34,13 +34,13 @@ std::vector<const char *> SDL_WSIPlatform::get_instance_extensions() {
 
 uint32_t SDL_WSIPlatform::get_surface_width() {
   int w, h;
-  SDL_GetWindowSize(window, &w, &h);
+  SDL_GetWindowSizeInPixels(window, &w, &h);
   return w;
 }
 
 uint32_t SDL_WSIPlatform::get_surface_height() {
   int w, h;
-  SDL_GetWindowSize(window, &w, &h);
+  SDL_GetWindowSizeInPixels(window, &w, &h);
   return h;
 }
 
