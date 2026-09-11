@@ -433,10 +433,11 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
     return;
   }
 
+  float scale = SDL_GetWindowDisplayScale(window);
   message_font =
-      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 25.0);
+      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 25.0 * scale);
   achievement_challenge_indicator_font =
-      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 12.0);
+      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 12.0 * scale);
   if (!message_font || !achievement_challenge_indicator_font) {
     rdp_close();
     return;
