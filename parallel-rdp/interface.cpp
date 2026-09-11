@@ -122,6 +122,9 @@ static uint64_t sync_signal;
 static TTF_Font *message_font;
 static std::queue<Message> messages;
 
+static float message_font_size = 25.0;
+static float achievement_challenge_indicator_font_size = 12.0;
+
 static TTF_Font *achievement_challenge_indicator_font;
 static std::vector<const char *> achievement_challenge_indicators;
 static Vulkan::ImageHandle achievement_challenge_indicator_image;
@@ -155,8 +158,19 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
     callback.paused = false;
     callback.emu_running = false;
-  } else if (event->type == SDL_EVENT_WINDOW_RESIZED && callback.emu_running) {
+  } else if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED &&
+             callback.emu_running) {
     wsi_platform->do_resize();
+
+    if (message_font) {
+      TTF_SetFontSize(message_font,
+                      message_font_size * SDL_GetWindowDisplayScale(window));
+    }
+    if (achievement_challenge_indicator_font) {
+      TTF_SetFontSize(achievement_challenge_indicator_font,
+                      achievement_challenge_indicator_font_size *
+                          SDL_GetWindowDisplayScale(window));
+    }
   } else if (event->type == SDL_EVENT_WINDOW_MINIMIZED) {
     callback.paused = true;
   } else if (event->type == SDL_EVENT_WINDOW_RESTORED) {
@@ -432,9 +446,12 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   }
 
   message_font =
-      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 25.0);
+      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true,
+                     message_font_size * SDL_GetWindowDisplayScale(window));
   achievement_challenge_indicator_font =
-      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true, 12.0);
+      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true,
+                     achievement_challenge_indicator_font_size *
+                         SDL_GetWindowDisplayScale(window));
   if (!message_font || !achievement_challenge_indicator_font) {
     rdp_close();
     return;
@@ -503,7 +520,7 @@ static void calculate_viewport(float *x, float *y, float *width, float *height,
       gfx_info.widescreen ? display_height * 16 / 9 : display_height * 4 / 3;
 
   int w, h;
-  SDL_GetWindowSize(window, &w, &h);
+  SDL_GetWindowSizeInPixels(window, &w, &h);
 
   if (gfx_info.integer_scaling) {
     // Integer scaling path
