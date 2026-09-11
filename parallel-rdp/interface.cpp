@@ -161,13 +161,15 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
   } else if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED &&
              callback.emu_running) {
     wsi_platform->do_resize();
-    float scale = SDL_GetWindowDisplayScale(window);
+
     if (message_font) {
-      TTF_SetFontSize(message_font, message_font_size * scale);
+      TTF_SetFontSize(message_font,
+                      message_font_size * SDL_GetWindowDisplayScale(window));
     }
     if (achievement_challenge_indicator_font) {
       TTF_SetFontSize(achievement_challenge_indicator_font,
-                      achievement_challenge_indicator_font_size * scale);
+                      achievement_challenge_indicator_font_size *
+                          SDL_GetWindowDisplayScale(window));
     }
   } else if (event->type == SDL_EVENT_WINDOW_MINIMIZED) {
     callback.paused = true;
@@ -443,12 +445,13 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
     return;
   }
 
-  float scale = SDL_GetWindowDisplayScale(window);
-  message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true,
-                                message_font_size * scale);
+  message_font =
+      TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true,
+                     message_font_size * SDL_GetWindowDisplayScale(window));
   achievement_challenge_indicator_font =
       TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true,
-                     achievement_challenge_indicator_font_size * scale);
+                     achievement_challenge_indicator_font_size *
+                         SDL_GetWindowDisplayScale(window));
   if (!message_font || !achievement_challenge_indicator_font) {
     rdp_close();
     return;
