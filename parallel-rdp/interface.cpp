@@ -158,8 +158,7 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
     callback.paused = false;
     callback.emu_running = false;
-  } else if ((event->type == SDL_EVENT_WINDOW_RESIZED ||
-              event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) &&
+  } else if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED &&
              callback.emu_running) {
     wsi_platform->do_resize();
     float scale = SDL_GetWindowDisplayScale(window);
@@ -445,6 +444,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   }
 
   float scale = SDL_GetWindowDisplayScale(window);
+  printf("scale: %f\n", scale);
   message_font = TTF_OpenFontIO(SDL_IOFromConstMem(font, font_size), true,
                                 message_font_size * scale);
   achievement_challenge_indicator_font =
