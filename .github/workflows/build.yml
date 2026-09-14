@@ -41,7 +41,6 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           target: ${{ matrix.target }}
-          rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
         run:
@@ -101,7 +100,6 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           target: ${{ matrix.target }}
-          rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
         run: |
@@ -169,7 +167,6 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           target: ${{ matrix.target }}
-          rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
       - name: Set LLVM_VERSION
         run:
@@ -235,7 +232,6 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
           target: x86_64-linux-android,aarch64-linux-android
-          rustflags: ""
           cache: ${{ github.ref_type != 'tag' }}
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4

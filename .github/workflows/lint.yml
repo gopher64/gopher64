@@ -23,7 +23,6 @@ jobs:
           fetch-depth: 0
       - uses: actions-rust-lang/setup-rust-toolchain@v2
         with:
-          rustflags: ""
           components: clippy, rustfmt
       - name: Set LLVM_VERSION
         run:
