@@ -129,18 +129,21 @@ pub fn read_regs(
     match reg as usize {
         RDRAM_MODE_REG => device.pi.regs[reg as usize] ^ 0xc0c0c0c0,
         0x80 => 0x00000000, //Row, needed for libdragon
-        _ => device.rdram.regs[chip_id as usize][reg as usize],
+        r if r < RDRAM_REGS_COUNT => device.rdram.regs[chip_id as usize][r],
+        _ => 0,
     }
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let chip_id = (address >> 13) & 3;
     let reg = (address & 0x3FF) >> 2;
-    device::memory::masked_write_32(
-        &mut device.rdram.regs[chip_id as usize][reg as usize],
-        value,
-        mask,
-    )
+    if (reg as usize) < RDRAM_REGS_COUNT {
+        device::memory::masked_write_32(
+            &mut device.rdram.regs[chip_id as usize][reg as usize],
+            value,
+            mask,
+        )
+    }
 }
 
 pub fn init(device: &mut device::Device) {

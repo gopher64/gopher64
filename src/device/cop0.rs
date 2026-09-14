@@ -58,7 +58,11 @@ pub const COP0_CAUSE_EXCCODE_TR: u64 = 13 << 2;
 pub const COP0_CAUSE_EXCCODE_FPE: u64 = 15 << 2;
 pub const COP0_CAUSE_IP2: u64 = 1 << 10;
 pub const COP0_CAUSE_IP4: u64 = 1 << 12;
-pub const COP0_CAUSE_IP7: u64 = 1 << 15;
+// libultra CAUSE_IP6 (0x2000, bit 13): Indy read N64's RDB write → ACK for N64 sender
+// libultra CAUSE_IP7 (0x4000, bit 14): Indy wrote RDB packet → data ready for N64 to read
+pub const COP0_CAUSE_RDB_READ_ACK: u64 = 1 << 13; // Indy ACK of N64→Indy packet
+pub const COP0_CAUSE_IP6: u64 = 1 << 14;           // RDB data-ready (Indy→N64) + legacy alias
+pub const COP0_CAUSE_IP7: u64 = 1 << 15;           // COMPARE timer (libultra CAUSE_IP8)
 pub const COP0_CAUSE_BD: u64 = 1 << 31;
 
 pub const COP0_CAUSE_CE1: u64 = 1 << 28;

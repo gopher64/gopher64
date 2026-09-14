@@ -262,6 +262,7 @@ pub fn reset_pif(device: &mut device::Device, is_nmi_reset: bool) {
     let cic = u32::from(device.cart.cic_seed);
     let word = (rom_type << 19) | (s7 << 18) | (reset_type << 17) | (cic << 8) | 0x3f;
     device.pif.ram[0x24..0x28].copy_from_slice(&word.to_be_bytes());
+
 }
 
 pub fn init(device: &mut device::Device) {

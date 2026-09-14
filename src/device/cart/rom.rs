@@ -145,6 +145,7 @@ pub fn is_system_pal(rom_contents: &[u8]) -> bool {
     false
 }
 
+
 fn set_cic(device: &mut device::Device) {
     let hash = calculate_hash(&device.cart.rom[0x40..0x1000]);
     match hash.as_str() {
