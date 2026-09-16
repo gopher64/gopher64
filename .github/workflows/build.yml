@@ -222,7 +222,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            platform: 36
+            platform: 33
             ndk: 29.0.14206865
     steps:
       - uses: actions/checkout@v7
