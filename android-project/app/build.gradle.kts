@@ -19,11 +19,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "io.github.gopher64.gopher64"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     ndkVersion = "29.0.14206865"
 
@@ -31,7 +27,6 @@ android {
         applicationId = "io.github.gopher64.gopher64"
         minSdk = 33
         targetSdk = 36
-        compileSdkVersion = 36
         versionCode = semverToVersionCode(cargoPackageVersion())
         versionName = cargoPackageVersion()
         ndk {
