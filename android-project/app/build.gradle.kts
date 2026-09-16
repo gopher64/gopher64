@@ -29,8 +29,9 @@ android {
 
     defaultConfig {
         applicationId = "io.github.gopher64.gopher64"
-        minSdk = 34
+        minSdk = 33
         targetSdk = 36
+        compileSdkVersion = 36
         versionCode = semverToVersionCode(cargoPackageVersion())
         versionName = cargoPackageVersion()
         ndk {
