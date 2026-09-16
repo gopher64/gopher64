@@ -97,6 +97,9 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
 
     var minSdk = android.defaultConfig.minSdk
     var ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath
+    val sdkDir = androidComponents.sdkComponents.sdkDirectory.get().asFile.absolutePath
+    val compileSdk = android.compileSdk
+    environment("ANDROID_JAR", "$sdkDir/platforms/android-$compileSdk/android.jar")
     environment("ANDROID_NDK_HOME", "$ndkDir")
     environment("ANDROID_NDK_ROOT", "$ndkDir")
     val libClangPath = if (OperatingSystem.current().isWindows) {
