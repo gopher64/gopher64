@@ -29,7 +29,7 @@ android {
 
     defaultConfig {
         applicationId = "io.github.gopher64.gopher64"
-        minSdk = 33
+        minSdk = 34
         targetSdk = 36
         versionCode = semverToVersionCode(cargoPackageVersion())
         versionName = cargoPackageVersion()
