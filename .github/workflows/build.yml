@@ -222,8 +222,6 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            platform: 33
-            ndk: 29.0.14206865
     steps:
       - uses: actions/checkout@v7
         with:
@@ -236,7 +234,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: "platforms;android-${{ matrix.platform }} ndk;${{ matrix.ndk }}"
+          packages: "platforms;android-33 platforms;android-36 ndk;29.0.14206865"
       - name: Decode keystore and create jks
         if: ${{ github.ref_type == 'tag' }}
         working-directory: android-project
