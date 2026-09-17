@@ -8,7 +8,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -19,14 +19,18 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "io.github.gopher64.gopher64"
-    compileSdk = 36
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     ndkVersion = "29.0.14206865"
 
     defaultConfig {
         applicationId = "io.github.gopher64.gopher64"
         minSdk = 33
-        targetSdk = 36
+        targetSdk = 37
         versionCode = semverToVersionCode(cargoPackageVersion())
         versionName = cargoPackageVersion()
         ndk {
@@ -99,7 +103,8 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     var ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath
     val sdkDir = androidComponents.sdkComponents.sdkDirectory.get().asFile.absolutePath
     val compileSdk = android.compileSdk
-    environment("ANDROID_JAR", "$sdkDir/platforms/android-$compileSdk/android.jar")
+    val compileSdkMinor = android.compileSdkMinor
+    environment("ANDROID_JAR", "$sdkDir/platforms/android-$compileSdk.$compileSdkMinor/android.jar")
     environment("ANDROID_NDK_HOME", "$ndkDir")
     environment("ANDROID_NDK_ROOT", "$ndkDir")
     val libClangPath = if (OperatingSystem.current().isWindows) {
