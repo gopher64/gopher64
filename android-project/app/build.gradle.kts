@@ -8,7 +8,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -19,14 +19,14 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "io.github.gopher64.gopher64"
-    compileSdk = 36
+    compileSdk = 37
 
     ndkVersion = "29.0.14206865"
 
     defaultConfig {
         applicationId = "io.github.gopher64.gopher64"
         minSdk = 33
-        targetSdk = 36
+        targetSdk = 37
         versionCode = semverToVersionCode(cargoPackageVersion())
         versionName = cargoPackageVersion()
         ndk {
