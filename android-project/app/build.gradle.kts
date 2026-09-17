@@ -19,7 +19,11 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "io.github.gopher64.gopher64"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     ndkVersion = "29.0.14206865"
 
@@ -99,7 +103,8 @@ val ndkBuild = tasks.register<Exec>("ndkBuild") {
     var ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath
     val sdkDir = androidComponents.sdkComponents.sdkDirectory.get().asFile.absolutePath
     val compileSdk = android.compileSdk
-    environment("ANDROID_JAR", "$sdkDir/platforms/android-$compileSdk/android.jar")
+    val compileSdkMinor = android.compileSdkMinor
+    environment("ANDROID_JAR", "$sdkDir/platforms/android-$compileSdk.$compileSdkMinor/android.jar")
     environment("ANDROID_NDK_HOME", "$ndkDir")
     environment("ANDROID_NDK_ROOT", "$ndkDir")
     val libClangPath = if (OperatingSystem.current().isWindows) {
