@@ -234,7 +234,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: "platforms;android-33 platforms;android-37.2 ndk;29.0.14206865"
+          packages: "platforms;android-33 ndk;29.0.14206865"
       - name: Decode keystore and create jks
         if: ${{ github.ref_type == 'tag' }}
         working-directory: android-project
