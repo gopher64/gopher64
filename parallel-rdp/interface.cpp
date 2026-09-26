@@ -1018,7 +1018,7 @@ uint64_t rdp_process_commands() {
     case RDP::Op::SyncFull:
       sync_signal = processor->signal_timeline();
 
-      interrupt_timer = rdp_device.region;
+      interrupt_timer = rdp_device.region / 2;
       if (interrupt_timer == 0)
         interrupt_timer = 5000;
       break;
