@@ -58,6 +58,11 @@ jobs:
             libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev libfontconfig-dev
         env:
           DEBIAN_FRONTEND: noninteractive
+      - name: Install libicu70 # Needed for LLVM?
+        if: matrix.llvm == 'ARM64'
+        run: |
+          wget https://ports.ubuntu.com/ubuntu-ports/pool/main/i/icu/libicu70_70.1-2ubuntu1_arm64.deb
+          sudo dpkg -i libicu70_70.1-2ubuntu1_arm64.deb
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
@@ -112,7 +117,7 @@ jobs:
           force-url:
             https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
             env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-${{ matrix.llvm
-            }}.exe
+            }}.msi
       - name: Build
         run: |
           cargo build --profile ${{ env.BUILD_PROFILE }} -v --target=${{ matrix.target }}
