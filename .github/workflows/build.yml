@@ -55,9 +55,14 @@ jobs:
             libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
             libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libthai-dev libusb-1.0-0-dev \
-            libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev libfontconfig-dev libicu-dev
+            libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev libfontconfig-dev
         env:
           DEBIAN_FRONTEND: noninteractive
+      - name: Install libicu70 # Needed for LLVM?
+        if: matrix.llvm == 'ARM64'
+        run: |
+          wget https://ports.ubuntu.com/ubuntu-ports/pool/main/i/icu/libicu70_70.1-2ubuntu1_arm64.deb
+          sudo dpkg -i libicu70_70.1-2ubuntu1_arm64.deb
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
