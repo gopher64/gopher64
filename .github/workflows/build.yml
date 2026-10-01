@@ -55,7 +55,7 @@ jobs:
             libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
             libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libthai-dev libusb-1.0-0-dev \
-            libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev libfontconfig-dev
+            libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev libfontconfig-dev libicu-dev
         env:
           DEBIAN_FRONTEND: noninteractive
       - name: Install LLVM and Clang
@@ -112,7 +112,7 @@ jobs:
           force-url:
             https://github.com/llvm/llvm-project/releases/download/llvmorg-${{
             env.LLVM_VERSION }}/LLVM-${{ env.LLVM_VERSION }}-${{ matrix.llvm
-            }}.exe
+            }}.msi
       - name: Build
         run: |
           cargo build --profile ${{ env.BUILD_PROFILE }} -v --target=${{ matrix.target }}
