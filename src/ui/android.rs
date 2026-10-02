@@ -329,6 +329,41 @@ fn start_run_rom_on_jvm(
     Ok(())
 }
 
+const USER_EVENT_TOUCH_BUTTON: i32 = 6;
+const USER_EVENT_TOUCH_AXIS: i32 = 7;
+
+fn push_touch_user_event(code: i32, data1: i32, data2: i32) {
+    let mut event: sdl3_sys::events::SDL_Event = Default::default();
+    event.user.r#type = u32::from(sdl3_sys::events::SDL_EVENT_USER);
+    event.user.code = code;
+    // SDL3 user payloads are pointers; pack small integers into the pointer values.
+    event.user.data1 = data1 as isize as *mut std::ffi::c_void;
+    event.user.data2 = data2 as isize as *mut std::ffi::c_void;
+    unsafe {
+        sdl3_sys::events::SDL_PushEvent(&mut event);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeTouchButton<'caller>(
+    _unowned_env: EnvUnowned<'caller>,
+    _this: JObject<'caller>,
+    button: jint,
+    pressed: jint,
+) {
+    push_touch_user_event(USER_EVENT_TOUCH_BUTTON, button, pressed);
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeTouchAxis<'caller>(
+    _unowned_env: EnvUnowned<'caller>,
+    _this: JObject<'caller>,
+    x: jint,
+    y: jint,
+) {
+    push_touch_user_event(USER_EVENT_TOUCH_AXIS, x, y);
+}
+
 fn get_vm(app: &slint::android::AndroidApp) -> JavaVM {
     unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
 }
