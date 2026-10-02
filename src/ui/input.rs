@@ -420,7 +420,9 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
 
     #[cfg(target_os = "android")]
     {
-        if let Ok(touch_overlay) = ui::android::TOUCH_OVERLAY.lock() {
+        if channel == 0
+            && let Ok(touch_overlay) = ui::android::TOUCH_OVERLAY.lock()
+        {
             x = normalize_axis_position(touch_overlay.x);
             y = normalize_axis_position(touch_overlay.y);
             keys = touch_overlay.buttons;
