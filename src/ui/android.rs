@@ -13,6 +13,18 @@ const REQUEST_SELECT_ROM: jint = 1;
 const CONFIGURE_INPUT_PROFILE: jint = 2;
 const RUN_ROM: jint = 3;
 
+pub struct TouchOverlay {
+    pub buttons: u32,
+    pub x: i16,
+    pub y: i16,
+}
+
+pub static TOUCH_OVERLAY: std::sync::Mutex<TouchOverlay> = std::sync::Mutex::new(TouchOverlay {
+    buttons: 0,
+    x: 0,
+    y: 0,
+});
+
 pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
     std::sync::Mutex::new(None);
 
@@ -329,21 +341,6 @@ fn start_run_rom_on_jvm(
     Ok(())
 }
 
-const USER_EVENT_TOUCH_BUTTON: i32 = 6;
-const USER_EVENT_TOUCH_AXIS: i32 = 7;
-
-fn push_touch_user_event(code: i32, data1: i32, data2: i32) {
-    let mut event: sdl3_sys::events::SDL_Event = Default::default();
-    event.user.r#type = u32::from(sdl3_sys::events::SDL_EVENT_USER);
-    event.user.code = code;
-    // SDL3 user payloads are pointers; pack small integers into the pointer values.
-    event.user.data1 = data1 as isize as *mut std::ffi::c_void;
-    event.user.data2 = data2 as isize as *mut std::ffi::c_void;
-    unsafe {
-        sdl3_sys::events::SDL_PushEvent(&mut event);
-    }
-}
-
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeTouchButton<'caller>(
     _unowned_env: EnvUnowned<'caller>,
@@ -351,7 +348,13 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeTouchB
     button: jint,
     pressed: jint,
 ) {
-    push_touch_user_event(USER_EVENT_TOUCH_BUTTON, button, pressed);
+    if let Ok(mut touch_overlay) = TOUCH_OVERLAY.lock() {
+        if pressed == 1 {
+            touch_overlay.buttons |= 1 << button;
+        } else {
+            touch_overlay.buttons &= !(1 << button);
+        }
+    }
 }
 
 #[unsafe(no_mangle)]
@@ -361,7 +364,10 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeTouchA
     x: jint,
     y: jint,
 ) {
-    push_touch_user_event(USER_EVENT_TOUCH_AXIS, x, y);
+    if let Ok(mut touch_overlay) = TOUCH_OVERLAY.lock() {
+        touch_overlay.x = x as i16;
+        touch_overlay.y = y as i16;
+    }
 }
 
 fn get_vm(app: &slint::android::AndroidApp) -> JavaVM {
