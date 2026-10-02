@@ -417,6 +417,18 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     );
 
     let (mut x, mut y) = set_axis(profile, joystick, controller, ui.input.keyboard_state);
+
+    #[cfg(target_os = "android")]
+    {
+        if channel == 0
+            && ui.config.input.controller_assignment[0].is_none()
+            && let Ok(touch_overlay) = ui::android::TOUCH_OVERLAY.lock()
+        {
+            x = normalize_axis_position(touch_overlay.x);
+            y = normalize_axis_position(touch_overlay.y);
+            keys = touch_overlay.buttons;
+        }
+    }
     bound_axis(&mut x, &mut y);
 
     keys |= (x.round() as i8 as u8 as u32) << X_AXIS_SHIFT;

@@ -13,6 +13,18 @@ const REQUEST_SELECT_ROM: jint = 1;
 const CONFIGURE_INPUT_PROFILE: jint = 2;
 const RUN_ROM: jint = 3;
 
+pub struct TouchOverlay {
+    pub buttons: u32,
+    pub x: i16,
+    pub y: i16,
+}
+
+pub static TOUCH_OVERLAY: std::sync::Mutex<TouchOverlay> = std::sync::Mutex::new(TouchOverlay {
+    buttons: 0,
+    x: 0,
+    y: 0,
+});
+
 pub static ANDROID_APP: std::sync::Mutex<Option<slint::android::AndroidApp>> =
     std::sync::Mutex::new(None);
 
@@ -80,6 +92,10 @@ bind_java_type! {
         },
         fn put_extra_string_array {
             sig = (extra: JString, value: JString[]) -> AndroidIntent,
+            name = "putExtra",
+        },
+        fn put_extra_boolean {
+            sig = (extra: JString, value: jboolean) -> AndroidIntent,
             name = "putExtra",
         },
         fn get_string_extra(name: JString) -> JString,
@@ -241,13 +257,22 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
+    show_touch_overlay: bool,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) {
     if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
     {
         if let Err(err) = get_vm(app).attach_current_thread(|env| {
-            start_run_rom_on_jvm(env, app, file_path, game_settings, netplay, weak)
+            start_run_rom_on_jvm(
+                env,
+                app,
+                file_path,
+                game_settings,
+                netplay,
+                show_touch_overlay,
+                weak,
+            )
         }) {
             eprintln!("JNI error while starting N64Activity: {err:?}");
         }
@@ -260,6 +285,7 @@ fn start_run_rom_on_jvm(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
+    show_touch_overlay: bool,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) -> jni::errors::Result<()> {
     let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
@@ -314,10 +340,14 @@ fn start_run_rom_on_jvm(
 
     let file_path_string = JString::from_str(env, file_path)?;
     let cheats_path_string = JString::from_str(env, cheats_path.to_str().unwrap())?;
+
+    let show_touch_overlay_key = JString::from_str(env, "show_touch_overlay")?;
+
     let intent = AndroidIntent::new(env)?
         .set_class_name(env, &package_name, &class_name)?
         .put_extra_string(env, &file_path_key, &file_path_string)?
         .put_extra_string(env, &cheats_path_key, &cheats_path_string)?
+        .put_extra_boolean(env, &show_touch_overlay_key, show_touch_overlay)?
         .put_extra_string_array(env, &args_key, &j_args)?;
 
     weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
@@ -327,6 +357,35 @@ fn start_run_rom_on_jvm(
         .as_ref()
         .start_activity_for_result(env, &intent, RUN_ROM)?;
     Ok(())
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeTouchButton<'caller>(
+    _unowned_env: EnvUnowned<'caller>,
+    _this: JObject<'caller>,
+    button: jint,
+    pressed: jint,
+) {
+    if let Ok(mut touch_overlay) = TOUCH_OVERLAY.lock() {
+        if pressed == 1 {
+            touch_overlay.buttons |= 1 << button;
+        } else {
+            touch_overlay.buttons &= !(1 << button);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeTouchAxis<'caller>(
+    _unowned_env: EnvUnowned<'caller>,
+    _this: JObject<'caller>,
+    x: jint,
+    y: jint,
+) {
+    if let Ok(mut touch_overlay) = TOUCH_OVERLAY.lock() {
+        touch_overlay.x = x as i16;
+        touch_overlay.y = y as i16;
+    }
 }
 
 fn get_vm(app: &slint::android::AndroidApp) -> JavaVM {
