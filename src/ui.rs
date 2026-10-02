@@ -112,6 +112,7 @@ pub struct GameSettings {
     pub disable_expansion_pak: bool,
     pub cheats: rustc_hash::FxHashMap<String, Option<String>>,
     pub load_savestate_slot: Option<u32>,
+    #[allow(dead_code)]
     pub show_touch_overlay: bool,
 }
 

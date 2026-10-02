@@ -807,11 +807,9 @@ fn open_rom(app: &AppWindow) {
 }
 
 pub fn show_touch_overlay(app: &AppWindow) -> bool {
-    if let Some(controller_path) = app.get_controller_paths().row_data(0)
-        && !controller_path.is_empty()
-    {
-        false
-    } else {
-        true
-    }
+    let selected = app.get_selected_controller().row_data(0).unwrap_or(0);
+    app.get_controller_paths()
+        .row_data(selected as usize)
+        .map(|p| p.is_empty())
+        .unwrap_or(true)
 }
