@@ -421,6 +421,7 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     #[cfg(target_os = "android")]
     {
         if channel == 0
+            && ui.config.input.controller_assignment[0].is_none()
             && let Ok(touch_overlay) = ui::android::TOUCH_OVERLAY.lock()
         {
             x = normalize_axis_position(touch_overlay.x);

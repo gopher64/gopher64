@@ -94,6 +94,10 @@ bind_java_type! {
             sig = (extra: JString, value: JString[]) -> AndroidIntent,
             name = "putExtra",
         },
+        fn put_extra_boolean {
+            sig = (extra: JString, value: jboolean) -> AndroidIntent,
+            name = "putExtra",
+        },
         fn get_string_extra(name: JString) -> JString,
         fn set_class_name(package_name: JString, class_name: JString) -> AndroidIntent,
     },
@@ -326,10 +330,15 @@ fn start_run_rom_on_jvm(
 
     let file_path_string = JString::from_str(env, file_path)?;
     let cheats_path_string = JString::from_str(env, cheats_path.to_str().unwrap())?;
+
+    let show_touch_overlay_key = JString::from_str(env, "show_touch_overlay")?;
+    let show_touch_overlay = game_settings.show_touch_overlay;
+
     let intent = AndroidIntent::new(env)?
         .set_class_name(env, &package_name, &class_name)?
         .put_extra_string(env, &file_path_key, &file_path_string)?
         .put_extra_string(env, &cheats_path_key, &cheats_path_string)?
+        .put_extra_boolean(env, &show_touch_overlay_key, show_touch_overlay)?
         .put_extra_string_array(env, &args_key, &j_args)?;
 
     weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))

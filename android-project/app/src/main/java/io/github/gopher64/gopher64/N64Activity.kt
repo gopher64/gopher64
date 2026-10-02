@@ -26,8 +26,9 @@ class N64Activity : SDLActivity(), TouchOverlayView.Listener {
             Log.v("SDL", "Sustained performance mode not supported")
         }
 
-
-        setupTouchOverlay()
+        if (intent?.getBooleanExtra("show_touch_overlay", false) == true) {
+            setupTouchOverlay()
+        }
     }
 
     private fun setupTouchOverlay() {
