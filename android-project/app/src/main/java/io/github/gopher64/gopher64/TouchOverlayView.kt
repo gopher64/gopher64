@@ -315,9 +315,13 @@ class TouchOverlayView(
         }
         s.knobOffsetX = dx
         s.knobOffsetY = dy
-        // N64 stick: +X right, +Y up. Android Y grows downward.
-        val axisX = ((dx / s.radius) * 127f).roundToInt().coerceIn(-128, 127)
-        val axisY = ((-dy / s.radius) * 127f).roundToInt().coerceIn(-128, 127)
+        // Match SDL axis range (i16): +X right, +Y up. Android Y grows downward.
+        val axisX = ((dx / s.radius) * Short.MAX_VALUE)
+            .roundToInt()
+            .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
+        val axisY = ((-dy / s.radius) * Short.MAX_VALUE)
+            .roundToInt()
+            .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
         listener.onTouchAxis(axisX, axisY)
     }
 
