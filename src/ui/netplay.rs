@@ -501,7 +501,6 @@ fn create_session(
                                     disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                     cheats: serde_json::from_str(cheats).unwrap(),
                                     load_savestate_slot: None,
-                                    show_touch_overlay: show_touch_overlay(&handle),
                                 },
                                 &handle,
                             );
@@ -818,7 +817,6 @@ fn setup_wait_window(
                                                 .disable_expansion_pak,
                                             cheats: game_settings.cheats,
                                             load_savestate_slot: None,
-                                            show_touch_overlay: game_settings.show_touch_overlay,
                                         },
                                         Some(ui::gui::NetplayDevice {
                                             server_addr: server_addresses.game.clone(),
@@ -826,6 +824,7 @@ fn setup_wait_window(
                                             number_of_players: players.row_count(),
                                             input_delay,
                                         }),
+                                        show_touch_overlay(&handle),
                                         weak_app2,
                                     );
                                     handle.invoke_netplay_close();
@@ -930,7 +929,6 @@ fn setup_join_window(
                                     disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                     cheats: serde_json::from_str(cheats).unwrap(),
                                     load_savestate_slot: None,
-                                    show_touch_overlay: show_touch_overlay(&handle),
                                 },
                                 &handle,
                             );

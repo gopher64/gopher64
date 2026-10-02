@@ -185,7 +185,6 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         let disable_expansion_pak = args
             .disable_expansion_pak
             .unwrap_or(device.ui.config.emulation.disable_expansion_pak);
-        let show_touch_overlay = device.ui.config.input.controller_assignment[0].is_none();
 
         let mut shutdown_tx = None;
         let mut usb_handle = None;
@@ -265,7 +264,6 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 disable_expansion_pak,
                 cheats,
                 load_savestate_slot: args.load_state,
-                show_touch_overlay,
             },
             ra_config,
             netplay_config,

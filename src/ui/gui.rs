@@ -82,9 +82,9 @@ fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
                 disable_expansion_pak: handle.get_disable_expansion_pak(),
                 cheats: rustc_hash::FxHashMap::default(), // will be filled in later
                 load_savestate_slot: None,
-                show_touch_overlay: show_touch_overlay(&handle),
             },
             None,
+            show_touch_overlay(&handle),
             weak2,
         );
     })
@@ -571,10 +571,11 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<NetplayDevice>,
+    _show_touch_overlay: bool,
     weak: slint::Weak<AppWindow>,
 ) {
     #[cfg(target_os = "android")]
-    ui::android::run_rom(file_path, game_settings, netplay, weak);
+    ui::android::run_rom(file_path, game_settings, netplay, _show_touch_overlay, weak);
 
     #[cfg(not(target_os = "android"))]
     tokio::spawn(async move {
@@ -797,9 +798,9 @@ fn open_rom(app: &AppWindow) {
                     disable_expansion_pak,
                     cheats: rustc_hash::FxHashMap::default(), // will be filled in later
                     load_savestate_slot: None,
-                    show_touch_overlay,
                 },
                 None,
+                show_touch_overlay,
                 weak,
             );
         }

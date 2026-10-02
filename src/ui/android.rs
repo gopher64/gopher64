@@ -257,13 +257,22 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
+    show_touch_overlay: bool,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) {
     if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
     {
         if let Err(err) = get_vm(app).attach_current_thread(|env| {
-            start_run_rom_on_jvm(env, app, file_path, game_settings, netplay, weak)
+            start_run_rom_on_jvm(
+                env,
+                app,
+                file_path,
+                game_settings,
+                netplay,
+                show_touch_overlay,
+                weak,
+            )
         }) {
             eprintln!("JNI error while starting N64Activity: {err:?}");
         }
@@ -276,6 +285,7 @@ fn start_run_rom_on_jvm(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
+    show_touch_overlay: bool,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) -> jni::errors::Result<()> {
     let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
@@ -332,7 +342,6 @@ fn start_run_rom_on_jvm(
     let cheats_path_string = JString::from_str(env, cheats_path.to_str().unwrap())?;
 
     let show_touch_overlay_key = JString::from_str(env, "show_touch_overlay")?;
-    let show_touch_overlay = game_settings.show_touch_overlay;
 
     let intent = AndroidIntent::new(env)?
         .set_class_name(env, &package_name, &class_name)?
