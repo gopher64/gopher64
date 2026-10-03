@@ -1,6 +1,7 @@
 name: Rust
 permissions:
   contents: read
+  actions: read
 
 on:
   push:
