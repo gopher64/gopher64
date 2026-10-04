@@ -104,6 +104,14 @@ bind_java_type! {
 }
 
 bind_java_type! {
+    Build => "android.os.Build",
+    fields {
+        #[allow(non_snake_case)]
+        static SOC_MANUFACTURER: JString,
+    },
+}
+
+bind_java_type! {
     ParcelFileDescriptor => "android.os.ParcelFileDescriptor",
     methods {
         fn close() -> (),
@@ -390,6 +398,32 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeTouchA
 
 fn get_vm(app: &slint::android::AndroidApp) -> JavaVM {
     unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
+}
+
+#[cfg(all(target_os = "android", target_arch = "aarch64"))]
+pub fn is_adreno_gpu() -> bool {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        match get_vm(app).attach_current_thread(is_adreno_gpu_on_jvm) {
+            Ok(is_adreno) => is_adreno,
+            Err(err) => {
+                eprintln!("JNI error while detecting GPU: {err:?}");
+                false
+            }
+        }
+    } else {
+        eprintln!("Android app not initialized");
+        false
+    }
+}
+
+#[cfg(all(target_os = "android", target_arch = "aarch64"))]
+fn is_adreno_gpu_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<bool> {
+    let manufacturer = Build::SOC_MANUFACTURER(env)?.try_to_string(env)?;
+    let manufacturer = manufacturer.to_lowercase();
+    println!("Manufacturer: {manufacturer}");
+    Ok(manufacturer.contains("qualcomm") || manufacturer == "qti")
 }
 
 pub fn decode_path(path: &str) -> String {
