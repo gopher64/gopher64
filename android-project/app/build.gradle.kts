@@ -70,6 +70,12 @@ android {
             excludes.add("lib/**/libsevenz_rust2*.so")
         }
     }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDir(sdl3JavaSrcDir())
+        }
+    }
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -83,6 +89,22 @@ fun cargoPackageVersion(packageName: String = "gopher64"): String {
     val parsedJson = JsonSlurper().parseText(jsonText) as Map<String, Any>
     val packages = parsedJson["packages"] as List<Map<String, Any>>
     return packages.first { it["name"] == packageName }["version"] as String
+}
+
+@Suppress("UNCHECKED_CAST")
+fun sdl3JavaSrcDir(): File {
+    val repoRoot = rootDir.parentFile
+    val jsonText = providers.exec {
+        workingDir(repoRoot)
+        commandLine("cargo", "metadata", "--format-version", "1")
+    }.standardOutput.asText.get()
+
+    val parsedJson = JsonSlurper().parseText(jsonText) as Map<String, Any>
+    val packages = parsedJson["packages"] as List<Map<String, Any>>
+    val manifestPath = packages.first { it["name"] == "sdl3-src" }["manifest_path"] as String
+    return File(manifestPath).parentFile.resolve(
+        "SDL/android-project/app/src/main/java"
+    )
 }
 
 fun semverToVersionCode(version: String): Int {
