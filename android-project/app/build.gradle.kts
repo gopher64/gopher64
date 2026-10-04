@@ -38,6 +38,16 @@ android {
         }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                arguments += listOf(
+                    "-DANDROID_STL=c++_shared",
+                    "-DBUILD_SHARED_LIBS=ON",
+                )
+                abiFilters += "arm64-v8a" // libadrenotools is arm64-only
+            }
+        }
     }
 
     signingConfigs {
@@ -68,12 +78,19 @@ android {
     packaging {
         jniLibs {
             excludes.add("lib/**/libsevenz_rust2*.so")
+            useLegacyPackaging = true
         }
     }
 
     sourceSets {
         getByName("main") {
-            java.srcDir(sdl3JavaSrcDir())
+            java.directories += sdl3JavaSrcDir().absolutePath
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("../libadrenotools/CMakeLists.txt")
         }
     }
 }
