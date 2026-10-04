@@ -191,7 +191,7 @@ val sdlLibsX64 = tasks.register<Copy>("sdlLibsX64") {
 
 // Bundled Turnip Vulkan driver, loaded through libadrenotools at runtime. arm64-only.
 val turnipDriverUrl =
-    "https://github.com/whitebelyash/AdrenoToolsDrivers/releases/download/stu_v2/stable-turnip-V2.zip"
+    "https://github.com/whitebelyash/AdrenoToolsDrivers/releases/download/stu_v2/stable-turnip-sync-V2.zip"
 val turnipZip = layout.buildDirectory.file("turnip/stable-turnip-V2.zip")
 
 val turnipDownload = tasks.register("turnipDownload") {
