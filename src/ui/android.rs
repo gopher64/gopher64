@@ -422,7 +422,9 @@ pub fn is_adreno_gpu() -> bool {
 fn is_adreno_gpu_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<bool> {
     let manufacturer = Build::SOC_MANUFACTURER(env)?.try_to_string(env)?;
     let manufacturer = manufacturer.to_lowercase();
-    Ok(manufacturer.contains("qualcomm") || manufacturer == "qti")
+    Ok(manufacturer.contains("qualcomm")
+        || manufacturer.contains("qcom")
+        || manufacturer.contains("qti"))
 }
 
 pub fn decode_path(path: &str) -> String {
