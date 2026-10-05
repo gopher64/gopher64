@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 import java.util.Properties
 import java.io.FileInputStream
+import java.net.URI
 import org.gradle.internal.os.OperatingSystem
 
 plugins {
@@ -38,6 +39,16 @@ android {
         }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                arguments += listOf(
+                    "-DANDROID_STL=c++_shared",
+                    "-DBUILD_SHARED_LIBS=ON",
+                )
+                abiFilters += "arm64-v8a" // libadrenotools is arm64-only
+            }
+        }
     }
 
     signingConfigs {
@@ -68,12 +79,19 @@ android {
     packaging {
         jniLibs {
             excludes.add("lib/**/libsevenz_rust2*.so")
+            useLegacyPackaging = true
         }
     }
 
     sourceSets {
         getByName("main") {
-            java.srcDir(sdl3JavaSrcDir())
+            java.directories += sdl3JavaSrcDir().absolutePath
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("../libadrenotools/CMakeLists.txt")
         }
     }
 }
@@ -171,9 +189,40 @@ val sdlLibsX64 = tasks.register<Copy>("sdlLibsX64") {
     include("libSDL*")
 }
 
+// Bundled Turnip Vulkan driver, loaded through libadrenotools at runtime. arm64-only.
+val turnipDriverUrl =
+    "https://github.com/whitebelyash/AdrenoToolsDrivers/releases/download/stu_v2/stable-turnip-sync-V2.zip"
+val turnipZip = layout.buildDirectory.file("turnip/stable-turnip-V2.zip")
+
+val turnipDownload = tasks.register("turnipDownload") {
+    val zip = turnipZip.get().asFile
+    inputs.property("url", turnipDriverUrl)
+    outputs.file(zip)
+
+    doLast {
+        zip.parentFile.mkdirs()
+        URI(turnipDriverUrl).toURL().openStream().use { input ->
+            zip.outputStream().use { output -> input.copyTo(output) }
+        }
+    }
+}
+
+val turnipDriverArm64 = tasks.register<Copy>("turnipDriverArm64") {
+    dependsOn(turnipDownload)
+    val isRelease = gradle.startParameter.taskNames.any { it.endsWith("Release", ignoreCase = true) }
+    val jniType = if (isRelease) "release" else "debug"
+    val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs/arm64-v8a"
+
+    from(zipTree(turnipZip)) {
+        include("libvulkan_freedreno.so")
+    }
+    into(jniLibsFolder)
+}
+
 tasks.named("preBuild") {
     dependsOn(sdlLibsArm64)
     dependsOn(sdlLibsX64)
+    dependsOn(turnipDriverArm64)
 }
 
 tasks.named("sdlLibsArm64") {

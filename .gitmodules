@@ -9,3 +9,7 @@
 [submodule "retroachievements/rcheevos"]
 	path = retroachievements/rcheevos
 	url = https://github.com/RetroAchievements/rcheevos.git
+[submodule "libadrenotools"]
+	path = android-project/libadrenotools
+	url = https://github.com/gopher64/libadrenotools.git
+	branch = gopher64

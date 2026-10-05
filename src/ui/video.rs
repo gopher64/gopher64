@@ -38,6 +38,25 @@ pub fn init(device: &mut device::Device, netplay: bool) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
     ui::ttf_init();
 
+    #[cfg(all(target_os = "android", target_arch = "aarch64"))]
+    {
+        if ui::android::is_adreno_gpu() {
+            println!("Adreno GPU detected");
+            unsafe {
+                let path = sdl3_sys::system::SDL_GetAndroidInternalStoragePath();
+                if !path.is_null() {
+                    std::env::set_var(
+                        "GOPHER64_INTERNAL_DATA_PATH",
+                        std::ffi::CStr::from_ptr(path).to_str().unwrap(),
+                    );
+                }
+
+                let adrenotools = c"libadrenotools.so";
+                sdl3_sys::vulkan::SDL_Vulkan_LoadLibrary(adrenotools.as_ptr());
+            }
+        }
+    }
+
     let window_title = std::ffi::CString::new("gopher64").unwrap();
 
     let mut flags = sdl3_sys::video::SDL_WINDOW_VULKAN
