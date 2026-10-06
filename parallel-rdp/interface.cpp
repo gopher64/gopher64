@@ -779,8 +779,12 @@ void rdp_save_state(uint8_t *state) {
   }
 }
 
-void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state) {
+void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state,
+                    size_t state_size) {
   gfx_info = _gfx_info;
+  if (state_size < rdp_state_size()) {
+    return;
+  }
   memcpy(&rdp_device, state, sizeof(RDP_DEVICE));
 
   if (g_tmem) {
@@ -852,7 +856,7 @@ uint64_t rdp_process_commands() {
       return interrupt_timer;
     } else {
       do {
-        offset &= 0xFFFFF8;
+        offset &= (gfx_info.RDRAM_SIZE - 1) & ~uint32_t(7);
         rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 0] =
             *reinterpret_cast<const uint32_t *>(gfx_info.RDRAM + offset);
         rdp_device.cmd_data[2 * rdp_device.cmd_ptr + 1] =
