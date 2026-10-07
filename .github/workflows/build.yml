@@ -83,7 +83,7 @@ jobs:
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}
-          archive: false
+          archive: ${{ github.ref_type != 'tag' }}
 
   build-windows:
     runs-on: ${{ matrix.os }}
@@ -134,7 +134,7 @@ jobs:
         with:
           name: gopher64-${{ matrix.arch }}
           path: output/gopher64-${{ matrix.arch }}.exe
-          archive: ${{ github.ref_type == 'tag' && true || false }}
+          archive: true
       - name: SignPath
         if: ${{ github.ref_type == 'tag' }}
         uses: signpath/github-action-submit-signing-request@v3
@@ -268,13 +268,13 @@ jobs:
         with:
           name: gopher64-android-apk
           path: android-project/output/gopher64-android.apk
-          archive: false
+          archive: ${{ github.ref_type != 'tag' }}
       - name: Upload aab
         uses: actions/upload-artifact@v7
         with:
           name: gopher64-android-aab
           path: android-project/output/gopher64-android.aab
-          archive: false
+          archive: ${{ github.ref_type != 'tag' }}
 
   collect-artifacts:
     name: Collect release artifacts
