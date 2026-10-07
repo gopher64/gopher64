@@ -14,6 +14,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_PROFILE_DEV_DEBUG: full
   RA_HARDCORE: ${{ github.ref_type == 'tag' && 'true' || 'false' }}
   NETPLAY_ID: ${{ github.ref_type == 'tag' && secrets.NETPLAY_ID || 'dev' }}
   BUILD_PROFILE: ${{ github.ref_type == 'tag' && 'release' || 'dev' }}
