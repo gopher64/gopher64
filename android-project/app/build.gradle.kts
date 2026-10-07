@@ -74,6 +74,13 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            packaging {
+                jniLibs {
+                    keepDebugSymbols += "**/*.so"
+                }
+            }
+        }
     }
 
     packaging {
