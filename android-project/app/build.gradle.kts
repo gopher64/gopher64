@@ -174,9 +174,19 @@ val sdlLibsArm64 = tasks.register<Copy>("sdlLibsArm64") {
     val jniType = if (isRelease) "release" else "debug"
     val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs/arm64-v8a"
 
-    from("$rootDir/../target/aarch64-linux-android/$jniType")
+    from("$rootDir/../target/aarch64-linux-android/$jniType/build") {
+        include("sdl3-sys-*/out/build/libSDL3.so")
+        include("sdl3-ttf-sys-*/out/build/libSDL3_ttf.so")
+    }
+    eachFile { path = name }
+    duplicatesStrategy = DuplicatesStrategy.FAIL
     into(jniLibsFolder)
-    include("libSDL*")
+
+    doLast {
+        listOf("libSDL3.so", "libSDL3_ttf.so").forEach {
+            require(File(jniLibsFolder, it).exists()) { "Missing required native lib: $it" }
+        }
+    }
 }
 
 val sdlLibsX64 = tasks.register<Copy>("sdlLibsX64") {
@@ -184,9 +194,19 @@ val sdlLibsX64 = tasks.register<Copy>("sdlLibsX64") {
     val jniType = if (isRelease) "release" else "debug"
     val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs/x86_64"
 
-    from("$rootDir/../target/x86_64-linux-android/$jniType")
+    from("$rootDir/../target/x86_64-linux-android/$jniType/build") {
+        include("sdl3-sys-*/out/build/libSDL3.so")
+        include("sdl3-ttf-sys-*/out/build/libSDL3_ttf.so")
+    }
+    eachFile { path = name }
+    duplicatesStrategy = DuplicatesStrategy.FAIL
     into(jniLibsFolder)
-    include("libSDL*")
+
+    doLast {
+        listOf("libSDL3.so", "libSDL3_ttf.so").forEach {
+            require(File(jniLibsFolder, it).exists()) { "Missing required native lib: $it" }
+        }
+    }
 }
 
 // Bundled Turnip Vulkan driver, loaded through libadrenotools at runtime. arm64-only.
