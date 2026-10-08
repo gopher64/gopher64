@@ -724,10 +724,7 @@ void rdp_update_screen() {
   if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
     return;
   }
-  if (surface_destroyed) {
-    SDL_PumpEvents(); // For Android to trigger pause event
-  }
-  if (!wsi->end_frame()) {
+  if (surface_destroyed || !wsi->end_frame()) {
     LOGE("End frame failed\n");
     SDL_PumpEvents(); // For Android to trigger pause event
   }
