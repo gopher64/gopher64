@@ -108,6 +108,7 @@ static SDL_Window *window;
 static RDP::CommandProcessor *processor;
 static SDL_WSIPlatform *wsi_platform;
 static WSI *wsi;
+static bool swapchain_destroyed = false;
 
 static RDP_DEVICE rdp_device;
 static bool crop_letterbox;
@@ -315,9 +316,11 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
   } else if (event->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
     wsi->end_frame();
     wsi->deinit_surface_and_swapchain();
+    swapchain_destroyed = true;
   } else if (event->type == SDL_EVENT_RENDER_DEVICE_RESET) {
     wsi->init_surface_swapchain();
     wsi->begin_frame();
+    swapchain_destroyed = false;
   }
 
   return 0;
@@ -474,6 +477,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
   display_fps = false;
+  swapchain_destroyed = false;
 }
 
 void rdp_close() {
@@ -718,6 +722,10 @@ void rdp_render_frame() {
 
 void rdp_update_screen() {
   if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
+    return;
+  }
+  if (swapchain_destroyed) {
+    LOGE("Swapchain destroyed\n");
     return;
   }
   if (!wsi->end_frame()) {
