@@ -721,6 +721,9 @@ void rdp_render_frame() {
 }
 
 void rdp_update_screen() {
+  if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
+    return;
+  }
   if (surface_destroyed) {
     SDL_PumpEvents(); // For Android to trigger pause event
   }
