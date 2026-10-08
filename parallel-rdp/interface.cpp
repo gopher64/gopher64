@@ -108,6 +108,7 @@ static SDL_Window *window;
 static RDP::CommandProcessor *processor;
 static SDL_WSIPlatform *wsi_platform;
 static WSI *wsi;
+static bool surface_destroyed;
 
 static RDP_DEVICE rdp_device;
 static bool crop_letterbox;
@@ -313,13 +314,13 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     joystick_event->connected = false;
     SDL_RunOnMainThread(add_joystick_event, joystick_event, false);
   } else if (event->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
-    callback.paused = true;
+    surface_destroyed = true;
     wsi->end_frame();
     wsi->deinit_surface_and_swapchain();
   } else if (event->type == SDL_EVENT_RENDER_DEVICE_RESET) {
     wsi->init_surface_swapchain();
     wsi->begin_frame();
-    callback.paused = false;
+    surface_destroyed = false;
   }
 
   return 0;
@@ -476,6 +477,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
   display_fps = false;
+  surface_destroyed = false;
 }
 
 void rdp_close() {
@@ -719,8 +721,8 @@ void rdp_render_frame() {
 }
 
 void rdp_update_screen() {
-  if (callback.paused) {
-    return;
+  if (surface_destroyed) {
+    SDL_PumpEvents(); // For Android to trigger pause event
   }
   if (!wsi->end_frame()) {
     LOGE("End frame failed\n");
