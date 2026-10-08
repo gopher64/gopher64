@@ -488,7 +488,7 @@ void rdp_close() {
   fps_image = Vulkan::ImageHandle();
 
   if (wsi)
-    wsi->get_device().wait_idle();
+    wsi->end_frame();
 
   if (message_font) {
     TTF_CloseFont(message_font);
