@@ -313,11 +313,13 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     joystick_event->connected = false;
     SDL_RunOnMainThread(add_joystick_event, joystick_event, false);
   } else if (event->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
+    callback.paused = true;
     wsi->end_frame();
     wsi->deinit_surface_and_swapchain();
   } else if (event->type == SDL_EVENT_RENDER_DEVICE_RESET) {
     wsi->init_surface_swapchain();
     wsi->begin_frame();
+    callback.paused = false;
   }
 
   return 0;
@@ -717,7 +719,7 @@ void rdp_render_frame() {
 }
 
 void rdp_update_screen() {
-  if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
+  if (callback.paused) {
     return;
   }
   if (!wsi->end_frame()) {
