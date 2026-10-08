@@ -140,6 +140,10 @@ pub fn sdl_hints() {
             sdl3_sys::everything::SDL_HINT_ANDROID_ALLOW_RECREATE_ACTIVITY,
             hint.as_ptr(),
         );
+        sdl3_sys::everything::SDL_SetHint(
+            sdl3_sys::everything::SDL_HINT_ANDROID_TRAP_BACK_BUTTON,
+            hint.as_ptr(),
+        );
         let app_id = std::ffi::CString::new(APP_ID).unwrap();
         sdl3_sys::everything::SDL_SetHint(sdl3_sys::everything::SDL_HINT_APP_ID, app_id.as_ptr());
     }
