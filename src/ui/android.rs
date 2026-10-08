@@ -396,6 +396,17 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeTouchA
     }
 }
 
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_gopher64_gopher64_N64Activity_nativeExitGame<'caller>(
+    _unowned_env: EnvUnowned<'caller>,
+    _this: JObject<'caller>,
+) {
+    let mut event: sdl3_sys::events::SDL_Event = Default::default();
+    event.user.r#type = u32::from(sdl3_sys::events::SDL_EVENT_USER);
+    event.user.code = 3; // exit game
+    unsafe { sdl3_sys::events::SDL_PushEvent(&mut event) };
+}
+
 fn get_vm(app: &slint::android::AndroidApp) -> JavaVM {
     unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }
 }

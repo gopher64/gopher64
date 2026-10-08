@@ -8,14 +8,23 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
 import org.libsdl.app.SDLActivity
 
 class N64Activity : SDLActivity(), TouchOverlayView.Listener {
     private var leftOverlay: TouchOverlayView? = null
     private var rightOverlay: TouchOverlayView? = null
 
+    private val backCallback = OnBackInvokedCallback { nativeExitGame() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(
+            OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+            backCallback
+        )
 
         val powerManager = getContext().getSystemService(Context.POWER_SERVICE) as PowerManager
 
@@ -77,6 +86,11 @@ class N64Activity : SDLActivity(), TouchOverlayView.Listener {
         }
     }
 
+    override fun onDestroy() {
+        onBackInvokedDispatcher.unregisterOnBackInvokedCallback(backCallback)
+        super.onDestroy()
+    }
+
     override fun onTouchButton(button: Int, pressed: Boolean) {
         nativeTouchButton(button, if (pressed) 1 else 0)
     }
@@ -112,4 +126,5 @@ class N64Activity : SDLActivity(), TouchOverlayView.Listener {
 
     private external fun nativeTouchButton(button: Int, pressed: Int)
     private external fun nativeTouchAxis(x: Int, y: Int)
+    private external fun nativeExitGame()
 }
