@@ -108,7 +108,6 @@ static SDL_Window *window;
 static RDP::CommandProcessor *processor;
 static SDL_WSIPlatform *wsi_platform;
 static WSI *wsi;
-static bool surface_destroyed;
 
 static RDP_DEVICE rdp_device;
 static bool crop_letterbox;
@@ -153,6 +152,14 @@ static void add_joystick_event(void *userdata) {
   JoystickEvent *joystick_event = (JoystickEvent *)userdata;
   joystick_events.push(*joystick_event);
   delete joystick_event;
+}
+
+static void deinit_surface_and_swapchain(void *userdata) {
+  wsi->deinit_surface_and_swapchain();
+}
+
+static void init_surface_and_swapchain(void *userdata) {
+  wsi->init_surface_swapchain();
 }
 
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
@@ -314,13 +321,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     joystick_event->connected = false;
     SDL_RunOnMainThread(add_joystick_event, joystick_event, false);
   } else if (event->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
-    surface_destroyed = true;
-    wsi->end_frame();
-    wsi->deinit_surface_and_swapchain();
+    SDL_RunOnMainThread(deinit_surface_and_swapchain, nullptr, false);
   } else if (event->type == SDL_EVENT_RENDER_DEVICE_RESET) {
-    wsi->init_surface_swapchain();
-    wsi->begin_frame();
-    surface_destroyed = false;
+    SDL_RunOnMainThread(init_surface_and_swapchain, nullptr, false);
   }
 
   return 0;
@@ -477,7 +480,6 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
   display_fps = false;
-  surface_destroyed = false;
 }
 
 void rdp_close() {
@@ -724,7 +726,7 @@ void rdp_update_screen() {
   if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
     return;
   }
-  if (surface_destroyed || !wsi->end_frame()) {
+  if (!wsi_platform->is_surface_valid() || !wsi->end_frame()) {
     LOGE("End frame failed\n");
     SDL_PumpEvents(); // For Android to trigger pause event
   }
