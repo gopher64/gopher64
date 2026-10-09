@@ -16,9 +16,7 @@ public:
   void poll_input_async(Granite::InputTrackerHandler *handler) override;
   void set_window(SDL_Window *_window);
   void do_resize();
-  bool is_surface_valid() const { return surface_valid; }
 
 private:
   SDL_Window *window;
-  bool surface_valid = false;
 };
