@@ -7,12 +7,16 @@ VkSurfaceKHR SDL_WSIPlatform::create_surface(VkInstance instance,
   bool result = SDL_Vulkan_CreateSurface(window, instance, NULL, &surface);
   if (result != true) {
     printf("Error creating surface\n");
+    surface_valid = false;
+  } else {
+    surface_valid = true;
   }
   return surface;
 }
 
 void SDL_WSIPlatform::destroy_surface(VkInstance instance,
                                       VkSurfaceKHR surface) {
+  surface_valid = false;
   SDL_Vulkan_DestroySurface(instance, surface, NULL);
 }
 

@@ -155,7 +155,8 @@ static void add_joystick_event(void *userdata) {
 }
 
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
-  if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+  if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED ||
+      event->type == SDL_EVENT_TERMINATING) {
     callback.paused = false;
     callback.emu_running = false;
   } else if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED &&
@@ -313,11 +314,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     joystick_event->connected = false;
     SDL_RunOnMainThread(add_joystick_event, joystick_event, false);
   } else if (event->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
-    wsi->end_frame();
     wsi->deinit_surface_and_swapchain();
   } else if (event->type == SDL_EVENT_RENDER_DEVICE_RESET) {
     wsi->init_surface_swapchain();
-    wsi->begin_frame();
   }
 
   return 0;
@@ -486,9 +485,6 @@ void rdp_close() {
   achievement_challenge_indicator_image = Vulkan::ImageHandle();
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
-
-  if (wsi)
-    wsi->end_frame();
 
   if (message_font) {
     TTF_CloseFont(message_font);
@@ -720,11 +716,19 @@ void rdp_update_screen() {
   if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
     return;
   }
-  if (!wsi->end_frame()) {
-    LOGE("End frame failed\n");
-    SDL_PumpEvents(); // For Android to trigger pause event
+#ifdef __ANDROID__
+  SDL_PropertiesID props = SDL_GetWindowProperties(window);
+  void *android_pointer = SDL_GetPointerProperty(
+      props, SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
+  if (android_pointer && wsi_platform->is_surface_valid()) {
+#endif
+    wsi->end_frame();
+    wsi->begin_frame();
+#ifdef __ANDROID__
+  } else {
+    SDL_PumpEvents();
   }
-  wsi->begin_frame();
+#endif
 }
 
 CALL_BACK rdp_check_callback() {
