@@ -154,14 +154,6 @@ static void add_joystick_event(void *userdata) {
   delete joystick_event;
 }
 
-static void deinit_surface_and_swapchain(void *userdata) {
-  wsi->deinit_surface_and_swapchain();
-}
-
-static void init_surface_and_swapchain(void *userdata) {
-  wsi->init_surface_swapchain();
-}
-
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
     callback.paused = false;
@@ -321,9 +313,9 @@ bool sdl_event_filter(void *userdata, SDL_Event *event) {
     joystick_event->connected = false;
     SDL_RunOnMainThread(add_joystick_event, joystick_event, false);
   } else if (event->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
-    SDL_RunOnMainThread(deinit_surface_and_swapchain, nullptr, false);
+    wsi->deinit_surface_and_swapchain();
   } else if (event->type == SDL_EVENT_RENDER_DEVICE_RESET) {
-    SDL_RunOnMainThread(init_surface_and_swapchain, nullptr, false);
+    wsi->init_surface_swapchain();
   }
 
   return 0;
@@ -723,14 +715,14 @@ void rdp_render_frame() {
 }
 
 void rdp_update_screen() {
+  SDL_PumpEvents();
   if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
     return;
   }
-  if (!wsi_platform->is_surface_valid() || !wsi->end_frame()) {
-    LOGE("End frame failed\n");
-    SDL_PumpEvents(); // For Android to trigger pause event
+  if (wsi_platform->is_surface_valid()) {
+    wsi->end_frame();
+    wsi->begin_frame();
   }
-  wsi->begin_frame();
 }
 
 CALL_BACK rdp_check_callback() {

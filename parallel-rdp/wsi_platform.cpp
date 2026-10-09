@@ -7,6 +7,7 @@ VkSurfaceKHR SDL_WSIPlatform::create_surface(VkInstance instance,
   bool result = SDL_Vulkan_CreateSurface(window, instance, NULL, &surface);
   if (result != true) {
     printf("Error creating surface\n");
+    surface_valid = false;
   } else {
     surface_valid = true;
   }
@@ -49,7 +50,7 @@ uint32_t SDL_WSIPlatform::get_surface_height() {
 
 bool SDL_WSIPlatform::alive(Vulkan::WSI &wsi) { return true; }
 
-void SDL_WSIPlatform::poll_input() { SDL_PumpEvents(); }
+void SDL_WSIPlatform::poll_input() {}
 
 void SDL_WSIPlatform::poll_input_async(Granite::InputTrackerHandler *handler) {}
 
