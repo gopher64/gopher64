@@ -155,7 +155,8 @@ static void add_joystick_event(void *userdata) {
 }
 
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
-  if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+  if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED ||
+      event->type == SDL_EVENT_TERMINATING) {
     callback.paused = false;
     callback.emu_running = false;
   } else if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED &&
@@ -484,9 +485,6 @@ void rdp_close() {
   achievement_challenge_indicator_image = Vulkan::ImageHandle();
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
-
-  if (wsi)
-    wsi->end_frame();
 
   if (message_font) {
     TTF_CloseFont(message_font);
