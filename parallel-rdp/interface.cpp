@@ -718,16 +718,19 @@ void rdp_update_screen() {
   if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
     return;
   }
+#ifdef __ANDROID__
   SDL_PropertiesID props = SDL_GetWindowProperties(window);
   void *android_pointer = SDL_GetPointerProperty(
       props, SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
-
   if (android_pointer) {
+#endif
     wsi->end_frame();
     wsi->begin_frame();
+#ifdef __ANDROID__
   } else {
     SDL_PumpEvents();
   }
+#endif
 }
 
 CALL_BACK rdp_check_callback() {
