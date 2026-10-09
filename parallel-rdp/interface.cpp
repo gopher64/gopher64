@@ -720,7 +720,7 @@ void rdp_update_screen() {
   SDL_PropertiesID props = SDL_GetWindowProperties(window);
   void *android_pointer = SDL_GetPointerProperty(
       props, SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
-  if (android_pointer) {
+  if (android_pointer && wsi_platform->is_surface_valid()) {
 #endif
     wsi->end_frame();
     wsi->begin_frame();
