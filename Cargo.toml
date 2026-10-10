@@ -1,6 +1,6 @@
 [package]
 name = "gopher64"
-version = "1.1.39"
+version = "1.1.40"
 edition = "2024"
 rust-version = "1.99.0"
 
@@ -12,7 +12,7 @@ gui = ["dep:rfd", "dep:slint", "dep:open", "dep:slint-build"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-zip = "8.0"
+zip = "9.0"
 sevenz-rust2 = "0.23"
 chrono = "0.4"
 serde = { version = "1.0", features = ["derive"] }
