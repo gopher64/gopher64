@@ -126,13 +126,15 @@ pub fn init(device: &mut device::Device, netplay: bool) {
 
     unsafe {
         let font_bytes = include_bytes!("../../data/ui/RobotoMono-Regular.ttf");
-        rdp_init(
+        if !rdp_init(
             device.ui.video.window as *mut std::ffi::c_void,
             gfx_info,
             font_bytes.as_ptr() as *const std::ffi::c_void,
             font_bytes.len(),
             device.ui.storage.save_state_slot,
-        )
+        ) {
+            panic!("Failed to init parallel-rdp.");
+        }
     }
 
     fps_counter(&mut device.ui);
