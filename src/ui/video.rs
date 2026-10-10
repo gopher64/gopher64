@@ -51,6 +51,12 @@ pub fn init(device: &mut device::Device, netplay: bool) {
                     );
                 }
 
+                let sysmem = std::ffi::CString::new("sysmem").unwrap();
+                std::env::set_var(
+                    "TU_DEBUG",
+                    std::ffi::CStr::from_ptr(sysmem).to_str().unwrap(),
+                );
+
                 let adrenotools = c"libadrenotools.so";
                 sdl3_sys::vulkan::SDL_Vulkan_LoadLibrary(adrenotools.as_ptr());
             }
