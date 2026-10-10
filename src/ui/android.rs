@@ -108,6 +108,8 @@ bind_java_type! {
     fields {
         #[allow(non_snake_case)]
         static SOC_MANUFACTURER: JString,
+        #[allow(non_snake_case)]
+        static SOC_MODEL: JString,
     },
 }
 
@@ -421,6 +423,8 @@ pub fn is_adreno_gpu() -> bool {
 #[cfg(all(target_os = "android", target_arch = "aarch64"))]
 fn is_adreno_gpu_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<bool> {
     let manufacturer = Build::SOC_MANUFACTURER(env)?.try_to_string(env)?;
+    let model = Build::SOC_MODEL(env)?.try_to_string(env)?;
+    println!("SOC model: {model}");
     let manufacturer = manufacturer.to_lowercase();
     Ok(manufacturer.contains("qualcomm")
         || manufacturer.contains("qcom")
