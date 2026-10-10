@@ -391,7 +391,7 @@ static ImageHandle create_message_image(Vulkan::Device &device, int width,
   return handle;
 }
 
-void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
+bool rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
               size_t font_size, uint32_t save_state_slot) {
   memset(&rdp_device, 0, sizeof(RDP_DEVICE));
   memset(&callback, 0, sizeof(CALL_BACK));
@@ -401,7 +401,7 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   bool result = SDL_AddEventWatch(sdl_event_filter, nullptr);
   if (!result) {
     LOGE("Could not add event watch.\n");
-    return;
+    return false;
   }
 
   gfx_info = _gfx_info;
@@ -429,19 +429,22 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   Context::SystemHandles handles = {};
   if (!::Vulkan::Context::init_loader(
           (PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr())) {
+    LOGE("Failed to init vulkan loader.\n");
     rdp_close();
-    return;
+    return false;
   }
   if (!wsi->init_simple(1, handles)) {
+    LOGE("Failed to init parallel-rdp.\n");
     rdp_close();
-    return;
+    return false;
   }
 
   rdp_new_processor();
 
   if (!processor->device_is_supported()) {
+    LOGE("Failed to init parallel-rdp processor.\n");
     rdp_close();
-    return;
+    return false;
   }
 
   message_font =
@@ -452,8 +455,9 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
                      achievement_challenge_indicator_font_size *
                          SDL_GetWindowDisplayScale(window));
   if (!message_font || !achievement_challenge_indicator_font) {
+    LOGE("Failed to init fonts.\n");
     rdp_close();
-    return;
+    return false;
   }
 
   wsi->begin_frame();
@@ -473,6 +477,8 @@ void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
   achievement_progress_indicator_image = Vulkan::ImageHandle();
   fps_image = Vulkan::ImageHandle();
   display_fps = false;
+
+  return true;
 }
 
 void rdp_close() {

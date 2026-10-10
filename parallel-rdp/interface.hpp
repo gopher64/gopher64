@@ -52,7 +52,7 @@ typedef enum {
   MESSAGE_LONG = 6000,
 } MESSAGE_LENGTH;
 
-void rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
+bool rdp_init(void *_window, GFX_INFO _gfx_info, const void *font,
               size_t font_size, uint32_t save_state_slot);
 void rdp_close();
 void rdp_set_vi_register(uint32_t reg, uint32_t value);
@@ -65,7 +65,8 @@ void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds);
 void rdp_check_framebuffers(uint32_t address, uint32_t length);
 size_t rdp_state_size();
 void rdp_save_state(uint8_t *state);
-void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state, size_t state_size);
+void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state,
+                    size_t state_size);
 void rdp_set_fps(uint32_t fps, uint32_t vis);
 
 JoystickEvent get_joystick_event();
