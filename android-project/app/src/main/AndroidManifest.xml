@@ -5,8 +5,8 @@
     <uses-feature android:name="android.hardware.vulkan.version" android:required="true"
         android:version="0x00401000" />
     <uses-feature
-        android:name="android.hardware.bluetooth"
-        android:required="false" />
+        android:name="android.hardware.touchscreen"
+        android:required="true" />
     <uses-feature
         android:name="android.hardware.gamepad"
         android:required="false" />
