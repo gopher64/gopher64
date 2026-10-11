@@ -5,6 +5,9 @@
     <uses-feature android:name="android.hardware.vulkan.version" android:required="true"
         android:version="0x00401000" />
     <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="true" />
+    <uses-feature
         android:name="android.hardware.bluetooth"
         android:required="false" />
     <uses-feature
@@ -30,6 +33,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".N64Activity"
+            android:alwaysRetainTaskState="true"
             android:launchMode="singleTop"
             android:configChanges="layoutDirection|locale|grammaticalGender|fontScale|fontWeightAdjustment|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:preferMinimalPostProcessing="true"
