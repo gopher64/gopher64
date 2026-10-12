@@ -365,12 +365,19 @@ fn start_run_rom_on_jvm(
         .put_extra_boolean(env, &show_touch_overlay_key, show_touch_overlay)?
         .put_extra_string_array(env, &args_key, &j_args)?;
 
+    let weak_clear = weak.clone();
     weak.upgrade_in_event_loop(move |handle| handle.set_game_running(true))
         .unwrap();
 
-    activity
+    if let Err(err) = activity
         .as_ref()
-        .start_activity_for_result(env, &intent, RUN_ROM)?;
+        .start_activity_for_result(env, &intent, RUN_ROM)
+    {
+        weak_clear
+            .upgrade_in_event_loop(move |handle| handle.set_game_running(false))
+            .unwrap();
+        return Err(err);
+    }
     Ok(())
 }
 
@@ -746,9 +753,9 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
     intent_data: JObject<'caller>,
 ) {
     let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
-        if result_code == AndroidActivity::RESULT_OK(env)? {
-            match request_code {
-                REQUEST_SELECT_ROM => {
+        match request_code {
+            REQUEST_SELECT_ROM => {
+                if result_code == AndroidActivity::RESULT_OK(env)? {
                     if let Some(tx) = SELECT_ROM_TX.blocking_lock().take()
                         && !intent_data.is_null()
                     {
@@ -782,7 +789,9 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                         }
                     }
                 }
-                CONFIGURE_INPUT_PROFILE => {
+            }
+            CONFIGURE_INPUT_PROFILE => {
+                if result_code == AndroidActivity::RESULT_OK(env)? {
                     if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
                         && let Some(weak_app_window) = weak_app_window.as_ref()
                     {
@@ -790,8 +799,19 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                         ui::gui::update_input_profiles(&weak_app_window, &config);
                     }
                 }
-                RUN_ROM => {
-                    let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
+            }
+            RUN_ROM => {
+                if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
+                    && let Some(weak_app_window) = weak_app_window.as_ref()
+                {
+                    weak_app_window
+                        .upgrade_in_event_loop(move |handle| handle.set_game_running(false))
+                        .unwrap();
+                }
+
+                if result_code == AndroidActivity::RESULT_OK(env)? && !intent_data.is_null() {
+                    let result_intent =
+                        unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
 
                     let file_path_key = JString::from_str(env, "file_path")?;
                     let file_path = result_intent
@@ -813,13 +833,12 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                         weak_app_window
                             .upgrade_in_event_loop(move |handle| {
                                 ui::gui::update_recent_roms(&handle, file_path.into());
-                                handle.set_game_running(false)
                             })
                             .unwrap();
                     }
                 }
-                _ => {}
             }
+            _ => {}
         }
         Ok(())
     });
