@@ -578,9 +578,11 @@ fn get_launch_rom_on_jvm(
         return Ok(None);
     }
 
-    // `getAction` returns null for intents without an action (e.g. some launcher
-    // launches); `try_to_string` surfaces that as an error, which we treat as "no ROM".
-    let action = intent.get_action(env)?.try_to_string(env)?;
+    let action = intent.get_action(env)?;
+    if action.is_null() {
+        return Ok(None);
+    }
+    let action = action.try_to_string(env)?;
     let action_view = AndroidIntent::ACTION_VIEW(env)?.try_to_string(env)?;
     if action != action_view {
         return Ok(None);
