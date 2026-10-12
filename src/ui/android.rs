@@ -53,6 +53,7 @@ bind_java_type! {
         fn start_activity(intent: AndroidIntent) -> (),
         fn start_activity_for_result(intent: AndroidIntent, request_code: jint) -> (),
         fn get_content_resolver() -> AndroidContentResolver,
+        fn get_intent() -> AndroidIntent,
     },
     fields {
         #[allow(non_snake_case)]
@@ -99,6 +100,7 @@ bind_java_type! {
             name = "putExtra",
         },
         fn get_string_extra(name: JString) -> JString,
+        fn get_action() -> JString,
         fn set_class_name(package_name: JString, class_name: JString) -> AndroidIntent,
     },
 }
@@ -545,6 +547,52 @@ fn open_uri_on_jvm(
 
     activity.as_ref().start_activity(env, &intent)?;
     Ok(())
+}
+
+pub fn get_launch_rom() -> Option<std::path::PathBuf> {
+    if let Ok(app) = ANDROID_APP.lock()
+        && let Some(app) = app.as_ref()
+    {
+        match get_vm(app).attach_current_thread(|env| get_launch_rom_on_jvm(env, app)) {
+            Ok(path) => path,
+            Err(err) => {
+                eprintln!("JNI error while reading launch intent: {err:?}");
+                None
+            }
+        }
+    } else {
+        eprintln!("Android app not initialized");
+        None
+    }
+}
+
+fn get_launch_rom_on_jvm(
+    env: &mut Env<'_>,
+    app: &slint::android::AndroidApp,
+) -> jni::errors::Result<Option<std::path::PathBuf>> {
+    let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
+    let activity = unsafe { env.as_cast_raw::<Global<AndroidActivity>>(&raw_activity_global)? };
+
+    let intent = activity.as_ref().get_intent(env)?;
+    if intent.is_null() {
+        return Ok(None);
+    }
+
+    // `getAction` returns null for intents without an action (e.g. some launcher
+    // launches); `try_to_string` surfaces that as an error, which we treat as "no ROM".
+    let action = intent.get_action(env)?.try_to_string(env)?;
+    let action_view = AndroidIntent::ACTION_VIEW(env)?.try_to_string(env)?;
+    if action != action_view {
+        return Ok(None);
+    }
+
+    let uri = intent.get_data(env)?;
+    if uri.is_null() {
+        return Ok(None);
+    }
+
+    let path = uri.to_string(env)?;
+    Ok(Some(std::path::PathBuf::from(path.to_string())))
 }
 
 pub async fn select_rom(rom_dir: slint::SharedString) -> Option<std::path::PathBuf> {

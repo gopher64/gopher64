@@ -563,6 +563,11 @@ pub fn app_window(
         });
     }
 
+    #[cfg(target_os = "android")]
+    if let Some(path) = ui::android::get_launch_rom() {
+        run_with_path(app.as_weak(), path);
+    }
+
     app.run().unwrap();
     retroachievements::shutdown_client();
 }
