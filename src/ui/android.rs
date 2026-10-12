@@ -810,8 +810,7 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                 }
 
                 if result_code == AndroidActivity::RESULT_OK(env)? && !intent_data.is_null() {
-                    let result_intent =
-                        unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
+                    let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
 
                     let file_path_key = JString::from_str(env, "file_path")?;
                     let file_path = result_intent
