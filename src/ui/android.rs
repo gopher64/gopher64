@@ -746,47 +746,7 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
     intent_data: JObject<'caller>,
 ) {
     let outcome = unowned_env.with_env(|env| -> Result<_, jni::errors::Error> {
-        let result_ok = result_code == AndroidActivity::RESULT_OK(env)?;
-
-        if request_code == RUN_ROM {
-            let file_path = if result_ok && !intent_data.is_null() {
-                let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
-
-                let cheats_path_key = JString::from_str(env, "cheats_path")?;
-                if let Ok(cheats_path) = result_intent
-                    .as_ref()
-                    .get_string_extra(env, &cheats_path_key)
-                    && let Ok(cheats_path) = cheats_path.try_to_string(env)
-                {
-                    let _ = std::fs::remove_file(cheats_path);
-                }
-
-                let file_path_key = JString::from_str(env, "file_path")?;
-                result_intent
-                    .as_ref()
-                    .get_string_extra(env, &file_path_key)?
-                    .try_to_string(env)
-                    .ok()
-            } else {
-                None
-            };
-
-            if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
-                && let Some(weak_app_window) = weak_app_window.as_ref()
-            {
-                weak_app_window
-                    .upgrade_in_event_loop(move |handle| {
-                        if let Some(file_path) = file_path {
-                            ui::gui::update_recent_roms(&handle, file_path.into());
-                        }
-                        handle.set_game_running(false);
-                    })
-                    .unwrap();
-            }
-            return Ok(());
-        }
-
-        if result_ok {
+        if result_code == AndroidActivity::RESULT_OK(env)? {
             match request_code {
                 REQUEST_SELECT_ROM => {
                     if let Some(tx) = SELECT_ROM_TX.blocking_lock().take()
@@ -828,6 +788,34 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                     {
                         let config = ui::config::Config::new();
                         ui::gui::update_input_profiles(&weak_app_window, &config);
+                    }
+                }
+                RUN_ROM => {
+                    let result_intent = unsafe { env.as_cast_raw::<AndroidIntent>(&intent_data)? };
+
+                    let file_path_key = JString::from_str(env, "file_path")?;
+                    let file_path = result_intent
+                        .as_ref()
+                        .get_string_extra(env, &file_path_key)?
+                        .try_to_string(env)?;
+
+                    let cheats_path_key = JString::from_str(env, "cheats_path")?;
+                    if let Ok(cheats_path) = result_intent
+                        .as_ref()
+                        .get_string_extra(env, &cheats_path_key)
+                        && let Ok(cheats_path) = cheats_path.try_to_string(env)
+                    {
+                        let _ = std::fs::remove_file(cheats_path);
+                    }
+                    if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
+                        && let Some(weak_app_window) = weak_app_window.as_ref()
+                    {
+                        weak_app_window
+                            .upgrade_in_event_loop(move |handle| {
+                                ui::gui::update_recent_roms(&handle, file_path.into());
+                                handle.set_game_running(false)
+                            })
+                            .unwrap();
                     }
                 }
                 _ => {}
