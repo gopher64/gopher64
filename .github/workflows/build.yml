@@ -17,6 +17,7 @@ env:
   CARGO_PROFILE_DEV_DEBUG: full
   RA_HARDCORE: ${{ github.ref_type == 'tag' && 'true' || 'false' }}
   NETPLAY_ID: ${{ github.ref_type == 'tag' && secrets.NETPLAY_ID || 'dev' }}
+  OBFSTR_SEED: ${{ github.ref_type == 'tag' && github.run_id || 'FIXED' }}
   BUILD_PROFILE: ${{ github.ref_type == 'tag' && 'release' || 'dev' }}
   BUILD_DIR: ${{ github.ref_type == 'tag' && 'release' || 'debug' }}
 
