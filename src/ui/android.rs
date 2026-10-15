@@ -512,9 +512,9 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         let name = match device.get_name(env) {
             Ok(name) => match name.mutf8_chars(env) {
                 Ok(chars) => chars.to_string(),
-                Err(err) => ui::input::UNKNOWN_CONTROLLER_NAME.to_string(),
+                Err(_) => ui::input::UNKNOWN_CONTROLLER_NAME.to_string(),
             },
-            Err(err) => ui::input::UNKNOWN_CONTROLLER_NAME.to_string(),
+            Err(_) => ui::input::UNKNOWN_CONTROLLER_NAME.to_string(),
         };
         let vendor_id = match device.get_vendor_id(env) {
             Ok(vendor_id) => vendor_id,
