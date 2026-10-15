@@ -460,20 +460,12 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     }
 }
 
-/// On Android, the identity used to match a stored controller assignment against
-/// a live SDL joystick, formatted as `"vendor:product"`. This is rebuilt purely
-/// from SDL -- no JNI required -- and matches the value the GUI stored via the
-/// Android `InputDevice` API. Two identical pads can't be told apart, but keeping
-/// the identity to vendor:product avoids the GUI and the running game disagreeing
-/// when they observe the same device through different APIs.
 fn android_controller_identity(joystick_id: sdl3_sys::joystick::SDL_JoystickID) -> String {
     let vendor_id = unsafe { sdl3_sys::joystick::SDL_GetJoystickVendorForID(joystick_id) };
     let product_id = unsafe { sdl3_sys::joystick::SDL_GetJoystickProductForID(joystick_id) };
     format!("{vendor_id}:{product_id}")
 }
 
-/// Whether SDL has not already opened this joystick/gamepad, so we can claim it
-/// for this port.
 fn joystick_available(joystick_id: sdl3_sys::joystick::SDL_JoystickID) -> bool {
     unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(joystick_id) }.is_null()
         && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(joystick_id) }.is_null()
