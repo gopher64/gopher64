@@ -543,9 +543,7 @@ pub fn init(ui: &mut ui::Ui) {
         {
             let mut joystick_id = sdl3_sys::everything::SDL_JoystickID(0);
 
-            let joysticks = get_joysticks();
-
-            for joystick in joysticks.iter() {
+            for joystick in get_joysticks().iter() {
                 let is_match = if cfg!(target_os = "android") {
                     // The Slint GUI enumerates controllers through the Android
                     // InputDevice API while the running game sees them through
