@@ -7,6 +7,7 @@ const Y_AXIS_SHIFT: usize = 24;
 
 const MAX_AXIS_VALUE: f64 = 85.0;
 
+#[cfg(not(target_os = "android"))]
 pub const UNKNOWN_CONTROLLER_NAME: &str = "Unknown controller";
 
 #[derive(Default)]
