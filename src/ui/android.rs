@@ -509,13 +509,6 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
             continue;
         }
 
-        // The running game rebuilds this device's identity purely from SDL (see
-        // `ui::input::init`/`android_controller_identity`). If any field below
-        // can't be read we'd fall back to placeholder values and build an
-        // identity that can never equal the SDL-derived one, so the assignment
-        // would silently fail to match. Skip such a device instead.
-        //
-        // `name` is only shown in the GUI.
         let name = match device.get_name(env) {
             Ok(name) => match name.mutf8_chars(env) {
                 Ok(chars) => chars.to_string(),
