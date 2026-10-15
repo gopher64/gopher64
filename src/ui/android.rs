@@ -541,7 +541,10 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         // can't be read we'd fall back to placeholder values and build an
         // identity that can never equal the SDL-derived one, so the assignment
         // would silently fail to match. Skip such a device instead.
-        let name = match device.get_name(env).and_then(|name| name.try_to_string(env)) {
+        let name = match device
+            .get_name(env)
+            .and_then(|name| name.try_to_string(env))
+        {
             Ok(name) => name,
             Err(err) => {
                 eprintln!("Skipping Android controller {device_id}: could not read name ({err:?})");
@@ -552,17 +555,19 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         // device, so it tells two identical controllers apart. Mirror SDL's
         // fallback to the device name when the descriptor is empty (see
         // SDLControllerManager.getJoystickDescriptor).
-        let raw_descriptor =
-            match device.get_descriptor(env).and_then(|d| d.try_to_string(env)) {
-                Ok(descriptor) if !descriptor.is_empty() => descriptor,
-                Ok(_) => name.clone(),
-                Err(err) => {
-                    eprintln!(
-                        "Skipping Android controller {device_id}: could not read descriptor ({err:?})"
-                    );
-                    continue;
-                }
-            };
+        let raw_descriptor = match device
+            .get_descriptor(env)
+            .and_then(|d| d.try_to_string(env))
+        {
+            Ok(descriptor) if !descriptor.is_empty() => descriptor,
+            Ok(_) => name.clone(),
+            Err(err) => {
+                eprintln!(
+                    "Skipping Android controller {device_id}: could not read descriptor ({err:?})"
+                );
+                continue;
+            }
+        };
         let vendor_id = match device.get_vendor_id(env) {
             Ok(vendor_id) => vendor_id,
             Err(err) => {
