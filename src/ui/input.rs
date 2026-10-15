@@ -460,6 +460,20 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     }
 }
 
+/// On Android, the identity used to match a stored controller assignment against
+/// a live SDL joystick, formatted as `"vendor:product:crc16(descriptor)"`. SDL
+/// embeds `crc16(descriptor)` in the joystick GUID (bytes 2-3), so this can be
+/// rebuilt purely from SDL -- no JNI required -- and matches the value the GUI
+/// stored via the Android `InputDevice` API (which hashes the descriptor with
+/// `sdl_crc16`).
+fn android_controller_identity(joystick_id: sdl3_sys::joystick::SDL_JoystickID) -> String {
+    let vendor_id = unsafe { sdl3_sys::joystick::SDL_GetJoystickVendorForID(joystick_id) };
+    let product_id = unsafe { sdl3_sys::joystick::SDL_GetJoystickProductForID(joystick_id) };
+    let guid = unsafe { sdl3_sys::joystick::SDL_GetJoystickGUIDForID(joystick_id) };
+    let crc = u16::from_le_bytes([guid.data[2], guid.data[3]]);
+    format!("{}:{}:{}", vendor_id, product_id, crc)
+}
+
 pub fn assign_controller(config: &mut ui::config::Config, controller: i32, port: usize) {
     let joysticks = get_joysticks();
     if controller < 0 {
@@ -467,13 +481,12 @@ pub fn assign_controller(config: &mut ui::config::Config, controller: i32, port:
     } else if controller < joysticks.len() as i32 {
         let joystick_id = joysticks[controller as usize];
         if cfg!(target_os = "android") {
-            // See `init`: Android devices are matched on vendor:product because
-            // the GUI and the running game can observe different device names.
-            let vendor_id = unsafe { sdl3_sys::joystick::SDL_GetJoystickVendorForID(joystick_id) };
-            let product_id =
-                unsafe { sdl3_sys::joystick::SDL_GetJoystickProductForID(joystick_id) };
+            // See `init`/`android_controller_identity`: Android devices are
+            // matched on vendor:product plus a crc16 of the device descriptor,
+            // because the GUI and the running game observe them through different
+            // APIs that can disagree on the device name.
             config.input.controller_assignment[port - 1] =
-                Some(format!("{}:{}", vendor_id, product_id));
+                Some(android_controller_identity(joystick_id));
         } else {
             let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(joystick_id) };
             if !path.is_null() {
@@ -535,16 +548,13 @@ pub fn init(ui: &mut ui::Ui) {
 
             for joystick in get_joysticks().iter() {
                 let is_match = if cfg!(target_os = "android") {
-                    // Match on vendor:product. The Slint GUI enumerates
-                    // controllers through the Android InputDevice API while the
-                    // running game sees them through SDL, and the two can report
-                    // different device names for the same pad -- so the name
-                    // cannot be part of the key.
-                    let vendor_id =
-                        unsafe { sdl3_sys::joystick::SDL_GetJoystickVendorForID(*joystick) };
-                    let product_id =
-                        unsafe { sdl3_sys::joystick::SDL_GetJoystickProductForID(*joystick) };
-                    *controller_assignment == format!("{}:{}", vendor_id, product_id)
+                    // The Slint GUI enumerates controllers through the Android
+                    // InputDevice API while the running game sees them through
+                    // SDL, so the two can report different names for the same pad
+                    // and a bare vendor:product cannot tell two identical pads
+                    // apart. Match on vendor:product plus crc16 of the Android
+                    // descriptor, which SDL carries in the joystick GUID.
+                    *controller_assignment == android_controller_identity(*joystick)
                 } else {
                     let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
                     !path.is_null()

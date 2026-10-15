@@ -164,6 +164,7 @@ bind_java_type! {
         fn get_vendor_id() -> jint,
         fn get_product_id() -> jint,
         fn get_name() -> JString,
+        fn get_descriptor() -> JString,
     },
 }
 
@@ -171,10 +172,35 @@ bind_java_type! {
 pub struct ControllerInfo {
     pub name: String,
     /// Identity used to match a stored controller assignment, formatted as
-    /// `"vendor_id:product_id"`. The device name is deliberately excluded because
-    /// it can differ between the Android and SDL views of the same device (see
-    /// [`ui::input::init`]).
+    /// `"vendor_id:product_id:crc16(descriptor)"`. The descriptor is the Android
+    /// [`InputDevice.getDescriptor`](https://developer.android.com/reference/android/view/InputDevice#getDescriptor())
+    /// (falling back to the device name when empty), which is stable and unique
+    /// per physical device. SDL folds that same descriptor into the joystick GUID
+    /// as a crc16, so the running game can rebuild this identity from SDL alone
+    /// (see [`android_controller_identity`]).
     pub descriptor: String,
+}
+
+/// CRC-16 matching SDL's `SDL_crc16` (the algorithm is fixed; SDL's joystick
+/// code depends on it). SDL folds the Android `InputDevice` descriptor into the
+/// joystick GUID via this hash, which lets the GUI (Android framework) and the
+/// running game (SDL) agree on a per-physical-device identity -- including
+/// telling two identical controllers apart.
+fn sdl_crc16(data: &[u8]) -> u16 {
+    fn crc16_for_byte(mut r: u8) -> u16 {
+        let mut crc: u16 = 0;
+        for _ in 0..8 {
+            crc = (if (crc ^ r as u16) & 1 != 0 { 0xA001 } else { 0 }) ^ (crc >> 1);
+            r >>= 1;
+        }
+        crc
+    }
+
+    let mut crc: u16 = 0;
+    for &byte in data {
+        crc = crc16_for_byte((crc as u8) ^ byte) ^ (crc >> 8);
+    }
+    crc
 }
 
 fn argv_to_strings(argc: std::ffi::c_int, argv: *mut *mut std::ffi::c_char) -> Vec<String> {
@@ -517,13 +543,30 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         } else {
             ui::input::UNKNOWN_CONTROLLER_NAME.to_string()
         };
-        let descriptor = if let Ok(product_id) = device.get_product_id(env)
-            && let Ok(vendor_id) = device.get_vendor_id(env)
+        // The Android InputDevice descriptor is stable and unique per physical
+        // device, so it tells two identical controllers apart. Mirror SDL's
+        // fallback to the device name when the descriptor is empty (see
+        // SDLControllerManager.getJoystickDescriptor).
+        let raw_descriptor = if let Ok(descriptor) = device.get_descriptor(env)
+            && let Ok(descriptor) = descriptor.try_to_string(env)
+            && !descriptor.is_empty()
         {
-            format!("{}:{}", vendor_id, product_id)
+            descriptor
         } else {
-            String::new()
+            name.clone()
         };
+        let vendor_id = device.get_vendor_id(env).unwrap_or(0);
+        let product_id = device.get_product_id(env).unwrap_or(0);
+
+        // Build the identity the running game will match against. SDL folds the
+        // descriptor into the joystick GUID as crc16(descriptor), so the game can
+        // rebuild this string purely from SDL (see `ui::input::init`).
+        let descriptor = format!(
+            "{}:{}:{}",
+            vendor_id,
+            product_id,
+            sdl_crc16(raw_descriptor.as_bytes())
+        );
 
         controllers.push(ControllerInfo { name, descriptor });
     }
