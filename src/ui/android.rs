@@ -170,7 +170,10 @@ bind_java_type! {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ControllerInfo {
     pub name: String,
-    /// Stable ID from [`InputDevice.getDescriptor`](https://developer.android.com/reference/android/view/InputDevice#getDescriptor()).
+    /// Identity used to match a stored controller assignment, formatted as
+    /// `"vendor_id:product_id"`. The device name is deliberately excluded because
+    /// it can differ between the Android and SDL views of the same device (see
+    /// [`ui::input::init`]).
     pub descriptor: String,
 }
 
@@ -517,7 +520,7 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         let descriptor = if let Ok(product_id) = device.get_product_id(env)
             && let Ok(vendor_id) = device.get_vendor_id(env)
         {
-            format!("{}:{}:{}", name, vendor_id, product_id)
+            format!("{}:{}", vendor_id, product_id)
         } else {
             String::new()
         };
