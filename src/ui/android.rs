@@ -536,27 +536,51 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
             continue;
         }
 
-        let name = if let Ok(name) = device.get_name(env)
-            && let Ok(name) = name.try_to_string(env)
-        {
-            name
-        } else {
-            ui::input::UNKNOWN_CONTROLLER_NAME.to_string()
+        // The running game rebuilds this device's identity purely from SDL (see
+        // `ui::input::init`/`android_controller_identity`). If any field below
+        // can't be read we'd fall back to placeholder values and build an
+        // identity that can never equal the SDL-derived one, so the assignment
+        // would silently fail to match. Skip such a device instead.
+        let name = match device.get_name(env).and_then(|name| name.try_to_string(env)) {
+            Ok(name) => name,
+            Err(err) => {
+                eprintln!("Skipping Android controller {device_id}: could not read name ({err:?})");
+                continue;
+            }
         };
         // The Android InputDevice descriptor is stable and unique per physical
         // device, so it tells two identical controllers apart. Mirror SDL's
         // fallback to the device name when the descriptor is empty (see
         // SDLControllerManager.getJoystickDescriptor).
-        let raw_descriptor = if let Ok(descriptor) = device.get_descriptor(env)
-            && let Ok(descriptor) = descriptor.try_to_string(env)
-            && !descriptor.is_empty()
-        {
-            descriptor
-        } else {
-            name.clone()
+        let raw_descriptor =
+            match device.get_descriptor(env).and_then(|d| d.try_to_string(env)) {
+                Ok(descriptor) if !descriptor.is_empty() => descriptor,
+                Ok(_) => name.clone(),
+                Err(err) => {
+                    eprintln!(
+                        "Skipping Android controller {device_id}: could not read descriptor ({err:?})"
+                    );
+                    continue;
+                }
+            };
+        let vendor_id = match device.get_vendor_id(env) {
+            Ok(vendor_id) => vendor_id,
+            Err(err) => {
+                eprintln!(
+                    "Skipping Android controller {device_id}: could not read vendor id ({err:?})"
+                );
+                continue;
+            }
         };
-        let vendor_id = device.get_vendor_id(env).unwrap_or(0);
-        let product_id = device.get_product_id(env).unwrap_or(0);
+        let product_id = match device.get_product_id(env) {
+            Ok(product_id) => product_id,
+            Err(err) => {
+                eprintln!(
+                    "Skipping Android controller {device_id}: could not read product id ({err:?})"
+                );
+                continue;
+            }
+        };
 
         // Build the identity the running game will match against. SDL folds the
         // descriptor into the joystick GUID as crc16(descriptor), so the game can
