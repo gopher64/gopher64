@@ -421,7 +421,8 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     #[cfg(target_os = "android")]
     {
         if channel == 0
-            && ui.config.input.controller_assignment[0].is_none()
+            && controller.is_null()
+            && joystick.is_null()
             && let Ok(touch_overlay) = ui::android::TOUCH_OVERLAY.lock()
         {
             x = normalize_axis_position(touch_overlay.x);
@@ -459,18 +460,38 @@ pub fn get(ui: &mut ui::Ui, channel: usize) -> InputData {
     }
 }
 
+fn android_controller_identity(joystick_id: sdl3_sys::joystick::SDL_JoystickID) -> String {
+    let vendor_id = unsafe { sdl3_sys::joystick::SDL_GetJoystickVendorForID(joystick_id) };
+    let product_id = unsafe { sdl3_sys::joystick::SDL_GetJoystickProductForID(joystick_id) };
+    format!("{vendor_id}:{product_id}")
+}
+
+fn joystick_available(joystick_id: sdl3_sys::joystick::SDL_JoystickID) -> bool {
+    unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(joystick_id) }.is_null()
+        && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(joystick_id) }.is_null()
+}
+
 pub fn assign_controller(config: &mut ui::config::Config, controller: i32, port: usize) {
     let joysticks = get_joysticks();
     if controller < 0 {
         config.input.controller_assignment[port - 1] = None;
     } else if controller < joysticks.len() as i32 {
-        let path =
-            unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(joysticks[controller as usize]) };
-        if !path.is_null() {
+        let joystick_id = joysticks[controller as usize];
+        if cfg!(target_os = "android") {
+            // See `init`/`android_controller_identity`: Android devices are
+            // matched on vendor:product, because the GUI and the running game
+            // observe them through different APIs that can disagree on other
+            // details like the device name.
             config.input.controller_assignment[port - 1] =
-                Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string() });
+                Some(android_controller_identity(joystick_id));
         } else {
-            eprintln!("Invalid controller path for controller {controller}");
+            let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(joystick_id) };
+            if !path.is_null() {
+                config.input.controller_assignment[port - 1] =
+                    Some(unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string() });
+            } else {
+                eprintln!("Invalid controller path for controller {controller}");
+            }
         }
     } else {
         eprintln!("Invalid controller number")
@@ -523,36 +544,19 @@ pub fn init(ui: &mut ui::Ui) {
             let mut joystick_id = sdl3_sys::everything::SDL_JoystickID(0);
 
             for joystick in get_joysticks().iter() {
-                let path = if cfg!(target_os = "android") {
-                    let name = if let name =
-                        unsafe { sdl3_sys::joystick::SDL_GetJoystickNameForID(*joystick) }
-                        && !name.is_null()
-                    {
-                        unsafe { std::ffi::CStr::from_ptr(name).to_str().unwrap() }.to_string()
-                    } else {
-                        UNKNOWN_CONTROLLER_NAME.to_string()
-                    };
-
-                    let vendor_id =
-                        unsafe { sdl3_sys::joystick::SDL_GetJoystickVendorForID(*joystick) };
-                    let product_id =
-                        unsafe { sdl3_sys::joystick::SDL_GetJoystickProductForID(*joystick) };
-                    Some(format!("{}:{}:{}", name, vendor_id, product_id))
+                let is_match = if cfg!(target_os = "android") {
+                    // The Slint GUI enumerates controllers through the Android
+                    // InputDevice API while the running game sees them through
+                    // SDL, so the two can disagree on details like the device
+                    // name. Match on vendor:product, which both agree on.
+                    *controller_assignment == android_controller_identity(*joystick)
                 } else {
                     let path = unsafe { sdl3_sys::joystick::SDL_GetJoystickPathForID(*joystick) };
-                    if !path.is_null() {
-                        Some(
-                            unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }.to_string(),
-                        )
-                    } else {
-                        None
-                    }
+                    !path.is_null()
+                        && unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }
+                            == *controller_assignment
                 };
-                if let Some(path) = path
-                    && path == *controller_assignment
-                    && unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(*joystick) }.is_null()
-                    && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(*joystick) }.is_null()
-                {
+                if is_match && joystick_available(*joystick) {
                     joystick_id = *joystick;
                     break;
                 }

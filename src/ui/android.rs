@@ -170,7 +170,9 @@ bind_java_type! {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ControllerInfo {
     pub name: String,
-    /// Stable ID from [`InputDevice.getDescriptor`](https://developer.android.com/reference/android/view/InputDevice#getDescriptor()).
+    /// Identity used to match a stored controller assignment, formatted as
+    /// `"vendor_id:product_id"`. The running game rebuilds the same string from
+    /// SDL (see [`android_controller_identity`]).
     pub descriptor: String,
 }
 
@@ -514,13 +516,28 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         } else {
             ui::input::UNKNOWN_CONTROLLER_NAME.to_string()
         };
-        let descriptor = if let Ok(product_id) = device.get_product_id(env)
-            && let Ok(vendor_id) = device.get_vendor_id(env)
-        {
-            format!("{}:{}:{}", name, vendor_id, product_id)
-        } else {
-            String::new()
+        let vendor_id = match device.get_vendor_id(env) {
+            Ok(vendor_id) => vendor_id,
+            Err(err) => {
+                eprintln!(
+                    "Skipping Android controller {device_id}: could not read vendor id ({err:?})"
+                );
+                continue;
+            }
         };
+        let product_id = match device.get_product_id(env) {
+            Ok(product_id) => product_id,
+            Err(err) => {
+                eprintln!(
+                    "Skipping Android controller {device_id}: could not read product id ({err:?})"
+                );
+                continue;
+            }
+        };
+
+        // Build the identity the running game will match against. The game can
+        // rebuild this string purely from SDL (see `ui::input::init`).
+        let descriptor = format!("{vendor_id}:{product_id}");
 
         controllers.push(ControllerInfo { name, descriptor });
     }

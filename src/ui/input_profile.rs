@@ -175,6 +175,7 @@ fn draw_profile_screen(
 ) -> bool {
     let mut selected: (usize, usize) = (0, 0);
     let mut auto_advance = dinput && !unsafe { sdl3_sys::keyboard::SDL_HasKeyboard() };
+    let mut awaiting_axis_release: Option<i32> = None;
 
     let (mut gather, mut gather_timer) = reset_gather(auto_advance);
     loop {
@@ -279,9 +280,16 @@ fn draw_profile_screen(
                 sdl3_sys::events::SDL_EVENT_GAMEPAD_AXIS_MOTION => {
                     let axis_value = unsafe { event.gaxis }.value;
                     let axis = unsafe { event.gaxis }.axis;
+                    let magnitude = axis_value.saturating_abs() as i32;
+                    // clear the latch once this axis settles back near center
+                    if awaiting_axis_release == Some(axis as i32) && magnitude < i16::MAX as i32 / 4
+                    {
+                        awaiting_axis_release = None;
+                    }
                     if !dinput
                         && gather != 0
-                        && axis_value.saturating_abs() > (i16::MAX as i32 * 3 / 4) as i16
+                        && awaiting_axis_release != Some(axis as i32)
+                        && magnitude > i16::MAX as i32 * 3 / 4
                     {
                         profile.inputs[selected.0][selected.1] =
                             Some(ui::config::InputItem::ControllerAxis(
@@ -291,6 +299,7 @@ fn draw_profile_screen(
                                     initial_state: 0,
                                 },
                             ));
+                        awaiting_axis_release = Some(axis as i32);
                         (gather, gather_timer) = advance_cursor(&mut selected, &mut auto_advance);
                     }
                 }
@@ -422,7 +431,16 @@ fn draw_profile_screen(
                     } else {
                         0
                     };
-                    if dinput && gather != 0 && axis_value.abs_diff(initial_state) > (u16::MAX / 4)
+                    // clear the latch once this axis settles back near center
+                    if awaiting_axis_release == Some(axis as i32)
+                        && axis_value.abs_diff(initial_state) < u16::MAX / 8
+                    {
+                        awaiting_axis_release = None;
+                    }
+                    if dinput
+                        && gather != 0
+                        && awaiting_axis_release != Some(axis as i32)
+                        && axis_value.abs_diff(initial_state) > (u16::MAX / 4)
                     {
                         profile.inputs[selected.0][selected.1] = Some(
                             ui::config::InputItem::JoystickAxis(ui::config::InputControllerAxis {
@@ -431,6 +449,7 @@ fn draw_profile_screen(
                                 initial_state,
                             }),
                         );
+                        awaiting_axis_release = Some(axis as i32);
                         (gather, gather_timer) = advance_cursor(&mut selected, &mut auto_advance);
                     }
                 }
