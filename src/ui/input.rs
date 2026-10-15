@@ -475,6 +475,26 @@ fn android_controller_identity(joystick_id: sdl3_sys::joystick::SDL_JoystickID) 
     format!("{}:{}:{}", vendor_id, product_id, crc)
 }
 
+/// The `vendor:product` prefix of [`android_controller_identity`], used as a
+/// fallback match. A controller SDL claims through its HIDAPI driver (rather than
+/// the Android `InputDevice` backend) builds its GUID from the USB vendor/product
+/// and a HIDAPI-derived name, so its crc16 won't equal the one the GUI computed
+/// from the `InputDevice` descriptor and the full identity never matches. The
+/// vendor/product still agree, so we fall back to those -- at the cost of not
+/// telling two *identical* HIDAPI pads apart.
+fn android_controller_vendor_product(joystick_id: sdl3_sys::joystick::SDL_JoystickID) -> String {
+    let vendor_id = unsafe { sdl3_sys::joystick::SDL_GetJoystickVendorForID(joystick_id) };
+    let product_id = unsafe { sdl3_sys::joystick::SDL_GetJoystickProductForID(joystick_id) };
+    format!("{vendor_id}:{product_id}")
+}
+
+/// Whether SDL has not already opened this joystick/gamepad, so we can claim it
+/// for this port.
+fn joystick_available(joystick_id: sdl3_sys::joystick::SDL_JoystickID) -> bool {
+    unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(joystick_id) }.is_null()
+        && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(joystick_id) }.is_null()
+}
+
 pub fn assign_controller(config: &mut ui::config::Config, controller: i32, port: usize) {
     let joysticks = get_joysticks();
     if controller < 0 {
@@ -547,7 +567,9 @@ pub fn init(ui: &mut ui::Ui) {
         {
             let mut joystick_id = sdl3_sys::everything::SDL_JoystickID(0);
 
-            for joystick in get_joysticks().iter() {
+            let joysticks = get_joysticks();
+
+            for joystick in joysticks.iter() {
                 let is_match = if cfg!(target_os = "android") {
                     // The Slint GUI enumerates controllers through the Android
                     // InputDevice API while the running game sees them through
@@ -562,12 +584,29 @@ pub fn init(ui: &mut ui::Ui) {
                         && unsafe { std::ffi::CStr::from_ptr(path).to_str().unwrap() }
                             == *controller_assignment
                 };
-                if is_match
-                    && unsafe { sdl3_sys::joystick::SDL_GetJoystickFromID(*joystick) }.is_null()
-                    && unsafe { sdl3_sys::gamepad::SDL_GetGamepadFromID(*joystick) }.is_null()
-                {
+                if is_match && joystick_available(*joystick) {
                     joystick_id = *joystick;
                     break;
+                }
+            }
+
+            // On Android, fall back to matching on vendor:product alone when the
+            // full crc identity didn't match. SDL may expose a pad through its
+            // HIDAPI driver, whose GUID crc16 can't be reproduced from the
+            // Android InputDevice descriptor the GUI hashed (see
+            // `android_controller_vendor_product`); without this the pad would
+            // silently fail to bind.
+            if joystick_id == 0
+                && cfg!(target_os = "android")
+                && let Some((vendor_product, _)) = controller_assignment.rsplit_once(':')
+            {
+                for joystick in joysticks.iter() {
+                    if android_controller_vendor_product(*joystick) == vendor_product
+                        && joystick_available(*joystick)
+                    {
+                        joystick_id = *joystick;
+                        break;
+                    }
                 }
             }
 

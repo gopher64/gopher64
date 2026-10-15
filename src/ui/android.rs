@@ -541,31 +541,57 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         // can't be read we'd fall back to placeholder values and build an
         // identity that can never equal the SDL-derived one, so the assignment
         // would silently fail to match. Skip such a device instead.
-        let name = match device
-            .get_name(env)
-            .and_then(|name| name.try_to_string(env))
-        {
-            Ok(name) => name,
-            Err(err) => {
-                eprintln!("Skipping Android controller {device_id}: could not read name ({err:?})");
-                continue;
+        //
+        // `name` is shown in the GUI; `name_crc` is the crc16 of the name's
+        // *modified UTF-8* bytes, used as the descriptor fallback below. SDL
+        // reads these strings through `GetStringUTFChars` (modified UTF-8) and
+        // hashes those exact bytes, so we must hash modified UTF-8 too -- Rust's
+        // standard UTF-8 (`String::as_bytes`) diverges for any non-ASCII byte
+        // and the identity would never match.
+        let (name, name_crc) = {
+            let name = match device.get_name(env) {
+                Ok(name) => name,
+                Err(err) => {
+                    eprintln!(
+                        "Skipping Android controller {device_id}: could not read name ({err:?})"
+                    );
+                    continue;
+                }
+            };
+            match name.mutf8_chars(env) {
+                Ok(chars) => (chars.to_string(), sdl_crc16(chars.to_bytes())),
+                Err(err) => {
+                    eprintln!(
+                        "Skipping Android controller {device_id}: could not read name ({err:?})"
+                    );
+                    continue;
+                }
             }
         };
         // The Android InputDevice descriptor is stable and unique per physical
         // device, so it tells two identical controllers apart. Mirror SDL's
         // fallback to the device name when the descriptor is empty (see
-        // SDLControllerManager.getJoystickDescriptor).
-        let raw_descriptor = match device
-            .get_descriptor(env)
-            .and_then(|d| d.try_to_string(env))
-        {
-            Ok(descriptor) if !descriptor.is_empty() => descriptor,
-            Ok(_) => name.clone(),
-            Err(err) => {
-                eprintln!(
-                    "Skipping Android controller {device_id}: could not read descriptor ({err:?})"
-                );
-                continue;
+        // SDLControllerManager.getJoystickDescriptor), hashing the same modified
+        // UTF-8 bytes SDL folds into the joystick GUID.
+        let descriptor_crc = {
+            let descriptor = match device.get_descriptor(env) {
+                Ok(descriptor) => descriptor,
+                Err(err) => {
+                    eprintln!(
+                        "Skipping Android controller {device_id}: could not read descriptor ({err:?})"
+                    );
+                    continue;
+                }
+            };
+            match descriptor.mutf8_chars(env) {
+                Ok(chars) if !chars.to_bytes().is_empty() => sdl_crc16(chars.to_bytes()),
+                Ok(_) => name_crc,
+                Err(err) => {
+                    eprintln!(
+                        "Skipping Android controller {device_id}: could not read descriptor ({err:?})"
+                    );
+                    continue;
+                }
             }
         };
         let vendor_id = match device.get_vendor_id(env) {
@@ -590,12 +616,7 @@ fn list_controllers_on_jvm(env: &mut Env<'_>) -> jni::errors::Result<Vec<Control
         // Build the identity the running game will match against. SDL folds the
         // descriptor into the joystick GUID as crc16(descriptor), so the game can
         // rebuild this string purely from SDL (see `ui::input::init`).
-        let descriptor = format!(
-            "{}:{}:{}",
-            vendor_id,
-            product_id,
-            sdl_crc16(raw_descriptor.as_bytes())
-        );
+        let descriptor = format!("{vendor_id}:{product_id}:{descriptor_crc}");
 
         controllers.push(ControllerInfo { name, descriptor });
     }
