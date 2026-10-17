@@ -26,6 +26,7 @@ Linux:
 
 Android:
 * APK: [gopher64-android.apk](https://github.com/gopher64/gopher64/releases/latest/download/gopher64-android.apk)
+* [Play Store](https://play.google.com/store/apps/details?id=io.github.gopher64.gopher64)
 
 ## wiki
 
