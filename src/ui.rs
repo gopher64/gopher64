@@ -18,6 +18,8 @@ pub mod video;
 #[cfg(all(feature = "gui", not(target_os = "android")))]
 pub mod vru;
 
+use crate::savestates;
+
 pub const APP_ID: &str = "io.github.gopher64.gopher64";
 
 pub fn install_default_crypto_provider() {
@@ -148,6 +150,7 @@ pub struct Ui {
     pub video: Video,
     pub usb: Usb,
     pub speed_limiter: SpeedLimiter,
+    pub savestate: savestates::Savestate,
 }
 
 pub fn sdl_hints() {
@@ -327,6 +330,7 @@ impl Ui {
             },
             dirs,
             speed_limiter: SpeedLimiter::default(),
+            savestate: savestates::Savestate::default(),
         }
     }
 }

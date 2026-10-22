@@ -224,12 +224,12 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     device.cpu.running = callback.emu_running;
     if device.netplay.is_none() {
         if callback.save_state {
-            device.savestate.save_state = true;
+            device.ui.savestate.save_state = true;
         } else if callback.load_state {
-            device.savestate.load_state = true;
+            device.ui.savestate.load_state = true;
         }
         if callback.load_rewind && device.ui.config.emulation.rewind {
-            device.savestate.load_rewind = true;
+            device.ui.savestate.load_rewind = true;
         }
         if callback.reset_game {
             device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] |= device::cop0::COP0_CAUSE_IP4;

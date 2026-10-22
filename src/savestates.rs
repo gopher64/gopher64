@@ -56,6 +56,29 @@ where
     Ok(unsafe { std::mem::transmute::<u128, __m128i>(bytes) })
 }
 
+/// Serialize an `FxHashMap` in sorted-key order so the output is deterministic regardless
+/// of insertion history. Without this, two logically-identical maps (e.g. the TLB lookup
+/// tables after a savestate round-trip) can serialize to different bytes, which would make
+/// the serialized device state — and any hash of it — non-canonical.
+pub fn serialize_sorted_map<S, K, V>(
+    map: &rustc_hash::FxHashMap<K, V>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+    K: serde::Serialize + Ord,
+    V: serde::Serialize,
+{
+    use serde::ser::SerializeMap;
+    let mut entries: Vec<(&K, &V)> = map.iter().collect();
+    entries.sort_by(|a, b| a.0.cmp(b.0));
+    let mut map_ser = serializer.serialize_map(Some(entries.len()))?;
+    for (k, v) in entries {
+        map_ser.serialize_entry(k, v)?;
+    }
+    map_ser.end()
+}
+
 pub fn serialize_m128i_array<S>(value: &[__m128i], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
@@ -70,13 +93,12 @@ where
     seq.end()
 }
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Default)]
 pub struct Savestate {
     pub save_state: bool,
     pub load_state: bool,
     pub load_rewind: bool,
     pub last_rewind_saved: f64,
-    #[serde(skip)]
     pub rewind_pool:
         std::sync::Arc<tokio::sync::Mutex<std::collections::BTreeMap<i32, SavestateData>>>,
 }
@@ -97,21 +119,21 @@ static SAVES_CLONE: std::sync::LazyLock<tokio::sync::Mutex<ui::storage::Saves>> 
 pub fn process_savestates(device: &mut device::Device) {
     let save_rewind = if device.netplay.is_none()
         && device.ui.config.emulation.rewind
-        && device.vi.elapsed_time - device.savestate.last_rewind_saved > 1.0
+        && device.vi.elapsed_time - device.ui.savestate.last_rewind_saved > 1.0
     {
-        device.savestate.last_rewind_saved = device.vi.elapsed_time;
+        device.ui.savestate.last_rewind_saved = device.vi.elapsed_time;
         true
     } else {
         false
     };
 
-    if device.savestate.save_state || save_rewind {
-        create_savestate(device, !device.savestate.save_state, None);
-        device.savestate.save_state = false;
-    } else if device.savestate.load_state || device.savestate.load_rewind {
-        load_savestate(device, device.savestate.load_rewind, None);
-        device.savestate.load_state = false;
-        device.savestate.load_rewind = false;
+    if device.ui.savestate.save_state || save_rewind {
+        create_savestate(device, !device.ui.savestate.save_state, None);
+        device.ui.savestate.save_state = false;
+    } else if device.ui.savestate.load_state || device.ui.savestate.load_rewind {
+        load_savestate(device, device.ui.savestate.load_rewind, None);
+        device.ui.savestate.load_state = false;
+        device.ui.savestate.load_rewind = false;
     }
 }
 
@@ -133,7 +155,7 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool, rewind_frame:
 
     let save_path = device.ui.storage.paths.savestate_file_path.clone();
     let save_state_slot = device.ui.storage.save_state_slot;
-    let rewind_pool = device.savestate.rewind_pool.clone();
+    let rewind_pool = device.ui.savestate.rewind_pool.clone();
 
     tokio::spawn(async move {
         let mut error = false;
@@ -215,6 +237,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
             let now = std::time::Instant::now();
             loop {
                 if let Some(state) = device
+                    .ui
                     .savestate
                     .rewind_pool
                     .blocking_lock()
@@ -227,7 +250,8 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
                 }
                 std::thread::sleep(std::time::Duration::from_millis(1));
             }
-        } else if let Some((_key, state)) = device.savestate.rewind_pool.blocking_lock().pop_last()
+        } else if let Some((_key, state)) =
+            device.ui.savestate.rewind_pool.blocking_lock().pop_last()
         {
             Some(state)
         } else {
@@ -258,7 +282,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
             ui::video::idle();
         }
 
-        device.savestate.last_rewind_saved = state.device.vi.elapsed_time;
+        device.ui.savestate.last_rewind_saved = state.device.vi.elapsed_time;
 
         std::mem::swap(&mut device.rng, &mut state.device.rng);
 

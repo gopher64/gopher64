@@ -1,4 +1,5 @@
 use crate::device;
+use crate::savestates;
 #[cfg(all(feature = "gui", not(target_os = "android")))]
 use crate::ui;
 
@@ -27,6 +28,7 @@ pub struct Vru {
     pub word_buffer: [u16; 40],
     pub words: Vec<String>,
     pub talking: bool,
+    #[serde(serialize_with = "savestates::serialize_sorted_map")]
     pub word_mappings: rustc_hash::FxHashMap<String, String>,
 }
 

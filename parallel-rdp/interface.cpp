@@ -773,7 +773,8 @@ void rdp_check_framebuffers(uint32_t address, uint32_t length) {
 }
 
 size_t rdp_state_size() {
-  return sizeof(RDP_DEVICE) + 0x1000 + processor->get_hidden_rdram_size();
+  return sizeof(RDP_DEVICE) + 0x1000 + processor->get_hidden_rdram_size() +
+         sizeof(RDP::CommandProcessor::RenderStateSnapshot);
 }
 
 void rdp_save_state(uint8_t *state) {
@@ -787,6 +788,12 @@ void rdp_save_state(uint8_t *state) {
     memcpy(state + sizeof(RDP_DEVICE) + 0x1000, g_hidden_rdram,
            processor->get_hidden_rdram_size());
   }
+
+  RDP::CommandProcessor::RenderStateSnapshot snapshot = {};
+  processor->save_render_state(snapshot);
+  memcpy(state + sizeof(RDP_DEVICE) + 0x1000 +
+             processor->get_hidden_rdram_size(),
+         &snapshot, sizeof(snapshot));
 }
 
 void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state,
@@ -805,6 +812,13 @@ void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state,
     memcpy(g_hidden_rdram, state + sizeof(RDP_DEVICE) + 0x1000,
            processor->get_hidden_rdram_size());
   }
+
+  RDP::CommandProcessor::RenderStateSnapshot snapshot = {};
+  memcpy(&snapshot,
+         state + sizeof(RDP_DEVICE) + 0x1000 +
+             processor->get_hidden_rdram_size(),
+         sizeof(snapshot));
+  processor->load_render_state(snapshot);
 }
 
 static void push_onscreen_message(void *data) {

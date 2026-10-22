@@ -15,7 +15,7 @@ const N64_EXTENSIONS_UNCOMPRESSED: [&str; 8] =
 
 use rand::{Rng, SeedableRng};
 
-use crate::{cheats, netplay, retroachievements, savestates, ui};
+use crate::{cheats, netplay, retroachievements, ui};
 use std::io::Read;
 
 pub mod ai;
@@ -60,7 +60,7 @@ pub fn run_game(
     }
     if let Some(slot) = game_settings.load_savestate_slot {
         device.ui.storage.save_state_slot = slot;
-        device.savestate.load_state = true;
+        device.ui.savestate.load_state = true;
     }
 
     cart::rom::init(device, rom_contents); // cart needs to come before rdram
@@ -261,7 +261,6 @@ pub struct Device {
     #[serde(skip)]
     pub ui: ui::Ui,
     pub byte_swap: usize,
-    pub savestate: savestates::Savestate,
     pub cpu: cpu::Cpu,
     pub pif: pif::Pif,
     pub cart: cart::Cart,
@@ -304,6 +303,11 @@ impl Device {
         self.vru.clone_from(&device.vru);
         self.transferpaks.clone_from(&device.transferpaks);
         self.cheats.clone_from(&device.cheats);
+
+        self.cart.rom = Vec::new();
+        for transferpak in self.transferpaks.iter_mut() {
+            transferpak.cart.rom = Vec::new();
+        }
     }
 
     pub fn new(with_ui: bool) -> Box<Device> {
@@ -322,15 +326,6 @@ impl Device {
                 ui::Ui::default()
             },
             byte_swap,
-            savestate: savestates::Savestate {
-                save_state: false,
-                load_state: false,
-                load_rewind: false,
-                last_rewind_saved: 0.0,
-                rewind_pool: std::sync::Arc::new(tokio::sync::Mutex::new(
-                    std::collections::BTreeMap::new(),
-                )),
-            },
             cpu: cpu::Cpu {
                 cop0: cop0::Cop0 {
                     regs: [0; cop0::COP0_REGS_COUNT],
