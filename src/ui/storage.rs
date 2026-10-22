@@ -34,6 +34,7 @@ pub struct Save {
 
 #[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct RomSave {
+    #[serde(serialize_with = "crate::savestates::serialize_sorted_map")]
     pub data: rustc_hash::FxHashMap<u32, u8>,
     pub write_pending: bool,
 }
