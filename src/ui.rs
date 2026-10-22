@@ -114,6 +114,28 @@ pub struct GameSettings {
     pub load_savestate_slot: Option<u32>,
 }
 
+pub struct SpeedLimiter {
+    pub limit_freq: u64,
+    pub limit_freq_check: std::time::Instant,
+    pub frame_counter: u64,
+    pub enabled: bool,
+    pub min_wait_time: std::time::Duration,
+    pub next_pace_deadline: Option<std::time::Instant>,
+}
+
+impl Default for SpeedLimiter {
+    fn default() -> Self {
+        Self {
+            limit_freq: 2,
+            limit_freq_check: std::time::Instant::now(),
+            frame_counter: 0,
+            enabled: true,
+            min_wait_time: std::time::Duration::from_secs(1),
+            next_pace_deadline: None,
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct Ui {
     pub dirs: Dirs,
@@ -125,6 +147,7 @@ pub struct Ui {
     pub storage: Storage,
     pub video: Video,
     pub usb: Usb,
+    pub speed_limiter: SpeedLimiter,
 }
 
 pub fn sdl_hints() {
@@ -303,6 +326,7 @@ impl Ui {
                 cart_rx: None,
             },
             dirs,
+            speed_limiter: SpeedLimiter::default(),
         }
     }
 }

@@ -255,25 +255,11 @@ pub fn get_rom_contents(file_path: &std::path::PathBuf) -> Option<Vec<u8>> {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct SpeedLimiter {
-    pub limit_freq: u64,
-    #[serde(skip)]
-    #[serde(default = "std::time::Instant::now")]
-    pub limit_freq_check: std::time::Instant,
-    pub frame_counter: u64,
-    pub enabled: bool,
-    pub min_wait_time: std::time::Duration,
-    #[serde(skip)]
-    pub next_pace_deadline: Option<std::time::Instant>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Device {
     #[serde(skip)]
     pub netplay: Option<netplay::Netplay>,
     #[serde(skip)]
     pub ui: ui::Ui,
-    pub speed_limiter: SpeedLimiter,
     pub byte_swap: usize,
     pub savestate: savestates::Savestate,
     pub cpu: cpu::Cpu,
@@ -334,14 +320,6 @@ impl Device {
                 ui::Ui::new()
             } else {
                 ui::Ui::default()
-            },
-            speed_limiter: SpeedLimiter {
-                limit_freq: 2,
-                limit_freq_check: std::time::Instant::now(),
-                frame_counter: 0,
-                enabled: true,
-                min_wait_time: std::time::Duration::from_secs(1),
-                next_pace_deadline: None,
             },
             byte_swap,
             savestate: savestates::Savestate {
