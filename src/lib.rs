@@ -105,6 +105,14 @@ pub struct Args {
         help = "Password for RetroAchievements"
     )]
     pub ra_password: Option<String>,
+    #[arg(
+        long,
+        value_name = "FRAMES",
+        value_parser = clap::value_parser!(u64).range(1..),
+        conflicts_with = "netplay_server_addr",
+        help = "Savestate test: run FRAMES, save state, run FRAMES and hash, load state, run FRAMES and hash again, then compare the hashes"
+    )]
+    pub savestate_test: Option<u64>,
 }
 
 #[cfg(feature = "gui")]
@@ -170,6 +178,14 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         }
 
         let mut device = device::Device::new(true);
+        let mut rng_seed = args.rng_seed;
+
+        if let Some(frames) = args.savestate_test {
+            rng_seed.get_or_insert(ui::state_test::DEFAULT_RNG_SEED);
+            device.ui.state_test = Some(ui::state_test::StateTest::new(frames));
+            device.ui.speed_limiter.enabled = false;
+            device.ui.audio.gain = 0.0;
+        }
 
         device.ui.config.ui.recent_roms.retain(|x| *x != game);
         device.ui.config.ui.recent_roms.insert(0, game);
@@ -276,7 +292,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 disable_expansion_pak,
                 cheats,
                 load_savestate_slot: args.load_state,
-                rng_seed: args.rng_seed,
+                rng_seed,
             },
             ra_config,
             netplay_config,
