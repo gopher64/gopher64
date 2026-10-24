@@ -230,6 +230,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
             "Cannot load savestate in RA hardcore mode",
             ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
         );
+        return;
     }
 
     let state_data = if rewind {
