@@ -117,6 +117,8 @@ static SAVES_CLONE: std::sync::LazyLock<tokio::sync::Mutex<ui::storage::Saves>> 
     std::sync::LazyLock::new(|| tokio::sync::Mutex::new(ui::storage::Saves::default()));
 
 pub fn process_savestates(device: &mut device::Device) {
+    ui::state_test::frame(device);
+
     let save_rewind = if device.netplay.is_none()
         && device.ui.config.emulation.rewind
         && device.vi.elapsed_time - device.ui.savestate.last_rewind_saved > 1.0
