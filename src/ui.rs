@@ -12,6 +12,7 @@ pub mod input_profile;
 pub mod netplay;
 #[cfg(feature = "gui")]
 pub mod retroachievements;
+pub mod state_test;
 pub mod storage;
 pub mod usb;
 pub mod video;
@@ -151,6 +152,7 @@ pub struct Ui {
     pub usb: Usb,
     pub speed_limiter: SpeedLimiter,
     pub savestate: savestates::Savestate,
+    pub state_test: Option<state_test::StateTest>,
 }
 
 pub fn sdl_hints() {
@@ -331,6 +333,7 @@ impl Ui {
             dirs,
             speed_limiter: SpeedLimiter::default(),
             savestate: savestates::Savestate::default(),
+            state_test: None,
         }
     }
 }
