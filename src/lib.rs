@@ -97,6 +97,13 @@ pub struct Args {
         help = "Password for RetroAchievements"
     )]
     pub ra_password: Option<String>,
+    #[arg(
+        long,
+        value_name = "FRAMES",
+        value_parser = clap::value_parser!(u64).range(1..),
+        help = "Savestate test: run FRAMES, save state, run FRAMES and hash, load state, run FRAMES and hash again, then compare the hashes"
+    )]
+    pub savestate_test: Option<u64>,
 }
 
 #[cfg(feature = "gui")]
@@ -161,7 +168,17 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
             return Err(Error::other("Savestate slot must be between 0 and 9"));
         }
 
+        if args.savestate_test.is_some() && args.netplay_server_addr.is_some() {
+            return Err(Error::other("--savestate-test cannot be used with netplay"));
+        }
+
         let mut device = device::Device::new(true);
+
+        if let Some(frames) = args.savestate_test {
+            device.ui.state_test = Some(ui::state_test::StateTest::new(frames));
+            device.ui.speed_limiter.enabled = false;
+            device.ui.audio.gain = 0.0;
+        }
 
         device.ui.config.ui.recent_roms.retain(|x| *x != game);
         device.ui.config.ui.recent_roms.insert(0, game);
