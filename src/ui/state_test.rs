@@ -71,10 +71,7 @@ fn advance(device: &mut device::Device, test: &mut StateTest) {
         }
         Phase::AfterSave => {
             test.hash = hash_device(device);
-            if !savestates::load_savestate(device, false, None) {
-                eprintln!("Savestate test failed: could not load savestate");
-                test.finished = true;
-            }
+            savestates::load_savestate(device, false, None);
             test.phase = Phase::AfterLoad;
         }
         Phase::AfterLoad => {

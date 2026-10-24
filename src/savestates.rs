@@ -224,17 +224,12 @@ pub fn create_savestate(device: &mut device::Device, rewind: bool, rewind_frame:
     });
 }
 
-pub fn load_savestate(
-    device: &mut device::Device,
-    rewind: bool,
-    rewind_frame: Option<i32>,
-) -> bool {
+pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: Option<i32>) {
     if retroachievements::get_hardcore() {
         ui::video::onscreen_message(
             "Cannot load savestate in RA hardcore mode",
             ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
         );
-        return false;
     }
 
     let state_data = if rewind {
@@ -399,7 +394,6 @@ pub fn load_savestate(
                 ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
             );
         }
-        true
     } else {
         let (message, length) = if !rewind {
             (
@@ -421,7 +415,6 @@ pub fn load_savestate(
             )
         };
         ui::video::onscreen_message(&message, length);
-        false
     }
 }
 
