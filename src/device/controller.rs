@@ -54,6 +54,11 @@ pub fn process(
                 netplay.inputs[channel]
             } else if let Some(playback) = &device.bk2_playback {
                 playback.input(channel)
+            } else if device.ui.state_test.is_some() {
+                ui::input::InputData {
+                    data: 0,
+                    pak_change_pressed: false,
+                }
             } else {
                 ui::input::get(&mut device.ui, channel)
             };
