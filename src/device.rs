@@ -109,7 +109,11 @@ pub fn run_game(
     cpu::init(device);
 
     ui::storage::init(&mut device.ui, &device.cart.rom);
-    ui::storage::load_saves(&mut device.ui, &mut device.netplay);
+
+    if device.ui.state_test.is_none() {
+        ui::storage::load_saves(&mut device.ui, &mut device.netplay);
+    }
+
     ui::storage::format_saves(device);
 
     if !retroachievements::get_hardcore() {
@@ -120,7 +124,9 @@ pub fn run_game(
 
     retroachievements::unload_game(discord_watch_tx, discord_handle);
 
-    ui::storage::write_saves(device);
+    if device.ui.state_test.is_none() {
+        ui::storage::write_saves(device);
+    }
 
     if let Some(netplay) = &mut device.netplay {
         netplay::close(netplay);
@@ -144,6 +150,9 @@ fn init_rng_rtc(device: &mut Device) {
             rng_seed = netplay::receive_rng(netplay);
         }
     }
+    if device.ui.state_test.is_some() {
+        rng_seed = ui::state_test::RNG_SEED;
+    }
     device.rng = rand::rngs::Xoshiro256PlusPlus::seed_from_u64(rng_seed);
 
     device.cart.rtc_timestamp = std::time::SystemTime::now()
@@ -156,6 +165,9 @@ fn init_rng_rtc(device: &mut Device) {
         } else {
             device.cart.rtc_timestamp = netplay::receive_rtc(netplay);
         }
+    }
+    if device.ui.state_test.is_some() {
+        device.cart.rtc_timestamp = ui::state_test::RTC_TIMESTAMP;
     }
 }
 

@@ -222,6 +222,10 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     let mut speed_limiter_toggled = false;
     let callback = unsafe { rdp_check_callback() };
     device.cpu.running = callback.emu_running;
+    if let Some(test) = &device.ui.state_test {
+        device.cpu.running &= !test.finished();
+        return (false, false);
+    }
     if device.netplay.is_none() {
         if callback.save_state {
             device.ui.savestate.save_state = true;
