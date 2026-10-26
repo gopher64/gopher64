@@ -48,7 +48,13 @@ pub fn read_mem(
 ) -> u32 {
     device::cop0::add_cycles(
         device,
-        rdram_calculate_cycles(access_size as u64) / (access_size as u64 / 4),
+        match access_size {
+            device::memory::AccessSize::Word => const { rdram_cycles_per_word(4) },
+            device::memory::AccessSize::Dword => const { rdram_cycles_per_word(8) },
+            device::memory::AccessSize::Dcache => const { rdram_cycles_per_word(16) },
+            device::memory::AccessSize::Icache => const { rdram_cycles_per_word(32) },
+            device::memory::AccessSize::None => unreachable!(),
+        },
     );
     let masked_address = address as usize & RDRAM_MASK;
 
@@ -172,6 +178,10 @@ pub fn init(device: &mut device::Device) {
     device.ri.regs[device::ri::RI_CONFIG_REG] = 0x40;
 }
 
-pub fn rdram_calculate_cycles(length: u64) -> u64 {
+pub const fn rdram_calculate_cycles(length: u64) -> u64 {
     31 + (length / 3) // https://hcs64.com/dma.html, https://github.com/rasky/n64-systembench
+}
+
+const fn rdram_cycles_per_word(access_size: u64) -> u64 {
+    rdram_calculate_cycles(access_size) / (access_size / 4)
 }
