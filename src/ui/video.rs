@@ -38,6 +38,10 @@ pub fn init(device: &mut device::Device, netplay: bool) {
     ui::sdl_init(sdl3_sys::init::SDL_INIT_VIDEO);
     ui::ttf_init();
 
+    unsafe {
+        std::env::set_var("PARALLEL_RDP_SINGLE_THREADED_COMMAND", "1");
+    }
+
     #[cfg(all(target_os = "android", target_arch = "aarch64"))]
     {
         if ui::android::is_adreno_gpu() {
