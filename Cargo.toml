@@ -25,7 +25,7 @@ encoding_rs = "0.8"
 mimalloc = "0.1"
 regex = "1.11"
 tokio-tungstenite = { version = "0.30", features = ["rustls-tls-webpki-roots"] }
-matchbox_socket = "0.14"
+matchbox_socket = "0.15"
 ggrs = { version = "0.13", features = ["sync-send"] }
 rustc-hash = "2.1"
 futures = "0.3"
