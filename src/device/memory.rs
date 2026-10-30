@@ -1,7 +1,7 @@
 use crate::{device, savestates};
 
 const MM_RDRAM_DRAM: usize = 0x00000000;
-const MM_RDRAM_REGS: usize = 0x03f00000;
+pub const MM_RDRAM_REGS: usize = 0x03f00000;
 const MM_RSP_MEM: usize = 0x04000000;
 const MM_RSP_REGS: usize = 0x04040000;
 const MM_RSP_REGS_PC: usize = 0x04080000;

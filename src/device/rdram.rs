@@ -71,6 +71,31 @@ pub fn read_mem(
     )
 }
 
+pub fn read_cache_line<const WORDS: usize>(
+    device: &mut device::Device,
+    address: u64,
+) -> [u32; WORDS] {
+    device::cop0::add_cycles(
+        device,
+        const { rdram_cycles_per_word(WORDS as u64 * 4) * WORDS as u64 },
+    );
+    let masked_address = address as usize & RDRAM_MASK;
+
+    ui::video::check_framebuffers(masked_address as u32, WORDS as u32 * 4);
+
+    let mut words = [0; WORDS];
+    if let Some(data) = device
+        .rdram
+        .mem
+        .get(masked_address..masked_address + WORDS * 4)
+    {
+        for (word, bytes) in words.iter_mut().zip(data.as_chunks::<4>().0) {
+            *word = u32::from_ne_bytes(*bytes);
+        }
+    }
+    words
+}
+
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     ui::video::check_framebuffers(address as u32, 4);
 

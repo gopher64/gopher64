@@ -48,16 +48,22 @@ pub fn icache_fill(device: &mut device::Device, line_index: usize, phys_address:
     let cache_address = ((device.memory.icache[line_index].tag
         | (device.memory.icache[line_index].index) as u32)
         & 0x1ffffffc) as u64;
+    if cache_address < device::memory::MM_RDRAM_REGS as u64 {
+        device.memory.icache[line_index].words =
+            device::rdram::read_cache_line(device, cache_address);
+    } else {
+        for i in 0..8 {
+            device.memory.icache[line_index].words[i as usize] = device.memory.memory_map_read
+                [(cache_address >> 16) as usize](
+                device,
+                cache_address | (i * 4),
+                device::memory::AccessSize::Icache,
+            );
+        }
+    }
     for i in 0..8 {
-        device.memory.icache[line_index].words[i as usize] = device.memory.memory_map_read
-            [(cache_address >> 16) as usize](
-            device,
-            cache_address | (i * 4),
-            device::memory::AccessSize::Icache,
-        );
-
-        device.memory.icache[line_index].instruction[i as usize] =
-            device::cpu::decode_opcode(device, device.memory.icache[line_index].words[i as usize]);
+        device.memory.icache[line_index].instruction[i] =
+            device::cpu::decode_opcode(device, device.memory.icache[line_index].words[i]);
     }
 }
 
@@ -108,6 +114,11 @@ fn dcache_fill(device: &mut device::Device, line_index: usize, phys_address: u64
         | (device.memory.dcache[line_index].index) as u32)
         & 0x1ffffffc) as u64;
 
+    if cache_address < device::memory::MM_RDRAM_REGS as u64 {
+        device.memory.dcache[line_index].words =
+            device::rdram::read_cache_line(device, cache_address);
+        return;
+    }
     for i in 0..4 {
         device.memory.dcache[line_index].words[i as usize] = device.memory.memory_map_read
             [(cache_address >> 16) as usize](
