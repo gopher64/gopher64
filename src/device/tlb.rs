@@ -6,6 +6,31 @@ pub struct TlbLut {
     pub cached: bool,
 }
 
+const TLB_CACHE_SIZE: usize = 16;
+
+#[derive(Copy, Clone)]
+pub struct TlbCache {
+    tags: [u64; TLB_CACHE_SIZE],
+    luts: [TlbLut; TLB_CACHE_SIZE],
+}
+
+impl Default for TlbCache {
+    fn default() -> Self {
+        TlbCache {
+            tags: [u64::MAX; TLB_CACHE_SIZE],
+            luts: [TlbLut {
+                address: 0,
+                cached: false,
+            }; TLB_CACHE_SIZE],
+        }
+    }
+}
+
+fn clear_cache(device: &mut device::Device) {
+    device.cpu.cop0.tlb_cache_r = TlbCache::default();
+    device.cpu.cop0.tlb_cache_w = TlbCache::default();
+}
+
 #[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TlbEntry {
     pub mask: u64,
@@ -144,6 +169,7 @@ pub fn probe(device: &mut device::Device) {
 }
 
 fn tlb_unmap(device: &mut device::Device, index: u64) {
+    clear_cache(device);
     let e = &device.cpu.cop0.tlb_entries[index as usize];
 
     if e.v_even != 0 {
@@ -178,6 +204,7 @@ fn tlb_unmap(device: &mut device::Device, index: u64) {
 }
 
 fn tlb_map(device: &mut device::Device, index: u64) {
+    clear_cache(device);
     let e = &device.cpu.cop0.tlb_entries[index as usize];
 
     if e.v_even != 0
@@ -249,16 +276,24 @@ pub fn get_physical_address(
     access_type: device::memory::AccessType,
 ) -> (u64, bool, bool) {
     address &= 0xffffffff;
+    let page = address >> 12;
+    let slot = page as usize % TLB_CACHE_SIZE;
 
-    if access_type == device::memory::AccessType::Write {
-        if let Some(lut) = device.cpu.cop0.tlb_lut_w.get(&(address >> 12)) {
-            return (
-                (lut.address & 0x1FFFF000) | (address & 0xFFF),
-                lut.cached,
-                false,
-            );
-        }
-    } else if let Some(lut) = device.cpu.cop0.tlb_lut_r.get(&(address >> 12)) {
+    let (lut_map, cache) = if access_type == device::memory::AccessType::Write {
+        (&device.cpu.cop0.tlb_lut_w, &mut device.cpu.cop0.tlb_cache_w)
+    } else {
+        (&device.cpu.cop0.tlb_lut_r, &mut device.cpu.cop0.tlb_cache_r)
+    };
+    let lut = if cache.tags[slot] == page {
+        Some(cache.luts[slot])
+    } else if let Some(lut) = lut_map.get(&page) {
+        cache.tags[slot] = page;
+        cache.luts[slot] = *lut;
+        Some(*lut)
+    } else {
+        None
+    };
+    if let Some(lut) = lut {
         return (
             (lut.address & 0x1FFFF000) | (address & 0xFFF),
             lut.cached,

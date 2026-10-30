@@ -104,6 +104,10 @@ pub struct Cop0 {
     pub tlb_lut_r: rustc_hash::FxHashMap<u64, device::tlb::TlbLut>,
     #[serde(serialize_with = "savestates::serialize_sorted_map")]
     pub tlb_lut_w: rustc_hash::FxHashMap<u64, device::tlb::TlbLut>,
+    #[serde(skip)]
+    pub tlb_cache_r: device::tlb::TlbCache,
+    #[serde(skip)]
+    pub tlb_cache_w: device::tlb::TlbCache,
     pub tlb_entries: [device::tlb::TlbEntry; 32],
     pub is_event: bool,
 }
