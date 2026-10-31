@@ -1,6 +1,8 @@
 use crate::device;
+#[cfg(target_os = "android")]
+use crate::ui;
 
-use std::io::Write;
+use std::io::{Read, Write};
 const MBC3_RTC_SECONDS: usize = 0;
 const MBC3_RTC_MINUTES: usize = 1;
 const MBC3_RTC_HOURS: usize = 2;
@@ -32,6 +34,17 @@ pub enum CartType {
     MBC3RamBatt,
     MBC3RamBattRtc,
     MBC5RamBatt,
+}
+
+pub fn read_file(path: &str) -> Option<Vec<u8>> {
+    #[cfg(target_os = "android")]
+    let mut file = ui::android::get_file_from_uri(&std::path::PathBuf::from(path))?;
+    #[cfg(not(target_os = "android"))]
+    let mut file = std::fs::File::open(path).ok()?;
+
+    let mut contents = vec![];
+    file.read_to_end(&mut contents).ok()?;
+    Some(contents)
 }
 
 pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &[u8]) {
