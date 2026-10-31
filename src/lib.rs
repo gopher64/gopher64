@@ -194,8 +194,12 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 if device.ui.config.input.transfer_pak[i]
                     && !device.ui.config.input.gb_rom_path[i].is_empty()
                     && !device.ui.config.input.gb_ram_path[i].is_empty()
-                    && let Ok(rom) = std::fs::read(&device.ui.config.input.gb_rom_path[i])
-                    && let Ok(ram) = std::fs::read(&device.ui.config.input.gb_ram_path[i])
+                    && let Some(rom) = device::controller::gbcart::read_file(
+                        &device.ui.config.input.gb_rom_path[i],
+                    )
+                    && let Some(ram) = device::controller::gbcart::read_file(
+                        &device.ui.config.input.gb_ram_path[i],
+                    )
                 {
                     device::controller::gbcart::init(&mut device.transferpaks[i].cart, &rom, &ram);
                 }
