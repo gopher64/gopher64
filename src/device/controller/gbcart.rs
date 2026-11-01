@@ -24,6 +24,7 @@ pub struct GbCart {
     pub rtc_regs: [u8; MBC3_RTC_REGS_COUNT],
     pub rtc_regs_latch: [u8; MBC3_RTC_REGS_COUNT],
     pub last_elapsed_time: i64,
+    pub rtc_base_time: i64,
 }
 
 #[derive(Default, Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -47,8 +48,16 @@ pub fn read_file(path: &str) -> Option<Vec<u8>> {
     Some(contents)
 }
 
+fn unix_time_now() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
 pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &[u8]) {
     gb_cart.rom = rom.to_vec();
+    gb_cart.rtc_base_time = unix_time_now();
     let offset = match ram.len() % 8192 {
         44 => {
             gb_cart.ram = ram[..ram.len() - 44].to_vec();
@@ -85,6 +94,15 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
         u32::from_le_bytes(ram[offset + 32..offset + 36].try_into().unwrap()) as u8;
     gb_cart.rtc_regs_latch[MBC3_RTC_DAYS_H] =
         u32::from_le_bytes(ram[offset + 36..offset + 40].try_into().unwrap()) as u8;
+
+    let saved_time = if ram.len() - offset == 48 {
+        i64::from_le_bytes(ram[offset + 40..offset + 48].try_into().unwrap())
+    } else {
+        u32::from_le_bytes(ram[offset + 40..offset + 44].try_into().unwrap()) as i64
+    };
+    if saved_time > 0 {
+        advance_rtc(&mut gb_cart.rtc_regs, gb_cart.rtc_base_time - saved_time);
+    }
 }
 
 pub fn save(
@@ -124,8 +142,9 @@ pub fn save(
             f.write_all(&(gb_cart.rtc_regs_latch[MBC3_RTC_DAYS_H] as u32).to_le_bytes())
                 .unwrap();
 
-            let max = ((i32::MAX as i64) << 32) | (i32::MAX as i64);
-            f.write_all(&max.to_le_bytes()).unwrap();
+            // rtc_regs are now in sync with rtc_base_time + elapsed_time
+            let timestamp = gb_cart.rtc_base_time + elapsed_time;
+            f.write_all(&timestamp.to_le_bytes()).unwrap();
 
             f.flush().unwrap();
         }
@@ -135,44 +154,38 @@ pub fn save(
 }
 
 fn update_rtc_regs(cart: &mut device::controller::gbcart::GbCart, elapsed_time: i64) {
-    let mut diff = elapsed_time - cart.last_elapsed_time;
+    let diff = elapsed_time - cart.last_elapsed_time;
     cart.last_elapsed_time = elapsed_time;
+    advance_rtc(&mut cart.rtc_regs, diff);
+}
 
-    if diff > 0 {
-        cart.rtc_regs[MBC3_RTC_SECONDS] += (diff % 60) as u8;
-        if cart.rtc_regs[MBC3_RTC_SECONDS] >= 60 {
-            cart.rtc_regs[MBC3_RTC_SECONDS] -= 60;
-            cart.rtc_regs[MBC3_RTC_MINUTES] += 1;
-        }
-        diff /= 60;
+fn advance_rtc(regs: &mut [u8; MBC3_RTC_REGS_COUNT], diff: i64) {
+    // bit 6 of DAYS_H is the halt flag
+    if diff <= 0 || regs[MBC3_RTC_DAYS_H] & 0x40 != 0 {
+        return;
+    }
 
-        cart.rtc_regs[MBC3_RTC_MINUTES] += (diff % 60) as u8;
-        if cart.rtc_regs[MBC3_RTC_MINUTES] >= 60 {
-            cart.rtc_regs[MBC3_RTC_MINUTES] -= 60;
-            cart.rtc_regs[MBC3_RTC_HOURS] += 1;
-        }
-        diff /= 60;
+    let mut total = regs[MBC3_RTC_SECONDS] as i64
+        + regs[MBC3_RTC_MINUTES] as i64 * 60
+        + regs[MBC3_RTC_HOURS] as i64 * 3600
+        + diff;
+    regs[MBC3_RTC_SECONDS] = (total % 60) as u8;
+    total /= 60;
+    regs[MBC3_RTC_MINUTES] = (total % 60) as u8;
+    total /= 60;
+    regs[MBC3_RTC_HOURS] = (total % 24) as u8;
+    total /= 24;
 
-        cart.rtc_regs[MBC3_RTC_HOURS] += (diff % 24) as u8;
-        if cart.rtc_regs[MBC3_RTC_HOURS] >= 24 {
-            cart.rtc_regs[MBC3_RTC_HOURS] -= 24;
-            cart.rtc_regs[MBC3_RTC_DAYS_L] += 1;
-        }
-        diff /= 24;
+    let days =
+        ((((regs[MBC3_RTC_DAYS_H] & 0x01) as i64) << 8) | regs[MBC3_RTC_DAYS_L] as i64) + total;
 
-        /* update days counter */
-        let days = ((((cart.rtc_regs[MBC3_RTC_DAYS_H] & 0x01) as i64) << 8)
-            | cart.rtc_regs[MBC3_RTC_DAYS_L] as i64)
-            + diff;
+    regs[MBC3_RTC_DAYS_L] = (days & 0xff) as u8;
+    regs[MBC3_RTC_DAYS_H] &= !0x01;
+    regs[MBC3_RTC_DAYS_H] |= ((days >> 8) & 1) as u8;
 
-        cart.rtc_regs[MBC3_RTC_DAYS_L] = (days & 0xff) as u8;
-        cart.rtc_regs[MBC3_RTC_DAYS_H] &= !0x01;
-        cart.rtc_regs[MBC3_RTC_DAYS_H] |= ((days >> 8) & 1) as u8;
-
-        /* set carry bit if days overflow */
-        if days > 511 {
-            cart.rtc_regs[MBC3_RTC_DAYS_H] |= 0x80;
-        }
+    // set carry bit if days overflow
+    if days > 511 {
+        regs[MBC3_RTC_DAYS_H] |= 0x80;
     }
 }
 
