@@ -12,6 +12,7 @@ pub const COP0_BADVADDR_REG: usize = 8;
 pub const COP0_COUNT_REG: usize = 9;
 pub const COP0_ENTRYHI_REG: usize = 10;
 const COP0_COMPARE_REG: usize = 11;
+const COMPARE_WRAP_PERIOD: u64 = 1 << 32;
 pub const COP0_STATUS_REG: usize = 12;
 pub const COP0_CAUSE_REG: usize = 13;
 pub const COP0_EPC_REG: usize = 14;
@@ -212,16 +213,16 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
         COP0_COMPARE_REG => {
             data &= 0xFFFFFFFF;
             let current_count = (device.cpu.cop0.regs[COP0_COUNT_REG] >> 1) & 0xFFFFFFFF;
-            let mut compare_event_diff = (data as u32).wrapping_sub(current_count as u32);
+            let mut compare_event_diff = (data as u32).wrapping_sub(current_count as u32) as u64;
 
             if compare_event_diff == 0 {
-                compare_event_diff += u32::MAX;
+                compare_event_diff = COMPARE_WRAP_PERIOD;
             }
 
             device::events::create_event(
                 device,
                 device::events::EVENT_TYPE_COMPARE,
-                (compare_event_diff as u64) << 1,
+                compare_event_diff << 1,
             );
             device.cpu.cop0.regs[COP0_CAUSE_REG] &= !COP0_CAUSE_IP7;
         }
@@ -246,7 +247,7 @@ pub fn compare_event(device: &mut device::Device) {
     device::events::create_event_at(
         device,
         device::events::EVENT_TYPE_COMPARE,
-        device.cpu.next_event_count + (u32::MAX as u64),
+        device.cpu.next_event_count + (COMPARE_WRAP_PERIOD << 1),
     );
     device::exceptions::check_pending_interrupts(device);
 }
@@ -385,5 +386,9 @@ pub fn init(device: &mut device::Device) {
     device.cpu.cop0.regs[COP0_BADVADDR_REG] = 0xFFFFFFFF;
     device.cpu.cop0.regs[COP0_CONTEXT_REG] = 0x7FFFF0;
 
-    device::events::create_event(device, device::events::EVENT_TYPE_COMPARE, u32::MAX as u64)
+    device::events::create_event(
+        device,
+        device::events::EVENT_TYPE_COMPARE,
+        COMPARE_WRAP_PERIOD << 1,
+    )
 }

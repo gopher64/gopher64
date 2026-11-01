@@ -32,43 +32,49 @@ pub fn check_pending_interrupts(device: &mut device::Device) {
     }
 }
 
+fn set_exception_cause(device: &mut device::Device, cause: u64) {
+    let regs = &mut device.cpu.cop0.regs;
+    regs[device::cop0::COP0_CAUSE_REG] =
+        (regs[device::cop0::COP0_CAUSE_REG] & device::cop0::COP0_CAUSE_IP_MASK) | cause;
+}
+
 pub fn interrupt_exception(device: &mut device::Device) {
     device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] &= !device::cop0::COP0_CAUSE_EXCCODE_MASK;
     exception_general(device, 0x180);
 }
 
 pub fn floating_point_exception(device: &mut device::Device) {
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] = device::cop0::COP0_CAUSE_EXCCODE_FPE;
+    set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_FPE);
 
     exception_general(device, 0x180)
 }
 
 pub fn trap_exception(device: &mut device::Device) {
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] = device::cop0::COP0_CAUSE_EXCCODE_TR;
+    set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_TR);
 
     exception_general(device, 0x180)
 }
 
 pub fn syscall_exception(device: &mut device::Device) {
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] = device::cop0::COP0_CAUSE_EXCCODE_SYS;
+    set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_SYS);
 
     exception_general(device, 0x180)
 }
 
 pub fn break_exception(device: &mut device::Device) {
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] = device::cop0::COP0_CAUSE_EXCCODE_BP;
+    set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_BP);
 
     exception_general(device, 0x180)
 }
 
 pub fn reserved_exception(device: &mut device::Device, cop: u64) {
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] = device::cop0::COP0_CAUSE_EXCCODE_RI | cop;
+    set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_RI | cop);
 
     exception_general(device, 0x180)
 }
 
 pub fn cop_unusable_exception(device: &mut device::Device, cop: u64) {
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] = device::cop0::COP0_CAUSE_EXCCODE_CPU | cop;
+    set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_CPU | cop);
 
     exception_general(device, 0x180)
 }
@@ -79,9 +85,9 @@ pub fn tlb_miss_exception(
     access_type: device::memory::AccessType,
 ) {
     if access_type == device::memory::AccessType::Read {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] = device::cop0::COP0_CAUSE_EXCCODE_TLBL
+        set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_TLBL);
     } else {
-        device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] = device::cop0::COP0_CAUSE_EXCCODE_TLBS
+        set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_TLBS);
     }
 
     device.cpu.cop0.regs[device::cop0::COP0_BADVADDR_REG] = address;
@@ -112,8 +118,7 @@ pub fn tlb_miss_exception(
         if address & !3 >= i.start_even && address & !3 <= i.end_even {
             valid = i.v_even != 0;
             if valid && access_type == device::memory::AccessType::Write && i.d_even == 0 {
-                device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] =
-                    device::cop0::COP0_CAUSE_EXCCODE_MOD;
+                set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_MOD);
                 valid = false;
             }
             break;
@@ -121,8 +126,7 @@ pub fn tlb_miss_exception(
         if address & !3 >= i.start_odd && address & !3 <= i.end_odd {
             valid = i.v_odd != 0;
             if valid && access_type == device::memory::AccessType::Write && i.d_odd == 0 {
-                device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] =
-                    device::cop0::COP0_CAUSE_EXCCODE_MOD;
+                set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_MOD);
                 valid = false;
             }
             break;
