@@ -192,7 +192,7 @@ pub fn emux_xdetect(_device: &mut device::Device, _opcode: u32) {}
 
 fn get_control_registers(device: &device::Device, index: u32) -> u64 {
     match index as usize {
-        COP0_COUNT_REG => device.cpu.cop0.regs[index as usize] >> 1,
+        COP0_COUNT_REG => (device.cpu.cop0.regs[index as usize] >> 1) & 0xFFFFFFFF,
         COP0_RANDOM_REG => set_random_register(device),
         7 | 21 | 22 | 23 | 24 | 25 | 31 => device.cpu.cop0.reg_latch,
         _ => device.cpu.cop0.regs[index as usize],
@@ -207,23 +207,14 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
             data <<= 1;
             device::events::translate_events(device, device.cpu.cop0.regs[COP0_COUNT_REG], data);
             device.cpu.cop0.regs[COP0_COUNT_REG] = data;
+            let compare = device.cpu.cop0.regs[COP0_COMPARE_REG];
+            schedule_compare_event(device, compare);
             return;
         }
         COP0_WIRED_REG => device.cpu.cop0.regs[COP0_RANDOM_REG] = 31,
         COP0_COMPARE_REG => {
             data &= 0xFFFFFFFF;
-            let current_count = (device.cpu.cop0.regs[COP0_COUNT_REG] >> 1) & 0xFFFFFFFF;
-            let mut compare_event_diff = (data as u32).wrapping_sub(current_count as u32) as u64;
-
-            if compare_event_diff == 0 {
-                compare_event_diff = COMPARE_WRAP_PERIOD;
-            }
-
-            device::events::create_event(
-                device,
-                device::events::EVENT_TYPE_COMPARE,
-                compare_event_diff << 1,
-            );
+            schedule_compare_event(device, data);
             device.cpu.cop0.regs[COP0_CAUSE_REG] &= !COP0_CAUSE_IP7;
         }
         COP0_STATUS_REG
@@ -239,6 +230,19 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
         device.cpu.cop0.reg_write_masks[index as usize],
     );
     device::exceptions::check_pending_interrupts(device);
+}
+
+fn schedule_compare_event(device: &mut device::Device, compare: u64) {
+    let current_count = device.cpu.cop0.regs[COP0_COUNT_REG] >> 1;
+    let mut diff = (compare as u32).wrapping_sub(current_count as u32) as u64;
+    if diff == 0 {
+        diff = COMPARE_WRAP_PERIOD;
+    }
+    device::events::create_event_at(
+        device,
+        device::events::EVENT_TYPE_COMPARE,
+        (current_count + diff) << 1,
+    );
 }
 
 pub fn compare_event(device: &mut device::Device) {
