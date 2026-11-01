@@ -48,16 +48,12 @@ pub fn read_file(path: &str) -> Option<Vec<u8>> {
     Some(contents)
 }
 
-fn unix_time_now() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
-}
-
 pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &[u8]) {
     gb_cart.rom = rom.to_vec();
-    gb_cart.rtc_base_time = unix_time_now();
+    gb_cart.rtc_base_time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
     let offset = match ram.len() % 8192 {
         44 => {
             gb_cart.ram = ram[..ram.len() - 44].to_vec();
