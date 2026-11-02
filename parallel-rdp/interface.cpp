@@ -86,7 +86,11 @@ typedef struct {
   uint32_t cmd_data[0x00040000 >> 2];
   int cmd_cur;
   int cmd_ptr;
-  uint32_t region;
+  int32_t scissor_xh, scissor_yh, scissor_xl, scissor_yl;
+  uint32_t scissor_field;    // interlace: only every other line is drawn
+  uint32_t scissor_keep_odd; // which lines are kept in field mode
+  uint32_t cycle_type;
+  uint64_t busy_until; // CPU cycle at which the RDP finishes its queued work
   FrameBufferInfo frame_buffer_info;
 } RDP_DEVICE;
 
@@ -854,8 +858,116 @@ uint32_t pixel_size(uint32_t pixel_type, uint32_t area) {
   }
 }
 
-uint64_t rdp_process_commands() {
+// Rough RDP timing model used to schedule the DP interrupt after SyncFull.
+// busy_until tracks when the RDP will finish its queued work, so that work
+// overlapping earlier submissions is not counted twice.
+// Each primitive costs its (scissor-clipped) pixel count divided by the fill
+// rate of the current cycle type, plus a small fixed setup cost. Fill and copy
+// modes write 64 bits per clock; 1-cycle mode is ~1 pixel per clock and
+// 2-cycle mode ~2 clocks per pixel. Texture loads move 64 bits per clock.
+static const uint64_t RDP_PRIMITIVE_SETUP_CLOCKS = 16;
+// Each scanline of a texture load or textured rectangle is a separate RDRAM
+// transfer, which pays a fixed overhead on top of its data.
+static const uint64_t RDP_SCANLINE_CLOCKS = 16;
+// SyncLoad / SyncPipe / SyncTile / SyncFull wait for the pipeline to drain.
+static const uint64_t RDP_SYNC_CLOCKS = 50;
+
+// RDP clocks (62.5 MHz) to CPU cycles (93.75 MHz)
+static void rdp_add_busy(uint64_t clocks) {
+  rdp_device.busy_until += clocks * 3 / 2;
+}
+
+static uint64_t rdp_pixel_clocks(uint64_t pixels) {
+  switch (rdp_device.cycle_type) {
+  case 0: // 1-cycle
+    return pixels;
+  case 1: // 2-cycle
+    return pixels * 2;
+  default: { // copy / fill: 64 bits per clock
+    uint32_t bits = 4u << rdp_device.frame_buffer_info.framebuffer_pixel_size;
+    return (pixels * bits + 63) / 64;
+  }
+  }
+}
+
+// number of scanlines in [top, bottom) that are actually rasterized: in
+// interlaced field mode only the odd or even lines are drawn
+static uint64_t rdp_scissor_rows(int32_t top, int32_t bottom) {
+  if (bottom <= top)
+    return 0;
+  if (!rdp_device.scissor_field)
+    return uint64_t(bottom - top);
+  // count lines y in [top, bottom) with (y & 1) == keep_odd
+  int32_t p = int32_t(rdp_device.scissor_keep_odd);
+  auto lines_below = [p](int32_t y) { return (y - p + 1) >> 1; };
+  return uint64_t(lines_below(bottom) - lines_below(top));
+}
+
+// coordinates are in 10.2 (rectangles) or s11.2 (triangle Y) fixed point
+static uint64_t rdp_clipped_area(int32_t xh, int32_t yh, int32_t xl,
+                                 int32_t yl) {
+  xh = std::max(xh >> 2, rdp_device.scissor_xh);
+  yh = std::max(yh >> 2, rdp_device.scissor_yh);
+  xl = std::min(xl >> 2, rdp_device.scissor_xl);
+  yl = std::min(yl >> 2, rdp_device.scissor_yl);
+  if (xl <= xh)
+    return 0;
+  return uint64_t(xl - xh) * rdp_scissor_rows(yh, yl);
+}
+
+static uint64_t rdp_rectangle_pixels(uint32_t w1, uint32_t w2) {
+  int32_t xl = (w1 >> 12) & 0xFFF, yl = w1 & 0xFFF;
+  int32_t xh = (w2 >> 12) & 0xFFF, yh = w2 & 0xFFF;
+  if (rdp_device.cycle_type >= 2) { // copy/fill include the last row/column
+    xl += 4;
+    yl += 4;
+  }
+  return rdp_clipped_area(xh, yh, xl, yl);
+}
+
+// number of scanlines a rectangle covers after scissoring
+static uint64_t rdp_rectangle_rows(uint32_t w1, uint32_t w2) {
+  int32_t yl = w1 & 0xFFF, yh = w2 & 0xFFF;
+  if (rdp_device.cycle_type >= 2) // copy/fill include the last row
+    yl += 4;
+  return rdp_scissor_rows(std::max(yh >> 2, rdp_device.scissor_yh),
+                          std::min(yl >> 2, rdp_device.scissor_yl));
+}
+
+static int32_t sign_extend_14(uint32_t v) { return int32_t(v << 18) >> 18; }
+
+// area of a triangle from its edge coefficients: half of height times the
+// span width at the middle vertex
+static uint64_t rdp_triangle_pixels(const uint32_t *cmd) {
+  int32_t yl = sign_extend_14(cmd[0]);
+  int32_t ym = sign_extend_14(cmd[1] >> 16);
+  int32_t yh = sign_extend_14(cmd[1]);
+  int32_t xl = int32_t(cmd[2]);
+  int32_t xh = int32_t(cmd[4]);
+  int32_t dxhdy = int32_t(cmd[5]);
+  int64_t major_x_at_ym = int64_t(xh) + int64_t(dxhdy) * (ym - yh) / 4;
+  int64_t width = std::llabs(major_x_at_ym - xl) >> 16;
+  int32_t sxh = rdp_device.scissor_xh, sxl = rdp_device.scissor_xl;
+  width = std::min<int64_t>(width, std::max(sxl - sxh, 0));
+  int32_t top = std::max(yh >> 2, rdp_device.scissor_yh);
+  int32_t bottom = std::min(yl >> 2, rdp_device.scissor_yl);
+  return uint64_t(width) * rdp_scissor_rows(top, bottom) / 2;
+}
+
+// keep busy_until relative to COUNT when the CPU rewrites COUNT
+void rdp_translate_busy_until(uint64_t old_count, uint64_t new_count) {
+  uint64_t remaining =
+      rdp_device.busy_until > old_count ? rdp_device.busy_until - old_count : 0;
+  rdp_device.busy_until = new_count + remaining;
+}
+
+uint64_t rdp_process_commands(uint64_t now) {
   uint64_t interrupt_timer = 0;
+
+  // the RDP starts on this batch once it has finished any earlier work
+  if (rdp_device.busy_until < now)
+    rdp_device.busy_until = now;
+
   const uint32_t DP_CURRENT = *gfx_info.DPC_CURRENT_REG & 0x00FFFFF8;
   const uint32_t DP_END = *gfx_info.DPC_END_REG & 0x00FFFFF8;
 
@@ -909,6 +1021,35 @@ uint64_t rdp_process_commands() {
     if (command >= 8)
       processor->enqueue_command(cmd_length * 2,
                                  &rdp_device.cmd_data[2 * rdp_device.cmd_cur]);
+
+    if (command >= 0x26 && command <= 0x29) { // Sync{Load,Pipe,Tile,Full}
+      rdp_add_busy(RDP_SYNC_CLOCKS);
+    } else if (command >= 0x08 && command <= 0x0F) {
+      rdp_add_busy(RDP_PRIMITIVE_SETUP_CLOCKS +
+                   rdp_pixel_clocks(rdp_triangle_pixels(
+                       &rdp_device.cmd_data[2 * rdp_device.cmd_cur])));
+    } else if (command == 0x24 || command == 0x25) { // TextureRectangle(Flip)
+      rdp_add_busy(RDP_PRIMITIVE_SETUP_CLOCKS +
+                   rdp_pixel_clocks(rdp_rectangle_pixels(w1, w2)) +
+                   rdp_rectangle_rows(w1, w2) * RDP_SCANLINE_CLOCKS);
+    } else if (command == 0x36) { // FillRectangle
+      rdp_add_busy(RDP_PRIMITIVE_SETUP_CLOCKS +
+                   rdp_pixel_clocks(rdp_rectangle_pixels(w1, w2)));
+    } else if (command == 0x33 || command == 0x34) { // LoadBlock / LoadTile
+      uint32_t sl = (w1 >> 12) & 0xFFF, tl = w1 & 0xFFF;
+      uint32_t sh = (w2 >> 12) & 0xFFF, th = w2 & 0xFFF;
+      uint64_t texels = command == 0x33
+                            ? uint64_t(sh >= sl ? sh - sl + 1 : 0)
+                            : uint64_t(sh >= sl ? ((sh - sl) >> 2) + 1 : 0) *
+                                  uint64_t(th >= tl ? ((th - tl) >> 2) + 1 : 0);
+      // LoadBlock is one contiguous transfer; LoadTile fetches row by row
+      uint64_t rows = command == 0x33
+                          ? 1
+                          : uint64_t(th >= tl ? ((th - tl) >> 2) + 1 : 0);
+      uint32_t bits = 4u << rdp_device.frame_buffer_info.texture_pixel_size;
+      rdp_add_busy(RDP_PRIMITIVE_SETUP_CLOCKS + (texels * bits + 63) / 64 +
+                   rows * RDP_SCANLINE_CLOCKS);
+    }
 
     switch (RDP::Op(command)) {
     case RDP::Op::FillTriangle:
@@ -1029,12 +1170,12 @@ uint64_t rdp_process_commands() {
       uint32_t upper_left_y = (w1 & 0xFFF) >> 2;
       uint32_t lower_right_x = ((w2 >> 12) & 0xFFF) >> 2;
       uint32_t lower_right_y = (w2 & 0xFFF) >> 2;
-      if (lower_right_x > upper_left_x && lower_right_y > upper_left_y) {
-        rdp_device.region =
-            (lower_right_x - upper_left_x) * (lower_right_y - upper_left_y);
-      } else {
-        rdp_device.region = 0;
-      }
+      rdp_device.scissor_xh = upper_left_x;
+      rdp_device.scissor_yh = upper_left_y;
+      rdp_device.scissor_xl = lower_right_x;
+      rdp_device.scissor_yl = lower_right_y;
+      rdp_device.scissor_field = (w2 >> 25) & 1;
+      rdp_device.scissor_keep_odd = (w2 >> 24) & 1;
 
       rdp_device.frame_buffer_info.framebuffer_y_offset = upper_left_y;
       rdp_device.frame_buffer_info.framebuffer_height =
@@ -1042,6 +1183,7 @@ uint64_t rdp_process_commands() {
     } break;
     case RDP::Op::SetOtherModes: {
       uint8_t cycle_type = (w1 >> 20) & 3;
+      rdp_device.cycle_type = cycle_type;
       uint8_t depth_read_write = (w2 >> 4) & 3;
       rdp_device.frame_buffer_info.depth_buffer_enabled =
           ((cycle_type & 2) == 0) && (depth_read_write != 0);
@@ -1049,9 +1191,8 @@ uint64_t rdp_process_commands() {
     case RDP::Op::SyncFull:
       sync_signal = processor->signal_timeline();
 
-      interrupt_timer = rdp_device.region / 2;
-      if (interrupt_timer == 0)
-        interrupt_timer = 5000;
+      // SyncFull itself adds RDP_SYNC_CLOCKS, so busy_until > now here
+      interrupt_timer = rdp_device.busy_until - now;
       break;
     default:
       break;

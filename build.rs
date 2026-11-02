@@ -206,6 +206,7 @@ fn main() {
         .allowlist_function("rdp_update_screen")
         .allowlist_function("rdp_render_frame")
         .allowlist_function("rdp_process_commands")
+        .allowlist_function("rdp_translate_busy_until")
         .allowlist_function("rdp_onscreen_message")
         .allowlist_function("rdp_check_callback")
         .allowlist_function("rdp_check_framebuffers")

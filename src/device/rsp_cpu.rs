@@ -188,7 +188,12 @@ pub fn run(device: &mut device::Device) -> u64 {
         }
     }
     device.rsp.cpu.running = false;
-    (device.rsp.cpu.cycle_counter as f64 * 1.5) as u64 // converting RCP clock to CPU clock
+    elapsed_cpu_cycles(device)
+}
+
+// RSP cycles elapsed in the current burst, converted from RCP clock to CPU clock
+pub fn elapsed_cpu_cycles(device: &device::Device) -> u64 {
+    device.rsp.cpu.cycle_counter * 3 / 2
 }
 
 pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
