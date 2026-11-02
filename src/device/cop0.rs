@@ -206,6 +206,7 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
             data &= 0xFFFFFFFF;
             data <<= 1;
             device::events::translate_events(device, device.cpu.cop0.regs[COP0_COUNT_REG], data);
+            device::rdp::translate_busy_until(device.cpu.cop0.regs[COP0_COUNT_REG], data);
             device.cpu.cop0.regs[COP0_COUNT_REG] = data;
             let compare = device.cpu.cop0.regs[COP0_COMPARE_REG];
             schedule_compare_event(device, compare);

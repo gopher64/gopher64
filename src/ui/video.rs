@@ -289,8 +289,12 @@ pub fn set_register(reg: u32, value: u32) {
     }
 }
 
-pub fn process_rdp_list() -> u64 {
-    unsafe { rdp_process_commands() }
+pub fn process_rdp_list(now: u64) -> u64 {
+    unsafe { rdp_process_commands(now) }
+}
+
+pub fn translate_rdp_busy_until(old_count: u64, new_count: u64) {
+    unsafe { rdp_translate_busy_until(old_count, new_count) }
 }
 
 pub fn check_framebuffers(address: u32, length: u32) {

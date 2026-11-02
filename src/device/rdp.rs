@@ -114,14 +114,27 @@ pub fn write_regs_dpc(device: &mut device::Device, address: u64, value: u32, mas
 }
 
 fn run_rdp(device: &mut device::Device) {
-    let timer = ui::video::process_rdp_list();
+    // The RSP runs a whole burst while COUNT stands still, so commands it
+    // submits arrive at COUNT plus its progress through the current burst.
+    let rsp_cycles = if device.rsp.cpu.running {
+        device::rsp_cpu::elapsed_cpu_cycles(device)
+    } else {
+        0
+    };
+    let now = device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG] + rsp_cycles;
+    let timer = ui::video::process_rdp_list(now);
     device.rdp.regs_dpc[DPC_STATUS_REG] |=
         DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY;
     device.rdp.regs_dpc[DPC_PIPEBUSY_REG] = 0xFFFFFF;
 
     if timer != 0 {
-        device::events::create_event(device, device::events::EVENT_TYPE_DP, timer)
+        device::events::create_event(device, device::events::EVENT_TYPE_DP, rsp_cycles + timer)
     }
+}
+
+// keep the RDP's busy_until relative to COUNT when the CPU rewrites COUNT
+pub fn translate_busy_until(old_count: u64, new_count: u64) {
+    ui::video::translate_rdp_busy_until(old_count, new_count)
 }
 
 pub fn read_regs_dps(
