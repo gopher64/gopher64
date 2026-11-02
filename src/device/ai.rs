@@ -37,8 +37,10 @@ fn get_remaining_dma_length(device: &device::Device) -> u64 {
         return 0;
     }
 
-    let remaining_dma_duration =
-        next_ai_event.unwrap().count - device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG];
+    let remaining_dma_duration = next_ai_event
+        .unwrap()
+        .count
+        .saturating_sub(device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG]);
 
     let dma_length = remaining_dma_duration * device.ai.fifo[0].length / device.ai.fifo[0].duration;
     dma_length & !7
