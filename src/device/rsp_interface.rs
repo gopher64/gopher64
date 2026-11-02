@@ -86,6 +86,7 @@ pub struct Rsp {
     pub fifo: [RspDma; 2],
     pub last_status_value: u32,
     pub run_after_dma: bool,
+    pub pending_status: u32,
 }
 
 pub fn read_mem_fast(
@@ -209,10 +210,15 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
     device.rsp.regs[SP_RD_LEN_REG] = 0xff8;
     device.rsp.regs[SP_WR_LEN_REG] = 0xff8;
 
+    let rsp_cycles = if device.rsp.cpu.running {
+        device::rsp_cpu::elapsed_cpu_cycles(device)
+    } else {
+        0
+    };
     device::events::create_event(
         device,
         device::events::EVENT_TYPE_SPDMA,
-        device::rdram::rdram_calculate_cycles((count * length) as u64) + 9,
+        rsp_cycles + device::rdram::rdram_calculate_cycles((count * length) as u64) + 9,
     );
 }
 
@@ -312,7 +318,15 @@ pub fn read_regs(
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
     match reg as usize {
-        SP_STATUS_REG => update_sp_status(device, value),
+        SP_STATUS_REG => {
+            if device.rsp.cpu.running {
+                device.rsp.pending_status = value;
+                device.rsp.cpu.sync_point = true;
+            } else {
+                apply_pending_status(device);
+                update_sp_status(device, value)
+            }
+        }
         SP_RD_LEN_REG => {
             device::memory::masked_write_32(&mut device.rsp.regs[reg as usize], value, mask);
             fifo_push(device, DmaDir::Write)
@@ -459,7 +473,6 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
 
     if device.rsp.regs[SP_STATUS_REG] & SP_STATUS_HALT == 0 && was_halted {
         device.rsp.cpu.broken = false;
-        device.rsp.cpu.halted = false;
         do_task(device);
     }
 }
@@ -477,7 +490,15 @@ fn do_task(device: &mut device::Device) {
     }
 }
 
+fn apply_pending_status(device: &mut device::Device) {
+    let pending = std::mem::take(&mut device.rsp.pending_status);
+    if pending != 0 {
+        update_sp_status(device, pending)
+    }
+}
+
 pub fn rsp_event(device: &mut device::Device) {
+    apply_pending_status(device);
     if device.rsp.cpu.broken {
         device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_HALT | SP_STATUS_BROKE;
 
@@ -486,8 +507,7 @@ pub fn rsp_event(device: &mut device::Device) {
         }
         return;
     }
-    if device.rsp.cpu.halted {
-        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_HALT;
+    if device.rsp.regs[SP_STATUS_REG] & SP_STATUS_HALT != 0 {
         return;
     }
     do_task(device)

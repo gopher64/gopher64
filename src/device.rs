@@ -478,7 +478,6 @@ impl Device {
                     },
                     broken: false,
                     running: false,
-                    halted: false,
                     sync_point: false,
                     cycle_counter: 0,
                     gpr: [0; 32],
@@ -511,6 +510,7 @@ impl Device {
                 mem: [0; 0x2000],
                 last_status_value: 0,
                 run_after_dma: false,
+                pending_status: 0,
                 fifo: [rsp_interface::RspDma {
                     dir: rsp_interface::DmaDir::None,
                     length: 0,

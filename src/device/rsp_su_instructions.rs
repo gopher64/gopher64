@@ -580,13 +580,6 @@ pub fn mtc0(device: &mut device::Device, opcode: u32) {
             0xFFFFFFFF,
         )
     }
-    if rd(opcode) as usize == device::rsp_interface::SP_STATUS_REG
-        && device.rsp.cpu.gpr[rt(opcode) as usize] & device::rsp_interface::SP_SET_HALT != 0
-    {
-        device.rsp.regs[device::rsp_interface::SP_STATUS_REG] &=
-            !device::rsp_interface::SP_STATUS_HALT; // set halt when event happens
-        device.rsp.cpu.halted = true // the RSP can halt itself by setting SP_SET_HALT
-    }
 }
 
 pub fn mfc2(device: &mut device::Device, opcode: u32) {

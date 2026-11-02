@@ -35,7 +35,6 @@ pub struct Cpu {
     pub branch_state: BranchState,
     pub broken: bool,
     pub running: bool,
-    pub halted: bool,
     pub sync_point: bool,
     pub cycle_counter: u64,
     #[serde(
