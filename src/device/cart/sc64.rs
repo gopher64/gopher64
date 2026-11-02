@@ -336,6 +336,20 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                             );
                         }
                     }
+                    '%' => {
+                        match device.cart.sc64.regs[SC64_DATA0_REG] {
+                            0 => {
+                                // DIAGNOSTIC_ID_VOLTAGE_TEMPERATURE
+                                device.cart.sc64.regs[SC64_DATA1_REG] = 3300 << 16;
+                            }
+                            _ => {
+                                panic!(
+                                    "unknown sc64 diagnostic command: {}",
+                                    device.cart.sc64.regs[SC64_DATA0_REG]
+                                );
+                            }
+                        }
+                    }
                     _ => {
                         panic!(
                             "unknown sc64 command: {}",
