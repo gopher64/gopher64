@@ -58,12 +58,12 @@ pub fn read_regs(
     device.mi.regs[((address & 0xFFFF) >> 2) as usize]
 }
 
-pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
+pub fn write_regs(device: &mut device::Device, address: u64, value: u32, _mask: u32) {
     let reg = (address & 0xFFFF) >> 2;
     match reg as usize {
         MI_INIT_MODE_REG => update_init_mode(device, value),
         MI_INTR_MASK_REG => update_intr_mask(device, value),
-        _ => device::memory::masked_write_32(&mut device.mi.regs[reg as usize], value, mask),
+        _ => {} // MI_VERSION and MI_INTR are read-only
     }
 
     if device.mi.regs[MI_INTR_REG] & device.mi.regs[MI_INTR_MASK_REG] == 0 {
