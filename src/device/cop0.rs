@@ -49,7 +49,7 @@ pub const COP0_STATUS_CU2: u64 = 1 << 30;
 pub const COP0_CAUSE_EXCCODE_MOD: u64 = 1 << 2;
 pub const COP0_CAUSE_EXCCODE_TLBL: u64 = 2 << 2;
 pub const COP0_CAUSE_EXCCODE_TLBS: u64 = 3 << 2;
-//const COP0_CAUSE_EXCCODE_ADEL: u64 = 4 << 2;
+pub const COP0_CAUSE_EXCCODE_ADEL: u64 = 4 << 2;
 //const COP0_CAUSE_EXCCODE_ADES: u64 = 5 << 2;
 pub const COP0_CAUSE_EXCCODE_SYS: u64 = 8 << 2;
 pub const COP0_CAUSE_EXCCODE_BP: u64 = 9 << 2;
@@ -169,6 +169,10 @@ fn eret(device: &mut device::Device, _opcode: u32) {
     }
     device.cpu.branch_state.state = device::cpu::State::Exception;
     device.cpu.llbit = false;
+    if device.cpu.pc & 3 != 0 {
+        device::exceptions::address_error_exception(device, device.cpu.pc);
+        return;
+    }
     device::exceptions::check_pending_interrupts(device)
 }
 

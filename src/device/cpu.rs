@@ -9,6 +9,9 @@ pub enum State {
     DelaySlotNotTaken,
     Discard,
     Exception,
+    // jr/jalr to a misaligned target: the address error is raised after the delay slot
+    TakeAddressError,
+    DelaySlotAddressError,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -242,12 +245,17 @@ pub fn init(device: &mut device::Device) {
 }
 
 pub fn in_delay_slot(device: &device::Device) -> bool {
-    device.cpu.branch_state.state == State::DelaySlotTaken
-        || device.cpu.branch_state.state == State::DelaySlotNotTaken
+    matches!(
+        device.cpu.branch_state.state,
+        State::DelaySlotTaken | State::DelaySlotNotTaken | State::DelaySlotAddressError
+    )
 }
 
 pub fn in_delay_slot_taken(device: &device::Device) -> bool {
-    device.cpu.branch_state.state == State::DelaySlotTaken
+    matches!(
+        device.cpu.branch_state.state,
+        State::DelaySlotTaken | State::DelaySlotAddressError
+    )
 }
 
 pub fn run(device: &mut device::Device) {
@@ -298,6 +306,15 @@ pub fn run(device: &mut device::Device) {
                 device.cpu.branch_state.state = State::Step
             }
             State::Exception => device.cpu.branch_state.state = State::Step,
+            State::TakeAddressError => {
+                device.cpu.pc += 4;
+                device.cpu.branch_state.state = State::DelaySlotAddressError
+            }
+            State::DelaySlotAddressError => {
+                device.cpu.pc = device.cpu.branch_state.pc;
+                device.cpu.branch_state.state = State::Step;
+                device::exceptions::address_error_exception(device, device.cpu.pc)
+            }
         }
         device::cop0::add_cycles(device, 1);
         if device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG] > device.cpu.next_event_count {

@@ -79,6 +79,13 @@ pub fn cop_unusable_exception(device: &mut device::Device, cop: u64) {
     exception_general(device, 0x180)
 }
 
+pub fn address_error_exception(device: &mut device::Device, address: u64) {
+    set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_ADEL);
+    device.cpu.cop0.regs[device::cop0::COP0_BADVADDR_REG] = address;
+
+    exception_general(device, 0x180)
+}
+
 pub fn tlb_miss_exception(
     device: &mut device::Device,
     address: u64,
