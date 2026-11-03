@@ -566,9 +566,11 @@ pub fn mfc0(device: &mut device::Device, opcode: u32) {
 
     // This read ended the RSP execution. Re-execute the mfc0 when the
     // RSP resumes instead of acting on a stale value. Delay slots are left alone
-    // as the branch state can't be rewound.
+    // as the branch state can't be rewound. Semaphore reads are not re-executed:
+    // the read itself sets the semaphore, so the value isn't stale.
     if !was_sync_point
         && device.rsp.cpu.sync_point
+        && rd(opcode) != device::rsp_interface::SP_SEMAPHORE_REG as u32
         && device.rsp.cpu.branch_state.state == device::cpu::State::Step
     {
         device.rsp.regs2[device::rsp_interface::SP_PC_REG] =

@@ -123,11 +123,11 @@ fn run_rdp(device: &mut device::Device) {
     };
     let now = device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG] + rsp_cycles;
     let timer = ui::video::process_rdp_list(now);
-    device.rdp.regs_dpc[DPC_STATUS_REG] |=
-        DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY | DPC_STATUS_CMD_BUSY;
+    device.rdp.regs_dpc[DPC_STATUS_REG] |= DPC_STATUS_START_GCLK | DPC_STATUS_PIPE_BUSY;
     device.rdp.regs_dpc[DPC_PIPEBUSY_REG] = 0xFFFFFF;
 
     if timer != 0 {
+        device.rdp.regs_dpc[DPC_STATUS_REG] |= DPC_STATUS_CMD_BUSY;
         device::events::create_event(device, device::events::EVENT_TYPE_DP, rsp_cycles + timer)
     }
 }

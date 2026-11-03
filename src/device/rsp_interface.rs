@@ -8,7 +8,7 @@ const SP_WR_LEN_REG: usize = 3;
 pub const SP_STATUS_REG: usize = 4;
 const SP_DMA_FULL_REG: usize = 5;
 const SP_DMA_BUSY_REG: usize = 6;
-const SP_SEMAPHORE_REG: usize = 7;
+pub const SP_SEMAPHORE_REG: usize = 7;
 pub const SP_REGS_COUNT: usize = 8;
 
 pub const SP_PC_REG: usize = 0;

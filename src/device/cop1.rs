@@ -1,20 +1,5 @@
 use crate::{device, savestates};
 
-//const FCR31_FLAG_INEXACT_BIT: u32 = 1 << 2;
-//const FCR31_FLAG_UNDERFLOW_BIT: u32 = 1 << 3;
-//const FCR31_FLAG_OVERFLOW_BIT: u32 = 1 << 4;
-//const FCR31_FLAG_DIVBYZERO_BIT: u32 = 1 << 5;
-//const FCR31_FLAG_INVALID_BIT: u32 = 1 << 6;
-//const FCR31_ENABLE_INEXACT_BIT: u32 = 1 << 7;
-//const FCR31_ENABLE_UNDERFLOW_BIT: u32 = 1 << 8;
-//const FCR31_ENABLE_OVERFLOW_BIT: u32 = 1 << 9;
-//const FCR31_ENABLE_DIVBYZERO_BIT: u32 = 1 << 10;
-//const FCR31_ENABLE_INVALID_BIT: u32 = 1 << 11;
-//const FCR31_CAUSE_INEXACT_BIT: u32 = 1 << 12;
-//const FCR31_CAUSE_UNDERFLOW_BIT: u32 = 1 << 13;
-//const FCR31_CAUSE_OVERFLOW_BIT: u32 = 1 << 14;
-//const FCR31_CAUSE_DIVBYZERO_BIT: u32 = 1 << 15;
-//const FCR31_CAUSE_INVALID_BIT: u32 = 1 << 16;
 const FCR31_CAUSE_UNIMP_BIT: u32 = 1 << 17;
 pub const FCR31_CMP_BIT: u32 = 1 << 23;
 const FCR31_FS_BIT: u32 = 1 << 24;
@@ -27,12 +12,12 @@ const FCR31_WRITE_MASK: u32 = 0b00000001100000111111111111111111;
 pub struct Cop1 {
     pub fcr0: u32,
     pub fcr31: u32,
-    pub fgr32: [[u8; 4]; 32],
-    pub fgr64: [[u8; 8]; 32],
+    // The FPU always has 32 64-bit registers, Status.FR only changes how they are indexed
+    pub fgr: [u64; 32],
     #[serde(skip, default = "savestates::default_instructions")]
     pub instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip, default = "savestates::default_instructions")]
-    pub b_instrs: [fn(&mut device::Device, u32); 4],
+    pub b_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip, default = "savestates::default_instructions")]
     pub s_instrs: [fn(&mut device::Device, u32); 64],
     #[serde(skip, default = "savestates::default_instructions")]
@@ -43,8 +28,12 @@ pub struct Cop1 {
     pub l_instrs: [fn(&mut device::Device, u32); 64],
 }
 
+fn cu1_enabled(device: &device::Device) -> bool {
+    device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 != 0
+}
+
 pub fn lwc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -63,18 +52,12 @@ pub fn lwc1(device: &mut device::Device, opcode: u32) {
         phys_address,
         device::memory::AccessSize::Word,
         cached,
-    )
-    .to_ne_bytes();
-    set_fpr_single(
-        device,
-        device::fpu_instructions::ft(opcode) as usize,
-        f32::from_ne_bytes(value),
-        false,
-    )
+    );
+    set_fpr_word(device, device::fpu_instructions::ft(opcode), value)
 }
 
 pub fn ldc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -89,29 +72,27 @@ pub fn ldc1(device: &mut device::Device, opcode: u32) {
         return;
     }
 
-    let mut w = [2; 32];
-    w[0] = device::memory::data_read(
+    let hi = device::memory::data_read(
         device,
         phys_address,
         device::memory::AccessSize::Dword,
         cached,
     );
-    w[1] = device::memory::data_read(
+    let lo = device::memory::data_read(
         device,
         phys_address + 4,
         device::memory::AccessSize::Dword,
         cached,
     );
-    let value = ((w[0] as u64) << 32) | (w[1]) as u64;
-    set_fpr_double(
+    set_fpr_dword(
         device,
-        device::fpu_instructions::ft(opcode) as usize,
-        f64::from_ne_bytes(value.to_ne_bytes()),
+        device::fpu_instructions::ft(opcode),
+        ((hi as u64) << 32) | lo as u64,
     )
 }
 
 pub fn swc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -125,18 +106,12 @@ pub fn swc1(device: &mut device::Device, opcode: u32) {
     if err {
         return;
     }
-    let value = get_fpr_single(device, device::fpu_instructions::ft(opcode) as usize).to_ne_bytes();
-    device::memory::data_write(
-        device,
-        phys_address,
-        u32::from_ne_bytes(value),
-        0xFFFFFFFF,
-        cached,
-    );
+    let value = get_fpr_word(device, device::fpu_instructions::ft(opcode));
+    device::memory::data_write(device, phys_address, value, 0xFFFFFFFF, cached);
 }
 
 pub fn sdc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -151,46 +126,38 @@ pub fn sdc1(device: &mut device::Device, opcode: u32) {
         return;
     }
 
-    let value = get_fpr_double(device, device::fpu_instructions::ft(opcode) as usize).to_ne_bytes();
-
+    let value = get_fpr_dword(device, device::fpu_instructions::ft(opcode));
     device::memory::data_write(
         device,
         phys_address,
-        u32::from_ne_bytes(value[4..8].try_into().unwrap()),
+        (value >> 32) as u32,
         0xFFFFFFFF,
         cached,
     );
-    device::memory::data_write(
-        device,
-        phys_address + 4,
-        u32::from_ne_bytes(value[0..4].try_into().unwrap()),
-        0xFFFFFFFF,
-        cached,
-    )
+    device::memory::data_write(device, phys_address + 4, value as u32, 0xFFFFFFFF, cached)
 }
 
 fn mfc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
-    let value = get_fpr_single(device, device::fpu_instructions::fs(opcode) as usize);
+    let value = get_fpr_word(device, device::fpu_instructions::fs(opcode));
     device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] =
-        device::cpu_instructions::se32(u32::from_ne_bytes(value.to_ne_bytes()) as i32);
+        device::cpu_instructions::se32(value as i32);
 }
 
 fn dmfc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
-    let value = get_fpr_double(device, device::fpu_instructions::fs(opcode) as usize);
     device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] =
-        u64::from_ne_bytes(value.to_ne_bytes());
+        get_fpr_dword(device, device::fpu_instructions::fs(opcode));
 }
 
 fn cfc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -199,45 +166,26 @@ fn cfc1(device: &mut device::Device, opcode: u32) {
     )
 }
 
-fn dcfc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
-        return unusable(device, opcode);
-    }
-
-    device.cpu.cop1.fcr31 &= !FCR31_CAUSE_MASK;
-    device.cpu.cop1.fcr31 |= FCR31_CAUSE_UNIMP_BIT;
-    device::exceptions::floating_point_exception(device)
-}
-
 fn mtc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
-    let value = f32::from_ne_bytes(
-        (device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] as u32).to_ne_bytes(),
-    );
-    set_fpr_single(
-        device,
-        device::fpu_instructions::fs(opcode) as usize,
-        value,
-        false,
-    )
+    let value = device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] as u32;
+    set_fpr_word(device, device::fpu_instructions::fs(opcode), value)
 }
 
 fn dmtc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
-    let value = f64::from_ne_bytes(
-        device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize].to_ne_bytes(),
-    );
-    set_fpr_double(device, device::fpu_instructions::fs(opcode) as usize, value)
+    let value = device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize];
+    set_fpr_dword(device, device::fpu_instructions::fs(opcode), value)
 }
 
 fn ctc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -248,26 +196,16 @@ fn ctc1(device: &mut device::Device, opcode: u32) {
     )
 }
 
-fn dctc1(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
-        return unusable(device, opcode);
-    }
-
-    device.cpu.cop1.fcr31 &= !FCR31_CAUSE_MASK;
-    device.cpu.cop1.fcr31 |= FCR31_CAUSE_UNIMP_BIT;
-    device::exceptions::floating_point_exception(device)
-}
-
 fn execute_cop1_b(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
-    device.cpu.cop1.b_instrs[((opcode >> 16) & 0x3) as usize](device, opcode)
+    device.cpu.cop1.b_instrs[((opcode >> 16) & 0x1F) as usize](device, opcode)
 }
 
 fn execute_cop1_s(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -275,7 +213,7 @@ fn execute_cop1_s(device: &mut device::Device, opcode: u32) {
 }
 
 fn execute_cop1_d(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -283,7 +221,7 @@ fn execute_cop1_d(device: &mut device::Device, opcode: u32) {
 }
 
 fn execute_cop1_l(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -291,7 +229,7 @@ fn execute_cop1_l(device: &mut device::Device, opcode: u32) {
 }
 
 fn execute_cop1_w(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
@@ -302,12 +240,15 @@ fn unusable(device: &mut device::Device, _opcode: u32) {
     device::exceptions::cop_unusable_exception(device, device::cop0::COP0_CAUSE_CE1)
 }
 
-pub fn reserved(device: &mut device::Device, opcode: u32) {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_CU1 == 0 {
+// Reserved COP1 encodings (and DCFC1/DCTC1) raise an Unimplemented Operation exception
+pub fn unimplemented(device: &mut device::Device, opcode: u32) {
+    if !cu1_enabled(device) {
         return unusable(device, opcode);
     }
 
-    device::exceptions::reserved_exception(device, device::cop0::COP0_CAUSE_CE1);
+    device.cpu.cop1.fcr31 &= !FCR31_CAUSE_MASK;
+    device.cpu.cop1.fcr31 |= FCR31_CAUSE_UNIMP_BIT;
+    device::exceptions::floating_point_exception(device)
 }
 
 fn get_control_registers_fpu(device: &device::Device, index: u32) -> u32 {
@@ -387,47 +328,48 @@ pub fn set_host_flush_mode(device: &device::Device) {
     }
 }
 
-pub fn set_fpr_single(device: &mut device::Device, index: usize, value: f32, clear_high: bool) {
-    let bytes = value.to_ne_bytes();
+// In half mode (Status.FR = 0) arithmetic operations ignore the lowest bit of fs, while ft and
+// fd use the full index
+#[inline(always)]
+pub fn fs_index(device: &device::Device, index: u32) -> usize {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_FR == 0 {
-        device.cpu.cop1.fgr32[index] = bytes;
+        (index & !1) as usize
     } else {
-        let bytes_lo = bytes;
-        let bytes_hi: [u8; 4] = if clear_high {
-            [0, 0, 0, 0]
-        } else {
-            device.cpu.cop1.fgr64[index][4..8].try_into().unwrap()
-        };
-        device.cpu.cop1.fgr64[index] = [bytes_lo, bytes_hi].concat().try_into().unwrap();
+        index as usize
     }
 }
 
-pub fn get_fpr_single(device: &device::Device, index: usize) -> f32 {
+// 32 bit transfers (MTC1, MFC1, LWC1, SWC1): in half mode odd indices access the upper half of
+// the even register
+pub fn get_fpr_word(device: &device::Device, index: u32) -> u32 {
     if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_FR == 0 {
-        f32::from_ne_bytes(device.cpu.cop1.fgr32[index])
+        (device.cpu.cop1.fgr[(index & !1) as usize] >> ((index & 1) * 32)) as u32
     } else {
-        f32::from_ne_bytes(device.cpu.cop1.fgr64[index][0..4].try_into().unwrap())
+        device.cpu.cop1.fgr[index as usize] as u32
     }
 }
 
-pub fn set_fpr_double(device: &mut device::Device, index: usize, value: f64) {
-    let bytes = value.to_ne_bytes();
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_FR == 0 {
-        device.cpu.cop1.fgr32[index & !1] = bytes[0..4].try_into().unwrap();
-        device.cpu.cop1.fgr32[(index & !1) + 1] = bytes[4..8].try_into().unwrap();
+pub fn set_fpr_word(device: &mut device::Device, index: u32, value: u32) {
+    let (register, shift) = if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG]
+        & device::cop0::COP0_STATUS_FR
+        == 0
+    {
+        ((index & !1) as usize, (index & 1) * 32)
     } else {
-        device.cpu.cop1.fgr64[index] = bytes;
-    }
+        (index as usize, 0)
+    };
+    let fgr = &mut device.cpu.cop1.fgr[register];
+    *fgr = (*fgr & !(0xFFFFFFFF << shift)) | ((value as u64) << shift);
 }
 
-pub fn get_fpr_double(device: &device::Device, index: usize) -> f64 {
-    if device.cpu.cop0.regs[device::cop0::COP0_STATUS_REG] & device::cop0::COP0_STATUS_FR == 0 {
-        let bytes_lo = device.cpu.cop1.fgr32[index & !1];
-        let bytes_hi = device.cpu.cop1.fgr32[(index & !1) + 1];
-        f64::from_ne_bytes([bytes_lo, bytes_hi].concat().try_into().unwrap())
-    } else {
-        f64::from_ne_bytes(device.cpu.cop1.fgr64[index])
-    }
+// 64 bit transfers (DMTC1, DMFC1, LDC1, SDC1)
+pub fn get_fpr_dword(device: &device::Device, index: u32) -> u64 {
+    device.cpu.cop1.fgr[fs_index(device, index)]
+}
+
+pub fn set_fpr_dword(device: &mut device::Device, index: u32, value: u64) {
+    let index = fs_index(device, index);
+    device.cpu.cop1.fgr[index] = value
 }
 
 pub fn map_instructions(device: &mut device::Device) {
@@ -436,337 +378,343 @@ pub fn map_instructions(device: &mut device::Device) {
         device::fpu_instructions::bc1t,  // 1
         device::fpu_instructions::bc1fl, // 2
         device::fpu_instructions::bc1tl, // 3
+        device::cop1::unimplemented,     // 4
+        device::cop1::unimplemented,     // 5
+        device::cop1::unimplemented,     // 6
+        device::cop1::unimplemented,     // 7
+        device::cop1::unimplemented,     // 8
+        device::cop1::unimplemented,     // 9
+        device::cop1::unimplemented,     // 10
+        device::cop1::unimplemented,     // 11
+        device::cop1::unimplemented,     // 12
+        device::cop1::unimplemented,     // 13
+        device::cop1::unimplemented,     // 14
+        device::cop1::unimplemented,     // 15
+        device::cop1::unimplemented,     // 16
+        device::cop1::unimplemented,     // 17
+        device::cop1::unimplemented,     // 18
+        device::cop1::unimplemented,     // 19
+        device::cop1::unimplemented,     // 20
+        device::cop1::unimplemented,     // 21
+        device::cop1::unimplemented,     // 22
+        device::cop1::unimplemented,     // 23
+        device::cop1::unimplemented,     // 24
+        device::cop1::unimplemented,     // 25
+        device::cop1::unimplemented,     // 26
+        device::cop1::unimplemented,     // 27
+        device::cop1::unimplemented,     // 28
+        device::cop1::unimplemented,     // 29
+        device::cop1::unimplemented,     // 30
+        device::cop1::unimplemented,     // 31
     ];
 
     device.cpu.cop1.s_instrs = [
-        device::fpu_instructions::add_s,     // 0
-        device::fpu_instructions::sub_s,     // 1
-        device::fpu_instructions::mul_s,     // 2
-        device::fpu_instructions::div_s,     // 3
-        device::fpu_instructions::sqrt_s,    // 4
-        device::fpu_instructions::abs_s,     // 5
-        device::fpu_instructions::mov_s,     // 6
-        device::fpu_instructions::neg_s,     // 7
-        device::fpu_instructions::round_l_s, // 8
-        device::fpu_instructions::trunc_l_s, // 9
-        device::fpu_instructions::ceil_l_s,  // 10
-        device::fpu_instructions::floor_l_s, // 11
-        device::fpu_instructions::round_w_s, // 12
-        device::fpu_instructions::trunc_w_s, // 13
-        device::fpu_instructions::ceil_w_s,  // 14
-        device::fpu_instructions::floor_w_s, // 15
-        device::cop1::reserved,              // 16
-        device::cop1::reserved,              // 17
-        device::cop1::reserved,              // 18
-        device::cop1::reserved,              // 19
-        device::cop1::reserved,              // 20
-        device::cop1::reserved,              // 21
-        device::cop1::reserved,              // 22
-        device::cop1::reserved,              // 23
-        device::cop1::reserved,              // 24
-        device::cop1::reserved,              // 25
-        device::cop1::reserved,              // 26
-        device::cop1::reserved,              // 27
-        device::cop1::reserved,              // 28
-        device::cop1::reserved,              // 29
-        device::cop1::reserved,              // 30
-        device::cop1::reserved,              // 31
-        device::cop1::reserved,              // 32
-        device::fpu_instructions::cvt_d_s,   // 33
-        device::cop1::reserved,              // 34
-        device::cop1::reserved,              // 35
-        device::fpu_instructions::cvt_w_s,   // 36
-        device::fpu_instructions::cvt_l_s,   // 37
-        device::cop1::reserved,              // 38
-        device::cop1::reserved,              // 38
-        device::cop1::reserved,              // 40
-        device::cop1::reserved,              // 41
-        device::cop1::reserved,              // 42
-        device::cop1::reserved,              // 43
-        device::cop1::reserved,              // 44
-        device::cop1::reserved,              // 45
-        device::cop1::reserved,              // 46
-        device::cop1::reserved,              // 47
-        device::fpu_instructions::c_f_s,     // 48
-        device::fpu_instructions::c_un_s,    // 49
-        device::fpu_instructions::c_eq_s,    // 50
-        device::fpu_instructions::c_ueq_s,   // 51
-        device::fpu_instructions::c_olt_s,   // 52
-        device::fpu_instructions::c_ult_s,   // 53
-        device::fpu_instructions::c_ole_s,   // 54
-        device::fpu_instructions::c_ule_s,   // 55
-        device::fpu_instructions::c_sf_s,    // 56
-        device::fpu_instructions::c_ngle_s,  // 57
-        device::fpu_instructions::c_seq_s,   // 58
-        device::fpu_instructions::c_ngl_s,   // 59
-        device::fpu_instructions::c_lt_s,    // 60
-        device::fpu_instructions::c_nge_s,   // 61
-        device::fpu_instructions::c_le_s,    // 62
-        device::fpu_instructions::c_ngt_s,   // 63
+        device::fpu_instructions::add_s,             // 0
+        device::fpu_instructions::sub_s,             // 1
+        device::fpu_instructions::mul_s,             // 2
+        device::fpu_instructions::div_s,             // 3
+        device::fpu_instructions::sqrt_s,            // 4
+        device::fpu_instructions::abs_s,             // 5
+        device::fpu_instructions::mov_s,             // 6
+        device::fpu_instructions::neg_s,             // 7
+        device::fpu_instructions::round_l_s,         // 8
+        device::fpu_instructions::trunc_l_s,         // 9
+        device::fpu_instructions::ceil_l_s,          // 10
+        device::fpu_instructions::floor_l_s,         // 11
+        device::fpu_instructions::round_w_s,         // 12
+        device::fpu_instructions::trunc_w_s,         // 13
+        device::fpu_instructions::ceil_w_s,          // 14
+        device::fpu_instructions::floor_w_s,         // 15
+        device::cop1::unimplemented,                 // 16
+        device::cop1::unimplemented,                 // 17
+        device::cop1::unimplemented,                 // 18
+        device::cop1::unimplemented,                 // 19
+        device::cop1::unimplemented,                 // 20
+        device::cop1::unimplemented,                 // 21
+        device::cop1::unimplemented,                 // 22
+        device::cop1::unimplemented,                 // 23
+        device::cop1::unimplemented,                 // 24
+        device::cop1::unimplemented,                 // 25
+        device::cop1::unimplemented,                 // 26
+        device::cop1::unimplemented,                 // 27
+        device::cop1::unimplemented,                 // 28
+        device::cop1::unimplemented,                 // 29
+        device::cop1::unimplemented,                 // 30
+        device::cop1::unimplemented,                 // 31
+        device::cop1::unimplemented,                 // 32
+        device::fpu_instructions::cvt_d_s,           // 33
+        device::cop1::unimplemented,                 // 34
+        device::cop1::unimplemented,                 // 35
+        device::fpu_instructions::cvt_w_s,           // 36
+        device::fpu_instructions::cvt_l_s,           // 37
+        device::cop1::unimplemented,                 // 38
+        device::cop1::unimplemented,                 // 38
+        device::cop1::unimplemented,                 // 40
+        device::cop1::unimplemented,                 // 41
+        device::cop1::unimplemented,                 // 42
+        device::cop1::unimplemented,                 // 43
+        device::cop1::unimplemented,                 // 44
+        device::cop1::unimplemented,                 // 45
+        device::cop1::unimplemented,                 // 46
+        device::cop1::unimplemented,                 // 47
+        device::fpu_instructions::c_cond::<f32, 0>,  // 48
+        device::fpu_instructions::c_cond::<f32, 1>,  // 49
+        device::fpu_instructions::c_cond::<f32, 2>,  // 50
+        device::fpu_instructions::c_cond::<f32, 3>,  // 51
+        device::fpu_instructions::c_cond::<f32, 4>,  // 52
+        device::fpu_instructions::c_cond::<f32, 5>,  // 53
+        device::fpu_instructions::c_cond::<f32, 6>,  // 54
+        device::fpu_instructions::c_cond::<f32, 7>,  // 55
+        device::fpu_instructions::c_cond::<f32, 8>,  // 56
+        device::fpu_instructions::c_cond::<f32, 9>,  // 57
+        device::fpu_instructions::c_cond::<f32, 10>, // 58
+        device::fpu_instructions::c_cond::<f32, 11>, // 59
+        device::fpu_instructions::c_cond::<f32, 12>, // 60
+        device::fpu_instructions::c_cond::<f32, 13>, // 61
+        device::fpu_instructions::c_cond::<f32, 14>, // 62
+        device::fpu_instructions::c_cond::<f32, 15>, // 63
     ];
 
     device.cpu.cop1.d_instrs = [
-        device::fpu_instructions::add_d,     // 0
-        device::fpu_instructions::sub_d,     // 1
-        device::fpu_instructions::mul_d,     // 2
-        device::fpu_instructions::div_d,     // 3
-        device::fpu_instructions::sqrt_d,    // 4
-        device::fpu_instructions::abs_d,     // 5
-        device::fpu_instructions::mov_d,     // 6
-        device::fpu_instructions::neg_d,     // 7
-        device::fpu_instructions::round_l_d, // 8
-        device::fpu_instructions::trunc_l_d, // 9
-        device::fpu_instructions::ceil_l_d,  // 10
-        device::fpu_instructions::floor_l_d, // 11
-        device::fpu_instructions::round_w_d, // 12
-        device::fpu_instructions::trunc_w_d, // 13
-        device::fpu_instructions::ceil_w_d,  // 14
-        device::fpu_instructions::floor_w_d, // 15
-        device::cop1::reserved,              // 16
-        device::cop1::reserved,              // 17
-        device::cop1::reserved,              // 18
-        device::cop1::reserved,              // 19
-        device::cop1::reserved,              // 20
-        device::cop1::reserved,              // 21
-        device::cop1::reserved,              // 22
-        device::cop1::reserved,              // 23
-        device::cop1::reserved,              // 24
-        device::cop1::reserved,              // 25
-        device::cop1::reserved,              // 26
-        device::cop1::reserved,              // 27
-        device::cop1::reserved,              // 28
-        device::cop1::reserved,              // 29
-        device::cop1::reserved,              // 30
-        device::cop1::reserved,              // 31
-        device::fpu_instructions::cvt_s_d,   // 32
-        device::cop1::reserved,              // 33
-        device::cop1::reserved,              // 34
-        device::cop1::reserved,              // 35
-        device::fpu_instructions::cvt_w_d,   // 36
-        device::fpu_instructions::cvt_l_d,   // 37
-        device::cop1::reserved,              // 38
-        device::cop1::reserved,              // 38
-        device::cop1::reserved,              // 40
-        device::cop1::reserved,              // 41
-        device::cop1::reserved,              // 42
-        device::cop1::reserved,              // 43
-        device::cop1::reserved,              // 44
-        device::cop1::reserved,              // 45
-        device::cop1::reserved,              // 46
-        device::cop1::reserved,              // 47
-        device::fpu_instructions::c_f_d,     // 48
-        device::fpu_instructions::c_un_d,    // 49
-        device::fpu_instructions::c_eq_d,    // 50
-        device::fpu_instructions::c_ueq_d,   // 51
-        device::fpu_instructions::c_olt_d,   // 52
-        device::fpu_instructions::c_ult_d,   // 53
-        device::fpu_instructions::c_ole_d,   // 54
-        device::fpu_instructions::c_ule_d,   // 55
-        device::fpu_instructions::c_sf_d,    // 56
-        device::fpu_instructions::c_ngle_d,  // 57
-        device::fpu_instructions::c_seq_d,   // 58
-        device::fpu_instructions::c_ngl_d,   // 59
-        device::fpu_instructions::c_lt_d,    // 60
-        device::fpu_instructions::c_nge_d,   // 61
-        device::fpu_instructions::c_le_d,    // 62
-        device::fpu_instructions::c_ngt_d,   // 63
+        device::fpu_instructions::add_d,             // 0
+        device::fpu_instructions::sub_d,             // 1
+        device::fpu_instructions::mul_d,             // 2
+        device::fpu_instructions::div_d,             // 3
+        device::fpu_instructions::sqrt_d,            // 4
+        device::fpu_instructions::abs_d,             // 5
+        device::fpu_instructions::mov_d,             // 6
+        device::fpu_instructions::neg_d,             // 7
+        device::fpu_instructions::round_l_d,         // 8
+        device::fpu_instructions::trunc_l_d,         // 9
+        device::fpu_instructions::ceil_l_d,          // 10
+        device::fpu_instructions::floor_l_d,         // 11
+        device::fpu_instructions::round_w_d,         // 12
+        device::fpu_instructions::trunc_w_d,         // 13
+        device::fpu_instructions::ceil_w_d,          // 14
+        device::fpu_instructions::floor_w_d,         // 15
+        device::cop1::unimplemented,                 // 16
+        device::cop1::unimplemented,                 // 17
+        device::cop1::unimplemented,                 // 18
+        device::cop1::unimplemented,                 // 19
+        device::cop1::unimplemented,                 // 20
+        device::cop1::unimplemented,                 // 21
+        device::cop1::unimplemented,                 // 22
+        device::cop1::unimplemented,                 // 23
+        device::cop1::unimplemented,                 // 24
+        device::cop1::unimplemented,                 // 25
+        device::cop1::unimplemented,                 // 26
+        device::cop1::unimplemented,                 // 27
+        device::cop1::unimplemented,                 // 28
+        device::cop1::unimplemented,                 // 29
+        device::cop1::unimplemented,                 // 30
+        device::cop1::unimplemented,                 // 31
+        device::fpu_instructions::cvt_s_d,           // 32
+        device::cop1::unimplemented,                 // 33
+        device::cop1::unimplemented,                 // 34
+        device::cop1::unimplemented,                 // 35
+        device::fpu_instructions::cvt_w_d,           // 36
+        device::fpu_instructions::cvt_l_d,           // 37
+        device::cop1::unimplemented,                 // 38
+        device::cop1::unimplemented,                 // 38
+        device::cop1::unimplemented,                 // 40
+        device::cop1::unimplemented,                 // 41
+        device::cop1::unimplemented,                 // 42
+        device::cop1::unimplemented,                 // 43
+        device::cop1::unimplemented,                 // 44
+        device::cop1::unimplemented,                 // 45
+        device::cop1::unimplemented,                 // 46
+        device::cop1::unimplemented,                 // 47
+        device::fpu_instructions::c_cond::<f64, 0>,  // 48
+        device::fpu_instructions::c_cond::<f64, 1>,  // 49
+        device::fpu_instructions::c_cond::<f64, 2>,  // 50
+        device::fpu_instructions::c_cond::<f64, 3>,  // 51
+        device::fpu_instructions::c_cond::<f64, 4>,  // 52
+        device::fpu_instructions::c_cond::<f64, 5>,  // 53
+        device::fpu_instructions::c_cond::<f64, 6>,  // 54
+        device::fpu_instructions::c_cond::<f64, 7>,  // 55
+        device::fpu_instructions::c_cond::<f64, 8>,  // 56
+        device::fpu_instructions::c_cond::<f64, 9>,  // 57
+        device::fpu_instructions::c_cond::<f64, 10>, // 58
+        device::fpu_instructions::c_cond::<f64, 11>, // 59
+        device::fpu_instructions::c_cond::<f64, 12>, // 60
+        device::fpu_instructions::c_cond::<f64, 13>, // 61
+        device::fpu_instructions::c_cond::<f64, 14>, // 62
+        device::fpu_instructions::c_cond::<f64, 15>, // 63
     ];
 
     device.cpu.cop1.l_instrs = [
-        device::cop1::reserved,            // 0
-        device::cop1::reserved,            // 1
-        device::cop1::reserved,            // 2
-        device::cop1::reserved,            // 3
-        device::cop1::reserved,            // 4
-        device::cop1::reserved,            // 5
-        device::cop1::reserved,            // 6
-        device::cop1::reserved,            // 7
-        device::cop1::reserved,            // 8
-        device::cop1::reserved,            // 9
-        device::cop1::reserved,            // 10
-        device::cop1::reserved,            // 11
-        device::cop1::reserved,            // 12
-        device::cop1::reserved,            // 13
-        device::cop1::reserved,            // 14
-        device::cop1::reserved,            // 15
-        device::cop1::reserved,            // 16
-        device::cop1::reserved,            // 17
-        device::cop1::reserved,            // 18
-        device::cop1::reserved,            // 19
-        device::cop1::reserved,            // 20
-        device::cop1::reserved,            // 21
-        device::cop1::reserved,            // 22
-        device::cop1::reserved,            // 23
-        device::cop1::reserved,            // 24
-        device::cop1::reserved,            // 25
-        device::cop1::reserved,            // 26
-        device::cop1::reserved,            // 27
-        device::cop1::reserved,            // 28
-        device::cop1::reserved,            // 29
-        device::cop1::reserved,            // 30
-        device::cop1::reserved,            // 31
+        device::cop1::unimplemented,       // 0
+        device::cop1::unimplemented,       // 1
+        device::cop1::unimplemented,       // 2
+        device::cop1::unimplemented,       // 3
+        device::cop1::unimplemented,       // 4
+        device::cop1::unimplemented,       // 5
+        device::cop1::unimplemented,       // 6
+        device::cop1::unimplemented,       // 7
+        device::cop1::unimplemented,       // 8
+        device::cop1::unimplemented,       // 9
+        device::cop1::unimplemented,       // 10
+        device::cop1::unimplemented,       // 11
+        device::cop1::unimplemented,       // 12
+        device::cop1::unimplemented,       // 13
+        device::cop1::unimplemented,       // 14
+        device::cop1::unimplemented,       // 15
+        device::cop1::unimplemented,       // 16
+        device::cop1::unimplemented,       // 17
+        device::cop1::unimplemented,       // 18
+        device::cop1::unimplemented,       // 19
+        device::cop1::unimplemented,       // 20
+        device::cop1::unimplemented,       // 21
+        device::cop1::unimplemented,       // 22
+        device::cop1::unimplemented,       // 23
+        device::cop1::unimplemented,       // 24
+        device::cop1::unimplemented,       // 25
+        device::cop1::unimplemented,       // 26
+        device::cop1::unimplemented,       // 27
+        device::cop1::unimplemented,       // 28
+        device::cop1::unimplemented,       // 29
+        device::cop1::unimplemented,       // 30
+        device::cop1::unimplemented,       // 31
         device::fpu_instructions::cvt_s_l, // 32
         device::fpu_instructions::cvt_d_l, // 33
-        device::cop1::reserved,            // 34
-        device::cop1::reserved,            // 35
-        device::cop1::reserved,            // 36
-        device::cop1::reserved,            // 37
-        device::cop1::reserved,            // 38
-        device::cop1::reserved,            // 39
-        device::cop1::reserved,            // 40
-        device::cop1::reserved,            // 41
-        device::cop1::reserved,            // 42
-        device::cop1::reserved,            // 43
-        device::cop1::reserved,            // 44
-        device::cop1::reserved,            // 45
-        device::cop1::reserved,            // 46
-        device::cop1::reserved,            // 47
-        device::cop1::reserved,            // 48
-        device::cop1::reserved,            // 49
-        device::cop1::reserved,            // 50
-        device::cop1::reserved,            // 51
-        device::cop1::reserved,            // 52
-        device::cop1::reserved,            // 53
-        device::cop1::reserved,            // 54
-        device::cop1::reserved,            // 55
-        device::cop1::reserved,            // 56
-        device::cop1::reserved,            // 57
-        device::cop1::reserved,            // 58
-        device::cop1::reserved,            // 59
-        device::cop1::reserved,            // 60
-        device::cop1::reserved,            // 61
-        device::cop1::reserved,            // 62
-        device::cop1::reserved,            // 63
+        device::cop1::unimplemented,       // 34
+        device::cop1::unimplemented,       // 35
+        device::cop1::unimplemented,       // 36
+        device::cop1::unimplemented,       // 37
+        device::cop1::unimplemented,       // 38
+        device::cop1::unimplemented,       // 39
+        device::cop1::unimplemented,       // 40
+        device::cop1::unimplemented,       // 41
+        device::cop1::unimplemented,       // 42
+        device::cop1::unimplemented,       // 43
+        device::cop1::unimplemented,       // 44
+        device::cop1::unimplemented,       // 45
+        device::cop1::unimplemented,       // 46
+        device::cop1::unimplemented,       // 47
+        device::cop1::unimplemented,       // 48
+        device::cop1::unimplemented,       // 49
+        device::cop1::unimplemented,       // 50
+        device::cop1::unimplemented,       // 51
+        device::cop1::unimplemented,       // 52
+        device::cop1::unimplemented,       // 53
+        device::cop1::unimplemented,       // 54
+        device::cop1::unimplemented,       // 55
+        device::cop1::unimplemented,       // 56
+        device::cop1::unimplemented,       // 57
+        device::cop1::unimplemented,       // 58
+        device::cop1::unimplemented,       // 59
+        device::cop1::unimplemented,       // 60
+        device::cop1::unimplemented,       // 61
+        device::cop1::unimplemented,       // 62
+        device::cop1::unimplemented,       // 63
     ];
 
     device.cpu.cop1.w_instrs = [
-        device::cop1::reserved,            // 0
-        device::cop1::reserved,            // 1
-        device::cop1::reserved,            // 2
-        device::cop1::reserved,            // 3
-        device::cop1::reserved,            // 4
-        device::cop1::reserved,            // 5
-        device::cop1::reserved,            // 6
-        device::cop1::reserved,            // 7
-        device::cop1::reserved,            // 8
-        device::cop1::reserved,            // 9
-        device::cop1::reserved,            // 10
-        device::cop1::reserved,            // 11
-        device::cop1::reserved,            // 12
-        device::cop1::reserved,            // 13
-        device::cop1::reserved,            // 14
-        device::cop1::reserved,            // 15
-        device::cop1::reserved,            // 16
-        device::cop1::reserved,            // 17
-        device::cop1::reserved,            // 18
-        device::cop1::reserved,            // 19
-        device::cop1::reserved,            // 20
-        device::cop1::reserved,            // 21
-        device::cop1::reserved,            // 22
-        device::cop1::reserved,            // 23
-        device::cop1::reserved,            // 24
-        device::cop1::reserved,            // 25
-        device::cop1::reserved,            // 26
-        device::cop1::reserved,            // 27
-        device::cop1::reserved,            // 28
-        device::cop1::reserved,            // 29
-        device::cop1::reserved,            // 30
-        device::cop1::reserved,            // 31
+        device::cop1::unimplemented,       // 0
+        device::cop1::unimplemented,       // 1
+        device::cop1::unimplemented,       // 2
+        device::cop1::unimplemented,       // 3
+        device::cop1::unimplemented,       // 4
+        device::cop1::unimplemented,       // 5
+        device::cop1::unimplemented,       // 6
+        device::cop1::unimplemented,       // 7
+        device::cop1::unimplemented,       // 8
+        device::cop1::unimplemented,       // 9
+        device::cop1::unimplemented,       // 10
+        device::cop1::unimplemented,       // 11
+        device::cop1::unimplemented,       // 12
+        device::cop1::unimplemented,       // 13
+        device::cop1::unimplemented,       // 14
+        device::cop1::unimplemented,       // 15
+        device::cop1::unimplemented,       // 16
+        device::cop1::unimplemented,       // 17
+        device::cop1::unimplemented,       // 18
+        device::cop1::unimplemented,       // 19
+        device::cop1::unimplemented,       // 20
+        device::cop1::unimplemented,       // 21
+        device::cop1::unimplemented,       // 22
+        device::cop1::unimplemented,       // 23
+        device::cop1::unimplemented,       // 24
+        device::cop1::unimplemented,       // 25
+        device::cop1::unimplemented,       // 26
+        device::cop1::unimplemented,       // 27
+        device::cop1::unimplemented,       // 28
+        device::cop1::unimplemented,       // 29
+        device::cop1::unimplemented,       // 30
+        device::cop1::unimplemented,       // 31
         device::fpu_instructions::cvt_s_w, // 32
         device::fpu_instructions::cvt_d_w, // 33
-        device::cop1::reserved,            // 34
-        device::cop1::reserved,            // 35
-        device::cop1::reserved,            // 36
-        device::cop1::reserved,            // 37
-        device::cop1::reserved,            // 38
-        device::cop1::reserved,            // 39
-        device::cop1::reserved,            // 40
-        device::cop1::reserved,            // 41
-        device::cop1::reserved,            // 42
-        device::cop1::reserved,            // 43
-        device::cop1::reserved,            // 44
-        device::cop1::reserved,            // 45
-        device::cop1::reserved,            // 46
-        device::cop1::reserved,            // 47
-        device::cop1::reserved,            // 48
-        device::cop1::reserved,            // 49
-        device::cop1::reserved,            // 50
-        device::cop1::reserved,            // 51
-        device::cop1::reserved,            // 52
-        device::cop1::reserved,            // 53
-        device::cop1::reserved,            // 54
-        device::cop1::reserved,            // 55
-        device::cop1::reserved,            // 56
-        device::cop1::reserved,            // 57
-        device::cop1::reserved,            // 58
-        device::cop1::reserved,            // 59
-        device::cop1::reserved,            // 60
-        device::cop1::reserved,            // 61
-        device::cop1::reserved,            // 62
-        device::cop1::reserved,            // 63
+        device::cop1::unimplemented,       // 34
+        device::cop1::unimplemented,       // 35
+        device::cop1::unimplemented,       // 36
+        device::cop1::unimplemented,       // 37
+        device::cop1::unimplemented,       // 38
+        device::cop1::unimplemented,       // 39
+        device::cop1::unimplemented,       // 40
+        device::cop1::unimplemented,       // 41
+        device::cop1::unimplemented,       // 42
+        device::cop1::unimplemented,       // 43
+        device::cop1::unimplemented,       // 44
+        device::cop1::unimplemented,       // 45
+        device::cop1::unimplemented,       // 46
+        device::cop1::unimplemented,       // 47
+        device::cop1::unimplemented,       // 48
+        device::cop1::unimplemented,       // 49
+        device::cop1::unimplemented,       // 50
+        device::cop1::unimplemented,       // 51
+        device::cop1::unimplemented,       // 52
+        device::cop1::unimplemented,       // 53
+        device::cop1::unimplemented,       // 54
+        device::cop1::unimplemented,       // 55
+        device::cop1::unimplemented,       // 56
+        device::cop1::unimplemented,       // 57
+        device::cop1::unimplemented,       // 58
+        device::cop1::unimplemented,       // 59
+        device::cop1::unimplemented,       // 60
+        device::cop1::unimplemented,       // 61
+        device::cop1::unimplemented,       // 62
+        device::cop1::unimplemented,       // 63
     ];
 
     device.cpu.cop1.instrs = [
         device::cop1::mfc1,           // 0
         device::cop1::dmfc1,          // 1
         device::cop1::cfc1,           // 2
-        device::cop1::dcfc1,          // 3
+        device::cop1::unimplemented,  // 3
         device::cop1::mtc1,           // 4
         device::cop1::dmtc1,          // 5
         device::cop1::ctc1,           // 6
-        device::cop1::dctc1,          // 7
+        device::cop1::unimplemented,  // 7
         device::cop1::execute_cop1_b, // 8
-        device::cop1::reserved,       // 9
-        device::cop1::reserved,       // 10
-        device::cop1::reserved,       // 11
-        device::cop1::reserved,       // 12
-        device::cop1::reserved,       // 13
-        device::cop1::reserved,       // 14
-        device::cop1::reserved,       // 15
+        device::cop1::unimplemented,  // 9
+        device::cop1::unimplemented,  // 10
+        device::cop1::unimplemented,  // 11
+        device::cop1::unimplemented,  // 12
+        device::cop1::unimplemented,  // 13
+        device::cop1::unimplemented,  // 14
+        device::cop1::unimplemented,  // 15
         device::cop1::execute_cop1_s, // 16
         device::cop1::execute_cop1_d, // 17
-        device::cop1::reserved,       // 18
-        device::cop1::reserved,       // 19
+        device::cop1::unimplemented,  // 18
+        device::cop1::unimplemented,  // 19
         device::cop1::execute_cop1_w, // 20
         device::cop1::execute_cop1_l, // 21
-        device::cop1::reserved,       // 22
-        device::cop1::reserved,       // 23
-        device::cop1::reserved,       // 24
-        device::cop1::reserved,       // 25
-        device::cop1::reserved,       // 26
-        device::cop1::reserved,       // 27
-        device::cop1::reserved,       // 28
-        device::cop1::reserved,       // 29
-        device::cop1::reserved,       // 30
-        device::cop1::reserved,       // 31
+        device::cop1::unimplemented,  // 22
+        device::cop1::unimplemented,  // 23
+        device::cop1::unimplemented,  // 24
+        device::cop1::unimplemented,  // 25
+        device::cop1::unimplemented,  // 26
+        device::cop1::unimplemented,  // 27
+        device::cop1::unimplemented,  // 28
+        device::cop1::unimplemented,  // 29
+        device::cop1::unimplemented,  // 30
+        device::cop1::unimplemented,  // 31
     ]
 }
 
 pub fn init(device: &mut device::Device) {
-    set_fgr_registers(device, 0);
     device.cpu.cop1.fcr0 = 0b101000000000;
 
     map_instructions(device);
     set_host_flush_mode(device);
-}
-
-pub fn set_fgr_registers(device: &mut device::Device, status_reg: u64) {
-    // this method doesn't account for undocumented behaviour (accessing odd numbered registers in half mode)
-    if (status_reg & device::cop0::COP0_STATUS_FR) == 0 {
-        let mut i = 0;
-        while i < 32 {
-            let bytes = device.cpu.cop1.fgr64[i];
-            device.cpu.cop1.fgr32[i] = bytes[0..4].try_into().unwrap();
-            device.cpu.cop1.fgr32[i + 1] = bytes[4..8].try_into().unwrap();
-            i += 2;
-        }
-    } else {
-        let mut i = 0;
-        while i < 32 {
-            let bytes_lo = device.cpu.cop1.fgr32[i];
-            let bytes_hi = device.cpu.cop1.fgr32[i + 1];
-            device.cpu.cop1.fgr64[i] = [bytes_lo, bytes_hi].concat().try_into().unwrap();
-            i += 2;
-        }
-    }
 }

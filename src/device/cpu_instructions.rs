@@ -139,8 +139,10 @@ pub fn bgtz(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn addi(device: &mut device::Device, opcode: u32) {
-    device.cpu.gpr[rt(opcode) as usize] =
-        se32(device.cpu.gpr[rs(opcode) as usize] as i32).wrapping_add(se16(imm(opcode) as i16))
+    match (device.cpu.gpr[rs(opcode) as usize] as i32).checked_add(imm(opcode) as i16 as i32) {
+        Some(result) => device.cpu.gpr[rt(opcode) as usize] = se32(result),
+        None => device::exceptions::overflow_exception(device),
+    }
 }
 
 pub fn addiu(device: &mut device::Device, opcode: u32) {
@@ -215,8 +217,10 @@ pub fn bgtzl(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn daddi(device: &mut device::Device, opcode: u32) {
-    device.cpu.gpr[rt(opcode) as usize] =
-        device.cpu.gpr[rs(opcode) as usize].wrapping_add(se16(imm(opcode) as i16))
+    match (device.cpu.gpr[rs(opcode) as usize] as i64).checked_add(imm(opcode) as i16 as i64) {
+        Some(result) => device.cpu.gpr[rt(opcode) as usize] = result as u64,
+        None => device::exceptions::overflow_exception(device),
+    }
 }
 
 pub fn daddiu(device: &mut device::Device, opcode: u32) {
@@ -624,43 +628,27 @@ pub fn swr(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn cache(device: &mut device::Device, opcode: u32) {
-    let (phys_address, _, err) = device::memory::translate_address(
-        device,
-        device.cpu.gpr[rs(opcode) as usize].wrapping_add(se16(imm(opcode) as i16)),
-        device::memory::AccessType::Read,
-    );
+    let virt_address = device.cpu.gpr[rs(opcode) as usize].wrapping_add(se16(imm(opcode) as i16));
+    let (phys_address, _, err) =
+        device::memory::translate_address(device, virt_address, device::memory::AccessType::Read);
     if err {
         return;
     }
 
-    let dcache_line = ((phys_address >> 4) & 0x1FF) as usize;
-    let icache_line = ((phys_address >> 5) & 0x1FF) as usize;
+    let ptag = (phys_address & !0xFFF) as u32;
+    let dcache_line = device::cache::dcache_line(virt_address);
+    let icache_line = device::cache::icache_line(virt_address);
     match rt(opcode) {
         0x00 => {
-            //icache index invalidate
-            device.memory.icache[icache_line].valid = false
+            //icache index invalidate (the ptag is replaced with the one of the address)
+            device.memory.icache[icache_line].valid = false;
+            device.memory.icache[icache_line].tag = ptag
         }
         0x04 => {
             //icache load tag
-            let mut valid = 0;
-            if device.memory.icache[icache_line].valid {
-                valid = 1
-            }
-            device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
-                valid << 7,
-                0x80,
-            );
-            device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
-                0,
-                0x40,
-            );
-            device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
-                (device.memory.icache[icache_line].tag >> 4) as u64,
-                0xFFFFF00,
-            )
+            let valid = device.memory.icache[icache_line].valid as u64;
+            device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] =
+                (valid << 7) | ((device.memory.icache[icache_line].tag >> 4) as u64 & 0xFFFFF00)
         }
         0x08 => {
             //icache store tag
@@ -685,64 +673,51 @@ pub fn cache(device: &mut device::Device, opcode: u32) {
                 device::cache::icache_writeback(device, icache_line)
             }
         }
+        // The dcache invalidate operations only clear the valid flag, the dirty flag is kept
         0x01 => {
-            //dcache index write back invalidate
-            if device.memory.dcache[dcache_line].dirty && device.memory.dcache[dcache_line].valid {
-                device::cache::dcache_writeback(device, dcache_line)
+            //dcache index write back invalidate (a valid line also takes the ptag of the address)
+            if device.memory.dcache[dcache_line].valid {
+                if device.memory.dcache[dcache_line].dirty {
+                    device::cache::dcache_writeback(device, dcache_line)
+                }
+                device.memory.dcache[dcache_line].valid = false;
+                device.memory.dcache[dcache_line].tag = ptag
             }
-            device.memory.dcache[dcache_line].valid = false
         }
         0x05 => {
-            //dcache index load tag
-            let mut valid = 0;
-            let mut dirty = 0;
-            if device.memory.dcache[dcache_line].valid {
-                valid = 1
-            }
-            if device.memory.dcache[dcache_line].dirty {
-                dirty = 1
-            }
-            device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
-                valid << 7,
-                0x80,
-            );
-            device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
-                dirty << 6,
-                0x40,
-            );
-            device::memory::masked_write_64(
-                &mut device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG],
-                (device.memory.dcache[dcache_line].tag >> 4) as u64,
-                0xFFFFF00,
-            )
+            //dcache index load tag (a valid line always reports the dirty state)
+            let state = if device.memory.dcache[dcache_line].valid {
+                0xC0
+            } else {
+                0
+            };
+            device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] =
+                state | ((device.memory.dcache[dcache_line].tag >> 4) as u64 & 0xFFFFF00)
         }
         0x09 => {
-            //dcache index store tag
+            //dcache index store tag (the dirty flag can't be changed)
             device.memory.dcache[dcache_line].valid =
                 (device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] & 0x80) >> 7 != 0;
-            device.memory.dcache[dcache_line].dirty =
-                (device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] & 0x40) >> 6 != 0;
             device.memory.dcache[dcache_line].tag =
                 ((device.cpu.cop0.regs[device::cop0::COP0_TAGLO_REG] & 0xFFFFF00) << 4) as u32
         }
         0x0D => {
-            //dcache create dirty exclusive
-            if !device::cache::dcache_hit(device, dcache_line, phys_address)
-                && device.memory.dcache[dcache_line].dirty
-            {
-                device::cache::dcache_writeback(device, dcache_line)
+            //dcache create dirty exclusive (doesn't set the dirty flag)
+            if !device::cache::dcache_hit(device, dcache_line, phys_address) {
+                if device.memory.dcache[dcache_line].valid
+                    && device.memory.dcache[dcache_line].dirty
+                {
+                    device::cache::dcache_writeback(device, dcache_line)
+                }
+                device.memory.dcache[dcache_line].dirty = false;
+                device.memory.dcache[dcache_line].tag = ptag;
+                device.memory.dcache[dcache_line].valid = true
             }
-            device.memory.dcache[dcache_line].tag = (phys_address & !0xFFF) as u32;
-            device.memory.dcache[dcache_line].valid = true;
-            device.memory.dcache[dcache_line].dirty = true
         }
         0x11 => {
             //dcache hit invalidate
             if device::cache::dcache_hit(device, dcache_line, phys_address) {
-                device.memory.dcache[dcache_line].valid = false;
-                device.memory.dcache[dcache_line].dirty = false
+                device.memory.dcache[dcache_line].valid = false
             }
         }
         0x15 => {
@@ -759,7 +734,8 @@ pub fn cache(device: &mut device::Device, opcode: u32) {
             if device::cache::dcache_hit(device, dcache_line, phys_address)
                 && device.memory.dcache[dcache_line].dirty
             {
-                device::cache::dcache_writeback(device, dcache_line)
+                device::cache::dcache_writeback(device, dcache_line);
+                device.memory.dcache[dcache_line].dirty = false
             }
         }
         _ => {
@@ -854,7 +830,6 @@ pub fn sc(device: &mut device::Device, opcode: u32) {
             return;
         }
 
-        device.cpu.llbit = false;
         device::memory::data_write(
             device,
             phys_address,
@@ -879,7 +854,6 @@ pub fn scd(device: &mut device::Device, opcode: u32) {
             return;
         }
 
-        device.cpu.llbit = false;
         device::memory::data_write(
             device,
             phys_address,
@@ -1033,8 +1007,10 @@ pub fn dsrav(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn mult(device: &mut device::Device, opcode: u32) {
-    let result = ((device.cpu.gpr[rs(opcode) as usize]) as i32 as i64)
-        .wrapping_mul(device.cpu.gpr[rt(opcode) as usize] as i32 as i64);
+    // VR4300 quirk: rs is used as a full 64-bit value and rt as a sign-extended
+    // 35-bit value; the low 64 bits of the product are split into HI/LO.
+    let result = (device.cpu.gpr[rs(opcode) as usize] as i64)
+        .wrapping_mul(((device.cpu.gpr[rt(opcode) as usize] as i64) << 29) >> 29);
 
     device.cpu.lo = se32((result) as i32);
     device.cpu.hi = se32((result >> 32) as i32);
@@ -1137,10 +1113,12 @@ pub fn ddivu(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn add(device: &mut device::Device, opcode: u32) {
-    device.cpu.gpr[rd(opcode) as usize] = se32(
-        (device.cpu.gpr[rs(opcode) as usize] as u32)
-            .wrapping_add(device.cpu.gpr[rt(opcode) as usize] as u32) as i32,
-    )
+    match (device.cpu.gpr[rs(opcode) as usize] as i32)
+        .checked_add(device.cpu.gpr[rt(opcode) as usize] as i32)
+    {
+        Some(result) => device.cpu.gpr[rd(opcode) as usize] = se32(result),
+        None => device::exceptions::overflow_exception(device),
+    }
 }
 
 pub fn addu(device: &mut device::Device, opcode: u32) {
@@ -1151,10 +1129,12 @@ pub fn addu(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn sub(device: &mut device::Device, opcode: u32) {
-    device.cpu.gpr[rd(opcode) as usize] = se32(
-        (device.cpu.gpr[rs(opcode) as usize] as u32)
-            .wrapping_sub(device.cpu.gpr[rt(opcode) as usize] as u32) as i32,
-    )
+    match (device.cpu.gpr[rs(opcode) as usize] as i32)
+        .checked_sub(device.cpu.gpr[rt(opcode) as usize] as i32)
+    {
+        Some(result) => device.cpu.gpr[rd(opcode) as usize] = se32(result),
+        None => device::exceptions::overflow_exception(device),
+    }
 }
 
 pub fn subu(device: &mut device::Device, opcode: u32) {
@@ -1196,8 +1176,12 @@ pub fn sltu(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn dadd(device: &mut device::Device, opcode: u32) {
-    device.cpu.gpr[rd(opcode) as usize] =
-        device.cpu.gpr[rs(opcode) as usize].wrapping_add(device.cpu.gpr[rt(opcode) as usize])
+    match (device.cpu.gpr[rs(opcode) as usize] as i64)
+        .checked_add(device.cpu.gpr[rt(opcode) as usize] as i64)
+    {
+        Some(result) => device.cpu.gpr[rd(opcode) as usize] = result as u64,
+        None => device::exceptions::overflow_exception(device),
+    }
 }
 
 pub fn daddu(device: &mut device::Device, opcode: u32) {
@@ -1206,8 +1190,12 @@ pub fn daddu(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn dsub(device: &mut device::Device, opcode: u32) {
-    device.cpu.gpr[rd(opcode) as usize] =
-        device.cpu.gpr[rs(opcode) as usize].wrapping_sub(device.cpu.gpr[rt(opcode) as usize])
+    match (device.cpu.gpr[rs(opcode) as usize] as i64)
+        .checked_sub(device.cpu.gpr[rt(opcode) as usize] as i64)
+    {
+        Some(result) => device.cpu.gpr[rd(opcode) as usize] = result as u64,
+        None => device::exceptions::overflow_exception(device),
+    }
 }
 
 pub fn dsubu(device: &mut device::Device, opcode: u32) {

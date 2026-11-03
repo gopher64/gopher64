@@ -55,6 +55,7 @@ pub const COP0_CAUSE_EXCCODE_SYS: u64 = 8 << 2;
 pub const COP0_CAUSE_EXCCODE_BP: u64 = 9 << 2;
 pub const COP0_CAUSE_EXCCODE_RI: u64 = 10 << 2;
 pub const COP0_CAUSE_EXCCODE_CPU: u64 = 11 << 2;
+pub const COP0_CAUSE_EXCCODE_OV: u64 = 12 << 2;
 pub const COP0_CAUSE_EXCCODE_TR: u64 = 13 << 2;
 pub const COP0_CAUSE_EXCCODE_FPE: u64 = 15 << 2;
 pub const COP0_CAUSE_IP2: u64 = 1 << 10;
@@ -90,7 +91,7 @@ const COP0_WATCHHI_REG_MASK: u64 = 0b00000000000000000000000000001111;
 const COP0_XCONTEXT_REG_MASK: u64 =
     0b1111111111111111111111111111111000000000000000000000000000000000;
 const COP0_PARITYERR_REG_MASK: u64 = 0b00000000000000000000000011111111;
-const COP0_TAGLO_REG_MASK: u64 = 0b00001111111111111111111111000000;
+const COP0_TAGLO_REG_MASK: u64 = 0xFFFFFFFF;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Cop0 {
@@ -128,9 +129,8 @@ fn mtc0(device: &mut device::Device, opcode: u32) {
     device::cop0::set_control_registers(
         device,
         device::cpu_instructions::rd(opcode),
-        device::cpu_instructions::se32(
-            device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize] as u32 as i32,
-        ),
+        // MTC0 transfers the full 64-bit GPR, same as DMTC0
+        device.cpu.gpr[device::cpu_instructions::rt(opcode) as usize],
     )
 }
 
@@ -192,7 +192,8 @@ pub fn reserved(device: &mut device::Device, _opcode: u32) {
     device::exceptions::reserved_exception(device, 0);
 }
 
-fn emux(_device: &mut device::Device, _opcode: u32) {}
+// Used for EMUX and the COP0 encodings that hardware ignores
+fn noop(_device: &mut device::Device, _opcode: u32) {}
 
 fn get_control_registers(device: &device::Device, index: u32) -> u64 {
     match index as usize {
@@ -221,11 +222,6 @@ fn set_control_registers(device: &mut device::Device, index: u32, mut data: u64)
             data &= 0xFFFFFFFF;
             schedule_compare_event(device, data);
             device.cpu.cop0.regs[COP0_CAUSE_REG] &= !COP0_CAUSE_IP7;
-        }
-        COP0_STATUS_REG
-            if data & COP0_STATUS_FR != device.cpu.cop0.regs[index as usize] & COP0_STATUS_FR =>
-        {
-            device::cop1::set_fgr_registers(device, data)
         }
         _ => {}
     }
@@ -279,13 +275,13 @@ pub fn map_instructions(device: &mut device::Device) {
     device.cpu.cop0.instrs = [
         device::cop0::mfc0,        // 0
         device::cop0::dmfc0,       // 1
-        device::cop0::reserved,    // 2
+        device::cop0::noop,        // 2
         device::cop0::reserved,    // 3
         device::cop0::mtc0,        // 4
         device::cop0::dmtc0,       // 5
-        device::cop0::reserved,    // 6
+        device::cop0::noop,        // 6
         device::cop0::reserved,    // 7
-        device::cop0::reserved,    // 8
+        device::cop0::noop,        // 8
         device::cop0::reserved,    // 9
         device::cop0::reserved,    // 10
         device::cop0::reserved,    // 11
@@ -312,70 +308,70 @@ pub fn map_instructions(device: &mut device::Device) {
     ];
 
     device.cpu.cop0.instrs2 = [
-        device::cop0::reserved, // 0
+        device::cop0::noop,     // 0
         device::cop0::tlbr,     // 1
         device::cop0::tlbwi,    // 2
-        device::cop0::reserved, // 3
-        device::cop0::reserved, // 4
-        device::cop0::reserved, // 5
+        device::cop0::noop,     // 3
+        device::cop0::noop,     // 4
+        device::cop0::noop,     // 5
         device::cop0::tlbwr,    // 6
-        device::cop0::reserved, // 7
+        device::cop0::noop,     // 7
         device::cop0::tlbp,     // 8
-        device::cop0::reserved, // 9
-        device::cop0::reserved, // 10
-        device::cop0::reserved, // 11
-        device::cop0::reserved, // 12
-        device::cop0::reserved, // 13
-        device::cop0::reserved, // 14
-        device::cop0::reserved, // 15
+        device::cop0::noop,     // 9
+        device::cop0::noop,     // 10
+        device::cop0::noop,     // 11
+        device::cop0::noop,     // 12
+        device::cop0::noop,     // 13
+        device::cop0::noop,     // 14
+        device::cop0::noop,     // 15
         device::cop0::reserved, // 16
-        device::cop0::reserved, // 17
-        device::cop0::reserved, // 18
-        device::cop0::reserved, // 19
-        device::cop0::reserved, // 20
-        device::cop0::reserved, // 21
-        device::cop0::reserved, // 22
-        device::cop0::reserved, // 23
+        device::cop0::noop,     // 17
+        device::cop0::noop,     // 18
+        device::cop0::noop,     // 19
+        device::cop0::noop,     // 20
+        device::cop0::noop,     // 21
+        device::cop0::noop,     // 22
+        device::cop0::noop,     // 23
         device::cop0::eret,     // 24
-        device::cop0::reserved, // 25
-        device::cop0::reserved, // 26
-        device::cop0::reserved, // 27
-        device::cop0::reserved, // 28
-        device::cop0::reserved, // 29
-        device::cop0::reserved, // 30
-        device::cop0::reserved, // 31
-        device::cop0::emux,     // 32
-        device::cop0::emux,     // 33
-        device::cop0::emux,     // 34
-        device::cop0::emux,     // 35
-        device::cop0::emux,     // 36
-        device::cop0::emux,     // 37
-        device::cop0::emux,     // 38
-        device::cop0::emux,     // 39
-        device::cop0::emux,     // 40
-        device::cop0::emux,     // 41
-        device::cop0::emux,     // 42
-        device::cop0::emux,     // 43
-        device::cop0::emux,     // 44
-        device::cop0::emux,     // 45
-        device::cop0::emux,     // 46
-        device::cop0::emux,     // 47
-        device::cop0::emux,     // 48
-        device::cop0::emux,     // 49
-        device::cop0::emux,     // 50
-        device::cop0::emux,     // 51
-        device::cop0::emux,     // 52
-        device::cop0::emux,     // 53
-        device::cop0::emux,     // 54
-        device::cop0::emux,     // 55
-        device::cop0::emux,     // 56
-        device::cop0::emux,     // 57
-        device::cop0::emux,     // 58
-        device::cop0::emux,     // 59
-        device::cop0::emux,     // 60
-        device::cop0::emux,     // 61
-        device::cop0::emux,     // 62
-        device::cop0::emux,     // 63
+        device::cop0::noop,     // 25
+        device::cop0::noop,     // 26
+        device::cop0::noop,     // 27
+        device::cop0::noop,     // 28
+        device::cop0::noop,     // 29
+        device::cop0::noop,     // 30
+        device::cop0::noop,     // 31
+        device::cop0::noop,     // 32
+        device::cop0::noop,     // 33
+        device::cop0::noop,     // 34
+        device::cop0::noop,     // 35
+        device::cop0::noop,     // 36
+        device::cop0::noop,     // 37
+        device::cop0::noop,     // 38
+        device::cop0::noop,     // 39
+        device::cop0::noop,     // 40
+        device::cop0::noop,     // 41
+        device::cop0::noop,     // 42
+        device::cop0::noop,     // 43
+        device::cop0::noop,     // 44
+        device::cop0::noop,     // 45
+        device::cop0::noop,     // 46
+        device::cop0::noop,     // 47
+        device::cop0::noop,     // 48
+        device::cop0::noop,     // 49
+        device::cop0::noop,     // 50
+        device::cop0::noop,     // 51
+        device::cop0::noop,     // 52
+        device::cop0::noop,     // 53
+        device::cop0::noop,     // 54
+        device::cop0::noop,     // 55
+        device::cop0::noop,     // 56
+        device::cop0::noop,     // 57
+        device::cop0::noop,     // 58
+        device::cop0::noop,     // 59
+        device::cop0::noop,     // 60
+        device::cop0::noop,     // 61
+        device::cop0::noop,     // 62
+        device::cop0::noop,     // 63
     ];
 }
 

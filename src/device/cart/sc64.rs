@@ -172,7 +172,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                 address + i as u64,
                                 data,
                                 0xFFFFFFFF,
-                                false,
+                                None,
                             );
                             i += 4;
                         }
@@ -190,7 +190,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                 device,
                                 address + i as u64,
                                 device::memory::AccessSize::Word,
-                                false,
+                                None,
                             )
                             .to_be_bytes();
                             device
@@ -332,7 +332,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                 device,
                                 writeback_sectors_address + (i * 4) as u64,
                                 device::memory::AccessSize::Word,
-                                false,
+                                None,
                             );
                         }
                     }

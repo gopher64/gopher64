@@ -61,8 +61,16 @@ pub fn icache_fill(device: &mut device::Device, line_index: usize, phys_address:
     }
 }
 
-pub fn icache_fetch(device: &mut device::Device, phys_address: u64) {
-    let line_index = ((phys_address >> 5) & 0x1FF) as usize;
+pub fn icache_line(virt_address: u64) -> usize {
+    ((virt_address >> 5) & 0x1FF) as usize
+}
+
+pub fn dcache_line(virt_address: u64) -> usize {
+    ((virt_address >> 4) & 0x1FF) as usize
+}
+
+pub fn icache_fetch(device: &mut device::Device, virt_address: u64, phys_address: u64) {
+    let line_index = icache_line(virt_address);
     if !icache_hit(device, line_index, phys_address) {
         icache_fill(device, line_index, phys_address)
     }
@@ -80,8 +88,6 @@ pub fn dcache_hit(device: &device::Device, line_index: usize, phys_address: u64)
 
 pub fn dcache_writeback(device: &mut device::Device, line_index: usize) {
     device::cop0::add_cycles(device, device::rdram::rdram_calculate_cycles(16));
-
-    device.memory.dcache[line_index].dirty = false;
 
     let cache_address = ((device.memory.dcache[line_index].tag
         | (device.memory.dcache[line_index].index) as u32)
@@ -118,8 +124,8 @@ fn dcache_fill(device: &mut device::Device, line_index: usize, phys_address: u64
     }
 }
 
-pub fn dcache_read(device: &mut device::Device, phys_address: u64) -> u32 {
-    let line_index = ((phys_address >> 4) & 0x1FF) as usize;
+pub fn dcache_read(device: &mut device::Device, virt_address: u64, phys_address: u64) -> u32 {
+    let line_index = dcache_line(virt_address);
     if !dcache_hit(device, line_index, phys_address) {
         if device.memory.dcache[line_index].valid && device.memory.dcache[line_index].dirty {
             dcache_writeback(device, line_index)
@@ -131,8 +137,14 @@ pub fn dcache_read(device: &mut device::Device, phys_address: u64) -> u32 {
     device.memory.dcache[line_index].words[((phys_address >> 2) & 3) as usize]
 }
 
-pub fn dcache_write(device: &mut device::Device, phys_address: u64, value: u32, mask: u32) {
-    let line_index = ((phys_address >> 4) & 0x1FF) as usize;
+pub fn dcache_write(
+    device: &mut device::Device,
+    virt_address: u64,
+    phys_address: u64,
+    value: u32,
+    mask: u32,
+) {
+    let line_index = dcache_line(virt_address);
     if !dcache_hit(device, line_index, phys_address) {
         if device.memory.dcache[line_index].valid && device.memory.dcache[line_index].dirty {
             dcache_writeback(device, line_index)
