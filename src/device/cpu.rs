@@ -272,8 +272,8 @@ pub fn run(device: &mut device::Device) {
             continue; // TLB exception
         }
 
-        if cached {
-            device::cache::icache_fetch(device, device.cpu.pc_phys)
+        if let Some(virt_address) = cached {
+            device::cache::icache_fetch(device, virt_address, device.cpu.pc_phys)
         } else {
             let opcode = device.memory.memory_map_read[(device.cpu.pc_phys >> 16) as usize](
                 device,

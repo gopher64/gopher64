@@ -39,8 +39,14 @@ fn set_exception_cause(device: &mut device::Device, cause: u64) {
 }
 
 pub fn interrupt_exception(device: &mut device::Device) {
-    device.cpu.cop0.regs[device::cop0::COP0_CAUSE_REG] &= !device::cop0::COP0_CAUSE_EXCCODE_MASK;
+    set_exception_cause(device, 0);
     exception_general(device, 0x180);
+}
+
+pub fn overflow_exception(device: &mut device::Device) {
+    set_exception_cause(device, device::cop0::COP0_CAUSE_EXCCODE_OV);
+
+    exception_general(device, 0x180)
 }
 
 pub fn floating_point_exception(device: &mut device::Device) {

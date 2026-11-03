@@ -60,30 +60,37 @@ pub fn masked_write_64(dst: &mut u64, value: u64, mask: u64) {
     *dst = (*dst & !mask) | (value & mask);
 }
 
+#[inline(always)]
 pub fn translate_address(
     device: &mut device::Device,
     mut address: u64,
     access_type: AccessType,
-) -> (u64, bool, bool) {
+) -> (u64, Option<u64>, bool) {
     if (address & 0xc0000000) != 0x80000000 {
         if (address & 0xFFFFFFFF00000000) == 0x9000000000000000 {
             // this is a hack to support 64-bit addresses used by some homebrew
             address |= 0xA0000000;
         } else {
-            return device::tlb::get_physical_address(device, address, access_type);
+            let (phys_address, cached, err) =
+                device::tlb::get_physical_address(device, address, access_type);
+            return (phys_address, cached.then_some(address), err);
         }
     }
-    (address & 0x1FFFFFFF, address & 0x20000000 == 0, false)
+    (
+        address & 0x1FFFFFFF,
+        (address & 0x20000000 == 0).then_some(address),
+        false,
+    )
 }
 
 pub fn data_read(
     device: &mut device::Device,
     phys_address: u64,
     access_size: AccessSize,
-    cached: bool,
+    cached: Option<u64>,
 ) -> u32 {
-    if cached {
-        device::cache::dcache_read(device, phys_address)
+    if let Some(virt_address) = cached {
+        device::cache::dcache_read(device, virt_address, phys_address)
     } else {
         device.memory.memory_map_read[(phys_address >> 16) as usize](
             device,
@@ -98,10 +105,10 @@ pub fn data_write(
     phys_address: u64,
     value: u32,
     mask: u32,
-    cached: bool,
+    cached: Option<u64>,
 ) {
-    if cached {
-        device::cache::dcache_write(device, phys_address, value, mask)
+    if let Some(virt_address) = cached {
+        device::cache::dcache_write(device, virt_address, phys_address, value, mask)
     } else {
         device.memory.memory_map_write[(phys_address >> 16) as usize](
             device,
