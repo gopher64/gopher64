@@ -140,6 +140,30 @@ fn get_vpr128(vpr: __m128i) -> u128 {
     unsafe { std::mem::transmute::<__m128i, u128>(vpr) }
 }
 
+// A branch or jump in the delay slot of a taken branch is ignored.
+// Execution continues at the first branch's target.
+fn branch(device: &mut device::Device, opcode: u32, taken: bool) {
+    if device::rsp_cpu::in_delay_slot_taken(device) {
+        return;
+    }
+    if taken {
+        device.rsp.cpu.branch_state.state = device::cpu::State::Take;
+        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG]
+            .wrapping_add(se16(imm(opcode) as i16) << 2)
+            + 4;
+    } else {
+        device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
+    }
+}
+
+fn link(device: &mut device::Device, reg: usize) {
+    device.rsp.cpu.gpr[reg] = if device::rsp_cpu::in_delay_slot_taken(device) {
+        (device.rsp.cpu.branch_state.pc + 4) & 0xFFF
+    } else {
+        (device.rsp.regs2[device::rsp_interface::SP_PC_REG] + 8) & 0xFFF
+    }
+}
+
 pub fn j(device: &mut device::Device, opcode: u32) {
     if device::rsp_cpu::in_delay_slot_taken(device) {
         return;
@@ -167,47 +191,23 @@ pub fn jal(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn beq(device: &mut device::Device, opcode: u32) {
-    if device.rsp.cpu.gpr[rs(opcode) as usize] == device.rsp.cpu.gpr[rt(opcode) as usize] {
-        device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG]
-            .wrapping_add(se16(imm(opcode) as i16) << 2)
-            + 4;
-    } else {
-        device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
-    }
+    let taken = device.rsp.cpu.gpr[rs(opcode) as usize] == device.rsp.cpu.gpr[rt(opcode) as usize];
+    branch(device, opcode, taken)
 }
 
 pub fn bne(device: &mut device::Device, opcode: u32) {
-    if device.rsp.cpu.gpr[rs(opcode) as usize] != device.rsp.cpu.gpr[rt(opcode) as usize] {
-        device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG]
-            .wrapping_add(se16(imm(opcode) as i16) << 2)
-            + 4;
-    } else {
-        device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
-    }
+    let taken = device.rsp.cpu.gpr[rs(opcode) as usize] != device.rsp.cpu.gpr[rt(opcode) as usize];
+    branch(device, opcode, taken)
 }
 
 pub fn blez(device: &mut device::Device, opcode: u32) {
-    if device.rsp.cpu.gpr[rs(opcode) as usize] as i32 <= 0 {
-        device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG]
-            .wrapping_add(se16(imm(opcode) as i16) << 2)
-            + 4;
-    } else {
-        device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
-    }
+    let taken = device.rsp.cpu.gpr[rs(opcode) as usize] as i32 <= 0;
+    branch(device, opcode, taken)
 }
 
 pub fn bgtz(device: &mut device::Device, opcode: u32) {
-    if device.rsp.cpu.gpr[rs(opcode) as usize] as i32 > 0 {
-        device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG]
-            .wrapping_add(se16(imm(opcode) as i16) << 2)
-            + 4;
-    } else {
-        device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
-    }
+    let taken = device.rsp.cpu.gpr[rs(opcode) as usize] as i32 > 0;
+    branch(device, opcode, taken)
 }
 
 pub fn addi(device: &mut device::Device, opcode: u32) {
@@ -502,49 +502,25 @@ pub fn sltu(device: &mut device::Device, opcode: u32) {
 }
 
 pub fn bltz(device: &mut device::Device, opcode: u32) {
-    if (device.rsp.cpu.gpr[rs(opcode) as usize] as i32) < 0 {
-        device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG]
-            .wrapping_add(se16(imm(opcode) as i16) << 2)
-            + 4;
-    } else {
-        device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
-    }
+    let taken = (device.rsp.cpu.gpr[rs(opcode) as usize] as i32) < 0;
+    branch(device, opcode, taken)
 }
 
 pub fn bgez(device: &mut device::Device, opcode: u32) {
-    if device.rsp.cpu.gpr[rs(opcode) as usize] as i32 >= 0 {
-        device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG]
-            .wrapping_add(se16(imm(opcode) as i16) << 2)
-            + 4;
-    } else {
-        device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
-    }
+    let taken = device.rsp.cpu.gpr[rs(opcode) as usize] as i32 >= 0;
+    branch(device, opcode, taken)
 }
 
 pub fn bltzal(device: &mut device::Device, opcode: u32) {
-    if (device.rsp.cpu.gpr[rs(opcode) as usize] as i32) < 0 {
-        device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG]
-            .wrapping_add(se16(imm(opcode) as i16) << 2)
-            + 4;
-    } else {
-        device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
-    }
-    device.rsp.cpu.gpr[31] = (device.rsp.regs2[device::rsp_interface::SP_PC_REG] + 8) & 0xFFF
+    let taken = (device.rsp.cpu.gpr[rs(opcode) as usize] as i32) < 0;
+    link(device, 31);
+    branch(device, opcode, taken)
 }
 
 pub fn bgezal(device: &mut device::Device, opcode: u32) {
-    if (device.rsp.cpu.gpr[rs(opcode) as usize] as i32) >= 0 {
-        device.rsp.cpu.branch_state.state = device::cpu::State::Take;
-        device.rsp.cpu.branch_state.pc = device.rsp.regs2[device::rsp_interface::SP_PC_REG]
-            .wrapping_add(se16(imm(opcode) as i16) << 2)
-            + 4;
-    } else {
-        device.rsp.cpu.branch_state.state = device::cpu::State::NotTaken;
-    }
-    device.rsp.cpu.gpr[31] = (device.rsp.regs2[device::rsp_interface::SP_PC_REG] + 8) & 0xFFF
+    let taken = (device.rsp.cpu.gpr[rs(opcode) as usize] as i32) >= 0;
+    link(device, 31);
+    branch(device, opcode, taken)
 }
 
 pub fn mfc0(device: &mut device::Device, opcode: u32) {
