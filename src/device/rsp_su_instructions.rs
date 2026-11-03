@@ -549,6 +549,7 @@ pub fn bgezal(device: &mut device::Device, opcode: u32) {
 
 pub fn mfc0(device: &mut device::Device, opcode: u32) {
     device.rsp.cpu.cycle_counter += 2;
+    let was_sync_point = device.rsp.cpu.sync_point;
     if rd(opcode) < device::rsp_interface::SP_REGS_COUNT as u32 {
         device.rsp.cpu.gpr[rt(opcode) as usize] = device::rsp_interface::read_regs(
             device,
@@ -561,6 +562,17 @@ pub fn mfc0(device: &mut device::Device, opcode: u32) {
             ((rd(opcode) - device::rsp_interface::SP_REGS_COUNT as u32) << 2) as u64,
             device::memory::AccessSize::Word,
         )
+    }
+
+    // This read ended the RSP execution. Re-execute the mfc0 when the
+    // RSP resumes instead of acting on a stale value. Delay slots are left alone
+    // as the branch state can't be rewound.
+    if !was_sync_point
+        && device.rsp.cpu.sync_point
+        && device.rsp.cpu.branch_state.state == device::cpu::State::Step
+    {
+        device.rsp.regs2[device::rsp_interface::SP_PC_REG] =
+            device.rsp.regs2[device::rsp_interface::SP_PC_REG].wrapping_sub(4) & 0xFFC;
     }
 }
 
