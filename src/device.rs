@@ -333,7 +333,7 @@ impl Device {
                     reg_latch: 0,
                     is_event: false,
                     instrs: [cop0::reserved; 32],
-                    instrs2: [cop0::reserved; 32],
+                    instrs2: [cop0::reserved; 64],
                     tlb_lut_w: rustc_hash::FxHashMap::default(),
                     tlb_lut_r: rustc_hash::FxHashMap::default(),
                     tlb_cache_r: tlb::TlbCache::default(),
