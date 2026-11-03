@@ -57,10 +57,11 @@ fn set_current_line(device: &mut device::Device) {
                 .saturating_sub(device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG]),
         )) / device.vi.count_per_scanline) as u32;
 
-        // wrap around VI_CURRENT_REG if needed
-        if device.vi.regs[VI_CURRENT_REG] >= device.vi.regs[VI_V_SYNC_REG] {
-            device.vi.regs[VI_CURRENT_REG] -= device.vi.regs[VI_V_SYNC_REG]
-        }
+        // the VI interrupt fires when VI_CURRENT reaches V_INTR, so count from there.
+        // wrap around VI_CURRENT_REG if needed, a field is V_SYNC + 1 lines
+        device.vi.regs[VI_CURRENT_REG] = (device.vi.regs[VI_CURRENT_REG]
+            + (device.vi.regs[VI_V_INTR_REG] & 0x3FF))
+            % (device.vi.regs[VI_V_SYNC_REG] + 1);
     }
     /* update current field */
     device.vi.regs[VI_CURRENT_REG] = (device.vi.regs[VI_CURRENT_REG] & !1) | device.vi.field;
@@ -178,15 +179,15 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
         device.cpu.next_event_count + device.vi.delay,
     );
 
-    let v_intr = device.vi.regs[VI_V_INTR_REG] & 0x3FF;
-    let v_start = (device.vi.regs[VI_V_START_REG] >> 16) & 0x3FF;
-    if v_start > v_intr {
-        device::events::create_event(
-            device,
-            device::events::EVENT_TYPE_UPDATE_SCREEN,
-            (v_start - v_intr) as u64 * device.vi.count_per_scanline,
-        );
-    }
+    let v_intr = (device.vi.regs[VI_V_INTR_REG] & 0x3FF) as i64;
+    let v_start = ((device.vi.regs[VI_V_START_REG] >> 16) & 0x3FF) as i64;
+    let lines_per_field = device.vi.regs[VI_V_SYNC_REG] as i64 + 1;
+    let lines = (v_start - v_intr).rem_euclid(lines_per_field) as u64;
+    device::events::create_event(
+        device,
+        device::events::EVENT_TYPE_UPDATE_SCREEN,
+        lines * device.vi.count_per_scanline,
+    );
 }
 
 pub fn init(device: &mut device::Device) {
