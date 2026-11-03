@@ -964,8 +964,13 @@ pub fn srav(device: &mut device::Device, opcode: u32) {
 
 pub fn jr(device: &mut device::Device, opcode: u32) {
     if !device::cpu::in_delay_slot_taken(device) {
-        device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.gpr[rs(opcode) as usize];
+        let target = device.cpu.gpr[rs(opcode) as usize];
+        device.cpu.branch_state.state = if target & 3 == 0 {
+            device::cpu::State::Take
+        } else {
+            device::cpu::State::TakeAddressError
+        };
+        device.cpu.branch_state.pc = target;
     } else if !device::cpu::in_delay_slot(device) {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }
@@ -975,8 +980,13 @@ pub fn jalr(device: &mut device::Device, opcode: u32) {
     let in_delay_slot_taken = device::cpu::in_delay_slot_taken(device);
 
     if !in_delay_slot_taken {
-        device.cpu.branch_state.state = device::cpu::State::Take;
-        device.cpu.branch_state.pc = device.cpu.gpr[rs(opcode) as usize];
+        let target = device.cpu.gpr[rs(opcode) as usize];
+        device.cpu.branch_state.state = if target & 3 == 0 {
+            device::cpu::State::Take
+        } else {
+            device::cpu::State::TakeAddressError
+        };
+        device.cpu.branch_state.pc = target;
     } else if !device::cpu::in_delay_slot(device) {
         device.cpu.branch_state.state = device::cpu::State::NotTaken;
     }

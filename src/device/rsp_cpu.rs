@@ -170,6 +170,9 @@ pub fn run(device: &mut device::Device) -> u64 {
             device::cpu::State::Exception => {
                 device.rsp.cpu.branch_state.state = device::cpu::State::Step
             }
+            device::cpu::State::TakeAddressError | device::cpu::State::DelaySlotAddressError => {
+                unreachable!() // VR4300-only states
+            }
         }
         device.rsp.regs2[device::rsp_interface::SP_PC_REG] &= 0xFFC;
 
