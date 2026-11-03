@@ -326,6 +326,7 @@ fn set_control_registers_fpu(device: &mut device::Device, index: u32, data: u32)
         }
 
         31 => {
+            let old_fcr31 = device.cpu.cop1.fcr31;
             device.cpu.cop1.fcr31 = data & FCR31_WRITE_MASK;
             // the Cause bits are ANDed with the Enable bits to check for exceptions
             // "Unimplemented Operation" has no Enable bit and always causes an exception
@@ -336,7 +337,11 @@ fn set_control_registers_fpu(device: &mut device::Device, index: u32, data: u32)
             {
                 device::exceptions::floating_point_exception(device)
             }
-            set_host_flush_mode(device);
+            // only the RM bit 1 and FS bit affect the host flush mode
+            const FLUSH_MODE_MASK: u32 = 2 | FCR31_FS_BIT;
+            if (old_fcr31 ^ device.cpu.cop1.fcr31) & FLUSH_MODE_MASK != 0 {
+                set_host_flush_mode(device);
+            }
         }
         _ => {
             panic!("unknown FCR register")
