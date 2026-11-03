@@ -323,6 +323,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         device::cpu::map_instructions(device);
         device::cop0::map_instructions(device);
         device::cop1::map_instructions(device);
+        device::cop1::set_host_flush_mode(device);
         device::cop2::map_instructions(device);
         device::rsp_cpu::map_instructions(device);
 
