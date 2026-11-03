@@ -51,17 +51,17 @@ fn set_vertical_interrupt(device: &mut device::Device) {
 
 fn set_current_line(device: &mut device::Device) {
     if let Some(next_vi) = device::events::get_event(device, device::events::EVENT_TYPE_VI) {
-        device.vi.regs[VI_CURRENT_REG] = ((device.vi.delay.saturating_sub(
+        let lines = ((device.vi.delay.saturating_sub(
             next_vi
                 .count
                 .saturating_sub(device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG]),
-        )) / device.vi.count_per_scanline) as u32;
+        )) / device.vi.count_per_scanline)
+            .min(device.vi.regs[VI_V_SYNC_REG] as u64) as u32;
 
         // the VI interrupt fires when VI_CURRENT reaches V_INTR, so count from there.
         // wrap around VI_CURRENT_REG if needed, a field is V_SYNC + 1 lines
-        device.vi.regs[VI_CURRENT_REG] = (device.vi.regs[VI_CURRENT_REG]
-            + (device.vi.regs[VI_V_INTR_REG] & 0x3FF))
-            % (device.vi.regs[VI_V_SYNC_REG] + 1);
+        device.vi.regs[VI_CURRENT_REG] =
+            (lines + (device.vi.regs[VI_V_INTR_REG] & 0x3FF)) % (device.vi.regs[VI_V_SYNC_REG] + 1);
     }
     /* update current field */
     device.vi.regs[VI_CURRENT_REG] = (device.vi.regs[VI_CURRENT_REG] & !1) | device.vi.field;
