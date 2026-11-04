@@ -72,6 +72,20 @@ fn do_dma(device: &mut device::Device) {
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_AI);
 }
 
+fn play_consumed_samples(device: &mut device::Device, remaining: u64) {
+    if remaining < device.ai.last_read {
+        let diff = device.ai.fifo[0].length - device.ai.last_read;
+
+        ui::audio::play_audio(
+            device,
+            (device.ai.fifo[0].address + diff) as usize,
+            device.ai.last_read - remaining,
+        );
+
+        device.ai.last_read = remaining;
+    }
+}
+
 fn fifo_push(device: &mut device::Device) {
     let duration = get_dma_duration(device);
 
@@ -117,17 +131,7 @@ pub fn read_regs(
     let return_value = match reg as usize {
         AI_LEN_REG => {
             let value = get_remaining_dma_length(device);
-            if value < device.ai.last_read {
-                let diff = device.ai.fifo[0].length - device.ai.last_read;
-
-                ui::audio::play_audio(
-                    device,
-                    (device.ai.fifo[0].address + diff) as usize,
-                    device.ai.last_read - value,
-                );
-
-                device.ai.last_read = value;
-            }
+            play_consumed_samples(device, value);
             value as u32
         }
         _ => device.ai.regs[reg as usize],
@@ -142,6 +146,10 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
         AI_LEN_REG => {
             device::memory::masked_write_32(&mut device.ai.regs[reg as usize], value, mask);
             if device.ai.regs[reg as usize] != 0 {
+                if device.ai.regs[AI_STATUS_REG] & AI_STATUS_BUSY != 0 {
+                    let remaining = get_remaining_dma_length(device);
+                    play_consumed_samples(device, remaining);
+                }
                 fifo_push(device)
             }
         }
@@ -158,15 +166,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 }
 
 pub fn dma_event(device: &mut device::Device) {
-    if device.ai.last_read != 0 {
-        let diff = device.ai.fifo[0].length - device.ai.last_read;
-        ui::audio::play_audio(
-            device,
-            (device.ai.fifo[0].address + diff) as usize,
-            device.ai.last_read,
-        );
-        device.ai.last_read = 0;
-    }
+    play_consumed_samples(device, 0);
 
     fifo_pop(device);
 }
