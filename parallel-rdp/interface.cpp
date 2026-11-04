@@ -1,6 +1,7 @@
 #include "interface.hpp"
 #include "../retroachievements/retroachievements.h"
 #include "rdp_device.hpp"
+#include "rdram_tracker.hpp"
 #include "spirv.hpp"
 #include "spirv_crt.hpp"
 #include "wsi.hpp"
@@ -72,14 +73,15 @@ enum user_event_codes {
 typedef struct {
   uint32_t depthbuffer_address;
   uint32_t framebuffer_address;
-  uint32_t framebuffer_y_offset;
   uint32_t texture_address;
   uint32_t framebuffer_pixel_size;
   uint32_t framebuffer_width;
   uint32_t texture_pixel_size;
   uint32_t texture_width;
-  uint32_t framebuffer_height;
-  bool depth_buffer_enabled;
+  // scissor as inclusive pixel bounds (empty when x1 < x0 or y1 < y0)
+  int32_t clip_x0, clip_y0, clip_x1, clip_y1;
+  bool depth_compare;
+  bool depth_update;
 } FrameBufferInfo;
 
 typedef struct {
@@ -120,8 +122,76 @@ static GFX_INFO gfx_info;
 static const uint32_t *fragment_spirv;
 static size_t fragment_size;
 
-static std::vector<bool> rdram_dirty;
-static uint64_t sync_signal;
+// RDRAM handed to parallel-rdp that the GPU may not have finished with yet
+static RdramTracker rdram_tracker;
+
+// the timeline value that will cover commands enqueued now
+static uint64_t mark_stamp() { return processor->get_timeline_value() + 1; }
+
+// A primitive covering pixels [x0, x1] x [y0, y1] before scissoring.
+// parallel-rdp only writes back pixels a primitive actually touched, so the
+// RDRAM involved is the primitive's footprint inside the scissor. The color
+// buffer always counts as written (that also covers blender reads).
+static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
+  auto &fb = rdp_device.frame_buffer_info;
+  x0 = std::max(x0, fb.clip_x0);
+  x1 = std::min({x1, fb.clip_x1, int32_t(fb.framebuffer_width) - 1});
+  y0 = std::max(y0, fb.clip_y0);
+  y1 = std::min(y1, fb.clip_y1);
+  if (x1 < x0 || y1 < y0)
+    return;
+
+  // parallel-rdp stores I4 color buffers as one byte per pixel
+  uint32_t bytes =
+      fb.framebuffer_pixel_size ? 1u << (fb.framebuffer_pixel_size - 1) : 1u;
+  uint64_t stamp = mark_stamp();
+  rdram_tracker.mark_rect(fb.framebuffer_address, fb.framebuffer_width, bytes,
+                          x0, x1, y0, y1, RdramTracker::Access::Write, stamp);
+
+  if (fb.depth_update)
+    rdram_tracker.mark_rect(fb.depthbuffer_address, fb.framebuffer_width, 2, x0,
+                            x1, y0, y1, RdramTracker::Access::Write, stamp);
+  else if (fb.depth_compare)
+    rdram_tracker.mark_rect(fb.depthbuffer_address, fb.framebuffer_width, 2, x0,
+                            x1, y0, y1, RdramTracker::Access::Read, stamp);
+}
+
+// texels [first, first + count) of the current texture image
+static void mark_texels(uint32_t first, uint32_t count) {
+  auto &fb = rdp_device.frame_buffer_info;
+  uint64_t bits = 4u << fb.texture_pixel_size;
+  uint64_t start = first * bits / 8;
+  uint64_t end = ((uint64_t(first) + count) * bits + 7) / 8;
+  rdram_tracker.mark(fb.texture_address + start, end - start,
+                     RdramTracker::Access::Read, mark_stamp());
+}
+
+// mirrors the RDRAM reads of parallel-rdp's Renderer::load_tile
+static void mark_texture_load(RDP::Op op, uint32_t w1, uint32_t w2) {
+  auto &fb = rdp_device.frame_buffer_info;
+  uint32_t sl = (w1 >> 12) & 0xFFF, tl = w1 & 0xFFF;
+  uint32_t sh = (w2 >> 12) & 0xFFF, th = w2 & 0xFFF;
+
+  if (op == RDP::Op::LoadBlock) {
+    // a single run of texels; sl/sh/tl are integers, low bits of w2 are dxt
+    uint32_t count = (sh - sl + 1) & 0xFFF;
+    if (count == 0 || count > 2048)
+      return;
+    mark_texels(tl * fb.texture_width + sl, count);
+    return;
+  }
+
+  // LoadTile / LoadTLut: 10.2 coordinates, fetched one row at a time
+  sl >>= 2;
+  tl >>= 2;
+  sh >>= 2;
+  th >>= 2;
+  uint32_t count = (sh - sl + 1) & 0xFFF;
+  if (th < tl || count == 0)
+    return;
+  for (uint32_t t = tl; t <= th; t++)
+    mark_texels(t * fb.texture_width + sl, count);
+}
 
 static TTF_Font *message_font;
 static std::queue<Message> messages;
@@ -337,11 +407,7 @@ JoystickEvent get_joystick_event() {
   return joystick_event;
 }
 
-void rdp_idle() {
-  processor->idle();
-  sync_signal = 0;
-  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
-}
+void rdp_idle() { processor->idle(); }
 
 static void rdp_new_processor() {
   RDP::CommandProcessorFlags flags =
@@ -373,8 +439,8 @@ static void rdp_new_processor() {
     LOGE("Failed to get hidden_rdram\n");
   }
 
-  sync_signal = 0;
-  rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
+  // the new processor's timeline starts over
+  rdram_tracker.reset(gfx_info.RDRAM_SIZE);
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
@@ -758,25 +824,19 @@ CALL_BACK rdp_check_callback() {
   return return_value;
 }
 
-void rdp_check_framebuffers(uint32_t address, uint32_t length) {
-  if (sync_signal) {
-    address >>= 3;
-    length = (length + 7) >> 3;
+void rdp_check_rdram(uint32_t address, uint32_t length, bool write) {
+  uint64_t completed = processor->get_completed_timeline();
+  // fast path: everything the RDP has touched is already done
+  if (rdram_tracker.max_stamp() <= completed)
+    return;
 
-    if (address >= rdram_dirty.size())
-      return;
-
-    uint32_t end_addr =
-        std::min(address + length, static_cast<uint32_t>(rdram_dirty.size()));
-
-    auto it = std::find(rdram_dirty.begin() + address,
-                        rdram_dirty.begin() + end_addr, true);
-    if (it != rdram_dirty.begin() + end_addr) {
-      processor->wait_for_timeline(sync_signal);
-      rdram_dirty.assign(gfx_info.RDRAM_SIZE >> 3, false);
-      sync_signal = 0;
-    }
-  }
+  uint64_t stamp = rdram_tracker.conflict(address, length, write);
+  if (stamp <= completed)
+    return;
+  // commands since the last signal haven't been submitted to the GPU yet
+  if (stamp > processor->get_timeline_value())
+    processor->signal_timeline();
+  processor->wait_for_timeline(stamp);
 }
 
 size_t rdp_state_size() {
@@ -1043,9 +1103,8 @@ uint64_t rdp_process_commands(uint64_t now) {
                             : uint64_t(sh >= sl ? ((sh - sl) >> 2) + 1 : 0) *
                                   uint64_t(th >= tl ? ((th - tl) >> 2) + 1 : 0);
       // LoadBlock is one contiguous transfer; LoadTile fetches row by row
-      uint64_t rows = command == 0x33
-                          ? 1
-                          : uint64_t(th >= tl ? ((th - tl) >> 2) + 1 : 0);
+      uint64_t rows =
+          command == 0x33 ? 1 : uint64_t(th >= tl ? ((th - tl) >> 2) + 1 : 0);
       uint32_t bits = 4u << rdp_device.frame_buffer_info.texture_pixel_size;
       rdp_add_busy(RDP_PRIMITIVE_SETUP_CLOCKS + (texels * bits + 63) / 64 +
                    rows * RDP_SCANLINE_CLOCKS);
@@ -1059,99 +1118,28 @@ uint64_t rdp_process_commands(uint64_t now) {
     case RDP::Op::ShadeTriangle:
     case RDP::Op::ShadeZBufferTriangle:
     case RDP::Op::ShadeTextureTriangle:
-    case RDP::Op::ShadeTextureZBufferTriangle:
+    case RDP::Op::ShadeTextureZBufferTriangle: {
+      // s11.2 Y range, rows [yh, yl); X is only bounded by the scissor
+      int32_t yl = sign_extend_14(w1), yh = sign_extend_14(w2);
+      mark_primitive(0, INT32_MAX, yh >> 2, (yl - 1) >> 2);
+    } break;
     case RDP::Op::TextureRectangle:
     case RDP::Op::TextureRectangleFlip:
     case RDP::Op::FillRectangle: {
-      uint32_t offset_address =
-          (rdp_device.frame_buffer_info.framebuffer_address +
-           pixel_size(rdp_device.frame_buffer_info.framebuffer_pixel_size,
-                      rdp_device.frame_buffer_info.framebuffer_y_offset *
-                          rdp_device.frame_buffer_info.framebuffer_width)) >>
-          3;
-      if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address]) {
-        uint32_t end_addr = std::min(
-            offset_address +
-                ((pixel_size(
-                      rdp_device.frame_buffer_info.framebuffer_pixel_size,
-                      rdp_device.frame_buffer_info.framebuffer_width *
-                          rdp_device.frame_buffer_info.framebuffer_height) +
-                  7) >>
-                 3),
-            static_cast<uint32_t>(rdram_dirty.size()));
-        std::fill(rdram_dirty.begin() + offset_address,
-                  rdram_dirty.begin() + end_addr, true);
-      }
-
-      if (rdp_device.frame_buffer_info.depth_buffer_enabled) {
-        offset_address =
-            (rdp_device.frame_buffer_info.depthbuffer_address +
-             pixel_size(2,
-                        rdp_device.frame_buffer_info.framebuffer_y_offset *
-                            rdp_device.frame_buffer_info.framebuffer_width)) >>
-            3;
-        if (offset_address < rdram_dirty.size() &&
-            !rdram_dirty[offset_address]) {
-          uint32_t end_addr = std::min(
-              offset_address +
-                  ((pixel_size(
-                        2,
-                        rdp_device.frame_buffer_info.framebuffer_width *
-                            rdp_device.frame_buffer_info.framebuffer_height) +
-                    7) >>
-                   3),
-              static_cast<uint32_t>(rdram_dirty.size()));
-          std::fill(rdram_dirty.begin() + offset_address,
-                    rdram_dirty.begin() + end_addr, true);
-        }
-      }
+      // 10.2 coordinates; copy/fill modes include the last row and column
+      int32_t xl = (w1 >> 12) & 0xFFF, yl = w1 & 0xFFF;
+      int32_t xh = (w2 >> 12) & 0xFFF, yh = w2 & 0xFFF;
+      bool copy_fill = rdp_device.cycle_type >= 2;
+      if (copy_fill)
+        yl |= 3;
+      mark_primitive(xh >> 2, copy_fill ? xl >> 2 : (xl - 1) >> 2, yh >> 2,
+                     (yl - 1) >> 2);
     } break;
     case RDP::Op::LoadTLut:
-    case RDP::Op::LoadTile: {
-      uint32_t upper_left_t = (w1 & 0xFFF) >> 2;
-      uint32_t offset_address =
-          (rdp_device.frame_buffer_info.texture_address +
-           pixel_size(rdp_device.frame_buffer_info.texture_pixel_size,
-                      upper_left_t *
-                          rdp_device.frame_buffer_info.texture_width)) >>
-          3;
-      if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address]) {
-        uint32_t lower_right_t = (w2 & 0xFFF) >> 2;
-        uint32_t end_addr = std::min(
-            offset_address +
-                ((pixel_size(rdp_device.frame_buffer_info.texture_pixel_size,
-                             (lower_right_t - upper_left_t) *
-                                 rdp_device.frame_buffer_info.texture_width) +
-                  7) >>
-                 3),
-            static_cast<uint32_t>(rdram_dirty.size()));
-        std::fill(rdram_dirty.begin() + offset_address,
-                  rdram_dirty.begin() + end_addr, true);
-      }
-    } break;
-    case RDP::Op::LoadBlock: {
-      uint32_t upper_left_s = ((w1 >> 12) & 0xFFF);
-      uint32_t upper_left_t = (w1 & 0xFFF);
-      uint32_t offset_address =
-          (rdp_device.frame_buffer_info.texture_address +
-           pixel_size(rdp_device.frame_buffer_info.texture_pixel_size,
-                      upper_left_s +
-                          upper_left_t *
-                              rdp_device.frame_buffer_info.texture_width)) >>
-          3;
-      if (offset_address < rdram_dirty.size() && !rdram_dirty[offset_address]) {
-        uint32_t lower_right_s = ((w2 >> 12) & 0xFFF);
-        uint32_t end_addr = std::min(
-            offset_address +
-                ((pixel_size(rdp_device.frame_buffer_info.texture_pixel_size,
-                             lower_right_s - upper_left_s) +
-                  7) >>
-                 3),
-            static_cast<uint32_t>(rdram_dirty.size()));
-        std::fill(rdram_dirty.begin() + offset_address,
-                  rdram_dirty.begin() + end_addr, true);
-      }
-    } break;
+    case RDP::Op::LoadTile:
+    case RDP::Op::LoadBlock:
+      mark_texture_load(RDP::Op(command), w1, w2);
+      break;
     case RDP::Op::SetColorImage:
       rdp_device.frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF);
       rdp_device.frame_buffer_info.framebuffer_pixel_size = (w1 >> 19) & 0x3;
@@ -1177,20 +1165,26 @@ uint64_t rdp_process_commands(uint64_t now) {
       rdp_device.scissor_field = (w2 >> 25) & 1;
       rdp_device.scissor_keep_odd = (w2 >> 24) & 1;
 
-      rdp_device.frame_buffer_info.framebuffer_y_offset = upper_left_y;
-      rdp_device.frame_buffer_info.framebuffer_height =
-          lower_right_y - upper_left_y;
+      // parallel-rdp draws subpixel rows/columns in [hi, lo) of the 10.2
+      // scissor, so the last pixel touched is (lo - 1) >> 2
+      auto &fb = rdp_device.frame_buffer_info;
+      fb.clip_x0 = int32_t(upper_left_x);
+      fb.clip_y0 = int32_t(upper_left_y);
+      fb.clip_x1 = (int32_t((w2 >> 12) & 0xFFF) - 1) >> 2;
+      fb.clip_y1 = (int32_t(w2 & 0xFFF) - 1) >> 2;
     } break;
     case RDP::Op::SetOtherModes: {
       uint8_t cycle_type = (w1 >> 20) & 3;
       rdp_device.cycle_type = cycle_type;
-      uint8_t depth_read_write = (w2 >> 4) & 3;
-      rdp_device.frame_buffer_info.depth_buffer_enabled =
-          ((cycle_type & 2) == 0) && (depth_read_write != 0);
+      // z_compare_en is bit 4, z_update_en is bit 5; ignored in copy/fill
+      bool depth_allowed = (cycle_type & 2) == 0;
+      rdp_device.frame_buffer_info.depth_compare =
+          depth_allowed && (w2 & (1u << 4));
+      rdp_device.frame_buffer_info.depth_update =
+          depth_allowed && (w2 & (1u << 5));
     } break;
     case RDP::Op::SyncFull:
-      sync_signal = processor->signal_timeline();
-
+      processor->signal_timeline();
       // SyncFull itself adds RDP_SYNC_CLOCKS, so busy_until > now here
       interrupt_timer = rdp_device.busy_until - now;
       break;

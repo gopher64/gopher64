@@ -83,6 +83,8 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
 fn copy_pif_rdram(device: &mut device::Device) {
     let dram_addr = device.si.regs[SI_DRAM_ADDR_REG] as usize & device::rdram::RDRAM_MASK;
     if device.si.dma_dir == DmaDir::Write {
+        // check RDP before SI reads from RDRAM
+        ui::video::check_rdram_read(dram_addr as u32, device::pif::PIF_RAM_SIZE as u32);
         let mut i = 0;
         while i < device::pif::PIF_RAM_SIZE {
             let data = u32::from_ne_bytes(
@@ -99,7 +101,7 @@ fn copy_pif_rdram(device: &mut device::Device) {
         }
     } else if device.si.dma_dir == DmaDir::Read {
         // check RDP before SI writes to RDRAM
-        ui::video::check_framebuffers(dram_addr as u32, device::pif::PIF_RAM_SIZE as u32);
+        ui::video::check_rdram_write(dram_addr as u32, device::pif::PIF_RAM_SIZE as u32);
         let mut i = 0;
         while i < device::pif::PIF_RAM_SIZE {
             let data = u32::from_be_bytes(device.pif.ram[i..i + 4].try_into().unwrap());
