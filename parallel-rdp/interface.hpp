@@ -63,7 +63,7 @@ uint64_t rdp_process_commands(uint64_t now);
 void rdp_translate_busy_until(uint64_t old_count, uint64_t new_count);
 void rdp_idle();
 void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds);
-void rdp_check_framebuffers(uint32_t address, uint32_t length);
+void rdp_check_rdram(uint32_t address, uint32_t length, bool write);
 size_t rdp_state_size();
 void rdp_save_state(uint8_t *state);
 void rdp_load_state(GFX_INFO _gfx_info, const uint8_t *state,

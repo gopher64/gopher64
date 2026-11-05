@@ -65,6 +65,9 @@ fn dma_read(device: &mut device::Device) {
         length += 1;
     }
 
+    // check RDP before PI reads from RDRAM
+    ui::video::check_rdram_read(dram_addr, length);
+
     let cycles = (handler.read)(device, cart_addr, dram_addr, length);
 
     device::events::create_event(device, device::events::EVENT_TYPE_PI, cycles);
@@ -92,7 +95,7 @@ fn dma_write(device: &mut device::Device) {
     }
 
     // check RDP before PI writes to RDRAM
-    ui::video::check_framebuffers(dram_addr, length);
+    ui::video::check_rdram_write(dram_addr, length);
 
     let cycles = (handler.write)(device, cart_addr, dram_addr, length);
 

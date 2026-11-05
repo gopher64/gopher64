@@ -297,8 +297,14 @@ pub fn translate_rdp_busy_until(old_count: u64, new_count: u64) {
     unsafe { rdp_translate_busy_until(old_count, new_count) }
 }
 
-pub fn check_framebuffers(address: u32, length: u32) {
-    unsafe { rdp_check_framebuffers(address, length) }
+// emulated read: wait if the RDP has queued writes to this range
+pub fn check_rdram_read(address: u32, length: u32) {
+    unsafe { rdp_check_rdram(address, length, false) }
+}
+
+// emulated write: wait if the RDP has queued reads or writes to this range
+pub fn check_rdram_write(address: u32, length: u32) {
+    unsafe { rdp_check_rdram(address, length, true) }
 }
 
 pub fn onscreen_message(message: &str, milliseconds: MESSAGE_LENGTH) {

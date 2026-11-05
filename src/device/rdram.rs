@@ -58,7 +58,7 @@ pub fn read_mem(
     );
     let masked_address = address as usize & RDRAM_MASK;
 
-    ui::video::check_framebuffers(masked_address as u32, 4);
+    ui::video::check_rdram_read(masked_address as u32, 4);
 
     u32::from_ne_bytes(
         device
@@ -72,13 +72,15 @@ pub fn read_mem(
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    ui::video::check_framebuffers(address as u32, 4);
+    let masked_address = address as usize & RDRAM_MASK;
+
+    ui::video::check_rdram_write(masked_address as u32, 4);
 
     let mut data = u32::from_ne_bytes(
         device
             .rdram
             .mem
-            .get(address as usize..(address + 4) as usize)
+            .get(masked_address..masked_address + 4)
             .unwrap_or(&[0; 4])
             .try_into()
             .unwrap_or_default(),
@@ -87,7 +89,7 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     device
         .rdram
         .mem
-        .get_mut(address as usize..(address + 4) as usize)
+        .get_mut(masked_address..masked_address + 4)
         .unwrap_or(&mut [0; 4])
         .copy_from_slice(&data.to_ne_bytes());
 }
@@ -107,13 +109,15 @@ pub fn write_mem_repeat(device: &mut device::Device, address: u64, value: u32, m
         );
     }
 
-    ui::video::check_framebuffers(address as u32, repeat_length);
+    let masked_address = address as usize & RDRAM_MASK;
 
-    for i in (0..repeat_length as u64).step_by(4) {
+    ui::video::check_rdram_write(masked_address as u32, repeat_length);
+
+    for i in (0..repeat_length as usize).step_by(4) {
         device
             .rdram
             .mem
-            .get_mut((address + i) as usize..(address + i) as usize + 4)
+            .get_mut(masked_address + i..masked_address + i + 4)
             .unwrap_or(&mut [0; 4])
             .copy_from_slice(&value.to_ne_bytes());
     }

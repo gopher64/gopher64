@@ -209,7 +209,7 @@ fn main() {
         .allowlist_function("rdp_translate_busy_until")
         .allowlist_function("rdp_onscreen_message")
         .allowlist_function("rdp_check_callback")
-        .allowlist_function("rdp_check_framebuffers")
+        .allowlist_function("rdp_check_rdram")
         .allowlist_function("rdp_state_size")
         .allowlist_function("rdp_save_state")
         .allowlist_function("rdp_load_state")
