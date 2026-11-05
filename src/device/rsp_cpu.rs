@@ -126,7 +126,7 @@ pub fn run(device: &mut device::Device) -> u64 {
     device.rsp.cpu.broken = false;
     device.rsp.cpu.cycle_counter = 0;
     device.rsp.cpu.running = true;
-    while !device.rsp.cpu.sync_point {
+    loop {
         device.rsp.cpu.instruction_type = InstructionType::Su;
         device.rsp.cpu.gpr[0] = 0; // gpr 0 is read only
 
@@ -187,6 +187,10 @@ pub fn run(device: &mut device::Device) -> u64 {
             } else {
                 device.rsp.cpu.pipeline_full = true;
             }
+        }
+
+        if device.rsp.cpu.sync_point {
+            break;
         }
     }
     device.rsp.cpu.running = false;

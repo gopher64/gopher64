@@ -363,6 +363,8 @@ pub fn write_regs2(device: &mut device::Device, address: u64, value: u32, mask: 
                 value & 0xFFC,
                 mask,
             );
+            // writing SP_PC resets the pipeline, discarding any pending branch
+            device.rsp.cpu.branch_state.state = device::cpu::State::Step;
         }
         _ => device::memory::masked_write_32(&mut device.rsp.regs2[reg as usize], value, mask),
     }
@@ -481,7 +483,8 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
 }
 
 fn do_task(device: &mut device::Device) {
-    device.rsp.cpu.sync_point = false;
+    // single-step mode: the burst ends after one instruction
+    device.rsp.cpu.sync_point = device.rsp.regs[SP_STATUS_REG] & SP_STATUS_SSTEP != 0;
     device.rsp.last_status_value = 0;
     device.rdp.last_status_value = 0;
     if device.rsp.regs[SP_DMA_BUSY_REG] == 1 {
@@ -511,6 +514,11 @@ pub fn rsp_event(device: &mut device::Device) {
         return;
     }
     if device.rsp.regs[SP_STATUS_REG] & SP_STATUS_HALT != 0 {
+        return;
+    }
+    // single-step mode: the RSP halts itself after each instruction
+    if device.rsp.regs[SP_STATUS_REG] & SP_STATUS_SSTEP != 0 {
+        device.rsp.regs[SP_STATUS_REG] |= SP_STATUS_HALT;
         return;
     }
     do_task(device)
