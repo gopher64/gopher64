@@ -73,13 +73,9 @@ enum user_event_codes {
 typedef struct {
   uint32_t depthbuffer_address;
   uint32_t framebuffer_address;
-  uint32_t texture_address;
   uint32_t framebuffer_pixel_size;
   uint32_t framebuffer_width;
   uint32_t texture_pixel_size;
-  uint32_t texture_width;
-  // scissor as inclusive pixel bounds (empty when x1 < x0 or y1 < y0)
-  int32_t clip_x0, clip_y0, clip_x1, clip_y1;
   bool depth_compare;
   bool depth_update;
 } FrameBufferInfo;
@@ -89,6 +85,8 @@ typedef struct {
   int cmd_cur;
   int cmd_ptr;
   int32_t scissor_xh, scissor_yh, scissor_xl, scissor_yl;
+  // last pixel column/row the scissor lets through (inclusive)
+  int32_t scissor_x_last, scissor_y_last;
   uint32_t scissor_field;    // interlace: only every other line is drawn
   uint32_t scissor_keep_odd; // which lines are kept in field mode
   uint32_t cycle_type;
@@ -134,10 +132,11 @@ static uint64_t mark_stamp() { return processor->get_timeline_value() + 1; }
 // buffer always counts as written (that also covers blender reads).
 static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
   auto &fb = rdp_device.frame_buffer_info;
-  x0 = std::max(x0, fb.clip_x0);
-  x1 = std::min({x1, fb.clip_x1, int32_t(fb.framebuffer_width) - 1});
-  y0 = std::max(y0, fb.clip_y0);
-  y1 = std::min(y1, fb.clip_y1);
+  x0 = std::max(x0, rdp_device.scissor_xh);
+  x1 = std::min(
+      {x1, rdp_device.scissor_x_last, int32_t(fb.framebuffer_width) - 1});
+  y0 = std::max(y0, rdp_device.scissor_yh);
+  y1 = std::min(y1, rdp_device.scissor_y_last);
   if (x1 < x0 || y1 < y0)
     return;
 
@@ -156,41 +155,18 @@ static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
                             x1, y0, y1, RdramTracker::Access::Read, stamp);
 }
 
-// texels [first, first + count) of the current texture image
-static void mark_texels(uint32_t first, uint32_t count) {
-  auto &fb = rdp_device.frame_buffer_info;
-  uint64_t bits = 4u << fb.texture_pixel_size;
-  uint64_t start = first * bits / 8;
-  uint64_t end = ((uint64_t(first) + count) * bits + 7) / 8;
-  rdram_tracker.mark(fb.texture_address + start, end - start,
-                     RdramTracker::Access::Read, mark_stamp());
-}
-
-// mirrors the RDRAM reads of parallel-rdp's Renderer::load_tile
-static void mark_texture_load(RDP::Op op, uint32_t w1, uint32_t w2) {
-  auto &fb = rdp_device.frame_buffer_info;
-  uint32_t sl = (w1 >> 12) & 0xFFF, tl = w1 & 0xFFF;
-  uint32_t sh = (w2 >> 12) & 0xFFF, th = w2 & 0xFFF;
-
-  if (op == RDP::Op::LoadBlock) {
-    // a single run of texels; sl/sh/tl are integers, low bits of w2 are dxt
-    uint32_t count = (sh - sl + 1) & 0xFFF;
-    if (count == 0 || count > 2048)
-      return;
-    mark_texels(tl * fb.texture_width + sl, count);
-    return;
-  }
-
-  // LoadTile / LoadTLut: 10.2 coordinates, fetched one row at a time
-  sl >>= 2;
-  tl >>= 2;
-  sh >>= 2;
-  th >>= 2;
-  uint32_t count = (sh - sl + 1) & 0xFFF;
-  if (th < tl || count == 0)
-    return;
-  for (uint32_t t = tl; t <= th; t++)
-    mark_texels(t * fb.texture_width + sl, count);
+// Texture loads: parallel-rdp asks this about the RDRAM each TMEM upload
+// reads, as the load is enqueued (see
+// Renderer::set_texture_load_snapshot_filter). Accepted ranges are copied
+// right away, so later writes to them don't have to wait for the GPU. Ranges
+// the RDP still has pending writes to (render-to-texture) can't be copied from
+// host memory; the GPU reads those in place, so they are marked as RDP reads.
+static bool texture_load_snapshot_filter(uint32_t address, uint32_t length) {
+  if (rdram_tracker.conflict(address, length, false) <=
+      processor->get_completed_timeline())
+    return true;
+  rdram_tracker.mark(address, length, RdramTracker::Access::Read, mark_stamp());
+  return false;
 }
 
 static TTF_Font *message_font;
@@ -437,6 +413,11 @@ static void rdp_new_processor() {
   g_hidden_rdram = processor->begin_read_hidden_rdram();
   if (!g_hidden_rdram) {
     LOGE("Failed to get hidden_rdram\n");
+  }
+
+  if (!processor->set_texture_load_snapshot_filter(
+          texture_load_snapshot_filter)) {
+    LOGE("Texture load snapshots need single-threaded command processing\n");
   }
 
   // the new processor's timeline starts over
@@ -902,22 +883,6 @@ void rdp_onscreen_message(const char *message, MESSAGE_LENGTH milliseconds) {
   SDL_RunOnMainThread(push_onscreen_message, data, false);
 }
 
-uint32_t pixel_size(uint32_t pixel_type, uint32_t area) {
-  switch (pixel_type) {
-  case 0:
-    return area / 2;
-  case 1:
-    return area;
-  case 2:
-    return area * 2;
-  case 3:
-    return area * 4;
-  default:
-    LOGE("Invalid pixel size: %u\n", pixel_type);
-    return 0;
-  }
-}
-
 // Rough RDP timing model used to schedule the DP interrupt after SyncFull.
 // busy_until tracks when the RDP will finish its queued work, so that work
 // overlapping earlier submissions is not counted twice.
@@ -1135,11 +1100,6 @@ uint64_t rdp_process_commands(uint64_t now) {
       mark_primitive(xh >> 2, copy_fill ? xl >> 2 : (xl - 1) >> 2, yh >> 2,
                      (yl - 1) >> 2);
     } break;
-    case RDP::Op::LoadTLut:
-    case RDP::Op::LoadTile:
-    case RDP::Op::LoadBlock:
-      mark_texture_load(RDP::Op(command), w1, w2);
-      break;
     case RDP::Op::SetColorImage:
       rdp_device.frame_buffer_info.framebuffer_address = (w2 & 0x00FFFFFF);
       rdp_device.frame_buffer_info.framebuffer_pixel_size = (w1 >> 19) & 0x3;
@@ -1149,9 +1109,7 @@ uint64_t rdp_process_commands(uint64_t now) {
       rdp_device.frame_buffer_info.depthbuffer_address = (w2 & 0x00FFFFFF);
       break;
     case RDP::Op::SetTextureImage:
-      rdp_device.frame_buffer_info.texture_address = (w2 & 0x00FFFFFF);
       rdp_device.frame_buffer_info.texture_pixel_size = (w1 >> 19) & 0x3;
-      rdp_device.frame_buffer_info.texture_width = (w1 & 0x3FF) + 1;
       break;
     case RDP::Op::SetScissor: {
       uint32_t upper_left_x = ((w1 >> 12) & 0xFFF) >> 2;
@@ -1167,11 +1125,8 @@ uint64_t rdp_process_commands(uint64_t now) {
 
       // parallel-rdp draws subpixel rows/columns in [hi, lo) of the 10.2
       // scissor, so the last pixel touched is (lo - 1) >> 2
-      auto &fb = rdp_device.frame_buffer_info;
-      fb.clip_x0 = int32_t(upper_left_x);
-      fb.clip_y0 = int32_t(upper_left_y);
-      fb.clip_x1 = (int32_t((w2 >> 12) & 0xFFF) - 1) >> 2;
-      fb.clip_y1 = (int32_t(w2 & 0xFFF) - 1) >> 2;
+      rdp_device.scissor_x_last = (int32_t((w2 >> 12) & 0xFFF) - 1) >> 2;
+      rdp_device.scissor_y_last = (int32_t(w2 & 0xFFF) - 1) >> 2;
     } break;
     case RDP::Op::SetOtherModes: {
       uint8_t cycle_type = (w1 >> 20) & 3;
