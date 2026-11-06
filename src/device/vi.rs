@@ -170,8 +170,12 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     retroachievements::do_frame();
 
-    /* toggle vi field if in interlaced mode */
-    device.vi.field ^= (device.vi.regs[VI_STATUS_REG] >> 6) & 0x1;
+    /* toggle vi field if in interlaced mode, the field is always 0 in progressive mode */
+    if device.vi.regs[VI_STATUS_REG] & 0x40 != 0 {
+        device.vi.field ^= 1;
+    } else {
+        device.vi.field = 0;
+    }
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_VI);
 
