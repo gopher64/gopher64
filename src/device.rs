@@ -505,7 +505,7 @@ impl Device {
                 regs: [0; rsp_interface::SP_REGS_COUNT],
                 regs2: [0; rsp_interface::SP_REGS2_COUNT],
                 mem: [0; 0x2000],
-                last_status_value: 0,
+                last_status_value: None,
                 run_after_dma: false,
                 pending_status: 0,
                 fifo: [rsp_interface::RspDma {

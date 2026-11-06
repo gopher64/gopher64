@@ -84,7 +84,7 @@ pub struct Rsp {
     #[serde(with = "serde_big_array::BigArray")]
     pub mem: [u8; 0x2000],
     pub fifo: [RspDma; 2],
-    pub last_status_value: u32,
+    pub last_status_value: Option<u32>,
     pub run_after_dma: bool,
     pub pending_status: u32,
 }
@@ -299,11 +299,11 @@ pub fn read_regs(
                     | SP_STATUS_SIG5
                     | SP_STATUS_SIG6
                     | SP_STATUS_SIG7);
-            if value == device.rsp.last_status_value && value != 0 {
+            if device.rsp.last_status_value == Some(value) {
                 device.rsp.cpu.sync_point = true;
             }
 
-            device.rsp.last_status_value = value;
+            device.rsp.last_status_value = Some(value);
             device.rsp.regs[reg as usize]
         }
         SP_SEMAPHORE_REG => {
@@ -485,7 +485,7 @@ fn update_sp_status(device: &mut device::Device, w: u32) {
 fn do_task(device: &mut device::Device) {
     // single-step mode: the burst ends after one instruction
     device.rsp.cpu.sync_point = device.rsp.regs[SP_STATUS_REG] & SP_STATUS_SSTEP != 0;
-    device.rsp.last_status_value = 0;
+    device.rsp.last_status_value = None;
     device.rdp.last_status_value = 0;
     if device.rsp.regs[SP_DMA_BUSY_REG] == 1 {
         device.rsp.run_after_dma = true
