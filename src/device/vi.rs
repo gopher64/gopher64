@@ -44,7 +44,9 @@ fn reset_pace_deadline(device: &mut device::Device) {
 }
 
 fn set_vertical_interrupt(device: &mut device::Device) {
-    if device::events::get_event(device, device::events::EVENT_TYPE_VI).is_none() {
+    if device.vi.regs[VI_V_SYNC_REG] != 0
+        && device::events::get_event(device, device::events::EVENT_TYPE_VI).is_none()
+    {
         device::events::create_event(device, device::events::EVENT_TYPE_VI, device.vi.delay)
     }
 }
@@ -173,11 +175,13 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
 
     device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_VI);
 
-    device::events::create_event_at(
-        device,
-        device::events::EVENT_TYPE_VI,
-        device.cpu.next_event_count + device.vi.delay,
-    );
+    if device.vi.delay != 0 {
+        device::events::create_event_at(
+            device,
+            device::events::EVENT_TYPE_VI,
+            device.cpu.next_event_count + device.vi.delay,
+        );
+    }
 
     let v_intr = (device.vi.regs[VI_V_INTR_REG] & 0x3FF) as i64;
     let v_start = ((device.vi.regs[VI_V_START_REG] >> 16) & 0x3FF) as i64;
