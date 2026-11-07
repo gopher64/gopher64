@@ -126,24 +126,58 @@ static RdramTracker rdram_tracker;
 // the timeline value that will cover commands enqueued now
 static uint64_t mark_stamp() { return processor->get_timeline_value() + 1; }
 
+// When upscaling, every render pass compares the color and depth buffers in
+// RDRAM against a reference copy, over full rows from the top down to the
+// lowest scissored line drawn (Renderer::update_deduced_height,
+// update_upscaled_domain_pre/post). That happens even when depth is disabled.
+// Each entry remembers that rows [0, rows) of one buffer are already marked
+// for `stamp`, so each primitive only marks rows below that.
+struct UpscaleMarked {
+  uint64_t stamp;
+  uint32_t address, stride;
+  int32_t rows;
+
+  void mark(uint32_t addr, uint32_t width, uint32_t bytes, int32_t y1,
+            uint64_t s) {
+    uint32_t st = width * bytes;
+    if (stamp != s || address != addr || stride != st)
+      *this = {s, addr, st, 0};
+    if (y1 < rows)
+      return;
+    rdram_tracker.mark_rect(addr, width, bytes, 0, int32_t(width) - 1, rows,
+                            y1, RdramTracker::Access::Read, s);
+    rows = y1 + 1;
+  }
+};
+static UpscaleMarked upscale_color, upscale_depth;
+
 // A primitive covering pixels [x0, x1] x [y0, y1] before scissoring.
 // parallel-rdp only writes back pixels a primitive actually touched, so the
 // RDRAM involved is the primitive's footprint inside the scissor. The color
 // buffer always counts as written (that also covers blender reads).
 static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
   auto &fb = rdp_device.frame_buffer_info;
-  x0 = std::max(x0, rdp_device.scissor_xh);
-  x1 = std::min(
-      {x1, rdp_device.scissor_x_last, int32_t(fb.framebuffer_width) - 1});
-  y0 = std::max(y0, rdp_device.scissor_yh);
-  y1 = std::min(y1, rdp_device.scissor_y_last);
-  if (x1 < x0 || y1 < y0)
-    return;
-
   // parallel-rdp stores I4 color buffers as one byte per pixel
   uint32_t bytes =
       fb.framebuffer_pixel_size ? 1u << (fb.framebuffer_pixel_size - 1) : 1u;
   uint64_t stamp = mark_stamp();
+
+  y1 = std::min(y1, rdp_device.scissor_y_last);
+
+  if (gfx_info.upscale > 1 && y1 >= 0) {
+    upscale_color.mark(fb.framebuffer_address, fb.framebuffer_width, bytes, y1,
+                       stamp);
+    upscale_depth.mark(fb.depthbuffer_address, fb.framebuffer_width, 2, y1,
+                       stamp);
+  }
+
+  x0 = std::max(x0, rdp_device.scissor_xh);
+  x1 = std::min(
+      {x1, rdp_device.scissor_x_last, int32_t(fb.framebuffer_width) - 1});
+  y0 = std::max(y0, rdp_device.scissor_yh);
+  if (x1 < x0 || y1 < y0)
+    return;
+
   rdram_tracker.mark_rect(fb.framebuffer_address, fb.framebuffer_width, bytes,
                           x0, x1, y0, y1, RdramTracker::Access::Write, stamp);
 
@@ -422,6 +456,8 @@ static void rdp_new_processor() {
 
   // the new processor's timeline starts over
   rdram_tracker.reset(gfx_info.RDRAM_SIZE);
+  upscale_color = {};
+  upscale_depth = {};
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
