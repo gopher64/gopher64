@@ -131,9 +131,16 @@ pub fn write_mem_repeat(device: &mut device::Device, address: u64, value: u32, m
 pub fn read_regs(
     device: &mut device::Device,
     address: u64,
-    _access_size: device::memory::AccessSize,
+    access_size: device::memory::AccessSize,
 ) -> u32 {
-    device::cop0::add_cycles(device, 20);
+    // register reads use the same RDRAM transfer as memory (n64-systembench: RDRAM U64R)
+    device::cop0::add_cycles(
+        device,
+        match access_size {
+            device::memory::AccessSize::Dword => const { rdram_cycles_per_word(8) },
+            _ => const { rdram_cycles_per_word(4) },
+        },
+    );
     let chip_id = (address >> 13) & 3;
     let reg = (address & 0x3FF) >> 2;
     match reg as usize {
