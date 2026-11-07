@@ -190,7 +190,7 @@ jobs:
             matrix.llvm }}.tar.xz
       - name: Build
         run: |
-          cargo install cargo-bundle
+          cargo install --locked cargo-bundle
           brew install molten-vk
           cargo build --profile ${{ env.BUILD_PROFILE }} --no-default-features -v --target=${{ matrix.target }}
           mv target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64 target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64-cli
@@ -258,7 +258,7 @@ jobs:
       - name: Build
         working-directory: android-project
         run: |
-          cargo install --git https://github.com/bbqsrc/cargo-ndk.git cargo-ndk
+          cargo install --locked --git https://github.com/bbqsrc/cargo-ndk.git cargo-ndk
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
           ./gradlew bundle${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
           mkdir output
