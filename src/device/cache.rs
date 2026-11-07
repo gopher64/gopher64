@@ -104,8 +104,6 @@ pub fn dcache_writeback(device: &mut device::Device, line_index: usize) {
 }
 
 fn dcache_fill(device: &mut device::Device, line_index: usize, phys_address: u64) {
-    device::cop0::add_cycles(device, 7);
-
     device.memory.dcache[line_index].valid = true;
     device.memory.dcache[line_index].dirty = false;
 
@@ -150,8 +148,6 @@ pub fn dcache_write(
             dcache_writeback(device, line_index)
         }
         dcache_fill(device, line_index, phys_address)
-    } else {
-        device::cop0::add_cycles(device, 1)
     }
     device::memory::masked_write_32(
         &mut device.memory.dcache[line_index].words[((phys_address >> 2) & 3) as usize],

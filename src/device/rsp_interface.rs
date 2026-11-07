@@ -107,7 +107,16 @@ pub fn read_mem(
     address: u64,
     access_size: device::memory::AccessSize,
 ) -> u32 {
-    device::cop0::add_cycles(device, access_size as u64 / 4);
+    // CPU access to DMEM/IMEM goes through the RCP bus (n64-systembench: SP DMEM IO R)
+    device::cop0::add_cycles(
+        device,
+        match access_size {
+            device::memory::AccessSize::Word => 27,
+            device::memory::AccessSize::Dword => 14,
+            device::memory::AccessSize::Dcache => 7,
+            _ => 4,
+        },
+    );
 
     let masked_address = address as usize & RSP_MEM_MASK;
     u32::from_be_bytes(
@@ -221,8 +230,20 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
     device::events::create_event(
         device,
         device::events::EVENT_TYPE_SPDMA,
-        rsp_cycles + device::rdram::rdram_calculate_cycles((count * length) as u64) + 9,
+        rsp_cycles + dma_cycles(dma.dir, count as u64, length as u64),
     );
+}
+
+// based on n64-systembench
+fn dma_cycles(dir: DmaDir, count: u64, length: u64) -> u64 {
+    let (row, min_row) = if dir == DmaDir::Read {
+        // DMEM/IMEM -> RDRAM
+        (length * 217 / 1000, 15)
+    } else {
+        // RDRAM -> DMEM/IMEM
+        (length * 23 / 100, 22)
+    };
+    37 + row + (count - 1) * row.max(min_row)
 }
 
 fn fifo_push(device: &mut device::Device, dir: DmaDir) {

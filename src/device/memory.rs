@@ -13,7 +13,7 @@ const MM_AI_REGS: usize = 0x04500000;
 const MM_PI_REGS: usize = 0x04600000;
 const MM_RI_REGS: usize = 0x04700000;
 const MM_SI_REGS: usize = 0x04800000;
-//const MM_DOM2_ADDR1: usize = 0x05000000;
+const MM_DOM2_ADDR1: usize = 0x05000000;
 pub const MM_DOM2_ADDR2: usize = 0x08000000;
 pub const MM_CART_ROM: usize = 0x10000000;
 pub const MM_PIF_MEM: usize = 0x1fc00000;
@@ -83,6 +83,15 @@ pub fn translate_address(
     )
 }
 
+// Uncached CPU write costs (n64-systembench: RDRAM U32W, RCP I/O W)
+fn write_cycles(phys_address: u64) -> u64 {
+    match phys_address as usize {
+        MM_RDRAM_DRAM..MM_RDRAM_REGS => 12,
+        MM_RSP_MEM..MM_DOM2_ADDR1 => 7,
+        _ => 0,
+    }
+}
+
 pub fn data_read(
     device: &mut device::Device,
     phys_address: u64,
@@ -110,6 +119,7 @@ pub fn data_write(
     if let Some(virt_address) = cached {
         device::cache::dcache_write(device, virt_address, phys_address, value, mask)
     } else {
+        device::cop0::add_cycles(device, write_cycles(phys_address));
         device.memory.memory_map_write[(phys_address >> 16) as usize](
             device,
             phys_address,
