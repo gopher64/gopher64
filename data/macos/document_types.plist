@@ -1,0 +1,17 @@
+  <key>CFBundleDocumentTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeName</key>
+      <string>Nintendo 64 ROM</string>
+      <key>CFBundleTypeRole</key>
+      <string>Viewer</string>
+      <key>LSHandlerRank</key>
+      <string>Alternate</string>
+      <key>CFBundleTypeExtensions</key>
+      <array>
+        <string>n64</string>
+        <string>v64</string>
+        <string>z64</string>
+      </array>
+    </dict>
+  </array>
