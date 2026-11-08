@@ -172,7 +172,7 @@ pub fn init(device: &mut device::Device) {
         } else if i >= MM_SI_REGS >> 16 && i <= (MM_SI_REGS + 0xFFFF) >> 16 {
             device.memory.memory_map_read[i] = device::si::read_regs;
             device.memory.memory_map_write[i] = device::si::write_regs;
-        } else if (MM_DOM2_ADDR2 >> 16..=(MM_DOM2_ADDR2 + 0x1FFFF) >> 16).contains(&i) {
+        } else if (MM_DOM2_ADDR2 >> 16..=(MM_DOM2_ADDR2 + 0xFFFFF) >> 16).contains(&i) {
             device.memory.memory_map_read[i] = device::cart::sram::read_mem;
             device.memory.memory_map_write[i] = device::cart::sram::write_mem;
         } else if device.cart.rom.len() <= MM_IS_VIEWER - MM_CART_ROM

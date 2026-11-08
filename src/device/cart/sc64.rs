@@ -112,13 +112,20 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                     4 => {
                                         vec![ui::storage::SaveTypes::Flash]
                                     }
+                                    5 => {
+                                        vec![ui::storage::SaveTypes::Sram768k]
+                                    }
+                                    6 => {
+                                        vec![ui::storage::SaveTypes::Sram1m]
+                                    }
                                     _ => {
                                         panic!(
                                             "unknown sc64 save type: {}",
                                             device.cart.sc64.regs[SC64_DATA1_REG]
                                         )
                                     }
-                                }
+                                };
+                            device::cart::sram::format_sram(device);
                         }
                         std::mem::swap(
                             &mut device.cart.sc64.cfg
