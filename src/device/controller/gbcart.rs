@@ -65,9 +65,11 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
         }
         _ => {
             gb_cart.ram = ram.to_vec();
+            resize_ram(gb_cart);
             return;
         }
     };
+    resize_ram(gb_cart);
 
     gb_cart.rtc_regs[MBC3_RTC_SECONDS] =
         u32::from_le_bytes(ram[offset..offset + 4].try_into().unwrap()) as u8;
@@ -98,6 +100,26 @@ pub fn init(gb_cart: &mut device::controller::gbcart::GbCart, rom: &[u8], ram: &
     };
     if saved_time > 0 {
         advance_rtc(&mut gb_cart.rtc_regs, gb_cart.rtc_base_time - saved_time);
+    }
+}
+
+// Size cart RAM according to the ROM header so truncated/oversized save files don't
+// cause out-of-bounds accesses.
+fn resize_ram(gb_cart: &mut device::controller::gbcart::GbCart) {
+    let size = match gb_cart.rom.get(0x149) {
+        Some(0x01) => 0x800,
+        Some(0x02) => 0x2000,
+        Some(0x03) => 0x8000,
+        Some(0x04) => 0x20000,
+        Some(0x05) => 0x10000,
+        _ => return,
+    };
+    if gb_cart.ram.len() != size {
+        eprintln!(
+            "TransferPak RAM file is {} bytes, expected {size}; resizing",
+            gb_cart.ram.len()
+        );
+        gb_cart.ram.resize(size, 0);
     }
 }
 
@@ -138,8 +160,13 @@ pub fn save(
             f.write_all(&(gb_cart.rtc_regs_latch[MBC3_RTC_DAYS_H] as u32).to_le_bytes())
                 .unwrap();
 
-            // rtc_regs are now in sync with rtc_base_time + elapsed_time
-            let timestamp = gb_cart.rtc_base_time + elapsed_time;
+            // rtc_regs are now in sync with rtc_base_time + elapsed_time. Emulated time can
+            // run ahead of real time (fast forward). Clamp to now.
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64;
+            let timestamp = (gb_cart.rtc_base_time + elapsed_time).min(now);
             f.write_all(&timestamp.to_le_bytes()).unwrap();
 
             f.flush().unwrap();
@@ -185,6 +212,53 @@ fn advance_rtc(regs: &mut [u8; MBC3_RTC_REGS_COUNT], diff: i64) {
     }
 }
 
+fn read_rom(pif_ram: &mut [u8], rom: &[u8], offset: usize, data: usize, size: usize) {
+    for i in 0..size {
+        pif_ram[data + i] = if rom.is_empty() {
+            0xff
+        } else {
+            rom[(offset + i) % rom.len()]
+        };
+    }
+}
+
+fn read_ram(pif_ram: &mut [u8], ram: &[u8], offset: usize, data: usize, size: usize) {
+    for i in 0..size {
+        pif_ram[data + i] = if ram.is_empty() {
+            0xff
+        } else {
+            ram[(offset + i) % ram.len()]
+        };
+    }
+}
+
+fn write_ram(pif_ram: &[u8], ram: &mut [u8], offset: usize, data: usize, size: usize) {
+    if ram.is_empty() {
+        return;
+    }
+    let len = ram.len();
+    for i in 0..size {
+        ram[(offset + i) % len] = pif_ram[data + i];
+    }
+}
+
+fn fill(pif_ram: &mut [u8], data: usize, size: usize, value: u8) {
+    pif_ram[data..data + size].fill(value);
+}
+
+fn rom_offset(bank: u32, address: u16) -> usize {
+    bank as usize * 0x4000 + (address & 0x3fff) as usize
+}
+
+fn ram_offset(bank: u16, address: u16) -> usize {
+    bank as usize * 0x2000 + (address - 0xa000) as usize
+}
+
+fn mbc1_ram_bank(cart: &device::controller::gbcart::GbCart) -> u16 {
+    // in ROM banking mode (mode 0) only RAM bank 0 is accessible
+    if cart.mbc1_mode { cart.ram_bank } else { 0 }
+}
+
 fn write_mbc1(
     pif_ram: &[u8],
     cart: &mut device::controller::gbcart::GbCart,
@@ -209,15 +283,8 @@ fn write_mbc1(
         if !cart.ram_enabled {
             return;
         }
-        if cart.mbc1_mode {
-            let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
-            cart.ram[banked_address as usize..banked_address as usize + size]
-                .copy_from_slice(&pif_ram[data..data + size]);
-        } else {
-            let banked_address = address - 0xA000;
-            cart.ram[banked_address as usize..banked_address as usize + size]
-                .copy_from_slice(&pif_ram[data..data + size]);
-        }
+        let offset = ram_offset(mbc1_ram_bank(cart), address);
+        write_ram(pif_ram, &mut cart.ram, offset, data, size);
     }
 }
 
@@ -229,30 +296,22 @@ fn read_mbc1(
     size: usize,
 ) {
     if address < 0x4000 {
-        let banked_address = address & 0x3FFF;
-        pif_ram[data..data + size]
-            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
+        read_rom(pif_ram, &cart.rom, rom_offset(0, address), data, size);
     } else if address < 0x8000 {
-        let banked_address = address as u32 - 0x4000 + (cart.rom_bank * 0x4000);
-        pif_ram[data..data + size]
-            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
+        read_rom(
+            pif_ram,
+            &cart.rom,
+            rom_offset(cart.rom_bank, address),
+            data,
+            size,
+        );
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
-            for i in 0..size {
-                pif_ram[data + i] = 0xff;
-            }
+            fill(pif_ram, data, size, 0xff);
             return;
         }
-        if cart.ram_bank > 3 {
-            for i in 0..size {
-                pif_ram[data + i] = 0;
-            }
-        } else {
-            let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
-            pif_ram[data..data + size].copy_from_slice(
-                &cart.ram[banked_address as usize..banked_address as usize + size],
-            );
-        }
+        let offset = ram_offset(mbc1_ram_bank(cart), address);
+        read_ram(pif_ram, &cart.ram, offset, data, size);
     }
 }
 
@@ -285,10 +344,10 @@ fn write_mbc3(
             return;
         }
         if cart.ram_bank < 0x8 {
-            let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
-            cart.ram[banked_address as usize..banked_address as usize + size]
-                .copy_from_slice(&pif_ram[data..data + size]);
-        } else if cart.cart_type == CartType::MBC3RamBattRtc {
+            let offset = ram_offset(cart.ram_bank, address);
+            write_ram(pif_ram, &mut cart.ram, offset, data, size);
+        } else if cart.cart_type == CartType::MBC3RamBattRtc && cart.ram_bank <= 0xc {
+            update_rtc_regs(cart, elapsed_time);
             cart.rtc_regs[cart.ram_bank as usize - 0x8] = value;
         }
     } else {
@@ -304,31 +363,28 @@ fn read_mbc3(
     size: usize,
 ) {
     if address < 0x4000 {
-        let banked_address = address & 0x3FFF;
-        pif_ram[data..data + size]
-            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
+        read_rom(pif_ram, &cart.rom, rom_offset(0, address), data, size);
     } else if address < 0x8000 {
-        let banked_address = address as u32 - 0x4000 + (cart.rom_bank * 0x4000);
-        pif_ram[data..data + size]
-            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
+        read_rom(
+            pif_ram,
+            &cart.rom,
+            rom_offset(cart.rom_bank, address),
+            data,
+            size,
+        );
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
-            for i in 0..size {
-                pif_ram[data + i] = 0xff;
-            }
+            fill(pif_ram, data, size, 0xff);
             return;
         }
         if cart.ram_bank < 0x8 {
-            let banked_address = address - 0xA000 + (cart.ram_bank * 0x2000);
-            pif_ram[data..data + size].copy_from_slice(
-                cart.ram
-                    .get(banked_address as usize..banked_address as usize + size)
-                    .unwrap_or(&vec![0; size]),
-            );
-        } else if cart.cart_type == CartType::MBC3RamBattRtc {
-            for i in 0..size {
-                pif_ram[data + i] = cart.rtc_regs_latch[cart.ram_bank as usize - 0x8];
-            }
+            let offset = ram_offset(cart.ram_bank, address);
+            read_ram(pif_ram, &cart.ram, offset, data, size);
+        } else if cart.cart_type == CartType::MBC3RamBattRtc && cart.ram_bank <= 0xc {
+            let value = cart.rtc_regs_latch[cart.ram_bank as usize - 0x8];
+            fill(pif_ram, data, size, value);
+        } else {
+            fill(pif_ram, data, size, 0xff);
         }
     } else {
         panic!("Unsupported read address {address:x}");
@@ -354,15 +410,13 @@ fn write_mbc5(
     } else if address < 0x6000 {
         cart.ram_bank = (value & 0xf) as u16;
     } else if address < 0xa000 {
-        eprintln!("Unknown MBC5 write address {address:x}");
+        // no MBC5 register here
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
             return;
         }
-
-        let banked_address = address - 0xA000 + (cart.ram_bank << 13);
-        cart.ram[banked_address as usize..banked_address as usize + size]
-            .copy_from_slice(&pif_ram[data..data + size]);
+        let offset = ram_offset(cart.ram_bank, address);
+        write_ram(pif_ram, &mut cart.ram, offset, data, size);
     } else {
         panic!("Unsupported write address {address:x}");
     }
@@ -376,24 +430,22 @@ fn read_mbc5(
     size: usize,
 ) {
     if address < 0x4000 {
-        let banked_address = address & 0x3FFF;
-        pif_ram[data..data + size]
-            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
+        read_rom(pif_ram, &cart.rom, rom_offset(0, address), data, size);
     } else if address < 0x8000 {
-        let banked_address = address as u32 - 0x4000 + (cart.rom_bank << 14);
-        pif_ram[data..data + size]
-            .copy_from_slice(&cart.rom[banked_address as usize..banked_address as usize + size]);
+        read_rom(
+            pif_ram,
+            &cart.rom,
+            rom_offset(cart.rom_bank, address),
+            data,
+            size,
+        );
     } else if (0xa000..0xc000).contains(&address) {
         if !cart.ram_enabled {
-            for i in 0..size {
-                pif_ram[data + i] = 0xff;
-            }
+            fill(pif_ram, data, size, 0xff);
             return;
         }
-
-        let banked_address = address - 0xA000 + (cart.ram_bank << 13);
-        pif_ram[data..data + size]
-            .copy_from_slice(&cart.ram[banked_address as usize..banked_address as usize + size]);
+        let offset = ram_offset(cart.ram_bank, address);
+        read_ram(pif_ram, &cart.ram, offset, data, size);
     } else {
         panic!("Unsupported read address {address:x}");
     }
