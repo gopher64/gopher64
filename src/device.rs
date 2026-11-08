@@ -429,11 +429,9 @@ impl Device {
                     usb_buffer: vec![],
                 },
                 flashram: cart::sram::Flashram {
-                    status: 0,
-                    erase_page: 0,
-                    page_buf: [0xff; 128],
-                    silicon_id: [cart::sram::FLASHRAM_TYPE_ID, cart::sram::MX29L1100_ID],
                     mode: cart::sram::FlashramMode::ReadArray,
+                    erase_setup: cart::sram::FlashramEraseSetup::None,
+                    page_buf: [0xff; cart::sram::FLASHRAM_PAGE_SIZE],
                 },
             },
             memory: memory::Memory {
