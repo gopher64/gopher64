@@ -79,3 +79,4 @@ icon = ["data/icon/gopher64_128x128.png","data/icon/gopher64_256x256.png","data/
 [package.metadata.bundle.osx]
 frameworks = ["/opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib"]
 minimum_system_version = "15.0"
+info_plist_exts = ["data/macos/document_types.plist"]
