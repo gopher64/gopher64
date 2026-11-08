@@ -7,6 +7,8 @@ pub enum SaveTypes {
     Eeprom4k,
     Eeprom16k,
     Sram,
+    Sram768k,
+    Sram1m,
     Flash,
     Mempak,
     Sdcard,
@@ -60,9 +62,9 @@ fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
             1 => return vec![SaveTypes::Eeprom4k],
             2 => return vec![SaveTypes::Eeprom16k],
             3 => return vec![SaveTypes::Sram],
-            4 => panic!("Unsupported save type: {save_type}"),
+            4 => return vec![SaveTypes::Sram768k],
             5 => return vec![SaveTypes::Flash],
-            6 => panic!("Unsupported save type: {save_type}"),
+            6 => return vec![SaveTypes::Sram1m],
             _ => panic!("Unknown save type: {save_type}"),
         }
     }
@@ -115,6 +117,8 @@ fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {
         =>{
             vec![SaveTypes::Flash]
         }
+        "CDZ" // Dezaemon 3D
+        => {vec![SaveTypes::Sram768k]}
         "NPQ" // Powerpuff Girls: Chemical X Traction
         => {vec![]}
         _ => {
@@ -378,11 +382,11 @@ fn writeback_sdcard(device: &mut device::Device) {
         save_data = device.ui.storage.saves.eeprom.data.as_ref();
         device.ui.storage.saves.eeprom.write_pending = false;
     } else if device.ui.storage.saves.sram.write_pending {
-        length = device.ui.storage.saves.sram.data.len() / 512;
+        length = device::cart::sram::sram_size(device) / 512;
         save_data = device.ui.storage.saves.sram.data.as_ref();
         device.ui.storage.saves.sram.write_pending = false;
     } else if device.ui.storage.saves.flash.write_pending {
-        length = device.ui.storage.saves.flash.data.len() / 512;
+        length = device::cart::sram::FLASHRAM_SIZE / 512;
         save_data = device.ui.storage.saves.flash.data.as_ref();
         device.ui.storage.saves.flash.write_pending = false;
     } else {
@@ -433,7 +437,7 @@ pub fn schedule_save(device: &mut device::Device, save_type: SaveTypes) {
         SaveTypes::Eeprom4k | SaveTypes::Eeprom16k => {
             device.ui.storage.saves.eeprom.write_pending = true;
         }
-        SaveTypes::Sram => {
+        SaveTypes::Sram | SaveTypes::Sram768k | SaveTypes::Sram1m => {
             device.ui.storage.saves.sram.write_pending = true;
         }
         SaveTypes::Flash => {
@@ -465,7 +469,7 @@ fn write_save(ui: &mut ui::Ui, save_type: SaveTypes) {
             save_data = ui.storage.saves.eeprom.data.clone();
             ui.storage.saves.eeprom.write_pending = false;
         }
-        SaveTypes::Sram => {
+        SaveTypes::Sram | SaveTypes::Sram768k | SaveTypes::Sram1m => {
             save_path = ui.storage.paths.sra_file_path.clone();
             save_data = ui.storage.saves.sram.data.clone();
             ui.storage.saves.sram.write_pending = false;

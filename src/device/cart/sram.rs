@@ -1,7 +1,10 @@
 use crate::{device, ui};
 
 const SRAM_MASK: usize = 0xFFFF;
+const SRAM_BANK_SIZE: usize = 0x8000;
 pub const SRAM_SIZE: usize = 0x8000;
+const SRAM_768K_SIZE: usize = SRAM_BANK_SIZE * 3;
+const SRAM_1M_SIZE: usize = 0x20000;
 pub const FLASHRAM_SIZE: usize = 0x20000;
 pub const FLASHRAM_TYPE_ID: u32 = 0x11118001;
 pub const MX29L1100_ID: u32 = 0x00c2001e;
@@ -28,9 +31,46 @@ pub struct Flashram {
     pub silicon_id: [u32; 2],
 }
 
+fn is_sram(device: &device::Device) -> bool {
+    device.ui.storage.save_type.iter().any(|save_type| {
+        matches!(
+            save_type,
+            ui::storage::SaveTypes::Sram
+                | ui::storage::SaveTypes::Sram768k
+                | ui::storage::SaveTypes::Sram1m
+        )
+    })
+}
+
+pub fn sram_size(device: &device::Device) -> usize {
+    let save_type = &device.ui.storage.save_type;
+    if save_type.contains(&ui::storage::SaveTypes::Sram1m) {
+        SRAM_1M_SIZE
+    } else if save_type.contains(&ui::storage::SaveTypes::Sram768k) {
+        SRAM_768K_SIZE
+    } else {
+        SRAM_SIZE
+    }
+}
+
+// translate a PI bus address into an offset in the SRAM save data
+fn sram_offset(device: &device::Device, address: u32) -> usize {
+    let save_type = &device.ui.storage.save_type;
+    if save_type.contains(&ui::storage::SaveTypes::Sram768k) {
+        // 3 x 256Kbit banks, selected by PI address bits 18-19
+        let bank = (address as usize >> 18) & 0x3;
+        bank * SRAM_BANK_SIZE + (address as usize & (SRAM_BANK_SIZE - 1))
+    } else if save_type.contains(&ui::storage::SaveTypes::Sram1m) {
+        address as usize & (SRAM_1M_SIZE - 1)
+    } else {
+        address as usize & SRAM_MASK
+    }
+}
+
 pub fn format_sram(device: &mut device::Device) {
-    if device.ui.storage.saves.sram.data.len() < SRAM_SIZE {
-        device.ui.storage.saves.sram.data.resize(SRAM_SIZE, 0xFF)
+    let size = sram_size(device);
+    if device.ui.storage.saves.sram.data.len() < size {
+        device.ui.storage.saves.sram.data.resize(size, 0xFF)
     }
 }
 
@@ -47,13 +87,16 @@ pub fn format_flash(device: &mut device::Device) {
 }
 
 fn read_mem_sram(device: &mut device::Device, address: u64) -> u32 {
-    let masked_address = address as usize & SRAM_MASK;
+    let offset = sram_offset(device, address as u32);
 
-    u32::from_be_bytes(
-        device.ui.storage.saves.sram.data[masked_address..masked_address + 4]
-            .try_into()
-            .unwrap(),
-    )
+    device
+        .ui
+        .storage
+        .saves
+        .sram
+        .data
+        .get(offset..offset + 4)
+        .map_or(0, |data| u32::from_be_bytes(data.try_into().unwrap()))
 }
 
 fn read_mem_flash(device: &device::Device, address: u64) -> u32 {
@@ -79,12 +122,7 @@ pub fn read_mem(
     let cycles = device::pi::calculate_cycles(device, 2, 4);
     device::cop0::add_cycles(device, cycles);
 
-    if device
-        .ui
-        .storage
-        .save_type
-        .contains(&ui::storage::SaveTypes::Sram)
-    {
+    if is_sram(device) {
         read_mem_sram(device, address)
     } else {
         read_mem_flash(device, address)
@@ -92,16 +130,21 @@ pub fn read_mem(
 }
 
 fn write_mem_sram(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    let masked_address = address as usize & SRAM_MASK;
+    let offset = sram_offset(device, address as u32);
 
-    let mut data = u32::from_be_bytes(
-        device.ui.storage.saves.sram.data[masked_address..masked_address + 4]
-            .try_into()
-            .unwrap(),
-    );
+    let Some(sram) = device
+        .ui
+        .storage
+        .saves
+        .sram
+        .data
+        .get_mut(offset..offset + 4)
+    else {
+        return;
+    };
+    let mut data = u32::from_be_bytes((&*sram).try_into().unwrap());
     device::memory::masked_write_32(&mut data, value, mask);
-    device.ui.storage.saves.sram.data[masked_address..masked_address + 4]
-        .copy_from_slice(&data.to_be_bytes());
+    sram.copy_from_slice(&data.to_be_bytes());
 
     ui::storage::schedule_save(device, ui::storage::SaveTypes::Sram);
 }
@@ -120,12 +163,7 @@ fn write_mem_flash(device: &mut device::Device, address: u64, value: u32, mask: 
 }
 
 pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    if device
-        .ui
-        .storage
-        .save_type
-        .contains(&ui::storage::SaveTypes::Sram)
-    {
+    if is_sram(device) {
         write_mem_sram(device, address, value, mask)
     } else {
         write_mem_flash(device, address, value, mask)
@@ -137,20 +175,20 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     device::events::create_event(device, device::events::EVENT_TYPE_PI, cycles);
 }
 
-fn dma_read_sram(device: &mut device::Device, mut cart_addr: u32, mut dram_addr: u32, length: u32) {
+fn dma_read_sram(device: &mut device::Device, cart_addr: u32, mut dram_addr: u32, length: u32) {
     dram_addr &= device::rdram::RDRAM_MASK as u32;
-    cart_addr &= SRAM_MASK as u32;
     let mut i = dram_addr;
     let mut j = cart_addr;
 
     while i < dram_addr + length {
+        let offset = sram_offset(device, j);
         *device
             .ui
             .storage
             .saves
             .sram
             .data
-            .get_mut(j as usize)
+            .get_mut(offset)
             .unwrap_or(&mut 0) = *device
             .rdram
             .mem
@@ -184,12 +222,7 @@ fn dma_read_flash(device: &mut device::Device, cart_addr: u32, dram_addr: u32, l
 
 // cart is big endian, rdram is native endian
 pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) -> u64 {
-    if device
-        .ui
-        .storage
-        .save_type
-        .contains(&ui::storage::SaveTypes::Sram)
-    {
+    if is_sram(device) {
         dma_read_sram(device, cart_addr, dram_addr, length)
     } else {
         dma_read_flash(device, cart_addr, dram_addr, length)
@@ -197,30 +230,18 @@ pub fn dma_read(device: &mut device::Device, cart_addr: u32, dram_addr: u32, len
     device::pi::calculate_cycles(device, 2, length)
 }
 
-fn dma_write_sram(
-    device: &mut device::Device,
-    mut cart_addr: u32,
-    mut dram_addr: u32,
-    length: u32,
-) {
+fn dma_write_sram(device: &mut device::Device, cart_addr: u32, mut dram_addr: u32, length: u32) {
     dram_addr &= device::rdram::RDRAM_MASK as u32;
-    cart_addr &= SRAM_MASK as u32;
     let mut i = dram_addr;
     let mut j = cart_addr;
 
     while i < dram_addr + length {
+        let offset = sram_offset(device, j);
         *device
             .rdram
             .mem
             .get_mut(i as usize ^ device.byte_swap)
-            .unwrap_or(&mut 0) = *device
-            .ui
-            .storage
-            .saves
-            .sram
-            .data
-            .get(j as usize)
-            .unwrap_or(&0);
+            .unwrap_or(&mut 0) = *device.ui.storage.saves.sram.data.get(offset).unwrap_or(&0);
         i += 1;
         j += 1;
     }
@@ -283,12 +304,7 @@ fn dma_write_flash(
 
 // cart is big endian, rdram is native endian
 pub fn dma_write(device: &mut device::Device, cart_addr: u32, dram_addr: u32, length: u32) -> u64 {
-    if device
-        .ui
-        .storage
-        .save_type
-        .contains(&ui::storage::SaveTypes::Sram)
-    {
+    if is_sram(device) {
         dma_write_sram(device, cart_addr, dram_addr, length)
     } else {
         dma_write_flash(device, cart_addr, dram_addr, length)
