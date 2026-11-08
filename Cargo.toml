@@ -1,6 +1,6 @@
 [package]
 name = "gopher64"
-version = "1.1.42"
+version = "1.2.0"
 edition = "2024"
 rust-version = "1.99.1"
 
@@ -42,7 +42,7 @@ rustls = { version = "0.23", default-features = false }
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 slint = { version = "1.16", default-features = false, features = ["compat-1-2", "std", "unstable-winit-030", "backend-winit", "renderer-femtovg-wgpu", "accessibility"], optional = true }
-rfd = {version = "0.17", optional = true }
+rfd = {version = "0.18", optional = true }
 dirs = "7.0"
 open = { version = "5.3", optional = true }
 sdl3-sys = { version = "0.7", features = ["build-from-source-static"] }
