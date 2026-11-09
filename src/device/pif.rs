@@ -191,7 +191,7 @@ pub fn process_ram(device: &mut device::Device) {
     if command & 0x02 != 0 {
         // Challenge / response for protection
         /* disable channel processing when doing CIC challenge */
-        for item in device.pif.channels.iter_mut().take(PIF_CHANNELS_COUNT) {
+        for item in device.pif.channels.iter_mut() {
             disable_pif_channel(item);
         }
 
