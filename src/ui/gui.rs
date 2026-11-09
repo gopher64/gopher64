@@ -568,6 +568,13 @@ pub fn app_window(
         run_with_path(app.as_weak(), path);
     }
 
+    // Launch ROMs opened via Finder or `open -a` (macOS "open documents" Apple Event)
+    #[cfg(target_os = "macos")]
+    {
+        let weak = app.as_weak();
+        ui::macos::register_open_documents_handler(move |path| run_with_path(weak.clone(), path));
+    }
+
     app.run().unwrap();
     retroachievements::shutdown_client();
 }
