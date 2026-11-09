@@ -123,8 +123,13 @@ pub fn write_mem_repeat(device: &mut device::Device, address: u64, value: u32, m
     }
 
     device.mi.regs[device::mi::MI_INIT_MODE_REG] &= !device::mi::MI_INIT_MODE;
-    for i in 0..(0x3F00000 >> 16) {
-        device.memory.memory_map_write[i] = device::rdram::write_mem;
+    for item in device
+        .memory
+        .memory_map_write
+        .iter_mut()
+        .take(0x3F00000 >> 16)
+    {
+        *item = device::rdram::write_mem;
     }
 }
 

@@ -197,8 +197,8 @@ fn set_buttons(
     alt_pressed: bool,
 ) -> u32 {
     let mut keys = 0;
-    for i in 0..14 {
-        for input in profile.inputs[i].iter() {
+    for (i, item) in profile.inputs.iter().enumerate().take(14) {
+        for input in item.iter() {
             if let Some(ui::config::InputItem::Key(key)) = input
                 && !alt_pressed
                 && unsafe { *keyboard_state.offset(key.id as isize) }

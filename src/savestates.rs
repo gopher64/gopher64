@@ -345,29 +345,29 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         }
 
         device::pif::connect_pif_channels(device);
-        for i in 0..4 {
-            if let Some(handler) = device.pif.channels[i].pak_handler {
+        for item in device.pif.channels.iter_mut().take(4) {
+            if let Some(handler) = item.pak_handler {
                 if handler.pak_type == device::controller::PakType::RumblePak {
                     let rumblepak_handler = device::controller::PakHandler {
                         read: device::controller::rumble::read,
                         write: device::controller::rumble::write,
                         pak_type: device::controller::PakType::RumblePak,
                     };
-                    device.pif.channels[i].pak_handler = Some(rumblepak_handler);
+                    item.pak_handler = Some(rumblepak_handler);
                 } else if handler.pak_type == device::controller::PakType::MemPak {
                     let mempak_handler = device::controller::PakHandler {
                         read: device::controller::mempak::read,
                         write: device::controller::mempak::write,
                         pak_type: device::controller::PakType::MemPak,
                     };
-                    device.pif.channels[i].pak_handler = Some(mempak_handler);
+                    item.pak_handler = Some(mempak_handler);
                 } else if handler.pak_type == device::controller::PakType::TransferPak {
                     let tpak_handler = device::controller::PakHandler {
                         read: device::controller::transferpak::read,
                         write: device::controller::transferpak::write,
                         pak_type: device::controller::PakType::TransferPak,
                     };
-                    device.pif.channels[i].pak_handler = Some(tpak_handler);
+                    item.pak_handler = Some(tpak_handler);
                 }
             }
         }

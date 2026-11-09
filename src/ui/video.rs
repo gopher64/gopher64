@@ -202,8 +202,8 @@ pub fn load_state(device: &mut device::Device, rdp_state: *const u8, rdp_state_l
     let gfx_info = build_gfx_info(device, device.netplay.is_some());
     unsafe {
         rdp_load_state(gfx_info, rdp_state, rdp_state_len);
-        for reg in 0..device::vi::VI_REGS_COUNT {
-            rdp_set_vi_register(reg as u32, device.vi.regs[reg])
+        for (reg, item) in device.vi.regs.iter().enumerate() {
+            rdp_set_vi_register(reg as u32, *item)
         }
     }
 }
