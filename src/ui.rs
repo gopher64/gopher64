@@ -8,6 +8,8 @@ pub mod config;
 pub mod gui;
 pub mod input;
 pub mod input_profile;
+#[cfg(all(feature = "gui", target_os = "macos"))]
+pub mod macos;
 #[cfg(feature = "gui")]
 pub mod netplay;
 #[cfg(feature = "gui")]
