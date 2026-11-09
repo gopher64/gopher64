@@ -1,13 +1,19 @@
 mod rom;
 use crate::device;
 
+pub const PIF_RAM_SIZE: usize = 64;
+const PIF_CHANNELS_COUNT: usize = 5;
+const PIF_RAM_OFFSET: usize = 0x7C0;
+const PIF_MASK: usize = 0xFFFF;
+const CHL_LEN: usize = 0x20;
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Pif {
     #[serde(with = "serde_big_array::BigArray")]
     pub rom: [u8; 1984],
     #[serde(with = "serde_big_array::BigArray")]
     pub ram: [u8; 64],
-    pub channels: [PifChannel; 5],
+    pub channels: [PifChannel; PIF_CHANNELS_COUNT],
 }
 
 #[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
@@ -21,12 +27,6 @@ pub struct PifChannel {
     pub pak_handler: Option<device::controller::PakHandler>,
     pub change_pak: device::controller::PakType,
 }
-
-pub const PIF_RAM_SIZE: usize = 64;
-const PIF_CHANNELS_COUNT: usize = 5;
-const PIF_RAM_OFFSET: usize = 0x7C0;
-const PIF_MASK: usize = 0xFFFF;
-const CHL_LEN: usize = 0x20;
 
 pub fn read_mem(
     device: &mut device::Device,
