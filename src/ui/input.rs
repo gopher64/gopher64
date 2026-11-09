@@ -59,8 +59,7 @@ fn normalize_axis_position(axis_position: i16) -> f64 {
     axis_position as f64 * MAX_AXIS_VALUE / i16::MAX as f64
 }
 
-fn set_axis_value(x: &mut f64, y: &mut f64, axis: usize, axis_position: i16) {
-    let magnitude = normalize_axis_position(axis_position).abs();
+fn set_axis_value(x: &mut f64, y: &mut f64, axis: usize, magnitude: f64) {
     match axis {
         ui::input_profile::AXIS_LEFT => *x = -magnitude,
         ui::input_profile::AXIS_RIGHT => *x = magnitude,
@@ -97,7 +96,12 @@ fn set_axis(
                     )
                 };
                 if axis_position as isize * controller_axis.axis as isize > 0 {
-                    set_axis_value(&mut x, &mut y, axis, axis_position);
+                    set_axis_value(
+                        &mut x,
+                        &mut y,
+                        axis,
+                        normalize_axis_position(axis_position).abs(),
+                    );
                     has_deadzone = true;
                 }
             } else if !joystick.is_null()
@@ -106,19 +110,18 @@ fn set_axis(
                 let axis_position =
                     unsafe { sdl3_sys::joystick::SDL_GetJoystickAxis(joystick, joystick_axis.id) };
                 if axis_position as isize * joystick_axis.axis as isize > 0 {
-                    set_axis_value(&mut x, &mut y, axis, axis_position);
+                    set_axis_value(
+                        &mut x,
+                        &mut y,
+                        axis,
+                        normalize_axis_position(axis_position).abs(),
+                    );
                     has_deadzone = true;
                 }
             } else if let Some(ui::config::InputItem::Key(key)) = input
                 && unsafe { *keyboard_state.offset(key.id as isize) }
             {
-                match axis {
-                    ui::input_profile::AXIS_LEFT => x = -MAX_AXIS_VALUE,
-                    ui::input_profile::AXIS_RIGHT => x = MAX_AXIS_VALUE,
-                    ui::input_profile::AXIS_DOWN => y = MAX_AXIS_VALUE,
-                    ui::input_profile::AXIS_UP => y = -MAX_AXIS_VALUE,
-                    _ => unreachable!(),
-                }
+                set_axis_value(&mut x, &mut y, axis, MAX_AXIS_VALUE);
             }
         }
     }
