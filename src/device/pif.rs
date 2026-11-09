@@ -12,7 +12,7 @@ pub struct Pif {
     #[serde(with = "serde_big_array::BigArray")]
     pub rom: [u8; 1984],
     #[serde(with = "serde_big_array::BigArray")]
-    pub ram: [u8; 64],
+    pub ram: [u8; PIF_RAM_SIZE],
     pub channels: [PifChannel; PIF_CHANNELS_COUNT],
 }
 
