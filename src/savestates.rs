@@ -319,6 +319,9 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         }
 
         device::memory::init(device);
+        if device.mi.regs[device::mi::MI_INIT_MODE_REG] & device::mi::MI_INIT_MODE != 0 {
+            device::rdram::set_write_handler(device, device::rdram::write_mem_repeat);
+        }
         device::vi::set_expected_refresh_rate(device);
         device::cpu::map_instructions(device);
         device::cop0::map_instructions(device);

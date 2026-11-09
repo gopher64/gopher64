@@ -77,25 +77,11 @@ fn update_init_mode(device: &mut device::Device, w: u32) {
     device.mi.regs[MI_INIT_MODE_REG] |= w & MI_INIT_LENGTH_MASK;
 
     if w & MI_CLR_INIT != 0 {
-        for item in device
-            .memory
-            .memory_map_write
-            .iter_mut()
-            .take(0x3F00000 >> 16)
-        {
-            *item = device::rdram::write_mem;
-        }
+        device::rdram::set_write_handler(device, device::rdram::write_mem);
         device.mi.regs[MI_INIT_MODE_REG] &= !MI_INIT_MODE
     }
     if w & MI_SET_INIT != 0 {
-        for item in device
-            .memory
-            .memory_map_write
-            .iter_mut()
-            .take(0x3F00000 >> 16)
-        {
-            *item = device::rdram::write_mem_repeat;
-        }
+        device::rdram::set_write_handler(device, device::rdram::write_mem_repeat);
         device.mi.regs[MI_INIT_MODE_REG] |= MI_INIT_MODE
     }
     if w & MI_CLR_EBUS != 0 {
