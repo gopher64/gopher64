@@ -6,7 +6,7 @@ rust-version = "1.99.1"
 
 [features]
 default = ["gui"]
-gui = ["dep:rfd", "dep:slint", "dep:open", "dep:slint-build"]
+gui = ["dep:rfd", "dep:slint", "dep:open", "dep:slint-build", "dep:objc2", "dep:objc2-foundation"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -56,8 +56,8 @@ sdl3-ttf-sys = { version = "0.7", features = ["build-from-source", "no-sdlttf-ha
 webpki-roots = "1.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "0.6"
-objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSAppleEventManager", "NSAppleEventDescriptor", "NSURL", "NSNotification", "NSString", "objc2-core-services"] }
+objc2 = { version = "0.6", optional = true }
+objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "NSAppleEventManager", "NSAppleEventDescriptor", "NSURL", "NSNotification", "NSString", "objc2-core-services"] }
 
 [build-dependencies]
 winresource = "0.1"
