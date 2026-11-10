@@ -427,6 +427,9 @@ impl Device {
                     buffer: vec![0; 8192],
                     writeback_sector: vec![0; 256],
                     usb_buffer: vec![],
+                    usb_read_type: 0,
+                    usb_read_size: 0,
+                    usb_next_read: 0,
                 },
                 flashram: cart::sram::Flashram {
                     mode: cart::sram::FlashramMode::ReadArray,
