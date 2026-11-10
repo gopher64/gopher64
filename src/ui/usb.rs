@@ -35,68 +35,37 @@ async fn handle_connection(
 ) {
     let (mut incoming, mut outgoing) = conn.into_split();
 
-    let mut shutdown_rx_clone = shutdown_rx.clone();
-
     while usb_rx.try_recv().is_ok() {} // drain stale USB messages
 
-    tokio::spawn(async move {
+    let mut reader = tokio::spawn(async move {
         let mut incoming_buffer = vec![0u8; 4096];
-        let mut data_type: Option<u32> = None;
-        let mut data_size: Option<u32> = None;
         let mut usb_buffer: Vec<u8> = vec![];
         loop {
-            tokio::select! {
-                result = incoming.read(&mut incoming_buffer) => {
-                    match result {
-                        Ok(0) => {
+            match incoming.read(&mut incoming_buffer).await {
+                Ok(0) | Err(_) => break,
+                Ok(n) => {
+                    usb_buffer.extend_from_slice(&incoming_buffer[0..n]);
+                    // A single read can contain several packets, handle all complete ones
+                    while usb_buffer.len() >= 8 {
+                        let d_type = u32::from_be_bytes(usb_buffer[0..4].try_into().unwrap());
+                        let d_size = u32::from_be_bytes(usb_buffer[4..8].try_into().unwrap());
+                        let length = d_size as usize;
+                        if usb_buffer.len() < 8 + length {
                             break;
                         }
-                        Ok(n) => {
-                            usb_buffer.extend_from_slice(&incoming_buffer[0..n]);
-                            if data_type.is_none() {
-                                if usb_buffer.len() < 4 {
-                                    continue;
-                                } else {
-                                    data_type = Some(u32::from_be_bytes(usb_buffer[0..4].try_into().unwrap()));
-                                    usb_buffer.drain(0..4);
-                                }
+                        let data: Vec<u8> = usb_buffer.drain(..8 + length).skip(8).collect();
+                        match d_type {
+                            DATATYPE_TCPTEST => respond_to_handshake(&usb_tx, data),
+                            DATATYPE_ROMUPLOAD => {} // The ROM is booted by the user in the emulator, ignore uploads
+                            _ => {
+                                let _ = cart_tx.send(UsbData {
+                                    data,
+                                    data_type: d_type,
+                                    data_size: d_size,
+                                });
                             }
-                            if data_type.is_some() && data_size.is_none() {
-                                if usb_buffer.len() < 4 {
-                                    continue;
-                                } else {
-                                    data_size = Some(u32::from_be_bytes(usb_buffer[0..4].try_into().unwrap()));
-                                    usb_buffer.drain(0..4);
-                                }
-                            }
-                            if let Some(d_type) = data_type && let Some(d_size) = data_size {
-                                let length = d_size as usize;
-                                if usb_buffer.len() >= length {
-                                    let usb_data = UsbData {
-                                        data: usb_buffer[0..length].to_vec(),
-                                        data_type: d_type,
-                                        data_size: d_size,
-                                    };
-                                    usb_buffer.drain(0..length);
-                                    if usb_data.data_type == DATATYPE_TCPTEST {
-                                        respond_to_handshake(&usb_tx,usb_data.data);
-                                    } else if usb_data.data_type == DATATYPE_ROMUPLOAD {
-                                        panic!("ROM upload not supported");
-                                    } else {
-                                        cart_tx.send(usb_data).unwrap();
-                                    }
-                                    data_type = None;
-                                    data_size = None;
-                                }
-                            }
-                        }
-                        Err(_e) => {
-                            break;
                         }
                     }
-                }
-                _ = shutdown_rx.changed() => {
-                    break;
                 }
             }
         }
@@ -120,11 +89,16 @@ async fn handle_connection(
                     }
                 }
             }
-            _ = shutdown_rx_clone.changed() => {
+            _ = &mut reader => {
+                // client disconnected
+                break;
+            }
+            _ = shutdown_rx.changed() => {
                 break;
             }
         }
     }
+    reader.abort();
 }
 
 pub fn init() -> (

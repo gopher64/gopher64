@@ -19,6 +19,7 @@ pub const SC64_CFG_COUNT: usize = 15;
 
 const SC64_BUFFER_MASK: usize = 0x1FFF;
 const SC64_EEPROM_MASK: usize = 0xFFF;
+const USB_PACKET_DELAY: u64 = 93750 * 2; // ~2ms of COUNT (CPU cycles at 93.75 MHz)
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Sc64 {
@@ -29,6 +30,9 @@ pub struct Sc64 {
     pub sector: u32,
     pub writeback_sector: Vec<u32>,
     pub usb_buffer: Vec<u8>,
+    pub usb_read_type: u32,
+    pub usb_read_size: u32, // non-zero while a received packet is waiting to be read by 'm'
+    pub usb_next_read: u64, // COUNT at which the next received packet becomes visible
 }
 
 fn format_sdcard(device: &mut device::Device) {
@@ -217,24 +221,23 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                         device.cart.sc64.regs[SC64_DATA0_REG] = 0;
                     }
                     'u' => {
-                        // used to notify the game that there is data to read
-                        if let Some(cart_rx) = device.ui.usb.cart_rx.as_mut() {
-                            match cart_rx.try_recv() {
-                                Ok(data) => {
-                                    device.cart.sc64.regs[SC64_DATA0_REG] = data.data_type & 0xFF; // read_status/type
-                                    device.cart.sc64.regs[SC64_DATA1_REG] =
-                                        data.data_size & 0xFFFFFF; // length
-                                    device.cart.sc64.usb_buffer = data.data; // store the data to be read
-                                }
-                                Err(_err) => {
-                                    device.cart.sc64.regs[SC64_DATA0_REG] = 0; // read_status/type
-                                    device.cart.sc64.regs[SC64_DATA1_REG] = 0; // length
-                                }
-                            }
-                        } else {
-                            device.cart.sc64.regs[SC64_DATA0_REG] = 0; // read_status/type
-                            device.cart.sc64.regs[SC64_DATA1_REG] = 0; // length
+                        // used to notify the game that there is data to read.
+                        // Status reads don't consume the packet, only 'm' does.
+                        // Packets from the PC arrive with some USB latency in between, so don't make
+                        // the next one visible right away (games may rely on this, NetLib examples do)
+                        let count = device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG];
+                        if device.cart.sc64.usb_read_size == 0
+                            && (count >= device.cart.sc64.usb_next_read
+                                || device.cart.sc64.usb_next_read - count > USB_PACKET_DELAY)
+                            && let Some(cart_rx) = device.ui.usb.cart_rx.as_mut()
+                            && let Ok(data) = cart_rx.try_recv()
+                        {
+                            device.cart.sc64.usb_read_type = data.data_type & 0xFF;
+                            device.cart.sc64.usb_read_size = data.data_size & 0xFFFFFF;
+                            device.cart.sc64.usb_buffer = data.data; // store the data to be read
                         }
+                        device.cart.sc64.regs[SC64_DATA0_REG] = device.cart.sc64.usb_read_type; // read_status/type
+                        device.cart.sc64.regs[SC64_DATA1_REG] = device.cart.sc64.usb_read_size; // length
                     }
                     'M' => {
                         // Send data from from flashcart to USB
@@ -299,7 +302,8 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                     'm' => {
                         // Receive data from USB to flashcart
                         let address = device.cart.sc64.regs[SC64_DATA0_REG] as u64 & 0x1FFFFFFF;
-                        let length = device.cart.sc64.regs[SC64_DATA1_REG] as usize;
+                        let length = device.cart.sc64.regs[SC64_DATA1_REG] as usize & 0xFFFFFF;
+                        let usb_buffer = std::mem::take(&mut device.cart.sc64.usb_buffer);
 
                         let mut i = 0;
 
@@ -309,8 +313,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                                     .rdram
                                     .mem
                                     .get_mut((address as usize + i) ^ device.byte_swap)
-                                    .unwrap_or(&mut 0) =
-                                    *device.cart.sc64.usb_buffer.get(i).unwrap_or(&0);
+                                    .unwrap_or(&mut 0) = *usb_buffer.get(i).unwrap_or(&0);
                                 i += 1;
                             }
                         } else if address >= device::memory::MM_CART_ROM as u64
@@ -319,12 +322,20 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
                             while i < length {
                                 device.ui.storage.saves.romsave.data.insert(
                                     ((address as usize + i) & device::cart::rom::CART_MASK) as u32,
-                                    *device.cart.sc64.usb_buffer.get(i).unwrap_or(&0),
+                                    *usb_buffer.get(i).unwrap_or(&0),
                                 );
                                 i += 1;
                             }
                         } else {
                             panic!("Unknown address {address:#x} for SC64 m command");
+                        }
+                        // packet consumed
+                        if device.cart.sc64.usb_read_size != 0 {
+                            device.cart.sc64.usb_read_type = 0;
+                            device.cart.sc64.usb_read_size = 0;
+                            device.cart.sc64.usb_next_read = device.cpu.cop0.regs
+                                [device::cop0::COP0_COUNT_REG]
+                                + USB_PACKET_DELAY;
                         }
                     }
                     'w' => {
