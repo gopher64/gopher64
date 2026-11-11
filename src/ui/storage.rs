@@ -41,7 +41,7 @@ pub struct RomSave {
     pub write_pending: bool,
 }
 
-#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Saves {
     pub eeprom: Save,
     pub sram: Save,
@@ -50,6 +50,52 @@ pub struct Saves {
     pub sdcard: Save,
     pub romsave: RomSave,
     pub write_to_disk: bool,
+}
+
+impl Save {
+    fn copy_from(&mut self, other: &Save) {
+        let Save {
+            data,
+            write_pending,
+        } = other;
+        self.data.clone_from(data);
+        self.write_pending = *write_pending;
+    }
+}
+
+impl RomSave {
+    fn copy_from(&mut self, other: &RomSave) {
+        let RomSave {
+            data,
+            write_pending,
+        } = other;
+        self.data.clone_from(data);
+        self.write_pending = *write_pending;
+    }
+}
+
+impl Saves {
+    /// Copy `other` into `self`, reusing `self`'s buffers. A derived `clone_from` would
+    /// allocate new ones on every savestate snapshot/load.
+    pub fn copy_from(&mut self, other: &Saves) {
+        // Destructure so adding a field forces this to be updated.
+        let Saves {
+            eeprom,
+            sram,
+            flash,
+            mempak,
+            sdcard,
+            romsave,
+            write_to_disk,
+        } = other;
+        self.eeprom.copy_from(eeprom);
+        self.sram.copy_from(sram);
+        self.flash.copy_from(flash);
+        self.mempak.copy_from(mempak);
+        self.sdcard.copy_from(sdcard);
+        self.romsave.copy_from(romsave);
+        self.write_to_disk = *write_to_disk;
+    }
 }
 
 fn get_save_type(rom: &[u8], game_id: &str) -> Vec<SaveTypes> {

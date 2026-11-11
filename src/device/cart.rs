@@ -45,6 +45,33 @@ pub struct Cart {
     pub rtc_timestamp: i64,
 }
 
+impl Cart {
+    /// Clone everything except the ROM, which is large and not part of the savestate.
+    /// `self.rom` is left untouched.
+    pub fn clone_state_from(&mut self, other: &Cart) {
+        // Destructure so adding a field to Cart forces this to be updated.
+        let Cart {
+            rom: _,
+            is_viewer_buffer,
+            pal,
+            latch,
+            cic_seed,
+            rtc,
+            sc64,
+            flashram,
+            rtc_timestamp,
+        } = other;
+        self.is_viewer_buffer.clone_from(is_viewer_buffer);
+        self.pal = *pal;
+        self.latch = *latch;
+        self.cic_seed = *cic_seed;
+        self.rtc.clone_from(rtc);
+        self.sc64.clone_from(sc64);
+        self.flashram.clone_from(flashram);
+        self.rtc_timestamp = *rtc_timestamp;
+    }
+}
+
 pub fn process(device: &mut device::Device, channel: usize) {
     let cmd = device.pif.ram[device.pif.channels[channel].tx_buf.unwrap()];
 

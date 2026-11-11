@@ -24,6 +24,18 @@ pub struct Rdram {
     pub regs: [[u32; RDRAM_REGS_COUNT]; 4],
 }
 
+impl Rdram {
+    /// Clone `other` into `self`, reusing `self.mem`'s allocation so it is not reallocated
+    /// (and keeps its address, which the RDP holds) when the sizes match.
+    pub fn clone_state_from(&mut self, other: &Rdram) {
+        // Destructure so adding a field to Rdram forces this to be updated.
+        let Rdram { mem, size, regs } = other;
+        self.mem.clone_from(mem);
+        self.size = *size;
+        self.regs = *regs;
+    }
+}
+
 pub fn read_mem_fast(
     device: &device::Device,
     address: u64,

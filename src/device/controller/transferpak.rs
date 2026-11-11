@@ -8,6 +8,22 @@ pub struct TransferPak {
     pub cart: device::controller::gbcart::GbCart,
 }
 
+impl TransferPak {
+    /// Clone everything except the GB cart ROM; `self.cart.rom` is left untouched.
+    pub fn clone_state_from(&mut self, other: &TransferPak) {
+        let TransferPak {
+            enabled,
+            reset_state,
+            bank,
+            cart,
+        } = other;
+        self.enabled = *enabled;
+        self.reset_state = *reset_state;
+        self.bank = *bank;
+        self.cart.clone_state_from(cart);
+    }
+}
+
 pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usize, size: usize) {
     let pak = &mut device.transferpaks[channel];
 

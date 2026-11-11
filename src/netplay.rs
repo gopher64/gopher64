@@ -1,6 +1,9 @@
 use crate::device;
+use crate::savestates;
 use crate::ui;
 use sha2::digest::Digest;
+
+const MAX_PREDICTION_WINDOW: usize = 16;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct RtcIceServerConfig {
@@ -45,6 +48,7 @@ pub struct NetplayConfig {
     pub number_of_players: usize,
     pub input_delay: usize,
     pub ice_config_path: std::path::PathBuf,
+    pub rollback: bool,
 }
 
 pub struct Netplay {
@@ -61,6 +65,7 @@ pub struct Netplay {
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
     pub incoming_message: Vec<u8>,
     pub ice_config_path: std::path::PathBuf,
+    pub rollback: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -201,7 +206,7 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
 }
 
 pub fn send_input_delay(netplay: &mut Netplay, input_delay: usize) {
-    if input_delay < 1 {
+    if !(1..=MAX_PREDICTION_WINDOW).contains(&input_delay) {
         return;
     }
 
@@ -269,7 +274,9 @@ pub fn process_requests(
         if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
             match request {
                 ggrs::GgrsRequest::SaveGameState { cell, frame } => {
-                    //savestates::create_savestate(device, true, Some(frame));
+                    if device.netplay.as_ref().unwrap().rollback {
+                        savestates::create_savestate(device, true, Some(frame));
+                    }
 
                     let mut hasher = sha2::Sha256::new();
                     for reg in device.cpu.cop0.regs.as_ref() {
@@ -279,9 +286,8 @@ pub fn process_requests(
                     cell.save(frame, Some(frame), Some(hash));
                 }
                 ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
-                    eprintln!("attempting to load game state");
-                    if let Some(_frame) = cell.load() {
-                        //    savestates::load_savestate(device, true, Some(frame));
+                    if let Some(frame) = cell.load() {
+                        savestates::load_savestate(device, true, Some(frame));
                     }
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
@@ -339,7 +345,9 @@ fn process_netplay(device: &mut device::Device) {
 
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
-    let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32 {
+    let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32
+        || netplay.rollback
+    {
         ui::input::get(&mut device.ui, 0)
     } else {
         //workaround for disabled rollback
@@ -351,12 +359,14 @@ fn advance_frame(device: &mut device::Device) {
         .add_local_input(local_handle, local_input)
         .unwrap();
 
-    // avoid rollback
-    while !netplay.disconnected
-        && netplay.session.current_frame() > netplay.session.confirmed_frame()
-        && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
-    {
-        poll_clients(netplay);
+    if !netplay.rollback {
+        // avoid rollback
+        while !netplay.disconnected
+            && netplay.session.current_frame() > netplay.session.confirmed_frame()
+            && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
+        {
+            poll_clients(netplay);
+        }
     }
 
     if netplay.disconnected {
@@ -504,7 +514,7 @@ pub fn init(
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
-        .with_max_prediction_window(16)
+        .with_max_prediction_window(MAX_PREDICTION_WINDOW)
         .with_disconnect_timeout(std::time::Duration::from_secs(if cfg!(debug_assertions) {
             10
         } else {
@@ -569,6 +579,7 @@ pub fn init(
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
         ice_config_path: netplay_config.ice_config_path.clone(),
+        rollback: netplay_config.rollback,
     })
 }
 
