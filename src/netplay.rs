@@ -48,7 +48,6 @@ pub struct NetplayConfig {
     pub number_of_players: usize,
     pub input_delay: usize,
     pub ice_config_path: std::path::PathBuf,
-    pub rollback: bool,
 }
 
 pub struct Netplay {
@@ -65,7 +64,6 @@ pub struct Netplay {
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
     pub incoming_message: Vec<u8>,
     pub ice_config_path: std::path::PathBuf,
-    pub rollback: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -109,7 +107,6 @@ fn process_reliable_messages(netplay: &mut Netplay) {
                     .messages
                     .insert(decoded_message.name, decoded_message.data);
                 netplay.incoming_message.clear();
-                check_input_delay(netplay);
                 check_disconnect(netplay);
             }
         }
@@ -205,20 +202,11 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message;
 }
 
-pub fn send_input_delay(netplay: &mut Netplay, input_delay: usize) {
+pub fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
     if !(1..=MAX_PREDICTION_WINDOW).contains(&input_delay) {
         return;
     }
 
-    let message = NetplayMessage {
-        name: "input_delay".to_string(),
-        data: (input_delay as u64).to_be_bytes().to_vec(),
-    };
-    send_message(netplay, message);
-    change_input_delay(netplay, input_delay);
-}
-
-fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
     netplay.input_delay = input_delay;
     for handle in netplay.session.local_player_handles() {
         if let Err(e) = netplay.session.set_input_delay(handle, input_delay) {
@@ -228,15 +216,6 @@ fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
                 &format!("Input delay: {}", input_delay),
                 ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
             );
-        }
-    }
-}
-
-fn check_input_delay(netplay: &mut Netplay) {
-    if let Some(data) = netplay.messages.remove("input_delay") {
-        let input_delay = u64::from_be_bytes(data.try_into().unwrap()) as usize;
-        if input_delay != netplay.input_delay {
-            change_input_delay(netplay, input_delay);
         }
     }
 }
@@ -274,9 +253,7 @@ pub fn process_requests(
         if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
             match request {
                 ggrs::GgrsRequest::SaveGameState { cell, frame } => {
-                    if device.netplay.as_ref().unwrap().rollback {
-                        savestates::create_savestate(device, true, Some(frame));
-                    }
+                    savestates::create_savestate(device, true, Some(frame));
 
                     let mut hasher = sha2::Sha256::new();
                     for reg in device.cpu.cop0.regs.as_ref() {
@@ -345,29 +322,12 @@ fn process_netplay(device: &mut device::Device) {
 
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
-    let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32
-        || netplay.rollback
-    {
-        ui::input::get(&mut device.ui, 0)
-    } else {
-        //workaround for disabled rollback
-        ui::input::InputData::default()
-    };
+    let local_input = ui::input::get(&mut device.ui, 0);
     let local_handle = *netplay.session.local_player_handles().first().unwrap();
     netplay
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
-
-    if !netplay.rollback {
-        // avoid rollback
-        while !netplay.disconnected
-            && netplay.session.current_frame() > netplay.session.confirmed_frame()
-            && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
-        {
-            poll_clients(netplay);
-        }
-    }
 
     if netplay.disconnected {
         netplay.requests.push_back(ggrs::GgrsRequest::AdvanceFrame {
@@ -579,7 +539,6 @@ pub fn init(
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
         ice_config_path: netplay_config.ice_config_path.clone(),
-        rollback: netplay_config.rollback,
     })
 }
 
