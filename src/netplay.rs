@@ -3,7 +3,7 @@ use crate::savestates;
 use crate::ui;
 use sha2::digest::Digest;
 
-const MAX_PREDICTION_WINDOW: usize = 16;
+pub const MAX_PREDICTION_WINDOW: usize = 16;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct RtcIceServerConfig {
@@ -203,7 +203,7 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
 }
 
 pub fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
-    if !(1..=MAX_PREDICTION_WINDOW).contains(&input_delay) {
+    if input_delay > MAX_PREDICTION_WINDOW {
         return;
     }
 
