@@ -107,7 +107,6 @@ fn process_reliable_messages(netplay: &mut Netplay) {
                     .messages
                     .insert(decoded_message.name, decoded_message.data);
                 netplay.incoming_message.clear();
-                check_input_delay(netplay);
                 check_disconnect(netplay);
             }
         }
@@ -203,20 +202,11 @@ pub fn receive_save(netplay: &mut Netplay, save_type: &str, save_data: &mut Vec<
     *save_data = message;
 }
 
-pub fn send_input_delay(netplay: &mut Netplay, input_delay: usize) {
+pub fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
     if !(1..=MAX_PREDICTION_WINDOW).contains(&input_delay) {
         return;
     }
 
-    let message = NetplayMessage {
-        name: "input_delay".to_string(),
-        data: (input_delay as u64).to_be_bytes().to_vec(),
-    };
-    send_message(netplay, message);
-    change_input_delay(netplay, input_delay);
-}
-
-fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
     netplay.input_delay = input_delay;
     for handle in netplay.session.local_player_handles() {
         if let Err(e) = netplay.session.set_input_delay(handle, input_delay) {
@@ -226,15 +216,6 @@ fn change_input_delay(netplay: &mut Netplay, input_delay: usize) {
                 &format!("Input delay: {}", input_delay),
                 ui::video::MESSAGE_LENGTH_MESSAGE_VERY_SHORT,
             );
-        }
-    }
-}
-
-fn check_input_delay(netplay: &mut Netplay) {
-    if let Some(data) = netplay.messages.remove("input_delay") {
-        let input_delay = u64::from_be_bytes(data.try_into().unwrap()) as usize;
-        if input_delay != netplay.input_delay {
-            change_input_delay(netplay, input_delay);
         }
     }
 }
@@ -272,7 +253,7 @@ pub fn process_requests(
         if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
             match request {
                 ggrs::GgrsRequest::SaveGameState { cell, frame } => {
-                    //savestates::create_savestate(device, true, Some(frame));
+                    savestates::create_savestate(device, true, Some(frame));
 
                     let mut hasher = sha2::Sha256::new();
                     for reg in device.cpu.cop0.regs.as_ref() {
@@ -341,25 +322,12 @@ fn process_netplay(device: &mut device::Device) {
 
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
-    let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32 {
-        ui::input::get(&mut device.ui, 0)
-    } else {
-        //workaround for disabled rollback
-        ui::input::InputData::default()
-    };
+    let local_input = ui::input::get(&mut device.ui, 0);
     let local_handle = *netplay.session.local_player_handles().first().unwrap();
     netplay
         .session
         .add_local_input(local_handle, local_input)
         .unwrap();
-
-    // avoid rollback
-    while !netplay.disconnected
-        && netplay.session.current_frame() > netplay.session.confirmed_frame()
-        && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
-    {
-        poll_clients(netplay);
-    }
 
     if netplay.disconnected {
         netplay.requests.push_back(ggrs::GgrsRequest::AdvanceFrame {
@@ -503,6 +471,7 @@ pub fn init(
         .with_num_players(netplay_config.number_of_players)
         .unwrap()
         .with_input_delay(netplay_config.input_delay)
+        .with_sparse_saving_mode(true)
         .with_fps(if pal { 50 } else { 60 })
         .unwrap()
         .with_desync_detection_mode(ggrs::DesyncDetection::On { interval: 60 })
