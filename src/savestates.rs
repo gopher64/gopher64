@@ -234,7 +234,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         // Keep the entry: GGRS does not re-save the frame it rolls back to, and may
         // roll back to the same frame again (e.g. late inputs from another player).
         if let Some(state) = device.ui.savestate.rewind_pool.remove(&rewind_frame) {
-            let loaded = apply_state(device, &state);
+            let loaded = apply_state(device, &state, false);
             device.ui.savestate.rewind_pool.insert(rewind_frame, state);
             loaded
         } else {
@@ -265,7 +265,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         } else {
             None
         };
-        state_data.is_some_and(|state| apply_state(device, &state))
+        state_data.is_some_and(|state| apply_state(device, &state, true))
     };
 
     if loaded {
@@ -303,7 +303,11 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
 }
 
 /// Restore emulator state from `state`. The ROMs are not part of the savestate and are kept.
-fn apply_state(device: &mut device::Device, state: &SavestateData) -> bool {
+///
+/// `run_cheats` must be false for netplay rollback loads: the state was saved after cheats
+/// already ran for that frame, and re-applying them only on the peer that rolls back would
+/// make its RAM diverge from peers that did not roll back.
+fn apply_state(device: &mut device::Device, state: &SavestateData, run_cheats: bool) -> bool {
     if device.rdram.size != state.device.rdram.size {
         return false;
     }
@@ -369,7 +373,7 @@ fn apply_state(device: &mut device::Device, state: &SavestateData) -> bool {
         retroachievements::load_state(std::ptr::null(), 0);
     }
 
-    if device.cheats.enabled {
+    if run_cheats && device.cheats.enabled {
         cheats::execute_cheats(device, device.cheats.cheats.clone());
     }
 
