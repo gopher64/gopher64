@@ -255,7 +255,6 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 number_of_players,
                 input_delay,
                 ice_config_path: dirs.cache_dir.join("ice_config.json"),
-                rollback: false,
             })
         } else {
             None

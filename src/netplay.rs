@@ -48,7 +48,6 @@ pub struct NetplayConfig {
     pub number_of_players: usize,
     pub input_delay: usize,
     pub ice_config_path: std::path::PathBuf,
-    pub rollback: bool,
 }
 
 pub struct Netplay {
@@ -65,7 +64,6 @@ pub struct Netplay {
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
     pub incoming_message: Vec<u8>,
     pub ice_config_path: std::path::PathBuf,
-    pub rollback: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -274,9 +272,7 @@ pub fn process_requests(
         if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
             match request {
                 ggrs::GgrsRequest::SaveGameState { cell, frame } => {
-                    if device.netplay.as_ref().unwrap().rollback {
-                        savestates::create_savestate(device, true, Some(frame));
-                    }
+                    //savestates::create_savestate(device, true, Some(frame));
 
                     let mut hasher = sha2::Sha256::new();
                     for reg in device.cpu.cop0.regs.as_ref() {
@@ -345,9 +341,7 @@ fn process_netplay(device: &mut device::Device) {
 
 fn advance_frame(device: &mut device::Device) {
     let netplay = device.netplay.as_mut().unwrap();
-    let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32
-        || netplay.rollback
-    {
+    let local_input = if netplay.session.current_frame() > netplay.session.max_prediction() as i32 {
         ui::input::get(&mut device.ui, 0)
     } else {
         //workaround for disabled rollback
@@ -359,14 +353,12 @@ fn advance_frame(device: &mut device::Device) {
         .add_local_input(local_handle, local_input)
         .unwrap();
 
-    if !netplay.rollback {
-        // avoid rollback
-        while !netplay.disconnected
-            && netplay.session.current_frame() > netplay.session.confirmed_frame()
-            && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
-        {
-            poll_clients(netplay);
-        }
+    // avoid rollback
+    while !netplay.disconnected
+        && netplay.session.current_frame() > netplay.session.confirmed_frame()
+        && netplay.session.confirmed_frame() != ggrs::NULL_FRAME
+    {
+        poll_clients(netplay);
     }
 
     if netplay.disconnected {
@@ -579,7 +571,6 @@ pub fn init(
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
         ice_config_path: netplay_config.ice_config_path.clone(),
-        rollback: netplay_config.rollback,
     })
 }
 
