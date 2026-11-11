@@ -417,11 +417,11 @@ msgstr "Envoyer"
 #: src/ui/gui/netplay_wait.slint:104
 msgctxt "NetplayWait"
 msgid ""
-"Setting the input delay too low will cause the game to lag.\n"
+"Setting the input delay too low will cause frequent rollbacks.\n"
 "You can lower the input delay in-game by pressing Alt+[ and raise it with "
 "Alt+]."
 msgstr ""
-"Régler le délai d'entrée trop bas provoquera des ralentissements.\n"
+"Régler le délai d'entrée trop bas provoquera des rollbacks fréquents.\n"
 "Vous pouvez diminuer le délai d'entrée en jeu avec Alt+[ et l'augmenter avec "
 "Alt+]."
 

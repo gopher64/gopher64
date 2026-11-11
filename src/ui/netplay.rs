@@ -799,14 +799,21 @@ fn setup_wait_window(
                                 .upgrade_in_event_loop(move |handle| {
                                     let player_name = handle.get_netplay_player_name();
                                     let players = handle.get_netplay_players();
-                                    let input_delay = response
-                                        .sessions
-                                        .iter()
-                                        .next()
-                                        .unwrap()
-                                        .1
-                                        .input_delay
-                                        .unwrap();
+                                    // Input delay is per-player: use our own choice, falling back
+                                    // to the host's if our recommendation hasn't been calculated yet.
+                                    let local_input_delay = handle.get_netplay_input_delay();
+                                    let input_delay = if local_input_delay > 0 {
+                                        local_input_delay as usize
+                                    } else {
+                                        response
+                                            .sessions
+                                            .iter()
+                                            .next()
+                                            .unwrap()
+                                            .1
+                                            .input_delay
+                                            .unwrap()
+                                    };
                                     let player_number =
                                         players.iter().position(|x| x == player_name).unwrap();
                                     run_rom(

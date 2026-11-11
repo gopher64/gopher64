@@ -1,6 +1,6 @@
 # gopher64
 Gopher64 is a cross-platform N64 emulator. Some notable features:
-* Netplay
+* Rollback netplay
 * Homebrew support
 * Upscaling
 * CRT shader
@@ -42,7 +42,7 @@ Keys are mapped according to [these defaults](https://github.com/gopher64/gopher
 
 ## netplay
 
-Gopher64 supports P2P netplay (online play with others).
+Gopher64 supports P2P rollback netplay (online play with others).
 
 Please read the [guide](https://github.com/gopher64/gopher64/wiki/Netplay-Guide) before trying out netplay.
 
