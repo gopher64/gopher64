@@ -145,8 +145,6 @@ pub fn process_savestates(device: &mut device::Device) {
 pub fn create_savestate(device: &mut device::Device, rewind: bool, rewind_frame: Option<i32>) {
     ui::video::idle();
 
-    // Snapshot on the calling thread so each savestate owns its data. A shared staging
-    // buffer would let a later savestate overwrite it before an earlier async task read it.
     // Rewind snapshots reuse the buffers of the pool entry they replace or evict.
     let rewind_key = rewind.then(|| {
         let pool = &device.ui.savestate.rewind_pool;
