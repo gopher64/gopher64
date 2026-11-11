@@ -212,7 +212,7 @@ pub fn init(ui: &mut ui::Ui, rom: &[u8]) {
     ));
 }
 
-pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
+pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>, cic_seed: u8) {
     if netplay.is_none() || netplay.as_ref().unwrap().player_number == 0 {
         let eep = std::fs::read(&ui.storage.paths.eep_file_path);
         if let Ok(eep) = eep {
@@ -235,7 +235,8 @@ pub fn load_saves(ui: &mut ui::Ui, netplay: &mut Option<netplay::Netplay>) {
             ui.storage.saves.sdcard.data = sdcard;
         }
         let romsave = std::fs::read(&ui.storage.paths.romsave_file_path);
-        if let Ok(romsave) = romsave
+        if device::cart::rom::romsave_persists(cic_seed)
+            && let Ok(romsave) = romsave
             && let Ok(romsave_data) = postcard::from_bytes(romsave.as_ref())
         {
             ui.storage.saves.romsave.data = romsave_data;
@@ -450,6 +451,9 @@ pub fn schedule_save(device: &mut device::Device, save_type: SaveTypes) {
             device.ui.storage.saves.sdcard.write_pending = true;
         }
         SaveTypes::Romsave => {
+            if !device::cart::rom::romsave_persists(device.cart.cic_seed) {
+                return;
+            }
             device.ui.storage.saves.romsave.write_pending = true;
         }
     }

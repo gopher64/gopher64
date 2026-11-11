@@ -3,6 +3,13 @@ use crate::ui;
 use sha2::{Digest, Sha256};
 
 pub const CART_MASK: usize = 0xFFFFFFF;
+const CIC_SEED_5167: u8 = 0xdd;
+
+/// Whether cart ROM writes are saved to disk. Real flashcarts (e.g. SummerCart64) only keep
+/// ROM writes until power-off, so only CIC 5167 ROMs (which expect persistence) get a romsave.
+pub fn romsave_persists(cic_seed: u8) -> bool {
+    cic_seed == CIC_SEED_5167
+}
 
 fn read_cart_word(device: &device::Device, address: usize) -> u32 {
     let romsave = &device.ui.storage.saves.romsave.data;
@@ -164,7 +171,7 @@ fn set_cic(device: &mut device::Device) {
             device.cart.cic_seed = 0x85; // CicNus6106
         }
         "53C0088FB777870D0AF32F0251E964030E2E8B72E830C26042FD191169508C05" => {
-            device.cart.cic_seed = 0xdd; // CicNus5167
+            device.cart.cic_seed = CIC_SEED_5167;
             device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] = 1;
         }
         _ => {

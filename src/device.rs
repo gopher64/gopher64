@@ -109,7 +109,7 @@ pub fn run_game(
     cpu::init(device);
 
     ui::storage::init(&mut device.ui, &device.cart.rom);
-    ui::storage::load_saves(&mut device.ui, &mut device.netplay);
+    ui::storage::load_saves(&mut device.ui, &mut device.netplay, device.cart.cic_seed);
     ui::storage::format_saves(device);
 
     if !retroachievements::get_hardcore() {
