@@ -1,4 +1,5 @@
 use crate::device;
+use crate::netplay;
 use crate::netplay::RtcIceServerConfig;
 use crate::ui;
 use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings, show_touch_overlay};
@@ -688,8 +689,8 @@ fn update_ping(
                                                 60.0
                                             };
                                             let latency_frames = (ping_avg / (1000.0 / refresh_rate)).ceil() as i32;
-                                            let recommendation =
-                                                (latency_frames + 1).min(16);
+                                            let recommendation = (latency_frames + 1)
+                                                .min(netplay::MAX_PREDICTION_WINDOW as i32);
 
                                             if handle.get_netplay_recommended_delay() == 0 {
                                                 handle.set_netplay_input_delay(recommendation);
@@ -801,9 +802,9 @@ fn setup_wait_window(
                                     let players = handle.get_netplay_players();
                                     // Input delay is per-player: use our own choice, falling back
                                     // to the host's if our recommendation hasn't been calculated yet.
-                                    let local_input_delay = handle.get_netplay_input_delay();
-                                    let input_delay = if local_input_delay > 0 {
-                                        local_input_delay as usize
+                                    let input_delay = if handle.get_netplay_recommended_delay() > 0
+                                    {
+                                        handle.get_netplay_input_delay() as usize
                                     } else {
                                         response
                                             .sessions
@@ -1027,6 +1028,8 @@ pub fn netplay_window(
     app: &AppWindow,
     no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
 ) {
+    app.set_netplay_max_input_delay(netplay::MAX_PREDICTION_WINDOW as i32);
+
     let (netplay_read_sender, netplay_read_receiver): (
         tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
         tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
