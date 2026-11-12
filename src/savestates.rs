@@ -374,7 +374,7 @@ fn apply_state(device: &mut device::Device, state: &SavestateData, run_cheats: b
     }
 
     if run_cheats && device.cheats.enabled {
-        cheats::execute_cheats(device, device.cheats.cheats.clone());
+        cheats::execute_cheats(device);
     }
 
     true

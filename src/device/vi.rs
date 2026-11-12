@@ -165,7 +165,7 @@ pub fn vertical_interrupt_event(device: &mut device::Device) {
     device.vi.elapsed_time += device.vi.frame_time;
 
     if device.cheats.enabled {
-        cheats::execute_cheats(device, device.cheats.cheats.clone());
+        cheats::execute_cheats(device);
     }
 
     retroachievements::do_frame();
