@@ -182,18 +182,12 @@ val sdlLibsArm64 = tasks.register<Copy>("sdlLibsArm64") {
     val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs/arm64-v8a"
 
     from("$rootDir/../target/aarch64-linux-android/$jniType/build") {
-        include("sdl3-sys-*/out/build/libSDL3.so")
-        include("sdl3-ttf-sys-*/out/build/libSDL3_ttf.so")
+        include("sdl3-sys*/**/out/build/libSDL3.so")
+        include("sdl3-ttf-sys*/**/out/build/libSDL3_ttf.so")
     }
     eachFile { path = name }
     duplicatesStrategy = DuplicatesStrategy.FAIL
     into(jniLibsFolder)
-
-    doLast {
-        listOf("libSDL3.so", "libSDL3_ttf.so").forEach {
-            require(File(jniLibsFolder, it).exists()) { "Missing required native lib: $it" }
-        }
-    }
 }
 
 val sdlLibsX64 = tasks.register<Copy>("sdlLibsX64") {
@@ -202,18 +196,12 @@ val sdlLibsX64 = tasks.register<Copy>("sdlLibsX64") {
     val jniLibsFolder = "$rootDir/app/src/$jniType/jniLibs/x86_64"
 
     from("$rootDir/../target/x86_64-linux-android/$jniType/build") {
-        include("sdl3-sys-*/out/build/libSDL3.so")
-        include("sdl3-ttf-sys-*/out/build/libSDL3_ttf.so")
+        include("sdl3-sys*/**/out/build/libSDL3.so")
+        include("sdl3-ttf-sys*/**/out/build/libSDL3_ttf.so")
     }
     eachFile { path = name }
     duplicatesStrategy = DuplicatesStrategy.FAIL
     into(jniLibsFolder)
-
-    doLast {
-        listOf("libSDL3.so", "libSDL3_ttf.so").forEach {
-            require(File(jniLibsFolder, it).exists()) { "Missing required native lib: $it" }
-        }
-    }
 }
 
 // Bundled Turnip Vulkan driver, loaded through libadrenotools at runtime. arm64-only.
@@ -246,10 +234,27 @@ val turnipDriverArm64 = tasks.register<Copy>("turnipDriverArm64") {
     into(jniLibsFolder)
 }
 
+// Copy tasks with no matching source files are skipped as NO-SOURCE (including
+// their doLast actions), so verify the copied libs in a separate task.
+val verifyNativeLibs = tasks.register("verifyNativeLibs") {
+    dependsOn(sdlLibsArm64, sdlLibsX64, turnipDriverArm64)
+    doLast {
+        val isRelease = gradle.startParameter.taskNames.any { it.endsWith("Release", ignoreCase = true) }
+        val jniType = if (isRelease) "release" else "debug"
+        val jniLibsFolder = File("$rootDir/app/src/$jniType/jniLibs")
+        val required = mapOf(
+            "arm64-v8a" to listOf("libgopher64.so", "libSDL3.so", "libSDL3_ttf.so", "libvulkan_freedreno.so"),
+            "x86_64" to listOf("libgopher64.so", "libSDL3.so", "libSDL3_ttf.so"),
+        )
+        val missing = required.flatMap { (abi, libs) ->
+            libs.map { File(jniLibsFolder, "$abi/$it") }.filterNot { it.exists() }
+        }
+        require(missing.isEmpty()) { "Missing required native libs: ${missing.joinToString()}" }
+    }
+}
+
 tasks.named("preBuild") {
-    dependsOn(sdlLibsArm64)
-    dependsOn(sdlLibsX64)
-    dependsOn(turnipDriverArm64)
+    dependsOn(verifyNativeLibs)
 }
 
 tasks.named("sdlLibsArm64") {
