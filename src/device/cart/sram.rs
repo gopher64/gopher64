@@ -303,6 +303,8 @@ fn flashram_command(device: &mut device::Device, command: u32) {
             let base = (command as usize & 0x3ff) * FLASHRAM_PAGE_SIZE;
             device.ui.storage.saves.flash.data[base..base + FLASHRAM_PAGE_SIZE]
                 .copy_from_slice(&flash.page_buf);
+            // The internal page buffer resets to all ones after a program.
+            flash.page_buf = [0xff; FLASHRAM_PAGE_SIZE];
             flashram_finish_operation(device);
         }
         0xb4 => flash.mode = FlashramMode::LoadBytePage,
