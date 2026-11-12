@@ -134,7 +134,16 @@ fn equal_half(device: &mut device::Device, cheat_line: &DecodedCheat) -> bool {
     current_value1 == (cheat_line.data >> 8) as u8 && current_value2 == cheat_line.data as u8
 }
 
-pub fn execute_cheats(device: &mut device::Device, cheats: Vec<Vec<DecodedCheat>>) {
+pub fn execute_cheats(device: &mut device::Device) {
+    // Temporarily move the list out so it can be borrowed while the device is mutated,
+    // instead of cloning it every VI.
+    let cheats = std::mem::take(&mut device.cheats.cheats);
+    run_cheats(device, &cheats);
+    device.cheats.cheats = cheats;
+    device.cheats.boot = false;
+}
+
+fn run_cheats(device: &mut device::Device, cheats: &[Vec<DecodedCheat>]) {
     for cheat in cheats.iter() {
         let mut valid = true;
         let mut cheat_iter = cheat.iter().peekable();
@@ -155,7 +164,7 @@ pub fn execute_cheats(device: &mut device::Device, cheats: Vec<Vec<DecodedCheat>
                             };
                             expanded_cheat.push(line);
                         }
-                        execute_cheats(device, [expanded_cheat].to_vec());
+                        run_cheats(device, &[expanded_cheat]);
                     }
                     valid = false; // skip the next line
                 }
@@ -200,5 +209,4 @@ pub fn execute_cheats(device: &mut device::Device, cheats: Vec<Vec<DecodedCheat>
             }
         }
     }
-    device.cheats.boot = false;
 }
