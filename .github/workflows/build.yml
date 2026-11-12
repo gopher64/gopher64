@@ -258,7 +258,7 @@ jobs:
       - name: Build
         working-directory: android-project
         run: |
-          cargo install --locked --git https://github.com/bbqsrc/cargo-ndk.git cargo-ndk
+          CARGO_BUILD_WARNINGS=warn cargo install --locked --git https://github.com/bbqsrc/cargo-ndk.git cargo-ndk
           ./gradlew assemble${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
           ./gradlew bundle${{ env.BUILD_PROFILE == 'release' && 'Release' || 'Debug' }}
           mkdir output
