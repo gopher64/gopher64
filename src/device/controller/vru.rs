@@ -1,5 +1,4 @@
 use crate::device;
-use crate::savestates;
 #[cfg(all(feature = "gui", not(target_os = "android")))]
 use crate::ui;
 
@@ -18,6 +17,9 @@ const VOICE_STATUS_BUSY: u8 = 0x05;
 const JDT_VRU: u16 = 0x0100; /* VRU */
 const CONT_FLAVOR: u16 = JDT_VRU;
 
+static WORD_MAPPINGS: std::sync::LazyLock<rustc_hash::FxHashMap<String, String>> =
+    std::sync::LazyLock::new(create_word_mappings);
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Vru {
     pub status: u8,
@@ -28,13 +30,10 @@ pub struct Vru {
     pub word_buffer: [u16; 40],
     pub words: Vec<String>,
     pub talking: bool,
-    #[serde(serialize_with = "savestates::serialize_sorted_map")]
-    pub word_mappings: rustc_hash::FxHashMap<String, String>,
 }
 
 pub fn init(device: &mut device::Device) {
     reset_vru(device);
-    create_word_mappings(device);
 }
 
 fn reset_vru(device: &mut device::Device) {
@@ -135,7 +134,7 @@ pub fn process(device: &mut device::Device, channel: usize) {
                                 device.vru.word_buffer[offset + i as usize]
                             ))
                         }
-                        let word = device.vru.word_mappings.get(&data);
+                        let word = WORD_MAPPINGS.get(&data);
                         if let Some(result) = word {
                             device.vru.words.push(result.clone());
                         } else {
@@ -247,8 +246,8 @@ pub fn vru_talking_event(device: &mut device::Device) {
     device.vru.talking = false
 }
 
-fn create_word_mappings(device: &mut device::Device) {
-    device.vru.word_mappings = rustc_hash::FxHashMap::from_iter([
+fn create_word_mappings() -> rustc_hash::FxHashMap<String, String> {
+    rustc_hash::FxHashMap::from_iter([
         (
             String::from("03A50024000303CF00A80003036000EA"),
             String::from("pikachu"),
@@ -2740,5 +2739,5 @@ fn create_word_mappings(device: &mut device::Device) {
             String::from("03BA019203C9036C0087000303C6"),
             String::from("take-that"),
         ),
-    ]);
+    ])
 }
