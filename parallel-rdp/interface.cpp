@@ -144,8 +144,8 @@ struct UpscaleMarked {
       *this = {s, addr, st, 0};
     if (y1 < rows)
       return;
-    rdram_tracker.mark_rect(addr, width, bytes, 0, int32_t(width) - 1, rows,
-                            y1, RdramTracker::Access::Read, s);
+    rdram_tracker.mark_rect(addr, width, bytes, 0, int32_t(width) - 1, rows, y1,
+                            RdramTracker::Access::Read, s);
     rows = y1 + 1;
   }
 };
@@ -747,7 +747,8 @@ static void render_frame(Vulkan::Device &device) {
     // pass.
     if (image) {
       calculate_viewport(&vp.x, &vp.y, &vp.width, &vp.height,
-                         image->get_height() / gfx_info.upscale);
+                         image->get_height() /
+                             (gfx_info.ssaa ? 1 : gfx_info.upscale));
 
       if (gfx_info.crt) {
         // Set shader parameters
