@@ -122,7 +122,7 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
         return;
     }
 
-    if netplay::in_rollback(device.netplay.as_ref()) {
+    if netplay::replaying_audio(device.netplay.as_ref()) {
         return;
     }
 
