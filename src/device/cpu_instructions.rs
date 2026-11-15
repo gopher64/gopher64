@@ -147,7 +147,7 @@ pub fn addi(device: &mut device::Device, opcode: u32) {
 
 pub fn addiu(device: &mut device::Device, opcode: u32) {
     device.cpu.gpr[rt(opcode) as usize] =
-        se32(device.cpu.gpr[rs(opcode) as usize] as i32).wrapping_add(se16(imm(opcode) as i16))
+        se32((device.cpu.gpr[rs(opcode) as usize] as i32).wrapping_add(imm(opcode) as i16 as i32))
 }
 
 pub fn slti(device: &mut device::Device, opcode: u32) {

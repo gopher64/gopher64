@@ -49,6 +49,7 @@ pub fn get_event(device: &device::Device, name: usize) -> Option<&Event> {
 
 pub fn remove_event(device: &mut device::Device, name: usize) {
     device.cpu.events[name].enabled = false;
+    set_next_event(device);
 }
 
 fn get_event_handler(name: usize) -> fn(&mut device::Device) {
