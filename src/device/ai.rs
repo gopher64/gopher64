@@ -103,7 +103,6 @@ fn fifo_push(device: &mut device::Device) {
         device.ai.regs[AI_STATUS_REG] |= AI_STATUS_BUSY;
 
         do_dma(device);
-        ui::audio::resume_game_audio(&mut device.ui);
     }
 }
 
@@ -118,7 +117,6 @@ fn fifo_pop(device: &mut device::Device) {
     } else {
         device.ai.regs[AI_STATUS_REG] &= !AI_STATUS_BUSY;
         device.ai.delayed_carry = false;
-        ui::audio::pause_game_audio(&mut device.ui);
     }
 }
 

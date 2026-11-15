@@ -68,6 +68,9 @@ pub struct Dirs {
 pub struct Audio {
     pub audio_stream: *mut sdl3_sys::audio::SDL_AudioStream,
     pub gain: f32,
+    pub frequency_ratio: f64,
+    pub primary_buffer: Vec<i16>,
+    pub silence_buffer: Vec<u8>,
 }
 
 unsafe impl Send for Audio {}
@@ -316,6 +319,8 @@ impl Ui {
             audio: Audio {
                 audio_stream: std::ptr::null_mut(),
                 gain: 1.0,
+                frequency_ratio: 1.0,
+                ..Default::default()
             },
             video: Video {
                 window: std::ptr::null_mut(),

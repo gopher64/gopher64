@@ -230,6 +230,7 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
         return;
     }
 
+    let rollback = rewind && rewind_frame.is_some();
     let loaded = if rewind && let Some(rewind_frame) = rewind_frame {
         // Keep the entry: GGRS does not re-save the frame it rolls back to, and may
         // roll back to the same frame again (e.g. late inputs from another player).
@@ -269,6 +270,11 @@ pub fn load_savestate(device: &mut device::Device, rewind: bool, rewind_frame: O
     };
 
     if loaded {
+        if rollback {
+            ui::audio::update_freq(device);
+        } else {
+            ui::audio::reset_game_audio(device);
+        }
         if !rewind {
             ui::video::onscreen_message(
                 &format!(
@@ -364,7 +370,6 @@ fn apply_state(device: &mut device::Device, state: &SavestateData, run_cheats: b
         }
     }
 
-    ui::audio::update_freq(device);
     ui::video::load_state(device, state.rdp_state.as_ptr(), state.rdp_state.len());
 
     if !state.ra_state.is_empty() {
