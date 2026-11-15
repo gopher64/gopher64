@@ -62,8 +62,30 @@ pub struct Netplay {
     pub received_data: std::collections::VecDeque<Vec<u8>>,
     pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
+    frame_progress: FrameProgress,
     pub incoming_message: Vec<u8>,
     pub ice_config_path: std::path::PathBuf,
+}
+
+#[derive(Default)]
+struct FrameProgress {
+    next_frame: i32,
+    next_audio_frame: i32,
+    replaying: bool,
+}
+
+impl FrameProgress {
+    fn load(&mut self, frame: i32) {
+        self.next_frame = frame;
+    }
+
+    fn advance(&mut self) {
+        // Audio already submitted to SDL survives a rollback. Only extend its
+        // timeline when we simulate a frame beyond the previous frontier.
+        self.replaying = self.next_frame < self.next_audio_frame;
+        self.next_frame += 1;
+        self.next_audio_frame = self.next_audio_frame.max(self.next_frame);
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -230,20 +252,19 @@ fn check_disconnect(netplay: &mut Netplay) {
     }
 }
 
-fn pending_frames(netplay: &Netplay) -> usize {
-    netplay
-        .requests
-        .iter()
-        .filter(|r| matches!(r, ggrs::GgrsRequest::AdvanceFrame { .. }))
-        .count()
+pub fn in_rollback(netplay: Option<&Netplay>) -> bool {
+    netplay.is_some_and(|netplay| {
+        netplay
+            .requests
+            .iter()
+            .any(|r| matches!(r, ggrs::GgrsRequest::AdvanceFrame { .. }))
+    })
 }
 
-pub fn in_rollback(netplay: Option<&Netplay>) -> bool {
-    if let Some(netplay) = netplay {
-        pending_frames(netplay) != 0
-    } else {
-        false
-    }
+pub fn replaying_audio(netplay: Option<&Netplay>) -> bool {
+    // A replay-only batch can end while prediction is still blocked. Even its
+    // final frame must not resubmit audio, regardless of the pending requests.
+    netplay.is_some_and(|netplay| netplay.frame_progress.replaying)
 }
 
 pub fn process_requests(
@@ -265,9 +286,11 @@ pub fn process_requests(
                 ggrs::GgrsRequest::LoadGameState { cell, frame: _ } => {
                     if let Some(frame) = cell.load() {
                         savestates::load_savestate(device, true, Some(frame));
+                        device.netplay.as_mut().unwrap().frame_progress.load(frame);
                     }
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
+                    device.netplay.as_mut().unwrap().frame_progress.advance();
                     return inputs;
                 }
             }
@@ -537,6 +560,7 @@ pub fn init(
         ],
         inputs: Vec::new(),
         requests: std::collections::VecDeque::new(),
+        frame_progress: FrameProgress::default(),
         received_data: std::collections::VecDeque::new(),
         messages: std::collections::HashMap::new(),
         ice_config_path: netplay_config.ice_config_path.clone(),
