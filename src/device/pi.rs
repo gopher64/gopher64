@@ -91,7 +91,7 @@ fn dma_write(device: &mut device::Device) {
         length += 1;
     }
     if length <= 0x80 {
-        length -= dram_addr & 0x7;
+        length = length.saturating_sub(dram_addr & 0x7);
     }
 
     // check RDP before PI writes to RDRAM
