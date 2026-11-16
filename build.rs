@@ -8,8 +8,9 @@ fn main() {
     #[cfg(feature = "gui")]
     {
         let slint_config = slint_build::CompilerConfiguration::new()
-            .with_bundled_translations("data/translations");
-        slint_build::compile_with_config("src/ui/gui", slint_config).unwrap();
+            .with_bundled_translations("data/translations")
+            .with_edition((1, 19));
+        slint_build::compile_with_config("src/ui/gui/appwindow.slint", slint_config).unwrap();
     }
 
     let mut simd_build = cc::Build::new();
