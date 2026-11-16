@@ -9,7 +9,7 @@ fn main() {
     {
         let slint_config = slint_build::CompilerConfiguration::new()
             .with_bundled_translations("data/translations");
-        slint_build::compile_with_config("src/ui/gui/appwindow.slint", slint_config).unwrap();
+        slint_build::compile_with_config("src/ui/gui", slint_config).unwrap();
     }
 
     let mut simd_build = cc::Build::new();
