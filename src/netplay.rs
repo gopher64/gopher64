@@ -60,7 +60,7 @@ pub struct Netplay {
     pub input_delay: usize,
     pub messages: std::collections::HashMap<String, Vec<u8>>,
     pub received_data: std::collections::VecDeque<Vec<u8>>,
-    pub inputs: Vec<(ui::input::InputData, ggrs::InputStatus)>,
+    pub inputs: Vec<ui::input::InputData>,
     pub requests: std::collections::VecDeque<ggrs::GgrsRequest<GgrsConfig>>,
     frame_progress: FrameProgress,
     pub incoming_message: Vec<u8>,
@@ -267,9 +267,7 @@ pub fn replaying_audio(netplay: Option<&Netplay>) -> bool {
     netplay.is_some_and(|netplay| netplay.frame_progress.replaying)
 }
 
-pub fn process_requests(
-    device: &mut device::Device,
-) -> Vec<(ui::input::InputData, ggrs::InputStatus)> {
+pub fn process_requests(device: &mut device::Device) -> Vec<ui::input::InputData> {
     loop {
         if let Some(request) = device.netplay.as_mut().unwrap().requests.pop_front() {
             match request {
@@ -291,7 +289,7 @@ pub fn process_requests(
                 }
                 ggrs::GgrsRequest::AdvanceFrame { inputs } => {
                     device.netplay.as_mut().unwrap().frame_progress.advance();
-                    return inputs;
+                    return inputs.into_iter().map(|(input, _)| input).collect();
                 }
             }
         } else {
@@ -558,13 +556,7 @@ pub fn init(
             netplay_config.number_of_players > 2,
             netplay_config.number_of_players > 3,
         ],
-        inputs: vec![
-            (
-                ui::input::InputData::default(),
-                ggrs::InputStatus::Confirmed
-            );
-            netplay_config.number_of_players
-        ],
+        inputs: vec![ui::input::InputData::default(); netplay_config.number_of_players],
         requests: std::collections::VecDeque::new(),
         frame_progress: FrameProgress::default(),
         received_data: std::collections::VecDeque::new(),
