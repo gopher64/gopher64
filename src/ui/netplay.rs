@@ -7,11 +7,8 @@ use futures::{SinkExt, StreamExt};
 use sha2::digest::Digest;
 use slint::ComponentHandle;
 use slint::Model;
-use tokio_tungstenite::tungstenite::Bytes;
-use tokio_tungstenite::tungstenite::Utf8Bytes;
+use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
-use tokio_tungstenite::tungstenite::protocol::frame::coding::CloseCode;
-use tokio_tungstenite::tungstenite::protocol::{CloseFrame, Message};
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 enum MessageType {
@@ -149,6 +146,8 @@ fn setup_callbacks(
             manage_websocket(
                 netplay_read_sender_create_session.clone(),
                 netplay_write_receiver_create_session.resubscribe(),
+                close_ping_rx_create_session.resubscribe(),
+                weak.clone(),
             );
 
             create_session(
@@ -175,7 +174,7 @@ fn setup_callbacks(
             sessions: std::collections::HashMap::new(),
             message: Some(message.into()),
         };
-        write_sender_chat_message.send(Some(send_chat)).unwrap();
+        let _ = write_sender_chat_message.send(Some(send_chat));
     });
 
     let write_sender_begin_game = netplay_write_sender.clone();
@@ -185,7 +184,7 @@ fn setup_callbacks(
             sessions: std::collections::HashMap::new(),
             message: Some(chosen_input_delay.to_string()),
         };
-        write_sender_begin_game.send(Some(begin_game)).unwrap();
+        let _ = write_sender_begin_game.send(Some(begin_game));
     });
 
     let write_sender_refresh_sessions = netplay_write_sender.clone();
@@ -254,15 +253,13 @@ fn setup_callbacks(
     let netplay_read_sender = netplay_read_sender.clone();
     let close_ping_tx = close_ping_tx.clone();
     app.on_netplay_close(move || {
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                handle.set_show_netplay_wait_session(false);
-                handle.set_show_netplay_create_session(false);
-                handle.set_show_netplay_join_session(false);
-                handle.invoke_clear_netplay_data();
-                handle.invoke_close_message();
-            })
-            .unwrap();
+        if let Some(handle) = weak_app.upgrade() {
+            handle.set_show_netplay_wait_session(false);
+            handle.set_show_netplay_create_session(false);
+            handle.set_show_netplay_join_session(false);
+            handle.invoke_clear_netplay_data();
+            handle.invoke_close_message();
+        }
         close_connections(&netplay_write_sender, &netplay_read_sender, &close_ping_tx);
     });
 
@@ -291,6 +288,8 @@ fn setup_create_window(app: &AppWindow) {
 fn manage_websocket(
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
+    mut close_receiver: tokio::sync::broadcast::Receiver<()>,
+    weak: slint::Weak<AppWindow>,
 ) {
     let mut request = std::env::var("NETPLAY_SERVER_URL")
         .unwrap_or("wss://netplay.gopher64.com".to_string())
@@ -316,78 +315,75 @@ fn manage_websocket(
     ui::install_default_crypto_provider();
 
     tokio::spawn(async move {
-        match tokio::time::timeout(
+        let result = match tokio::time::timeout(
             std::time::Duration::from_secs(3),
             tokio_tungstenite::connect_async(request),
         )
         .await
         {
-            Ok(Ok((socket, _response))) => {
+            Ok(Ok((socket, _))) => async {
                 let (mut write, mut read) = socket.split();
-
-                tokio::spawn(async move {
-                    while let Some(Ok(response)) = read.next().await {
-                        match response {
-                            Message::Binary(data) => {
-                                let decoded_response =
-                                    postcard::from_bytes::<NetplayLobbyMessage>(&data);
-                                match decoded_response {
-                                    Ok(message) => {
-                                        let _ = netplay_read_sender.send(Some(message));
-                                    }
-                                    Err(e) => {
-                                        eprintln!("Failed to parse message: {}", e);
-                                    }
+                loop {
+                    tokio::select! {
+                        request = netplay_write_receiver.recv() => {
+                            match request {
+                                Ok(Some(message)) => {
+                                    let data = postcard::to_stdvec(&message).map_err(|e| e.to_string())?;
+                                    tokio::time::timeout(
+                                        std::time::Duration::from_secs(3),
+                                        write.send(Message::Binary(data.into())),
+                                    ).await.map_err(|_| "Lobby send timed out".to_string())?
+                                        .map_err(|e| e.to_string())?;
+                                }
+                                Ok(None) | Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                                    let _ = tokio::time::timeout(
+                                        std::time::Duration::from_secs(1), write.close(),
+                                    ).await;
+                                    break Ok(());
+                                }
+                                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                                    break Err("Lobby message queue overflowed".to_string());
                                 }
                             }
-                            Message::Close(_) => {
-                                return;
-                            }
-                            _ => {}
                         }
-                    }
-                });
-                tokio::spawn(async move {
-                    loop {
-                        match netplay_write_receiver.recv().await {
-                            Ok(Some(response)) => {
-                                if let Err(e) = write
-                                    .send(Message::Binary(Bytes::from(
-                                        postcard::to_stdvec(&response).unwrap(),
-                                    )))
-                                    .await
-                                {
-                                    eprintln!("Failed to send message: {}", e);
+                        response = read.next() => {
+                            match response {
+                                Some(Ok(Message::Binary(data))) => {
+                                    let message = postcard::from_bytes::<NetplayLobbyMessage>(&data)
+                                        .map_err(|e| e.to_string())?;
+                                    let _ = netplay_read_sender.send(Some(message));
                                 }
-                            }
-                            Ok(None) => {
-                                break;
-                            }
-                            Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
-                                panic!("netplay_write_receiver lagged");
-                            }
-                            Err(tokio::sync::broadcast::error::RecvError::Closed) => {
-                                break; // exit the loop if the receiver is closed
+                                Some(Ok(Message::Close(_))) | None => {
+                                    break Err("Lobby server disconnected".to_string());
+                                }
+                                Some(Err(e)) => break Err(e.to_string()),
+                                Some(Ok(_)) => {}
                             }
                         }
                     }
-                    if let Err(e) = write
-                        .send(Message::Close(Some(CloseFrame {
-                            code: CloseCode::Normal,
-                            reason: Utf8Bytes::from(""),
-                        })))
-                        .await
-                    {
-                        eprintln!("Failed to send close message: {}", e);
-                    }
-                });
-            }
-            Ok(Err(e)) => {
-                eprintln!("Failed to connect to netplay: {}", e);
-            }
-            Err(e) => {
-                eprintln!("Failed to connect to netplay: {}", e);
-            }
+                }
+            }.await,
+            Ok(Err(e)) => Err(e.to_string()),
+            Err(_) => Err("Lobby connection timed out".into()),
+        };
+        if let Err(error) = result {
+            eprintln!("Netplay lobby connection ended: {error}");
+            let _ = weak.upgrade_in_event_loop(move |handle| {
+                // Check on the UI thread: this attempt may have been cancelled or
+                // replaced after its error was queued for the event loop.
+                if !matches!(
+                    close_receiver.try_recv(),
+                    Err(tokio::sync::broadcast::error::TryRecvError::Empty)
+                ) {
+                    return;
+                }
+                handle.invoke_netplay_close();
+                handle.invoke_show_message(
+                    "Lost connection to the netplay lobby. Please create or join a session again."
+                        .into(),
+                    true,
+                );
+            });
         }
     });
 }
@@ -401,7 +397,7 @@ fn update_sessions(
         message: None,
     };
 
-    netplay_write_sender.send(Some(request_sessions)).unwrap();
+    let _ = netplay_write_sender.send(Some(request_sessions));
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -454,7 +450,7 @@ fn create_session(
             message: None,
         };
 
-        netplay_write_sender.send(Some(create_session)).unwrap();
+        let _ = netplay_write_sender.send(Some(create_session));
 
         match tokio::time::timeout(
             std::time::Duration::from_secs(3),
@@ -566,7 +562,7 @@ fn join_session(
         message: None,
     };
 
-    netplay_write_sender.send(Some(join_session)).unwrap();
+    let _ = netplay_write_sender.send(Some(join_session));
 }
 
 fn update_ping(
@@ -758,7 +754,7 @@ fn setup_wait_window(
         sessions: std::collections::HashMap::new(),
         message: None,
     };
-    netplay_write_sender.send(Some(request_update)).unwrap();
+    let _ = netplay_write_sender.send(Some(request_update));
 
     let weak_app = app.as_weak();
     tokio::spawn(async move {
@@ -766,6 +762,15 @@ fn setup_wait_window(
             match netplay_read_receiver.recv().await {
                 Ok(Some(response)) => match response.message_type {
                     MessageType::ResponseSession => {
+                        if let Some(error) = response.message {
+                            let _ = weak_app.upgrade_in_event_loop(move |handle| {
+                                handle.invoke_show_message(error.into(), true);
+                            });
+                            continue;
+                        }
+                        if response.sessions.is_empty() {
+                            continue;
+                        }
                         weak_app
                             .upgrade_in_event_loop(move |handle| {
                                 let session = response.sessions.iter().next().unwrap().1;
@@ -885,6 +890,8 @@ fn setup_join_window(
     manage_websocket(
         netplay_read_sender.clone(),
         netplay_write_receiver.resubscribe(),
+        close_ping_rx.resubscribe(),
+        app.as_weak(),
     );
 
     app.set_netplay_pending_refresh(true);
