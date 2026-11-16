@@ -558,7 +558,13 @@ pub fn init(
             netplay_config.number_of_players > 2,
             netplay_config.number_of_players > 3,
         ],
-        inputs: Vec::new(),
+        inputs: vec![
+            (
+                ui::input::InputData::default(),
+                ggrs::InputStatus::Confirmed
+            );
+            netplay_config.number_of_players
+        ],
         requests: std::collections::VecDeque::new(),
         frame_progress: FrameProgress::default(),
         received_data: std::collections::VecDeque::new(),
