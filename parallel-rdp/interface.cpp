@@ -126,35 +126,50 @@ static RdramTracker rdram_tracker;
 // the timeline value that will cover commands enqueued now
 static uint64_t mark_stamp() { return processor->get_timeline_value() + 1; }
 
-// When upscaling, every render pass compares the color and depth buffers in
-// RDRAM against a reference copy, over full rows from the top down to the
-// lowest scissored line drawn (Renderer::update_deduced_height,
-// update_upscaled_domain_pre/post). That happens even when depth is disabled.
-// Each entry remembers that rows [0, rows) of one buffer are already marked
-// for `stamp`, so each primitive only marks rows below that.
-struct UpscaleMarked {
+// Upscaling reads full color and depth rows down to the lowest scissored
+// line drawn (Renderer::update_deduced_height). Fallback RDRAM copies cover
+// the same range rounded out to IncoherentPageSize, even with depth compare
+// and update disabled. Their readbacks can retain earlier GPU write masks,
+// so mark those pages as writes, including pixels outside this primitive.
+// Each entry remembers the end already marked for `stamp` to avoid marking
+// the same rows/pages for every primitive.
+struct FramebufferAccess {
   uint64_t stamp;
   uint32_t address, stride;
-  int32_t rows;
+  uint64_t end;
 
   void mark(uint32_t addr, uint32_t width, uint32_t bytes, int32_t y1,
-            uint64_t s) {
+            uint64_t s, bool fallback) {
     uint32_t st = width * bytes;
-    if (stamp != s || address != addr || stride != st)
-      *this = {s, addr, st, 0};
-    if (y1 < rows)
+    if (st == 0)
       return;
-    rdram_tracker.mark_rect(addr, width, bytes, 0, int32_t(width) - 1, rows, y1,
-                            RdramTracker::Access::Read, s);
-    rows = y1 + 1;
+    uint64_t begin = addr;
+    uint64_t limit = begin + uint64_t(y1 + 1) * st;
+    if (fallback) {
+      constexpr uint64_t mask =
+          RDP::ImplementationConstants::IncoherentPageSize - 1;
+      begin &= ~mask;
+      limit = (limit + mask) & ~mask;
+    }
+    if (stamp != s || address != addr || stride != st)
+      *this = {s, addr, st, begin};
+    auto access =
+        fallback ? RdramTracker::Access::Write : RdramTracker::Access::Read;
+    while (end < limit) {
+      // Renderer page copies and shader accesses wrap at the RDRAM size.
+      uint64_t offset = end & (gfx_info.RDRAM_SIZE - 1);
+      uint64_t length = std::min(limit - end, gfx_info.RDRAM_SIZE - offset);
+      rdram_tracker.mark(offset, length, access, s);
+      end += length;
+    }
   }
 };
-static UpscaleMarked upscale_color, upscale_depth;
+static FramebufferAccess color_access, depth_access;
 
 // A primitive covering pixels [x0, x1] x [y0, y1] before scissoring.
-// parallel-rdp only writes back pixels a primitive actually touched, so the
-// RDRAM involved is the primitive's footprint inside the scissor. The color
-// buffer always counts as written (that also covers blender reads).
+// Track direct primitive writes inside the scissor, in addition to the full
+// row/page accesses above. The color buffer always counts as written (that
+// also covers blender reads).
 static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
   auto &fb = rdp_device.frame_buffer_info;
   // parallel-rdp stores I4 color buffers as one byte per pixel
@@ -164,11 +179,15 @@ static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
 
   y1 = std::min(y1, rdp_device.scissor_y_last);
 
-  if (gfx_info.upscale > 1 && y1 >= 0) {
-    upscale_color.mark(fb.framebuffer_address, fb.framebuffer_width, bytes, y1,
-                       stamp);
-    upscale_depth.mark(fb.depthbuffer_address, fb.framebuffer_width, 2, y1,
-                       stamp);
+  bool fallback = !processor->is_rdram_host_coherent();
+  if (y1 >= 0 && (gfx_info.upscale > 1 || fallback)) {
+    color_access.mark(fb.framebuffer_address, fb.framebuffer_width, bytes, y1,
+                      stamp, fallback);
+    depth_access.mark(fb.depthbuffer_address, fb.framebuffer_width, 2, y1,
+                      stamp, fallback);
+    // Fallback write marks already cover the whole primitive.
+    if (fallback)
+      return;
   }
 
   x0 = std::max(x0, rdp_device.scissor_xh);
@@ -456,8 +475,8 @@ static void rdp_new_processor() {
 
   // the new processor's timeline starts over
   rdram_tracker.reset(gfx_info.RDRAM_SIZE);
-  upscale_color = {};
-  upscale_depth = {};
+  color_access = {};
+  depth_access = {};
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
