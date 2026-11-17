@@ -27,6 +27,7 @@ export component NetplayJoin inherits Page {
                 }
 
                 LineEdit {
+                    enabled: !NetplayData.pending_session;
                     placeholder-text: @tr("Enter player name");
                     text: NetplayData.player_name;
                     edited(text) => {
@@ -35,6 +36,7 @@ export component NetplayJoin inherits Page {
                 }
 
                 LineEdit {
+                    enabled: !NetplayData.pending_session;
                     min-width: 200px;
                     placeholder-text: @tr("Password (if required)");
                     text: NetplayData.password;
@@ -48,12 +50,14 @@ export component NetplayJoin inherits Page {
                 Rectangle { }
 
                 if NetplayData.game_name == "": Button {
+                    enabled: !NetplayData.pending_session;
                     text: @tr("Select ROM");
                     clicked => {
                         select_rom(SettingsData.rom_dir);
                     }
                 }
                 if NetplayData.game_name != "": Button {
+                    enabled: !NetplayData.pending_session;
                     text: NetplayData.game_name;
                     clicked => {
                         select_rom(SettingsData.rom_dir);

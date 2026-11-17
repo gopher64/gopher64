@@ -88,6 +88,11 @@ fn select_rom(
                 }
 
                 weak.upgrade_in_event_loop(move |handle| {
+                    if handle.get_netplay_pending_session()
+                        || handle.get_show_netplay_wait_session()
+                    {
+                        return;
+                    }
                     handle.set_netplay_game_name(game_name.into());
                     handle.set_netplay_game_pal(pal);
                     handle.set_netplay_game_hash(hash.into());
@@ -97,6 +102,11 @@ fn select_rom(
                 .unwrap();
             } else {
                 weak.upgrade_in_event_loop(move |handle| {
+                    if handle.get_netplay_pending_session()
+                        || handle.get_show_netplay_wait_session()
+                    {
+                        return;
+                    }
                     handle.invoke_show_message("Could not read ROM".into(), true);
 
                     handle.set_netplay_game_name(String::new().into());
@@ -534,7 +544,7 @@ fn create_session(
             Err(e) => {
                 weak_app
                     .upgrade_in_event_loop(move |handle| {
-                        handle.set_netplay_pending_session(false);
+                        handle.invoke_netplay_close();
                         handle.invoke_show_message(
                             format!("Server did not respond: {e}").into(),
                             true,
@@ -759,8 +769,9 @@ fn setup_wait_window(
 
     app.set_netplay_session_name(session_name);
     app.set_netplay_game_name(game_name);
-    app.set_netplay_rom_path(rom_path);
+    app.set_netplay_rom_path(rom_path.clone());
     app.set_netplay_can_start(true);
+    let player_name = app.get_netplay_player_name();
 
     let request_update = NetplayLobbyMessage {
         message_type: MessageType::RequestUpdateSession,
@@ -816,7 +827,6 @@ fn setup_wait_window(
                             let weak_app2 = weak_app.clone();
                             weak_app
                                 .upgrade_in_event_loop(move |handle| {
-                                    let player_name = handle.get_netplay_player_name();
                                     let session = response.sessions.values().next().unwrap();
                                     let players = &session.players;
                                     // Input delay is per-player: use our own choice, falling back
@@ -832,7 +842,7 @@ fn setup_wait_window(
                                         .position(|x| x == player_name.as_str())
                                         .unwrap();
                                     run_rom(
-                                        handle.get_netplay_rom_path().as_str().into(),
+                                        rom_path.as_str().into(),
                                         ui::GameSettings {
                                             overclock: game_settings.overclock,
                                             disable_expansion_pak: game_settings
@@ -916,7 +926,6 @@ fn setup_join_window(
                         && message.message.is_none()
                     {
                         let sender = write_sender.clone();
-                        let receiver = read_receiver.resubscribe();
                         weak.upgrade_in_event_loop(move |handle| {
                             let (session_name, session) = message.sessions.iter().next().unwrap();
                             let features_default = "false".to_string();
@@ -941,7 +950,7 @@ fn setup_join_window(
                                 .unwrap_or(&cheats_default);
                             setup_wait_window(
                                 sender,
-                                receiver,
+                                read_receiver,
                                 close_ping_rx.resubscribe(),
                                 session.server_address.as_ref().unwrap().clone(),
                                 session_name.into(),
