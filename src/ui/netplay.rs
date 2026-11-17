@@ -544,7 +544,7 @@ fn create_session(
             Err(e) => {
                 weak_app
                     .upgrade_in_event_loop(move |handle| {
-                        handle.set_netplay_pending_session(false);
+                        handle.invoke_netplay_close();
                         handle.invoke_show_message(
                             format!("Server did not respond: {e}").into(),
                             true,
