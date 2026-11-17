@@ -6,7 +6,6 @@ use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings, show_touch_ove
 use futures::{SinkExt, StreamExt};
 use sha2::digest::Digest;
 use slint::ComponentHandle;
-use slint::Model;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 
@@ -323,8 +322,22 @@ fn manage_websocket(
         {
             Ok(Ok((socket, _))) => async {
                 let (mut write, mut read) = socket.split();
+                // Keep idle connections alive.
+                let keepalive_period = std::time::Duration::from_secs(30);
+                let mut keepalive = tokio::time::interval_at(
+                    tokio::time::Instant::now() + keepalive_period,
+                    keepalive_period,
+                );
+                keepalive.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
                 loop {
                     tokio::select! {
+                        _ = keepalive.tick() => {
+                            tokio::time::timeout(
+                                std::time::Duration::from_secs(5),
+                                write.send(Message::Ping(Vec::new().into())),
+                            ).await.map_err(|_| "Lobby keepalive timed out".to_string())?
+                                .map_err(|e| e.to_string())?;
+                        }
                         request = netplay_write_receiver.recv() => {
                             match request {
                                 Ok(Some(message)) => {
@@ -804,24 +817,20 @@ fn setup_wait_window(
                             weak_app
                                 .upgrade_in_event_loop(move |handle| {
                                     let player_name = handle.get_netplay_player_name();
-                                    let players = handle.get_netplay_players();
+                                    let session = response.sessions.values().next().unwrap();
+                                    let players = &session.players;
                                     // Input delay is per-player: use our own choice, falling back
                                     // to the host's if our recommendation hasn't been calculated yet.
                                     let input_delay = if handle.get_netplay_recommended_delay() > 0
                                     {
                                         handle.get_netplay_input_delay() as usize
                                     } else {
-                                        response
-                                            .sessions
-                                            .iter()
-                                            .next()
-                                            .unwrap()
-                                            .1
-                                            .input_delay
-                                            .unwrap()
+                                        session.input_delay.unwrap()
                                     };
-                                    let player_number =
-                                        players.iter().position(|x| x == player_name).unwrap();
+                                    let player_number = players
+                                        .iter()
+                                        .position(|x| x == player_name.as_str())
+                                        .unwrap();
                                     run_rom(
                                         handle.get_netplay_rom_path().as_str().into(),
                                         ui::GameSettings {
@@ -834,7 +843,7 @@ fn setup_wait_window(
                                         Some(ui::gui::NetplayDevice {
                                             server_addr: server_addresses.game.clone(),
                                             player_number,
-                                            number_of_players: players.row_count(),
+                                            number_of_players: players.len(),
                                             input_delay,
                                         }),
                                         show_touch_overlay(&handle),
