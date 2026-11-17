@@ -316,7 +316,7 @@ fn manage_websocket(
 
     tokio::spawn(async move {
         let result = match tokio::time::timeout(
-            std::time::Duration::from_secs(3),
+            std::time::Duration::from_secs(5),
             tokio_tungstenite::connect_async(request),
         )
         .await
@@ -330,7 +330,7 @@ fn manage_websocket(
                                 Ok(Some(message)) => {
                                     let data = postcard::to_stdvec(&message).map_err(|e| e.to_string())?;
                                     tokio::time::timeout(
-                                        std::time::Duration::from_secs(3),
+                                        std::time::Duration::from_secs(5),
                                         write.send(Message::Binary(data.into())),
                                     ).await.map_err(|_| "Lobby send timed out".to_string())?
                                         .map_err(|e| e.to_string())?;
@@ -453,7 +453,7 @@ fn create_session(
         let _ = netplay_write_sender.send(Some(create_session));
 
         match tokio::time::timeout(
-            std::time::Duration::from_secs(3),
+            std::time::Duration::from_secs(5),
             netplay_read_receiver.recv(),
         )
         .await
