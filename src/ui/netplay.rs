@@ -6,6 +6,8 @@ use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings, show_touch_ove
 use futures::{SinkExt, StreamExt};
 use sha2::digest::Digest;
 use slint::ComponentHandle;
+use std::sync::{Arc, Mutex};
+use tokio::task::JoinSet;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 
@@ -130,6 +132,7 @@ fn setup_callbacks(
     close_ping_tx: &tokio::sync::broadcast::Sender<()>,
     close_ping_rx: &tokio::sync::broadcast::Receiver<()>,
     no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
+    lobby_tasks: &Arc<Mutex<JoinSet<()>>>,
 ) {
     let weak = app.as_weak();
     let netplay_write_sender_create_session = netplay_write_sender.clone();
@@ -138,6 +141,7 @@ fn setup_callbacks(
     let netplay_read_sender_create_session = netplay_read_sender.clone();
     let close_ping_tx_create_session = close_ping_tx.clone();
     let close_ping_rx_create_session = close_ping_rx.resubscribe();
+    let create_lobby_tasks = lobby_tasks.clone();
     app.on_netplay_create_session(
         move |session_name,
               player_name,
@@ -153,6 +157,7 @@ fn setup_callbacks(
                 &close_ping_tx_create_session,
             );
             manage_websocket(
+                &create_lobby_tasks,
                 netplay_read_sender_create_session.clone(),
                 netplay_write_receiver_create_session.resubscribe(),
                 close_ping_rx_create_session.resubscribe(),
@@ -229,6 +234,7 @@ fn setup_callbacks(
     let netplay_write_receiver_join_session_button = netplay_write_receiver.resubscribe();
     let close_ping_tx_join_session_button = close_ping_tx.clone();
     let close_ping_rx_join_session_button = close_ping_rx.resubscribe();
+    let join_lobby_tasks = lobby_tasks.clone();
     app.on_join_session_button_clicked(move || {
         let netplay_write_sender = netplay_write_sender_join_session_button.clone();
         let netplay_read_receiver = netplay_read_receiver_join_session_button.resubscribe();
@@ -236,6 +242,7 @@ fn setup_callbacks(
         let netplay_write_receiver = netplay_write_receiver_join_session_button.resubscribe();
         let close_ping_tx = close_ping_tx_join_session_button.clone();
         let close_ping_rx = close_ping_rx_join_session_button.resubscribe();
+        let join_lobby_tasks = join_lobby_tasks.clone();
         weak_app
             .upgrade_in_event_loop(move |handle| {
                 save_settings(&handle);
@@ -247,6 +254,7 @@ fn setup_callbacks(
                     netplay_write_receiver,
                     close_ping_tx,
                     close_ping_rx,
+                    &join_lobby_tasks,
                 );
             })
             .unwrap();
@@ -295,6 +303,7 @@ fn setup_create_window(app: &AppWindow) {
 }
 
 fn manage_websocket(
+    lobby_tasks: &Mutex<JoinSet<()>>,
     netplay_read_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
     mut netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     mut close_receiver: tokio::sync::broadcast::Receiver<()>,
@@ -323,7 +332,9 @@ fn manage_websocket(
 
     ui::install_default_crypto_provider();
 
-    tokio::spawn(async move {
+    let mut lobby_tasks = lobby_tasks.lock().unwrap();
+    while lobby_tasks.try_join_next().is_some() {}
+    lobby_tasks.spawn(async move {
         let result = match tokio::time::timeout(
             std::time::Duration::from_secs(5),
             tokio_tungstenite::connect_async(request),
@@ -896,6 +907,7 @@ fn setup_wait_window(
     app.invoke_close_message();
 }
 
+#[allow(clippy::too_many_arguments)]
 fn setup_join_window(
     app: &AppWindow,
     netplay_write_sender: tokio::sync::broadcast::Sender<Option<NetplayLobbyMessage>>,
@@ -904,9 +916,11 @@ fn setup_join_window(
     netplay_write_receiver: tokio::sync::broadcast::Receiver<Option<NetplayLobbyMessage>>,
     close_ping_tx: tokio::sync::broadcast::Sender<()>,
     close_ping_rx: tokio::sync::broadcast::Receiver<()>,
+    lobby_tasks: &Mutex<JoinSet<()>>,
 ) {
     close_connections(&netplay_write_sender, &netplay_read_sender, &close_ping_tx);
     manage_websocket(
+        lobby_tasks,
         netplay_read_sender.clone(),
         netplay_write_receiver.resubscribe(),
         close_ping_rx.resubscribe(),
@@ -1052,7 +1066,7 @@ fn setup_join_window(
 pub fn netplay_window(
     app: &AppWindow,
     no_intro_map: std::sync::Arc<tokio::sync::Mutex<rustc_hash::FxHashMap<String, String>>>,
-) {
+) -> Arc<Mutex<JoinSet<()>>> {
     app.set_netplay_max_input_delay(netplay::MAX_PREDICTION_WINDOW as i32);
 
     let (netplay_read_sender, netplay_read_receiver): (
@@ -1070,6 +1084,7 @@ pub fn netplay_window(
         tokio::sync::broadcast::Receiver<()>,
     ) = tokio::sync::broadcast::channel(5);
 
+    let lobby_tasks = Arc::new(Mutex::new(JoinSet::new()));
     setup_callbacks(
         app,
         &netplay_write_sender,
@@ -1079,5 +1094,7 @@ pub fn netplay_window(
         &close_ping_tx,
         &close_ping_rx,
         no_intro_map,
+        &lobby_tasks,
     );
+    lobby_tasks
 }
