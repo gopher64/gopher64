@@ -17,10 +17,13 @@ pub struct Instructions {
     #[serde(skip, default = "savestates::default_instruction")]
     pub func: fn(&mut device::Device, u32),
     pub opcode: u32,
+    #[serde(skip)]
+    pub instruction_type: InstructionType,
 }
 
-#[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(PartialEq, Copy, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub enum InstructionType {
+    #[default]
     Su,
     Vu,
 }
@@ -102,7 +105,7 @@ pub struct Cpu {
     #[serde(skip, default = "savestates::default_instructions")]
     pub cop0_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip, default = "savestates::default_instructions")]
-    pub cop2_instrs: [fn(&mut device::Device, u32); 32],
+    pub cop2_instrs: [fn(&mut device::Device, u32); 16],
     #[serde(skip, default = "savestates::default_instructions")]
     pub lwc2_instrs: [fn(&mut device::Device, u32); 32],
     #[serde(skip, default = "savestates::default_instructions")]
@@ -127,11 +130,11 @@ pub fn run(device: &mut device::Device) -> u64 {
     device.rsp.cpu.cycle_counter = 0;
     device.rsp.cpu.running = true;
     loop {
-        device.rsp.cpu.instruction_type = InstructionType::Su;
         device.rsp.cpu.gpr[0] = 0; // gpr 0 is read only
 
         let instruction = device.rsp.cpu.instructions
             [(device.rsp.regs2[device::rsp_interface::SP_PC_REG] / 4) as usize];
+        device.rsp.cpu.instruction_type = instruction.instruction_type;
         (instruction.func)(device, instruction.opcode);
 
         match device.rsp.cpu.branch_state.state {
@@ -176,18 +179,13 @@ pub fn run(device: &mut device::Device) -> u64 {
         }
         device.rsp.regs2[device::rsp_interface::SP_PC_REG] &= 0xFFC;
 
-        if device.rsp.cpu.instruction_type == device.rsp.cpu.last_instruction_type {
-            device.rsp.cpu.cycle_counter += 1;
-            device.rsp.cpu.pipeline_full = false;
-        } else {
-            device.rsp.cpu.last_instruction_type = device.rsp.cpu.instruction_type;
-            if device.rsp.cpu.pipeline_full {
-                device.rsp.cpu.cycle_counter += 1;
-                device.rsp.cpu.pipeline_full = false;
-            } else {
-                device.rsp.cpu.pipeline_full = true;
-            }
-        }
+        // A second instruction of the same type, or a full SU/VU pair,
+        // advances the pipeline by one cycle.
+        let advance = (device.rsp.cpu.instruction_type == device.rsp.cpu.last_instruction_type)
+            | device.rsp.cpu.pipeline_full;
+        device.rsp.cpu.cycle_counter += u64::from(advance);
+        device.rsp.cpu.pipeline_full = !advance;
+        device.rsp.cpu.last_instruction_type = device.rsp.cpu.instruction_type;
 
         if device.rsp.cpu.sync_point {
             break;
@@ -202,8 +200,17 @@ pub fn elapsed_cpu_cycles(device: &device::Device) -> u64 {
     device.rsp.cpu.cycle_counter * 3 / 2
 }
 
-pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::Device, u32) {
-    match opcode >> 26 {
+pub fn decode_opcode(device: &device::Device, opcode: u32) -> Instructions {
+    if opcode >> 25 == 37 {
+        // COP2 vector ALU instructions have bit 25 set.
+        return Instructions {
+            opcode,
+            func: device.rsp.cpu.vec_instrs[(opcode & 0x3F) as usize],
+            instruction_type: InstructionType::Vu,
+        };
+    }
+
+    let func = match opcode >> 26 {
         0 => {
             // SPECIAL
             device.rsp.cpu.special_instrs[(opcode & 0x3F) as usize]
@@ -218,7 +225,7 @@ pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::De
         }
         18 => {
             // COP2
-            device.rsp.cpu.cop2_instrs[((opcode >> 21) & 0x1F) as usize]
+            device.rsp.cpu.cop2_instrs[((opcode >> 21) & 0xF) as usize]
         }
         50 => {
             // LWC2
@@ -229,6 +236,11 @@ pub fn decode_opcode(device: &device::Device, opcode: u32) -> fn(&mut device::De
             device.rsp.cpu.swc2_instrs[((opcode >> 11) & 0x1F) as usize]
         }
         _ => device.rsp.cpu.instrs[(opcode >> 26) as usize],
+    };
+    Instructions {
+        opcode,
+        func,
+        instruction_type: InstructionType::Su,
     }
 }
 
@@ -438,38 +450,22 @@ pub fn map_instructions(device: &mut device::Device) {
     ];
 
     device.rsp.cpu.cop2_instrs = [
-        device::rsp_su_instructions::mfc2,        // 0
-        device::rsp_su_instructions::reserved,    // 1
-        device::rsp_su_instructions::cfc2,        // 2
-        device::rsp_su_instructions::reserved,    // 3
-        device::rsp_su_instructions::mtc2,        // 4
-        device::rsp_su_instructions::reserved,    // 5
-        device::rsp_su_instructions::ctc2,        // 6
-        device::rsp_su_instructions::reserved,    // 7
-        device::rsp_su_instructions::reserved,    // 8
-        device::rsp_su_instructions::reserved,    // 9
-        device::rsp_su_instructions::reserved,    // 10
-        device::rsp_su_instructions::reserved,    // 11
-        device::rsp_su_instructions::reserved,    // 12
-        device::rsp_su_instructions::reserved,    // 13
-        device::rsp_su_instructions::reserved,    // 14
-        device::rsp_su_instructions::reserved,    // 15
-        device::rsp_vu_instructions::execute_vec, // 16
-        device::rsp_vu_instructions::execute_vec, // 17
-        device::rsp_vu_instructions::execute_vec, // 18
-        device::rsp_vu_instructions::execute_vec, // 19
-        device::rsp_vu_instructions::execute_vec, // 20
-        device::rsp_vu_instructions::execute_vec, // 21
-        device::rsp_vu_instructions::execute_vec, // 22
-        device::rsp_vu_instructions::execute_vec, // 23
-        device::rsp_vu_instructions::execute_vec, // 24
-        device::rsp_vu_instructions::execute_vec, // 25
-        device::rsp_vu_instructions::execute_vec, // 26
-        device::rsp_vu_instructions::execute_vec, // 27
-        device::rsp_vu_instructions::execute_vec, // 28
-        device::rsp_vu_instructions::execute_vec, // 29
-        device::rsp_vu_instructions::execute_vec, // 30
-        device::rsp_vu_instructions::execute_vec, // 31
+        device::rsp_su_instructions::mfc2,     // 0
+        device::rsp_su_instructions::reserved, // 1
+        device::rsp_su_instructions::cfc2,     // 2
+        device::rsp_su_instructions::reserved, // 3
+        device::rsp_su_instructions::mtc2,     // 4
+        device::rsp_su_instructions::reserved, // 5
+        device::rsp_su_instructions::ctc2,     // 6
+        device::rsp_su_instructions::reserved, // 7
+        device::rsp_su_instructions::reserved, // 8
+        device::rsp_su_instructions::reserved, // 9
+        device::rsp_su_instructions::reserved, // 10
+        device::rsp_su_instructions::reserved, // 11
+        device::rsp_su_instructions::reserved, // 12
+        device::rsp_su_instructions::reserved, // 13
+        device::rsp_su_instructions::reserved, // 14
+        device::rsp_su_instructions::reserved, // 15
     ];
 
     device.rsp.cpu.lwc2_instrs = [
