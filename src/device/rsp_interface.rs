@@ -138,9 +138,8 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, _mask: u
 
     if masked_address & 0x1000 != 0 {
         // imem being updated
-        device.rsp.cpu.instructions[(masked_address & 0xFFF) / 4].func =
+        device.rsp.cpu.instructions[(masked_address & 0xFFF) / 4] =
             device::rsp_cpu::decode_opcode(device, data);
-        device.rsp.cpu.instructions[(masked_address & 0xFFF) / 4].opcode = data;
     }
 
     // SH/SB are broken: They overwrite the whole 32 bit, filling everything that isn't written with zeroes
@@ -202,9 +201,8 @@ fn do_dma(device: &mut device::Device, dma: RspDma) {
 
                 if offset != 0 {
                     // imem being updated
-                    device.rsp.cpu.instructions[((mem_addr & 0xFFF) / 4) as usize].func =
+                    device.rsp.cpu.instructions[((mem_addr & 0xFFF) / 4) as usize] =
                         device::rsp_cpu::decode_opcode(device, data);
-                    device.rsp.cpu.instructions[((mem_addr & 0xFFF) / 4) as usize].opcode = data;
                 }
                 device.rsp.mem[(offset + (mem_addr & 0xFFF)) as usize
                     ..(offset + (mem_addr & 0xFFF)) as usize + 4]

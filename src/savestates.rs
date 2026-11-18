@@ -341,9 +341,8 @@ fn apply_state(device: &mut device::Device, state: &SavestateData, run_cheats: b
     let mut mem_addr = 0x1000;
     while mem_addr < 0x2000 {
         let data = u32::from_be_bytes(device.rsp.mem[mem_addr..mem_addr + 4].try_into().unwrap());
-        device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].func =
+        device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4] =
             device::rsp_cpu::decode_opcode(device, data);
-        device.rsp.cpu.instructions[(mem_addr & 0xFFF) / 4].opcode = data;
         mem_addr += 4;
     }
 

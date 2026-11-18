@@ -463,6 +463,7 @@ impl Device {
                     instructions: [rsp_cpu::Instructions {
                         func: rsp_su_instructions::reserved,
                         opcode: 0,
+                        instruction_type: rsp_cpu::InstructionType::Su,
                     }; 0x1000 / 4],
                     last_instruction_type: rsp_cpu::InstructionType::Su,
                     instruction_type: rsp_cpu::InstructionType::Su,
@@ -494,7 +495,7 @@ impl Device {
                     special_instrs: [rsp_su_instructions::reserved; 64],
                     regimm_instrs: [rsp_su_instructions::reserved; 32],
                     cop0_instrs: [rsp_su_instructions::reserved; 32],
-                    cop2_instrs: [rsp_su_instructions::reserved; 32],
+                    cop2_instrs: [rsp_su_instructions::reserved; 16],
                     lwc2_instrs: [rsp_su_instructions::reserved; 32],
                     swc2_instrs: [rsp_su_instructions::reserved; 32],
                     instrs: [rsp_su_instructions::reserved; 64],
