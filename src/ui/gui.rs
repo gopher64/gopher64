@@ -546,22 +546,8 @@ pub fn app_window(
         controller_window(app, &config);
         local_game_window(app, &config);
     }
-    ui::netplay::netplay_window(app, no_intro_map.clone());
+    let lobby_tasks = ui::netplay::netplay_window(app, no_intro_map.clone());
     ui::cheats::cheats_window(app, no_intro_map);
-
-    #[cfg(not(target_os = "android"))]
-    {
-        let weak_app = app.as_weak();
-        app.window().on_close_requested(move || {
-            weak_app
-                .upgrade_in_event_loop(move |handle| {
-                    save_settings(&handle);
-                    handle.invoke_netplay_close();
-                })
-                .unwrap();
-            slint::CloseRequestResponse::HideWindow
-        });
-    }
 
     #[cfg(target_os = "android")]
     if let Some(path) = ui::android::get_launch_rom() {
@@ -576,6 +562,24 @@ pub fn app_window(
     }
 
     app.run().unwrap();
+    #[cfg(not(target_os = "android"))]
+    save_settings(app);
+
+    // Android can destroy the drawing surface while the file picker is open.
+    app.invoke_netplay_close();
+    let mut lobby_tasks = std::mem::take(&mut *lobby_tasks.lock().unwrap());
+    if !lobby_tasks.is_empty() {
+        tokio::runtime::Handle::current().block_on(async {
+            if tokio::time::timeout(std::time::Duration::from_secs(2), async {
+                while lobby_tasks.join_next().await.is_some() {}
+            })
+            .await
+            .is_err()
+            {
+                lobby_tasks.shutdown().await;
+            }
+        });
+    }
     retroachievements::shutdown_client();
 }
 

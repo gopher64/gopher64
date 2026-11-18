@@ -393,8 +393,6 @@ fn android_main(app: slint::android::AndroidApp) {
     let no_intro_map =
         std::sync::Arc::new(tokio::sync::Mutex::new(rustc_hash::FxHashMap::default()));
     ui::gui::app_window(&app_window, true, no_intro_map);
-    // The file picker can destroy the drawing surface while this activity is still alive.
-    app_window.invoke_netplay_close();
     close_tx.send(()).unwrap();
     *android::WEAK_SLINT_WINDOW.lock().unwrap() = None;
     *android::ANDROID_APP.lock().unwrap() = None;
