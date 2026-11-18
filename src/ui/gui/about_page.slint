@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import { Button } from "std-widgets.slint";
-import { ActionRow, LabelButton, Page } from "page.slint";
+import { ActionRow, Divider, LabelButton, Page } from "page.slint";
 
 export global AboutData {
     in property <string> version;
@@ -53,6 +53,8 @@ export component About inherits Page {
             }
         }
     }
+
+    Divider {}
 
     ActionRow {
         Button {

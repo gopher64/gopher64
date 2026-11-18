@@ -60,6 +60,11 @@ export component ActionRow inherits FlexboxLayout {
     @children
 }
 
+export component Divider inherits Rectangle {
+    height: 1px;
+    background: Palette.foreground.transparentize(0.6);
+}
+
 export component LabelButton inherits Rectangle {
     in property <string> label;
     in property <TextHorizontalAlignment> label-alignment: center;

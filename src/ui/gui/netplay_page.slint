@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import { Button } from "std-widgets.slint";
-import { ActionRow, Page } from "page.slint";
+import { ActionRow, Divider, Page } from "page.slint";
 import { State } from "localgame_page.slint";
 
 export global NetplayData {
@@ -32,7 +32,7 @@ export component Netplay inherits Page {
     content-max-width: 440px;
 
     VerticalLayout {
-        spacing: 20px;
+        spacing: 10px;
         alignment: start;
 
         ActionRow {
@@ -52,6 +52,8 @@ export component Netplay inherits Page {
                 }
             }
         }
+
+        Divider {}
 
         ActionRow {
             Button {
