@@ -122,49 +122,43 @@ static size_t fragment_size;
 
 // RDRAM handed to parallel-rdp that the GPU may not have finished with yet
 static RdramTracker rdram_tracker;
+static bool synchronous_rdram_uploads;
 
 // the timeline value that will cover commands enqueued now
 static uint64_t mark_stamp() { return processor->get_timeline_value() + 1; }
 
 // Upscaling reads full color and depth rows down to the lowest scissored
-// line drawn (Renderer::update_deduced_height). Fallback RDRAM copies cover
-// the same range rounded out to IncoherentPageSize, even with depth compare
-// and update disabled. Their readbacks can retain earlier GPU write masks,
-// so mark those pages as writes, including pixels outside this primitive.
-// Each entry remembers the end already marked for `stamp` to avoid marking
-// the same rows/pages for every primitive.
+// line drawn (Renderer::update_deduced_height). Fallback uploads cover the
+// same range rounded out to IncoherentPageSize. Fallback readbacks can retain
+// earlier GPU write masks, so mark their entire pages as writes. The renderer
+// only queues depth readbacks through the last row of a depth-writing
+// primitive. Each entry remembers the end already marked for its stamp.
 struct FramebufferAccess {
   uint64_t stamp;
-  uint32_t address, stride;
+  uint32_t address;
   uint64_t end;
 
-  void mark(uint32_t addr, uint32_t width, uint32_t bytes, int32_t y1,
-            uint64_t s, bool fallback) {
-    uint32_t st = width * bytes;
-    if (st == 0)
+  void mark(uint32_t addr, uint32_t size, uint64_t s,
+            RdramTracker::Access access, bool page_aligned) {
+    if (size == 0)
       return;
     uint64_t begin = addr;
-    uint64_t limit = begin + uint64_t(y1 + 1) * st;
-    if (fallback) {
+    uint64_t limit = begin + size;
+    if (page_aligned) {
       constexpr uint64_t mask =
           RDP::ImplementationConstants::IncoherentPageSize - 1;
       begin &= ~mask;
       limit = (limit + mask) & ~mask;
     }
-    if (stamp != s || address != addr || stride != st)
-      *this = {s, addr, st, begin};
-    auto access =
-        fallback ? RdramTracker::Access::Write : RdramTracker::Access::Read;
-    while (end < limit) {
-      // Renderer page copies and shader accesses wrap at the RDRAM size.
-      uint64_t offset = end & (gfx_info.RDRAM_SIZE - 1);
-      uint64_t length = std::min(limit - end, gfx_info.RDRAM_SIZE - offset);
-      rdram_tracker.mark(offset, length, access, s);
-      end += length;
+    if (stamp != s || address != addr)
+      *this = {s, addr, begin};
+    if (end < limit) {
+      rdram_tracker.mark(end, limit - end, access, s);
+      end = limit;
     }
   }
 };
-static FramebufferAccess color_access, depth_access;
+static FramebufferAccess color_access, depth_reads, depth_writes;
 
 // A primitive covering pixels [x0, x1] x [y0, y1] before scissoring.
 // Track direct primitive writes inside the scissor, in addition to the full
@@ -173,19 +167,41 @@ static FramebufferAccess color_access, depth_access;
 static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
   auto &fb = rdp_device.frame_buffer_info;
   // parallel-rdp stores I4 color buffers as one byte per pixel
-  uint32_t bytes =
-      fb.framebuffer_pixel_size ? 1u << (fb.framebuffer_pixel_size - 1) : 1u;
+  unsigned color_size_log2 =
+      fb.framebuffer_pixel_size ? fb.framebuffer_pixel_size - 1 : 0;
+  uint32_t bytes = 1u << color_size_log2;
+  // Mirror framebuffer bases into physical RDRAM before clipping the ranges.
+  uint32_t rdram_mask = gfx_info.RDRAM_SIZE - 1;
+  uint32_t color_base = fb.framebuffer_address & rdram_mask;
+  uint32_t depth_base = fb.depthbuffer_address & rdram_mask;
   uint64_t stamp = mark_stamp();
 
   y1 = std::min(y1, rdp_device.scissor_y_last);
 
   bool fallback = !processor->is_rdram_host_coherent();
-  if (y1 >= 0 && (gfx_info.upscale > 1 || fallback)) {
-    color_access.mark(fb.framebuffer_address, fb.framebuffer_width, bytes, y1,
-                      stamp, fallback);
-    depth_access.mark(fb.depthbuffer_address, fb.framebuffer_width, 2, y1,
-                      stamp, fallback);
-    // Fallback write marks already cover the whole primitive.
+  bool upscaled = gfx_info.upscale > 1;
+  if (y1 >= 0 && (upscaled || fallback)) {
+    using Access = RdramTracker::Access;
+    uint32_t pixels = fb.framebuffer_width * uint32_t(y1 + 1);
+    uint32_t depth_size = 2u * pixels;
+    color_access.mark(color_base, pixels * bytes, stamp,
+                      fallback ? Access::Write : Access::Read, fallback);
+    if (fallback && fb.depth_update &&
+        fb.depthbuffer_address != fb.framebuffer_address) {
+      depth_writes.mark(depth_base, depth_size, stamp, Access::Write, true);
+    } else if (upscaled || !synchronous_rdram_uploads ||
+               fb.depth_compare || fb.depth_update) {
+      // Direct import exposes the padding read by the word-aligned pre/post
+      // passes. The tracker block already covers the aligned-down start.
+      if (!fallback &&
+          (fb.framebuffer_address & ~3u) != (fb.depthbuffer_address & ~3u)) {
+        uint32_t pixel_mask = (4u >> color_size_log2) - 1u;
+        uint32_t aligned_pixels = (pixels + pixel_mask) & ~pixel_mask;
+        uint32_t aligned_end = (depth_base & ~3u) + 2u * aligned_pixels;
+        depth_size = std::max(depth_base + depth_size, aligned_end) - depth_base;
+      }
+      depth_reads.mark(depth_base, depth_size, stamp, Access::Read, fallback);
+    }
     if (fallback)
       return;
   }
@@ -197,14 +213,14 @@ static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
   if (x1 < x0 || y1 < y0)
     return;
 
-  rdram_tracker.mark_rect(fb.framebuffer_address, fb.framebuffer_width, bytes,
-                          x0, x1, y0, y1, RdramTracker::Access::Write, stamp);
+  rdram_tracker.mark_rect(color_base, fb.framebuffer_width, bytes, x0, x1,
+                          y0, y1, RdramTracker::Access::Write, stamp);
 
   if (fb.depth_update)
-    rdram_tracker.mark_rect(fb.depthbuffer_address, fb.framebuffer_width, 2, x0,
+    rdram_tracker.mark_rect(depth_base, fb.framebuffer_width, 2, x0,
                             x1, y0, y1, RdramTracker::Access::Write, stamp);
-  else if (fb.depth_compare)
-    rdram_tracker.mark_rect(fb.depthbuffer_address, fb.framebuffer_width, 2, x0,
+  else if (fb.depth_compare && !upscaled)
+    rdram_tracker.mark_rect(depth_base, fb.framebuffer_width, 2, x0,
                             x1, y0, y1, RdramTracker::Access::Read, stamp);
 }
 
@@ -468,15 +484,18 @@ static void rdp_new_processor() {
     LOGE("Failed to get hidden_rdram\n");
   }
 
-  if (!processor->set_texture_load_snapshot_filter(
-          texture_load_snapshot_filter)) {
+  bool single_threaded =
+      processor->set_texture_load_snapshot_filter(texture_load_snapshot_filter);
+  if (!single_threaded)
     LOGE("Texture load snapshots need single-threaded command processing\n");
-  }
 
+  synchronous_rdram_uploads =
+      single_threaded && !processor->is_rdram_host_coherent();
   // the new processor's timeline starts over
   rdram_tracker.reset(gfx_info.RDRAM_SIZE);
   color_access = {};
-  depth_access = {};
+  depth_reads = {};
+  depth_writes = {};
 }
 
 static ImageHandle create_message_image(Vulkan::Device &device, int width,
@@ -870,7 +889,7 @@ void rdp_check_rdram(uint32_t address, uint32_t length, bool write) {
   uint64_t stamp = rdram_tracker.conflict(address, length, write);
   if (stamp <= completed)
     return;
-  // commands since the last signal haven't been submitted to the GPU yet
+  // Signal the queued commands if they haven't been submitted yet.
   if (stamp > processor->get_timeline_value())
     processor->signal_timeline();
   processor->wait_for_timeline(stamp);
