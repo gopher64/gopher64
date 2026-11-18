@@ -259,7 +259,7 @@ static void add_joystick_event(void *userdata) {
 
 bool sdl_event_filter(void *userdata, SDL_Event *event) {
   if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED ||
-      event->type == SDL_EVENT_TERMINATING) {
+      event->type == SDL_EVENT_TERMINATING || event->type == SDL_EVENT_QUIT) {
     callback.paused = false;
     callback.emu_running = false;
   } else if (event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED &&
