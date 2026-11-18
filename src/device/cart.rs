@@ -1,6 +1,3 @@
-use chrono::Datelike;
-use chrono::Timelike;
-
 use crate::{device, ui};
 
 pub mod rom;
@@ -174,16 +171,17 @@ fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, 
 
 fn time2data(device: &mut device::Device, offset: usize) {
     let timestamp = device.cart.rtc_timestamp + device.vi.elapsed_time as i64;
-    let now = chrono::DateTime::from_timestamp(timestamp, 0)
-        .unwrap()
-        .with_timezone(&chrono::Local);
+    let utc = time::OffsetDateTime::from_unix_timestamp(timestamp).unwrap();
+    let local_offset =
+        time::UtcOffset::local_offset_at(utc).expect("could not determine local timezone offset");
+    let now = utc.to_offset(local_offset);
 
-    device.pif.ram[offset] = byte2bcd(now.second());
-    device.pif.ram[offset + 1] = byte2bcd(now.minute());
-    device.pif.ram[offset + 2] = 0x80 + byte2bcd(now.hour());
-    device.pif.ram[offset + 3] = byte2bcd(now.day());
-    device.pif.ram[offset + 4] = byte2bcd(now.weekday().num_days_from_sunday());
-    device.pif.ram[offset + 5] = byte2bcd(now.month());
+    device.pif.ram[offset] = byte2bcd(now.second() as u32);
+    device.pif.ram[offset + 1] = byte2bcd(now.minute() as u32);
+    device.pif.ram[offset + 2] = 0x80 + byte2bcd(now.hour() as u32);
+    device.pif.ram[offset + 3] = byte2bcd(now.day() as u32);
+    device.pif.ram[offset + 4] = byte2bcd(now.weekday().number_days_from_sunday() as u32);
+    device.pif.ram[offset + 5] = byte2bcd(now.month() as u32);
     device.pif.ram[offset + 6] = byte2bcd(now.year() as u32 - 1900);
     device.pif.ram[offset + 7] = byte2bcd((now.year() as u32 - 1900) / 100);
 }
