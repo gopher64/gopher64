@@ -114,16 +114,34 @@ jobs:
         run: |
           $llvm_version = rustc --version --verbose | Select-String "LLVM version" | ForEach-Object { $_.Line.Split(":")[1].Trim() }
           echo "LLVM_VERSION=$llvm_version" >> $env:GITHUB_ENV
-      - name: Remove preinstalled LLVM
-        continue-on-error: true
-        run: >-
-          winget.exe uninstall --id LLVM.LLVM --exact --source winget
-          --silent --disable-interactivity --accept-source-agreements
       - name: Install LLVM and Clang
-        run: >-
-          winget.exe install --id LLVM.LLVM --exact --source winget
-          --version "$env:LLVM_VERSION" --silent --disable-interactivity
-          --accept-source-agreements --accept-package-agreements
+        run: |
+          $version = $env:LLVM_VERSION
+          $asset = "LLVM-$version-${{ matrix.llvm }}.msi"
+          $msi = Join-Path $env:RUNNER_TEMP $asset
+          $log = Join-Path $env:RUNNER_TEMP 'llvm-install.log'
+
+          Invoke-WebRequest `
+            -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-$version/$asset" `
+            -OutFile $msi
+
+          $installer = Start-Process msiexec.exe -Wait -PassThru -ArgumentList `
+            "/i `"$msi`" /qn /norestart /L*v `"$log`""
+          if ($installer.ExitCode -notin @(0, 3010)) {
+            Get-Content $log -Tail 60
+            throw "LLVM MSI exited with code $($installer.ExitCode)"
+          }
+
+          $bin = Join-Path $env:ProgramFiles 'LLVM\bin'
+          $reported = & "$bin\clang-cl.exe" --version
+          $reported | Write-Host
+          if ($LASTEXITCODE -ne 0 -or
+              ($reported -join "`n") -notmatch "clang version $([regex]::Escape($version))\b") {
+            throw "Expected clang-cl $version in $bin"
+          }
+
+          $bin >> $env:GITHUB_PATH
+          "LIBCLANG_PATH=$bin" >> $env:GITHUB_ENV
       - name: Build
         run: |
           cargo build --profile ${{ env.BUILD_PROFILE }} -v --target=${{ matrix.target }}
