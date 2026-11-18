@@ -1,27 +1,32 @@
-import {
-    VerticalBox,
-    LineEdit,
-    StandardTableView,
-    HorizontalBox,
-    ComboBox,
-    Button,
-    ScrollView,
-} from "std-widgets.slint";
+import { Button, LineEdit, ListView, StandardTableView } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 import { SettingsData } from "settings_page.slint";
-import { Page } from "page.slint";
+import { ActionRow, LabelButton, Page } from "page.slint";
 
 export component NetplayJoin inherits Page {
     title: @tr("Netplay: Join Session");
+    content-max-width: 680px;
     callback refresh_sessions();
     callback select_rom(string);
     callback join_session(string, string, string, string);
     callback close;
 
-    VerticalBox {
+    private property <bool> compact-sessions: root.width < 600px;
+
+    VerticalLayout {
+        spacing: 8px;
         alignment: start;
-        HorizontalBox {
-            VerticalBox {
+
+        FlexboxLayout {
+            flex-direction: root.compact ? column : row;
+            flex-wrap: no-wrap;
+            spacing: 8px;
+            cross-axis-alignment: root.compact ? stretch : end;
+
+            VerticalLayout {
+                min-width: 0px;
+                preferred-width: 260px;
+                spacing: 4px;
                 Text {
                     text: @tr("Player Name (required):");
                 }
@@ -37,7 +42,6 @@ export component NetplayJoin inherits Page {
 
                 LineEdit {
                     enabled: !NetplayData.pending_session;
-                    min-width: 200px;
                     placeholder-text: @tr("Password (if required)");
                     text: NetplayData.password;
                     edited(text) => {
@@ -46,42 +50,77 @@ export component NetplayJoin inherits Page {
                 }
             }
 
-            VerticalBox {
-                Rectangle { }
-
-                if NetplayData.game_name == "": Button {
-                    enabled: !NetplayData.pending_session;
-                    text: @tr("Select ROM");
-                    clicked => {
-                        select_rom(SettingsData.rom_dir);
-                    }
-                }
-                if NetplayData.game_name != "": Button {
-                    enabled: !NetplayData.pending_session;
-                    text: NetplayData.game_name;
-                    clicked => {
-                        select_rom(SettingsData.rom_dir);
-                    }
+            LabelButton {
+                cross-axis-self-alignment: root.compact ? center : end;
+                enabled: !NetplayData.pending_session;
+                label: NetplayData.game_name == "" ? @tr("Select ROM") : NetplayData.game_name;
+                clicked => {
+                    select_rom(SettingsData.rom_dir);
                 }
             }
         }
 
         if NetplayData.pending_refresh: Text {
             text: @tr("Refreshing session list, please wait...");
-            horizontal-alignment: center;
             vertical-alignment: center;
+            wrap: word-wrap;
         }
         if !NetplayData.pending_refresh && NetplayData.sessions.length > 0: Text {
             text: @tr("Click on a session below to select it");
-            horizontal-alignment: center;
             vertical-alignment: center;
+            wrap: word-wrap;
         }
         if !NetplayData.pending_refresh && NetplayData.sessions.length == 0: Text {
             text: @tr("No sessions available. Please refresh to check again.");
-            horizontal-alignment: center;
             vertical-alignment: center;
+            wrap: word-wrap;
         }
-        StandardTableView {
+        if root.compact-sessions && NetplayData.sessions.length > 0: ListView {
+            min-width: 0px;
+            height: min(4, NetplayData.sessions.length) * 40px;
+            mouse-drag-pan-enabled: true;
+
+            for session[index] in NetplayData.sessions: LabelButton {
+                width: 100%;
+                height: 40px;
+                label: session[0].text;
+                label-alignment: left;
+                primary: index == NetplayData.current_session;
+                clicked => {
+                    NetplayData.current_session = index;
+                }
+            }
+        }
+
+        if root.compact-sessions && NetplayData.current_session >= 0 && NetplayData.current_session < NetplayData.sessions.length: details := VerticalLayout {
+            property <[StandardListViewItem]> session: NetplayData.sessions[NetplayData.current_session];
+            spacing: 4px;
+
+            Text {
+                text: @tr("Session Name") + ": " + details.session[0].text;
+                wrap: word-wrap;
+            }
+
+            Text {
+                text: @tr("Game Name") + ": " + details.session[1].text;
+                wrap: word-wrap;
+            }
+
+            ActionRow {
+                alignment: start;
+
+                Text {
+                    text: @tr("Password") + ": " + details.session[2].text;
+                }
+
+                Text {
+                    text: @tr("Cheats") + ": " + details.session[3].text;
+                }
+            }
+        }
+
+        if !root.compact-sessions: StandardTableView {
+            min-width: 0px;
             columns: [
                 { title: @tr("Session Name") },
                 { title: @tr("Game Name") },
@@ -95,8 +134,7 @@ export component NetplayJoin inherits Page {
             }
         }
 
-        HorizontalBox {
-            Rectangle { }
+        ActionRow {
 
             Button {
                 enabled: !NetplayData.pending_refresh;
@@ -108,11 +146,6 @@ export component NetplayJoin inherits Page {
                     refresh_sessions();
                 }
             }
-        }
-
-        HorizontalBox {
-            alignment: end;
-            Rectangle { }
 
             Button {
                 text: @tr("Join Session");

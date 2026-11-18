@@ -1,32 +1,98 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { ScrollView, HorizontalBox, VerticalBox } from "std-widgets.slint";
+import { Button, Palette, ScrollView } from "std-widgets.slint";
 
-export component Page inherits VerticalBox {
+export component Page inherits VerticalLayout {
     in property <string> title: "title";
+    in property <length> content-max-width: 520px;
+
+    out property <bool> compact: root.width < 480px;
+    out property <bool> two-columns: root.width >= 680px;
+
+    private property <bool> short: root.height < 400px;
+    private property <length> inset: root.compact || root.short ? 12px : 20px;
+
+    padding-top: root.short ? 6px : root.inset;
+    spacing: root.short ? 4px : root.compact ? 8px : 12px;
 
     accessible-role: tab-panel;
     accessible-label: root.title;
 
-    HorizontalBox {
+    HorizontalLayout {
+        padding-left: root.inset;
+        padding-right: root.inset;
+
         Text {
             font-size: 20px;
-            text <=> root.title;
+            horizontal-alignment: center;
+            text: root.title;
+            wrap: word-wrap;
         }
-
-        Rectangle { }
     }
 
     ScrollView {
         mouse-drag-pan-enabled: true;
         vertical-stretch: 1;
 
-        VerticalBox {
-            padding: 8px;
-            alignment: start;
+        HorizontalLayout {
+            alignment: center;
+            padding: root.inset;
+            padding-top: 0px;
 
-            @children
+            VerticalLayout {
+                preferred-width: root.content-max-width;
+                max-width: root.content-max-width;
+                spacing: 8px;
+                alignment: start;
+
+                @children
+            }
         }
+    }
+}
+
+export component ActionRow inherits FlexboxLayout {
+    spacing: 8px;
+    alignment: center;
+    cross-axis-alignment: center;
+
+    @children
+}
+
+export component LabelButton inherits Rectangle {
+    in property <string> label;
+    in property <TextHorizontalAlignment> label-alignment: center;
+    in property <bool> wrap-label;
+    in property <bool> primary <=> button.primary;
+    in property <bool> enabled <=> button.enabled;
+    callback clicked <=> button.clicked;
+
+    min-width: min(160px, caption.preferred-width + 32px);
+    preferred-width: caption.preferred-width + 32px;
+    min-height: max(button.min-height, root.wrap-label ? 48px : 0px);
+    vertical-stretch: 0;
+    forward-focus: button;
+
+    button := Button {
+        width: 100%;
+        height: 100%;
+        accessible-label: root.label;
+    }
+
+    caption := Text {
+        x: 16px;
+        y: 0px;
+        width: max(0px, parent.width - 32px);
+        height: 100%;
+        text: root.label;
+        color: root.primary && root.enabled
+            ? Palette.accent-foreground
+            : Palette.control-foreground.transparentize(root.enabled ? 0 : 0.62);
+        horizontal-alignment: root.label-alignment;
+        vertical-alignment: center;
+        wrap: root.wrap-label ? word-wrap : no-wrap;
+        overflow: elide;
+        accessible-role: none;
     }
 }

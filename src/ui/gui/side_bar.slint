@@ -10,13 +10,10 @@ export struct SideBarEntry {
 
 component SideBarButton inherits Rectangle {
     in property <bool> selected;
-    in property <bool> has-focus;
     in property <image> icon;
 
     callback clicked <=> touch.clicked;
 
-    width: 48px;
-    height: 48px;
     border-radius: 8px;
 
     highlight := Rectangle {
@@ -31,8 +28,8 @@ component SideBarButton inherits Rectangle {
 
     icon-display := Image {
         source: root.icon;
-        width: 24px;
-        height: 24px;
+        width: min(24px, max(0px, parent.width - 8px));
+        height: self.width;
         colorize: Palette.foreground;
         x: (parent.width - self.width) / 2;
         y: (parent.height - self.height) / 2;
@@ -57,16 +54,12 @@ component SideBarButton inherits Rectangle {
         hover when touch.has-hover && !root.selected: {
             highlight.opacity: 0.4;
         }
-        focused when root.has-focus && !root.selected: {
-            highlight.opacity: 0.4;
-        }
     ]
 }
 
 component SideBarItem inherits Rectangle {
     in property <int> tab-index;
     in property <bool> selected;
-    in property <bool> has-focus;
     in property <image> icon;
     in property <string> label;
 
@@ -90,7 +83,6 @@ component SideBarItem inherits Rectangle {
 
         icon: root.icon;
         selected: root.selected;
-        has-focus: root.has-focus;
     }
 }
 
@@ -100,66 +92,32 @@ export component SideBar inherits Rectangle {
     in property <bool> portrait;
     in-out property <int> current-item: 0;
 
-    Rectangle {
-        width: 100%;
-        height: 100%;
-        background: Palette.background.darker(0.2);
-    }
+    private property <length> extent: root.portrait ? root.width : root.height;
+    private property <length> item-size: min(48px, max(0px, (root.extent - 8px - 2px * (root.model.length - 1)) / max(1, root.model.length)));
 
-    // Bottom bar in portrait: icons in a row, centered vertically in the bar.
-    portrait-strip := HorizontalLayout {
-        visible: root.portrait;
-        width: 100%;
-        height: 100%;
+    background: Palette.background.darker(0.2);
+
+    FlexboxLayout {
+        flex-direction: root.portrait ? row : column;
+        flex-wrap: no-wrap;
         padding: 4px;
-        spacing: 4px;
+        spacing: 2px;
         alignment: space-evenly;
+        cross-axis-alignment: center;
 
         accessible-role: tab-list;
         accessible-label: root.title;
         accessible-item-count: root.model.length;
 
-        for item[index] in root.model: VerticalLayout {
-            alignment: center;
-
-            SideBarItem {
-                clicked => {
-                    root.current-item = index;
-                }
-
-                tab-index: index;
-                icon: item.icon;
-                label: item.label;
-                selected: index == root.current-item;
-            }
-        }
-    }
-
-    // Left rail in landscape: icons in a column, centered horizontally in the bar.
-    landscape-strip := VerticalLayout {
-        visible: !root.portrait;
-        width: 100%;
-        height: 100%;
-        padding: 4px;
-        spacing: 4px;
-        alignment: space-evenly;
-
-        accessible-role: tab-list;
-        accessible-label: root.title;
-        accessible-item-count: root.model.length;
-
-        for item[index] in root.model: HorizontalLayout {
-            alignment: center;
-
-            SideBarItem {
-                clicked => {
-                    root.current-item = index;
-                }
-
-                tab-index: index;
-                icon: item.icon;
-                label: item.label;
-                selected: index == root.current-item;
+        for item[index] in root.model: SideBarItem {
+            width: root.item-size;
+            height: root.item-size;
+            tab-index: index;
+            icon: item.icon;
+            label: item.label;
+            selected: index == root.current-item;
+            clicked => {
+                root.current-item = index;
             }
         }
     }
