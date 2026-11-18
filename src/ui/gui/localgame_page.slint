@@ -1,13 +1,8 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import {
-    Button,
-    HorizontalBox,
-    VerticalBox,
-    GroupBox,
-} from "std-widgets.slint";
-import { Page } from "page.slint";
+import { Button, GroupBox } from "std-widgets.slint";
+import { ActionRow, LabelButton, Page } from "page.slint";
 import { AboutData, NewVersionButton } from "about_page.slint";
 
 export global State {
@@ -22,45 +17,46 @@ export component LocalGame inherits Page {
     callback newversion_button_clicked;
     callback recent_rom_button_clicked(string);
     title: @tr("Local Game");
+    content-max-width: 440px;
 
-    VerticalBox {
-        alignment: start;
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Open ROM");
-                enabled: !State.game_running;
-                clicked => {
-                    open_rom_button_clicked();
-                }
+    ActionRow {
+        Button {
+            text: @tr("Open ROM");
+            enabled: !State.game_running;
+            clicked => {
+                open_rom_button_clicked();
             }
         }
 
-        if !State.is_android:HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Open Saves Folder");
-                clicked => {
-                    saves_folder_button_clicked();
-                }
+        if !State.is_android: Button {
+            text: @tr("Open Saves Folder");
+            clicked => {
+                saves_folder_button_clicked();
             }
         }
+    }
 
-        if AboutData.has_update:NewVersionButton {
-            newversion_button_clicked => {
-                newversion_button_clicked();
-            }
+    if AboutData.has_update: NewVersionButton {
+        newversion_button_clicked => {
+            newversion_button_clicked();
         }
-        Rectangle { }
+    }
 
-        if State.recent_roms.length > 0:HorizontalBox {
-            alignment: center;
-            GroupBox {
-                title: @tr("Recent ROMs");
+    if State.recent_roms.length > 0: HorizontalLayout {
+        alignment: center;
+
+        GroupBox {
+            title: @tr("Recent ROMs");
+
+            HorizontalLayout {
+                alignment: center;
+
                 VerticalLayout {
-                    alignment: space-between;
-                    for rom in State.recent_roms: Button {
-                        text: rom.b;
+                    spacing: 8px;
+
+                    for rom in State.recent_roms: LabelButton {
+                        label: rom.b;
+                        label-alignment: left;
                         enabled: !State.game_running;
                         clicked => {
                             recent_rom_button_clicked(rom.a);

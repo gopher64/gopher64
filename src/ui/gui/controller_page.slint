@@ -5,11 +5,9 @@ import {
     Switch,
     ComboBox,
     Button,
-    HorizontalBox,
-    VerticalBox,
     GroupBox,
 } from "std-widgets.slint";
-import { Page } from "page.slint";
+import { ActionRow, Page } from "page.slint";
 import { State } from "localgame_page.slint";
 
 export global ControllerData {
@@ -25,16 +23,21 @@ export global ControllerData {
     in-out property <[bool]> controller_changed;
 }
 
+global ControllerLayout {
+    out property <length> header-height: 36px;
+}
+
 component ControllerPortLabel inherits Text {
     height: 32px;
-    width: 36px;
+    width: 24px;
     vertical-alignment: center;
     horizontal-alignment: center;
     font-weight: 600;
 }
 
 component ControllerFieldHeader inherits Text {
-    height: 28px;
+    height: ControllerLayout.header-height;
+    wrap: word-wrap;
     horizontal-alignment: left;
     vertical-alignment: center;
     font-size: 13px;
@@ -42,13 +45,11 @@ component ControllerFieldHeader inherits Text {
 
 component ControllerSettingsColumn inherits VerticalLayout {
     in property <string> title;
-    in property <length> content-min-width: 0px;
     spacing: 6px;
     alignment: start;
     horizontal-stretch: 0;
-    min-width: content-min-width > header.preferred-width ? content-min-width : header.preferred-width;
 
-    header := ControllerFieldHeader {
+    ControllerFieldHeader {
         text: root.title;
     }
 
@@ -65,8 +66,7 @@ component ControllerSettingsCell inherits HorizontalLayout {
 component ControllerSettingsGrid inherits HorizontalLayout {
     callback transferpak_toggled(int, bool);
 
-    spacing: 12px;
-    alignment: start;
+    spacing: 8px;
 
     VerticalLayout {
         spacing: 6px;
@@ -74,8 +74,8 @@ component ControllerSettingsGrid inherits HorizontalLayout {
         horizontal-stretch: 0;
 
         Rectangle {
-            width: 36px;
-            height: 28px;
+            width: 24px;
+            height: ControllerLayout.header-height;
         }
 
         for player[index] in [0, 1, 2, 3]: ControllerPortLabel {
@@ -112,12 +112,14 @@ component ControllerSettingsGrid inherits HorizontalLayout {
 
     ControllerSettingsColumn {
         title: @tr("ControllerSettingsGrid" => "Profile");
-        content-min-width: 150px;
+        horizontal-stretch: 1;
 
         for player[index] in [0, 1, 2, 3]: ControllerSettingsCell {
+            alignment: stretch;
+
             ComboBox {
-                horizontal-stretch: 0;
-                min-width: self.preferred-width > 150px ? self.preferred-width : 150px;
+                min-width: 96px;
+                preferred-width: 160px;
                 model: ControllerData.input_profiles;
                 current-index: ControllerData.selected_profile_binding[index];
                 selected => {
@@ -129,29 +131,31 @@ component ControllerSettingsGrid inherits HorizontalLayout {
 }
 
 component ControllerAssignmentGrid inherits VerticalLayout {
+    in property <bool> reserve-header-space;
+
     spacing: 6px;
     alignment: start;
 
-    for player[index] in [0, 1, 2, 3]: HorizontalLayout {
+    if root.reserve-header-space: Rectangle {
+        height: ControllerLayout.header-height;
+    }
+
+    for player[index] in [0, 1, 2, 3]: ControllerSettingsCell {
+        alignment: stretch;
         spacing: 8px;
-        alignment: start;
 
         ControllerPortLabel {
             text: index + 1;
         }
 
-        HorizontalLayout {
-            alignment: start;
-
-            ComboBox {
-                horizontal-stretch: 0;
-                min-width: self.preferred-width > 300px ? self.preferred-width : 300px;
-                model: ControllerData.controller_names;
-                current-index: ControllerData.selected_controller[index];
-                selected => {
-                    ControllerData.selected_controller[index] = self.current-index;
-                    ControllerData.controller_changed[index] = true;
-                }
+        ComboBox {
+            min-width: 96px;
+            preferred-width: 300px;
+            model: ControllerData.controller_names;
+            current-index: ControllerData.selected_controller[index];
+            selected => {
+                ControllerData.selected_controller[index] = self.current-index;
+                ControllerData.controller_changed[index] = true;
             }
         }
     }
@@ -162,18 +166,17 @@ export component ControllerConfig inherits Page {
     callback transferpak_toggled(int, bool);
     callback controller_window_created;
     title: @tr("Controller Configuration");
+    content-max-width: root.two-columns ? 740px : 460px;
 
     init => {
         controller_window_created();
     }
 
-    VerticalBox {
-        spacing: 8px;
+    VerticalLayout {
+        spacing: 12px;
         alignment: start;
 
-        HorizontalBox {
-            alignment: start;
-
+        ActionRow {
             Button {
                 text: @tr("Configure Input Profile");
                 enabled: !State.game_running;
@@ -183,20 +186,30 @@ export component ControllerConfig inherits Page {
             }
         }
 
-        GroupBox {
-            title: @tr("Controller Settings");
+        FlexboxLayout {
+            alignment: stretch;
+            flex-direction: root.two-columns ? row : column;
+            flex-wrap: no-wrap;
+            spacing: 12px;
+            cross-axis-alignment: stretch;
 
-            ControllerSettingsGrid {
-                transferpak_toggled(index, enabled) => {
-                    root.transferpak_toggled(index, enabled);
+            GroupBox {
+                title: @tr("Controller Settings");
+
+                ControllerSettingsGrid {
+                    transferpak_toggled(index, enabled) => {
+                        root.transferpak_toggled(index, enabled);
+                    }
                 }
             }
-        }
 
-        GroupBox {
-            title: @tr("Controller Assignment");
+            GroupBox {
+                title: @tr("Controller Assignment");
 
-            ControllerAssignmentGrid { }
+                ControllerAssignmentGrid {
+                    reserve-header-space: root.two-columns;
+                }
+            }
         }
     }
 }

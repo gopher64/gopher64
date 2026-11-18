@@ -1,16 +1,11 @@
 import {
-    VerticalBox,
-    HorizontalBox,
     TextEdit,
     SpinBox,
-    GroupBox,
     LineEdit,
     Button,
-    GridBox,
-    ScrollView,
 } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
-import { Page } from "page.slint";
+import { ActionRow, Page } from "page.slint";
 
 export global NetplayWaitData {
     in-out property <string> motd;
@@ -26,130 +21,130 @@ export global NetplayWaitData {
 
 export component NetplayWait inherits Page {
     title: @tr("Netplay: Waiting Room");
+    content-max-width: 580px;
     callback send_chat_message(string);
     callback begin_game(int);
     callback close;
-    VerticalBox {
+    VerticalLayout {
+        spacing: 8px;
         alignment: start;
-        HorizontalBox {
-            alignment: center;
-            VerticalBox {
-                alignment: start;
-                horizontal-stretch: 0;
+
+        Text {
+            text: @tr("Session Name:") + " " + NetplayData.session_name;
+            font-size: 15px;
+            wrap: word-wrap;
+        }
+
+        Text {
+            text: @tr("Game Name:") + " " + NetplayData.game_name;
+            font-size: 15px;
+            wrap: word-wrap;
+        }
+
+        GridLayout {
+            spacing: 8px;
+
+            Row {
                 Text {
-                    text: @tr("Session Name:") + " " + NetplayData.session_name;
-                    font-size: 15px;
-                    horizontal-alignment: center;
-                }
-
-                Text {
-                    text: @tr("Game Name:") + " " + NetplayData.game_name;
-                    font-size: 15px;
-                    horizontal-alignment: center;
-                }
-
-                HorizontalBox {
-                    alignment: center;
-                    GridBox {
-                        Row {
-                            Text {
-                                text: @tr("Player 1:") + " " + NetplayWaitData.players[0];
-                            }
-
-                            Text {
-                                text: @tr("Player 2:") + " " + NetplayWaitData.players[1];
-                            }
-                        }
-
-                        Row {
-                            Text {
-                                text: @tr("Player 3:") + " " + NetplayWaitData.players[2];
-                            }
-
-                            Text {
-                                text: @tr("Player 4:") + " " + NetplayWaitData.players[3];
-                            }
-                        }
-                    }
-                }
-
-                TextEdit {
-                    read-only: true;
-                    min-height: 110px;
-                    text: NetplayWaitData.chat_text;
-                }
-
-                HorizontalBox {
-                    chat_message := LineEdit {
-                        placeholder-text: @tr("Enter chat message");
-                        key-released(event) => {
-                            if (event.text == Key.Return && chat_message.text != "") {
-                                send_chat_message(chat_message.text);
-                                chat_message.text = "";
-                            }
-                            accept
-                        }
-                    }
-
-                    Button {
-                        text: @tr("Send Message");
-                        enabled: chat_message.text != "";
-                        clicked => {
-                            send_chat_message(chat_message.text);
-                            chat_message.text = "";
-                        }
-                    }
-                }
-
-                Text {
-                    text: @tr("Setting the input delay too low will cause frequent rollbacks.\nYou can lower the input delay in-game by pressing Alt+[ and raise it with Alt+].");
-                    horizontal-alignment: center;
+                    text: @tr("Player 1:") + " " + NetplayWaitData.players[0];
                     wrap: word-wrap;
                 }
 
-                HorizontalBox {
-                    alignment: center;
-                    Text {
-                        text: @tr("Local Input Delay:");
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
-
-                    SpinBox {
-                        height: self.min-height;
-                        minimum: 0;
-                        maximum: NetplayWaitData.max_input_delay;
-                        value: NetplayWaitData.input_delay;
-                        enabled: NetplayWaitData.recommended_delay != 0;
-                        edited => {
-                            NetplayWaitData.input_delay = self.value;
-                        }
-                    }
-
-                    Text {
-                        text: @tr("Recommended: ") + (NetplayWaitData.recommended_delay == 0 ? "Calculating..." : NetplayWaitData.recommended_delay);
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
+                Text {
+                    text: @tr("Player 2:") + " " + NetplayWaitData.players[1];
+                    wrap: word-wrap;
                 }
-                HorizontalBox {
-                    alignment: center;
-                    Button {
-                        property <bool> mesh_complete: NetplayWaitData.players.length == (NetplayWaitData.connected_peers_count + 1);
-                        text: mesh_complete ? @tr("Start Game") : @tr("Waiting for P2P mesh ") + (NetplayWaitData.connected_peers_count + 1) + "/" + NetplayWaitData.players.length;
-                        enabled: NetplayWaitData.players[0] == NetplayData.player_name && NetplayWaitData.can_start && NetplayWaitData.recommended_delay != 0 && mesh_complete;
-                        clicked => {
-                            NetplayWaitData.can_start = false;
-                            begin_game(NetplayWaitData.input_delay);
-                        }
-                    }
+            }
 
-                    Button {
-                        text: @tr("Cancel");
-                        clicked => {
-                            close();
-                        }
+            Row {
+                Text {
+                    text: @tr("Player 3:") + " " + NetplayWaitData.players[2];
+                    wrap: word-wrap;
+                }
+
+                Text {
+                    text: @tr("Player 4:") + " " + NetplayWaitData.players[3];
+                    wrap: word-wrap;
+                }
+            }
+        }
+
+        TextEdit {
+            read-only: true;
+            min-height: 110px;
+            text: NetplayWaitData.chat_text;
+        }
+
+        ActionRow {
+            alignment: stretch;
+
+            chat_message := LineEdit {
+                min-width: 120px;
+                preferred-width: 200px;
+                placeholder-text: @tr("Enter chat message");
+                key-released(event) => {
+                    if (event.text == Key.Return && chat_message.text != "") {
+                        send_chat_message(chat_message.text);
+                        chat_message.text = "";
                     }
+                    accept
+                }
+            }
+
+            Button {
+                text: @tr("Send Message");
+                enabled: chat_message.text != "";
+                clicked => {
+                    send_chat_message(chat_message.text);
+                    chat_message.text = "";
+                }
+            }
+        }
+
+        Text {
+            text: @tr("Setting the input delay too low will cause frequent rollbacks.\nYou can lower the input delay in-game by pressing Alt+[ and raise it with Alt+].");
+            wrap: word-wrap;
+        }
+
+        ActionRow {
+            alignment: start;
+
+            Text {
+                text: @tr("Local Input Delay:");
+                vertical-alignment: center;
+            }
+
+            SpinBox {
+                height: self.min-height;
+                minimum: 0;
+                maximum: NetplayWaitData.max_input_delay;
+                value: NetplayWaitData.input_delay;
+                enabled: NetplayWaitData.recommended_delay != 0;
+                edited => {
+                    NetplayWaitData.input_delay = self.value;
+                }
+            }
+
+            Text {
+                text: @tr("Recommended: ") + (NetplayWaitData.recommended_delay == 0 ? "Calculating..." : NetplayWaitData.recommended_delay);
+                vertical-alignment: center;
+            }
+        }
+        ActionRow {
+            Button {
+                property <bool> mesh_complete: NetplayWaitData.players.length == (NetplayWaitData.connected_peers_count + 1);
+                text: mesh_complete ? @tr("Start Game") : @tr("Waiting for P2P mesh ") + (NetplayWaitData.connected_peers_count + 1) + "/" + NetplayWaitData.players.length;
+                enabled: NetplayWaitData.players[0] == NetplayData.player_name && NetplayWaitData.can_start && NetplayWaitData.recommended_delay != 0 && mesh_complete;
+                clicked => {
+                    NetplayWaitData.can_start = false;
+                    begin_game(NetplayWaitData.input_delay);
+                }
+            }
+
+            Button {
+                text: @tr("Cancel");
+                clicked => {
+                    close();
                 }
             }
         }

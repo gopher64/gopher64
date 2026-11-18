@@ -1,14 +1,8 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import {
-    StandardButton,
-    VerticalBox,
-    HorizontalBox,
-    Button,
-    LineEdit,
-} from "std-widgets.slint";
-import { Page } from "page.slint";
+import { Button } from "std-widgets.slint";
+import { ActionRow, Page } from "page.slint";
 import { State } from "localgame_page.slint";
 
 export global NetplayData {
@@ -35,11 +29,13 @@ export component Netplay inherits Page {
     callback netplay_discord_button_clicked;
     callback netplay_feedback_button_clicked;
     title: @tr("Netplay");
+    content-max-width: 440px;
 
-    VerticalBox {
+    VerticalLayout {
+        spacing: 20px;
         alignment: start;
-        HorizontalBox {
-            alignment: center;
+
+        ActionRow {
             Button {
                 enabled: !State.game_running;
                 text: @tr("Create Session");
@@ -47,10 +43,7 @@ export component Netplay inherits Page {
                     create_session_button_clicked();
                 }
             }
-        }
 
-        HorizontalBox {
-            alignment: center;
             Button {
                 enabled: !State.game_running;
                 text: @tr("Join Session");
@@ -60,12 +53,7 @@ export component Netplay inherits Page {
             }
         }
 
-        Rectangle {
-            height: 20px;
-        }
-
-        HorizontalBox {
-            alignment: center;
+        ActionRow {
             Button {
                 text: @tr("Netplay Discord Channel");
                 clicked => {

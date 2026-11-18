@@ -5,10 +5,8 @@ import {
     LineEdit,
     Switch,
     Button,
-    HorizontalBox,
-    VerticalBox,
 } from "std-widgets.slint";
-import { Page } from "page.slint";
+import { ActionRow, Page } from "page.slint";
 
 export global RAData {
     in-out property <bool> enabled;
@@ -31,132 +29,127 @@ export component RetroAchievements inherits Page {
     callback ra_games_clicked;
     callback ra_show_profile_clicked;
     title: @tr("RetroAchievements");
+    content-max-width: 440px;
 
-    VerticalBox {
+    VerticalLayout {
+        spacing: 4px;
         alignment: start;
-        HorizontalBox {
-            alignment: center;
-            VerticalBox {
-                alignment: start;
-                Switch {
-                    text: @tr("Enabled");
-                    checked: RAData.enabled;
-                    toggled => {
-                        RAData.enabled = self.checked;
-                        if (!RAData.enabled) {
-                            RAData.ra_username = "";
-                            username_widget.text = "";
-                            password_widget.text = "";
-                            RAData.current_user_message = RAData.not_logged_in;
-                            RAData.ra_show_profile = false;
-                        }
-                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
-                    }
-                }
 
-                if !RAData.ra_casual_only: Switch {
-                    text: @tr("Hardcore mode");
-                    checked: RAData.hardcore;
-                    enabled: RAData.enabled;
-                    toggled => {
-                        RAData.hardcore = self.checked;
-                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
-                    }
-                }
-                Switch {
-                    text: @tr("Challenge Indicators");
-                    checked: RAData.challenge;
-                    enabled: RAData.enabled;
-                    toggled => {
-                        RAData.challenge = self.checked;
-                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
-                    }
-                }
-
-                Switch {
-                    text: @tr("Leaderboard Trackers");
-                    checked: RAData.leaderboard;
-                    enabled: RAData.enabled;
-                    toggled => {
-                        RAData.leaderboard = self.checked;
-                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
-                    }
-                }
-
-                Switch {
-                    text: @tr("Discord Rich Presence");
-                    checked: RAData.rich_presence;
-                    enabled: RAData.enabled;
-                    toggled => {
-                        RAData.rich_presence = self.checked;
-                        ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
-                    }
-                }
-            }
-        }
-
-        HorizontalBox {
-            alignment: center;
-            Text {
-                text: RAData.current_user_message;
-                vertical-alignment: center;
-            }
-
-            if RAData.ra_show_profile:Button {
-                enabled: RAData.enabled;
-                text: @tr("View Profile");
-                clicked => {
-                    ra_show_profile_clicked();
-                }
-            }
-        }
-
-        HorizontalBox {
-            alignment: center;
-            username_widget := LineEdit {
-                enabled: RAData.enabled;
-                placeholder-text: @tr("Username");
-                text: RAData.ra_username;
-                edited(text) => {
-                    RAData.ra_username = text;
-                }
-            }
-
-            password_widget := LineEdit {
-                enabled: RAData.enabled;
-                input-type: password;
-                placeholder-text: @tr("Password");
-                edited(text) => {
-                    RAData.ra_password = text;
-                }
-            }
-        }
-
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Login");
-                enabled: RAData.enabled && !RAData.ra_logging_in && RAData.ra_username != "" && RAData.ra_password != "";
-                clicked => {
-                    RAData.ra_logging_in = true;
-                    ra_button_clicked(RAData.ra_password);
-                    RAData.ra_password = "";
+        Switch {
+            text: @tr("Enabled");
+            checked: RAData.enabled;
+            toggled => {
+                RAData.enabled = self.checked;
+                if (!RAData.enabled) {
+                    RAData.ra_username = "";
+                    username_widget.text = "";
                     password_widget.text = "";
+                    RAData.current_user_message = RAData.not_logged_in;
+                    RAData.ra_show_profile = false;
                 }
+                ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
             }
         }
 
-        Rectangle {
-            height: 20px;
+        if !RAData.ra_casual_only: Switch {
+            text: @tr("Hardcore mode");
+            checked: RAData.hardcore;
+            enabled: RAData.enabled;
+            toggled => {
+                RAData.hardcore = self.checked;
+                ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+            }
+        }
+        Switch {
+            text: @tr("Challenge Indicators");
+            checked: RAData.challenge;
+            enabled: RAData.enabled;
+            toggled => {
+                RAData.challenge = self.checked;
+                ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+            }
         }
 
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("View Supported Games");
-                clicked => {
-                    ra_games_clicked();
-                }
+        Switch {
+            text: @tr("Leaderboard Trackers");
+            checked: RAData.leaderboard;
+            enabled: RAData.enabled;
+            toggled => {
+                RAData.leaderboard = self.checked;
+                ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+            }
+        }
+
+        Switch {
+            text: @tr("Discord Rich Presence");
+            checked: RAData.rich_presence;
+            enabled: RAData.enabled;
+            toggled => {
+                RAData.rich_presence = self.checked;
+                ra_toggled(RAData.enabled,RAData.hardcore,RAData.challenge,RAData.leaderboard,RAData.rich_presence);
+            }
+        }
+    }
+
+    ActionRow {
+        Text {
+            text: RAData.current_user_message;
+            wrap: word-wrap;
+            vertical-alignment: center;
+        }
+
+        if RAData.ra_show_profile:Button {
+            enabled: RAData.enabled;
+            text: @tr("View Profile");
+            clicked => {
+                ra_show_profile_clicked();
+            }
+        }
+    }
+
+    FlexboxLayout {
+        alignment: stretch;
+        flex-direction: root.compact ? column : row;
+        flex-wrap: no-wrap;
+        spacing: 8px;
+
+        username_widget := LineEdit {
+            min-width: 120px;
+            enabled: RAData.enabled;
+            placeholder-text: @tr("Username");
+            text: RAData.ra_username;
+            edited(text) => {
+                RAData.ra_username = text;
+            }
+        }
+
+        password_widget := LineEdit {
+            min-width: 120px;
+            enabled: RAData.enabled;
+            input-type: password;
+            placeholder-text: @tr("Password");
+            edited(text) => {
+                RAData.ra_password = text;
+            }
+        }
+    }
+
+    ActionRow {
+        Button {
+            text: @tr("Login");
+            enabled: RAData.enabled && !RAData.ra_logging_in && RAData.ra_username != "" && RAData.ra_password != "";
+            clicked => {
+                RAData.ra_logging_in = true;
+                ra_button_clicked(RAData.ra_password);
+                RAData.ra_password = "";
+                password_widget.text = "";
+            }
+        }
+
+        Button {
+            text: @tr("View Supported Games");
+            clicked => {
+                ra_games_clicked();
             }
         }
     }

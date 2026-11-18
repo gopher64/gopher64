@@ -1,16 +1,7 @@
-import {
-    Palette,
-    StandardButton,
-    LineEdit,
-    HorizontalBox,
-    VerticalBox,
-    Button,
-    ComboBox,
-    ScrollView,
-} from "std-widgets.slint";
+import { Button, LineEdit } from "std-widgets.slint";
 import { NetplayData } from "netplay_page.slint";
 import { SettingsData } from "settings_page.slint";
-import { Page } from "page.slint";
+import { ActionRow, LabelButton, Page } from "page.slint";
 
 export component NetplayCreate inherits Page {
     title: @tr("Netplay: Create Session");
@@ -18,115 +9,102 @@ export component NetplayCreate inherits Page {
     callback create_session(string, string, string, string, string, string, bool, bool);
     callback close;
 
-    VerticalBox {
+    VerticalLayout {
+        spacing: 8px;
         alignment: start;
-        HorizontalBox {
-            alignment: center;
-            VerticalBox {
-                alignment: start;
-                horizontal-stretch: 0;
-                HorizontalBox {
-                    VerticalBox {
-                        Text {
-                            text: @tr("Session Name:");
-                        }
+        FlexboxLayout {
+            flex-direction: root.compact ? column : row;
+            flex-wrap: no-wrap;
+            spacing: 8px;
 
-                        LineEdit {
-                            enabled: !NetplayData.pending_session;
-                            placeholder-text: @tr("Enter session name");
-                            text: NetplayData.session_name;
-                            edited(text) => {
-                                NetplayData.session_name = text;
-                            }
-                        }
-                    }
-
-                    VerticalBox {
-                        Text {
-                            text: @tr("Password (Optional):");
-                        }
-
-                        LineEdit {
-                            enabled: !NetplayData.pending_session;
-                            placeholder-text: @tr("Enter session password");
-                            text: NetplayData.password;
-                            edited(text) => {
-                                NetplayData.password = text;
-                            }
-                        }
-                    }
+            VerticalLayout {
+                spacing: 4px;
+                Text {
+                    text: @tr("Session Name:");
                 }
 
-                VerticalBox {
-                    Text {
-                        text: @tr("Player Name:");
-                    }
-
-                    LineEdit {
-                        enabled: !NetplayData.pending_session;
-                        placeholder-text: @tr("Enter player name");
-                        text: NetplayData.player_name;
-                        edited(text) => {
-                            NetplayData.player_name = text;
-                        }
+                LineEdit {
+                    enabled: !NetplayData.pending_session;
+                    placeholder-text: @tr("Enter session name");
+                    text: NetplayData.session_name;
+                    edited(text) => {
+                        NetplayData.session_name = text;
                     }
                 }
+            }
 
-                HorizontalBox {
-                    alignment: center;
-                    if NetplayData.game_name == "": Button {
-                        enabled: !NetplayData.pending_session;
-                        text: @tr("Select ROM");
-                        clicked => {
-                            select_rom(SettingsData.rom_dir);
-                        }
-                    }
-                    if NetplayData.game_name != "": Button {
-                        enabled: !NetplayData.pending_session;
-                        text: NetplayData.game_name;
-                        clicked => {
-                            select_rom(SettingsData.rom_dir);
-                        }
-                    }
+            VerticalLayout {
+                spacing: 4px;
+
+                Text {
+                    text: @tr("Password (Optional):");
                 }
 
-                Rectangle { }
-
-                if NetplayData.game_cheats != "": Text {
-                    text: @tr("This game has cheats enabled. Cheats will be synchronized with other players.");
-                    horizontal-alignment: center;
-                    wrap: word-wrap;
-                }
-                Rectangle { }
-
-                HorizontalBox {
-                    alignment: center;
-                    Button {
-                        text: @tr("Create Session");
-                        enabled: NetplayData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
-                        clicked => {
-                            NetplayData.pending_session = true;
-                            create_session(
-                            NetplayData.session_name,
-                            NetplayData.player_name,
-                            NetplayData.game_name,
-                            NetplayData.game_hash,
-                            NetplayData.game_cheats,
-                            NetplayData.password,
-                            SettingsData.overclock_n64_cpu,
-                            SettingsData.disable_expansion_pak);
-                        }
-                    }
-
-                    Button {
-                        text: @tr("Cancel");
-                        clicked => {
-                            close();
-                        }
+                LineEdit {
+                    enabled: !NetplayData.pending_session;
+                    placeholder-text: @tr("Enter session password");
+                    text: NetplayData.password;
+                    edited(text) => {
+                        NetplayData.password = text;
                     }
                 }
+            }
+        }
 
-                Rectangle { }
+        VerticalLayout {
+            spacing: 4px;
+
+            Text {
+                text: @tr("Player Name:");
+            }
+
+            LineEdit {
+                enabled: !NetplayData.pending_session;
+                placeholder-text: @tr("Enter player name");
+                text: NetplayData.player_name;
+                edited(text) => {
+                    NetplayData.player_name = text;
+                }
+            }
+        }
+
+        ActionRow {
+            LabelButton {
+                enabled: !NetplayData.pending_session;
+                label: NetplayData.game_name == "" ? @tr("Select ROM") : NetplayData.game_name;
+                clicked => {
+                    select_rom(SettingsData.rom_dir);
+                }
+            }
+        }
+
+        if NetplayData.game_cheats != "": Text {
+            text: @tr("This game has cheats enabled. Cheats will be synchronized with other players.");
+            wrap: word-wrap;
+        }
+        ActionRow {
+            Button {
+                text: @tr("Create Session");
+                enabled: NetplayData.session_name != "" && NetplayData.player_name != "" && NetplayData.game_name != "" && !NetplayData.pending_session;
+                clicked => {
+                    NetplayData.pending_session = true;
+                    create_session(
+                    NetplayData.session_name,
+                    NetplayData.player_name,
+                    NetplayData.game_name,
+                    NetplayData.game_hash,
+                    NetplayData.game_cheats,
+                    NetplayData.password,
+                    SettingsData.overclock_n64_cpu,
+                    SettingsData.disable_expansion_pak);
+                }
+            }
+
+            Button {
+                text: @tr("Cancel");
+                clicked => {
+                    close();
+                }
             }
         }
     }

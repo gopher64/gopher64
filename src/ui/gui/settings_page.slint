@@ -4,11 +4,9 @@
 import {
     GroupBox,
     ComboBox,
-    HorizontalBox,
-    VerticalBox,
     Switch,
 } from "std-widgets.slint";
-import { Page } from "page.slint";
+import { ActionRow, Page } from "page.slint";
 
 export global SettingsData {
     in-out property <bool> integer_scaling;
@@ -27,25 +25,65 @@ export global SettingsData {
     in-out property <string> rom_dir;
 }
 
+component LabeledSwitch inherits HorizontalLayout {
+    in property <string> text;
+    in-out property <bool> checked <=> control.checked;
+    callback toggled <=> control.toggled;
+
+    spacing: 12px;
+
+    control := Switch {
+        accessible-label: root.text;
+    }
+
+    Rectangle {
+        HorizontalLayout {
+            Text {
+                text: root.text;
+                wrap: word-wrap;
+                vertical-alignment: center;
+                accessible-role: none;
+            }
+        }
+
+        TouchArea {
+            clicked => {
+                root.checked = !root.checked;
+                root.toggled();
+            }
+        }
+    }
+}
+
 export component Settings inherits Page {
     title: @tr("Settings");
+    content-max-width: root.two-columns ? 560px : 380px;
 
-    HorizontalBox {
-        alignment: center;
-        VerticalBox {
-            alignment: start;
-            GroupBox {
-                title: @tr("Game");
-                VerticalBox {
+    VerticalLayout {
+        spacing: root.two-columns ? 4px : 12px;
+        alignment: start;
+
+        GroupBox {
+            title: @tr("Game");
+            FlexboxLayout {
+                flex-direction: root.two-columns ? row : column;
+                flex-wrap: no-wrap;
+                spacing: root.two-columns ? 24px : 12px;
+                cross-axis-alignment: start;
+
+                VerticalLayout {
+                    spacing: 4px;
                     alignment: start;
-                    HorizontalBox {
+                    ActionRow {
                         alignment: start;
+
                         Text {
                             text: @tr("Resolution:");
                             vertical-alignment: center;
                         }
 
                         ComboBox {
+                            min-width: 96px;
                             model: ["1x", "2x", "4x", "8x"];
                             current-index: SettingsData.resolution;
                             selected => {
@@ -101,12 +139,12 @@ export component Settings inherits Page {
                             SettingsData.apply_crt_shader = self.checked;
                         }
                     }
+                }
 
-                    Rectangle {
-                        height: 20px;
-                    }
-
-                    Switch {
+                VerticalLayout {
+                    spacing: 4px;
+                    alignment: start;
+                    LabeledSwitch {
                         text: @tr("Overclock N64 CPU (may cause bugs)");
                         checked: SettingsData.overclock_n64_cpu;
                         toggled => {
@@ -147,30 +185,32 @@ export component Settings inherits Page {
                     }
                 }
             }
+        }
 
-            GroupBox {
-                title: @tr("UI");
-                VerticalBox {
+        GroupBox {
+            title: @tr("UI");
+            VerticalLayout {
+                alignment: start;
+                ActionRow {
                     alignment: start;
-                    HorizontalBox {
-                        alignment: start;
-                        Text {
-                            text: @tr("Theme:");
-                            vertical-alignment: center;
-                        }
 
-                        ComboBox {
-                            model: [@tr("System"), @tr("Dark"), @tr("Light")];
-                            current-index: SettingsData.theme;
-                            selected => {
-                                SettingsData.theme = self.current-index;
-                            }
-                        }
+                    Text {
+                        text: @tr("Theme:");
+                        vertical-alignment: center;
                     }
 
-                    Rectangle {
-                        height: 40px; // so the combobox isn't cut off
+                    ComboBox {
+                        min-width: 96px;
+                        model: [@tr("System"), @tr("Dark"), @tr("Light")];
+                        current-index: SettingsData.theme;
+                        selected => {
+                            SettingsData.theme = self.current-index;
+                        }
                     }
+                }
+
+                if !root.two-columns: Rectangle {
+                    height: 40px; // Leave space for the theme menu on tall screens.
                 }
             }
         }

@@ -162,8 +162,8 @@ export component AppWindow inherits Window {
         apply_theme();
     }
 
-    min-width: 320px;
-    min-height: 240px;
+    min-width: root.is_android ? 0px : 320px;
+    min-height: root.is_android ? 0px : 240px;
     preferred-width: 800px;
     preferred-height: 650px;
     title: "Gopher64";
@@ -372,11 +372,10 @@ export component AppWindow inherits Window {
                 background: Palette.background;
                 VerticalBox {
                     alignment: center;
-                    HorizontalBox {
-                        alignment: center;
-                        Text {
-                            text: popup_message;
-                        }
+                    Text {
+                        text: popup_message;
+                        wrap: word-wrap;
+                        horizontal-alignment: center;
                     }
 
                     if (popup_has_close):HorizontalBox {
@@ -391,8 +390,8 @@ export component AppWindow inherits Window {
                 }
             }
 
-            x: content-area.x;
-            y: content-area.y;
+            x: 0px;
+            y: 0px;
             height: content-area.height;
             width: content-area.width;
         }

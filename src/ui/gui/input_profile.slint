@@ -1,12 +1,10 @@
 import {
-    HorizontalBox,
-    VerticalBox,
     Button,
     LineEdit,
     Switch,
     Slider,
 } from "std-widgets.slint";
-import { Page } from "page.slint";
+import { ActionRow, Page } from "page.slint";
 
 export global InputProfileData {
     in-out property <bool> dinput;
@@ -17,37 +15,34 @@ export global InputProfileData {
 
 export component InputProfileDialog inherits Page {
     title: @tr("Create/Modify Input Profile");
+    content-max-width: 640px;
     callback profile_creation_button_clicked;
     in-out property dinput <=> InputProfileData.dinput;
     in-out property profile_name <=> InputProfileData.profile_name;
     in-out property deadzone <=> InputProfileData.deadzone;
-    VerticalBox {
+    VerticalLayout {
+        spacing: 8px;
         alignment: start;
 
-        HorizontalBox {
-            alignment: center;
-            vertical-stretch: 0;
-            LineEdit {
-                vertical-stretch: 0;
-                placeholder-text: @tr("Enter profile name to create or modify");
-                text: InputProfileData.profile_name;
-                preferred-width: 400px;
-                edited(text) => {
-                    InputProfileData.profile_name = text;
-                }
+        LineEdit {
+            placeholder-text: @tr("Enter profile name to create or modify");
+            text: InputProfileData.profile_name;
+            edited(text) => {
+                InputProfileData.profile_name = text;
             }
         }
 
-        HorizontalBox {
+        ActionRow {
+            alignment: start;
             vertical-stretch: 0;
-            alignment: center;
             Text {
                 text: @tr("Deadzone Percentage");
                 vertical-alignment: center;
             }
 
             Slider {
-                min-width: 160px;
+                min-width: 92px;
+                preferred-width: 140px;
                 maximum: 99;
                 value: InputProfileData.deadzone;
                 changed(value) => {
@@ -61,20 +56,15 @@ export component InputProfileDialog inherits Page {
             }
         }
 
-        HorizontalBox {
-            vertical-stretch: 0;
-            alignment: center;
-            Switch {
-                text: @tr("Use DirectInput");
-                checked: InputProfileData.dinput;
-                toggled => {
-                    InputProfileData.dinput = self.checked;
-                }
+        Switch {
+            text: @tr("Use DirectInput");
+            checked: InputProfileData.dinput;
+            toggled => {
+                InputProfileData.dinput = self.checked;
             }
         }
 
-        HorizontalBox {
-            alignment: center;
+        ActionRow {
             vertical-stretch: 0;
             Button {
                 vertical-stretch: 0;
@@ -94,12 +84,9 @@ export component InputProfileDialog inherits Page {
             }
         }
 
-        HorizontalBox {
-            Text {
-                wrap: word-wrap;
-                horizontal-alignment: center;
-                text: @tr("When using DirectInput and/or keyboard, navigate the dialog using the arrow keys.\nPress Enter to begin binding a button/axis.\nPress Delete to remove a binding.\n\nWhen using a PlayStation-style controller, navigate the dialog using the D-pad.\nPress the South/East button to begin binding a button/axis.\nPress the North/West button to remove a binding.");
-            }
+        Text {
+            wrap: word-wrap;
+            text: @tr("When using DirectInput and/or keyboard, navigate the dialog using the arrow keys.\nPress Enter to begin binding a button/axis.\nPress Delete to remove a binding.\n\nWhen using a PlayStation-style controller, navigate the dialog using the D-pad.\nPress the South/East button to begin binding a button/axis.\nPress the North/West button to remove a binding.");
         }
     }
 }

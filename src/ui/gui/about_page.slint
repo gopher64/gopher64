@@ -1,24 +1,22 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Button, HorizontalBox, VerticalBox } from "std-widgets.slint";
-import { Page } from "page.slint";
+import { Button } from "std-widgets.slint";
+import { ActionRow, LabelButton, Page } from "page.slint";
 
 export global AboutData {
     in property <string> version;
     in property <bool> has_update;
 }
 
-export component NewVersionButton {
+export component NewVersionButton inherits ActionRow {
     callback newversion_button_clicked;
-    HorizontalBox {
-        alignment: center;
-        Button {
-            text: @tr("New version available! Click here to download");
-            primary: true;
-            clicked => {
-                newversion_button_clicked();
-            }
+    LabelButton {
+        label: @tr("New version available! Click here to download");
+        wrap-label: true;
+        primary: true;
+        clicked => {
+            newversion_button_clicked();
         }
     }
 }
@@ -31,68 +29,56 @@ export component About inherits Page {
     callback github_sponsors_button_clicked;
     callback source_code_button_clicked;
     title: @tr("About");
+    content-max-width: 440px;
 
-    VerticalBox {
-        alignment: start;
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Wiki");
-                clicked => {
-                    wiki_button_clicked();
-                }
+    ActionRow {
+        Button {
+            text: @tr("Wiki");
+            clicked => {
+                wiki_button_clicked();
             }
         }
 
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Discord Server");
-                clicked => {
-                    discord_button_clicked();
-                }
+        Button {
+            text: @tr("Discord Server");
+            clicked => {
+                discord_button_clicked();
             }
         }
 
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Source Code");
-                clicked => {
-                    source_code_button_clicked();
-                }
+        Button {
+            text: @tr("Source Code");
+            clicked => {
+                source_code_button_clicked();
+            }
+        }
+    }
+
+    ActionRow {
+        Button {
+            text: @tr("Donate (via Patreon)");
+            clicked => {
+                patreon_button_clicked();
             }
         }
 
-        HorizontalBox {
-            alignment: center;
-            Button {
-                text: @tr("Donate (via Patreon)");
-                clicked => {
-                    patreon_button_clicked();
-                }
-            }
-
-            Button {
-                text: @tr("Donate (via GitHub)");
-                clicked => {
-                    github_sponsors_button_clicked();
-                }
+        Button {
+            text: @tr("Donate (via GitHub)");
+            clicked => {
+                github_sponsors_button_clicked();
             }
         }
+    }
 
-        HorizontalBox {
-            alignment: center;
-            Text {
-                text: AboutData.version;
-            }
-        }
+    Text {
+        text: AboutData.version;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
 
-        if AboutData.has_update:NewVersionButton {
-            newversion_button_clicked => {
-                newversion_button_clicked();
-            }
+    if AboutData.has_update: NewVersionButton {
+        newversion_button_clicked => {
+            newversion_button_clicked();
         }
-        Rectangle { }
     }
 }
