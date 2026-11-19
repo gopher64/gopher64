@@ -129,10 +129,10 @@ static uint64_t mark_stamp() { return processor->get_timeline_value() + 1; }
 
 // Upscaling reads full color and depth rows down to the lowest scissored
 // line drawn (Renderer::update_deduced_height). Fallback uploads cover the
-// same range rounded out to IncoherentPageSize. Fallback readbacks can retain
-// earlier GPU write masks, so mark their entire pages as writes. The renderer
-// only queues depth readbacks through the last row of a depth-writing
-// primitive. Each entry remembers the end already marked for its stamp.
+// same range rounded out to IncoherentPageSize. The tracker uses the possible
+// GPU write ranges and the pages queued for readback. The renderer only queues
+// depth readbacks through the last row of a depth-writing primitive. Each
+// entry remembers the end already marked for its stamp.
 struct FramebufferAccess {
   uint64_t stamp;
   uint32_t address;
@@ -185,10 +185,12 @@ static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
     uint32_t pixels = fb.framebuffer_width * uint32_t(y1 + 1);
     uint32_t depth_size = 2u * pixels;
     color_access.mark(color_base, pixels * bytes, stamp,
-                      fallback ? Access::Write : Access::Read, fallback);
+                      fallback ? Access::Write : Access::Read,
+                      fallback && !synchronous_rdram_uploads);
     if (fallback && fb.depth_update &&
         fb.depthbuffer_address != fb.framebuffer_address) {
-      depth_writes.mark(depth_base, depth_size, stamp, Access::Write, true);
+      depth_writes.mark(depth_base, depth_size, stamp, Access::Write,
+                        !synchronous_rdram_uploads);
     } else if (upscaled || !synchronous_rdram_uploads ||
                fb.depth_compare || fb.depth_update) {
       // Direct import exposes the padding read by the word-aligned pre/post
@@ -494,8 +496,17 @@ static void rdp_new_processor() {
 
   synchronous_rdram_uploads =
       single_threaded && !processor->is_rdram_host_coherent();
-  // the new processor's timeline starts over
-  rdram_tracker.reset(gfx_info.RDRAM_SIZE);
+  // Staging uploads that run on this thread cannot race CPU writes, so track
+  // the blocks the GPU may write within each readback page in that mode.
+  rdram_tracker.reset(gfx_info.RDRAM_SIZE,
+                      synchronous_rdram_uploads
+                          ? RDP::ImplementationConstants::IncoherentPageSize
+                          : 0);
+  if (synchronous_rdram_uploads)
+    processor->set_rdram_write_mask_clear_callback(
+        [](uint32_t page, uint64_t completed) {
+          rdram_tracker.retire_readback_writes(page, completed);
+        });
   color_access = {};
   depth_reads = {};
   depth_writes = {};
