@@ -85,7 +85,7 @@ typedef struct {
   int cmd_cur;
   int cmd_ptr;
   int32_t scissor_xh, scissor_yh, scissor_xl, scissor_yl;
-  // last pixel column/row the scissor lets through (inclusive)
+  // Last pixel column/row for the exclusive scissor edges.
   int32_t scissor_x_last, scissor_y_last;
   uint32_t scissor_field;    // interlace: only every other line is drawn
   uint32_t scissor_keep_odd; // which lines are kept in field mode
@@ -206,9 +206,12 @@ static void mark_primitive(int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
       return;
   }
 
+  // The renderer includes the right scissor pixel in fill and copy modes.
+  int32_t scissor_right = rdp_device.cycle_type >= 2
+                              ? rdp_device.scissor_xl
+                              : rdp_device.scissor_x_last;
   x0 = std::max(x0, rdp_device.scissor_xh);
-  x1 = std::min(
-      {x1, rdp_device.scissor_x_last, int32_t(fb.framebuffer_width) - 1});
+  x1 = std::min({x1, scissor_right, int32_t(fb.framebuffer_width) - 1});
   y0 = std::max(y0, rdp_device.scissor_yh);
   if (x1 < x0 || y1 < y0)
     return;
@@ -1198,8 +1201,8 @@ uint64_t rdp_process_commands(uint64_t now) {
       rdp_device.scissor_field = (w2 >> 25) & 1;
       rdp_device.scissor_keep_odd = (w2 >> 24) & 1;
 
-      // parallel-rdp draws subpixel rows/columns in [hi, lo) of the 10.2
-      // scissor, so the last pixel touched is (lo - 1) >> 2
+      // Last pixels for the exclusive edges of the 10.2 scissor.
+      // Fill and copy use scissor_xl for their inclusive right edge.
       rdp_device.scissor_x_last = (int32_t((w2 >> 12) & 0xFFF) - 1) >> 2;
       rdp_device.scissor_y_last = (int32_t(w2 & 0xFFF) - 1) >> 2;
     } break;
