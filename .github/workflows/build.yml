@@ -212,7 +212,7 @@ jobs:
             matrix.llvm }}.tar.xz
       - name: Build
         run: |
-          brew install --force-bottle cargo-bundle
+          brew install cargo-bundle
           brew install molten-vk
           cargo build --profile ${{ env.BUILD_PROFILE }} --no-default-features -v --target=${{ matrix.target }}
           mv target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64 target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64-cli
