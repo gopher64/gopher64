@@ -82,6 +82,7 @@ fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
                 disable_expansion_pak: handle.get_disable_expansion_pak(),
                 cheats: rustc_hash::FxHashMap::default(), // will be filled in later
                 load_savestate_slot: None,
+                rng_seed: None,
             },
             None,
             show_touch_overlay(&handle),
@@ -814,6 +815,7 @@ fn open_rom(app: &AppWindow) {
                     disable_expansion_pak,
                     cheats: rustc_hash::FxHashMap::default(), // will be filled in later
                     load_savestate_slot: None,
+                    rng_seed: None,
                 },
                 None,
                 show_touch_overlay,
