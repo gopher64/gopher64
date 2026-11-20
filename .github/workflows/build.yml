@@ -212,11 +212,11 @@ jobs:
             matrix.llvm }}.tar.xz
       - name: Build
         run: |
-          cargo install --locked cargo-bundle
+          brew install cargo-bundle
           brew install molten-vk
           cargo build --profile ${{ env.BUILD_PROFILE }} --no-default-features -v --target=${{ matrix.target }}
           mv target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64 target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64-cli
-          cargo bundle --profile ${{ env.BUILD_PROFILE }} --target=${{ matrix.target }} --format osx
+          "$(brew --prefix cargo-bundle)/bin/cargo-bundle" --profile ${{ env.BUILD_PROFILE }} --target=${{ matrix.target }} --format osx
           cp target/${{ matrix.target }}/${{ env.BUILD_DIR }}/gopher64-cli target/${{ matrix.target }}/${{ env.BUILD_DIR }}/bundle/osx/Gopher64.app/Contents/MacOS/gopher64-cli
         env:
           MACOSX_DEPLOYMENT_TARGET: "15.0"
