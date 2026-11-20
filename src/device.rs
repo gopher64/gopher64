@@ -87,7 +87,7 @@ pub fn run_game(
         }
     }
 
-    init_rng_rtc(device);
+    init_rng_rtc(device, game_settings.rng_seed);
 
     // must be after video init
     let (discord_watch_tx, discord_handle) = if ra_config.enabled && device.netplay.is_none() {
@@ -135,8 +135,8 @@ fn set_rng() -> rand::rngs::Xoshiro256PlusPlus {
     rand::rngs::Xoshiro256PlusPlus::try_from_rng(&mut rand::rngs::SysRng).unwrap()
 }
 
-fn init_rng_rtc(device: &mut Device) {
-    let mut rng_seed = set_rng().next_u64();
+fn init_rng_rtc(device: &mut Device, fixed_rng_seed: Option<u64>) {
+    let mut rng_seed = fixed_rng_seed.unwrap_or_else(|| set_rng().next_u64());
     if let Some(netplay) = &mut device.netplay {
         if netplay.player_number == 0 {
             netplay::send_rng(netplay, rng_seed);

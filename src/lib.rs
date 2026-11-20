@@ -86,6 +86,14 @@ pub struct Args {
     )]
     pub load_state: Option<u32>,
     #[arg(
+        long,
+        value_name = "SEED",
+        requires = "game",
+        conflicts_with = "netplay_server_addr",
+        help = "Set the initial emulation RNG seed (unsigned 64-bit integer)"
+    )]
+    pub rng_seed: Option<u64>,
+    #[arg(
         long = "ra-username",
         value_name = "USERNAME",
         help = "Username for RetroAchievements"
@@ -268,6 +276,7 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
                 disable_expansion_pak,
                 cheats,
                 load_savestate_slot: args.load_state,
+                rng_seed: args.rng_seed,
             },
             ra_config,
             netplay_config,

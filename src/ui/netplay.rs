@@ -532,6 +532,7 @@ fn create_session(
                                     disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                     cheats: serde_json::from_str(cheats).unwrap(),
                                     load_savestate_slot: None,
+                                    rng_seed: None,
                                 },
                                 &handle,
                             );
@@ -860,6 +861,7 @@ fn setup_wait_window(
                                                 .disable_expansion_pak,
                                             cheats: game_settings.cheats,
                                             load_savestate_slot: None,
+                                            rng_seed: None,
                                         },
                                         Some(ui::gui::NetplayDevice {
                                             server_addr: server_addresses.game.clone(),
@@ -976,6 +978,7 @@ fn setup_join_window(
                                     disable_expansion_pak: disable_expansion_pak.parse().unwrap(),
                                     cheats: serde_json::from_str(cheats).unwrap(),
                                     load_savestate_slot: None,
+                                    rng_seed: None,
                                 },
                                 &handle,
                             );
