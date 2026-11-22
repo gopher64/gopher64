@@ -94,6 +94,14 @@ pub struct Args {
     )]
     pub rng_seed: Option<u64>,
     #[arg(
+        long,
+        value_name = "FILE",
+        requires = "game",
+        conflicts_with_all = ["load_state", "netplay_server_addr", "ra_username", "ra_password"],
+        help = "Replay a standalone BizHawk N64 Input Log.txt"
+    )]
+    pub bk2_input_log: Option<std::path::PathBuf>,
+    #[arg(
         long = "ra-username",
         value_name = "USERNAME",
         help = "Username for RetroAchievements"
@@ -169,7 +177,13 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
             return Err(Error::other("Savestate slot must be between 0 and 9"));
         }
 
+        let playback = args
+            .bk2_input_log
+            .as_deref()
+            .map(device::controller::bk2::Playback::open)
+            .transpose()?;
         let mut device = device::Device::new(true);
+        device.bk2_playback = playback;
 
         device.ui.config.ui.recent_roms.retain(|x| *x != game);
         device.ui.config.ui.recent_roms.insert(0, game);
@@ -219,7 +233,8 @@ pub fn run(args: Args, arg_count: usize) -> std::io::Result<()> {
         }
 
         let file_path = dirs.config_dir.join("retroachievements.json");
-        let ra_config = if let ra_config = std::fs::read(&file_path).unwrap_or_default()
+        let ra_config = if device.bk2_playback.is_none()
+            && let ra_config = std::fs::read(&file_path).unwrap_or_default()
             && let ra_config =
                 serde_json::from_slice::<retroachievements::RAConfig>(ra_config.as_ref())
                     .unwrap_or_default()

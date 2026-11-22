@@ -226,7 +226,7 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
     let mut speed_limiter_toggled = false;
     let callback = unsafe { rdp_check_callback() };
     device.cpu.running = callback.emu_running;
-    if device.netplay.is_none() {
+    if device.netplay.is_none() && device.bk2_playback.is_none() {
         if callback.save_state {
             device.ui.savestate.save_state = true;
         } else if callback.load_state {
@@ -246,10 +246,10 @@ pub fn check_callback(device: &mut device::Device) -> (bool, bool) {
                 device.cpu.clock_rate, // 1 second
             );
         }
-        if device.ui.speed_limiter.enabled != callback.enable_speedlimiter {
-            speed_limiter_toggled = true;
-            device.ui.speed_limiter.enabled = callback.enable_speedlimiter;
-        }
+    }
+    if device.netplay.is_none() && device.ui.speed_limiter.enabled != callback.enable_speedlimiter {
+        speed_limiter_toggled = true;
+        device.ui.speed_limiter.enabled = callback.enable_speedlimiter;
     }
 
     if device.ui.storage.save_state_slot != callback.save_state_slot {

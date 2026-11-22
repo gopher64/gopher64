@@ -216,17 +216,27 @@ pub fn process_ram(device: &mut device::Device) {
     device.pif.ram[0x3F] &= !clrmask
 }
 
+fn controller_connected(device: &device::Device, port: usize) -> bool {
+    if let Some(netplay) = &device.netplay {
+        netplay.connected[port]
+    } else if let Some(playback) = &device.bk2_playback {
+        playback.connected(port)
+    } else {
+        device.ui.config.input.controller_enabled[port]
+    }
+}
+
+pub fn vru_enabled(device: &device::Device) -> bool {
+    device.ui.config.input.emulate_vru && device.netplay.is_none() && device.bk2_playback.is_none()
+}
+
 pub fn connect_pif_channels(device: &mut device::Device) {
     for i in 0..4 {
-        if let Some(netplay) = &device.netplay {
-            if netplay.connected[i] {
-                device.pif.channels[i].process = Some(device::controller::process);
-            }
-        } else if device.ui.config.input.controller_enabled[i] {
+        if controller_connected(device, i) {
             device.pif.channels[i].process = Some(device::controller::process);
         }
     }
-    if device.ui.config.input.emulate_vru && device.netplay.is_none() {
+    if vru_enabled(device) {
         device.pif.channels[3].process = Some(device::controller::vru::process);
     }
     device.pif.channels[4].process = Some(device::cart::process)
@@ -277,19 +287,15 @@ pub fn init(device: &mut device::Device) {
     connect_pif_channels(device);
 
     for i in 0..4 {
-        if let Some(netplay) = &device.netplay {
-            if netplay.connected[i] {
-                device.pif.channels[i].pak_handler = Some(default_handler);
-            }
-        } else if device.ui.config.input.controller_enabled[i] {
-            if device.transferpaks[i].cart.rom.is_empty() {
+        if controller_connected(device, i) {
+            if device.netplay.is_some() || device.transferpaks[i].cart.rom.is_empty() {
                 device.pif.channels[i].pak_handler = Some(default_handler);
             } else {
                 device.pif.channels[i].pak_handler = Some(tpak_handler);
             }
         }
     }
-    if device.ui.config.input.emulate_vru && device.netplay.is_none() {
+    if vru_enabled(device) {
         device.pif.channels[3].pak_handler = None;
     }
 }
