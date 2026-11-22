@@ -1149,6 +1149,12 @@ uint64_t rdp_process_commands(uint64_t now) {
     } else if (command == 0x36) { // FillRectangle
       rdp_add_busy(RDP_PRIMITIVE_SETUP_CLOCKS +
                    rdp_pixel_clocks(rdp_rectangle_pixels(w1, w2)));
+    } else if (command == 0x30) { // LoadTLUT
+      uint32_t sl = ((w1 >> 12) & 0xFFF) >> 2;
+      uint32_t sh = ((w2 >> 12) & 0xFFF) >> 2;
+      uint32_t entries = sh >= sl ? sh - sl + 1 : 0;
+      // Each 16-bit palette entry is replicated into one 64-bit TMEM word.
+      rdp_add_busy(RDP_PRIMITIVE_SETUP_CLOCKS + RDP_SCANLINE_CLOCKS + entries);
     } else if (command == 0x33 || command == 0x34) { // LoadBlock / LoadTile
       uint32_t sl = (w1 >> 12) & 0xFFF, tl = w1 & 0xFFF;
       uint32_t sh = (w2 >> 12) & 0xFFF, th = w2 & 0xFFF;
