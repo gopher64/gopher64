@@ -103,13 +103,10 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
         VI_ORIGIN_REG => {
             let current_origin = device.vi.regs[reg as usize];
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-            if current_origin != device.vi.regs[reg as usize] {
-                if device.netplay.is_none() && device.bk2_playback.is_none() {
-                    savestates::process_savestates(device);
-                }
-                if !netplay::in_rollback(device.netplay.as_ref()) {
-                    let _ = device.ui.video.fps_tx.as_ref().unwrap().send(true);
-                }
+            if current_origin != device.vi.regs[reg as usize]
+                && !netplay::in_rollback(device.netplay.as_ref())
+            {
+                let _ = device.ui.video.fps_tx.as_ref().unwrap().send(true);
             }
         }
         _ => {
@@ -145,6 +142,11 @@ pub fn update_screen(device: &mut device::Device) {
         ui::video::update_screen();
         device.ui.speed_limiter.frame_counter += 1;
         let _ = device.ui.video.vis_tx.as_ref().unwrap().send(true);
+    }
+
+    // Loading restores CPU state, so don't let a pending load undo a stop.
+    if device.cpu.running && device.netplay.is_none() && device.bk2_playback.is_none() {
+        savestates::process_savestates(device);
     }
 
     if device.netplay.is_some() {
