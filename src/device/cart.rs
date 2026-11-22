@@ -1,4 +1,5 @@
 use crate::{device, ui};
+use device::pif::{JoybusAction, JoybusError, write_reply};
 
 pub mod rom;
 pub mod sc64;
@@ -69,10 +70,13 @@ impl Cart {
     }
 }
 
-pub fn process(device: &mut device::Device, channel: usize) {
-    let cmd = device.pif.ram[device.pif.channels[channel].tx_buf.unwrap()];
-
-    match cmd {
+pub fn process(
+    device: &mut device::Device,
+    _channel: usize,
+    tx: &[u8],
+    rx: &mut [u8],
+) -> Result<JoybusAction, JoybusError> {
+    match tx[0] {
         JCMD_RESET | JCMD_STATUS => {
             let eeprom_type = if device
                 .ui
@@ -89,53 +93,56 @@ pub fn process(device: &mut device::Device, channel: usize) {
             {
                 JDT_EEPROM_4K
             } else {
-                device.pif.ram[device.pif.channels[channel].rx.unwrap()] |= 0x80;
-                return;
+                return Err(JoybusError::NoResponse);
             };
-
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = eeprom_type as u8;
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 1] =
-                (eeprom_type >> 8) as u8;
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 2] = 0;
+            let [lo, hi] = eeprom_type.to_le_bytes();
+            write_reply(rx, &[lo, hi, 0]);
         }
         JCMD_EEPROM_READ => {
-            eeprom_read_block(
-                device,
-                device.pif.channels[channel].tx_buf.unwrap() + 1,
-                device.pif.channels[channel].rx_buf.unwrap(),
-            );
+            let [_, block, ..] = tx else {
+                return Err(JoybusError::Timeout);
+            };
+            let address = usize::from(*block) * EEPROM_BLOCK_SIZE;
+            let block = &device.ui.storage.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE];
+            write_reply(rx, block);
         }
-        JCMD_EEPROM_WRITE => eeprom_write_block(
-            device,
-            device.pif.channels[channel].tx_buf.unwrap() + 1,
-            device.pif.channels[channel].tx_buf.unwrap() + 2,
-            device.pif.channels[channel].rx_buf.unwrap(),
-        ),
+        JCMD_EEPROM_WRITE => {
+            let [_, block, data @ ..] = tx else {
+                return Err(JoybusError::Timeout);
+            };
+            let Some(data) = data.first_chunk::<EEPROM_BLOCK_SIZE>() else {
+                return Err(JoybusError::Timeout);
+            };
+            let address = usize::from(*block) * EEPROM_BLOCK_SIZE;
+            device.ui.storage.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE]
+                .copy_from_slice(data);
+            write_reply(rx, &[0]);
+            ui::storage::schedule_save(device, ui::storage::SaveTypes::Eeprom4k);
+        }
         JCMD_AF_RTC_STATUS => {
-            /* set type and status */
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = JDT_AF_RTC as u8;
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 1] =
-                (JDT_AF_RTC >> 8) as u8;
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 2] = 0x00;
+            let [lo, hi] = JDT_AF_RTC.to_le_bytes();
+            write_reply(rx, &[lo, hi, 0]);
         }
         JCMD_AF_RTC_READ => {
-            af_rtc_read_block(
-                device,
-                device.pif.channels[channel].tx_buf.unwrap() + 1,
-                device.pif.channels[channel].rx_buf.unwrap(),
-                device.pif.channels[channel].rx_buf.unwrap() + 8,
-            );
+            let [_, block, ..] = tx else {
+                return Err(JoybusError::Timeout);
+            };
+            af_rtc_read_block(device, *block, rx);
         }
-        JCMD_AF_RTC_WRITE => af_rtc_write_block(
-            device,
-            device.pif.channels[channel].tx_buf.unwrap() + 1,
-            device.pif.channels[channel].tx_buf.unwrap() + 2,
-            device.pif.channels[channel].rx_buf.unwrap(),
-        ),
+        JCMD_AF_RTC_WRITE => {
+            let [_, block, data @ ..] = tx else {
+                return Err(JoybusError::Timeout);
+            };
+            let Some(data) = data.first_chunk::<8>() else {
+                return Err(JoybusError::Timeout);
+            };
+            af_rtc_write_block(device, *block, data, rx);
+        }
         _ => {
-            panic!("unknown cart command")
+            return Err(JoybusError::Timeout);
         }
     }
+    Ok(JoybusAction::None)
 }
 
 pub fn format_eeprom(device: &mut device::Device) {
@@ -150,67 +157,50 @@ pub fn format_eeprom(device: &mut device::Device) {
     }
 }
 
-fn eeprom_read_block(device: &mut device::Device, block: usize, offset: usize) {
-    let address = device.pif.ram[block] as usize * EEPROM_BLOCK_SIZE;
-
-    device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE].copy_from_slice(
-        &device.ui.storage.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE],
-    );
-}
-
-fn eeprom_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
-    let address = device.pif.ram[block] as usize * EEPROM_BLOCK_SIZE;
-
-    device.ui.storage.saves.eeprom.data[address..address + EEPROM_BLOCK_SIZE]
-        .copy_from_slice(&device.pif.ram[offset..offset + EEPROM_BLOCK_SIZE]);
-
-    device.pif.ram[status] = 0x00;
-
-    ui::storage::schedule_save(device, ui::storage::SaveTypes::Eeprom4k);
-}
-
-fn time2data(device: &mut device::Device, offset: usize) {
+fn rtc_time(device: &device::Device) -> [u8; 8] {
     let timestamp = device.cart.rtc_timestamp + device.vi.elapsed_time as i64;
     let utc = time::OffsetDateTime::from_unix_timestamp(timestamp).unwrap();
     let local_offset =
         time::UtcOffset::local_offset_at(utc).expect("could not determine local timezone offset");
     let now = utc.to_offset(local_offset);
 
-    device.pif.ram[offset] = byte2bcd(now.second() as u32);
-    device.pif.ram[offset + 1] = byte2bcd(now.minute() as u32);
-    device.pif.ram[offset + 2] = 0x80 + byte2bcd(now.hour() as u32);
-    device.pif.ram[offset + 3] = byte2bcd(now.day() as u32);
-    device.pif.ram[offset + 4] = byte2bcd(now.weekday().number_days_from_sunday() as u32);
-    device.pif.ram[offset + 5] = byte2bcd(now.month() as u32);
-    device.pif.ram[offset + 6] = byte2bcd(now.year() as u32 - 1900);
-    device.pif.ram[offset + 7] = byte2bcd((now.year() as u32 - 1900) / 100);
+    [
+        byte2bcd(now.second() as u32),
+        byte2bcd(now.minute() as u32),
+        0x80 + byte2bcd(now.hour() as u32),
+        byte2bcd(now.day() as u32),
+        byte2bcd(now.weekday().number_days_from_sunday() as u32),
+        byte2bcd(now.month() as u32),
+        byte2bcd(now.year() as u32 - 1900),
+        byte2bcd((now.year() as u32 - 1900) / 100),
+    ]
 }
 
-fn af_rtc_read_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
-    match device.pif.ram[block] {
+fn af_rtc_read_block(device: &device::Device, block: u8, rx: &mut [u8]) {
+    match block {
         0 => {
-            device.pif.ram[offset] = device.cart.rtc.control as u8;
-            device.pif.ram[offset + 1] = (device.cart.rtc.control >> 8) as u8;
-            device.pif.ram[status] = 0x00;
+            write_reply(rx, &device.cart.rtc.control.to_le_bytes());
         }
         1 => {
             panic!("AF-RTC reading block 1 is not implemented !");
         }
         2 => {
-            time2data(device, offset);
-            device.pif.ram[status] = 0x00;
+            write_reply(rx, &rtc_time(device));
         }
         _ => {
             panic!("AF-RTC read invalid block");
         }
     }
+    if let Some(status) = rx.get_mut(8) {
+        *status = 0;
+    }
 }
-fn af_rtc_write_block(device: &mut device::Device, block: usize, offset: usize, status: usize) {
-    match device.pif.ram[block] {
+
+fn af_rtc_write_block(device: &mut device::Device, block: u8, data: &[u8; 8], rx: &mut [u8]) {
+    match block {
         0 => {
-            device.cart.rtc.control =
-                ((device.pif.ram[offset + 1] as u16) << 8) | device.pif.ram[offset] as u16;
-            device.pif.ram[status] = 0x00;
+            device.cart.rtc.control = u16::from_le_bytes([data[0], data[1]]);
+            write_reply(rx, &[0]);
         }
         1 => {
             /* block 1 read-only when control[0] is set */

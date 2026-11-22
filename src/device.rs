@@ -402,12 +402,9 @@ impl Device {
                 rom: [0; 1984],
                 ram: [0; 64],
                 channels: [pif::PifChannel {
-                    tx: None,
-                    tx_buf: None,
-                    rx: None,
-                    rx_buf: None,
+                    header: None,
                     process: None,
-                    pak_handler: None,
+                    pak_type: controller::PakType::None,
                     change_pak: controller::PakType::None,
                 }; 5],
             },
@@ -542,7 +539,7 @@ impl Device {
             },
             si: si::Si {
                 regs: [0; si::SI_REGS_COUNT],
-                dma_dir: si::DmaDir::None,
+                transfer: None,
             },
             ri: ri::Ri {
                 regs: [0; ri::RI_REGS_COUNT],

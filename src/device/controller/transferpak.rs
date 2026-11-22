@@ -1,4 +1,5 @@
 use crate::device;
+use device::controller::PAK_CHUNK_SIZE;
 
 #[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TransferPak {
@@ -24,22 +25,23 @@ impl TransferPak {
     }
 }
 
-pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usize, size: usize) {
+pub fn read(
+    device: &mut device::Device,
+    channel: usize,
+    address: u16,
+    data: &mut [u8; PAK_CHUNK_SIZE],
+) {
     let pak = &mut device.transferpaks[channel];
 
     match address >> 12 {
         0x8 => {
             let value = if pak.enabled { 0x84 } else { 0x00 };
-            for i in 0..size {
-                device.pif.ram[data + i] = value;
-            }
+            data.fill(value);
             return;
         }
         _ => {
             if !pak.enabled {
-                for i in 0..size {
-                    device.pif.ram[data + i] = 0x00;
-                }
+                data.fill(0);
                 return;
             }
         }
@@ -63,17 +65,15 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
             } else if !pak.cart.enabled && pak.reset_state == 1 {
                 pak.reset_state = 0
             }
-            for i in 0..size {
-                device.pif.ram[data + i] = value;
-            }
+            data.fill(value);
         }
         0xC..=0xF => {
             device::controller::gbcart::read(
-                &mut device.pif.ram,
+                data,
                 &mut pak.cart,
                 0x4000 * pak.bank + (address & 0x3fff),
-                data,
-                size,
+                0,
+                PAK_CHUNK_SIZE,
             );
         }
         _ => {
@@ -82,10 +82,10 @@ pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usi
     }
 }
 
-pub fn write(device: &mut device::Device, channel: usize, address: u16, data: usize, size: usize) {
+pub fn write(device: &mut device::Device, channel: usize, address: u16, data: &[u8]) {
     let pak = &mut device.transferpaks[channel];
 
-    let value = device.pif.ram[data + size - 1];
+    let value = *data.last().unwrap();
     match address >> 12 {
         0x8 => {
             match value {
@@ -135,11 +135,11 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: us
         }
         0xC..=0xF => {
             device::controller::gbcart::write(
-                &device.pif.ram,
+                data,
                 &mut pak.cart,
                 0x4000 * pak.bank + (address & 0x3fff),
-                data,
-                size,
+                0,
+                data.len(),
                 device.vi.elapsed_time as i64,
             );
         }

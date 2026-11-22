@@ -1,5 +1,6 @@
 use crate::device;
 use crate::ui;
+use device::controller::PAK_CHUNK_SIZE;
 
 pub const MEMPAK_SIZE: usize = 0x8000;
 const MPK_PAGE_SIZE: usize = 256;
@@ -80,23 +81,24 @@ pub fn format_mempak(device: &mut device::Device) {
     }
 }
 
-pub fn read(device: &mut device::Device, channel: usize, address: u16, data: usize, size: usize) {
+pub fn read(
+    device: &device::Device,
+    channel: usize,
+    address: u16,
+    data: &mut [u8; PAK_CHUNK_SIZE],
+) {
     if (address as usize) < MEMPAK_SIZE {
         let offset = (channel * MEMPAK_SIZE) + address as usize;
-        device.pif.ram[data..data + size]
-            .copy_from_slice(&device.ui.storage.saves.mempak.data[offset..offset + size])
+        data.copy_from_slice(&device.ui.storage.saves.mempak.data[offset..offset + PAK_CHUNK_SIZE]);
     } else {
-        for i in 0..size {
-            device.pif.ram[data + i] = 0;
-        }
+        data.fill(0);
     }
 }
 
-pub fn write(device: &mut device::Device, channel: usize, address: u16, data: usize, size: usize) {
+pub fn write(device: &mut device::Device, channel: usize, address: u16, data: &[u8]) {
     if (address as usize) < MEMPAK_SIZE {
         let offset = (channel * MEMPAK_SIZE) + address as usize;
-        device.ui.storage.saves.mempak.data[offset..offset + size]
-            .copy_from_slice(&device.pif.ram[data..data + size]);
+        device.ui.storage.saves.mempak.data[offset..offset + data.len()].copy_from_slice(data);
 
         ui::storage::schedule_save(device, ui::storage::SaveTypes::Mempak);
     }

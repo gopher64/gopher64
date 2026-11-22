@@ -11,22 +11,27 @@ const SI_PIF_ADDR_WR64B_REG: usize = 4;
 pub const SI_STATUS_REG: usize = 6;
 pub const SI_REGS_COUNT: usize = 7;
 
-pub const SI_STATUS_DMA_BUSY: u32 = 1 << 0;
-pub const SI_STATUS_IO_BUSY: u32 = 1 << 1;
+const SI_STATUS_DMA_BUSY: u32 = 1 << 0;
+const SI_STATUS_IO_BUSY: u32 = 1 << 1;
 //const SI_STATUS_DMA_ERROR: u32 = 1 << 3;
 const SI_STATUS_INTERRUPT: u32 = 1 << 12;
+// Approximate SI transport timings from n64-systembench, in CPU cycles.
+// Joybus setup runs at write completion without charging extra PIF firmware time.
+const SI_WRITE_CYCLES: u64 = 6000;
+const SI_WRITE_ROM_CYCLES: u64 = 3100;
+const SI_IO_WRITE_CYCLES: u64 = 3200;
 
-#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub enum DmaDir {
-    None,
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub enum Transfer {
+    Read(usize),
     Write,
-    Read,
+    WriteRom,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Si {
     pub regs: [u32; SI_REGS_COUNT],
-    pub dma_dir: DmaDir,
+    pub transfer: Option<Transfer>,
 }
 
 pub fn read_regs(
@@ -42,28 +47,46 @@ fn randomize_interrupt_time(rng: &mut rand::rngs::Xoshiro256PlusPlus) -> u64 {
     rng.next_u64() % 0x100
 }
 
-fn dma_read(device: &mut device::Device) {
-    device.si.dma_dir = DmaDir::Read;
-
-    let duration = device::pif::update_pif_ram(device);
-
-    device.si.regs[SI_STATUS_REG] |= SI_STATUS_DMA_BUSY;
-
-    let length = duration + randomize_interrupt_time(&mut device.rng);
-
-    device::events::create_event(device, device::events::EVENT_TYPE_SI, length)
+fn start_transfer(device: &mut device::Device, transfer: Transfer, cycles: u64, io_status: u32) {
+    device.si.transfer = Some(transfer);
+    device.si.regs[SI_STATUS_REG] |= SI_STATUS_DMA_BUSY | io_status;
+    device::events::create_event(device, device::events::EVENT_TYPE_SI, cycles);
 }
 
-fn dma_write(device: &mut device::Device) {
-    device.si.dma_dir = DmaDir::Write;
+fn dram_addr(device: &device::Device) -> usize {
+    device.si.regs[SI_DRAM_ADDR_REG] as usize & device::rdram::RDRAM_MASK
+}
 
-    copy_pif_rdram(device);
+fn dma_read(device: &mut device::Device) {
+    let addr = dram_addr(device);
+    let cycles = device::pif::update_pif_ram(device) + randomize_interrupt_time(&mut device.rng);
+    start_transfer(device, Transfer::Read(addr), cycles, 0);
+}
 
-    device.si.regs[SI_STATUS_REG] |= SI_STATUS_DMA_BUSY;
+fn dma_write(device: &mut device::Device, pif_addr: u32) {
+    let addr = dram_addr(device);
+    let (transfer, cycles) = if let Some((source_offset, ram)) =
+        device::pif::dma_write_target(&mut device.pif, pif_addr)
+    {
+        // Snapshot the packet now so direct PIF reads already see the new data.
+        let addr = addr + source_offset;
+        ui::video::check_rdram_read(addr as u32, ram.len() as u32);
+        copy_rdram_to_pif(&device.rdram.mem, addr, ram);
+        (Transfer::Write, SI_WRITE_CYCLES)
+    } else {
+        (Transfer::WriteRom, SI_WRITE_ROM_CYCLES)
+    };
+    let cycles = cycles + randomize_interrupt_time(&mut device.rng);
+    start_transfer(device, transfer, cycles, 0);
+}
 
-    let length = 6000 + randomize_interrupt_time(&mut device.rng); //based on https://github.com/rasky/n64-systembench
-
-    device::events::create_event(device, device::events::EVENT_TYPE_SI, length)
+pub fn io_write(device: &mut device::Device) {
+    start_transfer(
+        device,
+        Transfer::Write,
+        SI_IO_WRITE_CYCLES,
+        SI_STATUS_IO_BUSY,
+    );
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
@@ -74,59 +97,44 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_SI)
         }
         SI_PIF_ADDR_RD64B_REG => dma_read(device),
-        SI_PIF_ADDR_WR64B_REG => dma_write(device),
+        // The RCP sees the entire bus word even for a byte or halfword store.
+        SI_PIF_ADDR_WR64B_REG => dma_write(device, value),
         _ => device::memory::masked_write_32(&mut device.si.regs[reg as usize], value, mask),
     }
 }
 
-//rdram is in native endian format, and pif memory is in big endian format
-fn copy_pif_rdram(device: &mut device::Device) {
-    let dram_addr = device.si.regs[SI_DRAM_ADDR_REG] as usize & device::rdram::RDRAM_MASK;
-    if device.si.dma_dir == DmaDir::Write {
-        // check RDP before SI reads from RDRAM
-        ui::video::check_rdram_read(dram_addr as u32, device::pif::PIF_RAM_SIZE as u32);
-        let mut i = 0;
-        while i < device::pif::PIF_RAM_SIZE {
-            let data = u32::from_ne_bytes(
-                device
-                    .rdram
-                    .mem
-                    .get(dram_addr + i..dram_addr + i + 4)
-                    .unwrap_or(&[0; 4])
-                    .try_into()
-                    .unwrap_or_default(),
-            );
-            device.pif.ram[i..i + 4].copy_from_slice(&data.to_be_bytes());
-            i += 4;
+// RDRAM is in native endian format; PIF RAM is big endian.
+fn copy_rdram_to_pif(rdram: &[u8], addr: usize, ram: &mut [u8]) {
+    let (words, _) = ram.as_chunks_mut::<4>();
+    for (i, word) in words.iter_mut().enumerate() {
+        let offset = addr + i * 4;
+        let data = rdram.get(offset..offset + 4).unwrap_or(&[0; 4]);
+        *word = u32::from_ne_bytes(data.try_into().unwrap()).to_be_bytes();
+    }
+}
+
+fn copy_pif_to_rdram(device: &mut device::Device, addr: usize) {
+    ui::video::check_rdram_write(addr as u32, device::pif::PIF_RAM_SIZE as u32);
+    let (words, _) = device.pif.ram.as_chunks::<4>();
+    for (i, word) in words.iter().enumerate() {
+        let offset = addr + i * 4;
+        if let Some(dst) = device.rdram.mem.get_mut(offset..offset + 4) {
+            dst.copy_from_slice(&u32::from_be_bytes(*word).to_ne_bytes());
         }
-    } else if device.si.dma_dir == DmaDir::Read {
-        // check RDP before SI writes to RDRAM
-        ui::video::check_rdram_write(dram_addr as u32, device::pif::PIF_RAM_SIZE as u32);
-        let mut i = 0;
-        while i < device::pif::PIF_RAM_SIZE {
-            let data = u32::from_be_bytes(device.pif.ram[i..i + 4].try_into().unwrap());
-            device
-                .rdram
-                .mem
-                .get_mut(dram_addr + i..dram_addr + i + 4)
-                .unwrap_or(&mut [0; 4])
-                .copy_from_slice(&data.to_ne_bytes());
-            i += 4;
-        }
-    } else {
-        panic!("si dma unknown")
     }
 }
 
 pub fn dma_event(device: &mut device::Device) {
-    if device.si.dma_dir == DmaDir::Write {
-        device::pif::process_ram(device);
-    } else if device.si.dma_dir == DmaDir::Read {
-        device::si::copy_pif_rdram(device);
-    } else {
-        panic!("si dma unknown")
+    match device
+        .si
+        .transfer
+        .take()
+        .expect("SI event without a transfer")
+    {
+        Transfer::Read(addr) => copy_pif_to_rdram(device, addr),
+        Transfer::Write => device::pif::process_ram(device),
+        Transfer::WriteRom => {}
     }
-    device.si.dma_dir = DmaDir::None;
     device.si.regs[SI_STATUS_REG] &= !(SI_STATUS_DMA_BUSY | SI_STATUS_IO_BUSY);
     device.si.regs[SI_STATUS_REG] |= SI_STATUS_INTERRUPT;
 

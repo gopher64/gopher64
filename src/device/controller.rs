@@ -1,4 +1,5 @@
-use crate::{device, savestates, ui};
+use crate::{device, ui};
+use device::pif::{JoybusAction, JoybusError, write_reply};
 
 pub mod bk2;
 pub mod gbcart;
@@ -30,33 +31,25 @@ pub enum PakType {
     TransferPak = 3,
 }
 
-#[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
-pub struct PakHandler {
-    #[serde(skip, default = "savestates::default_pak_handler")]
-    pub read: fn(&mut device::Device, usize, u16, usize, usize),
-    #[serde(skip, default = "savestates::default_pak_handler")]
-    pub write: fn(&mut device::Device, usize, u16, usize, usize),
-    pub pak_type: PakType,
-}
-
-pub fn process(device: &mut device::Device, channel: usize) {
-    let cmd = device.pif.ram[device.pif.channels[channel].tx_buf.unwrap()];
-
-    match cmd {
+pub fn process(
+    device: &mut device::Device,
+    channel: usize,
+    tx: &[u8],
+    rx: &mut [u8],
+) -> Result<JoybusAction, JoybusError> {
+    let pak_type = device.pif.channels[channel].pak_type;
+    match tx[0] {
         JCMD_RESET | JCMD_STATUS => {
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = CONT_FLAVOR as u8;
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 1] =
-                (CONT_FLAVOR >> 8) as u8;
-            if device.pif.channels[channel].pak_handler.is_none() {
-                device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 2] =
-                    CONT_STATUS_PAK_NOT_PRESENT;
+            let status = if pak_type == PakType::None {
+                CONT_STATUS_PAK_NOT_PRESENT
             } else {
-                device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 2] =
-                    CONT_STATUS_PAK_PRESENT;
-            }
+                CONT_STATUS_PAK_PRESENT
+            };
+            let [lo, hi] = CONT_FLAVOR.to_le_bytes();
+            let reply = [lo, hi, status];
+            write_reply(rx, &reply);
         }
         JCMD_CONTROLLER_READ => {
-            let offset = device.pif.channels[channel].rx_buf.unwrap();
             let input = if let Some(netplay) = &mut device.netplay {
                 netplay.inputs[channel]
             } else if let Some(playback) = &device.bk2_playback {
@@ -65,95 +58,95 @@ pub fn process(device: &mut device::Device, channel: usize) {
                 ui::input::get(&mut device.ui, channel)
             };
 
-            device.pif.ram[offset..offset + 4].copy_from_slice(&input.data.to_ne_bytes());
-            if input.pak_change_pressed {
-                // pak change button pressed
-                if device::events::get_event(device, device::events::EVENT_TYPE_PAK).is_none() {
-                    device.pif.channels[channel].change_pak =
-                        device.pif.channels[channel].pak_handler.unwrap().pak_type;
-                    device.pif.channels[channel].pak_handler = None;
-                    device::events::create_event(
-                        device,
-                        device::events::EVENT_TYPE_PAK,
-                        device.cpu.clock_rate / 2, // 500ms
-                    )
-                }
+            let reply = input.data.to_ne_bytes();
+            write_reply(rx, &reply);
+            if input.pak_change_pressed && pak_type != PakType::None {
+                return Ok(JoybusAction::SwitchPak);
             }
         }
-        JCMD_PAK_READ => pak_read_block(
-            device,
-            device.pif.channels[channel].tx_buf.unwrap() + 1,
-            device.pif.channels[channel].rx_buf.unwrap(),
-            device.pif.channels[channel].rx_buf.unwrap() + 32,
-            channel,
-        ),
-        JCMD_PAK_WRITE => pak_write_block(
-            device,
-            device.pif.channels[channel].tx_buf.unwrap() + 1,
-            device.pif.channels[channel].tx_buf.unwrap() + 3,
-            device.pif.channels[channel].rx_buf.unwrap(),
-            channel,
-        ),
-        _ => eprintln!("unknown controller command {cmd}"),
+        JCMD_PAK_READ => {
+            let [_, hi, lo, ..] = tx else {
+                return Err(JoybusError::Timeout);
+            };
+            let address = u16::from_be_bytes([*hi, *lo & 0xe0]);
+            let mut reply = [0; PAK_CHUNK_SIZE + 1];
+            let data = reply.first_chunk_mut::<PAK_CHUNK_SIZE>().unwrap();
+            write_reply(data, rx);
+            match pak_type {
+                PakType::MemPak => mempak::read(device, channel, address, data),
+                PakType::RumblePak => rumble::read(address, data),
+                PakType::TransferPak => transferpak::read(device, channel, address, data),
+                PakType::None => {}
+            }
+            reply[PAK_CHUNK_SIZE] = pak_crc(pak_type, data);
+            write_reply(rx, &reply);
+        }
+        JCMD_PAK_WRITE => {
+            let [_, hi, lo, data @ ..] = tx else {
+                return Err(JoybusError::Timeout);
+            };
+            let data = &data[..data.len().min(PAK_CHUNK_SIZE)];
+            let Some(&last_byte) = data.last() else {
+                return Err(JoybusError::Timeout);
+            };
+            let address = u16::from_be_bytes([*hi, *lo & 0xe0]);
+            match pak_type {
+                PakType::MemPak => mempak::write(device, channel, address, data),
+                PakType::RumblePak => rumble::write(device, channel, address, last_byte),
+                PakType::TransferPak => transferpak::write(device, channel, address, data),
+                PakType::None => {}
+            }
+            write_reply(rx, &[pak_crc(pak_type, data)]);
+        }
+        cmd => {
+            eprintln!("unknown controller command {cmd}");
+            return Err(JoybusError::Timeout);
+        }
     }
+    Ok(JoybusAction::None)
 }
 
-fn pak_read_block(
-    device: &mut device::Device,
-    addr_acrc: usize,
-    data: usize,
-    dcrc: usize,
-    channel: usize,
-) {
-    let address =
-        ((device.pif.ram[addr_acrc] as u16) << 8) | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
-    let handler = device.pif.channels[channel].pak_handler;
-
-    if let Some(handler) = handler {
-        (handler.read)(device, channel, address, data, PAK_CHUNK_SIZE);
-        device.pif.ram[dcrc] = data_crc(device, data, PAK_CHUNK_SIZE)
+fn pak_crc(pak_type: PakType, data: &[u8]) -> u8 {
+    // A partial Pak write does not produce a full-block CRC.
+    let crc = if data.len() == PAK_CHUNK_SIZE {
+        data_crc(data)
     } else {
-        device.pif.ram[dcrc] = !data_crc(device, data, PAK_CHUNK_SIZE)
-    }
+        0
+    };
+    if pak_type == PakType::None { !crc } else { crc }
 }
 
-fn pak_write_block(
-    device: &mut device::Device,
-    addr_acrc: usize,
-    data: usize,
-    dcrc: usize,
-    channel: usize,
-) {
-    let address =
-        ((device.pif.ram[addr_acrc] as u16) << 8) | (device.pif.ram[addr_acrc + 1] & 0xe0) as u16;
-    let handler = device.pif.channels[channel].pak_handler;
-
-    if let Some(handler) = handler {
-        (handler.write)(device, channel, address, data, PAK_CHUNK_SIZE);
-        device.pif.ram[dcrc] = data_crc(device, data, PAK_CHUNK_SIZE)
-    } else {
-        device.pif.ram[dcrc] = !data_crc(device, data, PAK_CHUNK_SIZE)
-    }
-}
-
-fn data_crc(device: &device::Device, data_offset: usize, size: usize) -> u8 {
-    let mut i = 0;
+fn data_crc(data: &[u8]) -> u8 {
     let mut crc = 0;
 
-    while i <= size {
+    for byte in data.iter().copied().chain([0]) {
         let mut mask = 0x80;
         while mask >= 1 {
             let xor_tap = if crc & 0x80 != 0 { 0x85 } else { 0x00 };
             crc <<= 1;
-            if i != size && (device.pif.ram[data_offset + i] & mask) != 0 {
+            if byte & mask != 0 {
                 crc |= 1;
             }
             crc ^= xor_tap;
             mask >>= 1
         }
-        i += 1;
     }
     crc
+}
+
+pub fn start_pak_switch(device: &mut device::Device, port: usize) {
+    if device::events::get_event(device, device::events::EVENT_TYPE_PAK).is_some() {
+        return;
+    }
+
+    let channel = &mut device.pif.channels[port];
+    channel.change_pak = channel.pak_type;
+    channel.pak_type = PakType::None;
+    device::events::create_event(
+        device,
+        device::events::EVENT_TYPE_PAK,
+        device.cpu.clock_rate / 2, // 500ms
+    );
 }
 
 pub fn pak_switch_event(device: &mut device::Device) {
@@ -178,42 +171,20 @@ pub fn pak_switch_event(device: &mut device::Device) {
                     }
                 }
                 PakType::TransferPak => PakType::MemPak,
-                _ => {
-                    panic!("Invalid pak type");
-                }
+                PakType::None => unreachable!("no pak change pending"),
             };
 
-            if new_pak_type == PakType::MemPak {
-                channel.pak_handler = Some(device::controller::PakHandler {
-                    read: device::controller::mempak::read,
-                    write: device::controller::mempak::write,
-                    pak_type: new_pak_type,
-                });
-                ui::video::onscreen_message(
-                    &format!("P{} MemPak selected", i + 1),
-                    ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-                );
-            } else if new_pak_type == PakType::RumblePak {
-                channel.pak_handler = Some(device::controller::PakHandler {
-                    read: device::controller::rumble::read,
-                    write: device::controller::rumble::write,
-                    pak_type: new_pak_type,
-                });
-                ui::video::onscreen_message(
-                    &format!("P{} RumblePak selected", i + 1),
-                    ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-                );
-            } else if new_pak_type == PakType::TransferPak {
-                channel.pak_handler = Some(device::controller::PakHandler {
-                    read: device::controller::transferpak::read,
-                    write: device::controller::transferpak::write,
-                    pak_type: new_pak_type,
-                });
-                ui::video::onscreen_message(
-                    &format!("P{} TransferPak selected", i + 1),
-                    ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
-                );
-            }
+            let name = match new_pak_type {
+                PakType::MemPak => "MemPak",
+                PakType::RumblePak => "RumblePak",
+                PakType::TransferPak => "TransferPak",
+                PakType::None => unreachable!(),
+            };
+            ui::video::onscreen_message(
+                &format!("P{} {name} selected", i + 1),
+                ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
+            );
+            channel.pak_type = new_pak_type;
             channel.change_pak = PakType::None;
         }
     }
