@@ -1,17 +1,17 @@
 use crate::ui;
 
-const R_DPAD: usize = 0;
-const L_DPAD: usize = 1;
-const D_DPAD: usize = 2;
-const U_DPAD: usize = 3;
+pub const R_DPAD: usize = 0;
+pub const L_DPAD: usize = 1;
+pub const D_DPAD: usize = 2;
+pub const U_DPAD: usize = 3;
 pub const START_BUTTON: usize = 4;
 pub const Z_TRIG: usize = 5;
 pub const B_BUTTON: usize = 6;
-const A_BUTTON: usize = 7;
-const R_CBUTTON: usize = 8;
+pub const A_BUTTON: usize = 7;
+pub const R_CBUTTON: usize = 8;
 pub const L_CBUTTON: usize = 9;
-const D_CBUTTON: usize = 10;
-const U_CBUTTON: usize = 11;
+pub const D_CBUTTON: usize = 10;
+pub const U_CBUTTON: usize = 11;
 pub const R_TRIG: usize = 12;
 pub const L_TRIG: usize = 13;
 pub const AXIS_RIGHT: usize = 14;

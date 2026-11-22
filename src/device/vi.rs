@@ -104,7 +104,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             let current_origin = device.vi.regs[reg as usize];
             device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
             if current_origin != device.vi.regs[reg as usize] {
-                if device.netplay.is_none() {
+                if device.netplay.is_none() && device.bk2_playback.is_none() {
                     savestates::process_savestates(device);
                 }
                 if !netplay::in_rollback(device.netplay.as_ref()) {
@@ -163,6 +163,9 @@ pub fn update_screen(device: &mut device::Device) {
 
 pub fn vertical_interrupt_event(device: &mut device::Device) {
     device.vi.elapsed_time += device.vi.frame_time;
+    if let Some(playback) = &mut device.bk2_playback {
+        playback.advance();
+    }
 
     if device.cheats.enabled {
         cheats::execute_cheats(device);

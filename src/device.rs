@@ -98,7 +98,7 @@ pub fn run_game(
 
     mi::init(device);
     pif::init(device);
-    if device.ui.config.input.emulate_vru && device.netplay.is_none() {
+    if pif::vru_enabled(device) {
         controller::vru::init(device);
     }
     memory::init(device);
@@ -259,6 +259,8 @@ pub struct Device {
     #[serde(skip)]
     pub netplay: Option<netplay::Netplay>,
     #[serde(skip)]
+    pub bk2_playback: Option<controller::bk2::Playback>,
+    #[serde(skip)]
     pub ui: ui::Ui,
     pub byte_swap: usize,
     pub cpu: cpu::Cpu,
@@ -317,6 +319,7 @@ impl Device {
         }
         Box::new(Device {
             netplay: None,
+            bk2_playback: None,
             ui: if with_ui {
                 ui::Ui::new()
             } else {
