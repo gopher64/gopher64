@@ -179,7 +179,8 @@ pub fn process(
         }
         JCMD_VRU_READ => {
             #[cfg(all(feature = "gui", not(target_os = "android")))]
-            let index = ui::vru::prompt_for_match(&device.vru.words, device.vi.frame_time);
+            let index =
+                ui::vru::prompt_for_match(&device.vru.words, device::vi::frame_time(device));
             #[cfg(any(not(feature = "gui"), target_os = "android"))]
             let index = 0x7FFF;
             let num_results = if index == 0x7FFF { 0 } else { 1 };

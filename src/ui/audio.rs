@@ -126,6 +126,7 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
         return;
     }
 
+    let frame_time = device::vi::frame_time(device);
     let audio = &mut device.ui.audio;
     audio.primary_buffer.resize(length as usize / 2, 0);
     let primary_buffer = &mut audio.primary_buffer;
@@ -144,7 +145,7 @@ pub fn play_audio(device: &mut device::Device, dram_addr: usize, length: u64) {
     queue_audio(
         audio,
         device.ai.freq,
-        device.vi.frame_time,
+        frame_time,
         device.ui.speed_limiter.enabled,
     );
 }

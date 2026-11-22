@@ -330,7 +330,6 @@ fn apply_state(device: &mut device::Device, state: &SavestateData, run_cheats: b
     if device.mi.regs[device::mi::MI_INIT_MODE_REG] & device::mi::MI_INIT_MODE != 0 {
         device::rdram::set_write_handler(device, device::rdram::write_mem_repeat);
     }
-    device::vi::set_expected_refresh_rate(device);
     device::cpu::map_instructions(device);
     device::cop0::map_instructions(device);
     device::cop1::map_instructions(device);
