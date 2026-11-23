@@ -266,6 +266,8 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: "platforms;android-33 ndk;30.0.16248370"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: Decode keystore and create jks
         if: ${{ github.ref_type == 'tag' }}
         working-directory: android-project
