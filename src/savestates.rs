@@ -354,20 +354,6 @@ fn apply_state(device: &mut device::Device, state: &SavestateData, run_cheats: b
     }
 
     device::pif::connect_pif_channels(device);
-    for item in device.pif.channels.iter_mut().take(4) {
-        if let Some(handler) = item.pak_handler.as_mut() {
-            use device::controller::{PakType, mempak, rumble, transferpak};
-            type Handler = fn(&mut device::Device, usize, u16, usize, usize);
-            let (read, write): (Handler, Handler) = match handler.pak_type {
-                PakType::RumblePak => (rumble::read, rumble::write),
-                PakType::MemPak => (mempak::read, mempak::write),
-                PakType::TransferPak => (transferpak::read, transferpak::write),
-                PakType::None => continue,
-            };
-            handler.read = read;
-            handler.write = write;
-        }
-    }
 
     ui::video::load_state(device, state.rdp_state.as_ptr(), state.rdp_state.len());
 
@@ -382,10 +368,6 @@ fn apply_state(device: &mut device::Device, state: &SavestateData, run_cheats: b
     }
 
     true
-}
-
-pub fn default_pak_handler() -> fn(&mut device::Device, usize, u16, usize, usize) {
-    device::controller::mempak::read
 }
 
 pub fn default_instruction() -> fn(&mut device::Device, u32) {

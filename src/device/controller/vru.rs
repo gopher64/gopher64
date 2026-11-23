@@ -1,6 +1,8 @@
 use crate::device;
 #[cfg(all(feature = "gui", not(target_os = "android")))]
 use crate::ui;
+use device::pif::write_reply;
+use device::pif::{JoybusAction, JoybusError};
 
 const JCMD_VRU_READ: u8 = 0x09;
 const JCMD_VRU_WRITE: u8 = 0x0A;
@@ -48,7 +50,7 @@ fn reset_vru(device: &mut device::Device) {
     device.vru.word_buffer = [0; 40];
 }
 
-fn set_status(device: &mut device::Device, channel: usize) {
+fn set_status(device: &mut device::Device, rx: &mut [u8]) {
     if device.vru.voice_init == 2 {
         /* words have been loaded, we can change the state from READY to START */
         device.vru.voice_state = VOICE_STATUS_START;
@@ -62,38 +64,32 @@ fn set_status(device: &mut device::Device, channel: usize) {
         device.vru.status = 0; /* setting the status to 0 tells the game to check the voice_status */
     }
 
-    device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = CONT_FLAVOR as u8;
-    device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 1] = (CONT_FLAVOR >> 8) as u8;
-    device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 2] = device.vru.status;
+    let [lo, hi] = CONT_FLAVOR.to_le_bytes();
+    write_reply(rx, &[lo, hi, device.vru.status]);
 }
 
-pub fn process(device: &mut device::Device, channel: usize) {
-    let cmd = device.pif.ram[device.pif.channels[channel].tx_buf.unwrap()];
-
-    match cmd {
+pub fn process(
+    device: &mut device::Device,
+    _channel: usize,
+    tx: &[u8],
+    rx: &mut [u8],
+) -> Result<JoybusAction, JoybusError> {
+    match tx[0] {
         device::controller::JCMD_RESET => {
             reset_vru(device);
-
-            set_status(device, channel);
+            set_status(device, rx);
         }
         device::controller::JCMD_STATUS => {
-            set_status(device, channel);
+            set_status(device, rx);
         }
         device::controller::JCMD_CONTROLLER_READ => {}
         JCMD_VRU_READ_STATUS => {
-            if device.vru.voice_init > 0 {
-                device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] =
-                    device.vru.voice_state;
+            let state = if device.vru.voice_init > 0 {
+                device.vru.voice_state
             } else {
-                device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
-            }
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 1] = 0;
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 2] =
-                device::controller::data_crc(
-                    device,
-                    device.pif.channels[channel].rx_buf.unwrap(),
-                    2,
-                );
+                0
+            };
+            write_reply(rx, &[state, 0, device::controller::data_crc(&[state, 0])]);
 
             if device.vru.load_offset > 0 {
                 let mut offset = 0;
@@ -149,13 +145,12 @@ pub fn process(device: &mut device::Device, channel: usize) {
             device.vru.status = 1;
         }
         JCMD_VRU_WRITE_CONFIG => {
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] =
-                device::controller::data_crc(
-                    device,
-                    device.pif.channels[channel].tx_buf.unwrap() + 3,
-                    4,
-                );
-            if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0x4E {
+            let Some(data) = tx.get(3..7) else {
+                return Err(JoybusError::Timeout);
+            };
+            let crc = device::controller::data_crc(data);
+            write_reply(rx, &[crc]);
+            if crc == 0x4E {
                 device.vru.talking = true;
                 device.vru.voice_init = 2;
                 device::events::create_event(
@@ -163,22 +158,24 @@ pub fn process(device: &mut device::Device, channel: usize) {
                     device::events::EVENT_TYPE_VRU,
                     device.cpu.clock_rate * 2, // 2 seconds
                 )
-            } else if device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] == 0xEF {
+            } else if crc == 0xEF {
                 device.vru.talking = false;
                 device::events::remove_event(device, device::events::EVENT_TYPE_VRU);
-            } else if device.pif.ram[device.pif.channels[channel].tx_buf.unwrap() + 3] == 0x2 {
+            } else if data[0] == 0x2 {
                 device.vru.voice_init = 0;
                 device.vru.words.clear();
             }
             device.vru.status = 0; /* status is always set to 0 after a write */
         }
         JCMD_VRU_WRITE_INIT => {
-            let offset = device.pif.channels[channel].tx_buf.unwrap() + 1;
-            if u16::from_ne_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap()) == 0 {
+            let [_, lo, hi, ..] = tx else {
+                return Err(JoybusError::Timeout);
+            };
+            if *lo == 0 && *hi == 0 {
                 device.vru.talking = false;
                 device::events::remove_event(device, device::events::EVENT_TYPE_VRU);
             }
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] = 0;
+            write_reply(rx, &[0]);
         }
         JCMD_VRU_READ => {
             #[cfg(all(feature = "gui", not(target_os = "android")))]
@@ -186,60 +183,61 @@ pub fn process(device: &mut device::Device, channel: usize) {
             #[cfg(any(not(feature = "gui"), target_os = "android"))]
             let index = 0x7FFF;
             let num_results = if index == 0x7FFF { 0 } else { 1 };
-            let data: rustc_hash::FxHashMap<usize, u16> = rustc_hash::FxHashMap::from_iter([
-                (0, 0x8000),
-                (2, 0x0F00),
-                (4, 0),           // error flags
-                (6, num_results), // number of results
-                (8, 0xBB8),       // mic level
-                (10, 0xBB8),      // voice level
-                (12, 0x8004),     // voice length
-                (14, index),      // match 1
-                (16, 0),          // match 1 errors
-                (18, 0x7FFF),     // match 2
-                (20, 0),          // match 2 errors
-                (22, 0x7FFF),     // match 3
-                (24, 0),          // match 3 errors
-                (26, 0x7FFF),     // match 4
-                (28, 0),          // match 4 errors
-                (30, 0x7FFF),     // match 5
-                (32, 0),          // match 5 errors
-                (34, 0x0040),
-            ]);
-            for (key, value) in data {
-                let offset = device.pif.channels[channel].rx_buf.unwrap() + key;
-                device.pif.ram[offset..offset + 2].copy_from_slice(&value.to_ne_bytes());
+            let data: [u16; 18] = [
+                0x8000,
+                0x0F00,
+                0, // error flags
+                num_results,
+                0xBB8,  // mic level
+                0xBB8,  // voice level
+                0x8004, // voice length
+                index,
+                0, // match 1 and errors
+                0x7FFF,
+                0, // match 2
+                0x7FFF,
+                0, // match 3
+                0x7FFF,
+                0, // match 4
+                0x7FFF,
+                0, // match 5
+                0x0040,
+            ];
+            let mut reply = [0; 37];
+            let (words, _) = reply.as_chunks_mut::<2>();
+            for (dst, value) in words.iter_mut().zip(data) {
+                *dst = value.to_ne_bytes();
             }
-
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap() + 36] =
-                device::controller::data_crc(
-                    device,
-                    device.pif.channels[channel].rx_buf.unwrap(),
-                    36,
-                );
+            reply[36] = device::controller::data_crc(&reply[..36]);
+            write_reply(rx, &reply);
 
             device.vru.voice_state = VOICE_STATUS_START;
         }
         JCMD_VRU_WRITE => {
-            device.pif.ram[device.pif.channels[channel].rx_buf.unwrap()] =
-                device::controller::data_crc(
-                    device,
-                    device.pif.channels[channel].tx_buf.unwrap() + 3,
-                    20,
-                );
-            if device.vru.load_offset == 0 {
+            let Some(data) = tx.get(3..23) else {
+                return Err(JoybusError::Timeout);
+            };
+            let start = usize::from(device.vru.load_offset);
+            let end = start + 10;
+            if end > device.vru.word_buffer.len() {
+                return Err(JoybusError::Timeout);
+            }
+            if start == 0 {
                 device.vru.word_buffer = [0; 40];
             }
-            for i in 0..10 {
-                let offset = device.pif.channels[channel].tx_buf.unwrap() + 3 + (i * 2);
-                device.vru.word_buffer[device.vru.load_offset as usize] =
-                    u16::from_ne_bytes(device.pif.ram[offset..offset + 2].try_into().unwrap());
-                device.vru.load_offset += 1;
+            for (word, bytes) in device.vru.word_buffer[start..end]
+                .iter_mut()
+                .zip(data.as_chunks::<2>().0)
+            {
+                *word = u16::from_ne_bytes(*bytes);
             }
+            device.vru.load_offset = end as u8;
+            write_reply(rx, &[device::controller::data_crc(data)]);
             device.vru.status = 0; /* status is always set to 0 after a write */
         }
-        _ => panic!("unknown VRU command {cmd}"),
+        _ => return Err(JoybusError::Timeout),
     }
+    Ok(JoybusAction::None)
 }
 
 pub fn vru_talking_event(device: &mut device::Device) {

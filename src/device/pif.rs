@@ -4,8 +4,33 @@ use crate::device;
 pub const PIF_RAM_SIZE: usize = 64;
 const PIF_CHANNELS_COUNT: usize = 5;
 const PIF_RAM_OFFSET: usize = 0x7C0;
-const PIF_MASK: usize = 0xFFFF;
+const PIF_MASK: usize = 0x7FF;
 const CHL_LEN: usize = 0x20;
+const PIF_COMMAND: usize = PIF_RAM_SIZE - 1;
+const PIF_CONFIGURE_JOYBUS: u8 = 0x01;
+const JOYBUS_LENGTH_MASK: u8 = 0x3f;
+const JOYBUS_TX_RESET: u8 = 0x40;
+const JOYBUS_TX_SKIP: u8 = 0x80;
+
+// Approximate n64-systembench read timings in CPU cycles, including the Joybus
+// exchange but not the firmware time to parse a newly written frame.
+const JOYBUS_READ_BASE: u64 = 22_400;
+const JOYBUS_CHANNEL_SETUP: u64 = 18_800;
+const JOYBUS_BYTE: u64 = 3_125;
+const JOYBUS_REPLY_TIMEOUT: u64 = 8_000;
+
+pub enum JoybusError {
+    Timeout = 0x40,
+    NoResponse = 0x80,
+}
+
+pub enum JoybusAction {
+    None,
+    SwitchPak,
+}
+
+type JoybusHandler =
+    fn(&mut device::Device, usize, &[u8], &mut [u8]) -> Result<JoybusAction, JoybusError>;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Pif {
@@ -18,13 +43,10 @@ pub struct Pif {
 
 #[derive(Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PifChannel {
-    pub tx: Option<usize>,
-    pub tx_buf: Option<usize>,
-    pub rx: Option<usize>,
-    pub rx_buf: Option<usize>,
+    pub header: Option<usize>,
     #[serde(skip)]
-    pub process: Option<fn(&mut device::Device, usize)>,
-    pub pak_handler: Option<device::controller::PakHandler>,
+    pub process: Option<JoybusHandler>,
+    pub pak_type: device::controller::PakType,
     pub change_pak: device::controller::PakType,
 }
 
@@ -66,115 +88,116 @@ pub fn write_mem(device: &mut device::Device, address: u64, value: u32, mask: u3
     device::memory::masked_write_32(&mut data, value, mask);
     device.pif.ram[masked_address..masked_address + 4].copy_from_slice(&data.to_be_bytes());
 
-    device.si.dma_dir = device::si::DmaDir::Write;
-    device::events::create_event(device, device::events::EVENT_TYPE_SI, 3200); //based on https://github.com/rasky/n64-systembench
-    device.si.regs[device::si::SI_STATUS_REG] |=
-        device::si::SI_STATUS_DMA_BUSY | device::si::SI_STATUS_IO_BUSY
-}
-
-fn process_channel(device: &mut device::Device, channel: usize) -> usize {
-    /* don't process channel if it has been disabled */
-    if device.pif.channels[channel].tx.is_none() {
-        return 0;
-    }
-
-    /* reset Tx/Rx just in case */
-    device.pif.ram[device.pif.channels[channel].tx.unwrap()] &= 0x3f;
-    device.pif.ram[device.pif.channels[channel].rx.unwrap()] &= 0x3f;
-
-    /* set NoResponse if no device is connected */
-    if device.pif.channels[channel].process.is_none() {
-        device.pif.ram[device.pif.channels[channel].rx.unwrap()] |= 0x80;
-        return 0;
-    }
-
-    /* do device processing */
-    let process_handler = device.pif.channels[channel].process.unwrap();
-    process_handler(device, channel);
-    1
+    device::si::io_write(device);
 }
 
 pub fn update_pif_ram(device: &mut device::Device) -> u64 {
-    let mut active_channels = 0;
-    for k in 0..PIF_CHANNELS_COUNT {
-        active_channels += process_channel(device, k)
+    let mut cycles = JOYBUS_READ_BASE;
+    let mut pak_switch_port = None;
+    // Give handlers only their packet's payloads, separate from device state.
+    let mut ram = device.pif.ram;
+    // PIF firmware executes channel 4 first, even when reused packets overlap.
+    for (port, channel) in device.pif.channels.into_iter().enumerate().rev() {
+        let Some(header) = channel.header else {
+            continue;
+        };
+        let packet = &mut ram[header..PIF_COMMAND];
+        let [tx_header, rx_header, payload @ ..] = packet else {
+            continue;
+        };
+        // A reset sends no payload. The physical reset pulse is not emulated.
+        if *tx_header & (JOYBUS_TX_SKIP | JOYBUS_TX_RESET) != 0 {
+            continue;
+        }
+        // A frame can be reused with different header bytes, so check lengths again.
+        let (tx_len, rx_len) = packet_lengths(*tx_header, *rx_header);
+        if tx_len + rx_len > payload.len() {
+            *rx_header = rx_len as u8 | JoybusError::Timeout as u8;
+            continue;
+        }
+        if tx_len == 0 {
+            continue;
+        }
+        let (tx, rx) = payload[..tx_len + rx_len].split_at_mut(tx_len);
+        let result = match channel.process {
+            Some(process) => process(device, port, tx, rx),
+            None => Err(JoybusError::NoResponse),
+        };
+        if matches!(result, Ok(JoybusAction::SwitchPak)) {
+            // A shared Pak shortcut goes to the lowest eligible port, regardless of wire order.
+            pak_switch_port = Some(port.min(pak_switch_port.unwrap_or(port)));
+        }
+        cycles += JOYBUS_CHANNEL_SETUP + tx_len as u64 * JOYBUS_BYTE;
+        cycles += match result {
+            Ok(_) => rx_len as u64 * JOYBUS_BYTE,
+            // Handlers report errors before producing any reply bytes.
+            Err(_) => JOYBUS_REPLY_TIMEOUT,
+        };
+        *rx_header = rx_len as u8 | result.err().map_or(0, |error| error as u8);
     }
-
-    (24000 + (active_channels * 30000)) as u64
+    device.pif.ram = ram;
+    if let Some(port) = pak_switch_port {
+        device::controller::start_pak_switch(device, port);
+    }
+    cycles
 }
 
-fn disable_pif_channel(channel: &mut PifChannel) {
-    channel.tx = None;
-    channel.rx = None;
-    channel.tx_buf = None;
-    channel.rx_buf = None;
+pub fn write_reply(rx: &mut [u8], reply: &[u8]) {
+    // The guest can intentionally receive fewer bytes than the device sends.
+    let len = rx.len().min(reply.len());
+    rx[..len].copy_from_slice(&reply[..len]);
 }
 
-fn setup_pif_channel(device: &mut device::Device, channel: usize, buf: usize) -> usize {
-    let tx = device.pif.ram[buf] & 0x3f;
-    let rx = device.pif.ram[buf + 1] & 0x3f;
-
-    /* XXX: check out of bounds accesses */
-
-    device.pif.channels[channel].tx = Some(buf);
-    device.pif.channels[channel].rx = Some(buf + 1);
-    device.pif.channels[channel].tx_buf = Some(buf + 2);
-    device.pif.channels[channel].rx_buf = Some(buf + 2 + tx as usize);
-
-    (2 + tx + rx) as usize
+pub fn dma_write_target(pif: &mut Pif, address: u32) -> Option<(usize, &mut [u8])> {
+    let offset = address as usize & PIF_MASK & !3;
+    // RAM is at the end of the mirrored PIF window; wrapping past it reaches ROM.
+    let start = offset.max(PIF_RAM_OFFSET);
+    let end = (offset + PIF_RAM_SIZE).min(PIF_MASK + 1);
+    if start >= end {
+        return None;
+    }
+    Some((
+        start - offset,
+        &mut pif.ram[start - PIF_RAM_OFFSET..end - PIF_RAM_OFFSET],
+    ))
 }
 
-fn setup_channels_format(device: &mut device::Device) {
-    let mut i: usize = 0;
-    let mut k: usize = 0;
-    while i < PIF_RAM_SIZE && k < PIF_CHANNELS_COUNT {
-        match device.pif.ram[i] {
-            0x00 => {
-                /* skip channel */
-                disable_pif_channel(&mut device.pif.channels[k]);
-                k += 1;
-                i += 1;
-            }
+fn packet_lengths(tx: u8, rx: u8) -> (usize, usize) {
+    (
+        usize::from(tx & JOYBUS_LENGTH_MASK),
+        usize::from(rx & JOYBUS_LENGTH_MASK),
+    )
+}
 
-            0xff => {
-                /* dummy data */
-                i += 1;
-            }
+fn clear_joybus_layout(pif: &mut Pif) {
+    for channel in &mut pif.channels {
+        channel.header = None;
+    }
+}
 
-            0xfe => {
-                /* end of channel setup - remaining channels are disabled */
-                while k < PIF_CHANNELS_COUNT {
-                    disable_pif_channel(&mut device.pif.channels[k]);
-                    k += 1;
+fn setup_channels_format(pif: &mut Pif) {
+    clear_joybus_layout(pif);
+    let frame = &pif.ram[..PIF_COMMAND];
+    let mut offset = 0;
+    for channel in &mut pif.channels {
+        while frame.get(offset) == Some(&0xff) {
+            offset += 1;
+        }
+        match frame.get(offset) {
+            Some(0x00 | 0xfd) => offset += 1,
+            Some(0xfe) | None => break,
+            Some(&tx) => {
+                let Some(&rx) = frame.get(offset + 1) else {
+                    break;
+                };
+                let (tx_len, rx_len) = packet_lengths(tx, rx);
+                let end = offset + 2 + tx_len + rx_len;
+                if end > frame.len() {
+                    break;
                 }
-            }
-
-            0xfd => {
-                /* channel reset - send reset command and discard the results */
-                disable_pif_channel(&mut device.pif.channels[k]); // not sure about this
-                k += 1;
-                i += 1;
-            }
-
-            _ => {
-                /* setup channel */
-
-                /* HACK?: some games sends bogus PIF commands while accessing controller paks
-                 * Yoshi Story, Top Gear Rally 2, Indiana Jones, ...
-                 * When encountering such commands, we skip this bogus byte.
-                 */
-                if (i + 1 < PIF_RAM_SIZE) && (device.pif.ram[i + 1] == 0xfe) {
-                    i += 1;
-                    continue;
-                }
-
-                if (i + 2) >= PIF_RAM_SIZE {
-                    i = PIF_RAM_SIZE;
-                    continue;
-                }
-
-                i += setup_pif_channel(device, k, i);
-                k += 1;
+                // Flagged skip and reset packets still use their declared lengths.
+                channel.header = Some(offset);
+                offset = end;
             }
         }
     }
@@ -182,20 +205,15 @@ fn setup_channels_format(device: &mut device::Device) {
 
 pub fn process_ram(device: &mut device::Device) {
     let mut clrmask = 0x00;
-    let command = device.pif.ram[0x3F];
-    if command & 0x01 != 0 {
+    let command = device.pif.ram[PIF_COMMAND];
+    if command & PIF_CONFIGURE_JOYBUS != 0 {
         // Configure joybus protocol
-        setup_channels_format(device);
-        clrmask |= 0x01
+        clrmask |= PIF_CONFIGURE_JOYBUS;
+        setup_channels_format(&mut device.pif);
     }
     if command & 0x02 != 0 {
         // Challenge / response for protection
-        /* disable channel processing when doing CIC challenge */
-        for item in device.pif.channels.iter_mut() {
-            disable_pif_channel(item);
-        }
-
-        /* CIC Challenge */
+        clear_joybus_layout(&mut device.pif);
         process_cic_challenge(device);
         clrmask |= 0x02;
     }
@@ -211,9 +229,9 @@ pub fn process_ram(device: &mut device::Device) {
     }
     if command & 0x20 != 0 {
         // Acquire checksum
-        device.pif.ram[0x3F] = 0x80
+        device.pif.ram[PIF_COMMAND] = 0x80
     }
-    device.pif.ram[0x3F] &= !clrmask
+    device.pif.ram[PIF_COMMAND] &= !clrmask;
 }
 
 fn controller_connected(device: &device::Device, port: usize) -> bool {
@@ -242,23 +260,6 @@ pub fn connect_pif_channels(device: &mut device::Device) {
     device.pif.channels[4].process = Some(device::cart::process)
 }
 
-fn get_default_handler(device: &device::Device) -> device::controller::PakHandler {
-    if device.ui.game_id == "NCT" {
-        // Chameleon Twist does not support the mempak
-        device::controller::PakHandler {
-            read: device::controller::rumble::read,
-            write: device::controller::rumble::write,
-            pak_type: device::controller::PakType::RumblePak,
-        }
-    } else {
-        device::controller::PakHandler {
-            read: device::controller::mempak::read,
-            write: device::controller::mempak::write,
-            pak_type: device::controller::PakType::MemPak,
-        }
-    }
-}
-
 pub fn reset_pif(device: &mut device::Device, is_nmi_reset: bool) {
     if device.cart.pal {
         device.pif.rom = rom::PAL_PIF_ROM;
@@ -275,28 +276,30 @@ pub fn reset_pif(device: &mut device::Device, is_nmi_reset: bool) {
 }
 
 pub fn init(device: &mut device::Device) {
-    reset_pif(device, false);
+    use device::controller::PakType;
 
-    let default_handler = get_default_handler(device);
-    let tpak_handler = device::controller::PakHandler {
-        read: device::controller::transferpak::read,
-        write: device::controller::transferpak::write,
-        pak_type: device::controller::PakType::TransferPak,
+    reset_pif(device, false);
+    let default_pak = if device.ui.game_id == "NCT" {
+        // Chameleon Twist does not support the mempak
+        PakType::RumblePak
+    } else {
+        PakType::MemPak
     };
 
     connect_pif_channels(device);
 
     for i in 0..4 {
         if controller_connected(device, i) {
-            if device.netplay.is_some() || device.transferpaks[i].cart.rom.is_empty() {
-                device.pif.channels[i].pak_handler = Some(default_handler);
-            } else {
-                device.pif.channels[i].pak_handler = Some(tpak_handler);
-            }
+            device.pif.channels[i].pak_type =
+                if device.netplay.is_some() || device.transferpaks[i].cart.rom.is_empty() {
+                    default_pak
+                } else {
+                    PakType::TransferPak
+                };
         }
     }
     if vru_enabled(device) {
-        device.pif.channels[3].pak_handler = None;
+        device.pif.channels[3].pak_type = PakType::None;
     }
 }
 
