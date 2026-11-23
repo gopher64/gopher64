@@ -4,7 +4,7 @@ use crate::ui;
 pub const EVENT_TYPE_NONE: usize = 0;
 pub const EVENT_TYPE_AI: usize = 1;
 pub const EVENT_TYPE_SI: usize = 2;
-pub const EVENT_TYPE_VI: usize = 3;
+pub const EVENT_TYPE_VI_FIELD: usize = 3;
 pub const EVENT_TYPE_PI: usize = 4;
 pub const EVENT_TYPE_DP: usize = 5;
 pub const EVENT_TYPE_SP: usize = 6;
@@ -15,8 +15,9 @@ pub const EVENT_TYPE_VRU: usize = 10;
 pub const EVENT_TYPE_PAK: usize = 11;
 pub const EVENT_TYPE_SAVE: usize = 12;
 pub const EVENT_TYPE_NMI: usize = 13;
-pub const EVENT_TYPE_UPDATE_SCREEN: usize = 14;
-pub const EVENT_TYPE_COUNT: usize = 15;
+pub const EVENT_TYPE_VI_INTERRUPT: usize = 14;
+pub const EVENT_TYPE_UPDATE_SCREEN: usize = 15;
+pub const EVENT_TYPE_COUNT: usize = 16;
 
 #[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Event {
@@ -56,7 +57,7 @@ fn get_event_handler(name: usize) -> fn(&mut device::Device) {
     match name {
         EVENT_TYPE_AI => device::ai::dma_event,
         EVENT_TYPE_SI => device::si::dma_event,
-        EVENT_TYPE_VI => device::vi::vertical_interrupt_event,
+        EVENT_TYPE_VI_FIELD => device::vi::field_event,
         EVENT_TYPE_PI => device::pi::dma_event,
         EVENT_TYPE_DP => device::rdp::rdp_interrupt_event,
         EVENT_TYPE_SP => device::rsp_interface::rsp_event,
@@ -67,6 +68,7 @@ fn get_event_handler(name: usize) -> fn(&mut device::Device) {
         EVENT_TYPE_PAK => device::controller::pak_switch_event,
         EVENT_TYPE_SAVE => ui::storage::save_event,
         EVENT_TYPE_NMI => device::exceptions::reset_event,
+        EVENT_TYPE_VI_INTERRUPT => device::vi::vertical_interrupt_event,
         EVENT_TYPE_UPDATE_SCREEN => device::vi::update_screen,
         _ => dummy_event,
     }

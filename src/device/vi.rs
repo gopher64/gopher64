@@ -14,60 +14,111 @@ const VI_V_START_REG: usize = 10;
 //const VI_V_BURST_REG: usize = 11;
 //const VI_X_SCALE_REG: usize = 12;
 //const VI_Y_SCALE_REG: usize = 13;
-pub const VI_REGS_COUNT: usize = 14;
+const VI_REGS_COUNT: usize = 14;
+const VI_V_MASK: u32 = 0x3ff;
+const VI_TYPE_MASK: u32 = 3;
+const MAX_LIMIT_FREQ: u64 = 3;
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Vi {
     pub regs: [u32; VI_REGS_COUNT],
     pub clock: u64,
-    pub delay: u64,
-    pub field: u32,
-    pub count_per_scanline: u64,
-    pub frame_time: f64,
+    // Timing for the current field. A zero half-line count means the VI is off.
+    half_lines: u64,
+    field_cycles: u64,
+    scanout_field: u64,
     pub elapsed_time: f64,
 }
 
-const MAX_LIMIT_FREQ: u64 = 3;
+impl Vi {
+    fn configured_half_lines(&self) -> u64 {
+        let v_sync = self.regs[VI_V_SYNC_REG] & VI_V_MASK;
+        if self.regs[VI_STATUS_REG] & VI_TYPE_MASK == 0 || v_sync == 0 {
+            0
+        } else {
+            u64::from(v_sync) + 1
+        }
+    }
 
-pub fn set_expected_refresh_rate(device: &mut device::Device) {
-    let expected_refresh_rate = device.vi.clock as f64
-        / (device.vi.regs[VI_V_SYNC_REG] + 1) as f64
-        / ((device.vi.regs[VI_H_SYNC_REG] & 0xFFF) + 1) as f64
-        * 2.0;
-    device.vi.frame_time = 1.0 / expected_refresh_rate;
-    device.vi.delay = (device.cpu.clock_rate as f64 / expected_refresh_rate) as u64;
-    device.vi.count_per_scanline = device.vi.delay / (device.vi.regs[VI_V_SYNC_REG] + 1) as u64;
-}
+    fn current_field(&self) -> u64 {
+        // The scanline counter alternates fields only with an odd half-line total.
+        self.scanout_field & self.half_lines
+    }
 
-fn reset_pace_deadline(device: &mut device::Device) {
-    device.ui.speed_limiter.next_pace_deadline = None;
-}
-
-fn set_vertical_interrupt(device: &mut device::Device) {
-    if device.vi.regs[VI_V_SYNC_REG] != 0
-        && device::events::get_event(device, device::events::EVENT_TYPE_VI).is_none()
-    {
-        device::events::create_event(device, device::events::EVENT_TYPE_VI, device.vi.delay)
+    fn cycles_at_line(&self, line: u64) -> u64 {
+        (line * self.field_cycles).div_ceil(self.half_lines)
     }
 }
 
-fn set_current_line(device: &mut device::Device) {
-    if let Some(next_vi) = device::events::get_event(device, device::events::EVENT_TYPE_VI) {
-        let lines = ((device.vi.delay.saturating_sub(
-            next_vi
-                .count
-                .saturating_sub(device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG]),
-        )) / device.vi.count_per_scanline)
-            .min(device.vi.regs[VI_V_SYNC_REG] as u64) as u32;
+pub fn frame_time(device: &device::Device) -> f64 {
+    device.vi.field_cycles as f64 / device.cpu.clock_rate as f64
+}
 
-        // the VI interrupt fires when VI_CURRENT reaches V_INTR, so count from there.
-        // wrap around VI_CURRENT_REG if needed, a field is V_SYNC + 1 lines
-        device.vi.regs[VI_CURRENT_REG] =
-            (lines + (device.vi.regs[VI_V_INTR_REG] & 0x3FF)) % (device.vi.regs[VI_V_SYNC_REG] + 1);
+fn schedule_field(device: &mut device::Device, start: u64) {
+    device.vi.elapsed_time +=
+        elapsed_field_cycles(device, start) as f64 / device.cpu.clock_rate as f64;
+
+    let vi = &mut device.vi;
+    let was_active = vi.half_lines != 0;
+    vi.half_lines = vi.configured_half_lines();
+    vi.scanout_field = if was_active && vi.half_lines != 0 {
+        vi.scanout_field ^ 1
+    } else {
+        0
+    };
+    vi.field_cycles = if vi.half_lines == 0 {
+        // Keep screen updates and host callbacks running with the VI off.
+        device.cpu.clock_rate / if device.cart.pal { 50 } else { 60 }
+    } else {
+        let h_total = u64::from((vi.regs[VI_H_SYNC_REG] & 0xfff) + 1);
+        vi.half_lines * h_total * device.cpu.clock_rate / (2 * vi.clock)
+    };
+    let end = start + vi.field_cycles;
+    device::events::create_event_at(device, device::events::EVENT_TYPE_VI_FIELD, end);
+    schedule_vertical_interrupt(device, start);
+}
+
+fn field_end(device: &device::Device) -> u64 {
+    // The scheduler also translates this deadline when the guest writes COUNT.
+    device.cpu.events[device::events::EVENT_TYPE_VI_FIELD].count
+}
+
+fn elapsed_field_cycles(device: &device::Device, now: u64) -> u64 {
+    device
+        .vi
+        .field_cycles
+        .saturating_sub(field_end(device).saturating_sub(now))
+}
+
+fn schedule_vertical_interrupt(device: &mut device::Device, earliest: u64) {
+    let vi = &device.vi;
+    let compare = u64::from(vi.regs[VI_V_INTR_REG] & VI_V_MASK);
+    let field = vi.current_field();
+    let mut line = compare & !1;
+    // An even compare (including the SDKs' line 2) fires one scanline early in odd fields.
+    if field == 1 && compare == line {
+        line = line.saturating_sub(2);
     }
-    /* update current field */
-    device.vi.regs[VI_CURRENT_REG] = (device.vi.regs[VI_CURRENT_REG] & !1) | device.vi.field;
-    ui::video::set_register(VI_CURRENT_REG as u32, device.vi.regs[VI_CURRENT_REG])
+    if line + field < vi.half_lines {
+        let count = field_end(device).saturating_sub(vi.field_cycles - vi.cycles_at_line(line));
+        if count >= earliest {
+            device::events::create_event_at(device, device::events::EVENT_TYPE_VI_INTERRUPT, count);
+            return;
+        }
+    }
+    device::events::remove_event(device, device::events::EVENT_TYPE_VI_INTERRUPT);
+}
+
+fn current_line(device: &device::Device) -> u32 {
+    let vi = &device.vi;
+    if vi.half_lines == 0 {
+        return 0;
+    }
+    let now = device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG];
+    let elapsed = elapsed_field_cycles(device, now);
+    let field = vi.current_field();
+    let line = elapsed * vi.half_lines / vi.field_cycles;
+    ((line.min(vi.half_lines - 1 - field) & !1) | field) as u32
 }
 
 pub fn read_regs(
@@ -75,49 +126,52 @@ pub fn read_regs(
     address: u64,
     _access_size: device::memory::AccessSize,
 ) -> u32 {
-    let reg = (address & 0xFFFF) >> 2;
-    if reg as usize == VI_CURRENT_REG {
-        set_current_line(device)
-    }
+    let reg = ((address & 0xffff) >> 2) as usize;
+    let value = if reg == VI_CURRENT_REG {
+        current_line(device)
+    } else {
+        device.vi.regs[reg]
+    };
     device::cop0::add_cycles(device, 20);
-    device.vi.regs[reg as usize]
+    value
 }
 
 pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u32) {
-    let reg = (address & 0xFFFF) >> 2;
-    match reg as usize {
-        VI_CURRENT_REG => device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_VI),
-        VI_V_SYNC_REG => {
-            if device.vi.regs[reg as usize] != value & mask {
-                device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-                set_vertical_interrupt(device);
-                set_expected_refresh_rate(device);
-            }
-        }
-        VI_H_SYNC_REG => {
-            if device.vi.regs[reg as usize] != value & mask {
-                device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-                set_expected_refresh_rate(device);
-            }
-        }
-        VI_ORIGIN_REG => {
-            let current_origin = device.vi.regs[reg as usize];
-            device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-            if current_origin != device.vi.regs[reg as usize]
-                && !netplay::in_rollback(device.netplay.as_ref())
-            {
-                let _ = device.ui.video.fps_tx.as_ref().unwrap().send(true);
-            }
-        }
-        _ => {
-            device::memory::masked_write_32(&mut device.vi.regs[reg as usize], value, mask);
-        }
+    let reg = ((address & 0xffff) >> 2) as usize;
+    if reg == VI_CURRENT_REG {
+        device::mi::clear_rcp_interrupt(device, device::mi::MI_INTR_VI);
+        return;
     }
-    ui::video::set_register(reg as u32, device.vi.regs[reg as usize])
+
+    let old = device.vi.regs[reg];
+    device::memory::masked_write_32(&mut device.vi.regs[reg], value, mask);
+    let value = device.vi.regs[reg];
+    let changed = old ^ value;
+    let now = device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG];
+    match reg {
+        VI_STATUS_REG | VI_V_SYNC_REG => {
+            // Latch timing at the field boundary unless the VI starts or stops.
+            let active = device.vi.configured_half_lines() != 0;
+            if active != (device.vi.half_lines != 0) {
+                schedule_field(device, now);
+            }
+        }
+        VI_V_INTR_REG if changed & VI_V_MASK != 0 => {
+            schedule_vertical_interrupt(device, now + 1);
+        }
+        VI_ORIGIN_REG if changed != 0 && !netplay::in_rollback(device.netplay.as_ref()) => {
+            let _ = device.ui.video.fps_tx.as_ref().unwrap().send(true);
+        }
+        _ => {}
+    }
+    ui::video::set_register(reg as u32, value);
 }
 
 pub fn update_screen(device: &mut device::Device) {
-    if !netplay::in_rollback(device.netplay.as_ref()) {
+    let in_rollback = netplay::in_rollback(device.netplay.as_ref());
+    if !in_rollback {
+        // Weave serrated output in the renderer even if the guest counter is progressive.
+        ui::video::set_register(VI_CURRENT_REG as u32, device.vi.scanout_field as u32);
         ui::video::render_frame();
     }
 
@@ -127,7 +181,7 @@ pub fn update_screen(device: &mut device::Device) {
         reset_pace_deadline(device);
     }
 
-    if !netplay::in_rollback(device.netplay.as_ref())
+    if !in_rollback
         && device
             .ui
             .speed_limiter
@@ -138,7 +192,7 @@ pub fn update_screen(device: &mut device::Device) {
         speed_limiter(device);
     }
 
-    if !netplay::in_rollback(device.netplay.as_ref()) {
+    if !in_rollback {
         ui::video::update_screen();
         device.ui.speed_limiter.frame_counter += 1;
         let _ = device.ui.video.vis_tx.as_ref().unwrap().send(true);
@@ -158,64 +212,63 @@ pub fn update_screen(device: &mut device::Device) {
                 ui::video::MESSAGE_LENGTH_MESSAGE_SHORT,
             );
         } else {
-            ui::video::pause_loop(&mut device.ui, device.vi.frame_time);
+            let seconds = frame_time(device);
+            ui::video::pause_loop(&mut device.ui, seconds);
         }
     }
 }
 
-pub fn vertical_interrupt_event(device: &mut device::Device) {
-    device.vi.elapsed_time += device.vi.frame_time;
-    if let Some(playback) = &mut device.bk2_playback {
+pub fn field_event(device: &mut device::Device) {
+    let start = device.cpu.next_event_count;
+    if device.vi.regs[VI_V_SYNC_REG] & VI_V_MASK != 0
+        && let Some(playback) = &mut device.bk2_playback
+    {
         playback.advance();
     }
 
-    if device.cheats.enabled {
-        cheats::execute_cheats(device);
+    if device.vi.half_lines != 0 {
+        if device.cheats.enabled {
+            cheats::execute_cheats(device);
+        }
+        retroachievements::do_frame();
     }
 
-    retroachievements::do_frame();
-
-    /* toggle vi field if in interlaced mode, the field is always 0 in progressive mode */
-    if device.vi.regs[VI_STATUS_REG] & 0x40 != 0 {
-        device.vi.field ^= 1;
+    schedule_field(device, start);
+    let vi = &device.vi;
+    let v_start = u64::from((vi.regs[VI_V_START_REG] >> 16) & VI_V_MASK);
+    // Let the vblank handler update the framebuffer before scanout.
+    let offset = if v_start < vi.half_lines {
+        vi.cycles_at_line(v_start)
     } else {
-        device.vi.field = 0;
-    }
-
-    device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_VI);
-
-    if device.vi.delay != 0 {
-        device::events::create_event_at(
-            device,
-            device::events::EVENT_TYPE_VI,
-            device.cpu.next_event_count + device.vi.delay,
-        );
-    }
-
-    let v_intr = (device.vi.regs[VI_V_INTR_REG] & 0x3FF) as i64;
-    let v_start = ((device.vi.regs[VI_V_START_REG] >> 16) & 0x3FF) as i64;
-    let lines_per_field = device.vi.regs[VI_V_SYNC_REG] as i64 + 1;
-    let lines = (v_start - v_intr).rem_euclid(lines_per_field) as u64;
-    device::events::create_event(
+        0
+    };
+    device::events::create_event_at(
         device,
         device::events::EVENT_TYPE_UPDATE_SCREEN,
-        lines * device.vi.count_per_scanline,
+        start + offset,
     );
+}
+
+pub fn vertical_interrupt_event(device: &mut device::Device) {
+    device::mi::set_rcp_interrupt(device, device::mi::MI_INTR_VI);
 }
 
 pub fn init(device: &mut device::Device) {
-    if device.cart.pal {
-        device.vi.clock = 49656530
-    } else {
-        device.vi.clock = 48681812
-    }
+    device.vi.clock = if device.cart.pal { 49656530 } else { 48681812 };
+    device.vi.regs[VI_V_INTR_REG] = VI_V_MASK;
+    device.vi.regs[VI_H_SYNC_REG] = 0x7ff;
+    schedule_field(device, device.cpu.cop0.regs[device::cop0::COP0_COUNT_REG]);
+}
+
+fn reset_pace_deadline(device: &mut device::Device) {
+    device.ui.speed_limiter.next_pace_deadline = None;
 }
 
 fn speed_limiter(device: &mut device::Device) {
+    let seconds = frame_time(device);
     let mut speed_limiter_toggled = false;
-    let mut interval = std::time::Duration::from_secs_f64(
-        device.vi.frame_time * device.ui.speed_limiter.limit_freq as f64,
-    );
+    let mut interval =
+        std::time::Duration::from_secs_f64(seconds * device.ui.speed_limiter.limit_freq as f64);
 
     if let Some(netplay) = &device.netplay {
         let ahead = netplay.session.frames_ahead();
@@ -263,7 +316,7 @@ fn speed_limiter(device: &mut device::Device) {
                 device.ui.speed_limiter.limit_freq += 1;
                 reset_pace_deadline(device);
             } else if device.ui.speed_limiter.min_wait_time
-                > std::time::Duration::from_secs_f64(device.vi.frame_time)
+                > std::time::Duration::from_secs_f64(seconds)
                 && device.ui.speed_limiter.limit_freq > 1
             {
                 device.ui.speed_limiter.limit_freq -= 1;

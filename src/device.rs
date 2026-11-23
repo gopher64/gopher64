@@ -105,8 +105,8 @@ pub fn run_game(
     cache::init(device);
     rsp_interface::init(device);
     rdp::init(device);
-    vi::init(device);
     cpu::init(device);
+    vi::init(device);
 
     ui::storage::init(&mut device.ui, &device.cart.rom);
     ui::storage::load_saves(&mut device.ui, &mut device.netplay, device.cart.cic_seed);
@@ -545,15 +545,7 @@ impl Device {
                 regs: [0; ri::RI_REGS_COUNT],
                 ram_init: false,
             },
-            vi: vi::Vi {
-                regs: [0; vi::VI_REGS_COUNT],
-                clock: 0,
-                field: 0,
-                delay: 0,
-                count_per_scanline: 0,
-                frame_time: 0.0,
-                elapsed_time: 0.0,
-            },
+            vi: vi::Vi::default(),
             vru: controller::vru::Vru {
                 status: 0,
                 voice_state: 0,
