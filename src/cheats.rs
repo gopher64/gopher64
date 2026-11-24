@@ -26,11 +26,12 @@ pub type Cheat = std::collections::BTreeMap<String, std::collections::BTreeMap<S
 
 pub fn init(
     device: &mut device::Device,
+    game_crc: &str,
     cheat_settings: rustc_hash::FxHashMap<String, Option<String>>,
 ) {
     let cheats = serde_json::from_slice::<Cheat>(include_bytes!("../data/cheats.json"))
         .unwrap()
-        .get(&ui::storage::get_game_crc(&device.cart.rom))
+        .get(game_crc)
         .cloned()
         .unwrap_or_default();
 

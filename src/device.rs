@@ -113,7 +113,11 @@ pub fn run_game(
     ui::storage::format_saves(device);
 
     if !retroachievements::get_hardcore() {
-        cheats::init(device, game_settings.cheats);
+        cheats::init(
+            device,
+            &ui::storage::get_game_crc(rom_contents),
+            game_settings.cheats,
+        );
     }
 
     cpu::run(device);
