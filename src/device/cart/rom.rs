@@ -128,16 +128,13 @@ pub fn dma_write(
 }
 
 fn apply_patches(device: &mut device::Device) {
-    match device.ui.game_hash.as_str() {
-        "4ADE28775C54157FCA8763DE388442B5CA149111B13CD7F1D2E6429C90EAF065" => {
-            // https://github.com/gopher64/gopher64/issues/1436
-            // WCW Nitro (USA): call osWritebackDCacheAll instead of writing back only the task.
-            device.cart.rom[0xd9f0..0xd9f4].copy_from_slice(&0x0c01_7a60u32.to_be_bytes());
-            // Updated CIC-NUS-6102 header checksums for the patched instruction.
-            device.cart.rom[0x10..0x18].copy_from_slice(&0xd4c4_5a5a_3138_2c95u64.to_be_bytes());
-            println!("Applied compatibility patch");
-        }
-        _ => {}
+    if device.ui.game_hash == "4ADE28775C54157FCA8763DE388442B5CA149111B13CD7F1D2E6429C90EAF065" {
+        // https://github.com/gopher64/gopher64/issues/1436
+        // WCW Nitro (USA): call osWritebackDCacheAll instead of writing back only the task.
+        device.cart.rom[0xd9f0..0xd9f4].copy_from_slice(&0x0c01_7a60u32.to_be_bytes());
+        // Updated CIC-NUS-6102 header checksums for the patched instruction.
+        device.cart.rom[0x10..0x18].copy_from_slice(&0xd4c4_5a5a_3138_2c95u64.to_be_bytes());
+        println!("Applied compatibility patch");
     }
 }
 
