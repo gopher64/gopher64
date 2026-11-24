@@ -127,6 +127,20 @@ pub fn dma_write(
     device::pi::calculate_cycles(device, 1, length)
 }
 
+fn apply_patches(device: &mut device::Device) {
+    match device.ui.game_hash.as_str() {
+        "4ADE28775C54157FCA8763DE388442B5CA149111B13CD7F1D2E6429C90EAF065" => {
+            // https://github.com/gopher64/gopher64/issues/1436
+            // WCW Nitro (USA): call osWritebackDCacheAll instead of writing back only the task.
+            device.cart.rom[0xd9f0..0xd9f4].copy_from_slice(&0x0c01_7a60u32.to_be_bytes());
+            // Updated CIC-NUS-6102 header checksums for the patched instruction.
+            device.cart.rom[0x10..0x18].copy_from_slice(&0xd4c4_5a5a_3138_2c95u64.to_be_bytes());
+            println!("Applied compatibility patch");
+        }
+        _ => {}
+    }
+}
+
 pub fn init(device: &mut device::Device, rom_file: &[u8]) {
     device.cart.sc64.cfg[device::cart::sc64::SC64_BOOTLOADER_SWITCH as usize] = 1;
 
@@ -140,6 +154,8 @@ pub fn init(device: &mut device::Device, rom_file: &[u8]) {
     if device.ui.game_id.contains('\0') {
         device.ui.game_id = String::from("UNK");
     }
+
+    apply_patches(device);
 }
 
 pub fn is_system_pal(rom_contents: &[u8]) -> bool {
