@@ -109,6 +109,16 @@ fn schedule_vertical_interrupt(device: &mut device::Device, earliest: u64) {
     device::events::remove_event(device, device::events::EVENT_TYPE_VI_INTERRUPT);
 }
 
+fn reprogram_vertical_interrupt(device: &mut device::Device, now: u64) {
+    // An earlier event can leave an already-matched VI interrupt undispatched.
+    if device::events::get_event(device, device::events::EVENT_TYPE_VI_INTERRUPT)
+        .is_some_and(|event| event.count <= now)
+    {
+        vertical_interrupt_event(device);
+    }
+    schedule_vertical_interrupt(device, now + 1);
+}
+
 fn current_line(device: &device::Device) -> u32 {
     let vi = &device.vi;
     if vi.half_lines == 0 {
@@ -157,7 +167,7 @@ pub fn write_regs(device: &mut device::Device, address: u64, value: u32, mask: u
             }
         }
         VI_V_INTR_REG if changed & VI_V_MASK != 0 => {
-            schedule_vertical_interrupt(device, now + 1);
+            reprogram_vertical_interrupt(device, now);
         }
         VI_ORIGIN_REG if changed != 0 && !netplay::in_rollback(device.netplay.as_ref()) => {
             let _ = device.ui.video.fps_tx.as_ref().unwrap().send(true);
