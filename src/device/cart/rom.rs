@@ -128,14 +128,27 @@ pub fn dma_write(
 }
 
 fn apply_patches(device: &mut device::Device) {
-    if device.ui.game_hash == "4ADE28775C54157FCA8763DE388442B5CA149111B13CD7F1D2E6429C90EAF065" {
+    let (offset, instruction, checksum): (usize, u32, u64) = match device.ui.game_hash.as_str() {
         // https://github.com/gopher64/gopher64/issues/1436
         // WCW Nitro (USA): call osWritebackDCacheAll instead of writing back only the task.
-        device.cart.rom[0xd9f0..0xd9f4].copy_from_slice(&0x0c01_7a60u32.to_be_bytes());
-        // Updated CIC-NUS-6102 header checksums for the patched instruction.
-        device.cart.rom[0x10..0x18].copy_from_slice(&0xd4c4_5a5a_3138_2c95u64.to_be_bytes());
-        println!("Applied compatibility patch");
-    }
+        "4ADE28775C54157FCA8763DE388442B5CA149111B13CD7F1D2E6429C90EAF065" => {
+            (0xd9f0, 0x0c01_7a60, 0xd4c4_5a5a_3138_2c95)
+        }
+        // https://github.com/gopher64/gopher64/issues/1427
+        // Wonder Project J2: update the shop only with zero graphics tasks outstanding.
+        // Otherwise switching items can reuse memory still referenced by the previous task.
+        "8BBDA06B90CA6CBB897286B05D6BBC3D87464AF6A14C3641EC84D2B25610A3AA" => {
+            (0x67a4, 0x2b21_0001, 0xe43c_9767_d6f9_4f42) // Japanese retail
+        }
+        "CF0E08C8349291EE5561BA03FA82287A505ACECE1644588001937B0ABC732D31" => {
+            (0x67a4, 0x2b21_0001, 0x4f1e_88f5_8c52_7523) // English fan translation
+        }
+        _ => return,
+    };
+    device.cart.rom[offset..offset + 4].copy_from_slice(&instruction.to_be_bytes());
+    // Updated CIC-NUS-6102 header checksums for the patched instruction.
+    device.cart.rom[0x10..0x18].copy_from_slice(&checksum.to_be_bytes());
+    println!("Applied compatibility patch");
 }
 
 pub fn init(device: &mut device::Device, rom_file: &[u8]) {
