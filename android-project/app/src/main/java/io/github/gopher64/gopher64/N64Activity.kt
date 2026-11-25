@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RelativeLayout
+import androidx.annotation.Keep
 import org.libsdl.app.SDLActivity
 
 class N64Activity : SDLActivity(), TouchOverlayView.Listener {
@@ -25,10 +26,12 @@ class N64Activity : SDLActivity(), TouchOverlayView.Listener {
         } else {
             Log.v("SDL", "Sustained performance mode not supported")
         }
+    }
 
-        if (intent?.getBooleanExtra("show_touch_overlay", false) == true) {
-            setupTouchOverlay()
-        }
+    // Called by the emulator thread after SDL has tried to bind the local controller.
+    @Keep
+    private fun showTouchOverlay() {
+        runOnUiThread { setupTouchOverlay() }
     }
 
     private fun setupTouchOverlay() {
