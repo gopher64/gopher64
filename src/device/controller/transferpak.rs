@@ -125,8 +125,6 @@ pub fn write(device: &mut device::Device, channel: usize, address: u16, data: &[
                     pak.cart.rom_bank = 1;
                     pak.cart.ram_bank = 0;
                     pak.cart.ram_enabled = false;
-                    pak.cart.cart_type =
-                        device::controller::gbcart::get_cart_type(pak.cart.rom[0x147]);
                 }
                 pak.cart.enabled = true;
             } else {
