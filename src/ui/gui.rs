@@ -85,7 +85,6 @@ fn run_with_path(weak: slint::Weak<AppWindow>, path: std::path::PathBuf) {
                 rng_seed: None,
             },
             None,
-            show_touch_overlay(&handle),
             weak2,
         );
     })
@@ -588,11 +587,10 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<NetplayDevice>,
-    _show_touch_overlay: bool,
     weak: slint::Weak<AppWindow>,
 ) {
     #[cfg(target_os = "android")]
-    ui::android::run_rom(file_path, game_settings, netplay, _show_touch_overlay, weak);
+    ui::android::run_rom(file_path, game_settings, netplay, weak);
 
     #[cfg(not(target_os = "android"))]
     tokio::spawn(async move {
@@ -803,7 +801,6 @@ fn open_rom(app: &AppWindow) {
 
     let overclock = app.get_overclock_n64_cpu();
     let disable_expansion_pak = app.get_disable_expansion_pak();
-    let show_touch_overlay = show_touch_overlay(app);
 
     let weak = app.as_weak();
     tokio::spawn(async move {
@@ -818,17 +815,8 @@ fn open_rom(app: &AppWindow) {
                     rng_seed: None,
                 },
                 None,
-                show_touch_overlay,
                 weak,
             );
         }
     });
-}
-
-pub fn show_touch_overlay(app: &AppWindow) -> bool {
-    let selected = app.get_selected_controller().row_data(0).unwrap_or(0);
-    app.get_controller_paths()
-        .row_data(selected as usize)
-        .map(|p| p.is_empty())
-        .unwrap_or(true)
 }

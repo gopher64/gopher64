@@ -70,7 +70,7 @@ pub fn run_game(
 
     ui::video::init(device, netplay_config.is_some());
     ui::audio::init(device);
-    ui::input::init(&mut device.ui);
+    ui::input::init(device, netplay_config.is_some());
 
     // must be after video init
     if let Some(netplay_config) = &netplay_config {

@@ -1,6 +1,6 @@
 use std::ops::Neg;
 
-use crate::ui;
+use crate::{device, ui};
 
 const X_AXIS_SHIFT: usize = 16;
 const Y_AXIS_SHIFT: usize = 24;
@@ -528,7 +528,8 @@ pub fn get_joysticks() -> Vec<sdl3_sys::joystick::SDL_JoystickID> {
     }
 }
 
-pub fn init(ui: &mut ui::Ui) {
+pub fn init(device: &mut device::Device, _netplay: bool) {
+    let ui = &mut device.ui;
     ui::sdl_init(sdl3_sys::init::SDL_INIT_GAMEPAD);
 
     ui.input.keyboard_state =
@@ -591,6 +592,19 @@ pub fn init(ui: &mut ui::Ui) {
             } else {
                 eprintln!("Could not bind assigned controller");
             }
+        }
+    }
+
+    #[cfg(target_os = "android")]
+    {
+        // Netplay always reads local input from slot 0, even when offline port 1 is disabled.
+        let local_controller = &ui.input.controllers[0];
+        if device.bk2_playback.is_none()
+            && (_netplay || ui.config.input.controller_enabled[0])
+            && local_controller.game_controller.is_null()
+            && local_controller.joystick.is_null()
+        {
+            ui::android::show_touch_overlay();
         }
     }
 }

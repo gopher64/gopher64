@@ -2,7 +2,7 @@ use crate::device;
 use crate::netplay;
 use crate::netplay::RtcIceServerConfig;
 use crate::ui;
-use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings, show_touch_overlay};
+use crate::ui::gui::{AppWindow, open_uri, run_rom, save_settings};
 use futures::{SinkExt, StreamExt};
 use sha2::digest::Digest;
 use slint::ComponentHandle;
@@ -869,7 +869,6 @@ fn setup_wait_window(
                                             number_of_players: players.len(),
                                             input_delay,
                                         }),
-                                        show_touch_overlay(&handle),
                                         weak_app2,
                                     );
                                     handle.invoke_netplay_close();

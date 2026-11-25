@@ -97,10 +97,6 @@ bind_java_type! {
             sig = (extra: JString, value: JString[]) -> AndroidIntent,
             name = "putExtra",
         },
-        fn put_extra_boolean {
-            sig = (extra: JString, value: jboolean) -> AndroidIntent,
-            name = "putExtra",
-        },
         fn get_string_extra(name: JString) -> JString,
         fn get_action() -> JString,
         fn get_flags() -> jint,
@@ -274,22 +270,13 @@ pub fn run_rom(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
-    show_touch_overlay: bool,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) {
     if let Ok(app) = ANDROID_APP.lock()
         && let Some(app) = app.as_ref()
     {
         if let Err(err) = get_vm(app).attach_current_thread(|env| {
-            start_run_rom_on_jvm(
-                env,
-                app,
-                file_path,
-                game_settings,
-                netplay,
-                show_touch_overlay,
-                weak,
-            )
+            start_run_rom_on_jvm(env, app, file_path, game_settings, netplay, weak)
         }) {
             eprintln!("JNI error while starting N64Activity: {err:?}");
         }
@@ -302,7 +289,6 @@ fn start_run_rom_on_jvm(
     file_path: std::path::PathBuf,
     game_settings: ui::GameSettings,
     netplay: Option<ui::gui::NetplayDevice>,
-    show_touch_overlay: bool,
     weak: slint::Weak<ui::gui::AppWindow>,
 ) -> jni::errors::Result<()> {
     let raw_activity_global = app.activity_as_ptr() as jni::sys::jobject;
@@ -358,13 +344,10 @@ fn start_run_rom_on_jvm(
     let file_path_string = JString::from_str(env, file_path)?;
     let cheats_path_string = JString::from_str(env, cheats_path.to_str().unwrap())?;
 
-    let show_touch_overlay_key = JString::from_str(env, "show_touch_overlay")?;
-
     let intent = AndroidIntent::new(env)?
         .set_class_name(env, &package_name, &class_name)?
         .put_extra_string(env, &file_path_key, &file_path_string)?
         .put_extra_string(env, &cheats_path_key, &cheats_path_string)?
-        .put_extra_boolean(env, &show_touch_overlay_key, show_touch_overlay)?
         .put_extra_string_array(env, &args_key, &j_args)?;
 
     let weak_clear = weak.clone();
@@ -381,6 +364,35 @@ fn start_run_rom_on_jvm(
         return Err(err);
     }
     Ok(())
+}
+
+pub fn show_touch_overlay() {
+    use sdl3_sys::system::{SDL_GetAndroidActivity, SDL_GetAndroidJNIEnv};
+
+    let raw_env = unsafe { SDL_GetAndroidJNIEnv() };
+    if raw_env.is_null() {
+        eprintln!("Could not get SDL's JNI environment for the touch overlay");
+        return;
+    }
+
+    // SDL supplies this thread's JNI environment and a local activity reference.
+    unsafe { EnvUnowned::from_raw(raw_env.cast()) }
+        .with_env(|env| {
+            env.with_local_frame(4, |env| -> jni::errors::Result<()> {
+                let activity = unsafe { JObject::from_raw(env, SDL_GetAndroidActivity().cast()) };
+                env.call_method(
+                    &activity,
+                    jni::jni_str!("showTouchOverlay"),
+                    jni::jni_sig!(() -> ()),
+                    &[],
+                )?;
+                Ok(())
+            })
+            .inspect_err(|_| env.exception_clear())
+        })
+        .resolve_with::<jni::errors::LogContextErrorAndDefault, _>(|| {
+            "JNI error while showing the touch overlay".to_string()
+        });
 }
 
 #[unsafe(no_mangle)]
