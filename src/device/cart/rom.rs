@@ -154,8 +154,27 @@ fn apply_patches(device: &mut device::Device) {
             ],
             0x8c7c_ff4d_b5f2_fa26,
         ),
-        // Knife Edge - Nose Gunner: replacement words derived from MiSTer's XOR patches.
+        // Replacement words derived from MiSTer's XOR patches.
         // https://github.com/MiSTer-devel/N64_ROM_Database/blob/main/N64-database.txt
+        // Batman of the Future - Return of the Joker (Europe)
+        "F96AFFC5A89BFF0843A2E35A6DEE9EA1FE8AE65719519A742780877419F5CE60" => {
+            (&[(0x72ac0, 0x2444_54ac)], 0x259f_728c_e125_6c79)
+        }
+        // Batman Beyond - Return of the Joker (USA)
+        "7CE0F1304C46F16613FF3D414C9B011A0A34BCD2A67DB1B3CBD063CFB7D5D38B" => {
+            (&[(0x2d17c, 0x2444_0048)], 0x2044_89c1_72a8_4241)
+        }
+        // Blues Brothers 2000 (Europe)
+        "2A7540A8CB2D0F2EEC24BC99E8C9AF505A17F32E3AA2E43394A4AC94867DC2C8" => (
+            &[(0xab40, 0x3c44_9ba6), (0xae04, 0x3c03_126f)],
+            0xd431_b8df_f75c_0049,
+        ),
+        // Blues Brothers 2000 (USA)
+        "3CA0AC99C1611125783D474825B9D912B7B2E491D17468B0DB6FB29B941FC985" => (
+            &[(0x9de0, 0x3c44_9ba6), (0xa0a4, 0x3c03_126f)],
+            0x7cb0_fb5e_f665_b5c2,
+        ),
+        // Knife Edge - Nose Gunner
         "07578B1E624FCE4AD366F1FC5C446E4516592DA3A1F072730656AE0C5CDFD103" => (
             // Europe
             &[
