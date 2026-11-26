@@ -128,25 +128,38 @@ pub fn dma_write(
 }
 
 fn apply_patches(device: &mut device::Device) {
-    let (offset, instruction, checksum): (usize, u32, u64) = match device.ui.game_hash.as_str() {
+    let (instructions, checksum): (&[(usize, u32)], u64) = match device.ui.game_hash.as_str() {
         // https://github.com/gopher64/gopher64/issues/1436
         // WCW Nitro (USA): call osWritebackDCacheAll instead of writing back only the task.
         "4ADE28775C54157FCA8763DE388442B5CA149111B13CD7F1D2E6429C90EAF065" => {
-            (0xd9f0, 0x0c01_7a60, 0xd4c4_5a5a_3138_2c95)
+            (&[(0xd9f0, 0x0c01_7a60)], 0xd4c4_5a5a_3138_2c95)
         }
         // https://github.com/gopher64/gopher64/issues/1427
         // Wonder Project J2: update the shop only with zero graphics tasks outstanding.
         // Otherwise switching items can reuse memory still referenced by the previous task.
         "8BBDA06B90CA6CBB897286B05D6BBC3D87464AF6A14C3641EC84D2B25610A3AA" => {
-            (0x67a4, 0x2b21_0001, 0xe43c_9767_d6f9_4f42) // Japanese retail
+            (&[(0x67a4, 0x2b21_0001)], 0xe43c_9767_d6f9_4f42) // Japanese retail
         }
         "CF0E08C8349291EE5561BA03FA82287A505ACECE1644588001937B0ABC732D31" => {
-            (0x67a4, 0x2b21_0001, 0x4f1e_88f5_8c52_7523) // English fan translation
+            (&[(0x67a4, 0x2b21_0001)], 0x4f1e_88f5_8c52_7523) // English fan translation
         }
+        // https://github.com/gopher64/gopher64/issues/1446
+        // John Romero's Daikatana (Japan): the fade flag clears before the splash callback
+        // returns. Wait for the callback to unregister itself before loading
+        // the title overlay over its code.
+        "D733DEBF3A38C643127D58E84B086F44948BD630BF6449030DB8CEA1CA51ABF8" => (
+            &[
+                (0x38ce8, 0x3c01_801b), // lui at, 0x801b
+                (0x38cf0, 0x8c23_f4a0), // lw v1, -0xb60(at), callback pointer tested by beqz
+            ],
+            0x8c7c_ff4d_b5f2_fa26,
+        ),
         _ => return,
     };
-    device.cart.rom[offset..offset + 4].copy_from_slice(&instruction.to_be_bytes());
-    // Updated CIC-NUS-6102 header checksums for the patched instruction.
+    for &(offset, instruction) in instructions {
+        device.cart.rom[offset..offset + 4].copy_from_slice(&instruction.to_be_bytes());
+    }
+    // Updated CIC-NUS-6102 header checksums for the patched ROM.
     device.cart.rom[0x10..0x18].copy_from_slice(&checksum.to_be_bytes());
     println!("Applied compatibility patch");
 }
