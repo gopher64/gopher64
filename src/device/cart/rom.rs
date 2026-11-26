@@ -164,6 +164,54 @@ fn apply_patches(device: &mut device::Device) {
             ],
             0xce90_8dcf_597e_0b61,
         ),
+        // https://github.com/ares-emulator/ares/issues/2321
+        // Pro Mahjong Kiwame 64 (Japan): the Pak menu builds overlapping display lists.
+        // Let its thread run before the frame loop, then submit and wait for the RSP
+        // to finish reading before flipping buffers and waking the menu.
+        "EF0C1333AA1BC6AC40AD6A3C18E17B392183E29DE04A47188B4AFFF06722134B" => (
+            &[
+                (0x14a0, 0x1100_67d4), // beqz t0, graphics hook at 0x8001a7f4
+                (0x14a4, 0x3c09_8005), // lui t1, hi(__osActiveQueue)
+                (0x14cc, 0x0611_2a89), // bgezal s0, submit (skip if already submitted)
+                (0xc150, 0xad18_0004), // mark the task pending before enqueueing it
+                // Hook in padding after the PI read routine.
+                (0x1b3f4, 0x8d29_242c),  // lw t1, __osActiveQueue(t1)
+                (0x1b3f8, 0x3c0a_8016),  // lui t2, hi(pak_thread)
+                (0x1b3fc, 0x354a_18c0),  // ori t2, t2, lo(pak_thread)
+                (0x1b400, 0x152a_982d),  // bne t1, t2, flip_buffers
+                (0x1b404, 0x0000_8025),  // move s0, zero (submit after flip)
+                (0x1b414, 0x0c00_2cbd),  // jal submit
+                (0x1b418, 0x2410_ffff),  // li s0, -1 (submit before flip)
+                (0x1b41c, 0x8c2a_347c), // wait: lw t2, task.state(at); submit leaves at = 0x800d0000
+                (0x1b420, 0x314a_0002), // andi t2, t2, OS_SC_NEEDS_RSP
+                (0x1b424, 0x1540_fffd), // bnez t2, wait
+                (0x1b42c, 0x0800_022e), // j flip_buffers at 0x800008b8
+                (0x1f5a10, 0x2418_0051), // Pak thread priority 81 (frame loop is 80)
+            ],
+            0x1b74_35d5_ebe5_c4e0,
+        ),
+        "EA587B80388D764BF1CBB67B5C7AAB9265B0590561B83F943E71770A3554D435" => (
+            // Rev 1
+            &[
+                (0x14a0, 0x1100_67d4),
+                (0x14a4, 0x3c09_8005),
+                (0x14cc, 0x0611_2a89),
+                (0xc150, 0xad18_0004),
+                (0x1b3f4, 0x8d29_244c),
+                (0x1b3f8, 0x3c0a_8016),
+                (0x1b3fc, 0x354a_30e0),
+                (0x1b400, 0x152a_982d),
+                (0x1b404, 0x0000_8025),
+                (0x1b414, 0x0c00_2cbd),
+                (0x1b418, 0x2410_ffff),
+                (0x1b41c, 0x8c2a_349c),
+                (0x1b420, 0x314a_0002),
+                (0x1b424, 0x1540_fffd),
+                (0x1b42c, 0x0800_022e),
+                (0x1f5b40, 0x2418_0051),
+            ],
+            0x8af3_0df9_accb_24d5,
+        ),
         // Replacement words derived from MiSTer's XOR patches.
         // https://github.com/MiSTer-devel/N64_ROM_Database/blob/main/N64-database.txt
         // Batman of the Future - Return of the Joker (Europe)
@@ -311,8 +359,7 @@ fn set_cic(device: &mut device::Device) {
             device.cart.sc64.cfg[device::cart::sc64::SC64_ROM_WRITE_ENABLE as usize] = 1;
         }
         _ => {
-            device.cart.cic_seed = 0x3F; // CicNus6102
-            //println!("unknown IPL3 {}", hash)
+            device.cart.cic_seed = 0x3F; // CicNus6102 fallback
         }
     }
 }
