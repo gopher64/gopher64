@@ -1,5 +1,6 @@
 use crate::device;
 use crate::device::cop1::FCR31_CMP_BIT;
+use std::cmp::Ordering;
 
 pub fn fs(opcode: u32) -> u32 {
     (opcode >> 11) & 0x1F
@@ -13,8 +14,8 @@ fn fd(opcode: u32) -> u32 {
     (opcode >> 6) & 0x1F
 }
 
-pub trait FpuFloat: Copy + PartialEq + PartialOrd {
-    fn is_nan(self) -> bool;
+pub trait FpuFloat: Copy {
+    fn compare(self, other: Self) -> Option<Ordering>;
     fn round_ties_even(self) -> Self;
     fn trunc(self) -> Self;
     fn ceil(self) -> Self;
@@ -28,8 +29,18 @@ pub trait FpuFloat: Copy + PartialEq + PartialOrd {
 macro_rules! impl_fpu_float {
     ($t:ty, $bits:ty) => {
         impl FpuFloat for $t {
-            fn is_nan(self) -> bool {
-                <$t>::is_nan(self)
+            fn compare(self, other: Self) -> Option<Ordering> {
+                if self.is_nan() || other.is_nan() {
+                    return None;
+                }
+
+                // COP1 compares subnormals as-is. total_cmp compares the bits,
+                // so host flush modes cannot turn a subnormal operand into zero.
+                // Unlike total_cmp, COP1 treats +0 and -0 as equal.
+                if (self.to_bits() | other.to_bits()) << 1 == 0 {
+                    return Some(Ordering::Equal);
+                }
+                Some(self.total_cmp(&other))
             }
             // lowered to roundeven/frintn, which don't depend on the host rounding mode
             fn round_ties_even(self) -> Self {
@@ -137,10 +148,11 @@ fn float_to_int<F: FpuFloat, const LONG: bool>(
 pub fn c_cond<F: FpuFloat, const COND: u32>(device: &mut device::Device, opcode: u32) {
     let a = F::get_fs(device, fs(opcode));
     let b = F::get_ft(device, ft(opcode));
-    let condition = if a.is_nan() || b.is_nan() {
-        COND & 1 != 0
-    } else {
-        (COND & 2 != 0 && a == b) || (COND & 4 != 0 && a < b)
+    let condition = match a.compare(b) {
+        None => COND & 1 != 0,
+        Some(Ordering::Equal) => COND & 2 != 0,
+        Some(Ordering::Less) => COND & 4 != 0,
+        Some(Ordering::Greater) => false,
     };
     if condition {
         device.cpu.cop1.fcr31 |= FCR31_CMP_BIT
