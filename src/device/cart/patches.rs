@@ -85,6 +85,64 @@ pub fn apply(device: &mut device::Device) {
             ],
             0x8af3_0df9_accb_24d5,
         ),
+        // https://github.com/ares-emulator/ares/issues/838
+        // Iggy's Reckin' Balls (USA and Japan): retraces can fill the 64-entry game queue
+        // during a level load, causing a graphics completion to be dropped. The
+        // next transition then hangs waiting for the missing completion.
+        "CD5FB12C0295F3911F688A2444152A2AADD417CF13F0FD89623F64EB36E630BC" => (
+            &[
+                // The scheduler is compressed. Install the hook after decompression,
+                // before the boot code writes back the decompressed program.
+                (0x1224, 0x0c00_04dd), // jal installer at 0x80001374
+                // Unused bytes after the boot decompressor's scratch word.
+                (0x1f74, 0x3c08_800a), // lui t0, hi(scheduler)
+                (0x1f78, 0x3c09_0c00), // lui t1, high half of jal opcode
+                (0x1f7c, 0x3529_04e4), // ori t1, t1, low half of jal 0x80001390
+                (0x1f80, 0x0802_a024), // j osWritebackDCache
+                (0x1f84, 0xad09_0570), // install the hook at the retrace send callsite
+                // Only rate-limit retraces sent to the game queue, reserving four
+                // entries for other messages (including graphics completions).
+                (0x1f90, 0x3c08_8010), // lui t0, hi(game queue)
+                (0x1f94, 0x2508_f850), // addiu t0, t0, lo(game queue)
+                (0x1f98, 0x1504_0007), // bne t0, a0, send
+                (0x1f9c, 0x0000_0000), // nop
+                (0x1fa0, 0x8c88_0008), // lw t0, 8(a0) (validCount)
+                (0x1fa4, 0x2d08_003c), // sltiu t0, t0, 60
+                (0x1fa8, 0x1500_0003), // bnez t0, send
+                (0x1fac, 0x2402_ffff), // li v0, -1 (message not queued)
+                (0x1fb0, 0x03e0_0008), // jr ra
+                (0x1fb4, 0x0000_0000), // nop
+                (0x1fb8, 0x0802_a688), // send: j osSendMesg
+                (0x1fbc, 0x0000_0000), // nop
+            ],
+            0x94c4_f69b_b505_4e32,
+        ),
+        // Iggy-kun no Bura Bura Poyon (Japan): same hook with relocated game
+        // queue and scheduler functions. The decompressor's scratch word at
+        // 0x80001370 is kept intact.
+        "6B48035C9B6AF0FDE902AC8D5F29CA471AC040C8FAB090BE6142AE8FFD69284C" => (
+            &[
+                (0x1224, 0x0c00_04dd), // jal installer at 0x80001374
+                (0x1f74, 0x3c08_800a), // lui t0, hi(scheduler)
+                (0x1f78, 0x3c09_0c00),
+                (0x1f7c, 0x3529_04e4), // build jal 0x80001390
+                (0x1f80, 0x0802_a0cc), // j osWritebackDCache
+                (0x1f84, 0xad09_0810), // install at the retrace send callsite
+                (0x1f90, 0x3c08_8010),
+                (0x1f94, 0x2508_0090), // game queue at 0x80100090
+                (0x1f98, 0x1504_0007),
+                (0x1f9c, 0x0000_0000),
+                (0x1fa0, 0x8c88_0008),
+                (0x1fa4, 0x2d08_003c),
+                (0x1fa8, 0x1500_0003),
+                (0x1fac, 0x2402_ffff),
+                (0x1fb0, 0x03e0_0008),
+                (0x1fb4, 0x0000_0000),
+                (0x1fb8, 0x0802_a730), // send: j osSendMesg
+                (0x1fbc, 0x0000_0000),
+            ],
+            0xd35d_d1ec_cf26_c388,
+        ),
         // Replacement words derived from MiSTer's XOR patches.
         // https://github.com/MiSTer-devel/N64_ROM_Database/blob/main/N64-database.txt
         // Batman of the Future - Return of the Joker (Europe)
