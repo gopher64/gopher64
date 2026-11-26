@@ -105,72 +105,62 @@ pub fn apply(device: &mut device::Device) {
             &[(0x9de0, 0x3c44_9ba6), (0xa0a4, 0x3c03_126f)],
             0x7cb0_fb5e_f665_b5c2,
         ),
-        // Knife Edge - Nose Gunner
+        // Knife Edge - Nose Gunner: use MiSTer's frame limits (0x2ab980 OS ticks
+        // during dialogue, 0x1ab980 otherwise). Select the limit inside the
+        // gameplay overlay: the timer thread can run when other data is loaded
+        // at the overlay's address, so it must not rewrite the instruction.
+        // Japan and USA: when skipping a briefing, clear the draw callback
+        // before draining queued tasks so it can't keep submitting work.
         "07578B1E624FCE4AD366F1FC5C446E4516592DA3A1F072730656AE0C5CDFD103" => (
             // Europe
             &[
-                (0x19338, 0x1000_0006),
-                (0x19354, 0x3c04_8012),
-                (0x19358, 0x8c84_d408),
-                (0x1935c, 0x3c05_8019),
-                (0x19360, 0x34a5_7f63),
-                (0x19364, 0x1480_0005),
-                (0x19368, 0x2404_002a),
-                (0x1936c, 0x2404_001a),
-                (0x19370, 0xa0a4_0000),
-                (0x19374, 0x1000_0003),
-                (0x19378, 0x0000_0000),
-                (0x1937c, 0xa0a4_0000),
-                (0x19380, 0x0000_0000),
-                (0x19384, 0x1000_ffbb),
-                (0x19388, 0x0000_0000),
-                (0x17b0c4, 0x11c0_0093),
+                (0x17b0c4, 0x11c0_0093), // Run the limiter even without dialogue.
+                (0x17b324, 0xac23_d3dc), // Store the low word from osGetTime.
+                (0x17b328, 0x1440_000a), // Exit if the high word is nonzero.
+                (0x17b32c, 0x8c28_d408), // Load the dialogue state (delay slot).
+                (0x17b330, 0x1500_0003), // With dialogue, use the original 0x2a LUI.
+                (0x17b334, 0x3c01_001a), // Otherwise use 0x1a (delay slot).
+                (0x17b338, 0x1000_0002), // Join at the original ORI.
+                (0x17b33c, 0x0000_0000),
+                (0x17b348, 0x0061_082b), // Compare osGetTime's low word to the limit.
             ],
-            0x8fd6_0561_899a_0f19,
+            0x4a99_7c74_e208_7f99,
         ),
         "AB0DDAC8FCE7BA6DFD4F3CF83EB801A5BF64181515DE9FB4FE42F91E0BCB8143" => (
             // Japan
             &[
-                (0x191c8, 0x1000_0006),
-                (0x191e4, 0x3c04_8012),
-                (0x191e8, 0x8c84_d288),
-                (0x191ec, 0x3c05_8019),
-                (0x191f0, 0x34a5_7dc3),
-                (0x191f4, 0x1480_0005),
-                (0x191f8, 0x2404_002a),
-                (0x191fc, 0x2404_001a),
-                (0x19200, 0xa0a4_0000),
-                (0x19204, 0x1000_0003),
-                (0x19208, 0x0000_0000),
-                (0x1920c, 0xa0a4_0000),
-                (0x19210, 0x0000_0000),
-                (0x19214, 0x1000_ffbb),
-                (0x19218, 0x0000_0000),
+                (0x101c8, 0x3c01_800f), // lui at, 0x800f
+                (0x101cc, 0xac20_bbb0), // sw zero, -0x4450(at)
                 (0x180614, 0x11c0_008b),
+                (0x180854, 0xac23_d25c),
+                (0x180858, 0x1440_000a),
+                (0x18085c, 0x8c28_d288),
+                (0x180860, 0x1500_0003),
+                (0x180864, 0x3c01_001a),
+                (0x180868, 0x1000_0002),
+                (0x18086c, 0x0000_0000),
+                (0x180878, 0x0061_082b),
+                (0x185be0, 0x0c03_4572), // jal 0x800d15c8, just before the setter
             ],
-            0x564c_916e_086f_0fb0,
+            0x2b59_1042_e146_cf22,
         ),
         "467FCB503F384D2479FB3A5FE22405089F56ECAB38A3ACD1A6AAF0D8B73372B5" => (
             // USA
             &[
-                (0x19228, 0x1000_0006),
-                (0x19244, 0x3c04_8012),
-                (0x19248, 0x8c84_d298),
-                (0x1924c, 0x3c05_8019),
-                (0x19250, 0x34a5_7b0f),
-                (0x19254, 0x1480_0005),
-                (0x19258, 0x2404_002a),
-                (0x1925c, 0x2404_001a),
-                (0x19260, 0xa0a4_0000),
-                (0x19264, 0x1000_0003),
-                (0x19268, 0x0000_0000),
-                (0x1926c, 0xa0a4_0000),
-                (0x19270, 0x0000_0000),
-                (0x19274, 0x1000_ffbb),
-                (0x19278, 0x0000_0000),
+                (0x10238, 0x3c01_800f), // lui at, 0x800f
+                (0x1023c, 0xac20_bc00), // sw zero, -0x4400(at)
                 (0x17a380, 0x11c0_0083),
+                (0x17a5a0, 0xac23_d26c),
+                (0x17a5a4, 0x1440_000a),
+                (0x17a5a8, 0x8c28_d298),
+                (0x17a5ac, 0x1500_0003),
+                (0x17a5b0, 0x3c01_001a),
+                (0x17a5b4, 0x1000_0002),
+                (0x17a5b8, 0x0000_0000),
+                (0x17a5c4, 0x0061_082b),
+                (0x17f92c, 0x0c03_458e), // jal 0x800d1638, just before the setter
             ],
-            0xb9d6_ca85_cc96_5fde,
+            0x74a3_2fa4_d498_9495,
         ),
         _ => return,
     };
