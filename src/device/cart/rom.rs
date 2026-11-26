@@ -154,6 +154,16 @@ fn apply_patches(device: &mut device::Device) {
             ],
             0x8c7c_ff4d_b5f2_fa26,
         ),
+        // https://github.com/MiSTer-devel/N64_MiSTer/issues/21
+        // Nintama Rantarou 64 Game Gallery (Japan): set OS_TASK_LOADABLE so a
+        // yielded graphics task resumes with the microcode its display list switched to.
+        "25179FBD5ABC34EEE034F4218888693D8AA1D3950693850D34917FEA35605FDF" => (
+            &[
+                (0xaabc, 0x35ef_0004), // ori t7, t7, 4 (graphics task flags)
+                (0xaacc, 0x2518_00d0), // addiu t8, t0, 0xd0 (boot microcode end from start)
+            ],
+            0xce90_8dcf_597e_0b61,
+        ),
         // Replacement words derived from MiSTer's XOR patches.
         // https://github.com/MiSTer-devel/N64_ROM_Database/blob/main/N64-database.txt
         // Batman of the Future - Return of the Joker (Europe)
