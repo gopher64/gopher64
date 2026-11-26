@@ -1,6 +1,7 @@
 use crate::{device, ui};
 use device::pif::{JoybusAction, JoybusError, write_reply};
 
+pub mod patches;
 pub mod rom;
 pub mod sc64;
 pub mod sram;
