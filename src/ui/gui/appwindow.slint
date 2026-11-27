@@ -42,6 +42,8 @@ export component AppWindow inherits Window {
     callback saves_folder_button_clicked;
     callback input_profile_button_clicked;
     callback input_profile_creation_button_clicked;
+    callback input_profile_selected(string) -> int;
+    callback input_profile_deleted(string);
     callback transferpak_toggled(int, bool);
     callback create_session_button_clicked;
     callback join_session_button_clicked;
@@ -109,8 +111,10 @@ export component AppWindow inherits Window {
 
     in-out property input_deadzone <=> InputProfileData.deadzone;
     in-out property input_profile_name <=> InputProfileData.profile_name;
+    in-out property input_profile_index <=> InputProfileData.profile_index;
     in-out property input_dinput <=> InputProfileData.dinput;
     in-out property show_input_profile <=> InputProfileData.show_input_profile;
+    in property <bool> input_profile_wizard_running;
 
     in-out property show_netplay_wait_session <=> NetplayData.show_wait_session;
     in-out property show_netplay_create_session <=> NetplayData.show_create_session;
@@ -234,6 +238,7 @@ export component AppWindow inherits Window {
         if(side-bar.current-item == 1 && !show_input_profile): ControllerConfig {
             width: 100%;
             height: 100%;
+            profile_wizard_running: root.input_profile_wizard_running;
             input_profile_button_clicked => {
                 input_profile_button_clicked();
             }
@@ -249,6 +254,12 @@ export component AppWindow inherits Window {
             height: 100%;
             profile_creation_button_clicked => {
                 input_profile_creation_button_clicked();
+            }
+            profile_selected(name) => {
+                input_profile_selected(name);
+            }
+            profile_deleted(name) => {
+                input_profile_deleted(name);
             }
         }
         if(side-bar.current-item == 2 && !show_netplay_wait_session && !show_netplay_create_session && !show_netplay_join_session): Netplay {

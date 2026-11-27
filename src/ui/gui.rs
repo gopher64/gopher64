@@ -201,36 +201,29 @@ fn settings_window(app: &AppWindow, config: &ui::config::Config) {
     }
 }
 
-pub fn update_input_profiles(weak: &slint::Weak<AppWindow>, config: &ui::config::Config) {
+pub(super) fn update_input_profiles(app: &AppWindow, config: &ui::config::Config) {
     let profiles = input_profiles(config);
-    let config_bindings = config.input.input_profile_binding.clone();
-    weak.upgrade_in_event_loop(move |handle| {
-        let profile_bindings = slint::VecModel::default();
-        for (i, input_profile_binding) in handle.get_selected_profile_binding().iter().enumerate() {
-            let currently_selected = handle
-                .get_input_profiles()
-                .row_data(input_profile_binding as usize)
-                .unwrap_or(config_bindings[i].clone().into())
-                .to_string();
-            let position = profiles
+    let previous_profiles = app.get_input_profiles();
+    let profile_bindings = slint::VecModel::default();
+    for (i, input_profile_binding) in app.get_selected_profile_binding().iter().enumerate() {
+        let currently_selected = previous_profiles
+            .row_data(input_profile_binding as usize)
+            .unwrap_or_else(|| config.input.input_profile_binding[i].as_str().into());
+        let position = profiles
+            .iter()
+            .position(|profile| profile == currently_selected.as_str());
+        profile_bindings.push(position.unwrap_or(0) as i32);
+    }
+
+    app.set_input_profiles(slint::ModelRc::from(std::rc::Rc::new(
+        slint::VecModel::from(
+            profiles
                 .iter()
-                .position(|profile| *profile == currently_selected);
-            profile_bindings.push(position.unwrap_or(0) as i32);
-        }
-
-        handle.set_input_profiles(slint::ModelRc::from(std::rc::Rc::new(
-            slint::VecModel::from(
-                profiles
-                    .iter()
-                    .map(|x| x.into())
-                    .collect::<Vec<slint::SharedString>>(),
-            ),
-        )));
-
-        handle
-            .set_selected_profile_binding(slint::ModelRc::from(std::rc::Rc::new(profile_bindings)));
-    })
-    .unwrap();
+                .map(|x| x.into())
+                .collect::<Vec<slint::SharedString>>(),
+        ),
+    )));
+    app.set_selected_profile_binding(slint::ModelRc::from(std::rc::Rc::new(profile_bindings)));
 }
 
 fn clear_gb_paths(weak: &slint::Weak<AppWindow>, player: i32) {
@@ -281,7 +274,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
         ),
     )));
 
-    update_input_profiles(&app.as_weak(), config);
+    update_input_profiles(app, config);
 
     app.set_controller_changed(slint::ModelRc::from(std::rc::Rc::new(
         slint::VecModel::from(vec![false, false, false, false]),
@@ -346,59 +339,99 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
 
     let weak_app = app.as_weak();
     app.on_input_profile_button_clicked(move || {
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                handle.set_input_deadzone(ui::input_profile::DEADZONE_DEFAULT);
-                handle.set_input_profile_name(String::new().into());
-                handle.set_input_dinput(false);
-                handle.set_show_input_profile(true);
-            })
-            .unwrap();
+        let handle = weak_app.unwrap();
+        handle.set_input_deadzone(ui::input_profile::DEADZONE_DEFAULT as f32);
+        handle.set_input_profile_name("".into());
+        handle.set_input_profile_index(-1);
+        handle.set_input_dinput(false);
+        handle.set_show_input_profile(true);
     });
+
+    let weak_app = app.as_weak();
+    app.on_input_profile_selected(move |name| {
+        let handle = weak_app.unwrap();
+        let Some(index) = handle.get_input_profiles().iter().position(|p| p == name) else {
+            return -1;
+        };
+        let config = ui::config::Config::load();
+        if let Some(profile) = config.input.input_profiles.get(name.as_str()) {
+            handle.set_input_deadzone(profile.deadzone as f32);
+            handle.set_input_dinput(profile.dinput);
+        }
+        index as i32
+    });
+
+    let weak_app = app.as_weak();
+    app.on_input_profile_deleted(move |name| {
+        let handle = weak_app.unwrap();
+        if name.is_empty() || name == "default" || handle.get_game_running() {
+            return;
+        }
+
+        let mut config = ui::config::Config::load();
+        if config.input.input_profiles.remove(name.as_str()).is_some() {
+            for binding in &mut config.input.input_profile_binding {
+                if binding == name.as_str() {
+                    *binding = "default".to_string();
+                }
+            }
+            if let Err(e) = config.save() {
+                eprintln!("Error deleting input profile: {}", e);
+                return;
+            }
+        }
+        handle.set_input_profile_name("".into());
+        handle.set_input_deadzone(ui::input_profile::DEADZONE_DEFAULT as f32);
+        handle.set_input_dinput(false);
+        update_input_profiles(&handle, &config);
+    });
+
     let weak_app = app.as_weak();
     app.on_input_profile_creation_button_clicked(move || {
+        let handle = weak_app.unwrap();
+        let profile_name = handle.get_input_profile_name();
+        let dinput = handle.get_input_dinput();
+        let deadzone = handle.get_input_deadzone() as i32;
+        handle.set_show_input_profile(false);
+
+        #[cfg(target_os = "android")]
+        ui::android::spawn_configure_input_profile(profile_name, dinput, deadzone);
+
         #[cfg(not(target_os = "android"))]
-        let weak_app2 = weak_app.clone();
-        weak_app
-            .upgrade_in_event_loop(move |handle| {
-                let profile_name = handle.get_input_profile_name();
-                let dinput = handle.get_input_dinput();
-                let deadzone = handle.get_input_deadzone();
-                handle.set_show_input_profile(false);
-
-                #[cfg(target_os = "android")]
-                ui::android::spawn_configure_input_profile(profile_name, dinput, deadzone);
-
-                #[cfg(not(target_os = "android"))]
-                tokio::spawn(async move {
-                    let cli_path = std::env::current_exe()
-                        .unwrap()
-                        .parent()
-                        .unwrap()
-                        .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
-                    let cmd_path = if cfg!(target_os = "macos") && cli_path.exists() {
-                        cli_path
-                    } else {
-                        std::env::current_exe().unwrap()
-                    };
-                    let mut command = tokio::process::Command::new(cmd_path);
-                    command.args([
-                        "--configure-input-profile",
-                        &profile_name,
-                        "--deadzone",
-                        &deadzone.to_string(),
-                    ]);
-                    if dinput {
-                        command.arg("--use-dinput");
-                    }
-                    if !command.status().await.unwrap().success() {
-                        eprintln!("Failed to configure input profile");
-                    }
-                    let config = ui::config::Config::new();
-                    update_input_profiles(&weak_app2, &config);
-                });
-            })
-            .unwrap();
+        {
+            handle.set_input_profile_wizard_running(true);
+            let weak_app = weak_app.clone();
+            tokio::spawn(async move {
+                let exe = std::env::current_exe().unwrap();
+                let cli_path = exe
+                    .parent()
+                    .unwrap()
+                    .join(format!("{}-cli", env!("CARGO_PKG_NAME")));
+                let cmd_path = if cfg!(target_os = "macos") && cli_path.exists() {
+                    cli_path
+                } else {
+                    exe
+                };
+                let mut command = tokio::process::Command::new(cmd_path);
+                command.args([
+                    &format!("--configure-input-profile={profile_name}"),
+                    "--deadzone",
+                    &deadzone.to_string(),
+                ]);
+                if dinput {
+                    command.arg("--use-dinput");
+                }
+                if !command.status().await.is_ok_and(|status| status.success()) {
+                    eprintln!("Failed to configure input profile");
+                }
+                weak_app
+                    .upgrade_in_event_loop(move |handle| {
+                        update_input_profiles(&handle, &ui::config::Config::load());
+                        handle.set_input_profile_wizard_running(false);
+                    })
+                    .unwrap();
+            });
+        }
     });
 
     let weak_app2 = app.as_weak();

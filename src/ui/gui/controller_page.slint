@@ -165,6 +165,7 @@ export component ControllerConfig inherits Page {
     callback input_profile_button_clicked;
     callback transferpak_toggled(int, bool);
     callback controller_window_created;
+    in property <bool> profile_wizard_running;
     title: @tr("Controller Configuration");
     content-max-width: root.two-columns ? 740px : 460px;
 
@@ -179,7 +180,7 @@ export component ControllerConfig inherits Page {
         ActionRow {
             Button {
                 text: @tr("Configure Input Profile");
-                enabled: !State.game_running;
+                enabled: !State.game_running && !root.profile_wizard_running;
                 clicked => {
                     input_profile_button_clicked();
                 }

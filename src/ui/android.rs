@@ -243,8 +243,7 @@ fn start_configure_input_profile_on_jvm(
 
     let args_key = JString::from_str(env, "args")?;
     let mut args = vec![
-        JString::from_str(env, "--configure-input-profile")?,
-        JString::from_str(env, &profile_name)?,
+        JString::from_str(env, format!("--configure-input-profile={profile_name}"))?,
         JString::from_str(env, "--deadzone")?,
         JString::from_str(env, &deadzone.to_string())?,
     ];
@@ -824,8 +823,14 @@ pub extern "system" fn Java_io_github_gopher64_gopher64_SlintActivity_nativeOnAc
                     if let Ok(weak_app_window) = WEAK_SLINT_WINDOW.lock()
                         && let Some(weak_app_window) = weak_app_window.as_ref()
                     {
-                        let config = ui::config::Config::new();
-                        ui::gui::update_input_profiles(&weak_app_window, &config);
+                        weak_app_window
+                            .upgrade_in_event_loop(|handle| {
+                                ui::gui::update_input_profiles(
+                                    &handle,
+                                    &ui::config::Config::load(),
+                                );
+                            })
+                            .unwrap();
                     }
                 }
             }
