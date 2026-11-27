@@ -196,7 +196,8 @@ fn draw_profile_screen(
                 sdl3_sys::events::SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED => {
                     set_font_size(window, font);
                 }
-                sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED => break,
+                sdl3_sys::events::SDL_EVENT_QUIT
+                | sdl3_sys::events::SDL_EVENT_WINDOW_CLOSE_REQUESTED => break,
                 sdl3_sys::events::SDL_EVENT_GAMEPAD_BUTTON_DOWN => {
                     if gather == 0 {
                         match sdl3_sys::gamepad::SDL_GamepadButton(
