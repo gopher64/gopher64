@@ -340,7 +340,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
     let weak_app = app.as_weak();
     app.on_input_profile_button_clicked(move || {
         let handle = weak_app.unwrap();
-        handle.set_input_deadzone(ui::input_profile::DEADZONE_DEFAULT);
+        handle.set_input_deadzone(ui::input_profile::DEADZONE_DEFAULT as f32);
         handle.set_input_profile_name("".into());
         handle.set_input_profile_index(-1);
         handle.set_input_dinput(false);
@@ -355,7 +355,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
         };
         let config = ui::config::Config::load();
         if let Some(profile) = config.input.input_profiles.get(name.as_str()) {
-            handle.set_input_deadzone(profile.deadzone);
+            handle.set_input_deadzone(profile.deadzone as f32);
             handle.set_input_dinput(profile.dinput);
         }
         index as i32
@@ -381,7 +381,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
             }
         }
         handle.set_input_profile_name("".into());
-        handle.set_input_deadzone(ui::input_profile::DEADZONE_DEFAULT);
+        handle.set_input_deadzone(ui::input_profile::DEADZONE_DEFAULT as f32);
         handle.set_input_dinput(false);
         update_input_profiles(&handle, &config);
     });
@@ -391,7 +391,7 @@ fn controller_window(app: &AppWindow, config: &ui::config::Config) {
         let handle = weak_app.unwrap();
         let profile_name = handle.get_input_profile_name();
         let dinput = handle.get_input_dinput();
-        let deadzone = handle.get_input_deadzone();
+        let deadzone = handle.get_input_deadzone() as i32;
         handle.set_show_input_profile(false);
 
         #[cfg(target_os = "android")]

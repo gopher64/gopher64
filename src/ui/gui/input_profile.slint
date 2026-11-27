@@ -13,7 +13,7 @@ export global InputProfileData {
     in-out property <bool> dinput;
     in-out property <string> profile_name;
     in-out property <int> profile_index: -1;
-    in-out property <int> deadzone;
+    in-out property <float> deadzone;
     in-out property <bool> show_input_profile;
 }
 
@@ -67,14 +67,12 @@ export component InputProfileDialog inherits Page {
                 min-width: 92px;
                 preferred-width: 140px;
                 maximum: 99;
-                value: InputProfileData.deadzone;
-                changed(value) => {
-                    InputProfileData.deadzone = value;
-                }
+                value <=> InputProfileData.deadzone;
             }
 
             Text {
-                text: InputProfileData.deadzone + "%";
+                private property <int> percent: InputProfileData.deadzone;
+                text: self.percent + "%";
                 vertical-alignment: center;
             }
         }
