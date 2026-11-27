@@ -123,32 +123,36 @@ impl Cheats {
 
 impl Drop for Config {
     fn drop(&mut self) {
-        if self.write_to_disk {
-            write_config(self);
+        if self.write_to_disk
+            && let Err(e) = self.save()
+        {
+            eprintln!("Error writing config: {}", e);
         }
     }
 }
 
-fn write_config(config: &Config) {
-    let dirs = ui::get_dirs();
-    let file_path = dirs.config_dir.join("config.json");
-    if let Ok(f) = std::fs::File::create(file_path)
-        && let Err(e) = serde_json::to_writer_pretty(f, &config)
-    {
-        eprintln!("Error writing config: {}", e);
-    }
-}
-
 impl Config {
+    pub fn save(&self) -> std::io::Result<()> {
+        let file_path = ui::get_dirs().config_dir.join("config.json");
+        let file = std::fs::File::create(file_path)?;
+        serde_json::to_writer_pretty(file, self)?;
+        Ok(())
+    }
+
     pub fn new() -> Config {
+        let mut config = Self::load();
+        config.write_to_disk = true;
+        config
+    }
+
+    pub fn load() -> Config {
         let dirs = ui::get_dirs();
         let file_path = dirs.config_dir.join("config.json");
         let config_file = std::fs::read(file_path);
         let mut input_data: Option<Input> = None;
         if let Ok(config_file) = config_file {
             let result = serde_json::from_slice::<Config>(config_file.as_ref());
-            if let Ok(mut result) = result {
-                result.write_to_disk = true;
+            if let Ok(result) = result {
                 return result;
             }
 
@@ -202,7 +206,7 @@ impl Config {
                 rom_dir: std::path::PathBuf::new(),
                 recent_roms: Vec::new(),
             },
-            write_to_disk: true,
+            write_to_disk: false,
         }
     }
 }

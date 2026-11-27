@@ -138,37 +138,57 @@ msgctxt "ControllerConfig"
 msgid "Controller Assignment"
 msgstr "Назначение контроллера"
 
-#: src/ui/gui/input_profile.slint:17
+#: src/ui/gui/input_profile.slint:21
 msgctxt "InputProfileDialog"
 msgid "Create/Modify Input Profile"
 msgstr "Создать/изменить профиль ввода"
 
-#: src/ui/gui/input_profile.slint:28
+#: src/ui/gui/input_profile.slint:41
 msgctxt "InputProfileDialog"
-msgid "Enter profile name to create or modify"
-msgstr "Введите имя профиля для создания или изменения"
+msgid "Enter profile name"
+msgstr "Введите имя профиля"
 
-#: src/ui/gui/input_profile.slint:39
+#: src/ui/gui/input_profile.slint:46 src/ui/gui/input_profile.slint:50
+msgctxt "InputProfileDialog"
+msgid "Existing Profiles"
+msgstr "Существующие профили"
+
+#: src/ui/gui/input_profile.slint:62
 msgctxt "InputProfileDialog"
 msgid "Deadzone Percentage"
 msgstr "Процент мёртвой зоны"
 
-#: src/ui/gui/input_profile.slint:60
+#: src/ui/gui/input_profile.slint:83
 msgctxt "InputProfileDialog"
 msgid "Use DirectInput"
 msgstr "Использовать DirectInput"
 
-#: src/ui/gui/input_profile.slint:71
+#: src/ui/gui/input_profile.slint:94
+msgctxt "InputProfileDialog"
+msgid "Modify Profile"
+msgstr "Изменить профиль"
+
+#: src/ui/gui/input_profile.slint:94
 msgctxt "InputProfileDialog"
 msgid "Start Profile Creation Wizard"
 msgstr "Запустить мастер создания профиля"
 
-#: src/ui/gui/input_profile.slint:80
+#: src/ui/gui/input_profile.slint:102 src/ui/gui/input_profile.slint:128
+msgctxt "InputProfileDialog"
+msgid "Delete Profile"
+msgstr "Удалить профиль"
+
+#: src/ui/gui/input_profile.slint:111 src/ui/gui/input_profile.slint:137
 msgctxt "InputProfileDialog"
 msgid "Cancel"
 msgstr "Отмена"
 
-#: src/ui/gui/input_profile.slint:89
+#: src/ui/gui/input_profile.slint:123
+msgctxt "InputProfileDialog"
+msgid "Delete profile “{}”?"
+msgstr "Удалить профиль «{}»?"
+
+#: src/ui/gui/input_profile.slint:147
 msgctxt "InputProfileDialog"
 msgid ""
 "When using DirectInput and/or keyboard, navigate the dialog using the arrow "

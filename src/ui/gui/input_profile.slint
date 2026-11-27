@@ -1,14 +1,18 @@
 import {
     Button,
+    ComboBox,
     LineEdit,
     Switch,
     Slider,
 } from "std-widgets.slint";
+import { ControllerData } from "controller_page.slint";
+import { State } from "localgame_page.slint";
 import { ActionRow, Page } from "page.slint";
 
 export global InputProfileData {
     in-out property <bool> dinput;
     in-out property <string> profile_name;
+    in-out property <int> profile_index: -1;
     in-out property <int> deadzone;
     in-out property <bool> show_input_profile;
 }
@@ -17,18 +21,37 @@ export component InputProfileDialog inherits Page {
     title: @tr("Create/Modify Input Profile");
     content-max-width: 640px;
     callback profile_creation_button_clicked;
-    in-out property dinput <=> InputProfileData.dinput;
+    callback profile_selected(string) -> int;
+    callback profile_deleted(string);
     in-out property profile_name <=> InputProfileData.profile_name;
-    in-out property deadzone <=> InputProfileData.deadzone;
+    private property <bool> can_configure: !State.game_running && root.profile_name != "" && root.profile_name != "default";
+    private property <string> profile_to_delete;
+
+    changed profile_name => {
+        root.profile_to_delete = "";
+        InputProfileData.profile_index = root.profile_selected(root.profile_name);
+        profiles.current-index = InputProfileData.profile_index;
+    }
+
     VerticalLayout {
         spacing: 8px;
         alignment: start;
 
         LineEdit {
-            placeholder-text: @tr("Enter profile name to create or modify");
-            text: InputProfileData.profile_name;
-            edited(text) => {
-                InputProfileData.profile_name = text;
+            placeholder-text: @tr("Enter profile name");
+            text <=> root.profile_name;
+        }
+
+        Text {
+            text: @tr("Existing Profiles");
+        }
+
+        profiles := ComboBox {
+            accessible-label: @tr("Existing Profiles");
+            model: ControllerData.input_profiles;
+            current-index: InputProfileData.profile_index;
+            selected(name) => {
+                root.profile_name = name;
             }
         }
 
@@ -64,14 +87,22 @@ export component InputProfileDialog inherits Page {
             }
         }
 
-        ActionRow {
+        if root.profile_to_delete == "": ActionRow {
             vertical-stretch: 0;
             Button {
                 vertical-stretch: 0;
-                text: @tr("Start Profile Creation Wizard");
-                enabled: InputProfileData.profile_name != "" && InputProfileData.profile_name != "default";
+                text: InputProfileData.profile_index >= 0 ? @tr("Modify Profile") : @tr("Start Profile Creation Wizard");
+                enabled: root.can_configure;
                 clicked => {
                     profile_creation_button_clicked();
+                }
+            }
+
+            Button {
+                text: @tr("Delete Profile");
+                enabled: root.can_configure && InputProfileData.profile_index >= 0;
+                clicked => {
+                    root.profile_to_delete = root.profile_name;
                 }
             }
 
@@ -80,6 +111,33 @@ export component InputProfileDialog inherits Page {
                 text: @tr("Cancel");
                 clicked => {
                     InputProfileData.show_input_profile = false;
+                }
+            }
+        }
+
+        if root.profile_to_delete != "": VerticalLayout {
+            spacing: 8px;
+
+            Text {
+                wrap: word-wrap;
+                text: @tr("Delete profile “{}”?", root.profile_to_delete);
+            }
+
+            ActionRow {
+                Button {
+                    text: @tr("Delete Profile");
+                    enabled: root.can_configure;
+                    clicked => {
+                        root.profile_deleted(root.profile_to_delete);
+                        root.profile_to_delete = "";
+                    }
+                }
+
+                Button {
+                    text: @tr("Cancel");
+                    clicked => {
+                        root.profile_to_delete = "";
+                    }
                 }
             }
         }
