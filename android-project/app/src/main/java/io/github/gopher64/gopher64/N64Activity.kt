@@ -18,6 +18,14 @@ class N64Activity : SDLActivity(), TouchOverlayView.Listener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // The saved Activity state does not include the running emulator.
+        if (savedInstanceState != null) {
+            // Let the next game launch even though SDL main never ran.
+            nativeSetenv("SDL_ANDROID_ALLOW_RECREATE_ACTIVITY", "1")
+            finish()
+            return
+        }
+
         val powerManager = getContext().getSystemService(Context.POWER_SERVICE) as PowerManager
 
         if (powerManager.isSustainedPerformanceModeSupported) {
