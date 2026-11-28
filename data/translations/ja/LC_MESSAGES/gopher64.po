@@ -95,7 +95,7 @@ msgstr "ROMを選択"
 #: src/ui/gui/cheat_page.slint:43
 msgctxt "Cheats"
 msgid "Clear Cheats For All ROMs"
-msgstr "すべてのROMのチートをクリア"
+msgstr "すべてのROMでチートを無効にする"
 
 #: src/ui/gui/cheat_page.slint:83
 msgctxt "Cheats"
@@ -110,7 +110,7 @@ msgstr "有効"
 #: src/ui/gui/controller_page.slint:100
 msgctxt "ControllerSettingsGrid"
 msgid "Transfer Pak"
-msgstr "Transfer Pak"
+msgstr "64GBパック"
 
 #: src/ui/gui/controller_page.slint:114
 msgctxt "ControllerSettingsGrid"
@@ -130,12 +130,12 @@ msgstr "入力プロファイルを設定"
 #: src/ui/gui/controller_page.slint:197
 msgctxt "ControllerConfig"
 msgid "Controller Settings"
-msgstr "コントローラー詳細設定"
+msgstr "ポート設定"
 
 #: src/ui/gui/controller_page.slint:207
 msgctxt "ControllerConfig"
 msgid "Controller Assignment"
-msgstr "コントローラー割り当て"
+msgstr "コントローラーの割り当て"
 
 #: src/ui/gui/input_profile.slint:21
 msgctxt "InputProfileDialog"
@@ -200,15 +200,15 @@ msgid ""
 "Press the South/East button to begin binding a button/axis.\n"
 "Press the North/West button to remove a binding."
 msgstr ""
-"DirectInputおよび/またはキーボードを使用する場合は、矢印キーでダイアログを"
+"DirectInputやキーボードを使用する場合は、矢印キーでダイアログを"
 "操作します。\n"
-"Enterキーでボタン/軸の割り当てを開始します。\n"
+"Enterキーでボタンや軸の割り当てを開始します。\n"
 "Deleteキーで割り当てを解除します。\n"
 "\n"
-"PlayStationスタイルのコントローラーを使用する場合は、方向パッドでダイアログ"
-"を操作します。\n"
-"下/右ボタンでボタン/軸の割り当てを開始します。\n"
-"上/左ボタンで割り当てを解除します。"
+"PlayStationタイプのコントローラーを使用する場合は、十字キーでダイアログを"
+"操作します。\n"
+"右側の4つのボタンのうち、下または右のボタンで割り当てを開始します。\n"
+"上または左のボタンで割り当てを解除します。"
 
 #: src/ui/gui/localgame_page.slint:19
 msgctxt "LocalGame"
@@ -233,7 +233,7 @@ msgstr "最近使ったROM"
 #: src/ui/gui/netplay_create.slint:7
 msgctxt "NetplayCreate"
 msgid "Netplay: Create Session"
-msgstr "ネットプレイ：セッション作成"
+msgstr "ネットプレイ：セッションの作成"
 
 #: src/ui/gui/netplay_create.slint:23
 msgctxt "NetplayCreate"
@@ -289,7 +289,7 @@ msgstr "キャンセル"
 #: src/ui/gui/netplay_join.slint:7
 msgctxt "NetplayJoin"
 msgid "Netplay: Join Session"
-msgstr "ネットプレイ：セッションに参加"
+msgstr "ネットプレイ：セッションへの参加"
 
 #: src/ui/gui/netplay_join.slint:31
 msgctxt "NetplayJoin"
@@ -435,21 +435,21 @@ msgstr "送信"
 msgctxt "NetplayWait"
 msgid ""
 "Setting the input delay too low will cause frequent rollbacks.\n"
-"You can lower the input delay in-game by pressing Alt+[ and raise it with "
-"Alt+]."
+"You can lower the input delay in-game by pressing \"Alt+[\" and raise it "
+"with \"Alt+]\"."
 msgstr ""
-"入力遅延を低く設定しすぎると頻繁にロールバックが発生します。\n"
-"Alt+[ でゲーム内の入力遅延を下げ、Alt+] で上げることができます。"
+"入力遅延が小さすぎると、ロールバックが頻繁に発生します。\n"
+"「Alt+[」でゲーム内の入力遅延を下げ、「Alt+]」で上げることができます。"
 
 #: src/ui/gui/netplay_wait.slint:113
 msgctxt "NetplayWait"
 msgid "Local Input Delay:"
-msgstr "ローカル入力遅延:"
+msgstr "自分の入力遅延："
 
 #: src/ui/gui/netplay_wait.slint:129
 msgctxt "NetplayWait"
 msgid "Recommended: "
-msgstr "推奨: "
+msgstr "推奨値： "
 
 #: src/ui/gui/netplay_wait.slint:136
 msgctxt "NetplayWait"
@@ -459,7 +459,7 @@ msgstr "ゲーム開始"
 #: src/ui/gui/netplay_wait.slint:136
 msgctxt "NetplayWait"
 msgid "Waiting for P2P mesh "
-msgstr "P2Pメッシュ接続待機中 "
+msgstr "P2P接続待ち "
 
 #: src/ui/gui/netplay_wait.slint:145
 msgctxt "NetplayWait"
@@ -494,12 +494,12 @@ msgstr "チャレンジ表示"
 #: src/ui/gui/retroachievements_page.slint:74
 msgctxt "RetroAchievements"
 msgid "Leaderboard Trackers"
-msgstr "リーダーボード追跡"
+msgstr "リーダーボード挑戦中の記録を表示"
 
 #: src/ui/gui/retroachievements_page.slint:84
 msgctxt "RetroAchievements"
 msgid "Discord Rich Presence"
-msgstr "Discord のリッチプレゼンス"
+msgstr "Discordのリッチプレゼンス"
 
 #: src/ui/gui/retroachievements_page.slint:103
 msgctxt "RetroAchievements"
@@ -559,7 +559,7 @@ msgstr "全画面表示"
 #: src/ui/gui/settings_page.slint:120
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
-msgstr "ワイド画面（伸ばす）"
+msgstr "ワイド画面（引き伸ばし）"
 
 #: src/ui/gui/settings_page.slint:128
 msgctxt "Settings"
@@ -579,7 +579,7 @@ msgstr "N64のCPUをオーバークロック（不具合の原因になること
 #: src/ui/gui/settings_page.slint:156
 msgctxt "Settings"
 msgid "Disable Expansion Pak"
-msgstr "拡張パックを無効にする"
+msgstr "メモリー拡張パックを無効にする"
 
 #: src/ui/gui/settings_page.slint:164
 msgctxt "Settings"
@@ -604,7 +604,7 @@ msgstr "UI"
 #: src/ui/gui/settings_page.slint:198
 msgctxt "Settings"
 msgid "Theme:"
-msgstr "テーマ:"
+msgstr "テーマ："
 
 #: src/ui/gui/settings_page.slint:204
 msgctxt "Settings"

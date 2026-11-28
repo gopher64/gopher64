@@ -15,7 +15,7 @@ msgstr ""
 #: src/ui/gui/about_page.slint:15
 msgctxt "NewVersionButton"
 msgid "New version available! Click here to download"
-msgstr "Nouvelle version disponible ! Cliquez ici pour télécharger"
+msgstr "Nouvelle version disponible ! Cliquez ici pour la télécharger"
 
 #: src/ui/gui/about_page.slint:31
 msgctxt "About"
@@ -55,7 +55,7 @@ msgstr "Jeu local"
 #: src/ui/gui/appwindow.slint:182
 msgctxt "Menu"
 msgid "Controller Config"
-msgstr "Configuration manette"
+msgstr "Manettes"
 
 #: src/ui/gui/appwindow.slint:186
 msgctxt "Menu"
@@ -95,12 +95,12 @@ msgstr "Sélectionner une ROM"
 #: src/ui/gui/cheat_page.slint:43
 msgctxt "Cheats"
 msgid "Clear Cheats For All ROMs"
-msgstr "Effacer la triche pour toutes les ROMs"
+msgstr "Désactiver les codes de triche pour toutes les ROM"
 
 #: src/ui/gui/cheat_page.slint:83
 msgctxt "Cheats"
 msgid "No Cheats Available"
-msgstr "Aucune triche disponible"
+msgstr "Aucun code de triche disponible"
 
 #: src/ui/gui/controller_page.slint:87
 msgctxt "ControllerSettingsGrid"
@@ -120,7 +120,7 @@ msgstr "Profil"
 #: src/ui/gui/controller_page.slint:168
 msgctxt "ControllerConfig"
 msgid "Controller Configuration"
-msgstr "Configuration de la manette"
+msgstr "Configuration des manettes"
 
 #: src/ui/gui/controller_page.slint:181
 msgctxt "ControllerConfig"
@@ -130,17 +130,17 @@ msgstr "Configurer le profil d'entrée"
 #: src/ui/gui/controller_page.slint:197
 msgctxt "ControllerConfig"
 msgid "Controller Settings"
-msgstr "Paramètres de la manette"
+msgstr "Paramètres des manettes"
 
 #: src/ui/gui/controller_page.slint:207
 msgctxt "ControllerConfig"
 msgid "Controller Assignment"
-msgstr "Attribution de la manette"
+msgstr "Attribution des manettes"
 
 #: src/ui/gui/input_profile.slint:21
 msgctxt "InputProfileDialog"
 msgid "Create/Modify Input Profile"
-msgstr "Créer / modifier le profil d'entrée"
+msgstr "Créer ou modifier un profil d'entrée"
 
 #: src/ui/gui/input_profile.slint:41
 msgctxt "InputProfileDialog"
@@ -200,15 +200,17 @@ msgid ""
 "Press the South/East button to begin binding a button/axis.\n"
 "Press the North/West button to remove a binding."
 msgstr ""
-"Lorsque vous utilisez DirectInput et/ou le clavier, naviguez dans la boîte "
+"Lorsque vous utilisez DirectInput ou le clavier, naviguez dans la boîte "
 "de dialogue avec les touches fléchées.\n"
-"Appuyez sur Entrée pour commencer à assigner un bouton/axe.\n"
-"Appuyez sur Suppr pour supprimer une assignation.\n"
+"Appuyez sur Entrée pour commencer à attribuer un bouton ou un axe.\n"
+"Appuyez sur Suppr pour supprimer une attribution.\n"
 "\n"
 "Lorsque vous utilisez une manette de style PlayStation, naviguez dans la "
 "boîte de dialogue avec la croix directionnelle.\n"
-"Appuyez sur le bouton Sud/Est pour commencer à assigner un bouton/axe.\n"
-"Appuyez sur le bouton Nord/Ouest pour supprimer une assignation."
+"Appuyez sur le bouton d'action du bas ou de droite pour commencer à "
+"attribuer un bouton ou un axe.\n"
+"Appuyez sur le bouton d'action du haut ou de gauche pour supprimer une "
+"attribution."
 
 #: src/ui/gui/localgame_page.slint:19
 msgctxt "LocalGame"
@@ -228,17 +230,17 @@ msgstr "Ouvrir le dossier des sauvegardes"
 #: src/ui/gui/localgame_page.slint:49
 msgctxt "LocalGame"
 msgid "Recent ROMs"
-msgstr "ROMs récentes"
+msgstr "ROM récentes"
 
 #: src/ui/gui/netplay_create.slint:7
 msgctxt "NetplayCreate"
 msgid "Netplay: Create Session"
-msgstr "Netplay : créer une session"
+msgstr "Netplay : créer une session"
 
 #: src/ui/gui/netplay_create.slint:23
 msgctxt "NetplayCreate"
 msgid "Session Name:"
-msgstr "Nom de la session :"
+msgstr "Nom de la session :"
 
 #: src/ui/gui/netplay_create.slint:28
 msgctxt "NetplayCreate"
@@ -248,7 +250,7 @@ msgstr "Saisir le nom de la session"
 #: src/ui/gui/netplay_create.slint:40
 msgctxt "NetplayCreate"
 msgid "Password (Optional):"
-msgstr "Mot de passe (facultatif) :"
+msgstr "Mot de passe (facultatif) :"
 
 #: src/ui/gui/netplay_create.slint:45
 msgctxt "NetplayCreate"
@@ -258,7 +260,7 @@ msgstr "Saisir le mot de passe de la session"
 #: src/ui/gui/netplay_create.slint:58
 msgctxt "NetplayCreate"
 msgid "Player Name:"
-msgstr "Nom du joueur :"
+msgstr "Nom du joueur :"
 
 #: src/ui/gui/netplay_create.slint:63
 msgctxt "NetplayCreate"
@@ -275,8 +277,8 @@ msgctxt "NetplayCreate"
 msgid ""
 "This game has cheats enabled. Cheats will be synchronized with other players."
 msgstr ""
-"La triche est activée pour ce jeu. Elle sera synchronisée avec les autres "
-"joueurs."
+"Des codes de triche sont activés pour ce jeu. Ils seront synchronisés avec "
+"les autres joueurs."
 
 #: src/ui/gui/netplay_create.slint:87
 msgctxt "NetplayCreate"
@@ -291,12 +293,12 @@ msgstr "Annuler"
 #: src/ui/gui/netplay_join.slint:7
 msgctxt "NetplayJoin"
 msgid "Netplay: Join Session"
-msgstr "Netplay : rejoindre une session"
+msgstr "Netplay : rejoindre une session"
 
 #: src/ui/gui/netplay_join.slint:31
 msgctxt "NetplayJoin"
 msgid "Player Name (required):"
-msgstr "Nom du joueur (obligatoire) :"
+msgstr "Nom du joueur (obligatoire) :"
 
 #: src/ui/gui/netplay_join.slint:36
 msgctxt "NetplayJoin"
@@ -306,7 +308,7 @@ msgstr "Saisir le nom du joueur"
 #: src/ui/gui/netplay_join.slint:45
 msgctxt "NetplayJoin"
 msgid "Password (if required)"
-msgstr "Mot de passe (si requis)"
+msgstr "Mot de passe (si nécessaire)"
 
 #: src/ui/gui/netplay_join.slint:56
 msgctxt "NetplayJoin"
@@ -316,7 +318,7 @@ msgstr "Sélectionner une ROM"
 #: src/ui/gui/netplay_join.slint:64
 msgctxt "NetplayJoin"
 msgid "Refreshing session list, please wait..."
-msgstr "Actualisation de la liste des sessions, veuillez patienter…"
+msgstr "Actualisation de la liste des sessions. Veuillez patienter…"
 
 #: src/ui/gui/netplay_join.slint:69
 msgctxt "NetplayJoin"
@@ -326,8 +328,7 @@ msgstr "Cliquez sur une session ci-dessous pour la sélectionner"
 #: src/ui/gui/netplay_join.slint:74
 msgctxt "NetplayJoin"
 msgid "No sessions available. Please refresh to check again."
-msgstr ""
-"Aucune session disponible. Veuillez actualiser pour vérifier à nouveau."
+msgstr "Aucune session disponible. Veuillez actualiser la liste."
 
 #: src/ui/gui/netplay_join.slint:100 src/ui/gui/netplay_join.slint:125
 msgctxt "NetplayJoin"
@@ -382,7 +383,7 @@ msgstr "Rejoindre une session"
 #: src/ui/gui/netplay_page.slint:58
 msgctxt "Netplay"
 msgid "Netplay Discord Channel"
-msgstr "Salon Discord Netplay"
+msgstr "Salon Discord pour le Netplay"
 
 #: src/ui/gui/netplay_page.slint:65
 msgctxt "Netplay"
@@ -392,37 +393,37 @@ msgstr "Donner votre avis"
 #: src/ui/gui/netplay_wait.slint:23
 msgctxt "NetplayWait"
 msgid "Netplay: Waiting Room"
-msgstr "Netplay : salle d'attente"
+msgstr "Netplay : salle d'attente"
 
 #: src/ui/gui/netplay_wait.slint:33
 msgctxt "NetplayWait"
 msgid "Session Name:"
-msgstr "Nom de la session :"
+msgstr "Nom de la session :"
 
 #: src/ui/gui/netplay_wait.slint:39
 msgctxt "NetplayWait"
 msgid "Game Name:"
-msgstr "Nom du jeu :"
+msgstr "Nom du jeu :"
 
 #: src/ui/gui/netplay_wait.slint:49
 msgctxt "NetplayWait"
 msgid "Player 1:"
-msgstr "Joueur 1 :"
+msgstr "Joueur 1 :"
 
 #: src/ui/gui/netplay_wait.slint:54
 msgctxt "NetplayWait"
 msgid "Player 2:"
-msgstr "Joueur 2 :"
+msgstr "Joueur 2 :"
 
 #: src/ui/gui/netplay_wait.slint:61
 msgctxt "NetplayWait"
 msgid "Player 3:"
-msgstr "Joueur 3 :"
+msgstr "Joueur 3 :"
 
 #: src/ui/gui/netplay_wait.slint:66
 msgctxt "NetplayWait"
 msgid "Player 4:"
-msgstr "Joueur 4 :"
+msgstr "Joueur 4 :"
 
 #: src/ui/gui/netplay_wait.slint:84
 msgctxt "NetplayWait"
@@ -438,22 +439,22 @@ msgstr "Envoyer"
 msgctxt "NetplayWait"
 msgid ""
 "Setting the input delay too low will cause frequent rollbacks.\n"
-"You can lower the input delay in-game by pressing Alt+[ and raise it with "
-"Alt+]."
+"You can lower the input delay in-game by pressing \"Alt+[\" and raise it "
+"with \"Alt+]\"."
 msgstr ""
-"Régler le délai d'entrée trop bas provoquera des rollbacks fréquents.\n"
-"Vous pouvez diminuer le délai d'entrée en jeu avec Alt+[ et l'augmenter avec "
-"Alt+]."
+"Un délai d'entrée trop faible provoque de fréquents rollbacks.\n"
+"Vous pouvez diminuer le délai d'entrée en jeu avec « Alt+[ » et l'augmenter "
+"avec « Alt+] »."
 
 #: src/ui/gui/netplay_wait.slint:113
 msgctxt "NetplayWait"
 msgid "Local Input Delay:"
-msgstr "Délai d'entrée local :"
+msgstr "Délai d'entrée local :"
 
 #: src/ui/gui/netplay_wait.slint:129
 msgctxt "NetplayWait"
 msgid "Recommended: "
-msgstr "Recommandé : "
+msgstr "Recommandé : "
 
 #: src/ui/gui/netplay_wait.slint:136
 msgctxt "NetplayWait"
@@ -463,7 +464,7 @@ msgstr "Lancer la partie"
 #: src/ui/gui/netplay_wait.slint:136
 msgctxt "NetplayWait"
 msgid "Waiting for P2P mesh "
-msgstr "En attente du maillage P2P "
+msgstr "En attente des connexions P2P "
 
 #: src/ui/gui/netplay_wait.slint:145
 msgctxt "NetplayWait"
@@ -493,7 +494,7 @@ msgstr "Mode hardcore"
 #: src/ui/gui/retroachievements_page.slint:64
 msgctxt "RetroAchievements"
 msgid "Challenge Indicators"
-msgstr "Indicateurs de défi"
+msgstr "Indicateurs de défis"
 
 #: src/ui/gui/retroachievements_page.slint:74
 msgctxt "RetroAchievements"
@@ -523,7 +524,7 @@ msgstr "Mot de passe"
 #: src/ui/gui/retroachievements_page.slint:139
 msgctxt "RetroAchievements"
 msgid "Login"
-msgstr "Connexion"
+msgstr "Se connecter"
 
 #: src/ui/gui/retroachievements_page.slint:150
 msgctxt "RetroAchievements"
@@ -543,17 +544,17 @@ msgstr "Jeu"
 #: src/ui/gui/settings_page.slint:81
 msgctxt "Settings"
 msgid "Resolution:"
-msgstr "Résolution :"
+msgstr "Résolution :"
 
 #: src/ui/gui/settings_page.slint:96
 msgctxt "Settings"
 msgid "SSAA downscaling"
-msgstr "Réduction SSAA"
+msgstr "Réduction d'échelle SSAA"
 
 #: src/ui/gui/settings_page.slint:104
 msgctxt "Settings"
 msgid "Integer Scaling"
-msgstr "Mise à l'échelle par entiers"
+msgstr "Mise à l'échelle par facteur entier"
 
 #: src/ui/gui/settings_page.slint:112
 msgctxt "Settings"
@@ -563,7 +564,7 @@ msgstr "Plein écran"
 #: src/ui/gui/settings_page.slint:120
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
-msgstr "Écran large (étiré)"
+msgstr "Écran large (image étirée)"
 
 #: src/ui/gui/settings_page.slint:128
 msgctxt "Settings"
@@ -578,7 +579,7 @@ msgstr "Appliquer le filtre CRT"
 #: src/ui/gui/settings_page.slint:148
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
-msgstr "Surcharger le CPU N64 (risque de bugs)"
+msgstr "Surcadencer le processeur de la N64 (risque de bugs)"
 
 #: src/ui/gui/settings_page.slint:156
 msgctxt "Settings"
@@ -598,7 +599,7 @@ msgstr "Émuler UNFLoader"
 #: src/ui/gui/settings_page.slint:180
 msgctxt "Settings"
 msgid "Emulate VRU"
-msgstr "Émuler le VRU"
+msgstr "Émuler la VRU"
 
 #: src/ui/gui/settings_page.slint:191
 msgctxt "Settings"
@@ -608,7 +609,7 @@ msgstr "Interface"
 #: src/ui/gui/settings_page.slint:198
 msgctxt "Settings"
 msgid "Theme:"
-msgstr "Thème :"
+msgstr "Thème :"
 
 #: src/ui/gui/settings_page.slint:204
 msgctxt "Settings"
@@ -628,7 +629,7 @@ msgstr "Clair"
 #: src/ui/gui/vru_dialog.slint:7
 msgctxt "VruDialog"
 msgid "What Would You Like To Say?"
-msgstr "Que souhaitez-vous dire ?"
+msgstr "Que souhaitez-vous dire ?"
 
 #~ msgctxt "NetplayCreate"
 #~ msgid "Server:"
