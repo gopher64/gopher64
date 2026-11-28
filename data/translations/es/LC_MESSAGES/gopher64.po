@@ -95,7 +95,7 @@ msgstr "Seleccionar ROM"
 #: src/ui/gui/cheat_page.slint:43
 msgctxt "Cheats"
 msgid "Clear Cheats For All ROMs"
-msgstr "Borrar trucos de todas las ROMs"
+msgstr "Desactivar los trucos de todas las ROM"
 
 #: src/ui/gui/cheat_page.slint:83
 msgctxt "Cheats"
@@ -140,7 +140,7 @@ msgstr "Asignación del mando"
 #: src/ui/gui/input_profile.slint:21
 msgctxt "InputProfileDialog"
 msgid "Create/Modify Input Profile"
-msgstr "Crear/Modificar perfil de entrada"
+msgstr "Crear o modificar un perfil de entrada"
 
 #: src/ui/gui/input_profile.slint:41
 msgctxt "InputProfileDialog"
@@ -200,14 +200,17 @@ msgid ""
 "Press the South/East button to begin binding a button/axis.\n"
 "Press the North/West button to remove a binding."
 msgstr ""
-"Al usar DirectInput y/o el teclado, navegue por el diálogo con las teclas de "
-"flecha.\n"
-"Pulse Intro para empezar a asignar un botón/eje.\n"
-"Pulse Suprimir para quitar una asignación.\n"
+"Si usas DirectInput o el teclado, navega por el cuadro de diálogo con las "
+"teclas de flecha.\n"
+"Pulsa Intro para empezar a asignar un botón o un eje.\n"
+"Pulsa Supr para quitar una asignación.\n"
 "\n"
-"Al usar un mando estilo PlayStation, navegue por el diálogo con la cruceta.\n"
-"Pulse el botón Sur/Este para empezar a asignar un botón/eje.\n"
-"Pulse el botón Norte/Oeste para quitar una asignación."
+"Si usas un mando de estilo PlayStation, navega por el cuadro de diálogo con "
+"la cruceta.\n"
+"Pulsa el botón de acción inferior o el de la derecha para empezar a asignar "
+"un botón o un eje.\n"
+"Pulsa el botón de acción superior o el de la izquierda para quitar una "
+"asignación."
 
 #: src/ui/gui/localgame_page.slint:19
 msgctxt "LocalGame"
@@ -222,12 +225,12 @@ msgstr "Abrir ROM"
 #: src/ui/gui/localgame_page.slint:32
 msgctxt "LocalGame"
 msgid "Open Saves Folder"
-msgstr "Abrir carpeta de guardados"
+msgstr "Abrir carpeta de partidas guardadas"
 
 #: src/ui/gui/localgame_page.slint:49
 msgctxt "LocalGame"
 msgid "Recent ROMs"
-msgstr "ROMs recientes"
+msgstr "ROM recientes"
 
 #: src/ui/gui/netplay_create.slint:7
 msgctxt "NetplayCreate"
@@ -247,12 +250,12 @@ msgstr "Introduce el nombre de la sesión"
 #: src/ui/gui/netplay_create.slint:40
 msgctxt "NetplayCreate"
 msgid "Password (Optional):"
-msgstr "Contraseña (Opcional):"
+msgstr "Contraseña (opcional):"
 
 #: src/ui/gui/netplay_create.slint:45
 msgctxt "NetplayCreate"
 msgid "Enter session password"
-msgstr "Introduce la contraseña"
+msgstr "Introduce la contraseña de la sesión"
 
 #: src/ui/gui/netplay_create.slint:58
 msgctxt "NetplayCreate"
@@ -290,12 +293,12 @@ msgstr "Cancelar"
 #: src/ui/gui/netplay_join.slint:7
 msgctxt "NetplayJoin"
 msgid "Netplay: Join Session"
-msgstr "Netplay: Unirse a la sesión"
+msgstr "Netplay: Unirse a una sesión"
 
 #: src/ui/gui/netplay_join.slint:31
 msgctxt "NetplayJoin"
 msgid "Player Name (required):"
-msgstr "Nombre de jugador (requerido):"
+msgstr "Nombre del jugador (obligatorio):"
 
 #: src/ui/gui/netplay_join.slint:36
 msgctxt "NetplayJoin"
@@ -315,17 +318,17 @@ msgstr "Seleccionar ROM"
 #: src/ui/gui/netplay_join.slint:64
 msgctxt "NetplayJoin"
 msgid "Refreshing session list, please wait..."
-msgstr "Actualizando lista de sesiones, espera..."
+msgstr "Actualizando la lista de sesiones. Espera un momento…"
 
 #: src/ui/gui/netplay_join.slint:69
 msgctxt "NetplayJoin"
 msgid "Click on a session below to select it"
-msgstr "Pulsa una sesión para seleccionarla"
+msgstr "Pulsa en una sesión de la lista para seleccionarla"
 
 #: src/ui/gui/netplay_join.slint:74
 msgctxt "NetplayJoin"
 msgid "No sessions available. Please refresh to check again."
-msgstr "No hay sesiones disponibles. Actualiza para comprobar de nuevo."
+msgstr "No hay sesiones disponibles. Actualiza la lista para volver a comprobarlo."
 
 #: src/ui/gui/netplay_join.slint:100 src/ui/gui/netplay_join.slint:125
 msgctxt "NetplayJoin"
@@ -350,7 +353,7 @@ msgstr "Trucos"
 #: src/ui/gui/netplay_join.slint:141
 msgctxt "NetplayJoin"
 msgid "Refresh Session List"
-msgstr "Actualizar lista"
+msgstr "Actualizar lista de sesiones"
 
 #: src/ui/gui/netplay_join.slint:151
 msgctxt "NetplayJoin"
@@ -375,7 +378,7 @@ msgstr "Crear sesión"
 #: src/ui/gui/netplay_page.slint:49
 msgctxt "Netplay"
 msgid "Join Session"
-msgstr "Unirse a la sesión"
+msgstr "Unirse a una sesión"
 
 #: src/ui/gui/netplay_page.slint:58
 msgctxt "Netplay"
@@ -436,13 +439,13 @@ msgstr "Enviar mensaje"
 msgctxt "NetplayWait"
 msgid ""
 "Setting the input delay too low will cause frequent rollbacks.\n"
-"You can lower the input delay in-game by pressing Alt+[ and raise it with "
-"Alt+]."
+"You can lower the input delay in-game by pressing \"Alt+[\" and raise it "
+"with \"Alt+]\"."
 msgstr ""
 "Configurar un retardo de entrada demasiado bajo provocará rollbacks "
 "frecuentes.\n"
-"Puedes reducir el retardo de entrada en el juego pulsando Alt+[ y aumentarlo "
-"con Alt+]."
+"Puedes reducir el retardo de entrada en el juego pulsando «Alt+[» y "
+"aumentarlo con «Alt+]»."
 
 #: src/ui/gui/netplay_wait.slint:113
 msgctxt "NetplayWait"
@@ -462,7 +465,7 @@ msgstr "Iniciar juego"
 #: src/ui/gui/netplay_wait.slint:136
 msgctxt "NetplayWait"
 msgid "Waiting for P2P mesh "
-msgstr "Esperando malla P2P "
+msgstr "Esperando conexiones P2P "
 
 #: src/ui/gui/netplay_wait.slint:145
 msgctxt "NetplayWait"
@@ -487,7 +490,7 @@ msgstr "Activado"
 #: src/ui/gui/retroachievements_page.slint:55
 msgctxt "RetroAchievements"
 msgid "Hardcore mode"
-msgstr "Modo Hardcore"
+msgstr "Modo hardcore"
 
 #: src/ui/gui/retroachievements_page.slint:64
 msgctxt "RetroAchievements"
@@ -497,7 +500,7 @@ msgstr "Indicadores de desafío"
 #: src/ui/gui/retroachievements_page.slint:74
 msgctxt "RetroAchievements"
 msgid "Leaderboard Trackers"
-msgstr "Indicadores de tabla de clasificación"
+msgstr "Seguimiento de las clasificaciones"
 
 #: src/ui/gui/retroachievements_page.slint:84
 msgctxt "RetroAchievements"
@@ -512,7 +515,7 @@ msgstr "Ver perfil"
 #: src/ui/gui/retroachievements_page.slint:119
 msgctxt "RetroAchievements"
 msgid "Username"
-msgstr "Usuario"
+msgstr "Nombre de usuario"
 
 #: src/ui/gui/retroachievements_page.slint:130
 msgctxt "RetroAchievements"
@@ -522,7 +525,7 @@ msgstr "Contraseña"
 #: src/ui/gui/retroachievements_page.slint:139
 msgctxt "RetroAchievements"
 msgid "Login"
-msgstr "Entrar"
+msgstr "Iniciar sesión"
 
 #: src/ui/gui/retroachievements_page.slint:150
 msgctxt "RetroAchievements"
@@ -547,7 +550,7 @@ msgstr "Resolución:"
 #: src/ui/gui/settings_page.slint:96
 msgctxt "Settings"
 msgid "SSAA downscaling"
-msgstr "Reducción de escala SSAA"
+msgstr "Reducción de escala con SSAA"
 
 #: src/ui/gui/settings_page.slint:104
 msgctxt "Settings"
@@ -562,7 +565,7 @@ msgstr "Pantalla completa"
 #: src/ui/gui/settings_page.slint:120
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
-msgstr "Pantalla ancha (estirado)"
+msgstr "Pantalla panorámica (imagen estirada)"
 
 #: src/ui/gui/settings_page.slint:128
 msgctxt "Settings"
@@ -577,7 +580,7 @@ msgstr "Aplicar sombreador CRT"
 #: src/ui/gui/settings_page.slint:148
 msgctxt "Settings"
 msgid "Overclock N64 CPU (may cause bugs)"
-msgstr "Overclock CPU N64 (puede causar errores)"
+msgstr "Subir la frecuencia de la CPU de la N64 (puede causar errores)"
 
 #: src/ui/gui/settings_page.slint:156
 msgctxt "Settings"
@@ -587,7 +590,7 @@ msgstr "Desactivar Expansion Pak"
 #: src/ui/gui/settings_page.slint:164
 msgctxt "Settings"
 msgid "Enable Rewind"
-msgstr "Activar rebobinado"
+msgstr "Activar el rebobinado"
 
 #: src/ui/gui/settings_page.slint:172
 msgctxt "Settings"

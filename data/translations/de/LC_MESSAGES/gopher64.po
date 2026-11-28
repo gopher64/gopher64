@@ -95,7 +95,7 @@ msgstr "ROM auswählen"
 #: src/ui/gui/cheat_page.slint:43
 msgctxt "Cheats"
 msgid "Clear Cheats For All ROMs"
-msgstr "Cheats für alle ROMs löschen"
+msgstr "Cheats für alle ROMs deaktivieren"
 
 #: src/ui/gui/cheat_page.slint:83
 msgctxt "Cheats"
@@ -155,7 +155,7 @@ msgstr "Vorhandene Profile"
 #: src/ui/gui/input_profile.slint:62
 msgctxt "InputProfileDialog"
 msgid "Deadzone Percentage"
-msgstr "Deadzone Größe in Prozent"
+msgstr "Totzone (%)"
 
 #: src/ui/gui/input_profile.slint:83
 msgctxt "InputProfileDialog"
@@ -200,16 +200,17 @@ msgid ""
 "Press the South/East button to begin binding a button/axis.\n"
 "Press the North/West button to remove a binding."
 msgstr ""
-"Bei Verwendung von DirectInput und/oder Tastatur navigieren Sie im Dialog "
+"Bei Verwendung von DirectInput oder der Tastatur navigieren Sie im Dialog "
 "mit den Pfeiltasten.\n"
-"Drücken Sie Enter, um die Belegung einer Taste/Achse zu starten.\n"
+"Drücken Sie Enter, um mit der Belegung einer Taste oder Achse zu beginnen.\n"
 "Drücken Sie Entf, um eine Belegung zu entfernen.\n"
 "\n"
 "Bei Verwendung eines Controllers im PlayStation-Stil navigieren Sie im "
 "Dialog mit dem Steuerkreuz.\n"
-"Drücken Sie die Süd-/Ost-Taste, um die Belegung einer Taste/Achse zu "
-"starten.\n"
-"Drücken Sie die Nord-/West-Taste, um eine Belegung zu entfernen."
+"Drücken Sie die untere oder rechte Aktionstaste, um mit der Belegung einer "
+"Taste oder Achse zu beginnen.\n"
+"Drücken Sie die obere oder linke Aktionstaste, um eine Belegung zu "
+"entfernen."
 
 #: src/ui/gui/localgame_page.slint:19
 msgctxt "LocalGame"
@@ -224,7 +225,7 @@ msgstr "ROM öffnen"
 #: src/ui/gui/localgame_page.slint:32
 msgctxt "LocalGame"
 msgid "Open Saves Folder"
-msgstr "Speicherordner öffnen"
+msgstr "Spielstandordner öffnen"
 
 #: src/ui/gui/localgame_page.slint:49
 msgctxt "LocalGame"
@@ -322,12 +323,12 @@ msgstr "Sitzungsliste wird aktualisiert, bitte warten …"
 #: src/ui/gui/netplay_join.slint:69
 msgctxt "NetplayJoin"
 msgid "Click on a session below to select it"
-msgstr "Auf eine Sitzung klicken um diese auszuwählen"
+msgstr "Klicken Sie unten auf die gewünschte Sitzung"
 
 #: src/ui/gui/netplay_join.slint:74
 msgctxt "NetplayJoin"
 msgid "No sessions available. Please refresh to check again."
-msgstr "Keine Sitzungen verfügbar. Bitte aktualisieren, um erneut zu prüfen."
+msgstr "Keine Sitzungen verfügbar. Bitte aktualisieren Sie die Liste."
 
 #: src/ui/gui/netplay_join.slint:100 src/ui/gui/netplay_join.slint:125
 msgctxt "NetplayJoin"
@@ -438,12 +439,12 @@ msgstr "Nachricht senden"
 msgctxt "NetplayWait"
 msgid ""
 "Setting the input delay too low will cause frequent rollbacks.\n"
-"You can lower the input delay in-game by pressing Alt+[ and raise it with "
-"Alt+]."
+"You can lower the input delay in-game by pressing \"Alt+[\" and raise it "
+"with \"Alt+]\"."
 msgstr ""
 "Eine zu niedrige Eingabeverzögerung führt zu häufigen Rollbacks.\n"
-"Sie können die Eingabeverzögerung im Spiel mit Alt+[ verringern und mit "
-"Alt+] erhöhen."
+"Sie können die Eingabeverzögerung im Spiel mit „Alt+[“ verringern und mit "
+"„Alt+]“ erhöhen."
 
 #: src/ui/gui/netplay_wait.slint:113
 msgctxt "NetplayWait"
@@ -463,7 +464,7 @@ msgstr "Spiel starten"
 #: src/ui/gui/netplay_wait.slint:136
 msgctxt "NetplayWait"
 msgid "Waiting for P2P mesh "
-msgstr "Warten auf P2P-Mesh "
+msgstr "Warten auf P2P-Verbindungen "
 
 #: src/ui/gui/netplay_wait.slint:145
 msgctxt "NetplayWait"
@@ -493,7 +494,7 @@ msgstr "Hardcore-Modus"
 #: src/ui/gui/retroachievements_page.slint:64
 msgctxt "RetroAchievements"
 msgid "Challenge Indicators"
-msgstr "Challenge Tipps"
+msgstr "Herausforderungsanzeigen"
 
 #: src/ui/gui/retroachievements_page.slint:74
 msgctxt "RetroAchievements"
@@ -553,7 +554,7 @@ msgstr "SSAA-Herunterskalierung"
 #: src/ui/gui/settings_page.slint:104
 msgctxt "Settings"
 msgid "Integer Scaling"
-msgstr "Pixelgenaue Skalierung"
+msgstr "Ganzzahlige Skalierung"
 
 #: src/ui/gui/settings_page.slint:112
 msgctxt "Settings"
@@ -563,7 +564,7 @@ msgstr "Vollbild"
 #: src/ui/gui/settings_page.slint:120
 msgctxt "Settings"
 msgid "Widescreen (stretch)"
-msgstr "16:9 (gestreckt)"
+msgstr "Breitbild (gestreckt)"
 
 #: src/ui/gui/settings_page.slint:128
 msgctxt "Settings"
@@ -588,7 +589,7 @@ msgstr "Expansion Pak deaktivieren"
 #: src/ui/gui/settings_page.slint:164
 msgctxt "Settings"
 msgid "Enable Rewind"
-msgstr "Rewind aktivieren"
+msgstr "Zurückspulen aktivieren"
 
 #: src/ui/gui/settings_page.slint:172
 msgctxt "Settings"
