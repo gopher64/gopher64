@@ -27,6 +27,31 @@ pub fn apply(device: &mut device::Device) {
             ],
             0x8c7c_ff4d_b5f2_fa26,
         ),
+        // https://github.com/ares-emulator/ares/issues/2319
+        // Bass Rush (Japan): the retrace callback publishes the next fishing
+        // state before it finishes. The loader can replace the callback's
+        // overlay while the callback is waiting for the controller thread.
+        "E0CCD9CA6F27AC49D28D72EB7978BE7EAF43EC0DD15C532BE2312A0D6387F526" => (
+            &[
+                (0x108c, 0x0801_5224), // j dispatch hook at 0x80054890
+                (0x1090, 0x3c03_8019), // lui v1, hi(next_state)
+                // Resident code padding. Check only the two overlay-loading states.
+                // Once the higher-priority callback unregisters, it returns without blocking.
+                (0x2fc90, 0x8c63_bd68), // lw v1, next_state(v1)
+                (0x2fc94, 0x2408_0011), // li t0, 0x11 (load lure view)
+                (0x2fc98, 0x1068_0003), // beq v1, t0, check_callback
+                (0x2fc9c, 0x2408_000e), // li t0, 0x0e (load boat view)
+                (0x2fca0, 0x1468_0007), // bne v1, t0, dispatch
+                (0x2fca8, 0x3c08_8007), // check_callback: lui t0, hi(retrace_callback)
+                (0x2fcac, 0x8d08_84d0), // lw t0, retrace_callback(t0)
+                (0x2fcb0, 0x3c09_8025), // lui t1, hi(fishing_callback)
+                (0x2fcb4, 0x2529_e3a0), // addiu t1, t1, lo(fishing_callback)
+                (0x2fcb8, 0x1109_0003), // beq t0, t1, retry
+                (0x2fcc0, 0x0800_9725), // dispatch: j 0x80025c94
+                (0x2fcc8, 0x0800_9723), // retry: j 0x80025c8c
+            ],
+            0x229b_6c36_9c7e_f3bc,
+        ),
         // https://github.com/MiSTer-devel/N64_MiSTer/issues/21
         // Nintama Rantarou 64 Game Gallery (Japan): set OS_TASK_LOADABLE so a
         // yielded graphics task resumes with the microcode its display list switched to.
